@@ -9,7 +9,8 @@ option(BUILD_GLAD "Build glad library" ON)
 option(BUILD_STB_IMAGE "Build stb_image library" ON)
 
 if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
-    message(FATAL_ERROR "In-source builds not allowed. Please make a new directory (called a build directory)
+    message(FATAL_ERROR "In-source builds not allowed.
+    Please make a new directory (called a build directory)
 	and run CMake from there. You may need to remove CMakeCache.txt.")
 endif()
 
@@ -31,45 +32,7 @@ find_package(Freetype REQUIRED)
 message(STATUS "Found freetype in ${FREETYPE_INCLUDE_DIRS}")
 message(STATUS "Found GLFW3 in ${GLFW3_INCLUDE_DIR}")
 
-find_package(Enet QUIET)
-
-#find_package(glad QUIET)
-#
-#if (NOT glad_FOUND)
-#    message(STATUS "glad not found, fetching from github...")
-#    include(FetchContent)
-#    FetchContent_Declare(
-#            glad
-#            GIT_REPOSITORY https://github.com/Enziferum/glad.git
-#    )
-#    FetchContent_MakeAvailable(glad)
-#
-#    # glad's cmake is unbelievably basic, so we have to set some stuff ourselves
-#    set(GLAD_INCLUDE_DIR "${glad_SOURCE_DIR}/include")
-#    set(GLAD_LIBRARIES glad)
-#    install(TARGETS glad EXPORT ${TARGETS_EXPORT_NAME})
-#endif()
-
-if (BUILD_GLAD)
-    message(STATUS "+-Add glad module dependency")
-    include(cmake/External_glad.cmake)
-    message(STATUS "| glad include dirs: ${GLAD_INCLUDE_DIRS}")
-    message(STATUS "| glad libraries: ${GLAD_LIBRARIES}")
-else()
-    message("don't have find package ")
-endif ()
-include_directories(${GLAD_INCLUDE_DIRS})
-
-if (BUILD_STB_IMAGE)
-    message(STATUS "+-Add stb_image module dependency")
-    include(cmake/External_stb_image.cmake)
-    message(STATUS "| stb_image include dirs: ${STB_IMAGE_INCLUDE_DIRS}")
-    message(STATUS "| stb_image libraries: ${STB_IMAGE_LIBRARIES}")
-else()
-    message("don't have find package ")
-endif ()
-include_directories(${STB_IMAGE_INCLUDE_DIRS})
-
+find_package(robot2D_ext QUIET)
 
 include_directories(${FREETYPE_INCLUDE_DIRS})
 
@@ -81,6 +44,7 @@ set(SRC
         include/robot2D/Core/Window.h
         include/robot2D/Core/Keyboard.h
         include/robot2D/Core/Vector2.h
+
         #Graphics
         include/robot2D/Graphics/Color.h
         include/robot2D/Graphics/Drawable.h
@@ -94,6 +58,7 @@ set(SRC
         include/robot2D/Graphics/Texture.h
         include/robot2D/Graphics/Transform.h
         include/robot2D/Graphics/Transformable.h
+
         #Util
         include/robot2D/Util/ResourceHandler.h
         )
@@ -114,6 +79,7 @@ set(SRC
         src/Graphics/Font.cpp
         src/Graphics/RenderStates.cpp
         src/Graphics/RenderWindow.cpp
+        src/Graphics/RenderTarget.cpp
         src/Graphics/Shader.cpp
         src/Graphics/Sprite.cpp
         src/Graphics/Text.cpp
@@ -130,24 +96,13 @@ endif()
 
 add_library(${PROJECT_NAME} ${SRC})
 
-if(BUILD_GLAD)
-    add_dependencies(${PROJECT_NAME} glad_ext)
-endif()
-
-if(BUILD_STB_IMAGE)
-    add_dependencies(${PROJECT_NAME} stb_image_ext)
-endif()
-
-set(LIBS ${LIBS} glfw ${FREETYPE_LIBRARIES})
+set(LIBS ${LIBS} glfw robot2D_ext ${FREETYPE_LIBRARIES})
 
 target_link_libraries(${PROJECT_NAME} ${LIBS})
 target_include_directories(${PROJECT_NAME} PUBLIC
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
         "$<INSTALL_INTERFACE:include>")
 
-#target_include_directories(${PROJECT_NAME} PRIVATE
-#        ${GLAD_INCLUDE_DIRS})
-#
 
 include(CMakePackageConfigHelpers)
 configure_package_config_file(

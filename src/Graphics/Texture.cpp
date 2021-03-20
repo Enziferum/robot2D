@@ -20,8 +20,8 @@ source distribution.
 *********************************************************************/
 
 #include <iostream>
-#include <glad/glad.h>
-#include "stb_image/stb_image.h"
+#include <ext/glad.h>
+#include "ext/stb_image.h"
 
 #include "robot2D/Graphics/Texture.h"
 

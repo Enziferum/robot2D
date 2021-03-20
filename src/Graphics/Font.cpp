@@ -20,7 +20,7 @@ source distribution.
 *********************************************************************/
 
 #include <iostream>
-#include <glad/glad.h>
+#include <ext/glad.h>
 
 #include "ft2build.h"
 #include FT_FREETYPE_H
