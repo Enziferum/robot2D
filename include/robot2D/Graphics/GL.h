@@ -21,4 +21,4 @@ source distribution.
 
 #pragma once
 
-#include <glad/glad.h>
+#include <ext/glad.h>

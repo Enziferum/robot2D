@@ -24,8 +24,7 @@ source distribution.
 #include <iostream>
 #include <tuple>
 
-#include <glad/glad.h>
-
+#include <ext/glad.h>
 #include "robot2D/Graphics/Shader.h"
 
 namespace robot2D{

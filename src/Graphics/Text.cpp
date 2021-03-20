@@ -21,7 +21,7 @@ source distribution.
 
 #include <iostream>
 
-#include <glad/glad.h>
+#include <ext/glad.h>
 
 
 #include "robot2D/Graphics/Text.h"

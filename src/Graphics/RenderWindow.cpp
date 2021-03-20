@@ -19,7 +19,7 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include <glad/glad.h>
+#include <ext/glad.h>
 #include "robot2D/Graphics/RenderWindow.h"
 
 namespace robot2D{

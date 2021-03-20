@@ -28,6 +28,7 @@ source distribution.
 
 
 namespace robot2D{
+
     struct character {
         unsigned int textureID; // ID handle of the glyph texture
         vec2i   size;      // size of glyph
