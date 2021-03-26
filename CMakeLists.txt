@@ -7,6 +7,7 @@ endif()
 
 option(BUILD_GLAD "Build glad library" ON)
 option(BUILD_STB_IMAGE "Build stb_image library" ON)
+option(BUILD_EDITOR "" ON)
 
 if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
     message(FATAL_ERROR "In-source builds not allowed.
@@ -90,11 +91,40 @@ set(SRC
         #Util
         )
 
+if(BUILD_EDITOR)
+    set(EDITOR_SRC
+            include/robot2D/Editor/ConsolePanel.h
+            include/robot2D/Editor/EditorScene.h
+            include/robot2D/Editor/EditorState.h
+            include/robot2D/Editor/ImGui-Robot.h
+            include/robot2D/Editor/InputManager.h
+            include/robot2D/Editor/MainMenuPanel.h
+            include/robot2D/Editor/IPanel.h
+            include/robot2D/Editor/ObjectPanel.h
+            include/robot2D/Editor/PanelManager.h
+            include/robot2D/Editor/TreeNodePanel.h
+            )
+
+    set(EDITOR_SRC ${EDITOR_SRC}
+            src/Editor/main.cpp
+            src/Editor/EditorState.cpp
+            src/Editor/IPanel.cpp
+            src/Editor/ObjectPanel.cpp
+            src/Editor/ImGui-Robot.cpp
+            src/Editor/PanelManager.cpp
+            src/Editor/EditorScene.cpp
+            )
+endif()
+
 if(WIN32)
     set(LIBS opengl32)
 endif()
 
 add_library(${PROJECT_NAME} ${SRC})
+if(BUILD_EDITOR)
+    add_executable(${PROJECT_NAME}_editor ${EDITOR_SRC})
+    target_link_libraries(${PROJECT_NAME}_editor ${PROJECT_NAME})
+endif()
 
 set(LIBS ${LIBS} glfw robot2D_ext ${FREETYPE_LIBRARIES})
 
