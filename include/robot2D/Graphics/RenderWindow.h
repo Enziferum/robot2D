@@ -21,21 +21,18 @@ source distribution.
 
 #pragma once
 
-#include "robot2D/Core/Window.h"
+#include <robot2D/Core/Window.h>
 #include "RenderTarget.h"
-#include "Sprite.h"
-#include "Shader.h"
 
 namespace robot2D{
     class RenderWindow: public Window, public RenderTarget{
     public:
         RenderWindow();
-        RenderWindow(const vec2u& size, const std::string& name, const bool& vsync = true);
+        RenderWindow(const vec2u& size, const std::string& name,
+                     const bool& vsync = true);
         ~RenderWindow();
 
     protected:
         void onResize(const int &w, const int &h) override;
-
-    private:
     };
 }

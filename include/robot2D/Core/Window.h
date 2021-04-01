@@ -46,6 +46,14 @@ namespace robot2D{
 
         const vec2u& get_size();
 
+        bool getMouseButton(const int& button);
+
+        void setCursorPosition(const vec2f& pos);
+        vec2f getCursorPos();
+
+        GLFWwindow* get_raw_window() const {
+            return m_window;
+        }
     protected:
         virtual void onResize(const int& w, const int& h);
     private:

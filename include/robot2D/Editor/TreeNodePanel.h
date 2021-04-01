@@ -1,8 +1,0 @@
-//
-// Created by support on 26.03.2021.
-//
-
-#ifndef ROBOT2D_TREENODEPANEL_H
-#define ROBOT2D_TREENODEPANEL_H
-
-#endif //ROBOT2D_TREENODEPANEL_H

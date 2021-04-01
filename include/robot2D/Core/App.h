@@ -65,6 +65,7 @@ namespace robot2D{
             return;
 
         m_states.insert(std::pair<int, State::Ptr>(id, ptr));
+        m_current_state = id;
     }
 
 }

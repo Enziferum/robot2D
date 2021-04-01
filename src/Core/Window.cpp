@@ -110,14 +110,11 @@ namespace robot2D{
                               int action, int mods) {
         Window* window = static_cast<Window*>(glfwGetWindowUserPointer(wnd));
 
-        //todo add press status
         Event event;
-        if(action == GLFW_REPEAT || action == GLFW_PRESS) {
+        if(action == GLFW_REPEAT || action == GLFW_PRESS)
             event.type = Event::KeyPressed;
-        }
-        if(action == GLFW_RELEASE){
+        if(action == GLFW_RELEASE)
             event.type = Event::KeyReleased;
-        }
         event.key.code = key;
         window->m_event_queue.push(event);
     }
@@ -130,6 +127,8 @@ namespace robot2D{
         Window* window = static_cast<Window*>(glfwGetWindowUserPointer(wnd));
 
         Event event;
+        event.move.x = float(xpos);
+        event.move.y = float(ypos);
         event.type = Event::MouseMoved;
 
         window->m_event_queue.push(event);
@@ -140,7 +139,8 @@ namespace robot2D{
 
         Event event;
         event.type = Event::MouseWheel;
-
+        event.wheel.scroll_x = 0;
+        event.wheel.scroll_y += float(ypos);
         window->m_event_queue.push(event);
     }
 
@@ -166,16 +166,20 @@ namespace robot2D{
     void Window::mouse_callback(GLFWwindow* wnd, int button, int action, int mods) {
         Window* window = static_cast<Window*>(glfwGetWindowUserPointer(wnd));
 
-        if(action == GLFW_PRESS) {
-            Event event;
-            event.type = Event::MouseButton;
-            event.mouse.btn = button;
-            double xpos, ypos;
-            glfwGetCursorPos(wnd, &xpos, &ypos);
-            event.mouse.x = int(xpos);
-            event.mouse.y = int(ypos);
-            window->m_event_queue.push(event);
-        }
+        Event event;
+        event.mouse.btn = button;
+        double xpos, ypos;
+        glfwGetCursorPos(wnd, &xpos, &ypos);
+        event.mouse.x = int(xpos);
+        event.mouse.y = int(ypos);
+
+        if(action == GLFW_PRESS)
+            event.type = Event::MousePressed;
+
+        if (action == GLFW_RELEASE)
+            event.type = Event::MouseReleased;
+
+        window->m_event_queue.push(event);
     }
 
     const vec2u& Window::get_size() {
@@ -184,8 +188,31 @@ namespace robot2D{
 
     void Window::view_callback(GLFWwindow* wnd, int w, int h) {
         Window* window = static_cast<Window*>(glfwGetWindowUserPointer(wnd));
+        Event event;
+        event.type = Event::Resized;
+        event.size.widht = w;
+        event.size.heigth = h;
+        window->m_event_queue.push(event);
         window->onResize(w, h);
     }
 
     void Window::onResize(const int &w, const int &h) {}
+
+
+    bool Window::getMouseButton(const int &button) {
+        return glfwGetMouseButton(m_window, button);
+    }
+
+    void Window::setCursorPosition(const vec2f &pos) {
+        glfwSetCursorPos(m_window, pos.x, pos.y);
+    }
+
+    vec2f Window::getCursorPos() {
+        vec2f pos;
+        double x, y;
+        glfwGetCursorPos(m_window, &x, &y);
+        pos.x = x; pos.y = y;
+        return pos;
+    }
+
 }

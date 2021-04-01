@@ -30,17 +30,18 @@ namespace robot2D{
     {
     }
 
+    RenderWindow::RenderWindow(const vec2u &size, const std::string &name, const bool &vsync)
+    : Window(size, name,vsync),
+      RenderTarget(m_win_size) {
+    }
+
     RenderWindow::~RenderWindow() {
 
     }
 
+    //todo applyView function
     void RenderWindow::onResize(const int &w, const int &h) {
-        //todo update views
         glViewport(0, 0, w, h);
     }
 
-    RenderWindow::RenderWindow(const vec2u &size, const std::string &name, const bool &vsync) : Window(size, name,
-                                                                                                       vsync),
-                                                                                                RenderTarget(m_win_size) {
-    }
 }
