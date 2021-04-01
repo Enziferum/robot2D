@@ -29,16 +29,15 @@ namespace robot2D{
     class State;
     class IStateMachine{
     public:
-        IStateMachine();
+        IStateMachine(const vec2u size = vec2u(800, 600),
+                      const std::string& name = "robot2D");
         virtual ~IStateMachine();
 
         void pushState(const int& state);
         void popState();
-        robot2D::RenderWindow& getWindow(){
-            return m_window;
-        }
-
         void setCurrent(const unsigned int& id);
+
+        RenderWindow& getWindow();
     protected:
         RenderWindow m_window;
         std::unordered_map<unsigned int,

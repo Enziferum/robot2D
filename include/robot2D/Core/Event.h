@@ -25,9 +25,13 @@ namespace robot2D{
     class Event{
     public:
         enum EventType {
+            Resized,
+            GainFocus,
+            LostFocus,
             MouseMoved,
             MouseWheel,
-            MouseButton,
+            MousePressed,
+            MouseReleased,
             KeyPressed,
             KeyReleased,
             Count
@@ -35,6 +39,10 @@ namespace robot2D{
 
         EventType type;
 
+        struct SizeEvent{
+            unsigned int widht;
+            unsigned int heigth;
+        };
 
         struct MouseMoveEvent{
             float x;
@@ -56,10 +64,17 @@ namespace robot2D{
             int y;
         };
 
+        struct MouseWheelEvent{
+            float scroll_x;
+            float scroll_y;
+        };
+
         union {
-            MouseMoveEvent moveEvent;
+            SizeEvent size;
+            MouseMoveEvent move;
             MouseButtonEvent mouse;
             KeyboardEvent key;
+            MouseWheelEvent wheel;
         };
 
     };

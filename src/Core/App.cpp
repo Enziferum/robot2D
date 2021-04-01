@@ -34,7 +34,7 @@ namespace robot2D{
 
     //_window(vec2u(size.x, size.y), name, sync)
     App::App(const vec2u& size, const std::string& name, const bool& sync):
-    IStateMachine(),
+    IStateMachine(size, name),
     lastTime(0.f), deltaTime(0.f){
 
     }
@@ -42,7 +42,6 @@ namespace robot2D{
     void App::run() {
         robot2D::Event event;
 
-        std::cout << m_current_state <<std::endl;
         while (m_window.isOpen()){
             handleEvents(event);
             update();

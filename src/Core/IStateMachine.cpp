@@ -22,8 +22,9 @@ source distribution.
 #include "robot2D/Core/IStateMachine.h"
 
 namespace robot2D{
-    IStateMachine::IStateMachine():
-        m_window() {
+    IStateMachine::IStateMachine(const vec2u size,
+                                 const std::string& name):
+        m_window(size, name, true) {
 
     }
 
@@ -41,5 +42,9 @@ namespace robot2D{
 
     void IStateMachine::setCurrent(const unsigned int &id) {
         m_current_state = id;
+    }
+
+    RenderWindow& IStateMachine::getWindow() {
+        return m_window;
     }
 }
