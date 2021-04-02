@@ -46,22 +46,20 @@ namespace robot2D{
 
         const vec2u& get_size();
 
+        // todo rewrite this methods //
         bool getMouseButton(const int& button);
-
         void setCursorPosition(const vec2f& pos);
         vec2f getCursorPos();
 
-        GLFWwindow* get_raw_window() const {
-            return m_window;
-        }
+        GLFWwindow* raw_window() const;
     protected:
         virtual void onResize(const int& w, const int& h);
     private:
         void setup();
-        virtual void setup_WGL();
         void setup_callbacks();
+        virtual void setup_WGL();
 
-        //glfw callbacks
+
     private:
         static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
         static void cursor_callback(GLFWwindow* window, double xpos, double ypos);
@@ -74,9 +72,9 @@ namespace robot2D{
         GLFWwindow* m_window;
         std::queue<Event> m_event_queue;
 
+        //window settings
         vec2u m_win_size;
         std::string m_name;
-
         bool m_vsync;
     };
 }

@@ -22,18 +22,23 @@ source distribution.
 #pragma once
 
 #include <string>
-#include <GLFW/glfw3.h>
-
 #include "robot2D/Core/Vector2.h"
 
 namespace robot2D{
+    enum class shaderType {
+        vertex,
+        fragment,
+        geometry
+    };
+
+
     class ShaderHandler {
     public:
         ShaderHandler();
         ~ShaderHandler() = default;
 
-        bool createShader(GLenum shaderType, const char* path);
-        bool createShader(GLenum shaderType, const char* code, bool is_path);
+        bool createShader(shaderType shader_type, const char* path);
+        bool createShader(shaderType shader_type, const char* code, bool is_path);
         void use() const;
 
         void set_parameter(const char* name, const float* matrix) const;
@@ -50,7 +55,7 @@ namespace robot2D{
             return shaderProgram;
         }
     private:
-        int setupShader(GLenum shaderType, const char* path, bool is_file = true);
+        int setupShader(shaderType shader_type, const char* path, bool is_file = true);
 
     private:
         int shaderProgram;

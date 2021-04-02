@@ -84,8 +84,8 @@ namespace robot2D{
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
 
-        m_textShader.createShader(GL_VERTEX_SHADER, vertexText, false);
-        m_textShader.createShader(GL_FRAGMENT_SHADER, fragmentText, false);
+        m_textShader.createShader(shaderType::vertex, vertexText, false);
+        m_textShader.createShader(shaderType::fragment, fragmentText, false);
 
         m_textShader.use();
         m_textShader.set_parameter("text", 0);

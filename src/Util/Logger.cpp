@@ -19,39 +19,15 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#pragma once
+#include "robot2D/Util/Logger.h"
 
-#include "Drawable.h"
-#include "Sprite.h"
-#include "Shader.h"
+namespace logger {
+    bool debug = true;
 
-
-namespace robot2D {
-    struct matrix {
-        float mat[4][4];
-    };
-
-    class RenderTarget {
-    public:
-        RenderTarget(const vec2u& size);
-        virtual ~RenderTarget() = 0;
-
-        virtual void draw(const RenderStates& states);
-        virtual void draw(const Drawable& drawable, const RenderStates& states
-                                                    = RenderStates::Default);
-
-        const matrix& projection_matrix() const;
-    protected:
-        void ortho_projection(matrix& m, float l, float r, float b,
-                              float t, float n, float f);
-    private:
-        void setup_GL();
-
-    protected:
-        ShaderHandler m_spriteShaders;
-        unsigned int VAO;
-
-        vec2u m_size;
-        matrix mat;
-    };
+    void tprintf(logType type, const char* msg){
+        if(type == logType::info)
+            std::cout << msg;
+        if(type == logType::error)
+            std::cerr << msg;
+    }
 }
