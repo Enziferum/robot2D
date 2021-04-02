@@ -19,19 +19,21 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include <iostream>
-#include <thread>
+#include <robot2D/Graphics/GL.h>
 
-#include <ext/glad.h>
 #include "robot2D/Core/Window.h"
+#include "robot2D/Util/Logger.h"
 
 namespace robot2D{
+
+    constexpr int opengl_major = 3;
+    constexpr int opengl_minor = 3;
 
     Window::Window():
     m_window(nullptr),
     m_win_size(800, 600),
     m_name("robot2D"),
-    m_vsync(true){
+    m_vsync(true) {
         setup();
     }
 
@@ -58,9 +60,10 @@ namespace robot2D{
         //todo window params
         /* Create a windowed mode window and its OpenGL context */
         m_window = glfwCreateWindow(m_win_size.x, m_win_size.y,
-                                    m_name.c_str(), NULL, NULL);
+                                    m_name.c_str(), nullptr, nullptr);
         if (!m_window)
         {
+            //todo throw expeption, after termimate
             glfwTerminate();
             exit(1);
         }
@@ -117,6 +120,10 @@ namespace robot2D{
         glfwPollEvents();
     }
 
+    void Window::close() {
+        glfwSetWindowShouldClose(m_window, 1);
+    }
+
     void Window::key_callback(GLFWwindow* wnd, int key, int scancode,
                               int action, int mods) {
         Window* window = static_cast<Window*>(glfwGetWindowUserPointer(wnd));
@@ -128,10 +135,6 @@ namespace robot2D{
             event.type = Event::KeyReleased;
         event.key.code = key;
         window->m_event_queue.push(event);
-    }
-
-    void Window::close() {
-        glfwSetWindowShouldClose(m_window, 1);
     }
 
     void Window::cursor_callback(GLFWwindow* wnd, double xpos, double ypos) {
@@ -155,8 +158,8 @@ namespace robot2D{
     }
 
     void Window::setup_WGL() {
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, opengl_major);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, opengl_minor);
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 #ifdef __APPLE__
@@ -165,7 +168,7 @@ namespace robot2D{
 
         if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
         {
-            //log(Error, "Failed to initialize GLAD");
+             LOG_ERROR_E("Failed to initialize GLAD")
             return ;
         }
 
@@ -233,15 +236,16 @@ namespace robot2D{
 //        event.type = Event::Resized;
 //        event.size.widht = w;
 //        event.size.heigth = h;
-//        std::cout << "Window::size_callback()" << std::endl;
 //        window->m_event_queue.push(event);
     }
 
     void Window::maximized_callback(GLFWwindow* wnd, int state) {
         Window* window = static_cast<Window*>(glfwGetWindowUserPointer(wnd));
         Event event;
-        if(state == GLFW_TRUE)
-            std::cout << "Window::size_callback()" << std::endl;
+    }
+
+    GLFWwindow* Window::raw_window() const {
+        return m_window;
     }
 
 }

@@ -62,6 +62,7 @@ set(SRC
 
         #Util
         include/robot2D/Util/ResourceHandler.h
+        include/robot2D/Util/Logger.h
         )
 
 set(SRC
@@ -89,6 +90,7 @@ set(SRC
         src/Graphics/Transformable.cpp
 
         #Util
+        src/Util/Logger.cpp
         )
 
 if(WIN32)

@@ -95,24 +95,24 @@ namespace robot2D{
                 1.0f, 0.0f, 1.0f, 0.0f
         };
 
-        glGenVertexArrays(1, &this->VAO);
+        glGenVertexArrays(1, &VAO);
         glGenBuffers(1, &VBO);
 
         glBindBuffer(GL_ARRAY_BUFFER, VBO);
         glBufferData(GL_ARRAY_BUFFER, sizeof(vertices),
                      vertices, GL_STATIC_DRAW);
 
-        glBindVertexArray(this->VAO);
+        glBindVertexArray(VAO);
         glEnableVertexAttribArray(0);
         glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE,
                               4 * sizeof(float), (void*)0);
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
 
-        if(!m_spriteShaders.createShader(GL_VERTEX_SHADER,
+        if(!m_spriteShaders.createShader(shaderType::vertex,
                                          vertexShaderSource, false))
             return;
-        if(!m_spriteShaders.createShader(GL_FRAGMENT_SHADER,
+        if(!m_spriteShaders.createShader(shaderType::fragment,
                                          fragmentShaderSource, false))
             return;
 
@@ -120,7 +120,6 @@ namespace robot2D{
         m_spriteShaders.use();
         m_spriteShaders.set_parameter("sprite", 0);
 
-        //todo do in other way
 
         ortho_projection(mat, 0.0f,static_cast<float>(m_size.x),
                  static_cast<float>(m_size.y),
@@ -128,6 +127,7 @@ namespace robot2D{
 
         m_spriteShaders.set_parameter("projection", &mat.mat[0][0]);
 
+        //todo use as RenderStates
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     }
@@ -162,6 +162,10 @@ namespace robot2D{
             glBindVertexArray(VAO);
         glDrawArrays(GL_TRIANGLES, 0, 6);
         glBindVertexArray(0);
+    }
+
+    const matrix &RenderTarget::projection_matrix() const {
+        return mat;
     }
 
 }

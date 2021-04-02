@@ -31,7 +31,7 @@ namespace robot2D {
         float mat[4][4];
     };
 
-    class RenderTarget{
+    class RenderTarget {
     public:
         RenderTarget(const vec2u& size);
         virtual ~RenderTarget() = 0;
@@ -40,12 +40,12 @@ namespace robot2D {
         virtual void draw(const Drawable& drawable, const RenderStates& states
                                                     = RenderStates::Default);
 
-
+        const matrix& projection_matrix() const;
     protected:
         void ortho_projection(matrix& m, float l, float r, float b,
                               float t, float n, float f);
     private:
-        virtual void setup_GL();
+        void setup_GL();
 
     protected:
         ShaderHandler m_spriteShaders;
