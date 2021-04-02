@@ -20,6 +20,7 @@ source distribution.
 *********************************************************************/
 
 #include <ext/glad.h>
+
 #include "robot2D/Graphics/RenderTarget.h"
 
 namespace robot2D{
@@ -44,7 +45,7 @@ namespace robot2D{
                                              "  color = vec4(spriteColor, 1.0) * texture(sprite, TexCoords);\n"
                                              "}\0";
 
-    void my_ortho(matrix& m, float l, float r, float b,
+    void RenderTarget::ortho_projection(matrix& m, float l, float r, float b,
                   float t, float n, float f){
         m.mat[0][0] = 2 / (r - l);
 
@@ -67,6 +68,7 @@ namespace robot2D{
         m.mat[3][2] = -(f + n) / (f - n);
         m.mat[3][3] = 1;
     }
+
 
     RenderTarget::RenderTarget(const vec2u& size): m_size(size) {
         setup_GL();
@@ -116,11 +118,11 @@ namespace robot2D{
 
 
         m_spriteShaders.use();
-        //m_spriteShaders.set_parameter("image", 0);
+        m_spriteShaders.set_parameter("sprite", 0);
 
         //todo do in other way
 
-        my_ortho(mat, 0.0f,static_cast<float>(m_size.x),
+        ortho_projection(mat, 0.0f,static_cast<float>(m_size.x),
                  static_cast<float>(m_size.y),
                  0.0f, -1.0f, 1.0f);
 

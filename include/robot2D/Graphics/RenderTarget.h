@@ -26,8 +26,8 @@ source distribution.
 #include "Shader.h"
 
 
-namespace robot2D{
-    struct matrix{
+namespace robot2D {
+    struct matrix {
         float mat[4][4];
     };
 
@@ -41,9 +41,13 @@ namespace robot2D{
                                                     = RenderStates::Default);
 
 
+    protected:
+        void ortho_projection(matrix& m, float l, float r, float b,
+                              float t, float n, float f);
     private:
         virtual void setup_GL();
-    private:
+
+    protected:
         ShaderHandler m_spriteShaders;
         unsigned int VAO;
 

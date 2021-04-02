@@ -67,7 +67,9 @@ namespace robot2D{
         static void cursor_callback(GLFWwindow* window, double xpos, double ypos);
         static void mouseWhell_callback(GLFWwindow* window, double xpos, double ypos);
         static void mouse_callback(GLFWwindow* window, int key, int action, int mods);
+        static void size_callback(GLFWwindow* window, int w, int h);
         static void view_callback(GLFWwindow* window, int w, int h);
+        static void maximized_callback(GLFWwindow* window, int state);
     protected:
         GLFWwindow* m_window;
         std::queue<Event> m_event_queue;

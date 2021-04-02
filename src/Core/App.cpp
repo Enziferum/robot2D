@@ -50,7 +50,7 @@ namespace robot2D{
     }
 
     void App::handleEvents(robot2D::Event& event) {
-        while (m_window.pollEvents(event)){
+        while (m_window.pollEvents(event)) {
             if(m_states.empty())
                 return;
             m_states[m_current_state] -> handleEvents(event);
