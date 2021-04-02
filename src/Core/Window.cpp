@@ -19,6 +19,9 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
+#include <iostream>
+#include <thread>
+
 #include <ext/glad.h>
 #include "robot2D/Core/Window.h"
 
@@ -74,12 +77,15 @@ namespace robot2D{
     void Window::setup_callbacks() {
         if(m_window == nullptr)
             return;
+
         glfwSetWindowUserPointer(m_window, this);
         glfwSetKeyCallback(m_window, key_callback);
         glfwSetCursorPosCallback(m_window, cursor_callback);
         glfwSetScrollCallback(m_window, mouseWhell_callback);
         glfwSetMouseButtonCallback(m_window, mouse_callback);
         glfwSetFramebufferSizeCallback(m_window, view_callback);
+        glfwSetWindowSizeCallback(m_window, size_callback);
+        glfwSetWindowMaximizeCallback(m_window, maximized_callback);
         //glfwSetCharCallback(m_window);
     }
 
@@ -88,12 +94,17 @@ namespace robot2D{
     }
 
     bool Window::pollEvents(Event& event) {
-        if(m_event_queue.empty())
-            return false;
-        event = m_event_queue.front();
-        m_event_queue.pop();
+        if(m_event_queue.empty()){
+            //what todo ??
+        }
 
-        return m_event_queue.empty();
+        if(!m_event_queue.empty()) {
+            event = m_event_queue.front();
+            m_event_queue.pop();
+            return true;
+        }
+
+        return false;
     }
 
     void Window::clear(const Color& color) {
@@ -136,7 +147,6 @@ namespace robot2D{
 
     void Window::mouseWhell_callback(GLFWwindow* wnd, double xpos, double ypos) {
         Window* window = static_cast<Window*>(glfwGetWindowUserPointer(wnd));
-
         Event event;
         event.type = Event::MouseWheel;
         event.wheel.scroll_x = 0;
@@ -192,8 +202,10 @@ namespace robot2D{
         event.type = Event::Resized;
         event.size.widht = w;
         event.size.heigth = h;
-        window->m_event_queue.push(event);
+        window->m_win_size = vec2u((unsigned int)(w),
+                                   (unsigned int)(h));
         window->onResize(w, h);
+        window->m_event_queue.push(event);
     }
 
     void Window::onResize(const int &w, const int &h) {}
@@ -213,6 +225,23 @@ namespace robot2D{
         glfwGetCursorPos(m_window, &x, &y);
         pos.x = x; pos.y = y;
         return pos;
+    }
+
+    void Window::size_callback(GLFWwindow* wnd, int w, int h) {
+//        Window* window = static_cast<Window*>(glfwGetWindowUserPointer(wnd));
+//        Event event;
+//        event.type = Event::Resized;
+//        event.size.widht = w;
+//        event.size.heigth = h;
+//        std::cout << "Window::size_callback()" << std::endl;
+//        window->m_event_queue.push(event);
+    }
+
+    void Window::maximized_callback(GLFWwindow* wnd, int state) {
+        Window* window = static_cast<Window*>(glfwGetWindowUserPointer(wnd));
+        Event event;
+        if(state == GLFW_TRUE)
+            std::cout << "Window::size_callback()" << std::endl;
     }
 
 }

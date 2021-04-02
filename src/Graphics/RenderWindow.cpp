@@ -18,6 +18,7 @@ and must not be misrepresented as being the original software.
 3. This notice may not be removed or altered from any
 source distribution.
 *********************************************************************/
+#include <iostream>
 
 #include <ext/glad.h>
 #include "robot2D/Graphics/RenderWindow.h"
@@ -41,6 +42,20 @@ namespace robot2D{
 
     //todo applyView function
     void RenderWindow::onResize(const int &w, const int &h) {
+        int x, y;
+        glfwGetFramebufferSize(m_window, &x, &y);
+
+        if(w != x || h != y)
+            std::cout << "not valid framebuffer size" << std::endl;
+
+        m_size = vec2u(w, h);
+        ortho_projection(mat, 0.0f, static_cast<float>(m_size.x),
+                         static_cast<float>(m_size.y),
+                         0.0f, -1.0f, 1.0f);
+
+        m_spriteShaders.use();
+        m_spriteShaders.set_parameter("projection", &mat.mat[0][0]);
+
         glViewport(0, 0, w, h);
     }
 
