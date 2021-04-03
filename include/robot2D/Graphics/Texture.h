@@ -38,6 +38,8 @@ namespace robot2D{
         void generate(const vec2u& size, void* data);
         const unsigned int& get_id()const;
         void bind()const;
+
+        unsigned char* get_pixels() const;
     private:
         void setup_GL();
     private:

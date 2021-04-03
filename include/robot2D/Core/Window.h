@@ -22,13 +22,16 @@ source distribution.
 #pragma once
 #include <queue>
 #include <string>
+#include <vector>
 
 #include <GLFW/glfw3.h>
+#include "robot2D/Graphics/Color.h"
+#include "robot2D/Graphics/Texture.h"
 
 #include "Vector2.h"
 #include "Event.h"
 
-#include "robot2D/Graphics/Color.h"
+
 
 namespace robot2D{
     class Window{
@@ -52,6 +55,8 @@ namespace robot2D{
         vec2f getCursorPos();
 
         GLFWwindow* raw_window() const;
+
+        void setIcon(std::vector<Texture>& icons);
     protected:
         virtual void onResize(const int& w, const int& h);
     private:

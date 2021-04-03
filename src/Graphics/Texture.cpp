@@ -102,5 +102,9 @@ namespace robot2D{
         return m_texture;
     }
 
+    unsigned char* Texture::get_pixels() const {
+        return buffer;
+    }
+
 
 }
