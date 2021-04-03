@@ -21,6 +21,8 @@ source distribution.
 
 #pragma once
 
+#include "Mouse.h"
+
 namespace robot2D{
     class Event{
     public:

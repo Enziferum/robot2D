@@ -248,4 +248,19 @@ namespace robot2D{
         return m_window;
     }
 
+    void Window::setIcon(std::vector<Texture>& icons) {
+        if(icons.empty())
+            return;
+        std::vector<GLFWimage> images;
+        for(auto &it: icons){
+            GLFWimage img;
+            auto size = it.get_size();
+            img.width = size.x;
+            img.height = size.y;
+            img.pixels = it.get_pixels();
+            images.emplace_back(img);
+        }
+        glfwSetWindowIcon(m_window, images.size(), &images[0]);
+    }
+
 }

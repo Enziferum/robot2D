@@ -74,5 +74,9 @@ namespace robot2D{
         m_window.display();
     }
 
+    void App::setIcon(std::vector<Texture>& textures) {
+        m_window.setIcon(textures);
+    }
+
 
 }

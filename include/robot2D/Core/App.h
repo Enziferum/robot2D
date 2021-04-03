@@ -42,6 +42,7 @@ namespace robot2D{
         void register_state(const int id, Args&& ... args);
 
         void run();
+        void setIcon(std::vector<Texture>& textures);
     private:
         void handleEvents(robot2D::Event&);
         void update();
