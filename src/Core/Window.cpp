@@ -89,7 +89,6 @@ namespace robot2D{
         glfwSetFramebufferSizeCallback(m_window, view_callback);
         glfwSetWindowSizeCallback(m_window, size_callback);
         glfwSetWindowMaximizeCallback(m_window, maximized_callback);
-        //glfwSetCharCallback(m_window);
     }
 
     bool Window::isOpen() const {

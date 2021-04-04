@@ -19,10 +19,7 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include <iostream>
-
-#include <GLFW/glfw3.h>
-#include "robot2D/Core/App.h"
+#include <robot2D/Extra/App.h>
 
 namespace robot2D{
 

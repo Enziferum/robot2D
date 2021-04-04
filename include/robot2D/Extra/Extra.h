@@ -19,32 +19,8 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include "robot2D/Core/IStateMachine.h"
+#pragma once
 
-namespace robot2D{
-    IStateMachine::IStateMachine(const vec2u size,
-                                 const std::string& name):
-        m_window(size, name, true) {
-
-    }
-
-    IStateMachine::~IStateMachine() {
-
-    }
-
-    void IStateMachine::pushState(const int &state) {
-        m_current_state = state;
-    }
-
-    void IStateMachine::popState() {
-
-    }
-
-    void IStateMachine::setCurrent(const unsigned int &id) {
-        m_current_state = id;
-    }
-
-    RenderWindow& IStateMachine::getWindow() {
-        return m_window;
-    }
-}
+#include "App.h"
+#include "IStateMachine.h"
+#include "State.h"

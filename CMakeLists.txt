@@ -5,9 +5,6 @@ if(MSVC)
     add_definitions(/MP)
 endif()
 
-option(BUILD_GLAD "Build glad library" ON)
-option(BUILD_STB_IMAGE "Build stb_image library" ON)
-option(BUILD_EDITOR "" ON)
 
 if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
     message(FATAL_ERROR "In-source builds not allowed.
@@ -37,14 +34,21 @@ find_package(robot2D_ext QUIET)
 
 include_directories(${FREETYPE_INCLUDE_DIRS})
 
+#todo cmake lists by module
+#
 set(SRC
+        include/robot2D/robot2D.h
+
         #Core
-        include/robot2D/Core/App.h
         include/robot2D/Core/Event.h
-        include/robot2D/Core/IStateMachine.h
         include/robot2D/Core/Window.h
         include/robot2D/Core/Keyboard.h
         include/robot2D/Core/Vector2.h
+
+        #Extra
+        include/robot2D/Extra/App.h
+        include/robot2D/Extra/IStateMachine.h
+        include/robot2D/Extra/State.h
 
         #Graphics
         include/robot2D/Graphics/Color.h
@@ -68,12 +72,13 @@ set(SRC
 set(SRC
         ${SRC}
         #Core
-
-        src/Core/App.cpp
-        src/Core/IStateMachine.cpp
         src/Core/Window.cpp
         src/Core/Event.cpp
-        src/Core/State.cpp
+
+        #Extra
+        src/Extra/App.cpp
+        src/Extra/State.cpp
+        src/Extra/IStateMachine.cpp
 
         #Graphics
         src/Graphics/Color.cpp

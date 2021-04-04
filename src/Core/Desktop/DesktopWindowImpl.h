@@ -20,56 +20,17 @@ source distribution.
 *********************************************************************/
 
 #pragma once
-#include <queue>
-#include <string>
-#include <vector>
 
 #include <GLFW/glfw3.h>
-#include "robot2D/Graphics/Color.h"
-#include "robot2D/Graphics/Texture.h"
-
-#include "Vector2.h"
-#include "Event.h"
-
-
 
 namespace robot2D {
-    namespace priv{
-        class WindowImpl;
-    }
 
-    class Window {
+    class DesktopWindowImpl{
     public:
-        Window();
-        Window(const vec2u& size,
-               const std::string& name, const bool& vsync = true);
-        ~Window();
+        DesktopWindowImpl();
+        ~DesktopWindowImpl();
 
-        bool pollEvents(Event& event);
-        bool isOpen() const;
-        void close();
-
-        void clear(const Color& color = Color::Black);
-        void display();
-
-        const vec2u& get_size();
-
-        // todo rewrite this methods //
-        bool getMouseButton(const int& button);
-        void setCursorPosition(const vec2f& pos);
-        vec2f getCursorPos();
-
-        GLFWwindow* raw_window() const;
-
-        void setIcon(std::vector<Texture>& icons);
-    protected:
-        virtual void onResize(const int& w, const int& h);
-    private:
-        void setup();
-        void setup_callbacks();
-        virtual void setup_WGL();
-
-
+        bool pollEvents();
     private:
         static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
         static void cursor_callback(GLFWwindow* window, double xpos, double ypos);
@@ -78,15 +39,7 @@ namespace robot2D {
         static void size_callback(GLFWwindow* window, int w, int h);
         static void view_callback(GLFWwindow* window, int w, int h);
         static void maximized_callback(GLFWwindow* window, int state);
-    protected:
-        priv::WindowImpl* m_windowImpl;
-        std::queue<Event> m_event_queue;
-
-        //window settings
-        vec2u m_win_size;
-        std::string m_name;
-        bool m_vsync;
-
+    private:
         GLFWwindow* m_window;
     };
 }

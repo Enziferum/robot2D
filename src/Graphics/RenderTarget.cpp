@@ -23,7 +23,7 @@ source distribution.
 
 #include "robot2D/Graphics/RenderTarget.h"
 
-namespace robot2D{
+namespace robot2D {
     const char* vertexShaderSource = "#version 330 core\n"
                                            "layout (location = 0) in vec4 vertex;\n"
                                            "out vec2 TexCoords; \n"
