@@ -19,11 +19,4 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include "robot2D/Core/State.h"
-
-namespace robot2D{
-    State::State(IStateMachine& machine):
-        m_machine(machine),
-        m_window(m_machine.getWindow()) {}
-    State::~State() {}
-}
+#pragma once

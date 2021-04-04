@@ -43,7 +43,7 @@ namespace robot2D{
         return m_pos;
     }
 
-    void Transformable::setOrigin(const vec2f &origin) {
+    void Transformable::setOrigin(const vec2f& origin) {
         m_origin = origin;
         m_update_transform = true;
     }
@@ -89,9 +89,9 @@ namespace robot2D{
     const Transform& Transformable::getTransform() const {
         if(m_update_transform){
             //convert to radians
-            float angle = -m_rotation * 3.141592654f / 180.f;
+            float angle  = -m_rotation * 3.141592654f / 180.f;
             float cosine = static_cast<float>(std::cos(angle));
-            float sine = static_cast<float>(std::sin(angle));
+            float sine   = static_cast<float>(std::sin(angle));
             float sxc    = m_scale_factor.x * cosine;
             float syc    = m_scale_factor.y * cosine;
             float sxs    = m_scale_factor.x * sine;
@@ -99,10 +99,9 @@ namespace robot2D{
             float tx     = -m_origin.x * sxc - m_origin.y * sys + m_pos.x;
             float ty     =  m_origin.x * sxs - m_origin.y * syc + m_pos.y;
 
-            m_tranform = Transform(sxc, sys, tx,
-                                   -sxs, syc, ty,
-                                   0.f, 0.f, 1.f);
-
+            m_tranform = Transform( sxc, sys, tx,
+                                     -sxs, syc, ty,
+                                     0.f, 0.f, 1.f);
             m_update_transform = false;
         }
         return m_tranform;

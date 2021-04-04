@@ -33,11 +33,16 @@ source distribution.
 
 
 
-namespace robot2D{
-    class Window{
+namespace robot2D {
+    namespace priv{
+        class WindowImpl;
+    }
+
+    class Window {
     public:
         Window();
-        Window(const vec2u& size, const std::string& name, const bool& vsync = true);
+        Window(const vec2u& size,
+               const std::string& name, const bool& vsync = true);
         ~Window();
 
         bool pollEvents(Event& event);
@@ -74,12 +79,14 @@ namespace robot2D{
         static void view_callback(GLFWwindow* window, int w, int h);
         static void maximized_callback(GLFWwindow* window, int state);
     protected:
-        GLFWwindow* m_window;
+        priv::WindowImpl* m_windowImpl;
         std::queue<Event> m_event_queue;
 
         //window settings
         vec2u m_win_size;
         std::string m_name;
         bool m_vsync;
+
+        GLFWwindow* m_window;
     };
 }

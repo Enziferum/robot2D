@@ -20,25 +20,4 @@ source distribution.
 *********************************************************************/
 
 #pragma once
-#include <memory>
 
-#include "IStateMachine.h"
-#include "Event.h"
-
-namespace robot2D{
-    class State{
-    public:
-        using Ptr = std::shared_ptr<State>;
-    public:
-        State(IStateMachine& machine);
-        virtual ~State() = 0;
-
-        virtual void handleEvents(const Event&) = 0;
-        virtual void update(float dt) = 0;
-        virtual void render() = 0;
-
-    protected:
-        IStateMachine& m_machine;
-        RenderWindow& m_window;
-    };
-}
