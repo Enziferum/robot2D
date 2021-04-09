@@ -34,10 +34,14 @@ source distribution.
 
 
 namespace robot2D {
-    namespace priv{
+    namespace priv {
         class WindowImpl;
     }
 
+    /**
+     * Window - heart of engine, you will use it if you want have onw Rendering part, but
+     * you can it fix it with Graphics module easily
+     */
     class Window {
     public:
         Window();
@@ -45,11 +49,26 @@ namespace robot2D {
                const std::string& name, const bool& vsync = true);
         ~Window();
 
+        ////
+        //// \brief process OS events and puts it to robot2D::Event
+        ////
         bool pollEvents(Event& event);
+
+        ////
+        //// \brief check if window is opened just now
+        ////
         bool isOpen() const;
+
+        ////
+        /// \brief process window closing, in next version will allow to set onClose callback
+        ///
         void close();
 
         void clear(const Color& color = Color::Black);
+
+        ///
+        /// \brief make swap buffers in render context
+        ///
         void display();
 
         const vec2u& get_size();
@@ -61,6 +80,7 @@ namespace robot2D {
 
         GLFWwindow* raw_window() const;
 
+        /// \brief allow you to set big/small icons to your app
         void setIcon(std::vector<Texture>& icons);
     protected:
         virtual void onResize(const int& w, const int& h);

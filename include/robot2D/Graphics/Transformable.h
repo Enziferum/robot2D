@@ -24,7 +24,10 @@ source distribution.
 #include "Transform.h"
 #include "robot2D/Core/Vector2.h"
 
-namespace robot2D{
+namespace robot2D {
+    /**
+     * \brief This class allows to be your custom object
+     */
     class Transformable{
     public:
         Transformable();

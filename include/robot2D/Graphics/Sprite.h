@@ -30,25 +30,31 @@ source distribution.
 
 namespace robot2D {
 
-    // texture lightweight wrap //
-
+    /**
+     * \brief in 2D worlds Sprite class is flyweight to wrap texture and make it Drawable on screen and
+     * Have different Transformations. Core feature, which you will use to alive us apps
+     */
     class Sprite: public Transformable, public Drawable{
     public:
         Sprite();
         ~Sprite()override = default;
 
-
+        /// \brief set custom color to your sprite
         void setColor(const Color& color);
         Color& getColor();
 
+        /// \brief allow to set Size/Scale of object
         void setScale(const vec2f &factor) override;
 
+        /// \brief set texture data to our Sprite flyweight
         void setTexture(const Texture& );
         const Texture* getTexture();
 
+        /// \brief return to you rect in world coordinates
         FloatRect getGlobalBounds() const;
-        FloatRect getLocalBounds() const;
 
+        /// \brief return to you rect in local Sprite coordinates
+        FloatRect getLocalBounds() const;
     protected:
         void draw(RenderTarget &target, RenderStates states) const override;
 
