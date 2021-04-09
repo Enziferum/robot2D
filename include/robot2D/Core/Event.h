@@ -24,7 +24,10 @@ source distribution.
 #include "Mouse.h"
 
 namespace robot2D{
-    class Event{
+    /**
+     * Describe OS-Based event to one format
+     */
+    class Event {
     public:
         enum EventType {
             Resized,

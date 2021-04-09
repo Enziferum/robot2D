@@ -24,7 +24,11 @@ source distribution.
 #include <robot2D/Core/Window.h>
 #include "RenderTarget.h"
 
-namespace robot2D{
+namespace robot2D {
+
+    /**
+     * \brief Heart of Engine's Rendering part
+     */
     class RenderWindow: public Window, public RenderTarget{
     public:
         RenderWindow();
