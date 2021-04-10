@@ -31,14 +31,12 @@ namespace robot2D{
     {
     }
 
-    RenderWindow::RenderWindow(const vec2u &size, const std::string &name, WindowContext context)
-    : Window(size, name, context),
-      RenderTarget(m_win_size) {
-    }
+    RenderWindow::RenderWindow(const vec2u &size, const std::string &name,
+                               WindowContext context):
+                               Window(size, name, context),
+                               RenderTarget(m_win_size)
+                               {}
 
-    RenderWindow::~RenderWindow() {
-
-    }
 
     //todo applyView function
     void RenderWindow::onResize(const int &w, const int &h) {

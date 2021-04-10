@@ -24,12 +24,13 @@ source distribution.
 #include "Drawable.h"
 #include "Sprite.h"
 #include "Shader.h"
-
+#include "Matrix.hpp"
 
 namespace robot2D {
-    struct matrix {
-        float mat[4][4];
-    };
+
+    namespace priv {
+        class Render;
+    }
 
     class RenderTarget {
     public:
@@ -40,18 +41,16 @@ namespace robot2D {
         virtual void draw(const Drawable& drawable, const RenderStates& states
                                                     = RenderStates::Default);
 
-        const matrix& projection_matrix() const;
+        virtual const Matrix& projection_matrix() const;
     protected:
-        void ortho_projection(matrix& m, float l, float r, float b,
+        void ortho_projection(Matrix& m, float l, float r, float b,
                               float t, float n, float f);
-    private:
-        void setup_GL();
-
     protected:
-        ShaderHandler m_spriteShaders;
-        unsigned int VAO;
+        priv::Render* m_renderImpl;
+    private:
+        void create();
 
-        vec2u m_size;
-        matrix mat;
+    private:
     };
+
 }
