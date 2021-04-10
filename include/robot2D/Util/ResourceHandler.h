@@ -24,9 +24,11 @@ source distribution.
 #include <string>
 #include <memory>
 
+#include <robot2D/Config.h>
+
 namespace robot2D{
     template<typename T, typename ID = std::string>
-    class ResourceHandler{
+    class ROBOT2D_EXPORT_API ResourceHandler{
     public:
         using Ptr = std::unique_ptr<T>;
     public:

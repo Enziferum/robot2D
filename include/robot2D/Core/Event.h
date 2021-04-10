@@ -21,13 +21,14 @@ source distribution.
 
 #pragma once
 
+#include <robot2D/Config.h>
 #include "Mouse.h"
 
 namespace robot2D{
     /**
      * Describe OS-Based event to one format
      */
-    class Event {
+    class ROBOT2D_EXPORT_API Event {
     public:
         enum EventType {
             Resized,

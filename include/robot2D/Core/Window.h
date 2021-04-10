@@ -40,7 +40,7 @@ namespace robot2D {
      * Window - heart of engine, you will use it if you want have onw Rendering part, but
      * you can it fix it with Graphics module easily
      */
-    class Window {
+    class ROBOT2D_EXPORT_API Window {
     public:
         Window();
         Window(const vec2u& size,

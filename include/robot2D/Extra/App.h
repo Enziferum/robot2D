@@ -32,7 +32,7 @@ source distribution.
 namespace robot2D{
 
     class State;
-    class App final: public IStateMachine{
+    class ROBOT2D_EXPORT_API App final: public IStateMachine{
     public:
         App();
         App(const vec2u& size, const std::string& name, const bool& sync);

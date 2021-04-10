@@ -27,7 +27,7 @@ source distribution.
 
 
 namespace robot2D{
-    class State{
+    class ROBOT2D_EXPORT_API State{
     public:
         using Ptr = std::shared_ptr<State>;
     public:
