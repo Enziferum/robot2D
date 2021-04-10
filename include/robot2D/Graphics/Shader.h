@@ -51,9 +51,7 @@ namespace robot2D{
         void set_parameter(const char* name, const float& x, const float& y, const float& z,
                            const float& w) const;
 
-        const int getProgram() const {
-            return shaderProgram;
-        }
+        int getProgram() const;
     private:
         int setupShader(shaderType shader_type, const char* path, bool is_file = true);
 

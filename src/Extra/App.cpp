@@ -33,7 +33,8 @@ namespace robot2D{
     App::App(const vec2u& size, const std::string& name, const bool& sync):
     IStateMachine(size, name),
     lastTime(0.f), deltaTime(0.f){
-
+        //c++ hack before c++ 17 to set unused parameter
+        (void)(sync);
     }
 
     void App::run() {

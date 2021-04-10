@@ -24,8 +24,8 @@ source distribution.
 namespace robot2D{
     Color::Color():
     r(0),
-    b(0),
     g(0),
+    b(0),
     alpha(255){}
 
 
