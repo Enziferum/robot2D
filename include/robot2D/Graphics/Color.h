@@ -41,6 +41,11 @@ namespace robot2D{
         static const Color Transparent; //!< Transparent (black) predefined color
 
         static Color from_gl(float r, float g, float b, float alpha = 1.f);
-        unsigned int r, g, b, alpha;
+
+    public:
+        unsigned int r;
+        unsigned int g;
+        unsigned int b;
+        unsigned int alpha;
     };
 }

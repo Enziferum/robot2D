@@ -31,8 +31,6 @@ source distribution.
 #include "Vector2.h"
 #include "Event.h"
 
-
-
 namespace robot2D {
     namespace priv{
         class WindowImpl;
@@ -79,6 +77,8 @@ namespace robot2D {
         static void view_callback(GLFWwindow* window, int w, int h);
         static void maximized_callback(GLFWwindow* window, int state);
     protected:
+        GLFWwindow* m_window;
+
         priv::WindowImpl* m_windowImpl;
         std::queue<Event> m_event_queue;
 
@@ -86,7 +86,5 @@ namespace robot2D {
         vec2u m_win_size;
         std::string m_name;
         bool m_vsync;
-
-        GLFWwindow* m_window;
     };
 }

@@ -52,12 +52,12 @@ namespace robot2D{
                                        "}\0";
 
     Text::Text():
+        m_buffer(),
         m_needupdate(false),
-        m_color(Color::White),
         m_text(""),
         m_pos(),
         m_scale(1.f),
-        m_buffer()
+        m_color(Color::White)
         {
             setup_GL();
         }

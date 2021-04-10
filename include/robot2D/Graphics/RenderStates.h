@@ -32,8 +32,8 @@ namespace robot2D{
         RenderStates();
         ~RenderStates() = default;
 
-        ShaderHandler* shader;
         const Texture* texture;
+        ShaderHandler* shader;
         const unsigned int* customVao;
 
         Color color;

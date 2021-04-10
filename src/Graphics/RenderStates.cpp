@@ -26,10 +26,11 @@ namespace robot2D{
 
     RenderStates::RenderStates():
     texture(nullptr),
-    transform(),
     shader(nullptr),
     customVao(nullptr),
-    color(robot2D::Color::White){
+    color(robot2D::Color::White),
+    transform() {
+
     }
 
 }

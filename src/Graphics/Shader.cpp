@@ -139,4 +139,8 @@ namespace robot2D{
     ShaderHandler::set_parameter(const char *name, const float &x, const float &y, const float &z, const float &w) const{
         glUniform4f(glGetUniformLocation(shaderProgram, name), x, y, z, w);
     }
+
+    int ShaderHandler::getProgram() const{
+        return shaderProgram;
+    }
 }

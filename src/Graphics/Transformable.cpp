@@ -23,11 +23,12 @@ source distribution.
 
 namespace robot2D{
     Transformable::Transformable()
-        : m_rotation(0.f),
+        :
         m_pos(),
         m_origin(),
-        m_tranform(),
         m_scale_factor(),
+        m_rotation(0.f),
+        m_tranform(),
         m_update_transform(false){
 
     }

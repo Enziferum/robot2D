@@ -5,7 +5,6 @@ if(MSVC)
     add_definitions(/MP)
 endif()
 
-
 if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
     message(FATAL_ERROR "In-source builds not allowed.
     Please make a new directory (called a build directory)
@@ -18,10 +17,10 @@ cmake_policy(SET CMP0074 NEW)
 set(CONFIG_FILE "${CMAKE_CURRENT_SOURCE_DIR}/cmake/generated/${PROJECT_NAME}-config.cmake")
 set(CONFIG_DEST "lib${LIB_SUFFIX}/cmake/${PROJECT_NAME}")
 set(TARGETS_EXPORT_NAME "${PROJECT_NAME}Targets")
-
-#todo set compiler flag options
-
 set(CMAKE_CXX_STANDARD 14)
+
+#todo check if compiler flags can be using
+set(CMAKE_CXX_FLAGS "-Wall -Wextra -Wpedantic -Werror")
 
 #install own-self
 find_package(glfw3 REQUIRED)
@@ -35,7 +34,6 @@ find_package(robot2D_ext QUIET)
 include_directories(${FREETYPE_INCLUDE_DIRS})
 
 #todo cmake lists by module
-#
 set(SRC
         include/robot2D/robot2D.h
 

@@ -125,6 +125,11 @@ namespace robot2D{
 
     void Window::key_callback(GLFWwindow* wnd, int key, int scancode,
                               int action, int mods) {
+        //c++ hack before c++ 17 to set unused parameter
+        (void)(scancode);
+        //c++ hack before c++ 17 to set unused parameter
+        (void)(mods);
+
         Window* window = static_cast<Window*>(glfwGetWindowUserPointer(wnd));
 
         Event event;
@@ -148,6 +153,9 @@ namespace robot2D{
     }
 
     void Window::mouseWhell_callback(GLFWwindow* wnd, double xpos, double ypos) {
+        //c++ hack before c++ 17 to set unused parameter
+        (void)(xpos);
+
         Window* window = static_cast<Window*>(glfwGetWindowUserPointer(wnd));
         Event event;
         event.type = Event::MouseWheel;
@@ -176,6 +184,9 @@ namespace robot2D{
     }
 
     void Window::mouse_callback(GLFWwindow* wnd, int button, int action, int mods) {
+        //c++ hack before c++ 17 to set unused parameter
+        (void)(mods);
+
         Window* window = static_cast<Window*>(glfwGetWindowUserPointer(wnd));
 
         Event event;
@@ -210,7 +221,12 @@ namespace robot2D{
         window->m_event_queue.push(event);
     }
 
-    void Window::onResize(const int &w, const int &h) {}
+    void Window::onResize(const int &w, const int &h) {
+        //c++ hack before c++ 17 to set unused parameter
+        (void)(w);
+        //c++ hack before c++ 17 to set unused parameter
+        (void)(h);
+    }
 
 
     bool Window::getMouseButton(const int &button) {
@@ -230,7 +246,15 @@ namespace robot2D{
     }
 
     void Window::size_callback(GLFWwindow* wnd, int w, int h) {
-//        Window* window = static_cast<Window*>(glfwGetWindowUserPointer(wnd));
+        //c++ hack before c++ 17 to set unused parameter
+        (void)(wnd);
+        //c++ hack before c++ 17 to set unused parameter
+        (void)(w);
+        //c++ hack before c++ 17 to set unused parameter
+        (void)(h);
+
+        // Window* window = static_cast<Window*>(glfwGetWindowUserPointer(wnd));
+
 //        Event event;
 //        event.type = Event::Resized;
 //        event.size.widht = w;
@@ -239,8 +263,12 @@ namespace robot2D{
     }
 
     void Window::maximized_callback(GLFWwindow* wnd, int state) {
+        //c++ hack before c++ 17 to set unused parameter
+        (void)(state);
+
         Window* window = static_cast<Window*>(glfwGetWindowUserPointer(wnd));
-        Event event;
+        //c++ hack before c++ 17 to set unused parameter
+        (void)(window);
     }
 
     GLFWwindow* Window::raw_window() const {

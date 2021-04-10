@@ -39,6 +39,9 @@ namespace robot2D{
     }
 
     bool Texture::loadFromFile(const std::string& path, bool alpha) {
+        //c++ hack before c++ 17 to set unused parameter
+        (void)(alpha);
+
         int width, height, nrChannels;
         buffer = stbi_load(path.c_str(), &width, &height,
                                         &nrChannels, 0);
