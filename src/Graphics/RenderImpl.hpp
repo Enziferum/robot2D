@@ -21,36 +21,22 @@ source distribution.
 
 #pragma once
 
-#include "Drawable.h"
-#include "Sprite.h"
-#include "Shader.h"
-#include "Matrix.hpp"
+#include <robot2D/Graphics/Matrix.hpp>
 
 namespace robot2D {
-
     namespace priv {
-        class Render;
+        class Render {
+        public:
+            Render();
+            virtual ~Render() = 0;
+
+            static Render* create();
+            virtual const Matrix& projection_matrix() const = 0;
+
+            virtual void preprocess() = 0;
+            virtual void process() = 0;
+            virtual void postprocess();
+        private:
+        };
     }
-
-    class RenderTarget {
-    public:
-        RenderTarget(const vec2u& size);
-        virtual ~RenderTarget() = 0;
-
-        virtual void draw(const RenderStates& states);
-        virtual void draw(const Drawable& drawable, const RenderStates& states
-                                                    = RenderStates::Default);
-
-        virtual const Matrix& projection_matrix() const;
-    protected:
-        void ortho_projection(Matrix& m, float l, float r, float b,
-                              float t, float n, float f);
-    protected:
-        priv::Render* m_renderImpl;
-    private:
-        void create();
-
-    private:
-    };
-
 }

@@ -21,31 +21,12 @@ source distribution.
 
 #include <ext/glad.h>
 
+#include "RenderImpl.hpp"
 #include "robot2D/Graphics/RenderTarget.h"
 
 namespace robot2D {
-    const char* vertexShaderSource = "#version 330 core\n"
-                                           "layout (location = 0) in vec4 vertex;\n"
-                                           "out vec2 TexCoords; \n"
-                                           "uniform mat4 projection; \n"
-                                           "uniform mat4 model; \n"
-                                           "void main()\n"
-                                           "{\n"
-                                           "   TexCoords = vertex.zw; \n"
-                                           "   gl_Position = projection * model * vec4(vertex.xy, 0.0, 1.0); \n"
-                                           "}\0";
 
-    const char* fragmentShaderSource = "#version 330 core \n"
-                                             "in vec2 TexCoords; \n"
-                                             "out vec4 color; \n"
-                                             "uniform sampler2D sprite;\n"
-                                             "uniform vec3 spriteColor;\n"
-                                             "void main()\n"
-                                             "{\n"
-                                             "  color = vec4(spriteColor, 1.0) * texture(sprite, TexCoords);\n"
-                                             "}\0";
-
-    void RenderTarget::ortho_projection(matrix& m, float l, float r, float b,
+    void RenderTarget::ortho_projection(Matrix& m, float l, float r, float b,
                   float t, float n, float f){
         m.mat[0][0] = 2 / (r - l);
 
@@ -70,102 +51,36 @@ namespace robot2D {
     }
 
 
-    RenderTarget::RenderTarget(const vec2u& size): m_size(size) {
-        setup_GL();
+    RenderTarget::RenderTarget(const vec2u& size):
+        m_size(size),
+        m_renderImpl(nullptr) {
     }
 
-    RenderTarget::~RenderTarget() {}
+    RenderTarget::~RenderTarget() {
+        if(m_renderImpl != nullptr){
+            delete m_renderImpl;
+            m_renderImpl = nullptr;
+        }
+    }
 
 
     void RenderTarget::draw(const Drawable& drawable, const RenderStates& states) {
         drawable.draw(*this, states);
     }
 
-    void RenderTarget::setup_GL() {
-        unsigned int VBO;
-
-        float vertices[] = {
-                // pos      // tex
-                0.0f, 1.0f, 0.0f, 1.0f,
-                1.0f, 0.0f, 1.0f, 0.0f,
-                0.0f, 0.0f, 0.0f, 0.0f,
-
-                0.0f, 1.0f, 0.0f, 1.0f,
-                1.0f, 1.0f, 1.0f, 1.0f,
-                1.0f, 0.0f, 1.0f, 0.0f
-        };
-
-        glGenVertexArrays(1, &VAO);
-        glGenBuffers(1, &VBO);
-
-        glBindBuffer(GL_ARRAY_BUFFER, VBO);
-        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices),
-                     vertices, GL_STATIC_DRAW);
-
-        glBindVertexArray(VAO);
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE,
-                              4 * sizeof(float), (void*)0);
-        glBindBuffer(GL_ARRAY_BUFFER, 0);
-        glBindVertexArray(0);
-
-        if(!m_spriteShaders.createShader(shaderType::vertex,
-                                         vertexShaderSource, false))
-            return;
-        if(!m_spriteShaders.createShader(shaderType::fragment,
-                                         fragmentShaderSource, false))
-            return;
-
-
-        m_spriteShaders.use();
-        m_spriteShaders.set_parameter("sprite", 0);
-
-
-        ortho_projection(mat, 0.0f,static_cast<float>(m_size.x),
-                 static_cast<float>(m_size.y),
-                 0.0f, -1.0f, 1.0f);
-
-        m_spriteShaders.set_parameter("projection", &mat.mat[0][0]);
-
-        //todo use as RenderStates
-        glEnable(GL_BLEND);
-        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    }
-
+    // todo work on cache
     void RenderTarget::draw(const RenderStates& states) {
-        if(states.shader) {
-            // it can be done not here, you can get projection from renderTarget getView !
-            // todo remove it in future
-            states.shader->set_parameter("projection", &mat.mat[0][0]);
-        }
-        else {
-            m_spriteShaders.use();
-            auto &color = states.color;
-
-            float r = color.r / 255.f;
-            float g = color.g / 255.f;
-            float b = color.b / 255.f;
-
-            m_spriteShaders.set_parameter("spriteColor", r, g, b);
-
-            const robot2D::Transform &transform = states.transform;
-            m_spriteShaders.set_parameter("model", transform.get_matrix());
-        }
-
-        if(states.texture) {
-            glActiveTexture(GL_TEXTURE0);
-            states.texture->bind();
-        }
-        if(states.customVao)
-            glBindVertexArray(*states.customVao);
-        else
-            glBindVertexArray(VAO);
-        glDrawArrays(GL_TRIANGLES, 0, 6);
-        glBindVertexArray(0);
+        m_renderImpl -> preprocess();
+        m_renderImpl -> process();
+        m_renderImpl -> postprocess();
     }
 
-    const matrix &RenderTarget::projection_matrix() const {
-        return mat;
+    const Matrix& RenderTarget::projection_matrix() const {
+        return m_renderImpl -> projection_matrix();
+    }
+
+    void RenderTarget::create() {
+        m_renderImpl = priv::Render::create();
     }
 
 }

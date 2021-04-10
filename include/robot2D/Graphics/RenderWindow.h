@@ -34,7 +34,11 @@ namespace robot2D {
         RenderWindow();
         RenderWindow(const vec2u& size, const std::string& name,
                      WindowContext context);
-        ~RenderWindow();
+        RenderWindow(const RenderWindow&) = delete;
+        RenderWindow(const RenderWindow&&) = delete;
+        RenderWindow& operator=(const RenderWindow&) = delete;
+        RenderWindow& operator=(const RenderWindow&&) = delete;
+        ~RenderWindow() override = default;
 
     protected:
         void onResize(const int &w, const int &h) override;
