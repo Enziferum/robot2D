@@ -26,7 +26,10 @@ source distribution.
 namespace robot2D{
     class RenderTarget;
 
-
+    /**
+     * \brief This class allows to you custom class to be rendered with simple call
+     * robot2D::RenderTarget / robot2D::RenderWindow draw() function
+     */
     class Drawable{
     public:
         virtual ~Drawable() = 0 ;

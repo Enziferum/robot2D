@@ -24,7 +24,11 @@ source distribution.
 #include <robot2D/Core/Vector2.h>
 #include "Rect.h"
 
-namespace robot2D{
+namespace robot2D {
+
+    /**
+     * \brief 2D Transform matrix, allows to get different transformations
+     */
     class Transform{
     public:
         Transform();

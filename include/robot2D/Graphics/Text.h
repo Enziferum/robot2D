@@ -30,14 +30,16 @@ source distribution.
 
 namespace robot2D{
 
-    class Text: public Drawable{
+    /// \brief Allows to render text on screen with custom font of type robot2D::Font
+    class Text: public Drawable {
     public:
         Text();
         ~Text() override = default;
 
         void setText(const std::string& size);
         void setPos(const robot2D::vec2f& pos);
-        robot2D::vec2f& getPos();
+
+        vec2f& getPos();
         void setScale(const float& scale);
         float& getScale();
 
