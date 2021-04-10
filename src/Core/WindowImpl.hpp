@@ -26,6 +26,7 @@ source distribution.
 #include <robot2D/Graphics/Color.h>
 #include <robot2D/Graphics/Texture.h>
 #include <robot2D/Core/Event.h>
+#include <robot2D/Core/WindowContext.hpp>
 
 namespace robot2D {
 
@@ -37,6 +38,8 @@ namespace robot2D {
 
             virtual bool pollEvents(Event& event) = 0;
             static WindowImpl* create();
+            static WindowImpl* create(const robot2D::vec2u& size,
+                                      const std::string& name, WindowContext& context);
 
             virtual void* get_RawWindow() = 0;
 

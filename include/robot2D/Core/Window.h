@@ -30,8 +30,10 @@ source distribution.
 
 #include "Vector2.h"
 #include "Event.h"
+#include "WindowContext.hpp"
 
 namespace robot2D {
+
     namespace priv {
         class WindowImpl;
     }
@@ -44,7 +46,7 @@ namespace robot2D {
     public:
         Window();
         Window(const vec2u& size,
-               const std::string& name, const bool& vsync = true);
+               const std::string& name, WindowContext& windowContext);
         ~Window();
 
         ////
@@ -92,6 +94,6 @@ namespace robot2D {
         //window settings
         vec2u m_win_size;
         std::string m_name;
-        bool m_vsync;
+        WindowContext m_context;
     };
 }

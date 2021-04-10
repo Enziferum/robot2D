@@ -24,7 +24,7 @@ source distribution.
 namespace robot2D{
     IStateMachine::IStateMachine(const vec2u size,
                                  const std::string& name):
-        m_window(size, name, true) {
+        m_window(size, name, WindowContext()) {
 
     }
 
