@@ -43,11 +43,6 @@ namespace robot2D{
     //todo applyView function
     void RenderWindow::onResize(const int &w, const int &h) {
         int x, y;
-        glfwGetFramebufferSize(m_window, &x, &y);
-
-//        if(w != x || h != y)
-//            std::cout << "not valid framebuffer size" << std::endl;
-
         m_size = vec2u(w, h);
         ortho_projection(mat, 0.0f, static_cast<float>(m_size.x),
                          static_cast<float>(m_size.y),
