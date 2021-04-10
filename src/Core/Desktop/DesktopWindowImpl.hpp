@@ -22,24 +22,31 @@ source distribution.
 #pragma once
 
 #include <GLFW/glfw3.h>
+#include "../WindowImpl.hpp"
 
 namespace robot2D {
+    namespace priv {
 
-    class DesktopWindowImpl{
-    public:
-        DesktopWindowImpl();
-        ~DesktopWindowImpl();
+        /// \brief our desktop backend is GLFW
+        class DesktopWindowImpl: public WindowImpl {
+        public:
+            DesktopWindowImpl();
+            ~DesktopWindowImpl();
 
-        bool pollEvents();
-    private:
-        static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
-        static void cursor_callback(GLFWwindow* window, double xpos, double ypos);
-        static void mouseWhell_callback(GLFWwindow* window, double xpos, double ypos);
-        static void mouse_callback(GLFWwindow* window, int key, int action, int mods);
-        static void size_callback(GLFWwindow* window, int w, int h);
-        static void view_callback(GLFWwindow* window, int w, int h);
-        static void maximized_callback(GLFWwindow* window, int state);
-    private:
-        GLFWwindow* m_window;
-    };
+            bool pollEvents(Event& event) override;
+
+            void *get_RawWindow() override;
+
+        private:
+            static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
+            static void cursor_callback(GLFWwindow* window, double xpos, double ypos);
+            static void mouseWhell_callback(GLFWwindow* window, double xpos, double ypos);
+            static void mouse_callback(GLFWwindow* window, int key, int action, int mods);
+            static void size_callback(GLFWwindow* window, int w, int h);
+            static void view_callback(GLFWwindow* window, int w, int h);
+            static void maximized_callback(GLFWwindow* window, int state);
+        private:
+            GLFWwindow* m_window;
+        };
+    }
 }

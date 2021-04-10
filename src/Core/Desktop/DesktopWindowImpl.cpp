@@ -19,3 +19,55 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
+#include "DesktopWindowImpl.hpp"
+
+namespace robot2D {
+    namespace priv {
+
+        DesktopWindowImpl::DesktopWindowImpl() {
+
+        }
+
+        DesktopWindowImpl::~DesktopWindowImpl() {
+
+        }
+
+        bool DesktopWindowImpl::pollEvents(Event& event) {
+            return false;
+        }
+
+        void* DesktopWindowImpl::get_RawWindow() {
+            return static_cast<void*>(m_window);
+        }
+
+        void DesktopWindowImpl::key_callback(GLFWwindow *window, int key, int scancode, int action, int mods) {
+
+        }
+
+        void DesktopWindowImpl::cursor_callback(GLFWwindow *window, double xpos, double ypos) {
+
+        }
+
+        void DesktopWindowImpl::mouseWhell_callback(GLFWwindow *window, double xpos, double ypos) {
+
+        }
+
+        void DesktopWindowImpl::mouse_callback(GLFWwindow *window, int key, int action, int mods) {
+
+        }
+
+        void DesktopWindowImpl::size_callback(GLFWwindow *window, int w, int h) {
+
+        }
+
+        void DesktopWindowImpl::view_callback(GLFWwindow *window, int w, int h) {
+
+        }
+
+        void DesktopWindowImpl::maximized_callback(GLFWwindow *window, int state) {
+
+        }
+
+
+    }
+}

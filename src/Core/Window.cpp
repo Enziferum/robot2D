@@ -20,21 +20,23 @@ source distribution.
 *********************************************************************/
 
 #include <robot2D/Graphics/GL.h>
+#include <robot2D/Core/Window.h>
+#include <robot2D/Util/Logger.h>
 
-#include "robot2D/Core/Window.h"
-#include "robot2D/Util/Logger.h"
+#include "WindowImpl.hpp"
 
-namespace robot2D{
-
+namespace robot2D {
     constexpr int opengl_major = 3;
     constexpr int opengl_minor = 3;
 
     Window::Window():
     m_window(nullptr),
+    m_windowImpl(nullptr),
     m_win_size(800, 600),
     m_name("robot2D"),
-    m_vsync(true) {
-        setup();
+    m_vsync(true)
+    {
+        Window::create();
     }
 
     Window::Window(const vec2u& size, const std::string& name, const bool& vsync):
@@ -42,7 +44,7 @@ namespace robot2D{
             m_win_size(size.x, size.y),
             m_name(name),
             m_vsync(vsync){
-        setup();
+        Window::create();
     }
 
 
@@ -271,9 +273,6 @@ namespace robot2D{
         (void)(window);
     }
 
-    GLFWwindow* Window::raw_window() const {
-        return m_window;
-    }
 
     void Window::setIcon(std::vector<Texture>& icons) {
         if(icons.empty())
@@ -288,6 +287,19 @@ namespace robot2D{
             images.emplace_back(img);
         }
         glfwSetWindowIcon(m_window, images.size(), &images[0]);
+    }
+
+    void* Window::get_RawWindow() const {
+        return m_windowImpl -> get_RawWindow();
+    }
+
+    void Window::create() {
+        m_windowImpl = priv::WindowImpl::create();
+        if(m_windowImpl == nullptr) {
+            //todo throw error
+        }
+
+
     }
 
 }

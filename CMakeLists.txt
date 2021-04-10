@@ -44,7 +44,7 @@ else()
     enable_cxx_compiler_flag_if_supported("-Wall")
     enable_cxx_compiler_flag_if_supported("-Wextra")
     enable_cxx_compiler_flag_if_supported("-Wpedantic")
-    enable_cxx_compiler_flag_if_supported("-Werror")
+    #enable_cxx_compiler_flag_if_supported("-Werror")
 endif()
 
 
@@ -91,7 +91,7 @@ set(SRC
         #Util
         include/robot2D/Util/ResourceHandler.h
         include/robot2D/Util/Logger.h
-        )
+        src/Core/WindowImpl.hpp)
 
 set(SRC
         ${SRC}
@@ -120,17 +120,20 @@ set(SRC
 
         #Util
         src/Util/Logger.cpp
-        )
+        src/Core/WindowImpl.cpp)
 
 if(WIN32)
     set(LIBS opengl32)
 endif()
 
+set(PLATFORM_SRC
+        src/Core/Desktop/DesktopWindowImpl.cpp)
+
 #if()
 #    target_compile_definitions(${target} PUBLIC "ROBOT2D_STATIC")
 #endif()
 
-add_library(${PROJECT_NAME} ${SRC})
+add_library(${PROJECT_NAME} ${SRC} ${PLATFORM_SRC})
 set(LIBS ${LIBS} glfw robot2D_ext ${FREETYPE_LIBRARIES})
 
 target_link_libraries(${PROJECT_NAME} ${LIBS})
