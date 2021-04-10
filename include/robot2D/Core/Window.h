@@ -71,18 +71,20 @@ namespace robot2D {
 
         const vec2u& get_size();
 
+        /// \brief allow you to set big/small icons to your app
+        void setIcon(std::vector<Texture>& icons);
+
         // todo rewrite this methods //
         bool getMouseButton(const int& button);
         void setCursorPosition(const vec2f& pos);
         vec2f getCursorPos();
 
-        GLFWwindow* raw_window() const;
-
-        /// \brief allow you to set big/small icons to your app
-        void setIcon(std::vector<Texture>& icons);
+        void* get_RawWindow() const;
     protected:
         virtual void onResize(const int& w, const int& h);
     private:
+        void create();
+
         void setup();
         void setup_callbacks();
         virtual void setup_WGL();
