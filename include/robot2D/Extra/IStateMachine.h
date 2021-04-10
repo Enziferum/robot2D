@@ -27,7 +27,7 @@ source distribution.
 
 namespace robot2D{
     class State;
-    class IStateMachine{
+    class ROBOT2D_EXPORT_API IStateMachine{
     public:
         IStateMachine(const vec2u size = vec2u(800, 600),
                       const std::string& name = "robot2D");

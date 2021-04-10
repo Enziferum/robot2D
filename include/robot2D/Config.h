@@ -23,3 +23,16 @@ source distribution.
 
 #define MAJOR_VERSION 0
 #define MINOR_VERSION 2
+
+#if(!defined(ROBOT2D_STATIC))
+    // Windows dll export options
+    #if defined(_WIN32)
+        #define ROBOT2D_EXPORT_API __declspec(dllexport)
+        #define ROBOT2D_IMPORT_API __declspec(dllimport)
+
+    #else
+        #define ROBOT2D_EXPORT_API
+        #define ROBOT2D_IMPORT_API
+    #endif
+
+#endif
