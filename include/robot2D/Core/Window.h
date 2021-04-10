@@ -85,24 +85,9 @@ namespace robot2D {
     private:
         void create();
 
-        void setup();
-        void setup_callbacks();
-        virtual void setup_WGL();
-
-
-    private:
-        static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
-        static void cursor_callback(GLFWwindow* window, double xpos, double ypos);
-        static void mouseWhell_callback(GLFWwindow* window, double xpos, double ypos);
-        static void mouse_callback(GLFWwindow* window, int key, int action, int mods);
-        static void size_callback(GLFWwindow* window, int w, int h);
-        static void view_callback(GLFWwindow* window, int w, int h);
-        static void maximized_callback(GLFWwindow* window, int state);
     protected:
-        GLFWwindow* m_window;
-
         priv::WindowImpl* m_windowImpl;
-        std::queue<Event> m_event_queue;
+
 
         //window settings
         vec2u m_win_size;

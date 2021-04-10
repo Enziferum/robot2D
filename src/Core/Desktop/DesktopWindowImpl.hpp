@@ -21,6 +21,8 @@ source distribution.
 
 #pragma once
 
+#include <queue>
+
 #include <GLFW/glfw3.h>
 #include "../WindowImpl.hpp"
 
@@ -34,8 +36,18 @@ namespace robot2D {
             ~DesktopWindowImpl();
 
             bool pollEvents(Event& event) override;
+            void* get_RawWindow() override;
 
-            void *get_RawWindow() override;
+            bool isOpen() const override;
+            void clear(const Color &color) override;
+            void close() override;
+            void display() override;
+
+            void setIcon(std::vector<robot2D::Texture>& ) override;
+        private:
+            void setup();
+            void setup_callbacks();
+            void setup_WGL();
 
         private:
             static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
@@ -47,6 +59,7 @@ namespace robot2D {
             static void maximized_callback(GLFWwindow* window, int state);
         private:
             GLFWwindow* m_window;
+            std::queue<Event> m_event_queue;
         };
     }
 }
