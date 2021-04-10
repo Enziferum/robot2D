@@ -30,7 +30,21 @@ namespace robot2D {
         constexpr int opengl_major = 3;
         constexpr int opengl_minor = 3;
 
-        DesktopWindowImpl::DesktopWindowImpl() {
+        DesktopWindowImpl::DesktopWindowImpl():
+        m_window(nullptr),
+        m_size(800, 600),
+        m_name(""),
+        m_context()
+        {
+            setup();
+        }
+
+        DesktopWindowImpl::DesktopWindowImpl(const vec2u &size, const std::string &name,
+                                             WindowContext &context):
+                m_window(nullptr),
+                m_size(size),
+                m_name(name),
+                m_context(context){
             setup();
         }
 
@@ -246,6 +260,8 @@ namespace robot2D {
             }
             glfwSetWindowIcon(m_window, images.size(), &images[0]);
         }
+
+
 
 
     }

@@ -31,8 +31,8 @@ namespace robot2D{
     {
     }
 
-    RenderWindow::RenderWindow(const vec2u &size, const std::string &name, const bool &vsync)
-    : Window(size, name,vsync),
+    RenderWindow::RenderWindow(const vec2u &size, const std::string &name, WindowContext context)
+    : Window(size, name, context),
       RenderTarget(m_win_size) {
     }
 
@@ -42,7 +42,6 @@ namespace robot2D{
 
     //todo applyView function
     void RenderWindow::onResize(const int &w, const int &h) {
-        int x, y;
         m_size = vec2u(w, h);
         ortho_projection(mat, 0.0f, static_cast<float>(m_size.x),
                          static_cast<float>(m_size.y),

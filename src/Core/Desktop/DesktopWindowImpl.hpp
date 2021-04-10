@@ -26,6 +26,8 @@ source distribution.
 #include <GLFW/glfw3.h>
 #include "../WindowImpl.hpp"
 
+#include <robot2D/Core/WindowContext.hpp>
+
 namespace robot2D {
     namespace priv {
 
@@ -33,6 +35,7 @@ namespace robot2D {
         class DesktopWindowImpl: public WindowImpl {
         public:
             DesktopWindowImpl();
+            DesktopWindowImpl(const vec2u& size, const std::string& name, WindowContext& context);
             ~DesktopWindowImpl();
 
             bool pollEvents(Event& event) override;
@@ -60,6 +63,10 @@ namespace robot2D {
         private:
             GLFWwindow* m_window;
             std::queue<Event> m_event_queue;
+
+            vec2u m_size;
+            std::string m_name;
+            WindowContext m_context;
         };
     }
 }

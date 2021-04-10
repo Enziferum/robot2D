@@ -35,6 +35,11 @@ namespace robot2D {
         WindowImpl* WindowImpl::create() {
             return new WindowImplType();
         }
+
+        WindowImpl* WindowImpl::create(const vec2u &size, const std::string &name, WindowContext &context) {
+            return new WindowImplType(size, name, context);
+        }
+
     }
 }
 

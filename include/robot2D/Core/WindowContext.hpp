@@ -21,34 +21,12 @@ source distribution.
 
 #pragma once
 
-#include <vector>
-
-#include <robot2D/Graphics/Color.h>
-#include <robot2D/Graphics/Texture.h>
-#include <robot2D/Core/Event.h>
-#include <robot2D/Core/WindowContext.hpp>
+#include <robot2D/Config.h>
 
 namespace robot2D {
+    struct ROBOT2D_EXPORT_API WindowContext {
+        bool vsync;
+        bool fullscreen;
+    };
 
-    namespace priv {
-        class WindowImpl {
-        public:
-            WindowImpl();
-            virtual ~WindowImpl() = 0;
-
-            virtual bool pollEvents(Event& event) = 0;
-            static WindowImpl* create();
-            static WindowImpl* create(const robot2D::vec2u& size,
-                                      const std::string& name, WindowContext& context);
-
-            virtual void* get_RawWindow() = 0;
-
-            virtual bool isOpen() const = 0;
-            virtual void clear(const robot2D::Color& color) = 0;
-            virtual void close() = 0;
-            virtual void display() = 0;
-
-            virtual void setIcon(std::vector<robot2D::Texture>& icons) = 0;
-        };
-    }
 }

@@ -33,7 +33,7 @@ namespace robot2D {
     public:
         RenderWindow();
         RenderWindow(const vec2u& size, const std::string& name,
-                     const bool& vsync = true);
+                     WindowContext context);
         ~RenderWindow();
 
     protected:

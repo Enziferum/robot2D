@@ -29,15 +29,16 @@ namespace robot2D {
     m_windowImpl(nullptr),
     m_win_size(800, 600),
     m_name("robot2D"),
-    m_vsync(true)
+    m_context()
     {
         Window::create();
     }
 
-    Window::Window(const vec2u& size, const std::string& name, const bool& vsync):
+    Window::Window(const vec2u& size, const std::string& name, WindowContext& context):
             m_win_size(size.x, size.y),
             m_name(name),
-            m_vsync(vsync){
+            m_context(context)
+            {
         Window::create();
     }
 
@@ -97,7 +98,7 @@ namespace robot2D {
     }
 
     void Window::create() {
-        m_windowImpl = priv::WindowImpl::create();
+        m_windowImpl = priv::WindowImpl::create(m_win_size, m_name, m_context);
         if(m_windowImpl == nullptr) {
             //todo throw error
         }
