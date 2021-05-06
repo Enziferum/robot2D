@@ -20,17 +20,28 @@ source distribution.
 *********************************************************************/
 
 #pragma once
+#include <unordered_map>
+#include <string>
+#include <memory>
 
-#include "Rect.h"
-#include "Vector2.h"
+#include <robot2D/Config.hpp>
 
 namespace robot2D{
-    class View{
+    template<typename T, typename ID = std::string>
+    class ROBOT2D_EXPORT_API ResourceHandler{
     public:
-        View();
-        ~View();
+        using Ptr = std::unique_ptr<T>;
+    public:
+        ResourceHandler();
+        ~ResourceHandler() = default;
 
+        template<typename ... Args>
+        bool loadFromFile(const ID& idx, Args&&... args);
 
+        const T& get(const ID& idx) const;
     private:
+        std::unordered_map<ID, Ptr> m_resources;
     };
+
+    #include "ResourceHandler.inl"
 }

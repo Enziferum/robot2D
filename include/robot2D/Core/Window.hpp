@@ -24,12 +24,11 @@ source distribution.
 #include <string>
 #include <vector>
 
-#include <GLFW/glfw3.h>
-#include "robot2D/Graphics/Color.h"
-#include "robot2D/Graphics/Texture.h"
+#include "robot2D/Graphics/Color.hpp"
+#include "robot2D/Graphics/Texture.hpp"
 
-#include "Vector2.h"
-#include "Event.h"
+#include "Vector2.hpp"
+#include "Event.hpp"
 #include "WindowContext.hpp"
 
 namespace robot2D {
@@ -86,10 +85,10 @@ namespace robot2D {
         virtual void onResize(const int& w, const int& h);
     private:
         void create();
-
+        float getDeltaTime();
     protected:
         priv::WindowImpl* m_windowImpl;
-
+        friend class App;
 
         //window settings
         vec2u m_win_size;

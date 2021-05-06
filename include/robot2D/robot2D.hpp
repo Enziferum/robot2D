@@ -21,36 +21,6 @@ source distribution.
 
 #pragma once
 
-#include <string>
-#include <map>
-
-#include "robot2D/Core/Vector2.h"
-
-
-namespace robot2D{
-
-    struct character {
-        unsigned int textureID; // ID handle of the glyph texture
-        vec2i   size;      // size of glyph
-        vec2i   bearing;   // offset from baseline to left/top of glyph
-        unsigned int advance;   // horizontal offset to advance to next glyph
-    };
-
-
-    class Font{
-    public:
-        Font();
-        ~Font();
-
-        bool loadFromFile(const std::string& path, const unsigned int& char_size = 20);
-        const std::map<char, character>& get_chars()const;
-    private:
-        void cleanup();
-        void setup_cache();
-        void generate_texture(unsigned int& texture, void* glyph);
-    private:
-        void* m_library;
-        void* m_face;
-        std::map<char, character> m_characters;
-    };
-}
+#include <robot2D/Core/Core.hpp>
+#include <robot2D/Extra/Extra.hpp>
+#include <robot2D/Graphics/Graphics.hpp>

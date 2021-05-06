@@ -19,8 +19,8 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include <robot2D/Core/Window.h>
-#include <robot2D/Util/Logger.h>
+#include <robot2D/Core/Window.hpp>
+#include <robot2D/Util/Logger.hpp>
 #include "WindowImpl.hpp"
 
 namespace robot2D {
@@ -125,4 +125,7 @@ namespace robot2D {
 //        return pos;
     }
 
+    float Window::getDeltaTime() {
+        return m_windowImpl -> getDeltaTime();
+    }
 }

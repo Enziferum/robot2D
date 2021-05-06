@@ -21,12 +21,12 @@ source distribution.
 
 #pragma once
 
-#include "robot2D/Core/Vector2.h"
-#include "Transformable.h"
-#include "Drawable.h"
-#include "Texture.h"
-#include "Rect.h"
-#include "Color.h"
+#include "robot2D/Core/Vector2.hpp"
+#include "Transformable.hpp"
+#include "Drawable.hpp"
+#include "Texture.hpp"
+#include "Rect.hpp"
+#include "Color.hpp"
 
 namespace robot2D {
 

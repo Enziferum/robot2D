@@ -21,6 +21,10 @@ source distribution.
 
 #pragma once
 
-#include <robot2D/Core/Core.h>
-#include <robot2D/Extra/Extra.h>
-#include <robot2D/Graphics/Graphics.h>
+#include "Event.hpp"
+#include "Keyboard.hpp"
+#include "Mouse.hpp"
+#include "Sensor.hpp"
+#include "Touch.hpp"
+#include "Vector2.hpp"
+#include "Window.hpp"

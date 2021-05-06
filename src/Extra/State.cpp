@@ -19,11 +19,20 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include <robot2D/Extra/State.h>
+#include <robot2D/Extra/State.hpp>
 
 namespace robot2D{
     State::State(IStateMachine& machine):
         m_machine(machine),
-        m_window(m_machine.getWindow()) {}
+        m_window(m_machine.getWindow()),
+        m_active(false){}
     State::~State() {}
+
+    bool State::isActive() const {
+        return m_active;
+    }
+
+    void State::setActive(const bool& flag) {
+        m_active = flag;
+    }
 }

@@ -21,17 +21,30 @@ source distribution.
 
 #pragma once
 
-#include "Color.h"
-#include "Drawable.h"
-#include "Font.h"
-#include "Rect.h"
-#include "RenderStates.h"
-#include "RenderTarget.h"
-#include "RenderWindow.h"
-#include "Shader.h"
-#include "Shader.h"
-#include "Text.h"
-#include "Texture.h"
-#include "Transform.h"
-#include "Transformable.h"
-#include "View.h"
+#include <string>
+#include "robot2D/Core/Vector2.hpp"
+
+namespace robot2D{
+    class Texture{
+    public:
+        Texture();
+        ~Texture();
+
+        bool loadFromFile(const std::string& path, bool alpha = false);
+
+        vec2u& get_size();
+        const vec2u& get_size() const;
+
+        void generate(const vec2u& size, void* data);
+        const unsigned int& get_id()const;
+        void bind()const;
+
+        unsigned char* get_pixels() const;
+    private:
+        void setup_GL();
+    private:
+        vec2u m_size;
+        unsigned int m_texture;
+        unsigned char* buffer;
+    };
+}

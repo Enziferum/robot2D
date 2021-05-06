@@ -19,7 +19,7 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include "robot2D/Util/Logger.h"
+#include "robot2D/Util/Logger.hpp"
 
 namespace logger {
     bool debug = true;

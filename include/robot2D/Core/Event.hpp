@@ -21,8 +21,8 @@ source distribution.
 
 #pragma once
 
-#include <robot2D/Config.h>
-#include "Mouse.h"
+#include <robot2D/Config.hpp>
+#include "Mouse.hpp"
 
 namespace robot2D{
     /**

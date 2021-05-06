@@ -21,22 +21,50 @@ source distribution.
 
 #pragma once
 
-#include <robot2D/Core/Window.h>
-#include "RenderTarget.h"
+#include "Transform.hpp"
+#include "robot2D/Core/Vector2.hpp"
 
 namespace robot2D {
-
     /**
-     * \brief Heart of Engine's Rendering part
+     * \brief This class allows to be your custom object
      */
-    class RenderWindow: public Window, public RenderTarget{
+    class Transformable{
     public:
-        RenderWindow();
-        RenderWindow(const vec2u& size, const std::string& name,
-                     WindowContext context);
-        ~RenderWindow();
+        Transformable();
+        virtual ~Transformable() = 0;
+
+
+        virtual void setPosition(const vec2f& pos);
+        vec2f& getPosition();
+
+        virtual void setOrigin(const vec2f& origin);
+        vec2f& getOrigin();
+
+        virtual void setSize(const vec2f& size);
+        virtual void setSize(const float& x, const float& y);
+        vec2f& getSize();
+
+        virtual void setScale(const vec2f& factor);
+        vec2f& getScale();
+
+        virtual void setRotate(const float& angle);
+        float& getRotate();
+
+        void move(const vec2f& offset);
+        void scale(const vec2f& factor);
+        void rotate(float angle);
+
+
+        const Transform& getTransform() const;
 
     protected:
-        void onResize(const int &w, const int &h) override;
+         vec2f m_pos;
+         vec2f m_origin;
+         vec2f m_scale_factor;
+         vec2f m_size;
+
+         float m_rotation;
+         mutable Transform m_transform;
+         mutable bool m_update_transform;
     };
 }

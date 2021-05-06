@@ -19,11 +19,9 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include <iostream>
-#include <ext/glad.h>
+#include <robot2D/Graphics/GL.hpp>
 #include "ext/stb_image.h"
-
-#include "robot2D/Graphics/Texture.h"
+#include "robot2D/Graphics/Texture.hpp"
 
 namespace robot2D{
 

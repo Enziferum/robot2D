@@ -20,7 +20,7 @@ source distribution.
 *********************************************************************/
 
 #include <cmath>
-#include "robot2D/Graphics/Transform.h"
+#include "robot2D/Graphics/Transform.hpp"
 
 namespace robot2D{
     Transform::Transform() {
@@ -84,7 +84,8 @@ namespace robot2D{
 
     Transform& Transform::combine(const Transform& other) {
         const float* a = m_mat;
-        const float* b = other.get_matrix();
+        const float* b = other.m_mat;
+
         *this = Transform(a[0] * b[0]  + a[4] * b[1]  + a[12] * b[3],
                           a[0] * b[4]  + a[4] * b[5]  + a[12] * b[7],
                           a[0] * b[12] + a[4] * b[13] + a[12] * b[15],
@@ -156,7 +157,7 @@ namespace robot2D{
         return combine(scaling);
     }
 
-    Transform& Transform::scale(const vec2f &factor) {
+    Transform& Transform::scale(const vec2f& factor) {
         return scale(factor.x, factor.y);
     }
 
