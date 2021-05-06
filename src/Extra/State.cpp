@@ -26,6 +26,7 @@ namespace robot2D{
         m_machine(machine),
         m_window(m_machine.getWindow()),
         m_active(false){}
+
     State::~State() {}
 
     bool State::isActive() const {

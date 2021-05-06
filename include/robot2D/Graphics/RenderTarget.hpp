@@ -31,6 +31,10 @@ namespace robot2D {
         float mat[4][4];
     };
 
+    namespace priv {
+        class RenderImpl;
+    }
+
     class RenderTarget {
     public:
         RenderTarget(const vec2u& size);
@@ -41,13 +45,10 @@ namespace robot2D {
                                                     = RenderStates::Default);
 
         const matrix& projection_matrix() const;
-    protected:
-        void ortho_projection(matrix& m, float l, float r, float b,
-                              float t, float n, float f);
     private:
-        void setup_GL();
-
+        void setup();
     protected:
+        priv::RenderImpl* m_render;
         ShaderHandler m_spriteShaders;
         unsigned int VAO;
 

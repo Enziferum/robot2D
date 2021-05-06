@@ -19,49 +19,37 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include <robot2D/Graphics/GL.hpp>
-#include "robot2D/Graphics/RenderTarget.hpp"
+#pragma once
 
-#include "RenderImpl.hpp"
+#include <robot2D/Graphics/RenderStates.hpp>
+#include <robot2D/Graphics/Shader.hpp>
+
+#include "../RenderImpl.hpp"
 
 namespace robot2D {
+    namespace priv {
+        struct Matrix {
+            float mat[4][4];
+        };
 
-    RenderTarget::RenderTarget(const vec2u& size):
-    m_render(nullptr),
-    m_size(size) {
-        setup();
-    }
+        class OpenGLRender: public RenderImpl {
+        public:
+            OpenGLRender();
+            ~OpenGLRender() override = default;
 
-    RenderTarget::~RenderTarget() {
-        if(m_render){
-            delete m_render;
-            m_render = nullptr;
-        }
-    }
+            void render(const RenderStates& states) const;
 
+            void setSize(const vec2u &size) override;
 
-    void RenderTarget::setup() {
-        if(!m_render)
-            m_render = robot2D::priv::RenderImpl::create();
+        private:
+            void setup_GL();
+            void ortho_projection(Matrix& m, float l, float r, float b,
+                                  float t, float n, float f);
+        private:
+            ShaderHandler m_spriteShaders;
+            unsigned int VAO;
 
-
-        m_render -> setSize(m_size);
-    }
-
-    void RenderTarget::draw(const Drawable& drawable, const RenderStates& states) {
-        drawable.draw(*this, states);
-    }
-
-
-    void RenderTarget::draw(const RenderStates& states) {
-
-        if(!m_render)
-            return;
-
-        m_render -> render(states);
-    }
-
-    const matrix& RenderTarget::projection_matrix() const {
-        return mat;
+            Matrix mat;
+        };
     }
 }

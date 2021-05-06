@@ -117,6 +117,7 @@ set(SRC
         src/Graphics/Texture.cpp
         src/Graphics/Transform.cpp
         src/Graphics/Transformable.cpp
+        src/Graphics/RenderImpl.cpp
 
         #Util
         src/Util/Logger.cpp
@@ -134,7 +135,8 @@ else(APPLE)
 endif()
 
 set(PLATFORM_SRC
-        src/Core/Desktop/DesktopWindowImpl.cpp)
+        src/Core/Desktop/DesktopWindowImpl.cpp
+        src/Graphics/Desktop/OpenGLRender.cpp)
 
 #if()
 #    target_compile_definitions(${target} PUBLIC "ROBOT2D_STATIC")

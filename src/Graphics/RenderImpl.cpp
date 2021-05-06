@@ -19,49 +19,24 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include <robot2D/Graphics/GL.hpp>
-#include "robot2D/Graphics/RenderTarget.hpp"
-
 #include "RenderImpl.hpp"
+#include "Desktop/OpenGLRender.hpp"
+
+using RenderHandle = robot2D::priv::OpenGLRender;
 
 namespace robot2D {
+    namespace priv {
 
-    RenderTarget::RenderTarget(const vec2u& size):
-    m_render(nullptr),
-    m_size(size) {
-        setup();
-    }
+        RenderImpl::RenderImpl() {}
 
-    RenderTarget::~RenderTarget() {
-        if(m_render){
-            delete m_render;
-            m_render = nullptr;
+        RenderImpl::~RenderImpl() {}
+
+        RenderImpl* RenderImpl::create() {
+            return new RenderHandle();
         }
-    }
 
-
-    void RenderTarget::setup() {
-        if(!m_render)
-            m_render = robot2D::priv::RenderImpl::create();
-
-
-        m_render -> setSize(m_size);
-    }
-
-    void RenderTarget::draw(const Drawable& drawable, const RenderStates& states) {
-        drawable.draw(*this, states);
-    }
-
-
-    void RenderTarget::draw(const RenderStates& states) {
-
-        if(!m_render)
-            return;
-
-        m_render -> render(states);
-    }
-
-    const matrix& RenderTarget::projection_matrix() const {
-        return mat;
+        void RenderImpl::setSize(const vec2u& size) {
+            m_size = size;
+        }
     }
 }
