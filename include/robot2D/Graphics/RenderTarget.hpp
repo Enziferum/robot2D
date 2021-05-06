@@ -21,4 +21,31 @@ source distribution.
 
 #pragma once
 
-#include <ext/glad.h>
+#include "Drawable.hpp"
+#include "Sprite.hpp"
+#include "Shader.hpp"
+
+namespace robot2D {
+    namespace priv {
+        class RenderImpl;
+    }
+
+    class RenderTarget {
+    public:
+        RenderTarget(const vec2u& size);
+        virtual ~RenderTarget() = 0;
+
+        virtual void draw(const RenderStates& states);
+        virtual void draw(const Drawable& drawable, const RenderStates& states
+                                                    = RenderStates::Default);
+
+    private:
+        void setup();
+    protected:
+        priv::RenderImpl* m_render;
+        ShaderHandler m_spriteShaders;
+        unsigned int VAO;
+        vec2u m_size;
+    };
+
+}

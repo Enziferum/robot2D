@@ -21,23 +21,6 @@ source distribution.
 
 #pragma once
 
-#include "RenderStates.h"
-
-namespace robot2D{
-    class RenderTarget;
-
-    /**
-     * \brief This class allows to you custom class to be rendered with simple call
-     * robot2D::RenderTarget / robot2D::RenderWindow draw() function
-     */
-    class Drawable{
-    public:
-        virtual ~Drawable() = 0 ;
-
-    protected:
-        friend class RenderTarget;
-        virtual void draw(RenderTarget& target, RenderStates) const = 0;
-    };
-
-
-}
+#include <robot2D/Core/Core.hpp>
+#include <robot2D/Extra/Extra.hpp>
+#include <robot2D/Graphics/Graphics.hpp>

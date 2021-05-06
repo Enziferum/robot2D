@@ -20,26 +20,30 @@ source distribution.
 *********************************************************************/
 
 #pragma once
+#include <unordered_map>
 #include <memory>
 
-#include <robot2D/Core/Event.h>
-#include "IStateMachine.h"
-
+#include <robot2D/Graphics/RenderWindow.hpp>
 
 namespace robot2D{
-    class ROBOT2D_EXPORT_API State{
+    class State;
+    class ROBOT2D_EXPORT_API IStateMachine{
     public:
-        using Ptr = std::shared_ptr<State>;
-    public:
-        State(IStateMachine& machine);
-        virtual ~State() = 0;
+        IStateMachine(const vec2u size = vec2u(800, 600),
+                      const std::string& name = "robot2D");
+        virtual ~IStateMachine();
 
-        virtual void handleEvents(const Event&) = 0;
-        virtual void update(float dt) = 0;
-        virtual void render() = 0;
+        void pushState(const int& state);
+        void popState();
+        void setCurrent(const unsigned int& id);
 
+        RenderWindow& getWindow();
     protected:
-        IStateMachine& m_machine;
-        RenderWindow& m_window;
+        RenderWindow m_window;
+        std::unordered_map<unsigned int,
+                std::shared_ptr<State>> m_states;
+        unsigned int m_current_state = -1;
     };
+
+
 }

@@ -20,8 +20,8 @@ source distribution.
 *********************************************************************/
 
 
-#include <robot2D/Graphics/GL.h>
-#include "robot2D/Graphics/RenderWindow.h"
+#include <robot2D/Graphics/GL.hpp>
+#include "robot2D/Graphics/RenderWindow.hpp"
 
 namespace robot2D{
 
@@ -41,12 +41,12 @@ namespace robot2D{
     //todo applyView function
     void RenderWindow::onResize(const int &w, const int &h) {
         m_size = vec2u(w, h);
-        ortho_projection(mat, 0.0f, static_cast<float>(m_size.x),
-                         static_cast<float>(m_size.y),
-                         0.0f, -1.0f, 1.0f);
+//        ortho_projection(mat, 0.0f, static_cast<float>(m_size.x),
+//                         static_cast<float>(m_size.y),
+//                         0.0f, -1.0f, 1.0f);
 
         m_spriteShaders.use();
-        m_spriteShaders.set_parameter("projection", &mat.mat[0][0]);
+//        m_spriteShaders.set_parameter("projection", &mat.mat[0][0]);
 
         glViewport(0, 0, w, h);
     }

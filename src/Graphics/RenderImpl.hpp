@@ -22,21 +22,21 @@ source distribution.
 #pragma once
 
 #include <robot2D/Graphics/Matrix.hpp>
+#include <robot2D/Graphics/RenderStates.hpp>
 
 namespace robot2D {
     namespace priv {
-        class Render {
+        class RenderImpl {
         public:
-            Render();
-            virtual ~Render() = 0;
+            RenderImpl();
+            virtual ~RenderImpl() = 0;
 
-            static Render* create();
-            virtual const Matrix& projection_matrix() const = 0;
+            static RenderImpl* create();
+            virtual void render(const RenderStates& states) const = 0;
 
-            virtual void preprocess() = 0;
-            virtual void process() = 0;
-            virtual void postprocess();
-        private:
+            virtual void setSize(const vec2u& size);
+        protected:
+            vec2u m_size;
         };
     }
 }

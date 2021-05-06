@@ -24,9 +24,9 @@ source distribution.
 #include <string>
 #include <vector>
 
-#include "Drawable.h"
-#include "Font.h"
-#include "Color.h"
+#include "Drawable.hpp"
+#include "Font.hpp"
+#include "Color.hpp"
 
 namespace robot2D{
 

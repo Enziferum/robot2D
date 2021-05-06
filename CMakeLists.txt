@@ -61,36 +61,36 @@ include_directories(${FREETYPE_INCLUDE_DIRS})
 
 #todo cmake lists by module
 set(SRC
-        include/robot2D/robot2D.h
+        include/robot2D/robot2D.hpp
 
         #Core
-        include/robot2D/Core/Event.h
-        include/robot2D/Core/Window.h
-        include/robot2D/Core/Keyboard.h
-        include/robot2D/Core/Vector2.h
+        include/robot2D/Core/Event.hpp
+        include/robot2D/Core/Window.hpp
+        include/robot2D/Core/Keyboard.hpp
+        include/robot2D/Core/Vector2.hpp
 
         #Extra
-        include/robot2D/Extra/App.h
-        include/robot2D/Extra/IStateMachine.h
-        include/robot2D/Extra/State.h
+        include/robot2D/Extra/App.hpp
+        include/robot2D/Extra/IStateMachine.hpp
+        include/robot2D/Extra/State.hpp
 
         #Graphics
-        include/robot2D/Graphics/Color.h
-        include/robot2D/Graphics/Drawable.h
-        include/robot2D/Graphics/GL.h
-        include/robot2D/Graphics/Rect.h
-        include/robot2D/Graphics/RenderStates.h
-        include/robot2D/Graphics/RenderTarget.h
-        include/robot2D/Graphics/RenderWindow.h
-        include/robot2D/Graphics/Shader.h
-        include/robot2D/Graphics/Sprite.h
-        include/robot2D/Graphics/Texture.h
-        include/robot2D/Graphics/Transform.h
-        include/robot2D/Graphics/Transformable.h
+        include/robot2D/Graphics/Color.hpp
+        include/robot2D/Graphics/Drawable.hpp
+        include/robot2D/Graphics/GL.hpp
+        include/robot2D/Graphics/Rect.hpp
+        include/robot2D/Graphics/RenderStates.hpp
+        include/robot2D/Graphics/RenderTarget.hpp
+        include/robot2D/Graphics/RenderWindow.hpp
+        include/robot2D/Graphics/Shader.hpp
+        include/robot2D/Graphics/Sprite.hpp
+        include/robot2D/Graphics/Texture.hpp
+        include/robot2D/Graphics/Transform.hpp
+        include/robot2D/Graphics/Transformable.hpp
 
         #Util
-        include/robot2D/Util/ResourceHandler.h
-        include/robot2D/Util/Logger.h
+        include/robot2D/Util/ResourceHandler.hpp
+        include/robot2D/Util/Logger.hpp
         src/Core/WindowImpl.hpp)
 
 set(SRC
@@ -117,6 +117,7 @@ set(SRC
         src/Graphics/Texture.cpp
         src/Graphics/Transform.cpp
         src/Graphics/Transformable.cpp
+        src/Graphics/RenderImpl.cpp
 
         #Util
         src/Util/Logger.cpp
@@ -124,10 +125,18 @@ set(SRC
 
 if(WIN32)
     set(LIBS opengl32)
+else(APPLE)
+    include_directories(/System/Library/Frameworks)
+    find_library(OpenGL_LIBRARY OpenGL)
+    mark_as_advanced(OpenGL_LIBRARY)
+    set(APPLE_LIBS ${OpenGL_LIBRARY} )
+    set(APPLE_LIBS ${APPLE_LIBS})
+    set(LIBS ${APPLE_LIBS})
 endif()
 
 set(PLATFORM_SRC
-        src/Core/Desktop/DesktopWindowImpl.cpp)
+        src/Core/Desktop/DesktopWindowImpl.cpp
+        src/Graphics/Desktop/OpenGLRender.cpp)
 
 #if()
 #    target_compile_definitions(${target} PUBLIC "ROBOT2D_STATIC")

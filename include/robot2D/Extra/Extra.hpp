@@ -21,6 +21,6 @@ source distribution.
 
 #pragma once
 
-#include <robot2D/Core/Core.h>
-#include <robot2D/Extra/Extra.h>
-#include <robot2D/Graphics/Graphics.h>
+#include "App.hpp"
+#include "IStateMachine.hpp"
+#include "State.hpp"

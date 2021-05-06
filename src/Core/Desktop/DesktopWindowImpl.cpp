@@ -19,8 +19,8 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include <robot2D/Util/Logger.h>
-#include <robot2D/Graphics/GL.h>
+#include <robot2D/Util/Logger.hpp>
+#include <robot2D/Graphics/GL.hpp>
 
 #include "DesktopWindowImpl.hpp"
 
@@ -75,6 +75,13 @@ namespace robot2D {
             if (!glfwInit())
                 return;
 
+            glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, opengl_major);
+            glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, opengl_minor);
+            glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+#ifdef __APPLE__
+            glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+#endif
 
             auto m_win_size = vec2u(800, 600);
             std::string m_name = "robot2D Ver 2.0";
@@ -96,27 +103,18 @@ namespace robot2D {
             if(m_vsync)
                 glfwSwapInterval(1);
 
-            setup_WGL();
             setup_callbacks();
+            setup_WGL();
         }
 
         void DesktopWindowImpl::setup_WGL() {
-            glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, opengl_major);
-            glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, opengl_minor);
-            glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-#ifdef __APPLE__
-            glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-#endif
-
+#ifdef WIN32
             if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
             {
                 LOG_ERROR_E("Failed to initialize GLAD")
                 return ;
             }
-
-            //todo in rendertarget
-            //glViewport(0, 0, m_win_size.x, m_win_size.y);
+#endif
             glViewport(0, 0, 800, 600);
         }
 
@@ -261,7 +259,9 @@ namespace robot2D {
             glfwSetWindowIcon(m_window, images.size(), &images[0]);
         }
 
-
+        float DesktopWindowImpl::getDeltaTime() const {
+            return glfwGetTime();
+        }
 
 
     }

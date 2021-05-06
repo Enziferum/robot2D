@@ -21,30 +21,16 @@ source distribution.
 
 #pragma once
 
-#include <string>
-#include "robot2D/Core/Vector2.h"
+#include "Rect.hpp"
+#include "robot2D/Core/Vector2.hpp"
 
 namespace robot2D{
-    class Texture{
+    class View{
     public:
-        Texture();
-        ~Texture();
+        View();
+        ~View();
 
-        bool loadFromFile(const std::string& path, bool alpha = false);
 
-        vec2u& get_size();
-        const vec2u& get_size() const;
-
-        void generate(const vec2u& size, void* data);
-        const unsigned int& get_id()const;
-        void bind()const;
-
-        unsigned char* get_pixels() const;
     private:
-        void setup_GL();
-    private:
-        vec2u m_size;
-        unsigned int m_texture;
-        unsigned char* buffer;
     };
 }
