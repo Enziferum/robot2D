@@ -19,68 +19,43 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include <ext/glad.h>
+#include <robot2D/Graphics/GL.hpp>
+#include "robot2D/Graphics/RenderTarget.hpp"
 
 #include "RenderImpl.hpp"
-#include "robot2D/Graphics/RenderTarget.h"
 
 namespace robot2D {
 
-    void RenderTarget::ortho_projection(Matrix& m, float l, float r, float b,
-                  float t, float n, float f){
-        m.mat[0][0] = 2 / (r - l);
-
-        m.mat[0][1] = 0;
-        m.mat[0][2] = 0;
-        m.mat[0][3] = 0;
-
-        m.mat[1][0] = 0;
-        m.mat[1][1] = 2 / (t - b);
-        m.mat[1][2] = 0;
-        m.mat[1][3] = 0;
-
-        m.mat[2][0] = 0;
-        m.mat[2][1] = 0;
-        m.mat[2][2] = -2 / (f - n);
-        m.mat[2][3] = 0;
-
-        m.mat[3][0] = -(r + l) / (r - l);
-        m.mat[3][1] = -(t + b) / (t - b);
-        m.mat[3][2] = -(f + n) / (f - n);
-        m.mat[3][3] = 1;
-    }
-
-
     RenderTarget::RenderTarget(const vec2u& size):
-        m_size(size),
-        m_renderImpl(nullptr) {
+    m_render(nullptr),
+    m_size(size) {
+        setup();
     }
 
     RenderTarget::~RenderTarget() {
-        if(m_renderImpl != nullptr){
-            delete m_renderImpl;
-            m_renderImpl = nullptr;
+        if(m_render){
+            delete m_render;
+            m_render = nullptr;
         }
     }
 
+    void RenderTarget::setup() {
+        if(!m_render)
+            m_render = robot2D::priv::RenderImpl::create();
+
+        m_render -> setSize(m_size);
+    }
 
     void RenderTarget::draw(const Drawable& drawable, const RenderStates& states) {
         drawable.draw(*this, states);
     }
 
-    // todo work on cache
+
     void RenderTarget::draw(const RenderStates& states) {
-        m_renderImpl -> preprocess();
-        m_renderImpl -> process();
-        m_renderImpl -> postprocess();
-    }
 
-    const Matrix& RenderTarget::projection_matrix() const {
-        return m_renderImpl -> projection_matrix();
-    }
+        if(!m_render)
+            return;
 
-    void RenderTarget::create() {
-        m_renderImpl = priv::Render::create();
+        m_render -> render(states);
     }
-
 }

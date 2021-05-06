@@ -24,7 +24,7 @@ source distribution.
 #include <string>
 #include <map>
 
-#include "robot2D/Core/Vector2.h"
+#include "robot2D/Core/Vector2.hpp"
 
 
 namespace robot2D{

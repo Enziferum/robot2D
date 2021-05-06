@@ -21,24 +21,17 @@ source distribution.
 
 #pragma once
 
-#include "Transform.h"
-#include "Color.h"
-#include "Shader.h"
-
-namespace robot2D{
-    class Texture;
-
-    struct RenderStates{
-        RenderStates();
-        ~RenderStates() = default;
-
-        const Texture* texture;
-        ShaderHandler* shader;
-        const unsigned int* customVao;
-
-        Color color;
-        Transform transform;
-
-        static const RenderStates Default;
-    };
-}
+#include "Color.hpp"
+#include "Drawable.hpp"
+#include "Font.hpp"
+#include "Rect.hpp"
+#include "RenderStates.hpp"
+#include "RenderTarget.hpp"
+#include "RenderWindow.hpp"
+#include "Shader.hpp"
+#include "Shader.hpp"
+#include "Text.hpp"
+#include "Texture.hpp"
+#include "Transform.hpp"
+#include "Transformable.hpp"
+#include "View.hpp"

@@ -21,25 +21,34 @@ source distribution.
 
 #pragma once
 
+#include <robot2D/Graphics/RenderStates.hpp>
+#include <robot2D/Graphics/Shader.hpp>
+
 #include "../RenderImpl.hpp"
 
 namespace robot2D {
     namespace priv {
-        class OpenGLRender: public Render {
+        struct Matrix {
+            float mat[4][4];
+        };
+
+        class OpenGLRender: public RenderImpl {
         public:
             OpenGLRender();
-            ~OpenGLRender();
+            ~OpenGLRender() override = default;
 
-            const Matrix& projection_matrix() const override;
-            void process() override;
+            void render(const RenderStates& states) const;
+
+            void setSize(const vec2u &size) override;
+
         private:
             void setup_GL();
+            void ortho_projection(Matrix& m, float l, float r, float b,
+                                  float t, float n, float f);
         private:
-
             ShaderHandler m_spriteShaders;
             unsigned int VAO;
 
-            vec2u m_size;
             Matrix mat;
         };
     }

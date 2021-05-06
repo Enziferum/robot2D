@@ -20,30 +20,25 @@ source distribution.
 *********************************************************************/
 
 #pragma once
-#include <unordered_map>
-#include <memory>
 
-#include <robot2D/Graphics/RenderWindow.h>
+#include "Transform.hpp"
+#include "Color.hpp"
+#include "Shader.hpp"
 
 namespace robot2D{
-    class State;
-    class ROBOT2D_EXPORT_API IStateMachine{
-    public:
-        IStateMachine(const vec2u size = vec2u(800, 600),
-                      const std::string& name = "robot2D");
-        virtual ~IStateMachine();
+    class Texture;
 
-        void pushState(const int& state);
-        void popState();
-        void setCurrent(const unsigned int& id);
+    struct RenderStates{
+        RenderStates();
+        ~RenderStates() = default;
 
-        RenderWindow& getWindow();
-    protected:
-        RenderWindow m_window;
-        std::unordered_map<unsigned int,
-                std::shared_ptr<State>> m_states;
-        unsigned int m_current_state = -1;
+        const Texture* texture;
+        ShaderHandler* shader;
+        const unsigned int* customVao;
+
+        Color color;
+        Transform transform;
+
+        static const RenderStates Default;
     };
-
-
 }

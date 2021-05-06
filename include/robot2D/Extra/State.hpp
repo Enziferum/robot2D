@@ -20,46 +20,30 @@ source distribution.
 *********************************************************************/
 
 #pragma once
+#include <memory>
 
-#include "Transform.h"
-#include "robot2D/Core/Vector2.h"
+#include <robot2D/Core/Event.hpp>
+#include "IStateMachine.hpp"
 
-namespace robot2D {
-    /**
-     * \brief This class allows to be your custom object
-     */
-    class Transformable{
+
+namespace robot2D{
+    class ROBOT2D_EXPORT_API State{
     public:
-        Transformable();
-        virtual ~Transformable() = 0;
+        using Ptr = std::shared_ptr<State>;
+    public:
+        State(IStateMachine& machine);
+        virtual ~State() = 0;
 
+        virtual void handleEvents(const Event&) = 0;
+        virtual void update(float dt) = 0;
+        virtual void render() = 0;
 
-        void setPosition(const vec2f& pos);
-        vec2f& getPosition();
-
-        void setOrigin(const vec2f& origin);
-        vec2f& getOrigin();
-
-        virtual void setScale(const vec2f& factor);
-        vec2f& getScale();
-
-        void setRotate(const float& angle);
-        float& getRotate();
-
-        void move(const vec2f& offset);
-        void scale(const vec2f& factor);
-        void rotate(float angle);
-
-
-        const Transform& getTransform() const;
-
+        void setActive(const bool& flag);
+        bool isActive() const;
     protected:
-         vec2f m_pos;
-         vec2f m_origin;
-         vec2f m_scale_factor;
+        IStateMachine& m_machine;
+        RenderWindow& m_window;
 
-         float m_rotation;
-         mutable Transform m_tranform;
-         mutable bool m_update_transform;
+        bool m_active;
     };
 }

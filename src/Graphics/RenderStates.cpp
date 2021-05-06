@@ -19,7 +19,7 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include "robot2D/Graphics/RenderStates.h"
+#include "robot2D/Graphics/RenderStates.hpp"
 
 namespace robot2D{
     const RenderStates RenderStates::Default;

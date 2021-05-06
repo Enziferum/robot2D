@@ -21,6 +21,26 @@ source distribution.
 
 #pragma once
 
-#include "App.h"
-#include "IStateMachine.h"
-#include "State.h"
+#include <robot2D/Core/Window.hpp>
+#include "RenderTarget.hpp"
+
+namespace robot2D {
+
+    /**
+     * \brief Heart of Engine's Rendering part
+     */
+    class RenderWindow: public Window, public RenderTarget{
+    public:
+        RenderWindow();
+        RenderWindow(const vec2u& size, const std::string& name,
+                     WindowContext context);
+        RenderWindow(const RenderWindow&) = delete;
+        RenderWindow(const RenderWindow&&) = delete;
+        RenderWindow& operator=(const RenderWindow&) = delete;
+        RenderWindow& operator=(const RenderWindow&&) = delete;
+        ~RenderWindow() override = default;
+
+    protected:
+        void onResize(const int &w, const int &h) override;
+    };
+}

@@ -19,10 +19,15 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
+
+#include <robot2D/Graphics/GL.hpp>
+#include <robot2D/Graphics/Texture.hpp>
+
 #include "OpenGLRender.hpp"
 
 namespace robot2D {
     namespace priv {
+
         const char* vertexShaderSource = "#version 330 core\n"
                                          "layout (location = 0) in vec4 vertex;\n"
                                          "out vec2 TexCoords; \n"
@@ -45,13 +50,31 @@ namespace robot2D {
                                            "}\0";
 
 
+        OpenGLRender::OpenGLRender() {}
 
-        OpenGLRender::OpenGLRender() {
-            setup_GL();
+        void OpenGLRender::ortho_projection(Matrix& m, float l, float r, float b,
+                                            float t, float n, float f){
+            m.mat[0][0] = 2 / (r - l);
+
+            m.mat[0][1] = 0;
+            m.mat[0][2] = 0;
+            m.mat[0][3] = 0;
+
+            m.mat[1][0] = 0;
+            m.mat[1][1] = 2 / (t - b);
+            m.mat[1][2] = 0;
+            m.mat[1][3] = 0;
+
+            m.mat[2][0] = 0;
+            m.mat[2][1] = 0;
+            m.mat[2][2] = -2 / (f - n);
+            m.mat[2][3] = 0;
+
+            m.mat[3][0] = -(r + l) / (r - l);
+            m.mat[3][1] = -(t + b) / (t - b);
+            m.mat[3][2] = -(f + n) / (f - n);
+            m.mat[3][3] = 1;
         }
-
-        OpenGLRender::~OpenGLRender() noexcept
-        {}
 
         void OpenGLRender::setup_GL() {
             unsigned int VBO;
@@ -104,7 +127,7 @@ namespace robot2D {
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         }
 
-        void OpenGLRender::process() {
+        void OpenGLRender::render(const RenderStates& states) const {
 
             if(states.shader) {
                 // it can be done not here, you can get projection from renderTarget getView !
@@ -121,7 +144,8 @@ namespace robot2D {
 
                 m_spriteShaders.set_parameter("spriteColor", r, g, b);
 
-                const robot2D::Transform &transform = states.transform;
+                const robot2D::Transform& transform = states.transform;
+
                 m_spriteShaders.set_parameter("model", transform.get_matrix());
             }
 
@@ -137,5 +161,9 @@ namespace robot2D {
             glBindVertexArray(0);
         }
 
+        void OpenGLRender::setSize(const vec2u &size) {
+            RenderImpl::setSize(size);
+            setup_GL();
+        }
     }
 }

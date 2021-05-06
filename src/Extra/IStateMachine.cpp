@@ -19,7 +19,8 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include <robot2D/Extra/IStateMachine.h>
+#include <robot2D/Extra/IStateMachine.hpp>
+#include <robot2D/Extra/State.hpp>
 
 namespace robot2D{
     IStateMachine::IStateMachine(const vec2u size,
@@ -28,23 +29,30 @@ namespace robot2D{
 
     }
 
-    IStateMachine::~IStateMachine() {
-
-    }
+    IStateMachine::~IStateMachine() {}
 
     void IStateMachine::pushState(const int &state) {
+        if(!m_states[m_current_state])
+            return;
         m_current_state = state;
+        m_states[m_current_state] -> setActive(true);
     }
 
     void IStateMachine::popState() {
-
+        if(!m_states[m_current_state])
+            return;
+        m_states[m_current_state] -> setActive(false);
     }
 
     void IStateMachine::setCurrent(const unsigned int &id) {
         m_current_state = id;
+        if(!m_states[m_current_state])
+            return;
+        m_states[m_current_state] -> setActive(true);
     }
 
     RenderWindow& IStateMachine::getWindow() {
         return m_window;
     }
+
 }

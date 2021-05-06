@@ -19,19 +19,24 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include "Desktop/OpenGLRender.hpp"
 #include "RenderImpl.hpp"
+#include "Desktop/OpenGLRender.hpp"
 
-using RenderType = robot2D::priv::OpenGLRender;
+using RenderHandle = robot2D::priv::OpenGLRender;
 
 namespace robot2D {
     namespace priv {
 
-        Render::Render() {}
-        Render::~Render() {}
+        RenderImpl::RenderImpl() {}
 
-        Render* Render::create() {
-            return new RenderType();
+        RenderImpl::~RenderImpl() {}
+
+        RenderImpl* RenderImpl::create() {
+            return new RenderHandle();
+        }
+
+        void RenderImpl::setSize(const vec2u& size) {
+            m_size = size;
         }
     }
 }

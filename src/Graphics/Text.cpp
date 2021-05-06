@@ -21,11 +21,9 @@ source distribution.
 
 #include <iostream>
 
-#include <ext/glad.h>
-
-
-#include "robot2D/Graphics/Text.h"
-#include "robot2D/Graphics/RenderTarget.h"
+#include <robot2D/Graphics/GL.hpp>
+#include "robot2D/Graphics/Text.hpp"
+#include "robot2D/Graphics/RenderTarget.hpp"
 
 namespace robot2D{
     constexpr int buffer_sz = 24;

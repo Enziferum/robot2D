@@ -21,17 +21,23 @@ source distribution.
 
 #pragma once
 
-#include "Color.h"
-#include "Drawable.h"
-#include "Font.h"
-#include "Rect.h"
-#include "RenderStates.h"
-#include "RenderTarget.h"
-#include "RenderWindow.h"
-#include "Shader.h"
-#include "Shader.h"
-#include "Text.h"
-#include "Texture.h"
-#include "Transform.h"
-#include "Transformable.h"
-#include "View.h"
+#include "RenderStates.hpp"
+
+namespace robot2D{
+    class RenderTarget;
+
+    /**
+     * \brief This class allows to you custom class to be rendered with simple call
+     * robot2D::RenderTarget / robot2D::RenderWindow draw() function
+     */
+    class Drawable{
+    public:
+        virtual ~Drawable() = 0 ;
+
+    protected:
+        friend class RenderTarget;
+        virtual void draw(RenderTarget& target, RenderStates) const = 0;
+    };
+
+
+}

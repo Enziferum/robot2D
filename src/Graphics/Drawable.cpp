@@ -19,7 +19,7 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include "robot2D/Graphics/Drawable.h"
+#include "robot2D/Graphics/Drawable.hpp"
 
 namespace robot2D{
     Drawable::~Drawable() {}
