@@ -19,7 +19,7 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include <robot2D/Extra/App.h>
+#include <robot2D/Extra/App.hpp>
 
 namespace robot2D{
 
@@ -51,24 +51,34 @@ namespace robot2D{
         while (m_window.pollEvents(event)) {
             if(m_states.empty())
                 return;
-            m_states[m_current_state] -> handleEvents(event);
+            for(auto& it: m_states){
+                if(it.second -> isActive())
+                    it.second -> handleEvents(event);
+            }
+            //m_states[m_current_state] -> handleEvents(event);
         }
     }
 
     void App::update() {
-        float currentTime = float(glfwGetTime());
+        float currentTime = float(m_window.getDeltaTime());
         deltaTime = currentTime - lastTime;
         lastTime = currentTime;
         if(m_states.empty())
             return;
-        m_states[m_current_state] -> update(deltaTime);
+        for(auto& it: m_states){
+            if(it.second -> isActive())
+                it.second -> update(deltaTime);
+        }
     }
 
     void App::render() {
         m_window.clear();
         if(m_states.empty())
             return;
-        m_states[m_current_state] -> render();
+        for(auto& it: m_states){
+            if(it.second -> isActive())
+                it.second -> render();
+        }
         m_window.display();
     }
 

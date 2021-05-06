@@ -21,10 +21,24 @@ source distribution.
 
 #pragma once
 
-#include "Event.h"
-#include "Keyboard.h"
-#include "Mouse.h"
-#include "Sensor.h"
-#include "Touch.h"
-#include "Vector2.h"
-#include "Window.h"
+#include "Transform.hpp"
+#include "Color.hpp"
+#include "Shader.hpp"
+
+namespace robot2D{
+    class Texture;
+
+    struct RenderStates{
+        RenderStates();
+        ~RenderStates() = default;
+
+        const Texture* texture;
+        ShaderHandler* shader;
+        const unsigned int* customVao;
+
+        Color color;
+        Transform transform;
+
+        static const RenderStates Default;
+    };
+}

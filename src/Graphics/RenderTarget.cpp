@@ -19,9 +19,8 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include <ext/glad.h>
-
-#include "robot2D/Graphics/RenderTarget.h"
+#include <robot2D/Graphics/GL.hpp>
+#include "robot2D/Graphics/RenderTarget.hpp"
 
 namespace robot2D {
     const char* vertexShaderSource = "#version 330 core\n"
@@ -148,7 +147,8 @@ namespace robot2D {
 
             m_spriteShaders.set_parameter("spriteColor", r, g, b);
 
-            const robot2D::Transform &transform = states.transform;
+            const robot2D::Transform& transform = states.transform;
+
             m_spriteShaders.set_parameter("model", transform.get_matrix());
         }
 

@@ -47,6 +47,9 @@ namespace robot2D {
             void display() override;
 
             void setIcon(std::vector<robot2D::Texture>& ) override;
+
+            float getDeltaTime() const override;
+
         private:
             void setup();
             void setup_callbacks();

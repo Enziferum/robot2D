@@ -20,8 +20,8 @@ source distribution.
 *********************************************************************/
 
 
-#include <robot2D/Graphics/GL.h>
-#include "robot2D/Graphics/RenderWindow.h"
+#include <robot2D/Graphics/GL.hpp>
+#include "robot2D/Graphics/RenderWindow.hpp"
 
 namespace robot2D{
 

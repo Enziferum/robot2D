@@ -23,9 +23,9 @@ source distribution.
 
 #include <vector>
 
-#include <robot2D/Graphics/Color.h>
-#include <robot2D/Graphics/Texture.h>
-#include <robot2D/Core/Event.h>
+#include <robot2D/Graphics/Color.hpp>
+#include <robot2D/Graphics/Texture.hpp>
+#include <robot2D/Core/Event.hpp>
 #include <robot2D/Core/WindowContext.hpp>
 
 namespace robot2D {
@@ -49,6 +49,8 @@ namespace robot2D {
             virtual void display() = 0;
 
             virtual void setIcon(std::vector<robot2D::Texture>& icons) = 0;
+
+            virtual float getDeltaTime()const = 0;
         };
     }
 }

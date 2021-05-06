@@ -21,8 +21,8 @@ source distribution.
 
 #pragma once
 
-#include <robot2D/Core/Vector2.h>
-#include "Rect.h"
+#include <robot2D/Core/Vector2.hpp>
+#include "Rect.hpp"
 
 namespace robot2D {
 

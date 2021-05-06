@@ -21,37 +21,23 @@ source distribution.
 
 #pragma once
 
-#include "Drawable.h"
-#include "Sprite.h"
-#include "Shader.h"
+#include "RenderStates.hpp"
 
+namespace robot2D{
+    class RenderTarget;
 
-namespace robot2D {
-    struct matrix {
-        float mat[4][4];
-    };
-
-    class RenderTarget {
+    /**
+     * \brief This class allows to you custom class to be rendered with simple call
+     * robot2D::RenderTarget / robot2D::RenderWindow draw() function
+     */
+    class Drawable{
     public:
-        RenderTarget(const vec2u& size);
-        virtual ~RenderTarget() = 0;
-
-        virtual void draw(const RenderStates& states);
-        virtual void draw(const Drawable& drawable, const RenderStates& states
-                                                    = RenderStates::Default);
-
-        const matrix& projection_matrix() const;
-    protected:
-        void ortho_projection(matrix& m, float l, float r, float b,
-                              float t, float n, float f);
-    private:
-        void setup_GL();
+        virtual ~Drawable() = 0 ;
 
     protected:
-        ShaderHandler m_spriteShaders;
-        unsigned int VAO;
-
-        vec2u m_size;
-        matrix mat;
+        friend class RenderTarget;
+        virtual void draw(RenderTarget& target, RenderStates) const = 0;
     };
+
+
 }

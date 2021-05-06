@@ -21,7 +21,7 @@ source distribution.
 
 #pragma once
 
-#include <robot2D/Config.h>
+#include <robot2D/Config.hpp>
 
 namespace robot2D{
     template<typename T>

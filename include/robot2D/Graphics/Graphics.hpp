@@ -21,4 +21,17 @@ source distribution.
 
 #pragma once
 
-#include <ext/glad.h>
+#include "Color.hpp"
+#include "Drawable.hpp"
+#include "Font.hpp"
+#include "Rect.hpp"
+#include "RenderStates.hpp"
+#include "RenderTarget.hpp"
+#include "RenderWindow.hpp"
+#include "Shader.hpp"
+#include "Shader.hpp"
+#include "Text.hpp"
+#include "Texture.hpp"
+#include "Transform.hpp"
+#include "Transformable.hpp"
+#include "View.hpp"

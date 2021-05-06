@@ -21,6 +21,37 @@ source distribution.
 
 #pragma once
 
-#include "App.h"
-#include "IStateMachine.h"
-#include "State.h"
+#include "Drawable.hpp"
+#include "Sprite.hpp"
+#include "Shader.hpp"
+
+
+namespace robot2D {
+    struct matrix {
+        float mat[4][4];
+    };
+
+    class RenderTarget {
+    public:
+        RenderTarget(const vec2u& size);
+        virtual ~RenderTarget() = 0;
+
+        virtual void draw(const RenderStates& states);
+        virtual void draw(const Drawable& drawable, const RenderStates& states
+                                                    = RenderStates::Default);
+
+        const matrix& projection_matrix() const;
+    protected:
+        void ortho_projection(matrix& m, float l, float r, float b,
+                              float t, float n, float f);
+    private:
+        void setup_GL();
+
+    protected:
+        ShaderHandler m_spriteShaders;
+        unsigned int VAO;
+
+        vec2u m_size;
+        matrix mat;
+    };
+}

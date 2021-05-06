@@ -21,23 +21,22 @@ source distribution.
 
 #pragma once
 
-#include "RenderStates.h"
+#include <robot2D/Core/Window.hpp>
+#include "RenderTarget.hpp"
 
-namespace robot2D{
-    class RenderTarget;
+namespace robot2D {
 
     /**
-     * \brief This class allows to you custom class to be rendered with simple call
-     * robot2D::RenderTarget / robot2D::RenderWindow draw() function
+     * \brief Heart of Engine's Rendering part
      */
-    class Drawable{
+    class RenderWindow: public Window, public RenderTarget{
     public:
-        virtual ~Drawable() = 0 ;
+        RenderWindow();
+        RenderWindow(const vec2u& size, const std::string& name,
+                     WindowContext context);
+        ~RenderWindow();
 
     protected:
-        friend class RenderTarget;
-        virtual void draw(RenderTarget& target, RenderStates) const = 0;
+        void onResize(const int &w, const int &h) override;
     };
-
-
 }
