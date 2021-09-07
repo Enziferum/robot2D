@@ -25,7 +25,7 @@ source distribution.
 #include "robot2D/Graphics/Text.hpp"
 #include "robot2D/Graphics/RenderTarget.hpp"
 
-namespace robot2D{
+namespace robot2D {
     constexpr int buffer_sz = 24;
 
     const char* vertexText = "#version 330 core\n"

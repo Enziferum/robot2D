@@ -26,8 +26,8 @@ source distribution.
 #include "IStateMachine.hpp"
 
 
-namespace robot2D{
-    class ROBOT2D_EXPORT_API State{
+namespace robot2D {
+    class ROBOT2D_EXPORT_API State {
     public:
         using Ptr = std::shared_ptr<State>;
     public:

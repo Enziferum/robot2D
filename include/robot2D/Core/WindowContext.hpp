@@ -27,6 +27,10 @@ namespace robot2D {
     struct ROBOT2D_EXPORT_API WindowContext {
         bool vsync;
         bool fullscreen;
+
+        WindowContext(const bool& vsync = true, const bool& fullscreen = false);
+
+        static const WindowContext Default;
     };
 
 }

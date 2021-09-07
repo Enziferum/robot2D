@@ -25,13 +25,14 @@ source distribution.
 #include <memory>
 #include <cassert>
 #include <string>
+
 #include <robot2D/Core/Window.hpp>
 
 
 #include "State.hpp"
 #include "IStateMachine.hpp"
 
-namespace robot2D{
+namespace robot2D {
 
     class State;
     class ROBOT2D_EXPORT_API App final: public IStateMachine{
@@ -57,7 +58,6 @@ namespace robot2D{
         float lastTime;
         float deltaTime;
     };
-
 
     template<class T, typename ... Args>
     void App::register_state(const int id, Args&& ... args) {

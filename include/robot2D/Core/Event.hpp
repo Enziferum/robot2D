@@ -32,6 +32,7 @@ namespace robot2D{
     public:
         enum EventType {
             Resized,
+            Closed,
             GainFocus,
             LostFocus,
             MouseMoved,
