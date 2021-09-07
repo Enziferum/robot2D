@@ -91,13 +91,16 @@ set(SRC
         #Util
         include/robot2D/Util/ResourceHandler.hpp
         include/robot2D/Util/Logger.hpp
-        src/Core/WindowImpl.hpp)
+        )
 
 set(SRC
         ${SRC}
         #Core
         src/Core/Window.cpp
         src/Core/Event.cpp
+        src/Core/WindowImpl.cpp
+        src/Core/WindowImpl.hpp
+        src/Core/WindowContext.cpp
 
         #Extra
         src/Extra/App.cpp
@@ -121,7 +124,7 @@ set(SRC
 
         #Util
         src/Util/Logger.cpp
-        src/Core/WindowImpl.cpp)
+        )
 
 if(WIN32)
     set(LIBS opengl32)

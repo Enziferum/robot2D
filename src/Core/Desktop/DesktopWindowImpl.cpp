@@ -33,7 +33,7 @@ namespace robot2D {
         DesktopWindowImpl::DesktopWindowImpl():
         m_window(nullptr),
         m_size(800, 600),
-        m_name(""),
+        m_name("Robot2D"),
         m_context()
         {
             setup();
@@ -83,14 +83,12 @@ namespace robot2D {
             glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
 
-            auto m_win_size = vec2u(800, 600);
-            std::string m_name = "robot2D Ver 2.0";
-            bool m_vsync = true;
+            GLFWmonitor* primary = m_context.fullscreen ? glfwGetPrimaryMonitor() : nullptr;
 
             //todo window params
             /* Create a windowed mode window and its OpenGL context */
-            m_window = glfwCreateWindow(m_win_size.x, m_win_size.y,
-                                        m_name.c_str(), nullptr, nullptr);
+            m_window = glfwCreateWindow(m_size.x, m_size.y,
+                                        m_name.c_str(), primary, nullptr);
             if (!m_window)
             {
                 //todo throw expeption, after termimate
@@ -100,7 +98,7 @@ namespace robot2D {
 
             /* Make the window's context current */
             glfwMakeContextCurrent(m_window);
-            if(m_vsync)
+            if(m_context.vsync)
                 glfwSwapInterval(1);
 
             setup_callbacks();
@@ -141,6 +139,7 @@ namespace robot2D {
                 return;
 
             glfwSetWindowUserPointer(m_window, this);
+            glfwSetWindowCloseCallback(m_window, close_callback);
             glfwSetKeyCallback(m_window, key_callback);
             glfwSetCursorPosCallback(m_window, cursor_callback);
             glfwSetScrollCallback(m_window, mouseWhell_callback);
@@ -148,6 +147,13 @@ namespace robot2D {
             glfwSetFramebufferSizeCallback(m_window, view_callback);
             glfwSetWindowSizeCallback(m_window, size_callback);
             glfwSetWindowMaximizeCallback(m_window, maximized_callback);
+        }
+
+        void DesktopWindowImpl::close_callback(GLFWwindow* wnd) {
+            DesktopWindowImpl* window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
+            Event event;
+            event.type = Event::Closed;
+            window->m_event_queue.push(event);
         }
 
         void DesktopWindowImpl::key_callback(GLFWwindow* wnd, int key, int scancode, int action, int mods) {
@@ -262,7 +268,5 @@ namespace robot2D {
         float DesktopWindowImpl::getDeltaTime() const {
             return glfwGetTime();
         }
-
-
     }
 }

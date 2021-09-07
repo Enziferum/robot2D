@@ -56,6 +56,7 @@ namespace robot2D {
             void setup_WGL();
 
         private:
+            static void close_callback(GLFWwindow* wnd);
             static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
             static void cursor_callback(GLFWwindow* window, double xpos, double ypos);
             static void mouseWhell_callback(GLFWwindow* window, double xpos, double ypos);

@@ -29,7 +29,7 @@ namespace robot2D {
     m_windowImpl(nullptr),
     m_win_size(800, 600),
     m_name("robot2D"),
-    m_context()
+    m_context(WindowContext::Default)
     {
         Window::create();
     }
@@ -99,30 +99,24 @@ namespace robot2D {
 
     void Window::create() {
         m_windowImpl = priv::WindowImpl::create(m_win_size, m_name, m_context);
-        if(m_windowImpl == nullptr) {
-            //todo throw error
-        }
+        if(m_windowImpl == nullptr)
+            throw std::runtime_error("Can't create WindowImpl");
     }
 
     const vec2u& Window::get_size() {
         return m_win_size;
     }
 
-    bool Window::getMouseButton(const int &button) {
-    //    return glfwGetMouseButton(m_window, button);
+    bool Window::isMousePressed(const int& key) {
+        return false;
     }
 
+
     void Window::setCursorPosition(const vec2f &pos) {
-     //   glfwSetCursorPos(m_window, pos.x, pos.y);
     }
 
     vec2f Window::getCursorPos() {
-
-//        vec2f pos;
-//        double x, y;
-//        glfwGetCursorPos(m_window, &x, &y);
-//        pos.x = x; pos.y = y;
-//        return pos;
+        return vec2f();
     }
 
     float Window::getDeltaTime() {

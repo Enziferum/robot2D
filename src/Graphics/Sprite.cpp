@@ -22,7 +22,7 @@ source distribution.
 #include "robot2D/Graphics/RenderTarget.hpp"
 #include "robot2D/Graphics/Sprite.hpp"
 
-namespace robot2D{
+namespace robot2D {
 
     Sprite::Sprite(): m_texture(nullptr),
     m_color(Color::White){

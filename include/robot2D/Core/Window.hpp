@@ -76,7 +76,9 @@ namespace robot2D {
         void setIcon(std::vector<Texture>& icons);
 
         // todo rewrite this methods //
-        bool getMouseButton(const int& button);
+
+        static bool isMousePressed(const int& key);
+
         void setCursorPosition(const vec2f& pos);
         vec2f getCursorPos();
 
