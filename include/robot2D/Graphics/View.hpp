@@ -22,15 +22,45 @@ source distribution.
 #pragma once
 
 #include "Rect.hpp"
+#include "Transform.hpp"
 #include "robot2D/Core/Vector2.hpp"
 
 namespace robot2D{
-    class View{
+    class View {
     public:
         View();
-        ~View();
+        explicit View(const FloatRect& viewport);
+        View(const vec2f& origin, const vec2f& size);
+        ~View() = default;
 
+        void setViewport(const FloatRect& viewport);
+        const FloatRect& getViewport() const;
 
+        void setCenter(const vec2f& origin);
+        void setCenter(float x, float y);
+        const vec2f& getCenter() const;
+
+        void setSize(const vec2f& size);
+        void setSize(float x, float y);
+        const vec2f& getSize() const;
+
+        void setRotation(const float& angle);
+        const float& getRotation() const;
+
+        void move(const vec2f& offset);
+        void move(float x, float y);
+        void rotate(const float& angle);
+        void zoom(float factor);
+
+        void reset(const FloatRect& rect);
+
+        const Transform& getTransform() const;
     private:
+        FloatRect m_viewport;
+        float m_rotation;
+        mutable Transform m_transform;
+        mutable bool needTransformUpdate;
+        vec2f m_center;
+        vec2f m_size;
     };
 }

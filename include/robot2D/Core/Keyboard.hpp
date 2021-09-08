@@ -22,7 +22,7 @@ source distribution.
 #pragma once
 
 namespace robot2D {
-    enum Key {
+    enum class Key {
         Unknown = -1,
         SPACE = 32,
         APOSTROPHE =    39, /* ' */
@@ -148,4 +148,12 @@ namespace robot2D {
         RIGHT_SUPER =   347,
         MENU =          348
     };
+
+    Key Int2Key(const int& code);
+
+    int key2Int(const Key& key);
+
+    namespace Keyboard {
+        bool isKeyPressed(const Key &key);
+    }
 }

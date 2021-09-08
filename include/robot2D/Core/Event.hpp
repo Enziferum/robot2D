@@ -23,6 +23,7 @@ source distribution.
 
 #include <robot2D/Config.hpp>
 #include "Mouse.hpp"
+#include "Keyboard.hpp"
 
 namespace robot2D{
     /**
@@ -56,8 +57,8 @@ namespace robot2D{
             float y;
         };
 
-        struct KeyboardEvent{
-            int code;
+        struct KeyboardEvent {
+            Key code;
         };
 
         struct MouseButtonEvent{

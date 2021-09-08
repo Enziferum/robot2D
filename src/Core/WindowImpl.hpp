@@ -44,9 +44,12 @@ namespace robot2D {
             virtual void* get_RawWindow() = 0;
 
             virtual bool isOpen() const = 0;
+            virtual void setTitle(const std::string& title) const = 0;
             virtual void clear(const robot2D::Color& color) = 0;
             virtual void close() = 0;
             virtual void display() = 0;
+            virtual bool isMousePressed(const Mouse& button) = 0;
+            virtual bool isKeyboardPressed(const Key& key) = 0;
 
             virtual void setIcon(std::vector<robot2D::Texture>& icons) = 0;
 

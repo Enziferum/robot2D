@@ -27,4 +27,5 @@ namespace robot2D {
         MouseRight = 1,
         MouseMiddle = 2
     };
+
 }

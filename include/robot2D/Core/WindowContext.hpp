@@ -28,7 +28,7 @@ namespace robot2D {
         bool vsync;
         bool fullscreen;
 
-        WindowContext(const bool& vsync = true, const bool& fullscreen = false);
+        WindowContext(const bool& vsync = false, const bool& fullscreen = false);
 
         static const WindowContext Default;
     };

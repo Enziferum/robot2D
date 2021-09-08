@@ -70,6 +70,8 @@ namespace robot2D {
         ///
         void display();
 
+        void setTitle(const std::string& title);
+
         const vec2u& get_size();
 
         /// \brief allow you to set big/small icons to your app
@@ -77,7 +79,9 @@ namespace robot2D {
 
         // todo rewrite this methods //
 
-        static bool isMousePressed(const int& key);
+        static bool isMousePressed(const Mouse& button);
+
+        static bool isKeyboardPressed(const Key& key);
 
         void setCursorPosition(const vec2f& pos);
         vec2f getCursorPos();
@@ -89,7 +93,7 @@ namespace robot2D {
         void create();
         float getDeltaTime();
     protected:
-        priv::WindowImpl* m_windowImpl;
+        static priv::WindowImpl* m_windowImpl;
         friend class App;
 
         //window settings

@@ -22,6 +22,8 @@ source distribution.
 #pragma once
 #include <algorithm>
 
+#include "robot2D/Core/Vector2.hpp"
+
 namespace robot2D{
     template<typename T>
     struct Rect{
