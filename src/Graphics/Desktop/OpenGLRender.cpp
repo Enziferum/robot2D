@@ -52,30 +52,6 @@ namespace robot2D {
 
         OpenGLRender::OpenGLRender() {}
 
-        void OpenGLRender::ortho_projection(Matrix& m, float l, float r, float b,
-                                            float t, float n, float f){
-            m.mat[0][0] = 2 / (r - l);
-
-            m.mat[0][1] = 0;
-            m.mat[0][2] = 0;
-            m.mat[0][3] = 0;
-
-            m.mat[1][0] = 0;
-            m.mat[1][1] = 2 / (t - b);
-            m.mat[1][2] = 0;
-            m.mat[1][3] = 0;
-
-            m.mat[2][0] = 0;
-            m.mat[2][1] = 0;
-            m.mat[2][2] = -2 / (f - n);
-            m.mat[2][3] = 0;
-
-            m.mat[3][0] = -(r + l) / (r - l);
-            m.mat[3][1] = -(t + b) / (t - b);
-            m.mat[3][2] = -(f + n) / (f - n);
-            m.mat[3][3] = 1;
-        }
-
         void OpenGLRender::setup_GL() {
             unsigned int VBO;
 
@@ -115,37 +91,31 @@ namespace robot2D {
             m_spriteShaders.use();
             m_spriteShaders.set_parameter("sprite", 0);
 
-
-            ortho_projection(mat, 0.0f,static_cast<float>(m_size.x),
-                             static_cast<float>(m_size.y),
-                             0.0f, -1.0f, 1.0f);
-
-            m_spriteShaders.set_parameter("projection", &mat.mat[0][0]);
+            m_default.reset(FloatRect(0, 0, static_cast<float>(m_size.x), static_cast<float>(m_size.y)));
+            m_view = m_default;
+            m_spriteShaders.set_parameter("projection", m_view.getTransform().get_matrix());
 
             //todo use as RenderStates
             glEnable(GL_BLEND);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         }
 
+        void OpenGLRender::setView(const View& view) {
+            m_view = view;
+            applyCurrentView();
+        }
+
         void OpenGLRender::render(const RenderStates& states) const {
-
-            if(states.shader) {
-                // it can be done not here, you can get projection from renderTarget getView !
-                // todo remove it in future
-                states.shader->set_parameter("projection", &mat.mat[0][0]);
-            }
-            else {
-                m_spriteShaders.use();
-                auto &color = states.color;
-
+            if(!states.shader){
+                auto& color = states.color;
                 float r = color.r / 255.f;
                 float g = color.g / 255.f;
                 float b = color.b / 255.f;
 
-                m_spriteShaders.set_parameter("spriteColor", r, g, b);
-
                 const robot2D::Transform& transform = states.transform;
 
+                m_spriteShaders.use();
+                m_spriteShaders.set_parameter("spriteColor", r, g, b);
                 m_spriteShaders.set_parameter("model", transform.get_matrix());
             }
 
@@ -165,5 +135,32 @@ namespace robot2D {
             RenderImpl::setSize(size);
             setup_GL();
         }
+
+        IntRect OpenGLRender::getViewport(const View &view) {
+            float width  = static_cast<float>(m_size.x);
+            float height = static_cast<float>(m_size.y);
+            const FloatRect& viewport = view.getViewport();
+
+            return IntRect(static_cast<int>(0.5f + width  * viewport.lx),
+                           static_cast<int>(0.5f + height * viewport.ly),
+                           static_cast<int>(0.5f + width  * viewport.width),
+                           static_cast<int>(0.5f + height * viewport.height));
+        }
+
+        void OpenGLRender::applyCurrentView() {
+            IntRect viewport = getViewport(m_view);
+            int top = m_size.y - (viewport.ly + viewport.height);
+            glViewport(viewport.lx, top, viewport.width, viewport.height);
+            m_spriteShaders.set_parameter("projection", m_view.getTransform().get_matrix());
+        }
+
+        const View& OpenGLRender::getView() {
+            return m_view;
+        }
+
+        const View& OpenGLRender::getDefaultView() {
+            return m_default;
+        }
+
     }
 }

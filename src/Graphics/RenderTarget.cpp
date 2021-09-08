@@ -58,4 +58,16 @@ namespace robot2D {
 
         m_render -> render(states);
     }
+
+    void RenderTarget::setView(const View& view) {
+        m_render->setView(view);
+    }
+
+    const View& RenderTarget::getView() {
+        return m_render->getView();
+    }
+
+    const View& RenderTarget::getDefaultView() {
+        return m_render->getDefaultView();
+    }
 }

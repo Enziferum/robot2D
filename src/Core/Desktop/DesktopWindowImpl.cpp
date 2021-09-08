@@ -113,11 +113,16 @@ namespace robot2D {
                 return ;
             }
 #endif
-            glViewport(0, 0, 800, 600);
+            glViewport(0, 0, m_size.x, m_size.y);
         }
 
         bool DesktopWindowImpl::isOpen() const {
             return !glfwWindowShouldClose(m_window);
+        }
+
+        void DesktopWindowImpl::setTitle(const std::string& title) const {
+            const char* t = title.c_str();
+            glfwSetWindowTitle(m_window, t);
         }
 
         void DesktopWindowImpl::clear(const Color &color) {
@@ -169,7 +174,7 @@ namespace robot2D {
                 event.type = Event::KeyPressed;
             if(action == GLFW_RELEASE)
                 event.type = Event::KeyReleased;
-            event.key.code = key;
+            event.key.code = Int2Key(key);
             window->m_event_queue.push(event);
         }
 
@@ -267,6 +272,14 @@ namespace robot2D {
 
         float DesktopWindowImpl::getDeltaTime() const {
             return glfwGetTime();
+        }
+
+        bool DesktopWindowImpl::isMousePressed(const Mouse& button) {
+            return glfwGetMouseButton(m_window, button);
+        }
+
+        bool DesktopWindowImpl::isKeyboardPressed(const Key &key) {
+            return glfwGetKey(m_window, key2Int(key));
         }
     }
 }

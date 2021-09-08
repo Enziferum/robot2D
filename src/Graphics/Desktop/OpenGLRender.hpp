@@ -23,6 +23,7 @@ source distribution.
 
 #include <robot2D/Graphics/RenderStates.hpp>
 #include <robot2D/Graphics/Shader.hpp>
+#include <robot2D/Graphics/View.hpp>
 
 #include "../RenderImpl.hpp"
 
@@ -41,14 +42,24 @@ namespace robot2D {
 
             void setSize(const vec2u &size) override;
 
+            void setView(const View& view) override;
+
+            const View &getView() override;
+
+            const View &getDefaultView() override;
+
         private:
             void setup_GL();
             void ortho_projection(Matrix& m, float l, float r, float b,
                                   float t, float n, float f);
+            IntRect getViewport(const View& view);
+
+            void applyCurrentView();
         private:
             ShaderHandler m_spriteShaders;
             unsigned int VAO;
-
+            View m_view;
+            View m_default;
             Matrix mat;
         };
     }

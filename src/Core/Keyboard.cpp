@@ -19,18 +19,21 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#pragma once
-
-#include <robot2D/Config.hpp>
+#include "robot2D/Core/Keyboard.hpp"
+#include "robot2D/Core/Window.hpp"
 
 namespace robot2D {
-    struct ROBOT2D_EXPORT_API WindowContext {
-        bool vsync;
-        bool fullscreen;
+    Key Int2Key(const int& code) {
+        return static_cast<Key>(code);
+    }
 
-        WindowContext(const bool& vsync = false, const bool& fullscreen = false);
+    int key2Int(const Key& key) {
+        return static_cast<int>(key);
+    }
 
-        static const WindowContext Default;
-    };
-
+    namespace Keyboard {
+        bool isKeyPressed(const Key& key) {
+            return Window::isKeyboardPressed(key);
+        }
+    }
 }

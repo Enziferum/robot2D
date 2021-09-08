@@ -19,18 +19,10 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#pragma once
-
-#include <robot2D/Config.hpp>
+#include "robot2D/Core/Mouse.hpp"
 
 namespace robot2D {
-    struct ROBOT2D_EXPORT_API WindowContext {
-        bool vsync;
-        bool fullscreen;
+    namespace Mouse {
 
-        WindowContext(const bool& vsync = false, const bool& fullscreen = false);
-
-        static const WindowContext Default;
-    };
-
+    }
 }

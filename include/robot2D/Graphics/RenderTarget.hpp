@@ -24,6 +24,7 @@ source distribution.
 #include "Drawable.hpp"
 #include "Sprite.hpp"
 #include "Shader.hpp"
+#include "View.hpp"
 
 namespace robot2D {
     namespace priv {
@@ -35,6 +36,9 @@ namespace robot2D {
         RenderTarget(const vec2u& size);
         virtual ~RenderTarget() = 0;
 
+        virtual void setView(const View& view);
+        virtual const View& getView();
+        virtual const View& getDefaultView();
         virtual void draw(const RenderStates& states);
         virtual void draw(const Drawable& drawable, const RenderStates& states
                                                     = RenderStates::Default);

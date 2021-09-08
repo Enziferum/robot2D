@@ -42,9 +42,14 @@ namespace robot2D {
             void* get_RawWindow() override;
 
             bool isOpen() const override;
+            void setTitle(const std::string& title) const override;
+
             void clear(const Color &color) override;
             void close() override;
             void display() override;
+
+            bool isMousePressed(const Mouse& button)override;
+            bool isKeyboardPressed(const Key& key)override;
 
             void setIcon(std::vector<robot2D::Texture>& ) override;
 

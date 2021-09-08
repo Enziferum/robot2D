@@ -25,8 +25,9 @@ source distribution.
 
 namespace robot2D {
 
+    priv::WindowImpl* Window::m_windowImpl = nullptr;
+
     Window::Window():
-    m_windowImpl(nullptr),
     m_win_size(800, 600),
     m_name("robot2D"),
     m_context(WindowContext::Default)
@@ -80,6 +81,10 @@ namespace robot2D {
         m_windowImpl -> close();
     }
 
+    void Window::setTitle(const std::string& title) {
+        m_windowImpl -> setTitle(title);
+    }
+
 
     void Window::onResize(const int &w, const int &h) {
         //c++ hack before c++ 17 to set unused parameter
@@ -107,10 +112,13 @@ namespace robot2D {
         return m_win_size;
     }
 
-    bool Window::isMousePressed(const int& key) {
-        return false;
+    bool Window::isMousePressed(const Mouse& button) {
+        return isMousePressed(button);
     }
 
+    bool Window::isKeyboardPressed(const Key& key) {
+        return m_windowImpl ->isKeyboardPressed(key);
+    }
 
     void Window::setCursorPosition(const vec2f &pos) {
     }
@@ -122,4 +130,6 @@ namespace robot2D {
     float Window::getDeltaTime() {
         return m_windowImpl -> getDeltaTime();
     }
+
+
 }

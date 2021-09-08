@@ -87,6 +87,7 @@ set(SRC
         include/robot2D/Graphics/Texture.hpp
         include/robot2D/Graphics/Transform.hpp
         include/robot2D/Graphics/Transformable.hpp
+        include/robot2D/Graphics/View.hpp
 
         #Util
         include/robot2D/Util/ResourceHandler.hpp
@@ -101,6 +102,7 @@ set(SRC
         src/Core/WindowImpl.cpp
         src/Core/WindowImpl.hpp
         src/Core/WindowContext.cpp
+        src/Core/Keyboard.cpp
 
         #Extra
         src/Extra/App.cpp
@@ -121,6 +123,7 @@ set(SRC
         src/Graphics/Transform.cpp
         src/Graphics/Transformable.cpp
         src/Graphics/RenderImpl.cpp
+        src/Graphics/View.cpp
 
         #Util
         src/Util/Logger.cpp
