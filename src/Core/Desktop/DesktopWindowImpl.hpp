@@ -39,7 +39,7 @@ namespace robot2D {
             ~DesktopWindowImpl();
 
             bool pollEvents(Event& event) override;
-            void* get_RawWindow() override;
+            void* getRaw() override;
 
             bool isOpen() const override;
             void setTitle(const std::string& title) const override;

@@ -28,3 +28,4 @@ source distribution.
 #include "Touch.hpp"
 #include "Vector2.hpp"
 #include "Window.hpp"
+#include "WindowContext.hpp"
