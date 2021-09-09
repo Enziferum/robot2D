@@ -47,12 +47,12 @@ namespace robot2D{
 
         EventType type;
 
-        struct SizeEvent{
+        struct SizeEvent {
             unsigned int widht;
             unsigned int heigth;
         };
 
-        struct MouseMoveEvent{
+        struct MouseMoveEvent {
             float x;
             float y;
         };
@@ -61,7 +61,7 @@ namespace robot2D{
             Key code;
         };
 
-        struct MouseButtonEvent{
+        struct MouseButtonEvent {
             enum buttons {
                 left = 0,
                 right = 1,
@@ -72,7 +72,7 @@ namespace robot2D{
             int y;
         };
 
-        struct MouseWheelEvent{
+        struct MouseWheelEvent {
             float scroll_x;
             float scroll_y;
         };

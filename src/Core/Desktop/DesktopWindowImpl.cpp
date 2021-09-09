@@ -66,7 +66,7 @@ namespace robot2D {
             return false;
         }
 
-        void* DesktopWindowImpl::get_RawWindow() {
+        void* DesktopWindowImpl::getRaw() {
             return static_cast<void*>(m_window);
         }
 
@@ -85,7 +85,6 @@ namespace robot2D {
 
             GLFWmonitor* primary = m_context.fullscreen ? glfwGetPrimaryMonitor() : nullptr;
 
-            //todo window params
             /* Create a windowed mode window and its OpenGL context */
             m_window = glfwCreateWindow(m_size.x, m_size.y,
                                         m_name.c_str(), primary, nullptr);
@@ -238,10 +237,6 @@ namespace robot2D {
             event.type = Event::Resized;
             event.size.widht = w;
             event.size.heigth = h;
-            //todo outside
-
-//            window->m_win_size = vec2u((unsigned int)(w),
-//                                       (unsigned int)(h));
 
             window->m_event_queue.push(event);
         }

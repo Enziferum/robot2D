@@ -69,10 +69,6 @@ set(SRC
         include/robot2D/Core/Keyboard.hpp
         include/robot2D/Core/Vector2.hpp
 
-        #Extra
-        include/robot2D/Extra/App.hpp
-        include/robot2D/Extra/IStateMachine.hpp
-        include/robot2D/Extra/State.hpp
 
         #Graphics
         include/robot2D/Graphics/Color.hpp
@@ -103,11 +99,7 @@ set(SRC
         src/Core/WindowImpl.hpp
         src/Core/WindowContext.cpp
         src/Core/Keyboard.cpp
-
-        #Extra
-        src/Extra/App.cpp
-        src/Extra/State.cpp
-        src/Extra/IStateMachine.cpp
+        src/Core/Mouse.cpp
 
         #Graphics
         src/Graphics/Color.cpp

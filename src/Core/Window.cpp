@@ -98,8 +98,8 @@ namespace robot2D {
         m_windowImpl -> setIcon(icons);
     }
 
-    void* Window::get_RawWindow() const {
-        return m_windowImpl -> get_RawWindow();
+    void* Window::getRaw() const {
+        return m_windowImpl -> getRaw();
     }
 
     void Window::create() {
@@ -108,7 +108,7 @@ namespace robot2D {
             throw std::runtime_error("Can't create WindowImpl");
     }
 
-    const vec2u& Window::get_size() {
+    const vec2u& Window::getSize() {
         return m_win_size;
     }
 
@@ -118,13 +118,6 @@ namespace robot2D {
 
     bool Window::isKeyboardPressed(const Key& key) {
         return m_windowImpl ->isKeyboardPressed(key);
-    }
-
-    void Window::setCursorPosition(const vec2f &pos) {
-    }
-
-    vec2f Window::getCursorPos() {
-        return vec2f();
     }
 
     float Window::getDeltaTime() {

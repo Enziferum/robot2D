@@ -61,7 +61,6 @@ namespace robot2D {
             Transformable::setScale(robot2D::vec2f(factor.x / m_size.x,
                                                    factor.y / m_size.y));
 
-        //Transformable::setScale(factor);
     }
 
     void Sprite::setColor(const Color& color) {

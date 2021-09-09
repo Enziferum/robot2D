@@ -150,16 +150,6 @@ namespace robot2D {
                     { xpos + w, ypos,       1.0f, 0.0f }
             };
 
-//            float vertices[6][4] = {
-//                    { xpos,     ypos + h,   0.0f, 1.0f },
-//                    { xpos + w, ypos,       1.0f, 0.0f },
-//                    { xpos,     ypos,       0.0f, 0.0f },
-//
-//                    { xpos,     ypos + h,   0.0f, 1.0f },
-//                    { xpos + w, ypos + h,   1.0f, 1.0f },
-//                    { xpos + w, ypos,       1.0f, 0.0f }
-//            };
-
             renderBuffer buffer = {
                     ch.textureID,
                     vertices
@@ -168,10 +158,6 @@ namespace robot2D {
 
             copy_pos.x += (ch.advance >> 6) * m_scale; // bitshift by 6 to get value in pixels (1/64th times 2^6 = 64)
         }
-
-        //do in render unbind
-        //glBindVertexArray(0);
-        //glBindTexture(GL_TEXTURE_2D, 0);
 
         m_needupdate = false;
     }

@@ -41,7 +41,7 @@ namespace robot2D {
             static WindowImpl* create(const robot2D::vec2u& size,
                                       const std::string& name, WindowContext& context);
 
-            virtual void* get_RawWindow() = 0;
+            virtual void* getRaw() = 0;
 
             virtual bool isOpen() const = 0;
             virtual void setTitle(const std::string& title) const = 0;

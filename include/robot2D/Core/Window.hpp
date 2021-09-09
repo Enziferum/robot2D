@@ -72,25 +72,22 @@ namespace robot2D {
 
         void setTitle(const std::string& title);
 
-        const vec2u& get_size();
+        const vec2u& getSize();
 
         /// \brief allow you to set big/small icons to your app
         void setIcon(std::vector<Texture>& icons);
 
-        // todo rewrite this methods //
 
         static bool isMousePressed(const Mouse& button);
 
         static bool isKeyboardPressed(const Key& key);
 
-        void setCursorPosition(const vec2f& pos);
-        vec2f getCursorPos();
-
-        void* get_RawWindow() const;
+        void* getRaw() const;
     protected:
         virtual void onResize(const int& w, const int& h);
     private:
         void create();
+
         float getDeltaTime();
     protected:
         static priv::WindowImpl* m_windowImpl;
