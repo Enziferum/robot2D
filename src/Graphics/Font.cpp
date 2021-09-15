@@ -20,12 +20,12 @@ source distribution.
 *********************************************************************/
 
 #include <iostream>
-#include <ext/glad.h>
+#include <robot2D/Graphics/GL.hpp>
 
 #include "ft2build.h"
 #include FT_FREETYPE_H
 
-#include "robot2D/Graphics/Font.h"
+#include "robot2D/Graphics/Font.hpp"
 
 namespace robot2D{
     const short chars_cache = 128;

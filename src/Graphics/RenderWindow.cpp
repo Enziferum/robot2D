@@ -19,8 +19,9 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include <ext/glad.h>
-#include "robot2D/Graphics/RenderWindow.h"
+
+#include <robot2D/Graphics/GL.hpp>
+#include "robot2D/Graphics/RenderWindow.hpp"
 
 namespace robot2D{
 
@@ -30,17 +31,16 @@ namespace robot2D{
     {
     }
 
-    RenderWindow::~RenderWindow() {
+    RenderWindow::RenderWindow(const vec2u &size, const std::string &name,
+                               WindowContext context):
+                               Window(size, name, context),
+                               RenderTarget(m_win_size)
+                               {}
 
+
+    //todo applyView function
+    void RenderWindow::onResize(const int& width, const int& height) {
+        m_size = vec2u(width, height);
     }
 
-    void RenderWindow::onResize(const int &w, const int &h) {
-        //todo update views
-        glViewport(0, 0, w, h);
-    }
-
-    RenderWindow::RenderWindow(const vec2u &size, const std::string &name, const bool &vsync) : Window(size, name,
-                                                                                                       vsync),
-                                                                                                RenderTarget(m_win_size) {
-    }
 }

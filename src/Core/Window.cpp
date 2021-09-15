@@ -19,173 +19,118 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include <ext/glad.h>
-#include "robot2D/Core/Window.h"
+#include <robot2D/Core/Window.hpp>
+#include <robot2D/Util/Logger.hpp>
+#include "WindowImpl.hpp"
 
-namespace robot2D{
+namespace robot2D {
+
+    priv::WindowImpl* Window::m_windowImpl = nullptr;
 
     Window::Window():
-    m_window(nullptr),
     m_win_size(800, 600),
     m_name("robot2D"),
-    m_vsync(true){
-        setup();
+    m_context(WindowContext::Default)
+    {
+        Window::create();
     }
 
-    Window::Window(const vec2u& size, const std::string& name, const bool& vsync):
-            m_window(nullptr),
+    Window::Window(const vec2u& size, const std::string& name, WindowContext& context):
             m_win_size(size.x, size.y),
             m_name(name),
-            m_vsync(vsync){
-        setup();
+            m_context(context)
+            {
+        Window::create();
     }
 
 
     Window::~Window() {
-        glfwTerminate();
-    }
-
-
-    void Window::setup() {
-        /* Initialize the library */
-        if (!glfwInit())
-            return;
-
-
-        //todo window params
-        /* Create a windowed mode window and its OpenGL context */
-        m_window = glfwCreateWindow(m_win_size.x, m_win_size.y,
-                                    m_name.c_str(), NULL, NULL);
-        if (!m_window)
-        {
-            glfwTerminate();
-            exit(1);
+        if(m_windowImpl != nullptr) {
+            delete m_windowImpl;
+            m_windowImpl = nullptr;
         }
-
-        /* Make the window's context current */
-        glfwMakeContextCurrent(m_window);
-        if(m_vsync)
-            glfwSwapInterval(1);
-
-        setup_WGL();
-        setup_callbacks();
     }
 
-    void Window::setup_callbacks() {
-        if(m_window == nullptr)
-            return;
-        glfwSetWindowUserPointer(m_window, this);
-        glfwSetKeyCallback(m_window, key_callback);
-        glfwSetCursorPosCallback(m_window, cursor_callback);
-        glfwSetScrollCallback(m_window, mouseWhell_callback);
-        glfwSetMouseButtonCallback(m_window, mouse_callback);
-        glfwSetFramebufferSizeCallback(m_window, view_callback);
-        //glfwSetCharCallback(m_window);
-    }
 
     bool Window::isOpen() const {
-        return !glfwWindowShouldClose(m_window);
+        return m_windowImpl -> isOpen();
     }
 
     bool Window::pollEvents(Event& event) {
-        if(m_event_queue.empty())
+        if(m_windowImpl == nullptr)
             return false;
-        event = m_event_queue.front();
-        m_event_queue.pop();
 
-        return m_event_queue.empty();
+        if(m_windowImpl -> pollEvents(event)) {
+            if(event.type == Event::Resized)
+                onResize(event.size.widht, event.size.heigth);
+            return true;
+        }
+
+        return false;
     }
 
     void Window::clear(const Color& color) {
-        glClearColor(color.r, color.g, color.b, color.alpha);
-        glClear(GL_COLOR_BUFFER_BIT);
+       m_windowImpl -> clear(color);
     }
 
     void Window::display() {
-        glfwSwapBuffers(m_window);
-        glfwPollEvents();
-    }
-
-    void Window::key_callback(GLFWwindow* wnd, int key, int scancode,
-                              int action, int mods) {
-        Window* window = static_cast<Window*>(glfwGetWindowUserPointer(wnd));
-
-        //todo add press status
-        Event event;
-        if(action == GLFW_REPEAT || action == GLFW_PRESS) {
-            event.type = Event::KeyPressed;
-        }
-        if(action == GLFW_RELEASE){
-            event.type = Event::KeyReleased;
-        }
-        event.key.code = key;
-        window->m_event_queue.push(event);
+        m_windowImpl -> display();
     }
 
     void Window::close() {
-        glfwSetWindowShouldClose(m_window, 1);
+        m_windowImpl -> close();
     }
 
-    void Window::cursor_callback(GLFWwindow* wnd, double xpos, double ypos) {
-        Window* window = static_cast<Window*>(glfwGetWindowUserPointer(wnd));
-
-        Event event;
-        event.type = Event::MouseMoved;
-
-        window->m_event_queue.push(event);
+    void Window::setTitle(const std::string& title) {
+        m_windowImpl -> setTitle(title);
     }
 
-    void Window::mouseWhell_callback(GLFWwindow* wnd, double xpos, double ypos) {
-        Window* window = static_cast<Window*>(glfwGetWindowUserPointer(wnd));
 
-        Event event;
-        event.type = Event::MouseWheel;
-
-        window->m_event_queue.push(event);
+    void Window::onResize(const int &w, const int &h) {
+        //c++ hack before c++ 17 to set unused parameter
+        (void)(w);
+        //c++ hack before c++ 17 to set unused parameter
+        (void)(h);
     }
 
-    void Window::setup_WGL() {
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-#ifdef __APPLE__
-        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-#endif
-
-        if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-        {
-            //log(Error, "Failed to initialize GLAD");
-            return ;
-        }
-
-        //todo in rendertarget
-        glViewport(0, 0, m_win_size.x, m_win_size.y);
+    void Window::setIcon(std::vector<Texture>& icons) {
+        m_windowImpl -> setIcon(icons);
     }
 
-    void Window::mouse_callback(GLFWwindow* wnd, int button, int action, int mods) {
-        Window* window = static_cast<Window*>(glfwGetWindowUserPointer(wnd));
-
-        if(action == GLFW_PRESS) {
-            Event event;
-            event.type = Event::MouseButton;
-            event.mouse.btn = button;
-            double xpos, ypos;
-            glfwGetCursorPos(wnd, &xpos, &ypos);
-            event.mouse.x = int(xpos);
-            event.mouse.y = int(ypos);
-            window->m_event_queue.push(event);
-        }
+    void* Window::getRaw() const {
+        return m_windowImpl -> getRaw();
     }
 
-    const vec2u& Window::get_size() {
+    void Window::create() {
+        m_windowImpl = priv::WindowImpl::create(m_win_size, m_name, m_context);
+        if(m_windowImpl == nullptr)
+            throw std::runtime_error("Can't create WindowImpl");
+    }
+
+    const vec2u& Window::getSize() {
         return m_win_size;
     }
 
-    void Window::view_callback(GLFWwindow* wnd, int w, int h) {
-        Window* window = static_cast<Window*>(glfwGetWindowUserPointer(wnd));
-        window->onResize(w, h);
+    bool Window::isMousePressed(const Mouse& button) {
+        return isMousePressed(button);
     }
 
-    void Window::onResize(const int &w, const int &h) {}
+    bool Window::isKeyboardPressed(const Key& key) {
+        return m_windowImpl ->isKeyboardPressed(key);
+    }
+
+    float Window::getDeltaTime() {
+        return m_windowImpl -> getDeltaTime();
+    }
+
+    void Window::setDrapDropCallback(Window::DrapDropCallback&& callback) {
+        m_windowImpl -> setDrapDropCallback(std::move(callback));
+    }
+
+    void Window::setMouseCursorVisible(const bool& flag) {
+        m_windowImpl ->setMouseCursorVisible(flag);
+    }
+
+
 }

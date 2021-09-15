@@ -21,13 +21,11 @@ source distribution.
 
 #include <iostream>
 
-#include <ext/glad.h>
+#include <robot2D/Graphics/GL.hpp>
+#include "robot2D/Graphics/Text.hpp"
+#include "robot2D/Graphics/RenderTarget.hpp"
 
-
-#include "robot2D/Graphics/Text.h"
-#include "robot2D/Graphics/RenderTarget.h"
-
-namespace robot2D{
+namespace robot2D {
     constexpr int buffer_sz = 24;
 
     const char* vertexText = "#version 330 core\n"
@@ -52,12 +50,12 @@ namespace robot2D{
                                        "}\0";
 
     Text::Text():
+        m_buffer(),
         m_needupdate(false),
-        m_color(Color::White),
         m_text(""),
         m_pos(),
         m_scale(1.f),
-        m_buffer()
+        m_color(Color::White)
         {
             setup_GL();
         }
@@ -84,8 +82,8 @@ namespace robot2D{
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
 
-        m_textShader.createShader(GL_VERTEX_SHADER, vertexText, false);
-        m_textShader.createShader(GL_FRAGMENT_SHADER, fragmentText, false);
+        m_textShader.createShader(shaderType::vertex, vertexText, false);
+        m_textShader.createShader(shaderType::fragment, fragmentText, false);
 
         m_textShader.use();
         m_textShader.set_parameter("text", 0);
@@ -152,16 +150,6 @@ namespace robot2D{
                     { xpos + w, ypos,       1.0f, 0.0f }
             };
 
-//            float vertices[6][4] = {
-//                    { xpos,     ypos + h,   0.0f, 1.0f },
-//                    { xpos + w, ypos,       1.0f, 0.0f },
-//                    { xpos,     ypos,       0.0f, 0.0f },
-//
-//                    { xpos,     ypos + h,   0.0f, 1.0f },
-//                    { xpos + w, ypos + h,   1.0f, 1.0f },
-//                    { xpos + w, ypos,       1.0f, 0.0f }
-//            };
-
             renderBuffer buffer = {
                     ch.textureID,
                     vertices
@@ -170,10 +158,6 @@ namespace robot2D{
 
             copy_pos.x += (ch.advance >> 6) * m_scale; // bitshift by 6 to get value in pixels (1/64th times 2^6 = 64)
         }
-
-        //do in render unbind
-        //glBindVertexArray(0);
-        //glBindTexture(GL_TEXTURE_2D, 0);
 
         m_needupdate = false;
     }

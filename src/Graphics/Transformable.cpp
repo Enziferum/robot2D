@@ -18,16 +18,18 @@ and must not be misrepresented as being the original software.
 3. This notice may not be removed or altered from any
 source distribution.
 *********************************************************************/
+
 #include <cmath>
-#include "robot2D/Graphics/Transformable.h"
+#include "robot2D/Graphics/Transformable.hpp"
 
 namespace robot2D{
     Transformable::Transformable()
-        : m_rotation(0.f),
-        m_pos(),
-        m_origin(),
-        m_tranform(),
-        m_scale_factor(),
+        :
+        m_pos(0, 0),
+        m_origin(0, 0),
+        m_scale_factor(1, 1),
+        m_rotation(0.f),
+        m_transform(),
         m_update_transform(false){
 
     }
@@ -43,7 +45,7 @@ namespace robot2D{
         return m_pos;
     }
 
-    void Transformable::setOrigin(const vec2f &origin) {
+    void Transformable::setOrigin(const vec2f& origin) {
         m_origin = origin;
         m_update_transform = true;
     }
@@ -77,7 +79,7 @@ namespace robot2D{
         setPosition(vec2f(m_pos.x + offset.x, m_pos.y + offset.y));
     }
 
-    void Transformable::scale(const vec2f &factor) {
+    void Transformable::scale(const vec2f& factor) {
         setScale(vec2f(m_scale_factor.x * factor.x,
                        m_scale_factor.y * factor.y));
     }
@@ -88,23 +90,36 @@ namespace robot2D{
 
     const Transform& Transformable::getTransform() const {
         if(m_update_transform){
-            //convert to radians
-            float angle = -m_rotation * 3.141592654f / 180.f;
+            float angle  = -m_rotation * 3.141592654f / 180.f;
             float cosine = static_cast<float>(std::cos(angle));
-            float sine = static_cast<float>(std::sin(angle));
-            float sxc    = m_scale_factor.x * cosine;
-            float syc    = m_scale_factor.y * cosine;
-            float sxs    = m_scale_factor.x * sine;
-            float sys    = m_scale_factor.y * sine;
+            float sine   = static_cast<float>(std::sin(angle));
+            float sxc    = m_scale_factor.x  * cosine;
+            float syc    = m_scale_factor.y  * cosine;
+            float sxs    = m_scale_factor.x  * sine;
+            float sys    = m_scale_factor.y  * sine;
             float tx     = -m_origin.x * sxc - m_origin.y * sys + m_pos.x;
             float ty     =  m_origin.x * sxs - m_origin.y * syc + m_pos.y;
 
-            m_tranform = Transform(sxc, sys, tx,
-                                   -sxs, syc, ty,
-                                   0.f, 0.f, 1.f);
-
+            m_transform = Transform( sxc, sys, tx,
+                                     -sxs, syc, ty,
+                                     0.f, 0.f, 1.f);
             m_update_transform = false;
         }
-        return m_tranform;
+        return m_transform;
     }
+
+    void Transformable::setSize(const vec2f& size) {
+        setSize(size.x, size.y);
+    }
+
+    void Transformable::setSize(const float& x, const float& y) {
+        m_size.x = x;
+        m_size.y = y;
+        m_update_transform = true;
+    }
+
+    vec2f& Transformable::getSize() {
+        return m_size;
+    }
+
 }
