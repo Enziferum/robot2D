@@ -19,8 +19,8 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include "robot2D/Graphics/RenderTarget.hpp"
-#include "robot2D/Graphics/Sprite.hpp"
+#include <robot2D/Graphics/RenderTarget.hpp>
+#include <robot2D/Graphics/Sprite.hpp>
 
 namespace robot2D {
 

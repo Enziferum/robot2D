@@ -19,15 +19,18 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include "robot2D/Util/Logger.hpp"
+#include <robot2D/Graphics/RenderStates.hpp>
 
-namespace logger {
-    bool debug = true;
+namespace robot2D{
+    const RenderStates RenderStates::Default;
 
-    void tprintf(logType type, const char* msg){
-        if(type == logType::info)
-            std::cout << msg;
-        if(type == logType::error)
-            std::cerr << msg;
+    RenderStates::RenderStates():
+    texture(nullptr),
+    shader(nullptr),
+    customVao(nullptr),
+    color(robot2D::Color::White),
+    transform() {
+
     }
+
 }

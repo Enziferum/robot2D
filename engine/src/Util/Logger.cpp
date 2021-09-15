@@ -19,6 +19,15 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include "robot2D/Core/Event.hpp"
+#include <robot2D/Util/Logger.hpp>
 
-namespace robot2D {}
+namespace logger {
+    bool debug = true;
+
+    void tprintf(logType type, const char* msg){
+        if(type == logType::info)
+            std::cout << msg;
+        if(type == logType::error)
+            std::cerr << msg;
+    }
+}

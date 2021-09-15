@@ -24,8 +24,8 @@ source distribution.
 #include <tuple>
 
 #include <robot2D/Graphics/GL.hpp>
-#include "robot2D/Graphics/Shader.hpp"
-#include "robot2D/Util/Logger.hpp"
+#include <robot2D/Graphics/Shader.hpp>
+#include <robot2D/Util/Logger.hpp>
 
 namespace robot2D{
     ShaderHandler::ShaderHandler() {

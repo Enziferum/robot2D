@@ -19,18 +19,34 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include "robot2D/Graphics/RenderStates.hpp"
+#include <robot2D/Graphics/Color.hpp>
 
 namespace robot2D{
-    const RenderStates RenderStates::Default;
+    Color::Color():
+    r(0),
+    g(0),
+    b(0),
+    alpha(255){}
 
-    RenderStates::RenderStates():
-    texture(nullptr),
-    shader(nullptr),
-    customVao(nullptr),
-    color(robot2D::Color::White),
-    transform() {
+
+    Color::Color(unsigned int r, unsigned int g, unsigned int b, unsigned int alpha):r(r),
+    g(g), b(b), alpha(alpha){
 
     }
 
+
+    const Color Color::Black(0, 0, 0);
+    const Color Color::White(255, 255, 255);
+    const Color Color::Red(255, 0, 0);
+    const Color Color::Green(0, 255, 0);
+    const Color Color::Blue(0, 0, 255);
+    const Color Color::Yellow(255, 255, 0);
+    const Color Color::Magenta(255, 0, 255);
+    const Color Color::Cyan(0, 255, 255);
+    const Color Color::Transparent(0, 0, 0, 0);
+
+    Color Color::from_gl(float r, float g, float b, float alpha) {
+        return Color((unsigned int)(r*255), (unsigned int)(g*255), (unsigned int)(b*255),
+                     (unsigned int)(alpha * 255));
+    }
 }

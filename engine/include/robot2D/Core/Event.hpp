@@ -25,7 +25,7 @@ source distribution.
 #include "Mouse.hpp"
 #include "Keyboard.hpp"
 
-namespace robot2D{
+namespace robot2D {
     /**
      * Describe OS-Based event to one format
      */

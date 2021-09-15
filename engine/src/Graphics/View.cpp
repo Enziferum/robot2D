@@ -20,7 +20,7 @@ source distribution.
 *********************************************************************/
 
 #include <cmath>
-#include "robot2D/Graphics/View.hpp"
+#include <robot2D/Graphics/View.hpp>
 
 namespace robot2D {
 
