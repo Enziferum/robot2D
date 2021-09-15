@@ -34,7 +34,8 @@ namespace robot2D {
         m_window(nullptr),
         m_size(800, 600),
         m_name("Robot2D"),
-        m_context()
+        m_context(),
+        m_cursorVisible(true)
         {
             setup();
         }
@@ -44,7 +45,8 @@ namespace robot2D {
                 m_window(nullptr),
                 m_size(size),
                 m_name(name),
-                m_context(context){
+                m_context(context),
+                m_cursorVisible(true){
             setup();
         }
 
@@ -151,6 +153,9 @@ namespace robot2D {
             glfwSetFramebufferSizeCallback(m_window, view_callback);
             glfwSetWindowSizeCallback(m_window, size_callback);
             glfwSetWindowMaximizeCallback(m_window, maximized_callback);
+            glfwSetDropCallback(m_window, dragdrop_callback);
+            glfwSetWindowFocusCallback(m_window, focus_callback);
+            glfwSetCharCallback(m_window, text_callback);
         }
 
         void DesktopWindowImpl::close_callback(GLFWwindow* wnd) {
@@ -276,5 +281,46 @@ namespace robot2D {
         bool DesktopWindowImpl::isKeyboardPressed(const Key &key) {
             return glfwGetKey(m_window, key2Int(key));
         }
+
+        void DesktopWindowImpl::dragdrop_callback(GLFWwindow* wnd, int count, const char** paths) {
+            DesktopWindowImpl* window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
+            std::vector<std::string> outputPaths;
+            for(int it = 0; it < count; ++it) {
+                if(paths[it] != nullptr)
+                    outputPaths.emplace_back(paths[it]);
+            }
+            if(window -> m_dragdrop_function)
+                window -> m_dragdrop_function(outputPaths);
+        }
+
+        void DesktopWindowImpl::setDrapDropCallback(DrapDropCallback&& callback) {
+            m_dragdrop_function = callback;
+        }
+
+        void DesktopWindowImpl::setMouseCursorVisible(const bool& flag) {
+            m_cursorVisible = flag;
+            glfwSetInputMode(m_window, GLFW_CURSOR, (m_cursorVisible ? GLFW_CURSOR_NORMAL: GLFW_CURSOR_HIDDEN));
+        }
+
+        void DesktopWindowImpl::focus_callback(GLFWwindow* wnd, int focus) {
+            DesktopWindowImpl* window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
+            Event event{};
+            if(focus) {
+                event.type == Event::GainFocus;
+            } else {
+                event.type == Event::LostFocus;
+            }
+
+            window->m_event_queue.push(event);
+        }
+
+        void DesktopWindowImpl::text_callback(GLFWwindow *wnd, unsigned int c) {
+            DesktopWindowImpl* window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
+            Event event{};
+            event.type = Event::TextEntered;
+            event.text.symbol = c;
+            window->m_event_queue.push(event);
+        }
+
     }
 }

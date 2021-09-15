@@ -22,6 +22,7 @@ source distribution.
 #pragma once
 
 #include <vector>
+#include <functional>
 
 #include <robot2D/Graphics/Color.hpp>
 #include <robot2D/Graphics/Texture.hpp>
@@ -32,6 +33,8 @@ namespace robot2D {
 
     namespace priv {
         class WindowImpl {
+        protected:
+            using DrapDropCallback = std::function<void(std::vector<std::string>)>;
         public:
             WindowImpl();
             virtual ~WindowImpl() = 0;
@@ -52,8 +55,9 @@ namespace robot2D {
             virtual bool isKeyboardPressed(const Key& key) = 0;
 
             virtual void setIcon(std::vector<robot2D::Texture>& icons) = 0;
-
+            virtual void setDrapDropCallback(DrapDropCallback&& callback) = 0;
             virtual float getDeltaTime()const = 0;
+            virtual void setMouseCursorVisible(const bool& flag) = 0;
         };
     }
 }

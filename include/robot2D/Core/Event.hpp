@@ -42,6 +42,7 @@ namespace robot2D{
             MouseReleased,
             KeyPressed,
             KeyReleased,
+            TextEntered,
             Count
         };
 
@@ -77,12 +78,17 @@ namespace robot2D{
             float scroll_y;
         };
 
+        struct TextEnterEvent {
+            unsigned int symbol;
+        };
+
         union {
             SizeEvent size;
             MouseMoveEvent move;
             MouseButtonEvent mouse;
             KeyboardEvent key;
             MouseWheelEvent wheel;
+            TextEnterEvent text;
         };
 
     };

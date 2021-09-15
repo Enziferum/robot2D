@@ -55,6 +55,10 @@ namespace robot2D {
 
             float getDeltaTime() const override;
 
+            void setDrapDropCallback(DrapDropCallback &&callback) override;
+
+
+            void setMouseCursorVisible(const bool& flag);
         private:
             void setup();
             void setup_callbacks();
@@ -69,13 +73,19 @@ namespace robot2D {
             static void size_callback(GLFWwindow* window, int w, int h);
             static void view_callback(GLFWwindow* window, int w, int h);
             static void maximized_callback(GLFWwindow* window, int state);
+            static void dragdrop_callback(GLFWwindow* wnd, int count, const char** paths);
+            static void focus_callback(GLFWwindow* wnd, int focus);
+            static void text_callback(GLFWwindow* wnd, unsigned int);
         private:
             GLFWwindow* m_window;
             std::queue<Event> m_event_queue;
 
+            bool m_cursorVisible;
+
             vec2u m_size;
             std::string m_name;
             WindowContext m_context;
+            std::function<void(std::vector<std::string>)> m_dragdrop_function;
         };
     }
 }
