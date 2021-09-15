@@ -19,55 +19,27 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include <robot2D/Graphics/GL.hpp>
-#include "robot2D/Graphics/RenderTarget.hpp"
+#include "WindowImpl.hpp"
 
-#include "RenderImpl.hpp"
+//just now not check OS, only main desktop
+#include "Desktop/DesktopWindowImpl.hpp"
+
+using WindowImplType = robot2D::priv::DesktopWindowImpl;
 
 namespace robot2D {
+    namespace priv {
 
-    RenderTarget::RenderTarget(const vec2u& size):
-    m_render(nullptr),
-    m_size(size) {
-        setup();
-    }
+        WindowImpl::WindowImpl() {}
+        WindowImpl::~WindowImpl() {}
 
-    RenderTarget::~RenderTarget() {
-        if(m_render){
-            delete m_render;
-            m_render = nullptr;
+        WindowImpl* WindowImpl::create() {
+            return new WindowImplType();
         }
-    }
 
-    void RenderTarget::setup() {
-        if(!m_render)
-            m_render = robot2D::priv::RenderImpl::create();
+        WindowImpl* WindowImpl::create(const vec2u &size, const std::string &name, WindowContext &context) {
+            return new WindowImplType(size, name, context);
+        }
 
-        m_render -> setSize(m_size);
-    }
-
-    void RenderTarget::draw(const Drawable& drawable, const RenderStates& states) {
-        drawable.draw(*this, states);
-    }
-
-
-    void RenderTarget::draw(const RenderStates& states) {
-
-        if(!m_render)
-            return;
-
-        m_render -> render(states);
-    }
-
-    void RenderTarget::setView(const View& view) {
-        m_render->setView(view);
-    }
-
-    const View& RenderTarget::getView() {
-        return m_render->getView();
-    }
-
-    const View& RenderTarget::getDefaultView() {
-        return m_render->getDefaultView();
     }
 }
+

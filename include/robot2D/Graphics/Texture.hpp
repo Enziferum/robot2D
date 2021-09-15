@@ -19,28 +19,32 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
+#pragma once
 
-#include <robot2D/Graphics/GL.hpp>
-#include "robot2D/Graphics/RenderWindow.hpp"
+#include <string>
+#include "robot2D/Core/Vector2.hpp"
 
 namespace robot2D{
+    class Texture{
+    public:
+        Texture();
+        ~Texture();
 
-    RenderWindow::RenderWindow():
-    Window(),
-    RenderTarget(m_win_size)
-    {
-    }
+        bool loadFromFile(const std::string& path, bool alpha = false);
 
-    RenderWindow::RenderWindow(const vec2u &size, const std::string &name,
-                               WindowContext context):
-                               Window(size, name, context),
-                               RenderTarget(m_win_size)
-                               {}
+        vec2u& get_size();
+        const vec2u& get_size() const;
 
+        void generate(const vec2u& size, void* data);
+        const unsigned int& get_id()const;
+        void bind()const;
 
-    //todo applyView function
-    void RenderWindow::onResize(const int& width, const int& height) {
-        m_size = vec2u(width, height);
-    }
-
+        unsigned char* get_pixels() const;
+    private:
+        void setup_GL();
+    private:
+        vec2u m_size;
+        unsigned int m_texture;
+        unsigned char* buffer;
+    };
 }

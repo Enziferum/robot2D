@@ -19,28 +19,18 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
+#pragma once
 
-#include <robot2D/Graphics/GL.hpp>
-#include "robot2D/Graphics/RenderWindow.hpp"
+#include <robot2D/Config.hpp>
 
-namespace robot2D{
+namespace robot2D {
+    struct ROBOT2D_EXPORT_API WindowContext {
+        bool vsync;
+        bool fullscreen;
 
-    RenderWindow::RenderWindow():
-    Window(),
-    RenderTarget(m_win_size)
-    {
-    }
+        WindowContext(const bool& vsync = false, const bool& fullscreen = false);
 
-    RenderWindow::RenderWindow(const vec2u &size, const std::string &name,
-                               WindowContext context):
-                               Window(size, name, context),
-                               RenderTarget(m_win_size)
-                               {}
-
-
-    //todo applyView function
-    void RenderWindow::onResize(const int& width, const int& height) {
-        m_size = vec2u(width, height);
-    }
+        static const WindowContext Default;
+    };
 
 }

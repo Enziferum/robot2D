@@ -19,10 +19,10 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include "robot2D/Graphics/RenderTarget.h"
-#include "robot2D/Graphics/Sprite.h"
+#include "robot2D/Graphics/RenderTarget.hpp"
+#include "robot2D/Graphics/Sprite.hpp"
 
-namespace robot2D{
+namespace robot2D {
 
     Sprite::Sprite(): m_texture(nullptr),
     m_color(Color::White){
@@ -34,6 +34,7 @@ namespace robot2D{
             auto size = texture.get_size();
             //it's not correct for us
             m_texture_rect = IntRect(0, 0, size.x, size.y);
+            setSize(size.x, size.y);
         }
         m_texture = &texture;
     }
@@ -44,22 +45,22 @@ namespace robot2D{
     }
 
     FloatRect Sprite::getLocalBounds() const {
-        float w = static_cast<float>(std::abs(m_texture_rect.width));
-        float h = static_cast<float>(std::abs(m_texture_rect.height));
+        float w = std::abs(m_size.x);
+        float h = std::abs(m_size.y);
 
         return FloatRect(0.f, 0.f, w, h);
     }
 
-    FloatRect Sprite::getGlobalBounds() const {
-        auto bounds = getLocalBounds();
-        const auto& transform = getTransform();
-        auto res = transform.transformRect(bounds);
-        return res;
+    FloatRect Sprite::getGlobalBounds() const {;
+        return getTransform().transformRect(getLocalBounds());
     }
 
     void Sprite::setScale(const vec2f& factor) {
         m_texture_rect = IntRect (0, 0, factor.x, factor.y);
-        Transformable::setScale(factor);
+        if (factor.x < m_size.x && factor.y < m_size.y)
+            Transformable::setScale(robot2D::vec2f(factor.x / m_size.x,
+                                                   factor.y / m_size.y));
+
     }
 
     void Sprite::setColor(const Color& color) {
@@ -72,7 +73,9 @@ namespace robot2D{
 
     void Sprite::draw(RenderTarget& target, RenderStates states) const {
         if(m_texture){
-            states.transform *= getTransform();
+            auto t = getTransform();
+            t = t.scale(m_size);
+            states.transform *= t;
             states.texture = m_texture;
             states.color = m_color;
             target.draw(states);

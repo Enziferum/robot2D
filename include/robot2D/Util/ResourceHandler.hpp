@@ -19,28 +19,29 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
+#pragma once
+#include <unordered_map>
+#include <string>
+#include <memory>
 
-#include <robot2D/Graphics/GL.hpp>
-#include "robot2D/Graphics/RenderWindow.hpp"
+#include <robot2D/Config.hpp>
 
 namespace robot2D{
+    template<typename T, typename ID = std::string>
+    class ROBOT2D_EXPORT_API ResourceHandler{
+    public:
+        using Ptr = std::unique_ptr<T>;
+    public:
+        ResourceHandler();
+        ~ResourceHandler() = default;
 
-    RenderWindow::RenderWindow():
-    Window(),
-    RenderTarget(m_win_size)
-    {
-    }
+        template<typename ... Args>
+        bool loadFromFile(const ID& idx, Args&&... args);
 
-    RenderWindow::RenderWindow(const vec2u &size, const std::string &name,
-                               WindowContext context):
-                               Window(size, name, context),
-                               RenderTarget(m_win_size)
-                               {}
+        const T& get(const ID& idx) const;
+    private:
+        std::unordered_map<ID, Ptr> m_resources;
+    };
 
-
-    //todo applyView function
-    void RenderWindow::onResize(const int& width, const int& height) {
-        m_size = vec2u(width, height);
-    }
-
+    #include "ResourceHandler.inl"
 }

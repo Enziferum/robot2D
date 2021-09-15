@@ -19,11 +19,9 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include <iostream>
-#include <ext/glad.h>
+#include <robot2D/Graphics/GL.hpp>
 #include "ext/stb_image.h"
-
-#include "robot2D/Graphics/Texture.h"
+#include "robot2D/Graphics/Texture.hpp"
 
 namespace robot2D{
 
@@ -39,6 +37,9 @@ namespace robot2D{
     }
 
     bool Texture::loadFromFile(const std::string& path, bool alpha) {
+        //c++ hack before c++ 17 to set unused parameter
+        (void)(alpha);
+
         int width, height, nrChannels;
         buffer = stbi_load(path.c_str(), &width, &height,
                                         &nrChannels, 0);
@@ -95,11 +96,15 @@ namespace robot2D{
         m_size = size;
 
         // create Texture
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, size.x, size.y, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, size.x, size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
     }
 
     const unsigned int& Texture::get_id() const {
         return m_texture;
+    }
+
+    unsigned char* Texture::get_pixels() const {
+        return buffer;
     }
 
 

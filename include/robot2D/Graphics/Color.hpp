@@ -19,28 +19,33 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-
-#include <robot2D/Graphics/GL.hpp>
-#include "robot2D/Graphics/RenderWindow.hpp"
+#pragma once
 
 namespace robot2D{
 
-    RenderWindow::RenderWindow():
-    Window(),
-    RenderTarget(m_win_size)
-    {
-    }
+    class Color{
+    public:
+        Color();
+        Color(unsigned int r, unsigned int g, unsigned int b,
+              unsigned int alpha = 255);
+        ~Color() = default;
 
-    RenderWindow::RenderWindow(const vec2u &size, const std::string &name,
-                               WindowContext context):
-                               Window(size, name, context),
-                               RenderTarget(m_win_size)
-                               {}
+        static const Color Black;       //!< Black predefined color
+        static const Color White;       //!< White predefined color
+        static const Color Red;         //!< Red predefined color
+        static const Color Green;       //!< Green predefined color
+        static const Color Blue;        //!< Blue predefined color
+        static const Color Yellow;      //!< Yellow predefined color
+        static const Color Magenta;     //!< Magenta predefined color
+        static const Color Cyan;        //!< Cyan predefined color
+        static const Color Transparent; //!< Transparent (black) predefined color
 
+        static Color from_gl(float r, float g, float b, float alpha = 1.f);
 
-    //todo applyView function
-    void RenderWindow::onResize(const int& width, const int& height) {
-        m_size = vec2u(width, height);
-    }
-
+    public:
+        unsigned int r;
+        unsigned int g;
+        unsigned int b;
+        unsigned int alpha;
+    };
 }

@@ -19,28 +19,37 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
+#pragma once
 
-#include <robot2D/Graphics/GL.hpp>
-#include "robot2D/Graphics/RenderWindow.hpp"
+#include "Drawable.hpp"
+#include "Sprite.hpp"
+#include "Shader.hpp"
+#include "View.hpp"
 
-namespace robot2D{
-
-    RenderWindow::RenderWindow():
-    Window(),
-    RenderTarget(m_win_size)
-    {
+namespace robot2D {
+    namespace priv {
+        class RenderImpl;
     }
 
-    RenderWindow::RenderWindow(const vec2u &size, const std::string &name,
-                               WindowContext context):
-                               Window(size, name, context),
-                               RenderTarget(m_win_size)
-                               {}
+    class RenderTarget {
+    public:
+        RenderTarget(const vec2u& size);
+        virtual ~RenderTarget() = 0;
 
+        virtual void setView(const View& view);
+        virtual const View& getView();
+        virtual const View& getDefaultView();
+        virtual void draw(const RenderStates& states);
+        virtual void draw(const Drawable& drawable, const RenderStates& states
+                                                    = RenderStates::Default);
 
-    //todo applyView function
-    void RenderWindow::onResize(const int& width, const int& height) {
-        m_size = vec2u(width, height);
-    }
+    private:
+        void setup();
+    protected:
+        priv::RenderImpl* m_render;
+        ShaderHandler m_spriteShaders;
+        unsigned int VAO;
+        vec2u m_size;
+    };
 
 }

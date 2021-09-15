@@ -21,11 +21,11 @@ source distribution.
 
 #include <sstream>
 #include <fstream>
-#include <iostream>
 #include <tuple>
 
-#include <ext/glad.h>
-#include "robot2D/Graphics/Shader.h"
+#include <robot2D/Graphics/GL.hpp>
+#include "robot2D/Graphics/Shader.hpp"
+#include "robot2D/Util/Logger.hpp"
 
 namespace robot2D{
     ShaderHandler::ShaderHandler() {
@@ -43,22 +43,27 @@ namespace robot2D{
         return std::make_tuple(true, text);
     }
 
-    int ShaderHandler::setupShader(GLenum shaderType, const char* path, bool is_file) {
+    int ShaderHandler::setupShader(shaderType shader_type, const char* path, bool is_file) {
         const char* text;
         if(is_file) {
             bool ok;
             std::string shaderCode;
             std::tie(ok, shaderCode) = loadFromFile(path);
             if (!ok) {
-                std::cout << "ERROR::SHADER::LOAD_FAILED %\n" << infoLog << std::endl;
-                //log(Error, "ERROR::SHADER::LOAD_FAILED %\n", infoLog);
+                LOG_ERROR("ERROR::SHADER::LOAD_FAILED % \n", infoLog)
                 return -1;
             }
             text = shaderCode.c_str();
         }
         else
             text = path;
-        int shader = glCreateShader(shaderType);
+        GLenum s_type;
+        if(shader_type == shaderType::vertex)
+            s_type = GL_VERTEX_SHADER;
+        if(shader_type == shaderType::fragment)
+            s_type = GL_FRAGMENT_SHADER;
+
+        int shader = glCreateShader(s_type);
 
         glShaderSource(shader, 1, &text, NULL);
         glCompileShader(shader);
@@ -66,23 +71,21 @@ namespace robot2D{
         glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
         if (!success) {
             glGetShaderInfoLog(shader, 512, NULL, infoLog);
-            std::cout << "ERROR::SHADER::COMPILATION_FAILED %\n" << infoLog << std::endl;
-            //log(Error, "ERROR::SHADER::COMPILATION_FAILED %\n", infoLog);
+            LOG_ERROR("ERROR::SHADER::COMPILATION_FAILED %\n", infoLog)
         }
 
         return shader;
     }
 
-    bool ShaderHandler::createShader(GLenum shaderType,const char* code, bool is_path) {
-        int shader = setupShader(shaderType, code, is_path);
+    bool ShaderHandler::createShader(shaderType shader_type, const char* code, bool is_path) {
+        int shader = setupShader(shader_type, code, is_path);
         glAttachShader(shaderProgram, shader);
         glLinkProgram(shaderProgram);
         // check for linking errors
         glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
         if (!success) {
             glGetProgramInfoLog(shaderProgram, 512, nullptr, infoLog);
-            std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED % \n" << infoLog << std::endl;
-            //log(Error, "ERROR::SHADER::PROGRAM::LINKING_FAILED % \n", infoLog);
+            LOG_ERROR("ERROR::SHADER::PROGRAM::LINKING_FAILED % \n", infoLog)
         }
         glDeleteShader(shader);
 
@@ -90,16 +93,15 @@ namespace robot2D{
     }
 
 
-    bool ShaderHandler::createShader(GLenum shaderType, const char* path) {
-        int shader = setupShader(shaderType, path);
+    bool ShaderHandler::createShader(shaderType shader_type, const char* path) {
+        int shader = setupShader(shader_type, path);
         glAttachShader(shaderProgram, shader);
         glLinkProgram(shaderProgram);
         // check for linking errors
         glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
         if (!success) {
             glGetProgramInfoLog(shaderProgram, 512, nullptr, infoLog);
-            std::cout << "ERROR::SHADER::PROGRAM::LINKING_FAILED % \n" << infoLog << std::endl;
-            //log(Error, "ERROR::SHADER::PROGRAM::LINKING_FAILED % \n", infoLog);
+            LOG_ERROR("ERROR::SHADER::PROGRAM::LINKING_FAILED % \n", infoLog)
         }
         glDeleteShader(shader);
 
@@ -138,7 +140,7 @@ namespace robot2D{
         glUniform4f(glGetUniformLocation(shaderProgram, name), x, y, z, w);
     }
 
-
-
-
+    int ShaderHandler::getProgram() const{
+        return shaderProgram;
+    }
 }

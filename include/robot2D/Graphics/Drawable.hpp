@@ -19,28 +19,25 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
+#pragma once
 
-#include <robot2D/Graphics/GL.hpp>
-#include "robot2D/Graphics/RenderWindow.hpp"
+#include "RenderStates.hpp"
 
 namespace robot2D{
+    class RenderTarget;
 
-    RenderWindow::RenderWindow():
-    Window(),
-    RenderTarget(m_win_size)
-    {
-    }
+    /**
+     * \brief This class allows to you custom class to be rendered with simple call
+     * robot2D::RenderTarget / robot2D::RenderWindow draw() function
+     */
+    class Drawable{
+    public:
+        virtual ~Drawable() = 0 ;
 
-    RenderWindow::RenderWindow(const vec2u &size, const std::string &name,
-                               WindowContext context):
-                               Window(size, name, context),
-                               RenderTarget(m_win_size)
-                               {}
+    protected:
+        friend class RenderTarget;
+        virtual void draw(RenderTarget& target, RenderStates) const = 0;
+    };
 
-
-    //todo applyView function
-    void RenderWindow::onResize(const int& width, const int& height) {
-        m_size = vec2u(width, height);
-    }
 
 }

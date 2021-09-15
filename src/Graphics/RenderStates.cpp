@@ -19,17 +19,18 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include "robot2D/Graphics/RenderStates.h"
+#include "robot2D/Graphics/RenderStates.hpp"
 
 namespace robot2D{
     const RenderStates RenderStates::Default;
 
     RenderStates::RenderStates():
     texture(nullptr),
-    transform(),
     shader(nullptr),
     customVao(nullptr),
-    color(robot2D::Color::White){
+    color(robot2D::Color::White),
+    transform() {
+
     }
 
 }

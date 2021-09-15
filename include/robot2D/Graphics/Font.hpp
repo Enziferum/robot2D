@@ -19,28 +19,38 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
+#pragma once
 
-#include <robot2D/Graphics/GL.hpp>
-#include "robot2D/Graphics/RenderWindow.hpp"
+#include <string>
+#include <map>
+
+#include "robot2D/Core/Vector2.hpp"
+
 
 namespace robot2D{
 
-    RenderWindow::RenderWindow():
-    Window(),
-    RenderTarget(m_win_size)
-    {
-    }
-
-    RenderWindow::RenderWindow(const vec2u &size, const std::string &name,
-                               WindowContext context):
-                               Window(size, name, context),
-                               RenderTarget(m_win_size)
-                               {}
+    struct character {
+        unsigned int textureID; // ID handle of the glyph texture
+        vec2i   size;      // size of glyph
+        vec2i   bearing;   // offset from baseline to left/top of glyph
+        unsigned int advance;   // horizontal offset to advance to next glyph
+    };
 
 
-    //todo applyView function
-    void RenderWindow::onResize(const int& width, const int& height) {
-        m_size = vec2u(width, height);
-    }
+    class Font{
+    public:
+        Font();
+        ~Font();
 
+        bool loadFromFile(const std::string& path, const unsigned int& char_size = 20);
+        const std::map<char, character>& get_chars()const;
+    private:
+        void cleanup();
+        void setup_cache();
+        void generate_texture(unsigned int& texture, void* glyph);
+    private:
+        void* m_library;
+        void* m_face;
+        std::map<char, character> m_characters;
+    };
 }

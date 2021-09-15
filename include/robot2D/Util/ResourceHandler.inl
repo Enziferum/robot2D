@@ -1,5 +1,5 @@
 
-#include "ResourceHandler.h"
+#include "ResourceHandler.hpp"
 
 /*********************************************************************
 (c) Alex Raag 2021

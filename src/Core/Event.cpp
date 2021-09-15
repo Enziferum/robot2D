@@ -19,8 +19,6 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include "robot2D/Core/Event.h"
+#include "robot2D/Core/Event.hpp"
 
-namespace robot2D{
-
-}
+namespace robot2D {}

@@ -19,28 +19,20 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
+#pragma once
 
-#include <robot2D/Graphics/GL.hpp>
-#include "robot2D/Graphics/RenderWindow.hpp"
+#define MAJOR_VERSION 0
+#define MINOR_VERSION 2
 
-namespace robot2D{
+#if(!defined(ROBOT2D_STATIC))
+    // Windows dll export options
+    #if defined(_WIN32)
+        #define ROBOT2D_EXPORT_API __declspec(dllexport)
+        #define ROBOT2D_IMPORT_API __declspec(dllimport)
 
-    RenderWindow::RenderWindow():
-    Window(),
-    RenderTarget(m_win_size)
-    {
-    }
+    #else
+        #define ROBOT2D_EXPORT_API
+        #define ROBOT2D_IMPORT_API
+    #endif
 
-    RenderWindow::RenderWindow(const vec2u &size, const std::string &name,
-                               WindowContext context):
-                               Window(size, name, context),
-                               RenderTarget(m_win_size)
-                               {}
-
-
-    //todo applyView function
-    void RenderWindow::onResize(const int& width, const int& height) {
-        m_size = vec2u(width, height);
-    }
-
-}
+#endif
