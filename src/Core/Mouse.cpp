@@ -22,7 +22,4 @@ source distribution.
 #include "robot2D/Core/Mouse.hpp"
 
 namespace robot2D {
-    namespace Mouse {
-
-    }
 }

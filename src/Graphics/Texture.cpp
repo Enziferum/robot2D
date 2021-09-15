@@ -96,7 +96,7 @@ namespace robot2D{
         m_size = size;
 
         // create Texture
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, size.x, size.y, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, size.x, size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
     }
 
     const unsigned int& Texture::get_id() const {

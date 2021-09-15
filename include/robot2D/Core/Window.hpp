@@ -23,6 +23,7 @@ source distribution.
 #include <queue>
 #include <string>
 #include <vector>
+#include <functional>
 
 #include "robot2D/Graphics/Color.hpp"
 #include "robot2D/Graphics/Texture.hpp"
@@ -42,6 +43,8 @@ namespace robot2D {
      * you can it fix it with Graphics module easily
      */
     class ROBOT2D_EXPORT_API Window {
+    public:
+        using DrapDropCallback = std::function<void(std::vector<std::string>)>;
     public:
         Window();
         Window(const vec2u& size,
@@ -77,12 +80,15 @@ namespace robot2D {
         /// \brief allow you to set big/small icons to your app
         void setIcon(std::vector<Texture>& icons);
 
+        void setDrapDropCallback(DrapDropCallback&& callback);
 
         static bool isMousePressed(const Mouse& button);
 
         static bool isKeyboardPressed(const Key& key);
 
         void* getRaw() const;
+
+        void setMouseCursorVisible(const bool& flag);
     protected:
         virtual void onResize(const int& w, const int& h);
     private:

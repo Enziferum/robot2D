@@ -124,5 +124,13 @@ namespace robot2D {
         return m_windowImpl -> getDeltaTime();
     }
 
+    void Window::setDrapDropCallback(Window::DrapDropCallback&& callback) {
+        m_windowImpl -> setDrapDropCallback(std::move(callback));
+    }
+
+    void Window::setMouseCursorVisible(const bool& flag) {
+        m_windowImpl ->setMouseCursorVisible(flag);
+    }
+
 
 }
