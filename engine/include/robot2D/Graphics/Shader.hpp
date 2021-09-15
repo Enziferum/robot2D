@@ -24,7 +24,7 @@ source distribution.
 #include <string>
 #include "robot2D/Core/Vector2.hpp"
 
-namespace robot2D{
+namespace robot2D {
     enum class shaderType {
         vertex,
         fragment,

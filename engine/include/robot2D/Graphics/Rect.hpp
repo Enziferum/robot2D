@@ -20,13 +20,13 @@ source distribution.
 *********************************************************************/
 
 #pragma once
+
 #include <algorithm>
+#include <robot2D/Core/Vector2.hpp>
 
-#include "robot2D/Core/Vector2.hpp"
-
-namespace robot2D{
+namespace robot2D {
     template<typename T>
-    struct Rect{
+    struct Rect {
         Rect();
         Rect(const T& leftx, const T& lefty, const T& width, const T& height);
         Rect& operator=(const Rect& other);
@@ -84,7 +84,6 @@ namespace robot2D{
 
         return *this;
     }
-
 
     template<typename T>
     bool operator ==(const Rect<T>& lhs, const Rect<T>& rhs){

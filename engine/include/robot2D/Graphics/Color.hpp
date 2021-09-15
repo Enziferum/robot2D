@@ -21,9 +21,9 @@ source distribution.
 
 #pragma once
 
-namespace robot2D{
+namespace robot2D {
 
-    class Color{
+    class Color {
     public:
         Color();
         Color(unsigned int r, unsigned int g, unsigned int b,
@@ -41,7 +41,6 @@ namespace robot2D{
         static const Color Transparent; //!< Transparent (black) predefined color
 
         static Color from_gl(float r, float g, float b, float alpha = 1.f);
-
     public:
         unsigned int r;
         unsigned int g;

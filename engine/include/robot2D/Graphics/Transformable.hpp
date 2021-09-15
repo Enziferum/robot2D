@@ -28,7 +28,7 @@ namespace robot2D {
     /**
      * \brief This class allows to be your custom object
      */
-    class Transformable{
+    class Transformable {
     public:
         Transformable();
         virtual ~Transformable() = 0;

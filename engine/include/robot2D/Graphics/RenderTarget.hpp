@@ -47,8 +47,6 @@ namespace robot2D {
         void setup();
     protected:
         priv::RenderImpl* m_render;
-        ShaderHandler m_spriteShaders;
-        unsigned int VAO;
         vec2u m_size;
     };
 

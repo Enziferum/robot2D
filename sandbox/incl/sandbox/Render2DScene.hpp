@@ -6,6 +6,7 @@
 
 #include "Scene.hpp"
 
+// Scene for Implementing BatchRender
 class Render2DScene: public Scene {
 public:
     explicit Render2DScene(robot2D::RenderWindow&);

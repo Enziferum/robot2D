@@ -29,7 +29,7 @@ namespace robot2D {
     /**
      * \brief Heart of Engine's Rendering part
      */
-    class RenderWindow: public Window, public RenderTarget{
+    class RenderWindow: public Window, public RenderTarget {
     public:
         RenderWindow();
         RenderWindow(const vec2u& size, const std::string& name,
