@@ -24,10 +24,9 @@ source distribution.
 #include <string>
 #include <map>
 
-#include "robot2D/Core/Vector2.hpp"
+#include <robot2D/Core/Vector2.hpp>
 
-
-namespace robot2D{
+namespace robot2D {
 
     struct character {
         unsigned int textureID; // ID handle of the glyph texture
@@ -37,7 +36,7 @@ namespace robot2D{
     };
 
 
-    class Font{
+    class Font {
     public:
         Font();
         ~Font();

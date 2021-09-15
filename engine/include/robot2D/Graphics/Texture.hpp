@@ -24,8 +24,8 @@ source distribution.
 #include <string>
 #include "robot2D/Core/Vector2.hpp"
 
-namespace robot2D{
-    class Texture{
+namespace robot2D {
+    class Texture {
     public:
         Texture();
         ~Texture();

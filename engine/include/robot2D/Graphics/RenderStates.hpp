@@ -25,10 +25,10 @@ source distribution.
 #include "Color.hpp"
 #include "Shader.hpp"
 
-namespace robot2D{
+namespace robot2D {
     class Texture;
 
-    struct RenderStates{
+    struct RenderStates {
         RenderStates();
         ~RenderStates() = default;
 

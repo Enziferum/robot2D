@@ -29,7 +29,7 @@ namespace robot2D {
     /**
      * \brief 2D Transform matrix, allows to get different transformations
      */
-    class Transform{
+    class Transform {
     public:
         Transform();
         Transform(float, float, float,

@@ -22,5 +22,5 @@ source distribution.
 #pragma once
 
 #include <robot2D/Core/Core.hpp>
-#include <robot2D/Extra/Extra.hpp>
 #include <robot2D/Graphics/Graphics.hpp>
+#include <robot2D/Util/Util.hpp>

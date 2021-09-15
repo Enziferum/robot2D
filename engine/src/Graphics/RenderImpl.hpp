@@ -21,7 +21,6 @@ source distribution.
 
 #pragma once
 
-#include <robot2D/Graphics/Matrix.hpp>
 #include <robot2D/Graphics/RenderStates.hpp>
 #include <robot2D/Graphics/View.hpp>
 

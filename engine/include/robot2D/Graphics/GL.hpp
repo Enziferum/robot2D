@@ -22,7 +22,7 @@ source distribution.
 #pragma once
 
 #ifdef WIN32
-    #include <ext/glad.h>
+    #include <robot2D/ext/glad.h>
 #elif __APPLE__
     #include <OpenGL/gl3.h>
 #endif

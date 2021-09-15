@@ -97,7 +97,6 @@ namespace robot2D {
         float getDeltaTime();
     protected:
         static priv::WindowImpl* m_windowImpl;
-        friend class App;
 
         //window settings
         vec2u m_win_size;
