@@ -22,8 +22,8 @@ source distribution.
 #include <iostream>
 
 #include <robot2D/Graphics/GL.hpp>
-#include "robot2D/Graphics/Text.hpp"
-#include "robot2D/Graphics/RenderTarget.hpp"
+#include <robot2D/Graphics/Text.hpp>
+#include <robot2D/Graphics/RenderTarget.hpp>
 
 namespace robot2D {
     constexpr int buffer_sz = 24;

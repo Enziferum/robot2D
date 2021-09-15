@@ -20,8 +20,8 @@ source distribution.
 *********************************************************************/
 
 #include <robot2D/Graphics/GL.hpp>
-#include "ext/stb_image.h"
-#include "robot2D/Graphics/Texture.hpp"
+#include <robot2D/ext/stb_image.h>
+#include <robot2D/Graphics/Texture.hpp>
 
 namespace robot2D{
 

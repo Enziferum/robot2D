@@ -25,7 +25,7 @@ source distribution.
 #include "ft2build.h"
 #include FT_FREETYPE_H
 
-#include "robot2D/Graphics/Font.hpp"
+#include <robot2D/Graphics/Font.hpp>
 
 namespace robot2D{
     const short chars_cache = 128;

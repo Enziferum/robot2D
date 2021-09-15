@@ -19,55 +19,21 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include <robot2D/Graphics/GL.hpp>
-#include "robot2D/Graphics/RenderTarget.hpp"
-
-#include "RenderImpl.hpp"
+#include <robot2D/Core/Keyboard.hpp>
+#include <robot2D/Core/Window.hpp>
 
 namespace robot2D {
-
-    RenderTarget::RenderTarget(const vec2u& size):
-    m_render(nullptr),
-    m_size(size) {
-        setup();
+    Key Int2Key(const int& code) {
+        return static_cast<Key>(code);
     }
 
-    RenderTarget::~RenderTarget() {
-        if(m_render){
-            delete m_render;
-            m_render = nullptr;
+    int key2Int(const Key& key) {
+        return static_cast<int>(key);
+    }
+
+    namespace Keyboard {
+        bool isKeyPressed(const Key& key) {
+            return Window::isKeyboardPressed(key);
         }
-    }
-
-    void RenderTarget::setup() {
-        if(!m_render)
-            m_render = robot2D::priv::RenderImpl::create();
-
-        m_render -> setSize(m_size);
-    }
-
-    void RenderTarget::draw(const Drawable& drawable, const RenderStates& states) {
-        drawable.draw(*this, states);
-    }
-
-
-    void RenderTarget::draw(const RenderStates& states) {
-
-        if(!m_render)
-            return;
-
-        m_render -> render(states);
-    }
-
-    void RenderTarget::setView(const View& view) {
-        m_render->setView(view);
-    }
-
-    const View& RenderTarget::getView() {
-        return m_render->getView();
-    }
-
-    const View& RenderTarget::getDefaultView() {
-        return m_render->getDefaultView();
     }
 }
