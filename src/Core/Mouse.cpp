@@ -19,7 +19,11 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include "robot2D/Core/Mouse.hpp"
+#include <robot2D/Core/Mouse.hpp>
+#include <robot2D/Core/Window.hpp>
 
 namespace robot2D {
+    bool isMousePressed(const Mouse& btn) {
+        return Window::isMousePressed(btn);
+    }
 }

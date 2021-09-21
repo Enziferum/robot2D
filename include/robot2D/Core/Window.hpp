@@ -25,8 +25,7 @@ source distribution.
 #include <vector>
 #include <functional>
 
-#include "robot2D/Graphics/Color.hpp"
-#include "robot2D/Graphics/Texture.hpp"
+#include "IconImage.hpp"
 
 #include "Vector2.hpp"
 #include "Event.hpp"
@@ -66,8 +65,6 @@ namespace robot2D {
         ///
         void close();
 
-        void clear(const Color& color = Color::Black);
-
         ///
         /// \brief make swap buffers in render context
         ///
@@ -78,7 +75,7 @@ namespace robot2D {
         const vec2u& getSize();
 
         /// \brief allow you to set big/small icons to your app
-        void setIcon(std::vector<Texture>& icons);
+        void setIcon(std::vector<IconImage>& icons);
 
         void setDrapDropCallback(DrapDropCallback&& callback);
 

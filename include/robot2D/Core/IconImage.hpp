@@ -21,35 +21,12 @@ source distribution.
 
 #pragma once
 
-#include "Drawable.hpp"
-#include "Sprite.hpp"
-#include "Shader.hpp"
-#include "View.hpp"
+#include <vector>
+#include "Vector2.hpp"
 
 namespace robot2D {
-    namespace priv {
-        class RenderImpl;
-    }
-
-    class RenderTarget {
-    public:
-        RenderTarget(const vec2u& size);
-        virtual ~RenderTarget() = 0;
-
-        virtual void setView(const View& view);
-        virtual const View& getView();
-        virtual const View& getDefaultView();
-        virtual void draw(const RenderStates& states);
-        virtual void draw(const Drawable& drawable, const RenderStates& states
-                                                    = RenderStates::Default);
-
-    private:
-        void setup();
-    protected:
-        priv::RenderImpl* m_render;
-        ShaderHandler m_spriteShaders;
-        unsigned int VAO;
-        vec2u m_size;
+    struct IconImage {
+        vec2u size;
+        std::vector<unsigned char> buffer;
     };
-
 }

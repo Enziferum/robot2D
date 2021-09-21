@@ -25,8 +25,15 @@ source distribution.
 
 namespace robot2D {
     struct ROBOT2D_EXPORT_API WindowContext {
+        enum class RenderBackend {
+            OpenGL,
+            Metal,
+            DirectX,
+            Vulkan
+        };
         bool vsync;
         bool fullscreen;
+        RenderBackend renderBackend;
 
         WindowContext(const bool& vsync = false, const bool& fullscreen = false);
 

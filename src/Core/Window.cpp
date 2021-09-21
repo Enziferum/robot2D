@@ -69,9 +69,6 @@ namespace robot2D {
         return false;
     }
 
-    void Window::clear(const Color& color) {
-       m_windowImpl -> clear(color);
-    }
 
     void Window::display() {
         m_windowImpl -> display();
@@ -94,7 +91,7 @@ namespace robot2D {
     }
 
 
-    void Window::setIcon(std::vector<Texture>& icons) {
+    void Window::setIcon(std::vector<IconImage>& icons) {
         m_windowImpl -> setIcon(icons);
     }
 

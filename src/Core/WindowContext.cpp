@@ -23,7 +23,7 @@ source distribution.
 
 namespace robot2D {
     WindowContext::WindowContext(const bool& vsync, const bool& fullscreen):
-    vsync(vsync), fullscreen(fullscreen){}
+    vsync(vsync), fullscreen(fullscreen), renderBackend(RenderBackend::OpenGL){}
 
     const WindowContext WindowContext::Default = WindowContext();
 }

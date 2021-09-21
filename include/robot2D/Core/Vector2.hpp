@@ -25,7 +25,7 @@ source distribution.
 
 namespace robot2D{
     template<typename T>
-    struct ROBOT2D_EXPORT_API Vector2{
+    struct ROBOT2D_EXPORT_API Vector2 {
         Vector2();
         Vector2(const T& x, const T& y);
 

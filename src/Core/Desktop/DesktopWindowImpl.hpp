@@ -22,11 +22,11 @@ source distribution.
 #pragma once
 
 #include <queue>
-
+#include <string>
 #include <GLFW/glfw3.h>
-#include "../WindowImpl.hpp"
-
 #include <robot2D/Core/WindowContext.hpp>
+
+#include "../WindowImpl.hpp"
 
 namespace robot2D {
     namespace priv {
@@ -44,25 +44,23 @@ namespace robot2D {
             bool isOpen() const override;
             void setTitle(const std::string& title) const override;
 
-            void clear(const Color &color) override;
             void close() override;
             void display() override;
 
             bool isMousePressed(const Mouse& button)override;
             bool isKeyboardPressed(const Key& key)override;
 
-            void setIcon(std::vector<robot2D::Texture>& ) override;
+            void setIcon(std::vector<IconImage>& ) override;
 
             float getDeltaTime() const override;
 
             void setDrapDropCallback(DrapDropCallback &&callback) override;
 
-
             void setMouseCursorVisible(const bool& flag);
         private:
             void setup();
             void setup_callbacks();
-            void setup_WGL();
+            void setup_GL();
 
         private:
             static void close_callback(GLFWwindow* wnd);

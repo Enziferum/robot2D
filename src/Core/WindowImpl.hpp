@@ -24,10 +24,11 @@ source distribution.
 #include <vector>
 #include <functional>
 
-#include <robot2D/Graphics/Color.hpp>
-#include <robot2D/Graphics/Texture.hpp>
+
+#include <robot2D/Core/Vector2.hpp>
 #include <robot2D/Core/Event.hpp>
 #include <robot2D/Core/WindowContext.hpp>
+#include <robot2D/Core/IconImage.hpp>
 
 namespace robot2D {
 
@@ -48,13 +49,13 @@ namespace robot2D {
 
             virtual bool isOpen() const = 0;
             virtual void setTitle(const std::string& title) const = 0;
-            virtual void clear(const robot2D::Color& color) = 0;
             virtual void close() = 0;
             virtual void display() = 0;
             virtual bool isMousePressed(const Mouse& button) = 0;
             virtual bool isKeyboardPressed(const Key& key) = 0;
 
-            virtual void setIcon(std::vector<robot2D::Texture>& icons) = 0;
+            // pixels
+            virtual void setIcon(std::vector<IconImage>& icons) = 0;
             virtual void setDrapDropCallback(DrapDropCallback&& callback) = 0;
             virtual float getDeltaTime()const = 0;
             virtual void setMouseCursorVisible(const bool& flag) = 0;

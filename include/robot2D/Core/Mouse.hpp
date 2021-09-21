@@ -28,4 +28,5 @@ namespace robot2D {
         MouseMiddle = 2
     };
 
+    bool isMousePressed(const Mouse& btn);
 }

@@ -20,8 +20,6 @@ source distribution.
 *********************************************************************/
 
 #include <robot2D/Util/Logger.hpp>
-#include <robot2D/Graphics/GL.hpp>
-
 #include "DesktopWindowImpl.hpp"
 
 namespace robot2D {
@@ -73,17 +71,18 @@ namespace robot2D {
         }
 
         void DesktopWindowImpl::setup() {
-            /* Initialize the library */
             if (!glfwInit())
                 return;
 
-            glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, opengl_major);
-            glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, opengl_minor);
-            glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+            if(m_context.renderBackend == WindowContext::RenderBackend::OpenGL) {
+                glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, opengl_major);
+                glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, opengl_minor);
+                glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 #ifdef __APPLE__
-            glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+                glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
+            }
 
             GLFWmonitor* primary = m_context.fullscreen ? glfwGetPrimaryMonitor() : nullptr;
 
@@ -103,20 +102,21 @@ namespace robot2D {
                 glfwSwapInterval(1);
 
             setup_callbacks();
-            setup_WGL();
+            setup_GL();
         }
 
-        void DesktopWindowImpl::setup_WGL() {
+        void DesktopWindowImpl::setup_GL() {
+            if(m_context.renderBackend == WindowContext::RenderBackend::OpenGL) {
 #ifdef WIN32
-            if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-            {
-                LOG_ERROR_E("Failed to initialize GLAD")
-                return ;
-            }
+                if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+                {
+                    LOG_ERROR_E("Failed to initialize GLAD")
+                    return ;
+                }
 #endif
-            glViewport(0, 0, m_size.x, m_size.y);
+                glViewport(0, 0, m_size.x, m_size.y);
+            }
         }
-
         bool DesktopWindowImpl::isOpen() const {
             return !glfwWindowShouldClose(m_window);
         }
@@ -124,11 +124,6 @@ namespace robot2D {
         void DesktopWindowImpl::setTitle(const std::string& title) const {
             const char* t = title.c_str();
             glfwSetWindowTitle(m_window, t);
-        }
-
-        void DesktopWindowImpl::clear(const Color &color) {
-            glClearColor(color.r, color.g, color.b, color.alpha);
-            glClear(GL_COLOR_BUFFER_BIT);
         }
 
         void DesktopWindowImpl::close() {
@@ -255,16 +250,35 @@ namespace robot2D {
             (void)(window);
         }
 
-        void DesktopWindowImpl::setIcon(std::vector<robot2D::Texture>& icons) {
+        void DesktopWindowImpl::focus_callback(GLFWwindow* wnd, int focus) {
+            DesktopWindowImpl* window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
+            Event event{};
+            if(focus)
+                event.type = Event::GainFocus;
+            else
+                event.type = Event::LostFocus;
+
+            window->m_event_queue.push(event);
+        }
+
+        void DesktopWindowImpl::text_callback(GLFWwindow *wnd, unsigned int c) {
+            DesktopWindowImpl* window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
+            Event event{};
+            event.type = Event::TextEntered;
+            event.text.symbol = c;
+            window->m_event_queue.push(event);
+        }
+
+        void DesktopWindowImpl::setIcon(std::vector<IconImage>& icons) {
             if(icons.empty())
                 return;
             std::vector<GLFWimage> images;
             for(auto &it: icons){
                 GLFWimage img;
-                auto size = it.get_size();
+                auto size = it.size;
                 img.width = size.x;
                 img.height = size.y;
-                img.pixels = it.get_pixels();
+                img.pixels = it.buffer.data();
                 images.emplace_back(img);
             }
             glfwSetWindowIcon(m_window, images.size(), &images[0]);
@@ -301,26 +315,5 @@ namespace robot2D {
             m_cursorVisible = flag;
             glfwSetInputMode(m_window, GLFW_CURSOR, (m_cursorVisible ? GLFW_CURSOR_NORMAL: GLFW_CURSOR_HIDDEN));
         }
-
-        void DesktopWindowImpl::focus_callback(GLFWwindow* wnd, int focus) {
-            DesktopWindowImpl* window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
-            Event event{};
-            if(focus) {
-                event.type == Event::GainFocus;
-            } else {
-                event.type == Event::LostFocus;
-            }
-
-            window->m_event_queue.push(event);
-        }
-
-        void DesktopWindowImpl::text_callback(GLFWwindow *wnd, unsigned int c) {
-            DesktopWindowImpl* window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
-            Event event{};
-            event.type = Event::TextEntered;
-            event.text.symbol = c;
-            window->m_event_queue.push(event);
-        }
-
     }
 }

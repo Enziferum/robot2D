@@ -69,22 +69,6 @@ set(SRC
         include/robot2D/Core/Keyboard.hpp
         include/robot2D/Core/Vector2.hpp
 
-
-        #Graphics
-        include/robot2D/Graphics/Color.hpp
-        include/robot2D/Graphics/Drawable.hpp
-        include/robot2D/Graphics/GL.hpp
-        include/robot2D/Graphics/Rect.hpp
-        include/robot2D/Graphics/RenderStates.hpp
-        include/robot2D/Graphics/RenderTarget.hpp
-        include/robot2D/Graphics/RenderWindow.hpp
-        include/robot2D/Graphics/Shader.hpp
-        include/robot2D/Graphics/Sprite.hpp
-        include/robot2D/Graphics/Texture.hpp
-        include/robot2D/Graphics/Transform.hpp
-        include/robot2D/Graphics/Transformable.hpp
-        include/robot2D/Graphics/View.hpp
-
         #Util
         include/robot2D/Util/ResourceHandler.hpp
         include/robot2D/Util/Logger.hpp
@@ -94,28 +78,11 @@ set(SRC
         ${SRC}
         #Core
         src/Core/Window.cpp
-        src/Core/Event.cpp
         src/Core/WindowImpl.cpp
         src/Core/WindowImpl.hpp
         src/Core/WindowContext.cpp
         src/Core/Keyboard.cpp
         src/Core/Mouse.cpp
-
-        #Graphics
-        src/Graphics/Color.cpp
-        src/Graphics/Drawable.cpp
-        src/Graphics/Font.cpp
-        src/Graphics/RenderStates.cpp
-        src/Graphics/RenderWindow.cpp
-        src/Graphics/RenderTarget.cpp
-        src/Graphics/Shader.cpp
-        src/Graphics/Sprite.cpp
-        src/Graphics/Text.cpp
-        src/Graphics/Texture.cpp
-        src/Graphics/Transform.cpp
-        src/Graphics/Transformable.cpp
-        src/Graphics/RenderImpl.cpp
-        src/Graphics/View.cpp
 
         #Util
         src/Util/Logger.cpp
@@ -133,8 +100,7 @@ else(APPLE)
 endif()
 
 set(PLATFORM_SRC
-        src/Core/Desktop/DesktopWindowImpl.cpp
-        src/Graphics/Desktop/OpenGLRender.cpp)
+        src/Core/Desktop/DesktopWindowImpl.cpp)
 
 #if()
 #    target_compile_definitions(${target} PUBLIC "ROBOT2D_STATIC")
