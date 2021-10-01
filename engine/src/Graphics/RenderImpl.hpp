@@ -23,6 +23,8 @@ source distribution.
 
 #include <robot2D/Graphics/RenderStates.hpp>
 #include <robot2D/Graphics/View.hpp>
+#include <robot2D/Graphics/Vertex.hpp>
+#include <robot2D/Graphics/RenderStats.hpp>
 
 namespace robot2D {
     namespace priv {
@@ -32,12 +34,17 @@ namespace robot2D {
             virtual ~RenderImpl() = 0;
 
             static RenderImpl* create();
-            virtual void render(const RenderStates& states) const = 0;
+            virtual void render(const VertexData& data, const RenderStates& states) const = 0;
 
             virtual void setView(const View& view) = 0;
             virtual const View& getView() = 0;
             virtual const View& getDefaultView() = 0;
             virtual void setSize(const vec2u& size);
+
+            virtual void beforeRender() const = 0;
+            virtual void afterRender() const = 0;
+            virtual void flushRender() const = 0;
+            virtual const RenderStats& getStats() const = 0;
         protected:
             vec2u m_size;
         };

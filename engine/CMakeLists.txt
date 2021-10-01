@@ -24,6 +24,7 @@ set(ENGINE_SRC ${ENGINE_SRC}
         ${INCLROOT}/Graphics/Transform.hpp
         ${INCLROOT}/Graphics/Transformable.hpp
         ${INCLROOT}/Graphics/View.hpp
+        ${INCLROOT}/Graphics/TextureAtlas.hpp
 
         #Util
         ${INCLROOT}/Util/ResourceHandler.hpp
@@ -58,6 +59,7 @@ set(ENGINE_SRC ${ENGINE_SRC}
         ${SRCROOT}/Graphics/Transformable.cpp
         ${SRCROOT}/Graphics/RenderImpl.cpp
         ${SRCROOT}/Graphics/View.cpp
+        ${SRCROOT}/Graphics/TextureAtlas.cpp
 
         #Util
         ${SRCROOT}/Util/Logger.cpp

@@ -32,16 +32,15 @@ namespace robot2D {
 
         bool loadFromFile(const std::string& path, bool alpha = false);
 
-        vec2u& get_size();
-        const vec2u& get_size() const;
+        vec2u& getSize();
+        const vec2u& getSize() const;
 
-        void generate(const vec2u& size, void* data);
-        const unsigned int& get_id()const;
-        void bind()const;
+        void create(const vec2u& size, void* data);
+        const unsigned int& getID()const;
 
-        unsigned char* get_pixels() const;
+        unsigned char* getPixels() const;
     private:
-        void setup_GL();
+        void setupGL();
     private:
         vec2u m_size;
         unsigned int m_texture;

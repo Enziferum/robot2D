@@ -25,7 +25,7 @@ source distribution.
 #include "Transform.hpp"
 #include "robot2D/Core/Vector2.hpp"
 
-namespace robot2D{
+namespace robot2D {
     class View {
     public:
         View();

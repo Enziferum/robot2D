@@ -77,8 +77,8 @@ namespace robot2D{
         return shader;
     }
 
-    bool ShaderHandler::createShader(shaderType shader_type, const char* code, bool is_path) {
-        int shader = setupShader(shader_type, code, is_path);
+    bool ShaderHandler::createShader(shaderType shader_type, const std::string& source, bool is_path) {
+        int shader = setupShader(shader_type, source, is_path);
         glAttachShader(shaderProgram, shader);
         glLinkProgram(shaderProgram);
         // check for linking errors
@@ -92,21 +92,6 @@ namespace robot2D{
         return true;
     }
 
-
-    bool ShaderHandler::createShader(shaderType shader_type, const char* path) {
-        int shader = setupShader(shader_type, path);
-        glAttachShader(shaderProgram, shader);
-        glLinkProgram(shaderProgram);
-        // check for linking errors
-        glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
-        if (!success) {
-            glGetProgramInfoLog(shaderProgram, 512, nullptr, infoLog);
-            LOG_ERROR("ERROR::SHADER::PROGRAM::LINKING_FAILED % \n", infoLog)
-        }
-        glDeleteShader(shader);
-
-        return true;
-    }
 
     void ShaderHandler::use() const{
         glUseProgram(shaderProgram);
@@ -127,7 +112,6 @@ namespace robot2D{
     }
 
     void ShaderHandler::set_parameter(const char *name, const float& x, const float& y, const float& z) const{
-        //glUniform3fv(glGetUniformLocation(shaderProgram, name), 1, (float*)(&vec));
         glUniform3f(glGetUniformLocation(shaderProgram, name), x, y, z);
     }
 

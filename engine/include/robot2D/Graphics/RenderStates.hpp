@@ -28,12 +28,18 @@ source distribution.
 namespace robot2D {
     class Texture;
 
+    struct RenderInfo {
+        unsigned int customVao;
+        bool useIndices;
+    };
+
     struct RenderStates {
         RenderStates();
         ~RenderStates() = default;
 
         const Texture* texture;
         ShaderHandler* shader;
+        RenderInfo* renderInfo;
         const unsigned int* customVao;
 
         Color color;

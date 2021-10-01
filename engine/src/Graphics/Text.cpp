@@ -109,7 +109,7 @@ namespace robot2D {
             glBindBuffer(GL_ARRAY_BUFFER, VBO);
             glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertex) * it.verts.size() , &it.verts[0]);
             glBindBuffer(GL_ARRAY_BUFFER, 0);
-            target.draw(states);
+            //target.draw(states);
             glBindVertexArray(0);
             glBindTexture(GL_TEXTURE_2D, 0);
         }

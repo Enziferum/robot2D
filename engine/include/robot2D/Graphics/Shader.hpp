@@ -25,10 +25,10 @@ source distribution.
 #include "robot2D/Core/Vector2.hpp"
 
 namespace robot2D {
+
     enum class shaderType {
         vertex,
-        fragment,
-        geometry
+        fragment
     };
 
 
@@ -37,8 +37,7 @@ namespace robot2D {
         ShaderHandler();
         ~ShaderHandler() = default;
 
-        bool createShader(shaderType shader_type, const char* path);
-        bool createShader(shaderType shader_type, const char* code, bool is_path);
+        bool createShader(shaderType shader_type, const std::string& source, bool is_path);
         void use() const;
 
         void set_parameter(const char* name, const float* matrix) const;
