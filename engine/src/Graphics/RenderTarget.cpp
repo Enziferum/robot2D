@@ -51,12 +51,12 @@ namespace robot2D {
     }
 
 
-    void RenderTarget::draw(const RenderStates& states) {
+    void RenderTarget::draw(const VertexData& data, const RenderStates& states) {
 
         if(!m_render)
             return;
 
-        m_render -> render(states);
+        m_render -> render(data, states);
     }
 
     void RenderTarget::setView(const View& view) {
@@ -69,5 +69,21 @@ namespace robot2D {
 
     const View& RenderTarget::getDefaultView() {
         return m_render->getDefaultView();
+    }
+
+    void RenderTarget::beforeRender() const {
+        m_render -> beforeRender();
+    }
+
+    void RenderTarget::afterRender() const {
+        m_render -> afterRender();
+    }
+
+    void RenderTarget::flushRender() const {
+        m_render -> flushRender();
+    }
+
+    const RenderStats& RenderTarget::getStats() const {
+        return m_render -> getStats();
     }
 }

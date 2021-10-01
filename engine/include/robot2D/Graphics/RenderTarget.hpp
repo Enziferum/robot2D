@@ -25,11 +25,14 @@ source distribution.
 #include "Sprite.hpp"
 #include "Shader.hpp"
 #include "View.hpp"
+#include "Vertex.hpp"
+#include "RenderStats.hpp"
 
 namespace robot2D {
     namespace priv {
         class RenderImpl;
     }
+
 
     class RenderTarget {
     public:
@@ -39,10 +42,17 @@ namespace robot2D {
         virtual void setView(const View& view);
         virtual const View& getView();
         virtual const View& getDefaultView();
-        virtual void draw(const RenderStates& states);
+
+
+        virtual void draw(const VertexData& data, const RenderStates& states);
         virtual void draw(const Drawable& drawable, const RenderStates& states
                                                     = RenderStates::Default);
 
+        virtual void beforeRender() const;
+        virtual void afterRender() const;
+        virtual void flushRender() const;
+
+        const RenderStats& getStats() const;
     private:
         void setup();
     protected:

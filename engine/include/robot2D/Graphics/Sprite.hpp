@@ -26,7 +26,7 @@ source distribution.
 #include "Drawable.hpp"
 #include "Texture.hpp"
 #include "Rect.hpp"
-#include "Color.hpp"
+#include "Vertex.hpp"
 
 namespace robot2D {
 
@@ -44,11 +44,14 @@ namespace robot2D {
         Color& getColor();
 
         /// \brief allow to set Size/Scale of object
-        void setScale(const vec2f &factor) override;
+        void setScale(const vec2f& factor) override;
 
         /// \brief set texture data to our Sprite flyweight
-        void setTexture(const Texture& );
+        void setTexture(const Texture&, const IntRect& textureRect = IntRect());
         const Texture* getTexture();
+
+        void setTextureRect(const IntRect& textureRect);
+
 
         /// \brief return to you rect in world coordinates
         FloatRect getGlobalBounds() const;
@@ -62,5 +65,6 @@ namespace robot2D {
         const Texture* m_texture;
         IntRect m_texture_rect;
         Color m_color;
+        Vertex vertices[4];
     };
 }

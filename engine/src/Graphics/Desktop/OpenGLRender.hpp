@@ -24,43 +24,45 @@ source distribution.
 #include <robot2D/Graphics/RenderStates.hpp>
 #include <robot2D/Graphics/Shader.hpp>
 #include <robot2D/Graphics/View.hpp>
+#include <robot2D/Graphics/RenderStats.hpp>
 
 #include "../RenderImpl.hpp"
+#include "RenderBuffer.hpp"
 
 namespace robot2D {
-    namespace priv {
-        struct Matrix {
-            float mat[4][4];
-        };
+    using uint = unsigned int;
 
+    namespace priv {
         class OpenGLRender: public RenderImpl {
         public:
             OpenGLRender();
-            ~OpenGLRender() override = default;
+            ~OpenGLRender();
 
-            void render(const RenderStates& states) const;
+            void render(const VertexData& data, const RenderStates& states) const;
 
-            void setSize(const vec2u &size) override;
-
+            void setSize(const vec2u& size) override;
             void setView(const View& view) override;
 
-            const View &getView() override;
-
-            const View &getDefaultView() override;
-
+            const View& getView() override;
+            const View& getDefaultView() override;
+            virtual const RenderStats& getStats() const override;
         private:
-            void setup_GL();
-            void ortho_projection(Matrix& m, float l, float r, float b,
-                                  float t, float n, float f);
+            void init();
+            void destroy();
+
+            virtual void beforeRender() const override;
+            virtual void afterRender()const override;
+            virtual void flushRender() const override;
+
             IntRect getViewport(const View& view);
 
             void applyCurrentView();
         private:
-            ShaderHandler m_spriteShaders;
-            unsigned int VAO;
+            mutable RenderBuffer m_renderBuffer;
+            ShaderHandler m_quadShader;
             View m_view;
             View m_default;
-            Matrix mat;
+            mutable RenderStats m_stats;
         };
     }
 }

@@ -25,10 +25,9 @@ source distribution.
 
 namespace robot2D{
 
-    Texture::Texture():m_size(),
-    buffer(nullptr)
-    {
-        setup_GL();
+    Texture::Texture():
+    m_size(),
+    buffer(nullptr) {
     }
 
     Texture::~Texture() {
@@ -44,11 +43,11 @@ namespace robot2D{
         buffer = stbi_load(path.c_str(), &width, &height,
                                         &nrChannels, 0);
 
+        if(buffer == nullptr)
+            return false;
+
         m_size.x = width;
         m_size.y = height;
-
-        if(!buffer)
-            return false;
 
         GLenum format;
 
@@ -60,6 +59,8 @@ namespace robot2D{
         if (nrChannels == 4)
             format = GL_RGBA;
 
+        setupGL();
+
         glTexImage2D(GL_TEXTURE_2D, 0, format, m_size.x, m_size.y,
                      0, format, GL_UNSIGNED_BYTE, buffer);
         glGenerateMipmap(GL_TEXTURE_2D);
@@ -67,43 +68,34 @@ namespace robot2D{
         return true;
     }
 
-    vec2u& Texture::get_size() {
+    vec2u& Texture::getSize() {
         return m_size;
     }
 
-    const vec2u &Texture::get_size() const {
+    const vec2u& Texture::getSize() const {
         return m_size;
     }
 
-    void Texture::setup_GL() {
+    void Texture::setupGL() {
         glGenTextures(1, &m_texture);
-        // all upcoming GL_TEXTURE_2D operations now have effect on this texture object
         glBindTexture(GL_TEXTURE_2D, m_texture);
-        // set the texture wrapping parameters
-        // set texture wrapping to GL_REPEAT (default wrapping method)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        // set texture filtering parameters
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     }
 
-    void Texture::bind() const {
-        glBindTexture(GL_TEXTURE_2D, m_texture);
-    }
-
-    void Texture::generate(const vec2u& size, void *data) {
+    void Texture::create(const vec2u& size, void* data) {
         m_size = size;
-
-        // create Texture
+        setupGL();
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, size.x, size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
     }
 
-    const unsigned int& Texture::get_id() const {
+    const unsigned int& Texture::getID() const {
         return m_texture;
     }
 
-    unsigned char* Texture::get_pixels() const {
+    unsigned char* Texture::getPixels() const {
         return buffer;
     }
 

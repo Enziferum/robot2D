@@ -29,9 +29,9 @@ namespace robot2D {
 
     }
 
-    void Sprite::setTexture(const Texture& texture) {
+    void Sprite::setTexture(const Texture& texture, const IntRect& textureRect ) {
         if(!m_texture && (m_texture_rect == IntRect())){
-            auto size = texture.get_size();
+            auto size = texture.getSize();
             //it's not correct for us
             m_texture_rect = IntRect(0, 0, size.x, size.y);
             setSize(size.x, size.y);
@@ -72,14 +72,37 @@ namespace robot2D {
     }
 
     void Sprite::draw(RenderTarget& target, RenderStates states) const {
-        if(m_texture){
-            auto t = getTransform();
-            t = t.scale(m_size);
-            states.transform *= t;
-            states.texture = m_texture;
-            states.color = m_color;
-            target.draw(states);
-        }
+        if(!m_texture)
+            return;
+        auto t = getTransform();
+        t = t.scale(m_size);
+        states.transform *= t;
+        states.texture = m_texture;
+        states.color = m_color;
+        target.draw({vertices[0], vertices[1], vertices[2], vertices[3]}, states);
+    }
+    // Not best way ?
+    void Sprite::setTextureRect(const IntRect& textureRect) {
+        m_texture_rect = textureRect;
+
+        float left   = static_cast<float>(m_texture_rect.lx);
+        float right  = left + m_texture_rect.width;
+
+        float bottom = m_texture_rect.ly;
+        float top = m_texture_rect.ly + m_texture_rect.height;
+
+        auto convertToGL = [](float value, float textureSize) {
+            return static_cast<float>(value / textureSize);
+        };
+        auto tx_s = m_texture -> getSize();
+        vertices[0].texCoords = {convertToGL(left, static_cast<float>(tx_s.x)),
+                                 convertToGL(bottom, static_cast<float>(tx_s.y))};
+        vertices[1].texCoords = {convertToGL(right, static_cast<float>(tx_s.x)),
+                                 convertToGL(bottom, static_cast<float>(tx_s.y))};
+        vertices[2].texCoords = {convertToGL(right, static_cast<float>(tx_s.x)),
+                                 convertToGL(top, static_cast<float>(tx_s.y))};
+        vertices[3].texCoords = {convertToGL(left, static_cast<float>(tx_s.x)),
+                                 convertToGL(top, static_cast<float>(tx_s.y))};
     }
 
 }
