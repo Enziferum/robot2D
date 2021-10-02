@@ -45,6 +45,7 @@ namespace robot2D {
         virtual const View& getDefaultView();
 
 
+        virtual void draw(const RenderStates& states);
         virtual void draw(const VertexData& data, const RenderStates& states);
         virtual void draw(const Drawable& drawable, const RenderStates& states
                                                     = RenderStates::Default);

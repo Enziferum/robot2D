@@ -20,25 +20,40 @@ source distribution.
 *********************************************************************/
 
 #pragma once
-#include "Rect.hpp"
-#include "Texture.hpp"
+#include <vector>
+#include <memory>
 
-namespace robot2D {
-    class TextureAtlas {
+#include <robot2D/Core/MessageBus.hpp>
+#include "Bitmask.hpp"
+#include "Defines.hpp"
+#include "Entity.hpp"
+
+namespace ecs {
+    using EntityList = std::vector<Entity>;
+
+    class SystemManager;
+    class System {
     public:
-        TextureAtlas();
-        ~TextureAtlas() = default;
+        using Ptr = std::shared_ptr<System>;
+    public:
+        System(const SystemID& systemId,
+               SystemManager* systemManager, robot2D::MessageBus& messageBus);
+        virtual ~System() = 0;
 
-        bool loadFromFile(const std::string& file, const robot2D::vec2u& itemSize,
-                          const robot2D::vec2f& offset = {});
+        bool fitsRequirements(const Bitmask& bitmask);
+        bool addEntity(const Entity& entityId);
+        bool hasEntity(const Entity& entityId);
+        bool removeEntity(const Entity& entityId);
 
-        const size_t& getItemsCount() const;
-        const Texture& getTexture() const;
-        const robot2D::vec2u& getItemSize() const;
-        const robot2D::FloatRect& getItemFrame(const robot2D::vec2u& index) const;
-    private:
-        Texture m_texture;
-        robot2D::vec2u m_ItemSize;
-        size_t m_itemsCount;
+        virtual void update(float dt) = 0;
+        virtual void onMessage(const robot2D::Message& message) = 0;
+    protected:
+        friend class SystemManager;
+        SystemManager* m_systemManager;
+
+        SystemID m_systemId;
+        EntityList m_entities;
+        robot2D::MessageBus& m_messageBus;
+        std::vector<Bitmask> m_requirements;
     };
 }

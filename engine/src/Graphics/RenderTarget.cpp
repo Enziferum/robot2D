@@ -48,6 +48,9 @@ namespace robot2D {
         drawable.draw(*this, states);
     }
 
+    void RenderTarget::draw(const RenderStates &states) {
+        m_render -> render(states);
+    }
 
     void RenderTarget::draw(const VertexData& data, const RenderStates& states) {
         if(!m_render)
@@ -83,4 +86,6 @@ namespace robot2D {
     const RenderStats& RenderTarget::getStats() const {
         return m_render -> getStats();
     }
+
+
 }

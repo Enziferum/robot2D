@@ -1,7 +1,7 @@
 /*********************************************************************
 (c) Alex Raag 2021
 https://github.com/Enziferum
-robot2D - Zlib license.
+ZombieArena - Zlib license.
 This software is provided 'as-is', without any express or
 implied warranty. In no event will the authors be held
 liable for any damages arising from the use of this software.
@@ -19,44 +19,40 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include <robot2D/Graphics/Buffer.hpp>
+#include "SystemManager.hpp"
+#include "EntityManager.hpp"
 
-#include "Desktop/OpenGLBuffer.hpp"
+namespace ecs {
+    SystemManager::SystemManager(robot2D::MessageBus& messageBus):
+        m_messageBus(messageBus) {
 
-namespace robot2D {
-    ////// Vertex Buffer //////
-
-    VertexBuffer::~VertexBuffer() noexcept {}
-
-    const uint32_t& VertexBuffer::getSize() const {
-        return m_size;
     }
 
-    uint32_t& VertexBuffer::getSize() {
-        return m_size;
+    void SystemManager::entityModified(const Entity& entityId, const Bitmask& entityMask) {
+        for(auto& it: m_systems) {
+            auto system = it.second;
+            if(system -> fitsRequirements(entityMask)) {
+                system -> addEntity(entityId);
+            } else {
+                system -> removeEntity(entityId);
+            }
+        }
     }
 
-    VertexBuffer::Ptr VertexBuffer::Create(const uint32_t& size) {
-        return std::make_shared<OpenGLVertexBuffer>(size);
+    bool SystemManager::removeEntity(const Entity& entity) {
+        for(auto& it: m_systems)
+            it.second -> removeEntity(entity);
+        return true;
     }
 
-    VertexBuffer::Ptr VertexBuffer::Create(float* data, const uint32_t &size) {
-        return std::make_shared<OpenGLVertexBuffer>(data, size);
+    void SystemManager::handleMessage(const robot2D::Message& message) {
+        for(auto& it: m_systems)
+            it.second -> onMessage(message);
     }
 
-    ////// Index Buffer //////
-
-    IndexBuffer::~IndexBuffer() noexcept {}
-
-    const uint32_t& IndexBuffer::getSize() const {
-        return m_size;
+    void SystemManager::update(float dt) {
+        for(auto& it: m_systems)
+            it.second -> update(dt);
     }
 
-    uint32_t& IndexBuffer::getSize() {
-        return m_size;
-    }
-
-    IndexBuffer::Ptr IndexBuffer::Create(uint32_t* data, const uint32_t& size) {
-        return std::make_shared<OpenGLIndexBuffer>(data, size);
-    }
 }

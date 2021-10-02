@@ -19,44 +19,23 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include <robot2D/Graphics/Buffer.hpp>
+#pragma once
+#include <queue>
 
-#include "Desktop/OpenGLBuffer.hpp"
+namespace ecs {
 
-namespace robot2D {
-    ////// Vertex Buffer //////
+    template<typename ID>
+    class EventQueue {
+    public:
+        EventQueue();
+        ~EventQueue() = default;
 
-    VertexBuffer::~VertexBuffer() noexcept {}
+        void addEvent(const ID& eventID);
+        bool processEvents(const ID& eventID);
+        void clear();
+    private:
+        std::queue<ID> m_eventQueue;
+    };
 
-    const uint32_t& VertexBuffer::getSize() const {
-        return m_size;
-    }
 
-    uint32_t& VertexBuffer::getSize() {
-        return m_size;
-    }
-
-    VertexBuffer::Ptr VertexBuffer::Create(const uint32_t& size) {
-        return std::make_shared<OpenGLVertexBuffer>(size);
-    }
-
-    VertexBuffer::Ptr VertexBuffer::Create(float* data, const uint32_t &size) {
-        return std::make_shared<OpenGLVertexBuffer>(data, size);
-    }
-
-    ////// Index Buffer //////
-
-    IndexBuffer::~IndexBuffer() noexcept {}
-
-    const uint32_t& IndexBuffer::getSize() const {
-        return m_size;
-    }
-
-    uint32_t& IndexBuffer::getSize() {
-        return m_size;
-    }
-
-    IndexBuffer::Ptr IndexBuffer::Create(uint32_t* data, const uint32_t& size) {
-        return std::make_shared<OpenGLIndexBuffer>(data, size);
-    }
 }

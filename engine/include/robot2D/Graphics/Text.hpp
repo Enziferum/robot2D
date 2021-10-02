@@ -52,6 +52,7 @@ namespace robot2D{
         void setup_GL();
         void update_geometry() const;
     private:
+        // TODO remove & move to Batch Render
         struct vertex {
             float x;
             float y;

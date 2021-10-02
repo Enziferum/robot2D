@@ -1,7 +1,7 @@
 /*********************************************************************
 (c) Alex Raag 2021
 https://github.com/Enziferum
-robot2D - Zlib license.
+ZombieArena - Zlib license.
 This software is provided 'as-is', without any express or
 implied warranty. In no event will the authors be held
 liable for any damages arising from the use of this software.
@@ -19,44 +19,33 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include <robot2D/Graphics/Buffer.hpp>
+#include "EcsManager.hpp"
 
-#include "Desktop/OpenGLBuffer.hpp"
-
-namespace robot2D {
-    ////// Vertex Buffer //////
-
-    VertexBuffer::~VertexBuffer() noexcept {}
-
-    const uint32_t& VertexBuffer::getSize() const {
-        return m_size;
+namespace ecs {
+    EcsManager::EcsManager(robot2D::MessageBus& messageBus):
+            m_entityManager(),
+            m_systemManager(messageBus)
+    {
+        m_entityManager.setSystemManager(&m_systemManager);
     }
 
-    uint32_t& VertexBuffer::getSize() {
-        return m_size;
+    const EntityManager& EcsManager::getEntityManager() const {
+        return m_entityManager;
     }
 
-    VertexBuffer::Ptr VertexBuffer::Create(const uint32_t& size) {
-        return std::make_shared<OpenGLVertexBuffer>(size);
+    EntityManager& EcsManager::getEntityManager() {
+        return m_entityManager;
     }
 
-    VertexBuffer::Ptr VertexBuffer::Create(float* data, const uint32_t &size) {
-        return std::make_shared<OpenGLVertexBuffer>(data, size);
+    const SystemManager& EcsManager::getSystemManager() const {
+        return m_systemManager;
     }
 
-    ////// Index Buffer //////
-
-    IndexBuffer::~IndexBuffer() noexcept {}
-
-    const uint32_t& IndexBuffer::getSize() const {
-        return m_size;
+    SystemManager& EcsManager::getSystemManager() {
+        return m_systemManager;
     }
 
-    uint32_t& IndexBuffer::getSize() {
-        return m_size;
-    }
-
-    IndexBuffer::Ptr IndexBuffer::Create(uint32_t* data, const uint32_t& size) {
-        return std::make_shared<OpenGLIndexBuffer>(data, size);
+    Entity EcsManager::createEntity(const Bitmask& bitmask) {
+        return m_entityManager.addEntity(bitmask);
     }
 }

@@ -19,44 +19,30 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include <robot2D/Graphics/Buffer.hpp>
+#include "EventQueue.hpp"
 
-#include "Desktop/OpenGLBuffer.hpp"
+namespace ecs {
+    template<typename ID>
+    EventQueue<ID>::EventQueue(): m_eventQueue() {}
 
-namespace robot2D {
-    ////// Vertex Buffer //////
-
-    VertexBuffer::~VertexBuffer() noexcept {}
-
-    const uint32_t& VertexBuffer::getSize() const {
-        return m_size;
+    template<typename ID>
+    bool EventQueue<ID>::processEvents(const ID& eventID) {
+        if(m_eventQueue.empty()) return false;
+        eventID = m_eventQueue.front();
+        m_eventQueue.pop();
+        return true;
     }
 
-    uint32_t& VertexBuffer::getSize() {
-        return m_size;
+    template<typename ID>
+    void EventQueue<ID>::clear() {
+        while(!m_eventQueue.empty())
+            m_eventQueue.pop;
     }
 
-    VertexBuffer::Ptr VertexBuffer::Create(const uint32_t& size) {
-        return std::make_shared<OpenGLVertexBuffer>(size);
+    template<typename ID>
+    void EventQueue<ID>::addEvent(const ID& eventID) {
+        m_eventQueue.push(eventID);
     }
 
-    VertexBuffer::Ptr VertexBuffer::Create(float* data, const uint32_t &size) {
-        return std::make_shared<OpenGLVertexBuffer>(data, size);
-    }
 
-    ////// Index Buffer //////
-
-    IndexBuffer::~IndexBuffer() noexcept {}
-
-    const uint32_t& IndexBuffer::getSize() const {
-        return m_size;
-    }
-
-    uint32_t& IndexBuffer::getSize() {
-        return m_size;
-    }
-
-    IndexBuffer::Ptr IndexBuffer::Create(uint32_t* data, const uint32_t& size) {
-        return std::make_shared<OpenGLIndexBuffer>(data, size);
-    }
 }

@@ -19,44 +19,36 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include <robot2D/Graphics/Buffer.hpp>
+#pragma once
+#include <cstdint>
+#include <vector>
 
-#include "Desktop/OpenGLBuffer.hpp"
+namespace ecs {
+    using Bitset = uint32_t;
 
-namespace robot2D {
-    ////// Vertex Buffer //////
+    class Bitmask {
+    public:
+        Bitmask();
+        Bitmask(const Bitset& bits);
+        ~Bitmask() = default;
 
-    VertexBuffer::~VertexBuffer() noexcept {}
+        Bitset getBitset() const;
+        void setBitset(const Bitset& bitset);
 
-    const uint32_t& VertexBuffer::getSize() const {
-        return m_size;
-    }
+        bool matches(const Bitmask& other,
+                     const Bitset& relevant = 0);
 
-    uint32_t& VertexBuffer::getSize() {
-        return m_size;
-    }
+        bool getBit(const unsigned int& pos) const;
 
-    VertexBuffer::Ptr VertexBuffer::Create(const uint32_t& size) {
-        return std::make_shared<OpenGLVertexBuffer>(size);
-    }
+        void turnOnBit(const unsigned int& pos);
+        void turnOnBits(const Bitset& bitset);
+        void toggleBit(const unsigned int& pos);
+        void clear(const unsigned int& pos);
+        void Clear();
+    private:
+        Bitset m_bits;
+    };
 
-    VertexBuffer::Ptr VertexBuffer::Create(float* data, const uint32_t &size) {
-        return std::make_shared<OpenGLVertexBuffer>(data, size);
-    }
-
-    ////// Index Buffer //////
-
-    IndexBuffer::~IndexBuffer() noexcept {}
-
-    const uint32_t& IndexBuffer::getSize() const {
-        return m_size;
-    }
-
-    uint32_t& IndexBuffer::getSize() {
-        return m_size;
-    }
-
-    IndexBuffer::Ptr IndexBuffer::Create(uint32_t* data, const uint32_t& size) {
-        return std::make_shared<OpenGLIndexBuffer>(data, size);
-    }
+    // get mask from input components
+    Bitmask configureMask(std::vector<Bitset> bits);
 }

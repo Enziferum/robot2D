@@ -8,6 +8,10 @@ set(ENGINE_SRC ${ENGINE_SRC}
         ${INCLROOT}/Core/Window.hpp
         ${INCLROOT}/Core/Keyboard.hpp
         ${INCLROOT}/Core/Vector2.hpp
+        ${INCLROOT}/Core/MessageBus.hpp
+        ${INCLROOT}/Core/Message.hpp
+        ${INCLROOT}/Core/memory/Allocators.hpp
+        ${INCLROOT}/Core/memory/MemoryManager.hpp
 
 
         #Graphics
@@ -46,6 +50,9 @@ set(ENGINE_SRC ${ENGINE_SRC}
         ${SRCROOT}/Core/WindowContext.cpp
         ${SRCROOT}/Core/Keyboard.cpp
         ${SRCROOT}/Core/Mouse.cpp
+        ${SRCROOT}/Core/MessageBus.cpp
+        ${SRCROOT}/Core/memory/Allocators.cpp
+        ${SRCROOT}/Core/memory/MemoryManager.cpp
 
         #Graphics
         ${SRCROOT}/Graphics/Color.cpp

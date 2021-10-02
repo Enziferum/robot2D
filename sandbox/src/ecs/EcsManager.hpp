@@ -19,44 +19,31 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include <robot2D/Graphics/Buffer.hpp>
+#pragma once
 
-#include "Desktop/OpenGLBuffer.hpp"
+#include <robot2D/Core/MessageBus.hpp>
+#include "EntityManager.hpp"
+#include "SystemManager.hpp"
+#include "Entity.hpp"
 
-namespace robot2D {
-    ////// Vertex Buffer //////
+namespace ecs {
 
-    VertexBuffer::~VertexBuffer() noexcept {}
+    class EcsManager {
+    public:
+        EcsManager(robot2D::MessageBus&);
+        ~EcsManager() = default;
 
-    const uint32_t& VertexBuffer::getSize() const {
-        return m_size;
-    }
+        Entity createEntity(const Bitmask& bitmask);
 
-    uint32_t& VertexBuffer::getSize() {
-        return m_size;
-    }
+        const EntityManager& getEntityManager() const;
+        EntityManager& getEntityManager();
 
-    VertexBuffer::Ptr VertexBuffer::Create(const uint32_t& size) {
-        return std::make_shared<OpenGLVertexBuffer>(size);
-    }
+        const SystemManager& getSystemManager() const;
+        SystemManager& getSystemManager();
+    private:
+        EntityManager m_entityManager;
+        SystemManager m_systemManager;
+    };
 
-    VertexBuffer::Ptr VertexBuffer::Create(float* data, const uint32_t &size) {
-        return std::make_shared<OpenGLVertexBuffer>(data, size);
-    }
 
-    ////// Index Buffer //////
-
-    IndexBuffer::~IndexBuffer() noexcept {}
-
-    const uint32_t& IndexBuffer::getSize() const {
-        return m_size;
-    }
-
-    uint32_t& IndexBuffer::getSize() {
-        return m_size;
-    }
-
-    IndexBuffer::Ptr IndexBuffer::Create(uint32_t* data, const uint32_t& size) {
-        return std::make_shared<OpenGLIndexBuffer>(data, size);
-    }
 }

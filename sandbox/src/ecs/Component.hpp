@@ -19,44 +19,20 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include <robot2D/Graphics/Buffer.hpp>
+#pragma once
 
-#include "Desktop/OpenGLBuffer.hpp"
+#include <memory>
 
-namespace robot2D {
-    ////// Vertex Buffer //////
+namespace ecs {
+    class Component {
+    public:
+        using Ptr = std::shared_ptr<Component>;
+    public:
+        Component(const uint32_t& type);
+        virtual ~Component() = 0;
 
-    VertexBuffer::~VertexBuffer() noexcept {}
-
-    const uint32_t& VertexBuffer::getSize() const {
-        return m_size;
-    }
-
-    uint32_t& VertexBuffer::getSize() {
-        return m_size;
-    }
-
-    VertexBuffer::Ptr VertexBuffer::Create(const uint32_t& size) {
-        return std::make_shared<OpenGLVertexBuffer>(size);
-    }
-
-    VertexBuffer::Ptr VertexBuffer::Create(float* data, const uint32_t &size) {
-        return std::make_shared<OpenGLVertexBuffer>(data, size);
-    }
-
-    ////// Index Buffer //////
-
-    IndexBuffer::~IndexBuffer() noexcept {}
-
-    const uint32_t& IndexBuffer::getSize() const {
-        return m_size;
-    }
-
-    uint32_t& IndexBuffer::getSize() {
-        return m_size;
-    }
-
-    IndexBuffer::Ptr IndexBuffer::Create(uint32_t* data, const uint32_t& size) {
-        return std::make_shared<OpenGLIndexBuffer>(data, size);
-    }
+        const uint32_t& getType() const;
+    protected:
+        uint32_t m_type;
+    };
 }

@@ -19,44 +19,32 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include <robot2D/Graphics/Buffer.hpp>
-
-#include "Desktop/OpenGLBuffer.hpp"
+#pragma once
 
 namespace robot2D {
-    ////// Vertex Buffer //////
+    class Message {
+    public:
 
-    VertexBuffer::~VertexBuffer() noexcept {}
+        using ID = int32_t;
+        enum MessageType {
+            System = 0,
+            Count
+        };
 
-    const uint32_t& VertexBuffer::getSize() const {
-        return m_size;
-    }
+        ID id = -1;
 
-    uint32_t& VertexBuffer::getSize() {
-        return m_size;
-    }
+        template<typename T>
+        const T& getData() const;
+        void* buffer;
+    private:
+        friend class MessageBus;
 
-    VertexBuffer::Ptr VertexBuffer::Create(const uint32_t& size) {
-        return std::make_shared<OpenGLVertexBuffer>(size);
-    }
+        size_t buffer_sz;
+    };
 
-    VertexBuffer::Ptr VertexBuffer::Create(float* data, const uint32_t &size) {
-        return std::make_shared<OpenGLVertexBuffer>(data, size);
-    }
-
-    ////// Index Buffer //////
-
-    IndexBuffer::~IndexBuffer() noexcept {}
-
-    const uint32_t& IndexBuffer::getSize() const {
-        return m_size;
-    }
-
-    uint32_t& IndexBuffer::getSize() {
-        return m_size;
-    }
-
-    IndexBuffer::Ptr IndexBuffer::Create(uint32_t* data, const uint32_t& size) {
-        return std::make_shared<OpenGLIndexBuffer>(data, size);
+    template<typename T>
+    const T& Message::getData() const {
+        assert(sizeof(T) == buffer_sz && "T size must be == buffer_sz");
+        return *static_cast<T*>(buffer);
     }
 }

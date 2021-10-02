@@ -19,44 +19,25 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include <robot2D/Graphics/Buffer.hpp>
+#include "EntityManager.hpp"
 
-#include "Desktop/OpenGLBuffer.hpp"
+namespace ecs {
 
-namespace robot2D {
-    ////// Vertex Buffer //////
+    Entity::Entity():m_entityManager(nullptr), m_id(-1) {}
+    Entity::Entity(EntityManager* entityManager, const EntityID& id): m_entityManager(entityManager),
+    m_id(id) {}
 
-    VertexBuffer::~VertexBuffer() noexcept {}
 
-    const uint32_t& VertexBuffer::getSize() const {
-        return m_size;
+    bool operator==(const Entity& l, const Entity& r){
+        return l.m_id == r.m_id;
     }
 
-    uint32_t& VertexBuffer::getSize() {
-        return m_size;
+    bool Entity::addComponent(const ComponentID &id) {
+        return m_entityManager->addComponent(m_id, id);
     }
 
-    VertexBuffer::Ptr VertexBuffer::Create(const uint32_t& size) {
-        return std::make_shared<OpenGLVertexBuffer>(size);
+    bool Entity::hasComponent(const ComponentID &id) {
+        return m_entityManager->hasComponent(m_id, id);
     }
 
-    VertexBuffer::Ptr VertexBuffer::Create(float* data, const uint32_t &size) {
-        return std::make_shared<OpenGLVertexBuffer>(data, size);
-    }
-
-    ////// Index Buffer //////
-
-    IndexBuffer::~IndexBuffer() noexcept {}
-
-    const uint32_t& IndexBuffer::getSize() const {
-        return m_size;
-    }
-
-    uint32_t& IndexBuffer::getSize() {
-        return m_size;
-    }
-
-    IndexBuffer::Ptr IndexBuffer::Create(uint32_t* data, const uint32_t& size) {
-        return std::make_shared<OpenGLIndexBuffer>(data, size);
-    }
 }
