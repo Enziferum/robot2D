@@ -97,7 +97,7 @@ namespace robot2D {
 
         glActiveTexture(GL_TEXTURE0);
         m_textShader.use();
-        m_textShader.set_parameter("textColor", m_color.r, m_color.g, m_color.b);
+        m_textShader.set_parameter("textColor", m_color.red, m_color.green, m_color.blue);
 
         //draw by char
         for(auto& it: m_buffer) {

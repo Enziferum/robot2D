@@ -8,18 +8,12 @@
 #include <robot2D/Graphics/Color.hpp>
 
 namespace robot2D {
-    struct RColor {
-        float r;
-        float g;
-        float b;
-        float a;
-    };
 
 #pragma pack(push, 1)
     struct RenderVertex {
         robot2D::vec2f Position;
         robot2D::vec2f TextureCoords;
-        RColor Color;
+        Color Color;
         float textureIndex;
     };
 #pragma pack(pop)

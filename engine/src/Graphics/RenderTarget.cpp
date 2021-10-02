@@ -18,6 +18,7 @@ and must not be misrepresented as being the original software.
 3. This notice may not be removed or altered from any
 source distribution.
 *********************************************************************/
+#include <cassert>
 
 #include <robot2D/Graphics/GL.hpp>
 #include <robot2D/Graphics/RenderTarget.hpp>
@@ -32,16 +33,13 @@ namespace robot2D {
         setup();
     }
 
-    RenderTarget::~RenderTarget() {
-        if(m_render){
-            delete m_render;
-            m_render = nullptr;
-        }
-    }
+    RenderTarget::~RenderTarget() {}
 
     void RenderTarget::setup() {
         if(!m_render)
-            m_render = robot2D::priv::RenderImpl::create();
+            m_render = std::move(robot2D::priv::RenderImpl::create());
+
+        assert(m_render != nullptr && "Render Impl must be not null");
 
         m_render -> setSize(m_size);
     }
@@ -52,7 +50,6 @@ namespace robot2D {
 
 
     void RenderTarget::draw(const VertexData& data, const RenderStates& states) {
-
         if(!m_render)
             return;
 

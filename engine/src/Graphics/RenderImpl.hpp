@@ -20,6 +20,7 @@ source distribution.
 *********************************************************************/
 
 #pragma once
+#include <memory>
 
 #include <robot2D/Graphics/RenderStates.hpp>
 #include <robot2D/Graphics/View.hpp>
@@ -30,10 +31,12 @@ namespace robot2D {
     namespace priv {
         class RenderImpl {
         public:
+            using Ptr = std::unique_ptr<RenderImpl>;
+        public:
             RenderImpl();
             virtual ~RenderImpl() = 0;
 
-            static RenderImpl* create();
+            static Ptr create();
             virtual void render(const VertexData& data, const RenderStates& states) const = 0;
 
             virtual void setView(const View& view) = 0;

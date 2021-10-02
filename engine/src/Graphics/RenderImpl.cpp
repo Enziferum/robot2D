@@ -31,8 +31,8 @@ namespace robot2D {
 
         RenderImpl::~RenderImpl() {}
 
-        RenderImpl* RenderImpl::create() {
-            return new RenderHandle();
+        RenderImpl::Ptr RenderImpl::create() {
+            return std::make_unique<RenderHandle>();
         }
 
         void RenderImpl::setSize(const vec2u& size) {

@@ -28,42 +28,37 @@ source distribution.
 namespace robot2D {
     namespace priv {
 
-        std::string vertexSource = R"(
-
+        const std::string vertexSource = R"(
+            #version 330 core
+            layout (location = 0) in vec2 position;
+            layout (location = 1) in vec2 textureCoords;
+            layout (location = 2) in vec4 color;
+            layout (location = 3) in float textureIndex;
+            out vec2 TexCoords;
+            out vec4 Color;
+            out float TexIndex;
+            uniform mat4 projection;
+            void main()
+            {
+                TexCoords = textureCoords;
+                Color = color;
+                TexIndex = textureIndex;
+                gl_Position = projection * vec4(position, 0.0, 1.0);
+            }
         )";
 
-        std::string fragmentSource = R"(
-
+        const std::string fragmentSource = R"(
+            #version 330 core
+            in vec2 TexCoords;
+            in vec4 Color;
+            in float TexIndex;
+            uniform sampler2D sprite;
+            out vec4 fragColor;
+            void main()
+            {
+                fragColor = Color * texture(sprite, TexCoords);
+            }
         )";
-
-        const char* vertexShaderSource = "#version 330 core\n"
-                                         "layout (location = 0) in vec2 position;\n"
-                                         "layout (location = 1) in vec2 textureCoords;\n"
-                                         "layout (location = 2) in vec4 color;\n"
-                                         "layout (location = 3) in float textureIndex;\n"
-                                         "out vec2 TexCoords; \n"
-                                         "out vec4 Color; \n"
-                                         "out float TexIndex; \n"
-                                         "uniform mat4 projection; \n"
-                                         "void main()\n"
-                                         "{\n"
-                                         "   TexCoords = textureCoords; \n"
-                                         "   Color = color; \n"
-                                         "   TexIndex = textureIndex; \n"
-                                         "   gl_Position = projection * vec4(position, 0.0, 1.0); \n"
-                                         "}\0";
-
-        const char* fragmentShaderSource = "#version 330 core \n"
-                                           "in vec2 TexCoords; \n"
-                                           "in vec4 Color; \n"
-                                           "in float TexIndex; \n"
-                                           "out vec4 fragColor; \n"
-                                           "uniform sampler2D sprite; \n"
-                                           "void main()\n"
-                                           "{\n"
-                                           "  fragColor = Color * texture(sprite, TexCoords);\n"
-                                           "}\0";
-
 
         constexpr short quadVertexSize = 4;
 
@@ -74,6 +69,7 @@ namespace robot2D {
             destroy();
         }
 
+        // TODO create Buffers(Vertex, Index)
         void OpenGLRender::init() {
             m_renderBuffer.quadBuffer = new RenderVertex[m_renderBuffer.maxQuadsCount];
 
@@ -115,19 +111,19 @@ namespace robot2D {
             delete[] quadIndices;
 
 
-            m_renderBuffer.quadVertexPositions[0] = {-0.5f, -0.5f};
-            m_renderBuffer.quadVertexPositions[1] = {0.5f, -0.5f};
-            m_renderBuffer.quadVertexPositions[2] = {0.5f, 0.5f};
-            m_renderBuffer.quadVertexPositions[3] = {-0.5f, 0.5f};
+            m_renderBuffer.quadVertexPositions[0] = {-0.5F, -0.5F};
+            m_renderBuffer.quadVertexPositions[1] = {0.5F, -0.5F};
+            m_renderBuffer.quadVertexPositions[2] = {0.5F, 0.5F};
+            m_renderBuffer.quadVertexPositions[3] = {-0.5F, 0.5F};
 
             if(!m_quadShader.createShader(shaderType::vertex,
-                                             vertexShaderSource, false)) {
+                                             vertexSource, false)) {
                 std::string reason = "Can't load Quad Vertex Shader";
                 throw std::runtime_error(reason);
             }
 
             if(!m_quadShader.createShader(shaderType::fragment,
-                                             fragmentShaderSource, false)) {
+                                             fragmentSource, false)) {
                 std::string reason = "Can't load Quad Fragment Shader";
                 throw std::runtime_error(reason);
             }
@@ -140,7 +136,7 @@ namespace robot2D {
 //            for(int it = 0; it < 32; ++it)
 //                m_quadShader.set_parameter("textureSamplers", it);
             m_quadShader.set_parameter("sprite", 0);
-            for(int it = 1; it < 32; ++it)
+            for(int it = 1; it < 2; ++it)
                 m_renderBuffer.textureSlots[it] = 0;
 
             m_default.reset(FloatRect(0.F, 0.F,
@@ -178,24 +174,18 @@ namespace robot2D {
                 beforeRender();
             }
 
-            float textureIndex = 0.f;
+            float textureIndex = 0.F;
 
             // texture coloring
             if(states.texture != nullptr) {
                 // find our texture
                 m_renderBuffer.textureSlots[1] = states.texture->getID();
-            } else {
-                m_renderBuffer.textureSlots[1] = 0;
             }
 
 
             for (auto it = 0; it < quadVertexSize; ++it) {
                 m_renderBuffer.quadBufferPtr->Position = states.transform * m_renderBuffer.quadVertexPositions[it];
-                float r = states.color.r / 255;
-                float g = states.color.g / 255;
-                float b = states.color.b / 255;
-                float a = 1;
-                m_renderBuffer.quadBufferPtr->Color = {r, g, b, a};
+                m_renderBuffer.quadBufferPtr->Color = states.color.toGL();
                 m_renderBuffer.quadBufferPtr->textureIndex = textureIndex;
                 m_renderBuffer.quadBufferPtr->TextureCoords = data[it].texCoords;
                 m_renderBuffer.quadBufferPtr++;
@@ -215,10 +205,10 @@ namespace robot2D {
             float height = static_cast<float>(m_size.y);
             const FloatRect& viewport = view.getViewport();
 
-            return IntRect(static_cast<int>(0.5f + width  * viewport.lx),
-                           static_cast<int>(0.5f + height * viewport.ly),
-                           static_cast<int>(0.5f + width  * viewport.width),
-                           static_cast<int>(0.5f + height * viewport.height));
+            return IntRect(static_cast<int>(0.5F + width  * viewport.lx),
+                           static_cast<int>(0.5F + height * viewport.ly),
+                           static_cast<int>(0.5F + width  * viewport.width),
+                           static_cast<int>(0.5F + height * viewport.height));
         }
 
         void OpenGLRender::applyCurrentView() {
@@ -253,9 +243,11 @@ namespace robot2D {
 //            for(int it = 0; it < m_renderBuffer.textureSlots.size(); ++it)
 //                glBindTexture(it, m_renderBuffer.textureSlots[it]);
 
+            glActiveTexture(GL_TEXTURE0);
             if(m_renderBuffer.textureSlots[1] != 0 ) {
-                glActiveTexture(GL_TEXTURE0);
                 glBindTexture(GL_TEXTURE_2D, m_renderBuffer.textureSlots[1]);
+            } else {
+                glBindTexture(GL_TEXTURE_2D, m_renderBuffer.textureSlots[0]);
             }
 
 
@@ -266,6 +258,7 @@ namespace robot2D {
             m_renderBuffer.indexCount = 0;
             m_renderBuffer.textureSlotIndex = 1;
             m_stats.drawCalls++;
+            m_renderBuffer.textureSlots[1] = 0;
         }
 
         const RenderStats &OpenGLRender::getStats() const {

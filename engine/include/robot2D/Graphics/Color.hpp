@@ -26,8 +26,8 @@ namespace robot2D {
     class Color {
     public:
         Color();
-        Color(unsigned int r, unsigned int g, unsigned int b,
-              unsigned int alpha = 255);
+        Color(const float& red, const float& green, const float& blue,
+              const float& alpha = 255.F);
         ~Color() = default;
 
         static const Color Black;       //!< Black predefined color
@@ -40,11 +40,14 @@ namespace robot2D {
         static const Color Cyan;        //!< Cyan predefined color
         static const Color Transparent; //!< Transparent (black) predefined color
 
-        static Color from_gl(float r, float g, float b, float alpha = 1.f);
+        Color toGL() const;
+
+        static Color fromGL(const float& red, const float& green, const float& blue, const float& alpha = 255.F);
+        static Color toGL(const float& red, const float& green, const float& blue, const float& alpha = 1.F);
     public:
-        unsigned int r;
-        unsigned int g;
-        unsigned int b;
-        unsigned int alpha;
+        float red;
+        float green;
+        float blue;
+        float alpha;
     };
 }

@@ -39,10 +39,15 @@ void Render2DScene::imGuiRender() {
 void Render2DScene::render() {
     m_window.beforeRender();
 
+    Quad quad;
+    quad.setPosition({400.F, 400.F});
+    quad.scale({100.F, 100.F});
+    m_window.draw(quad);
+
     robot2D::Sprite sprite;
     sprite.setTexture(texture);
-    sprite.setPosition({300.f, 300.f});
-    sprite.setSize({150.f, 150.f});
+    sprite.setPosition({300.F, 300.F});
+    sprite.setSize({150.F, 150.F});
 
     sprite.setTextureRect({48, 82, 83, 91});
     m_window.draw(sprite);
