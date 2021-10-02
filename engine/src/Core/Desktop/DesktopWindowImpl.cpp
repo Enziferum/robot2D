@@ -127,7 +127,7 @@ namespace robot2D {
         }
 
         void DesktopWindowImpl::clear(const Color &color) {
-            glClearColor(color.r, color.g, color.b, color.alpha);
+            glClearColor(color.red, color.green, color.blue, color.alpha);
             glClear(GL_COLOR_BUFFER_BIT);
         }
 

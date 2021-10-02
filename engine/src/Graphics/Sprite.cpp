@@ -25,9 +25,7 @@ source distribution.
 namespace robot2D {
 
     Sprite::Sprite(): m_texture(nullptr),
-    m_color(Color::White){
-
-    }
+    m_color(Color::White) {}
 
     void Sprite::setTexture(const Texture& texture, const IntRect& textureRect ) {
         if(!m_texture && (m_texture_rect == IntRect())){
@@ -81,6 +79,7 @@ namespace robot2D {
         states.color = m_color;
         target.draw({vertices[0], vertices[1], vertices[2], vertices[3]}, states);
     }
+
     // Not best way ?
     void Sprite::setTextureRect(const IntRect& textureRect) {
         m_texture_rect = textureRect;
@@ -94,6 +93,7 @@ namespace robot2D {
         auto convertToGL = [](float value, float textureSize) {
             return static_cast<float>(value / textureSize);
         };
+
         auto tx_s = m_texture -> getSize();
         vertices[0].texCoords = {convertToGL(left, static_cast<float>(tx_s.x)),
                                  convertToGL(bottom, static_cast<float>(tx_s.y))};

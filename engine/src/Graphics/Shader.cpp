@@ -78,7 +78,7 @@ namespace robot2D{
     }
 
     bool ShaderHandler::createShader(shaderType shader_type, const std::string& source, bool is_path) {
-        int shader = setupShader(shader_type, source, is_path);
+        int shader = setupShader(shader_type, source.c_str(), is_path);
         glAttachShader(shaderProgram, shader);
         glLinkProgram(shaderProgram);
         // check for linking errors

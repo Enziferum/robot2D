@@ -21,32 +21,40 @@ source distribution.
 
 #include <robot2D/Graphics/Color.hpp>
 
-namespace robot2D{
+namespace robot2D {
+    constexpr float maxColorComponent = 255.F;
+    
     Color::Color():
-    r(0),
-    g(0),
-    b(0),
-    alpha(255){}
+    red(0.F),
+    green(0.F),
+    blue(0.F),
+    alpha(maxColorComponent){}
 
 
-    Color::Color(unsigned int r, unsigned int g, unsigned int b, unsigned int alpha):r(r),
-    g(g), b(b), alpha(alpha){
+    Color::Color(const float& r, const float& g, const float& b, const float& alpha): red(r),
+    green(g), blue(b), alpha(alpha) {}
 
+
+    const Color Color::Black(0.F, 0.F, 0.F, maxColorComponent);
+    const Color Color::White(maxColorComponent, maxColorComponent, maxColorComponent, maxColorComponent);
+    const Color Color::Red(maxColorComponent, 0.F, 0.F, maxColorComponent);
+    const Color Color::Green(0.F, maxColorComponent, 0.F, maxColorComponent);
+    const Color Color::Blue(0.F, 0.F, maxColorComponent, maxColorComponent);
+    const Color Color::Yellow(maxColorComponent, maxColorComponent, 0.F, maxColorComponent);
+    const Color Color::Magenta(maxColorComponent, 0, maxColorComponent, maxColorComponent);
+    const Color Color::Cyan(0.F, maxColorComponent, maxColorComponent, maxColorComponent);
+    const Color Color::Transparent(0.F, 0.F, 0.F, 0.F);
+
+    Color Color::toGL(const float& red, const float& green, const float& blue, const float& alpha) {
+        return Color(red / maxColorComponent, green / maxColorComponent, blue/maxColorComponent, alpha / maxColorComponent);
     }
 
+    Color Color::fromGL(const float& red, const float& green, const float& blue, const float& alpha) {
+        return Color(red * maxColorComponent, green * maxColorComponent, blue * maxColorComponent,
+                     alpha * maxColorComponent);
+    }
 
-    const Color Color::Black(0, 0, 0);
-    const Color Color::White(255, 255, 255);
-    const Color Color::Red(255, 0, 0);
-    const Color Color::Green(0, 255, 0);
-    const Color Color::Blue(0, 0, 255);
-    const Color Color::Yellow(255, 255, 0);
-    const Color Color::Magenta(255, 0, 255);
-    const Color Color::Cyan(0, 255, 255);
-    const Color Color::Transparent(0, 0, 0, 0);
-
-    Color Color::from_gl(float r, float g, float b, float alpha) {
-        return Color((unsigned int)(r*255), (unsigned int)(g*255), (unsigned int)(b*255),
-                     (unsigned int)(alpha * 255));
+    Color Color::toGL() const {
+        return Color(red / maxColorComponent, green / maxColorComponent, blue / maxColorComponent, alpha / maxColorComponent);
     }
 }

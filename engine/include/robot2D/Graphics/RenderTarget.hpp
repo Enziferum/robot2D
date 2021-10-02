@@ -20,6 +20,7 @@ source distribution.
 *********************************************************************/
 
 #pragma once
+#include <memory>
 
 #include "Drawable.hpp"
 #include "Sprite.hpp"
@@ -56,7 +57,8 @@ namespace robot2D {
     private:
         void setup();
     protected:
-        priv::RenderImpl* m_render;
+        std::unique_ptr<priv::RenderImpl> m_render;
+        //priv::RenderImpl* m_render;
         vec2u m_size;
     };
 
