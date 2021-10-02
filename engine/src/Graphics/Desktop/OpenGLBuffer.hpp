@@ -17,8 +17,11 @@ namespace robot2D {
         void unBind() override;
 
         void setData(const void* data, const uint32_t &size) override;
+        void setAttributeLayout(const AttributeLayout& layout) { m_layout = layout;}
+        const AttributeLayout& getAttributeLayout() const { return m_layout;}
     private:
         unsigned m_bufferID;
+        AttributeLayout m_layout;
     };
 
     class OpenGLIndexBuffer final: public IndexBuffer {

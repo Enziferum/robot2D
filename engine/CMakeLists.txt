@@ -22,10 +22,12 @@ set(ENGINE_SRC ${ENGINE_SRC}
         ${INCLROOT}/Graphics/Shader.hpp
         ${INCLROOT}/Graphics/Sprite.hpp
         ${INCLROOT}/Graphics/Texture.hpp
+        ${INCLROOT}/Graphics/TextureAtlas.hpp
         ${INCLROOT}/Graphics/Transform.hpp
         ${INCLROOT}/Graphics/Transformable.hpp
         ${INCLROOT}/Graphics/View.hpp
-        ${INCLROOT}/Graphics/TextureAtlas.hpp
+        ${INCLROOT}/Graphics/VertexArray.hpp
+
 
         #Util
         ${INCLROOT}/Util/ResourceHandler.hpp
@@ -62,6 +64,7 @@ set(ENGINE_SRC ${ENGINE_SRC}
         ${SRCROOT}/Graphics/View.cpp
         ${SRCROOT}/Graphics/TextureAtlas.cpp
         ${SRCROOT}/Graphics/Buffer.cpp
+        ${SRCROOT}/Graphics/VertexArray.cpp
 
         #Util
         ${SRCROOT}/Util/Logger.cpp
@@ -70,6 +73,7 @@ set(ENGINE_SRC ${ENGINE_SRC}
         ${SRCROOT}/Core/Desktop/DesktopWindowImpl.cpp
         ${SRCROOT}/Graphics/Desktop/OpenGLRender.cpp
         ${SRCROOT}/Graphics/Desktop/OpenGLBuffer.cpp
+        ${SRCROOT}/Graphics/Desktop/OpenGLVertexArray.cpp
 
         PARENT_SCOPE
         )
