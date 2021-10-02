@@ -38,7 +38,8 @@ namespace robot2D {
             OpenGLRender();
             ~OpenGLRender();
 
-            void render(const VertexData& data, const RenderStates& states) const;
+            void render(const RenderStates& states) override;
+            void render(const VertexData& data, const RenderStates& states) const override;
 
             void setSize(const vec2u& size) override;
             void setView(const View& view) override;

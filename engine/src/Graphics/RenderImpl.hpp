@@ -37,6 +37,7 @@ namespace robot2D {
             virtual ~RenderImpl() = 0;
 
             static Ptr create();
+            virtual void render(const RenderStates& states) = 0;
             virtual void render(const VertexData& data, const RenderStates& states) const = 0;
 
             virtual void setView(const View& view) = 0;

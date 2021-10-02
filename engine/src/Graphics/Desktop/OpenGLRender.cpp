@@ -151,6 +151,16 @@ namespace robot2D {
             applyCurrentView();
         }
 
+        void OpenGLRender::render(const RenderStates& states) {
+            robot2D::vec2f textureCoords[] = { { 0.0f, 0.0f },
+                                               { 1.0f, 0.0f },
+                                               { 1.0f, 1.0f },
+                                               { 0.0f, 1.0f } };
+            render({{{}, textureCoords[0], robot2D::Color::White},
+                         {{}, textureCoords[1], robot2D::Color::White},
+                         {{}, textureCoords[2], robot2D::Color::White},
+                         {{}, textureCoords[3], robot2D::Color::White}}, states);
+        }
 
         void OpenGLRender::render(const VertexData& data, const RenderStates& states) const {
             // Rendering not quads in version 0.2 - 0.3 not supported todo runtime error
@@ -171,7 +181,6 @@ namespace robot2D {
                 // find our texture
                 m_renderBuffer.textureSlots[1] = states.texture->getID();
             }
-
 
             for (auto it = 0; it < quadVertexSize; ++it) {
                 m_renderBuffer.quadBufferPtr->Position = states.transform * m_renderBuffer.quadVertexPositions[it];
@@ -251,6 +260,7 @@ namespace robot2D {
         const RenderStats &OpenGLRender::getStats() const {
             return m_stats;
         }
+
 
     }
 }
