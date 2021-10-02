@@ -21,6 +21,7 @@ source distribution.
 
 #pragma once
 
+#include "Buffer.hpp"
 #include "Color.hpp"
 #include "Drawable.hpp"
 #include "Font.hpp"
@@ -29,9 +30,10 @@ source distribution.
 #include "RenderTarget.hpp"
 #include "RenderWindow.hpp"
 #include "Shader.hpp"
-#include "Shader.hpp"
 #include "Text.hpp"
 #include "Texture.hpp"
+#include "TextureAtlas.hpp"
 #include "Transform.hpp"
 #include "Transformable.hpp"
 #include "View.hpp"
+#include "Vertex.hpp"

@@ -22,6 +22,7 @@ source distribution.
 #include <stdexcept>
 #include <robot2D/Graphics/GL.hpp>
 #include <robot2D/Graphics/Texture.hpp>
+#include <robot2D/Graphics/Buffer.hpp>
 
 #include "OpenGLRender.hpp"
 
@@ -73,6 +74,10 @@ namespace robot2D {
         void OpenGLRender::init() {
             m_renderBuffer.quadBuffer = new RenderVertex[m_renderBuffer.maxQuadsCount];
 
+            auto vertexBuffer = VertexBuffer::Create(sizeof(RenderVertex) * m_renderBuffer.maxQuadsCount);
+
+
+
             glGenVertexArrays(1, &m_renderBuffer.VAO);
             glGenBuffers(1, &m_renderBuffer.VBO);
             glGenBuffers(1, &m_renderBuffer.EBO);
@@ -94,6 +99,8 @@ namespace robot2D {
             glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_renderBuffer.EBO);
             uint32_t* quadIndices = new uint32_t[m_renderBuffer.maxIndicesCount];
 
+
+
             uint32_t offset = 0;
             for (uint32_t i = 0; i < m_renderBuffer.maxIndicesCount; i += 6)
             {
@@ -108,6 +115,7 @@ namespace robot2D {
                 offset += 4;
             }
             glBufferData(GL_ELEMENT_ARRAY_BUFFER, m_renderBuffer.maxIndicesCount, quadIndices, GL_STATIC_DRAW);
+            auto indexBuffer = IndexBuffer::Create(quadIndices, m_renderBuffer.maxIndicesCount);
             delete[] quadIndices;
 
 
