@@ -6,6 +6,8 @@
 #include <array>
 #include <robot2D/Graphics/Texture.hpp>
 #include <robot2D/Graphics/Color.hpp>
+#include <robot2D/Graphics/Buffer.hpp>
+#include <robot2D/Graphics/VertexArray.hpp>
 
 namespace robot2D {
 
@@ -23,6 +25,9 @@ namespace robot2D {
         unsigned int maxQuadsCount = 20000;
         unsigned int maxVerticesCount = maxQuadsCount * 4;
         unsigned int maxIndicesCount = maxQuadsCount * 6;
+
+        VertexArray::Ptr vertexArray;
+        VertexBuffer::Ptr vertexBuffer;
 
         RenderVertex* quadBuffer = nullptr;
         RenderVertex* quadBufferPtr = nullptr;

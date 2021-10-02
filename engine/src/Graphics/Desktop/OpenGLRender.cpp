@@ -23,6 +23,7 @@ source distribution.
 #include <robot2D/Graphics/GL.hpp>
 #include <robot2D/Graphics/Texture.hpp>
 #include <robot2D/Graphics/Buffer.hpp>
+#include <robot2D/Graphics/VertexArray.hpp>
 
 #include "OpenGLRender.hpp"
 
@@ -70,36 +71,20 @@ namespace robot2D {
             destroy();
         }
 
-        // TODO create Buffers(Vertex, Index)
         void OpenGLRender::init() {
             m_renderBuffer.quadBuffer = new RenderVertex[m_renderBuffer.maxQuadsCount];
 
-            auto vertexBuffer = VertexBuffer::Create(sizeof(RenderVertex) * m_renderBuffer.maxQuadsCount);
+            m_renderBuffer.vertexArray = VertexArray::Create();
+            m_renderBuffer.vertexBuffer = VertexBuffer::Create(sizeof(RenderVertex) * m_renderBuffer.maxQuadsCount);
+            m_renderBuffer.vertexBuffer -> setAttributeLayout({
+                    {ElementType::Float2, ""},
+                    {ElementType::Float2, ""},
+                    {ElementType::Float4, ""},
+                    {ElementType::Float1, ""}
+            });
+            m_renderBuffer.vertexArray -> setVertexBuffer(m_renderBuffer.vertexBuffer);
 
-
-
-            glGenVertexArrays(1, &m_renderBuffer.VAO);
-            glGenBuffers(1, &m_renderBuffer.VBO);
-            glGenBuffers(1, &m_renderBuffer.EBO);
-
-            glBindBuffer(GL_ARRAY_BUFFER, m_renderBuffer.VBO);
-            glBufferData(GL_ARRAY_BUFFER, sizeof(RenderVertex) * m_renderBuffer.maxQuadsCount, nullptr, GL_DYNAMIC_DRAW);
-
-            glBindVertexArray(m_renderBuffer.VAO);
-
-            glEnableVertexAttribArray(0);
-            glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(RenderVertex), nullptr);
-            glEnableVertexAttribArray(1);
-            glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(RenderVertex), (const void*) offsetof(RenderVertex, TextureCoords));
-            glEnableVertexAttribArray(2);
-            glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, sizeof(RenderVertex), (const void*) offsetof(RenderVertex, Color));
-            glEnableVertexAttribArray(3);
-            glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, sizeof(RenderVertex), (const void*) offsetof(RenderVertex, textureIndex));
-
-            glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_renderBuffer.EBO);
             uint32_t* quadIndices = new uint32_t[m_renderBuffer.maxIndicesCount];
-
-
 
             uint32_t offset = 0;
             for (uint32_t i = 0; i < m_renderBuffer.maxIndicesCount; i += 6)
@@ -114,8 +99,9 @@ namespace robot2D {
 
                 offset += 4;
             }
-            glBufferData(GL_ELEMENT_ARRAY_BUFFER, m_renderBuffer.maxIndicesCount, quadIndices, GL_STATIC_DRAW);
             auto indexBuffer = IndexBuffer::Create(quadIndices, m_renderBuffer.maxIndicesCount);
+            m_renderBuffer.vertexArray ->setIndexBuffer(indexBuffer);
+
             delete[] quadIndices;
 
 
@@ -156,10 +142,6 @@ namespace robot2D {
 
 
         void OpenGLRender::destroy() {
-            glDeleteVertexArrays(1, &m_renderBuffer.VAO);
-            glDeleteBuffers(1, &m_renderBuffer.VBO);
-            glDeleteBuffers(1, &m_renderBuffer.EBO);
-
             delete[] m_renderBuffer.quadBuffer;
         }
 
@@ -241,9 +223,7 @@ namespace robot2D {
 
         void OpenGLRender::afterRender() const {
             auto size = (uint8_t*)m_renderBuffer.quadBufferPtr - (uint8_t*)m_renderBuffer.quadBuffer;
-            glBindBuffer(GL_ARRAY_BUFFER, m_renderBuffer.VBO);
-            glBufferSubData(GL_ARRAY_BUFFER, 0, size, m_renderBuffer.quadBuffer);
-            glBindBuffer(GL_ARRAY_BUFFER, 0);
+            m_renderBuffer.vertexBuffer ->setData(m_renderBuffer.quadBuffer, size);
         }
 
         void OpenGLRender::flushRender() const {
@@ -258,10 +238,9 @@ namespace robot2D {
                 glBindTexture(GL_TEXTURE_2D, m_renderBuffer.textureSlots[0]);
             }
 
-
-            glBindVertexArray(m_renderBuffer.VAO);
+            m_renderBuffer.vertexArray -> Bind();
             glDrawElements(GL_TRIANGLES, m_renderBuffer.indexCount, GL_UNSIGNED_INT, nullptr);
-            glBindVertexArray(0);
+            m_renderBuffer.vertexArray -> unBind();
 
             m_renderBuffer.indexCount = 0;
             m_renderBuffer.textureSlotIndex = 1;
