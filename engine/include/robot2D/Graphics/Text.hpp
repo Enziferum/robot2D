@@ -52,14 +52,14 @@ namespace robot2D{
         void setup_GL();
         void update_geometry() const;
     private:
-        struct vertex{
+        struct vertex {
             float x;
             float y;
             float tex_x;
             float tex_y;
         };
 
-        struct renderBuffer{
+        struct renderBuffer {
             unsigned int texture;
             std::vector<vertex> verts;
         };

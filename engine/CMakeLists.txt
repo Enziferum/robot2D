@@ -11,6 +11,7 @@ set(ENGINE_SRC ${ENGINE_SRC}
 
 
         #Graphics
+        ${INCLROOT}/Graphics/Buffer.hpp
         ${INCLROOT}/Graphics/Color.hpp
         ${INCLROOT}/Graphics/Drawable.hpp
         ${INCLROOT}/Graphics/GL.hpp
@@ -60,6 +61,7 @@ set(ENGINE_SRC ${ENGINE_SRC}
         ${SRCROOT}/Graphics/RenderImpl.cpp
         ${SRCROOT}/Graphics/View.cpp
         ${SRCROOT}/Graphics/TextureAtlas.cpp
+        ${SRCROOT}/Graphics/Buffer.cpp
 
         #Util
         ${SRCROOT}/Util/Logger.cpp
@@ -67,6 +69,7 @@ set(ENGINE_SRC ${ENGINE_SRC}
         # Impls
         ${SRCROOT}/Core/Desktop/DesktopWindowImpl.cpp
         ${SRCROOT}/Graphics/Desktop/OpenGLRender.cpp
+        ${SRCROOT}/Graphics/Desktop/OpenGLBuffer.cpp
 
         PARENT_SCOPE
         )
