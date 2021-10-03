@@ -75,3 +75,4 @@ target_include_directories(${PROJECT_NAME} PUBLIC
         "$<INSTALL_INTERFACE:include>")
 
 add_subdirectory(sandbox)
+add_subdirectory(editor)
