@@ -21,18 +21,30 @@ source distribution.
 
 #pragma once
 
-#include <memory>
+#include <cstdint>
+#include <vector>
+
+#include "Defines.hpp"
 
 namespace ecs {
-    class Component {
+    // allow to work With Components without using ComponentID variable
+    class ComponentManager final {
     public:
-        using Ptr = std::shared_ptr<Component>;
-    public:
-        Component(const uint32_t& type);
-        virtual ~Component() = 0;
+        ComponentManager();
+        ~ComponentManager() = default;
 
-        const uint32_t& getType() const;
-    protected:
-        uint32_t m_type;
+        using ID = uint32_t;
+
+        template<typename T>
+        ID getID() {
+            auto id = UniqueType(typeid(T));
+            return getIDFromIndex(id);
+        }
+
+        ID getIDFromIndex(const UniqueType& uniqueType);
+    private:
+        std::vector<UniqueType> m_indices;
     };
+
+
 }

@@ -20,6 +20,8 @@ source distribution.
 *********************************************************************/
 
 #include "EntityManager.hpp"
+#include "Entity.hpp"
+
 
 namespace ecs {
 
@@ -32,12 +34,9 @@ namespace ecs {
         return l.m_id == r.m_id;
     }
 
-    bool Entity::addComponent(const ComponentID &id) {
-        return m_entityManager->addComponent(m_id, id);
+    Bitmask Entity::getComponentMask() const {
+        return m_entityManager->getComponentBitmask(*this);
     }
 
-    bool Entity::hasComponent(const ComponentID &id) {
-        return m_entityManager->hasComponent(m_id, id);
-    }
 
 }

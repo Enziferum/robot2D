@@ -19,17 +19,23 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
+#include <algorithm>
 #include "Component.hpp"
 
 namespace ecs {
 
-    Component::Component(const uint32_t& type): m_type(type) {
+    ComponentManager::ComponentManager(): m_indices() {}
 
+    ComponentManager::ID ComponentManager::getIDFromIndex(const UniqueType& uniqueType) {
+        auto iter = std::find_if(m_indices.begin(), m_indices.end(), [&](const UniqueType& type) {
+            return uniqueType == type;
+        });
+        if(iter == m_indices.end()) {
+            m_indices.emplace_back(uniqueType);
+            return m_indices.size() - 1;
+        }
+
+        return std::distance(m_indices.begin(), iter);
     }
 
-    Component::~Component() {}
-
-    const uint32_t& Component::getType() const {
-        return m_type;
-    }
 }

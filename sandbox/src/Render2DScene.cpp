@@ -24,19 +24,7 @@ source distribution.
 #include "ecs/Component.hpp"
 #include "ecs/System.hpp"
 
-enum ComponentsID {
-    Transform = 0,
-    Sprite,
-    Collider2D
-};
-
-enum SystemID {
-    Render = 0,
-    DemoMove = 1,
-    Collision
-};
-
-class SpriteComponent final: public ecs::Component {
+class SpriteComponent final {
 public:
     SpriteComponent();
     ~SpriteComponent() = default;
@@ -53,8 +41,7 @@ private:
     robot2D::Color m_color;
 };
 
-SpriteComponent::SpriteComponent(): ecs::Component(ComponentsID::Sprite),
-                                    m_color(robot2D::Color::White) {
+SpriteComponent::SpriteComponent(): m_color(robot2D::Color::White) {
 
 }
 
@@ -79,52 +66,42 @@ const robot2D::Color &SpriteComponent::getColor() const {
 }
 
 
-class TransformComponent final: public ecs::Component, public robot2D::Transformable {
+class TransformComponent final: public robot2D::Transformable {
 public:
     TransformComponent();
     ~TransformComponent() override = default;
 
 };
 
-TransformComponent::TransformComponent(): ecs::Component(ComponentsID::Transform) {}
+TransformComponent::TransformComponent() {}
 
 
 class RenderSystem: public ecs::System, public robot2D::Drawable {
 public:
-    RenderSystem(ecs::SystemManager*, robot2D::MessageBus&);
+    RenderSystem(robot2D::MessageBus&);
     ~RenderSystem() override = default;
 
     void update(float dt) override;
-    void onMessage(const robot2D::Message &message) override;
     void draw(robot2D::RenderTarget &target, robot2D::RenderStates) const override;
 private:
 };
 
-RenderSystem::RenderSystem(ecs::SystemManager* systemManager, robot2D::MessageBus& messageBus):
-        System(SystemID::Render, systemManager, messageBus) {
-    ecs::Bitmask bitmask;
-    bitmask.turnOnBit(ComponentsID::Transform);
-    bitmask.turnOnBit(ComponentsID::Sprite);
-    m_requirements.emplace_back(bitmask);
+RenderSystem::RenderSystem(robot2D::MessageBus& messageBus):
+        System(messageBus, typeid(RenderSystem)) {
+    addRequirement<SpriteComponent>();
+    addRequirement<TransformComponent>();
 }
 
-
-void RenderSystem::update(float dt) {
-
-}
-
-void RenderSystem::onMessage(const robot2D::Message& message) {
-
-}
+void RenderSystem::update(float dt) {}
 
 void RenderSystem::draw(robot2D::RenderTarget& target, robot2D::RenderStates states) const {
     for(auto& it: m_entities) {
-        auto transform = it.getComponent<TransformComponent>(ComponentsID::Transform);
+        auto& transform = it.getComponent<TransformComponent>();
 
-        auto sprite = it.getComponent<SpriteComponent>(ComponentsID::Sprite);
-        states.transform = transform -> getTransform();
-        states.texture = &sprite -> getTexture();
-        states.color = sprite -> getColor();
+        auto& sprite = it.getComponent<SpriteComponent>();
+        states.transform = transform.getTransform();
+        states.texture = &sprite.getTexture();
+        states.color = sprite.getColor();
         target.draw(states);
     }
 }
@@ -132,34 +109,24 @@ void RenderSystem::draw(robot2D::RenderTarget& target, robot2D::RenderStates sta
 
 class DemoMoveSystem: public ecs::System {
 public:
-    DemoMoveSystem(ecs::SystemManager*, robot2D::MessageBus&);
+    DemoMoveSystem(robot2D::MessageBus&);
     ~DemoMoveSystem() override = default;
 
     void update(float dt) override;
-    void onMessage(const robot2D::Message& message) override;
 private:
 };
 
-DemoMoveSystem::DemoMoveSystem(ecs::SystemManager* systemManager, robot2D::MessageBus& messageBus):
-        ecs::System(SystemID::DemoMove, systemManager, messageBus){
-    ecs::Bitmask bitmask;
-    bitmask.turnOnBit(ComponentsID::Transform);
-    m_requirements.emplace_back(bitmask);
+DemoMoveSystem::DemoMoveSystem(robot2D::MessageBus& messageBus):
+        ecs::System(messageBus, typeid(DemoMoveSystem)) {
+    addRequirement<TransformComponent>();
 }
 
 void DemoMoveSystem::update(float dt) {
     for(auto& it: m_entities) {
-        auto transform = it.getComponent<TransformComponent>(ComponentsID::Transform);
-        transform -> move(robot2D::vec2f(1.f * dt, 0.f));
+        auto& transform = it.getComponent<TransformComponent>();
+        transform.move(robot2D::vec2f(1.f * dt, 0.f));
     }
 }
-
-void DemoMoveSystem::onMessage(const robot2D::Message& message) {
-
-}
-
-
-
 struct Quad: public robot2D::Transformable, public robot2D::Drawable {
     void draw(robot2D::RenderTarget &target, robot2D::RenderStates states) const override {
         std::vector<robot2D::Vertex> vertices;
@@ -173,35 +140,28 @@ struct Quad: public robot2D::Transformable, public robot2D::Drawable {
 
 
 Render2DScene::Render2DScene(robot2D::RenderWindow& window) : Scene(window),
-                                                              m_ecsManager(messageBus) {
+                                                              m_scene(messageBus) {
 
 }
 
 void Render2DScene::setup() {
     ///// setup Ecs /////
-    auto& systemManager = m_ecsManager.getSystemManager();
-    systemManager.registerSystem<RenderSystem>(SystemID::Render);
-    systemManager.registerSystem<DemoMoveSystem>(SystemID::DemoMove);
-
-
-    auto& entityManager = m_ecsManager.getEntityManager();
-    entityManager.registerComponent<TransformComponent>(ComponentsID::Transform);
-    entityManager.registerComponent<SpriteComponent>(ComponentsID::Sprite);
+    m_scene.addSystem<RenderSystem>(messageBus);
+    m_scene.addSystem<DemoMoveSystem>(messageBus);
 
     ///// setup Ecs /////
 
     m_textures.loadFromFile("sprite", "awesomeface.png", true);
     for(auto it = 0; it < 5; ++it) {
-        ecs::Bitmask bitmask = ecs::configureMask({ComponentsID::Transform, ComponentsID::Sprite});
-        ecs::Entity entity = m_ecsManager.createEntity(bitmask);
+        ecs::Entity entity = m_scene.createEntity();
 
-        auto transform = entity.getComponent<TransformComponent>(ComponentsID::Transform);
+        auto& transform = entity.addComponent<TransformComponent>();
         auto sz = m_window.getSize();
-        transform->setPosition({100, 100 + 100 * it});
-        transform->scale({100.f, 100.f});
+        transform.setPosition({100, 100 + 100 * it});
+        transform.scale({100.f, 100.f});
 
-        auto sprite = entity.getComponent<SpriteComponent>(ComponentsID::Sprite);
-        sprite->setTexture(m_textures.get("sprite"));
+        auto& sprite = entity.addComponent<SpriteComponent>();
+        sprite.setTexture(m_textures.get("sprite"));
     }
 }
 
@@ -210,8 +170,7 @@ void Render2DScene::handleEvents(const robot2D::Event& event) {
 }
 
 void Render2DScene::update(float dt) {
-    auto systemManager = m_ecsManager.getSystemManager();
-    systemManager.update(dt);
+    m_scene.update(dt);
 }
 
 void Render2DScene::imGuiRender() {
@@ -229,8 +188,7 @@ void Render2DScene::render() {
 //    sprite.setTextureRect({48, 82, 83, 91});
 //    m_window.draw(sprite);
 
-    auto renderSystem = m_ecsManager.getSystemManager().getSystem<RenderSystem>(SystemID::Render);
-    m_window.draw(*renderSystem);
+    m_window.draw(m_scene);
 
     m_window.afterRender();
     m_window.flushRender();

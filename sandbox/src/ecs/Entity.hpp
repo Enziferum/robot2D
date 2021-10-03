@@ -29,25 +29,31 @@ namespace ecs {
     class Entity {
     public:
         Entity();
-        Entity(EntityManager* entityManager, const EntityID& id);
-
         ~Entity() = default;
 
-        bool addComponent(const ComponentID& id);
-
-        bool hasComponent(const ComponentID& id);
-
-        template<typename T>
-        T* getComponent(const ComponentID& id);
+        template<typename T, typename ...Args>
+        T& addComponent(Args&& ... args);
 
         template<typename T>
-        const T* getComponent(const ComponentID& id) const;
+        bool hasComponent();
+
+        template<typename T>
+        T& getComponent();
+
+        template<typename T>
+        const T& getComponent() const;
 
         friend bool operator == (const Entity& l, const Entity& r);
+
+        EntityID getIndex() const { return m_id; }
+
+        Bitmask getComponentMask() const;
     private:
         friend class EntityManager;
+        explicit Entity(EntityManager* entityManager, const EntityID& id);
         EntityManager* m_entityManager;
 
         EntityID m_id;
     };
+
 }

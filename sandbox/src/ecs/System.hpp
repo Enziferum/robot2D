@@ -27,33 +27,48 @@ source distribution.
 #include "Bitmask.hpp"
 #include "Defines.hpp"
 #include "Entity.hpp"
+#include "Component.hpp"
 
 namespace ecs {
     using EntityList = std::vector<Entity>;
 
-    class SystemManager;
     class System {
     public:
         using Ptr = std::shared_ptr<System>;
     public:
-        System(const SystemID& systemId,
-               SystemManager* systemManager, robot2D::MessageBus& messageBus);
+        System(robot2D::MessageBus& messageBus, UniqueType uniqueType);
         virtual ~System() = 0;
 
-        bool fitsRequirements(const Bitmask& bitmask);
-        bool addEntity(const Entity& entityId);
-        bool hasEntity(const Entity& entityId);
-        bool removeEntity(const Entity& entityId);
+        bool fitsRequirements(Bitmask bitmask);
+        bool addEntity(Entity entity);
+        bool hasEntity(Entity entityId);
+        bool removeEntity(Entity entityId);
+        Bitmask getSystemMask() const { return m_mask; }
+
 
         virtual void update(float dt) = 0;
-        virtual void onMessage(const robot2D::Message& message) = 0;
+        virtual void onMessage(const robot2D::Message& message);
     protected:
-        friend class SystemManager;
-        SystemManager* m_systemManager;
 
-        SystemID m_systemId;
+        template<typename T>
+        void addRequirement();
+
+        void processRequirements(ComponentManager& componentManager);
+
+        friend class SystemManager;
+        virtual void onEntityAdded(Entity entity);
+
+        UniqueType m_systemId;
         EntityList m_entities;
         robot2D::MessageBus& m_messageBus;
-        std::vector<Bitmask> m_requirements;
+        std::vector<UniqueType> m_pendingTypes;
+        Bitmask m_mask;
     };
+
+    template<typename T>
+    void System::addRequirement() {
+        UniqueType uniqueType(typeid(T));
+        m_pendingTypes.template emplace_back(uniqueType);
+    }
+
 }
