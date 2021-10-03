@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.11)
 project(robot2D-Sandbox)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 
 add_subdirectory(features)
 set(LIBS robot2D robot2D-features)

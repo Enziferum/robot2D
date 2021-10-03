@@ -20,10 +20,12 @@ source distribution.
 *********************************************************************/
 
 #pragma once
+#include <typeindex>
 
 namespace ecs {
     // max components per Entity
     constexpr uint32_t maxComponents = 32;
+    using UniqueType = std::type_index;
 
     using EntityID = uint32_t;
     using ComponentID = uint32_t;

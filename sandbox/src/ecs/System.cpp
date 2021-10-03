@@ -23,28 +23,26 @@ source distribution.
 #include "System.hpp"
 
 namespace ecs {
-    System::System(const SystemID& systemId, SystemManager* systemManager, robot2D::MessageBus& messageBus):
-    m_systemManager(systemManager), m_messageBus(messageBus), m_systemId(systemId) {
-
-    }
+    System::System(robot2D::MessageBus& messageBus, UniqueType uniqueType):
+    m_messageBus(messageBus), m_systemId(uniqueType) {}
 
     System::~System() {}
 
-    bool System::fitsRequirements(const Bitmask& bitmask) {
-        auto it = std::find_if(m_requirements.begin(), m_requirements.end(), [&bitmask](Bitmask& mask) {
-            return mask.matches(bitmask, mask.getBitset());
-        });
-        return it != m_requirements.end();
+    bool System::fitsRequirements(Bitmask bitmask) {
+        if(bitmask.matches(m_mask, m_mask.getBitset()))
+            return true;
+        return false;
     }
 
-    bool System::addEntity(const Entity& entityId) {
-        if(hasEntity(entityId))
+    bool System::addEntity(Entity entity) {
+        if(hasEntity(entity))
             return false;
-        m_entities.emplace_back(entityId);
+        m_entities.emplace_back(entity);
+        onEntityAdded(entity);
         return true;
     }
 
-    bool System::hasEntity(const Entity& entityId) {
+    bool System::hasEntity(Entity entityId) {
         auto it = std::find_if(m_entities.begin(), m_entities.end(),
                                [&entityId](const Entity& id) {
                                    return entityId == id;
@@ -52,7 +50,7 @@ namespace ecs {
         return it != m_entities.end();
     }
 
-    bool System::removeEntity(const Entity& entityId) {
+    bool System::removeEntity(Entity entityId) {
         auto it = std::find_if(m_entities.begin(), m_entities.end(),
                                [&entityId](const Entity& id) {
             return entityId == id;
@@ -62,6 +60,18 @@ namespace ecs {
             return false;
         m_entities.erase(it);
         return true;
+    }
+
+    void System::onMessage(const robot2D::Message& message) {}
+
+    void System::onEntityAdded(Entity entity) {}
+
+    void System::processRequirements(ComponentManager& componentManager) {
+        for(auto& it: m_pendingTypes) {
+            auto index = componentManager.getIDFromIndex(it);
+            m_mask.turnOnBit(index);
+        }
+        m_pendingTypes.clear();
     }
 
 }

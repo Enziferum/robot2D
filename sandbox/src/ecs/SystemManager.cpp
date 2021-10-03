@@ -23,36 +23,34 @@ source distribution.
 #include "EntityManager.hpp"
 
 namespace ecs {
-    SystemManager::SystemManager(robot2D::MessageBus& messageBus):
-        m_messageBus(messageBus) {
+    SystemManager::SystemManager(robot2D::MessageBus& messageBus, ComponentManager& componentManager):
+        m_messageBus(messageBus), m_componentManager(componentManager) {}
 
-    }
-
-    void SystemManager::entityModified(const Entity& entityId, const Bitmask& entityMask) {
+    void SystemManager::removeEntity(Entity entity) {
         for(auto& it: m_systems) {
-            auto system = it.second;
-            if(system -> fitsRequirements(entityMask)) {
-                system -> addEntity(entityId);
-            } else {
-                system -> removeEntity(entityId);
-            }
+            it -> removeEntity(entity);
         }
-    }
-
-    bool SystemManager::removeEntity(const Entity& entity) {
-        for(auto& it: m_systems)
-            it.second -> removeEntity(entity);
-        return true;
     }
 
     void SystemManager::handleMessage(const robot2D::Message& message) {
         for(auto& it: m_systems)
-            it.second -> onMessage(message);
+            it -> onMessage(message);
     }
 
     void SystemManager::update(float dt) {
         for(auto& it: m_systems)
-            it.second -> update(dt);
+            it -> update(dt);
     }
+
+    void SystemManager::addEntity(Entity entity) {
+        const auto mask = entity.getComponentMask();
+        for(auto& it: m_systems) {
+            if(it-> fitsRequirements(mask)) {
+                it -> addEntity(entity);
+            }
+        }
+    }
+
+
 
 }

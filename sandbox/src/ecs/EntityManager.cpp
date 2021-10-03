@@ -24,60 +24,26 @@ source distribution.
 
 namespace ecs {
 
-    EntityManager::EntityManager(): m_entityCounter(0),
-                                    m_entityContainer(),
-                                    m_componentFactory() {
-
+    EntityManager::EntityManager(ComponentManager& componentManager): m_entityCounter(0),
+    m_componentMasks(),
+    m_componentManager(componentManager),
+    m_componentContainers(64){
+        m_componentMasks.resize(50);
     }
 
-    bool EntityManager::hasComponent(const EntityID &entityId, const ComponentID& componentId) {
-        if(m_entityContainer.find(entityId) == m_entityContainer.end())
-            return false;
-        return m_entityContainer.at(entityId).first.getBit(componentId);
-    }
-
-
-    bool EntityManager::addComponent(const EntityID& entityId, const ComponentID& componentId) {
-        // have already component or no entity in container
-        if(hasComponent(entityId, componentId))
-            return false;
-
-        // no component need register before todo throw error with message
-        if(m_componentFactory.find(componentId) == m_componentFactory.end())
-            return false;
-
-
-        Component::Ptr component = m_componentFactory.at(componentId)();
-        m_entityContainer.at(entityId).second.emplace_back(component);
-        m_entityContainer.at(entityId).first.turnOnBit(componentId);
-        m_systemManager -> entityModified({this, entityId}, m_entityContainer.at(entityId).first);
-        return true;
+    Entity EntityManager::createEntity() {
+        Entity entity{this, m_entityCounter};
+        m_entityCounter++;
+        return entity;
     }
 
 
-    Entity EntityManager::addEntity(const Bitmask& bitmask) {
-        EntityID entity = m_entityCounter;
-        if(!m_entityContainer.emplace(entity, EntityData(0, ComponentContainer())).second)
-            return Entity{};
-        ++m_entityCounter;
-
-        for(int it = 0; it < maxComponents; ++it) {
-            if(bitmask.getBit(it))
-                addComponent(entity, it);
-        }
-        m_systemManager -> entityModified({this, entity}, bitmask);
-        return Entity{this, entity};
+    Bitmask EntityManager::getComponentBitmask(Entity entity) {
+        const auto index = entity.getIndex();
+        assert(index < m_componentMasks.size());
+        return m_componentMasks[index];
     }
 
-    void EntityManager::setSystemManager(SystemManager* systemManager) {
-        m_systemManager = systemManager;
-    }
-
-    bool EntityManager::hasComponent(const EntityID &entityId, const ComponentID& componentId) const {
-        if(m_entityContainer.find(entityId) == m_entityContainer.end())
-            return false;
-        return m_entityContainer.at(entityId).first.getBit(componentId);
-    }
-
-
+    // don't remove :)
+    bool EntityManager::removeEntity(Entity entity) {}
 }

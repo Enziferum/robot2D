@@ -30,53 +30,52 @@ source distribution.
 
 namespace ecs {
 
-
-    class EntityManager;
-
     class SystemManager {
     public:
-        SystemManager(robot2D::MessageBus& messageBus);
+        SystemManager(robot2D::MessageBus& messageBus, ComponentManager& m_componentManager);
         ~SystemManager() = default;
 
+        template<class T, typename ...Args>
+        T& addSystem(Args&& ...args);
 
         template<typename T>
-        bool registerSystem(const SystemID& systemId);
+        T* getSystem();
 
-        template<typename T>
-        T* getSystem(const SystemID& systemId);
-
-        void entityModified(const Entity& entityId, const Bitmask& entityMask);
-        bool removeEntity(const Entity& entity);
+        void addEntity(Entity entity);
+        void removeEntity(Entity entity);
 
         void handleMessage(const robot2D::Message& message);
         void update(float dt);
     private:
         robot2D::MessageBus& m_messageBus;
-        std::unordered_map<SystemID, System::Ptr> m_systems;
+        std::vector<System::Ptr> m_systems;
+        ComponentManager& m_componentManager;
     };
-    using SystemPair = std::pair<SystemID, System::Ptr>;
 
-    template<typename T>
-    bool SystemManager::registerSystem(const SystemID& systemId) {
 
-        auto it = std::find_if(m_systems.begin(), m_systems.end(), [&systemId](const SystemPair& pair ) {
-            return pair.first == systemId;
+    template<class T, typename... Args>
+    T& SystemManager::addSystem(Args&& ... args) {
+        UniqueType systemId(typeid(T));
+        auto it = std::find_if(m_systems.begin(), m_systems.end(), [&systemId](const System::Ptr& ptr ) {
+            return ptr->m_systemId == systemId;
         });
-        if (it != m_systems.end())
-            return false;
 
-        m_systems[systemId] = std::make_shared<T>(this, m_messageBus);
-        if (m_systems[systemId] == nullptr)
-            return false;
-        return true;
+        if(it != m_systems.end()) {
+            return *(dynamic_cast<T*>(it->get()));
+        }
+
+        auto& system = m_systems.emplace_back(std::make_shared<T>(std::forward<Args>(args)...));
+        system -> processRequirements(m_componentManager);
+        return *(dynamic_cast<T*>(m_systems.back().get()));
     }
 
     template<typename T>
-    T* SystemManager::getSystem(const SystemID& systemId) {
-        auto it = m_systems.find(systemId);
-        if (it == m_systems.end())
-            return nullptr;
-        return dynamic_cast<T*>(it->second.get());
+    T* SystemManager::getSystem() {
+        UniqueType systemId(typeid(T));
+        auto it = std::find_if(m_systems.begin(), m_systems.end(), [&systemId](const System::Ptr& ptr ) {
+            return ptr->m_systemId == systemId;
+        });
+        return dynamic_cast<T*>(it->get());
     }
 
 }
