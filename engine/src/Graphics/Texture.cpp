@@ -20,7 +20,11 @@ source distribution.
 *********************************************************************/
 
 #include <robot2D/Graphics/GL.hpp>
-#include <robot2D/ext/stb_image.h>
+#ifdef WIN32
+    #include <robot2D/ext/stb_image.h>
+#elif __APPLE__
+    #include <ext/stb_image.h>
+#endif
 #include <robot2D/Graphics/Texture.hpp>
 
 namespace robot2D{

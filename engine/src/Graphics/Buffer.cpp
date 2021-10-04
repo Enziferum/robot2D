@@ -26,7 +26,7 @@ source distribution.
 namespace robot2D {
     ////// Vertex Buffer //////
 
-    VertexBuffer::~VertexBuffer() noexcept {}
+    VertexBuffer::~VertexBuffer() {}
 
     const uint32_t& VertexBuffer::getSize() const {
         return m_size;
@@ -46,7 +46,7 @@ namespace robot2D {
 
     ////// Index Buffer //////
 
-    IndexBuffer::~IndexBuffer() noexcept {}
+    IndexBuffer::~IndexBuffer() {}
 
     const uint32_t& IndexBuffer::getSize() const {
         return m_size;

@@ -84,7 +84,6 @@ public:
     RenderSystem(robot2D::MessageBus&);
     ~RenderSystem() override = default;
 
-    void update(float dt) override;
     void draw(robot2D::RenderTarget &target, robot2D::RenderStates) const override;
 private:
 };
@@ -95,8 +94,6 @@ RenderSystem::RenderSystem(robot2D::MessageBus& messageBus):
     addRequirement<TransformComponent>();
 }
 
-
-void RenderSystem::update(float dt) {}
 
 void RenderSystem::draw(robot2D::RenderTarget& target, robot2D::RenderStates states) const {
     for(auto& it: m_entities) {
@@ -176,7 +173,7 @@ void Render2DScene::setup() {
 }
 
 void Render2DScene::handleEvents(const robot2D::Event& event) {
-
+    (void)event;
 }
 
 void Render2DScene::update(float dt) {

@@ -47,7 +47,7 @@ namespace robot2D::ecs {
         void handleMessage(const robot2D::Message& message);
         void update(float dt);
     private:
-        robot2D::MessageBus& m_messageBus;
+        [[maybe_unused]] robot2D::MessageBus& m_messageBus;
         std::vector<System::Ptr> m_systems;
         ComponentManager& m_componentManager;
     };

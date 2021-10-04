@@ -13,6 +13,10 @@ endif()
 
 include(CheckCXXCompilerFlag)
 
+set(CMAKE_CXX_STANDARD 17)
+option(BUILD_SANDBOX "Build Sandbox Submodule?" ON)
+option(BUILD_EDITOR "Build Editor Submodule?" OFF)
+
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 cmake_policy(SET CMP0074 NEW)
 
@@ -37,7 +41,7 @@ else()
     enable_cxx_compiler_flag_if_supported("-Wall")
     enable_cxx_compiler_flag_if_supported("-Wextra")
     enable_cxx_compiler_flag_if_supported("-Wpedantic")
-    #enable_cxx_compiler_flag_if_supported("-Werror")
+    enable_cxx_compiler_flag_if_supported("-Werror")
 endif()
 
 find_package(glfw3 REQUIRED)
@@ -74,5 +78,10 @@ target_include_directories(${PROJECT_NAME} PUBLIC
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
         "$<INSTALL_INTERFACE:include>")
 
-add_subdirectory(sandbox)
-add_subdirectory(editor)
+if(BUILD_SANDBOX)
+    add_subdirectory(sandbox)
+endif()
+
+if(BUILD_EDITOR)
+    add_subdirectory(editor)
+endif()

@@ -24,6 +24,7 @@ source distribution.
 #ifdef WIN32
     #include <robot2D/ext/glad.h>
 #elif __APPLE__
+    #define GL_SILENCE_DEPRECATION
     #include <OpenGL/gl3.h>
 #endif
 

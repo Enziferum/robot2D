@@ -37,7 +37,7 @@ namespace robot2D {
 
     void RenderTarget::setup() {
         if(!m_render)
-            m_render = std::move(robot2D::priv::RenderImpl::create());
+            m_render = robot2D::priv::RenderImpl::create();
 
         assert(m_render != nullptr && "Render Impl must be not null");
 

@@ -25,9 +25,9 @@ source distribution.
 namespace robot2D::ecs {
 
     EntityManager::EntityManager(ComponentManager& componentManager): m_entityCounter(0),
-    m_componentMasks(),
     m_componentManager(componentManager),
-    m_componentContainers(64){
+    m_componentContainers(64),
+    m_componentMasks() {
         m_componentMasks.resize(50);
     }
 
@@ -45,5 +45,8 @@ namespace robot2D::ecs {
     }
 
     // don't remove :)
-    bool EntityManager::removeEntity(Entity entity) {}
+    bool EntityManager::removeEntity(Entity entity) {
+        (void)entity;
+        return true;
+    }
 }

@@ -57,6 +57,7 @@ namespace robot2D::ecs {
     }
 
     void Scene::draw(robot2D::RenderTarget& target, robot2D::RenderStates states) const {
+        (void)states;
         for(auto& it: m_drawables)
             target.draw(*it);
     }

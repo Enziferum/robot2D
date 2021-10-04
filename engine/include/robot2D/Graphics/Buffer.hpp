@@ -61,8 +61,8 @@ namespace robot2D {
 
     struct Element {
         Element(const ElementType& elementType, const std::string& name, bool normalized = false):
-        type(elementType),
         name(name),
+        type(elementType),
         size(ElementTypeSize(elementType)),
         offset(0), normalized(normalized) {}
 
@@ -138,7 +138,7 @@ namespace robot2D {
     public:
         using Ptr = std::shared_ptr<VertexBuffer>;
     public:
-        virtual ~VertexBuffer();
+        virtual ~VertexBuffer() = 0;
 
         virtual void Bind() = 0;
         virtual void unBind() = 0;

@@ -46,7 +46,7 @@ namespace robot2D::ecs {
         Bitmask getSystemMask() const { return m_mask; }
 
 
-        virtual void update(float dt) = 0;
+        virtual void update(float dt);
         virtual void onMessage(const robot2D::Message& message);
     protected:
 

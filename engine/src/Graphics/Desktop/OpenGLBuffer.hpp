@@ -34,8 +34,8 @@ namespace robot2D {
         void unBind() override;
 
         void setData(const void* data, const uint32_t &size) override;
-        void setAttributeLayout(const AttributeLayout& layout) { m_layout = layout;}
-        const AttributeLayout& getAttributeLayout() const { return m_layout;}
+        void setAttributeLayout(const AttributeLayout& layout) override { m_layout = layout;}
+        const AttributeLayout& getAttributeLayout() const override  { return m_layout;}
     private:
         unsigned m_bufferID;
         AttributeLayout m_layout;

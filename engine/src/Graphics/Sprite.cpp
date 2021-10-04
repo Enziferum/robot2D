@@ -28,6 +28,7 @@ namespace robot2D {
     m_color(Color::White) {}
 
     void Sprite::setTexture(const Texture& texture, const IntRect& textureRect ) {
+        (void)textureRect;
         if(!m_texture && (m_texture_rect == IntRect())){
             auto size = texture.getSize();
             //it's not correct for us
