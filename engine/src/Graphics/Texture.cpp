@@ -29,20 +29,28 @@ source distribution.
 
 namespace robot2D{
 
+    GLenum convertColorType(const Texture::ColorFormat& format) {
+        switch(format) {
+            case Texture::ColorFormat::Red:
+                return GL_RED;
+            case Texture::ColorFormat::Rgb:
+                return GL_RGB;
+            case Texture::ColorFormat::Rgba:
+                return GL_RGBA;
+        }
+    }
+
     Texture::Texture():
     m_size(),
-    buffer(nullptr) {
-    }
+    buffer(nullptr),
+    m_data() {}
 
     Texture::~Texture() {
         if(buffer)
             stbi_image_free(buffer);
     }
 
-    bool Texture::loadFromFile(const std::string& path, bool alpha) {
-        //c++ hack before c++ 17 to set unused parameter
-        (void)(alpha);
-
+    bool Texture::loadFromFile(const std::string& path, bool usealpha) {
         int width, height, nrChannels;
         buffer = stbi_load(path.c_str(), &width, &height,
                                         &nrChannels, 0);
@@ -50,23 +58,14 @@ namespace robot2D{
         if(buffer == nullptr)
             return false;
 
+        m_data.resize(width * height * 4);
         m_size.x = width;
         m_size.y = height;
-
-        GLenum format;
-
-        format = GL_RGB;
-        if (nrChannels == 1)
-            format = GL_RED;
-        if (nrChannels == 3)
-            format = GL_RGB;
-        if (nrChannels == 4)
-            format = GL_RGBA;
-
+        m_colorFormat = static_cast<ColorFormat>(nrChannels);
+        if(usealpha)
+            m_colorFormat = ColorFormat::Rgba;
         setupGL();
-
-        glTexImage2D(GL_TEXTURE_2D, 0, format, m_size.x, m_size.y,
-                     0, format, GL_UNSIGNED_BYTE, buffer);
+        bindBufferData(buffer);
         glGenerateMipmap(GL_TEXTURE_2D);
 
         return true;
@@ -89,10 +88,11 @@ namespace robot2D{
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     }
 
-    void Texture::create(const vec2u& size, void* data) {
+    void Texture::create(const vec2u& size, void* data, const ColorFormat& colorFormat) {
         m_size = size;
+        m_colorFormat = colorFormat;
         setupGL();
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, size.x, size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+        bindBufferData(data);
     }
 
     const unsigned int& Texture::getID() const {
@@ -103,5 +103,9 @@ namespace robot2D{
         return buffer;
     }
 
+    void Texture::bindBufferData(void* bufferData) {
+        auto glFormat = convertColorType(m_colorFormat);
+        glTexImage2D(GL_TEXTURE_2D, 0, glFormat, m_size.x, m_size.y, 0, glFormat, GL_UNSIGNED_BYTE, bufferData);
+    }
 
 }
