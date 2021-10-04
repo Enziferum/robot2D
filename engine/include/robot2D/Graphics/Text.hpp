@@ -69,7 +69,8 @@ namespace robot2D{
 
         unsigned int VAO;
         unsigned int VBO;
-        unsigned int m_chars_size;
+
+        //unsigned int m_chars_size;
         mutable bool m_needupdate;
         std::string m_text;
 

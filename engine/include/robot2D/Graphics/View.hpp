@@ -56,11 +56,12 @@ namespace robot2D {
 
         const Transform& getTransform() const;
     private:
-        FloatRect m_viewport;
-        float m_rotation;
-        mutable Transform m_transform;
-        mutable bool needTransformUpdate;
+
         vec2f m_center;
         vec2f m_size;
+        float m_rotation;
+        FloatRect m_viewport;
+        mutable Transform m_transform;
+        mutable bool needTransformUpdate;
     };
 }

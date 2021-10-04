@@ -112,8 +112,10 @@ namespace robot2D {
         return m_win_size;
     }
 
+    // todo create
     bool Window::isMousePressed(const Mouse& button) {
-        return isMousePressed(button);
+        (void)button;
+        return false;
     }
 
     bool Window::isKeyboardPressed(const Key& key) {

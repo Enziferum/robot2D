@@ -31,11 +31,12 @@ namespace robot2D {
         constexpr int opengl_minor = 3;
 
         DesktopWindowImpl::DesktopWindowImpl():
+
         m_window(nullptr),
+        m_cursorVisible(true),
         m_size(800, 600),
         m_name("Robot2D"),
-        m_context(),
-        m_cursorVisible(true)
+        m_context()
         {
             setup();
         }
@@ -43,10 +44,11 @@ namespace robot2D {
         DesktopWindowImpl::DesktopWindowImpl(const vec2u &size, const std::string &name,
                                              WindowContext &context):
                 m_window(nullptr),
+                m_cursorVisible(true),
                 m_size(size),
                 m_name(name),
-                m_context(context),
-                m_cursorVisible(true){
+                m_context(context)
+                {
             setup();
         }
 
@@ -306,9 +308,9 @@ namespace robot2D {
             DesktopWindowImpl* window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
             Event event{};
             if(focus) {
-                event.type == Event::GainFocus;
+                event.type = Event::GainFocus;
             } else {
-                event.type == Event::LostFocus;
+                event.type = Event::LostFocus;
             }
 
             window->m_event_queue.push(event);

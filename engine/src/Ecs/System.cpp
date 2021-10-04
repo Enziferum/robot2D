@@ -24,7 +24,8 @@ source distribution.
 
 namespace robot2D::ecs {
     System::System(robot2D::MessageBus& messageBus, UniqueType uniqueType):
-    m_messageBus(messageBus), m_systemId(uniqueType) {}
+    m_systemId(uniqueType),
+    m_messageBus(messageBus) {}
 
     System::~System() {}
 
@@ -62,9 +63,17 @@ namespace robot2D::ecs {
         return true;
     }
 
-    void System::onMessage(const robot2D::Message& message) {}
+    void System::onMessage(const robot2D::Message& message) {
+        (void)message;
+    }
 
-    void System::onEntityAdded(Entity entity) {}
+    void System::update(float dt) {
+        (void)dt;
+    }
+
+    void System::onEntityAdded(Entity entity) {
+        (void)entity;
+    }
 
     void System::processRequirements(ComponentManager& componentManager) {
         for(auto& it: m_pendingTypes) {

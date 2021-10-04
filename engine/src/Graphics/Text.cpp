@@ -90,6 +90,7 @@ namespace robot2D {
     }
 
     void Text::draw(RenderTarget& target, RenderStates states) const {
+        (void)target;
         if(!m_font)
             return;
 

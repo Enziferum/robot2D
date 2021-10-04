@@ -35,7 +35,7 @@ namespace robot2D {
         const size_t& getItemsCount() const;
         const Texture& getTexture() const;
         const robot2D::vec2u& getItemSize() const;
-        const robot2D::FloatRect& getItemFrame(const robot2D::vec2u& index) const;
+        robot2D::FloatRect getItemFrame(const robot2D::vec2u& index) const;
     private:
         Texture m_texture;
         robot2D::vec2u m_ItemSize;

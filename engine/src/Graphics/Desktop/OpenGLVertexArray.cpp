@@ -109,7 +109,7 @@ namespace robot2D {
                 {
                     glEnableVertexAttribArray(m_vertexIndex);
                     auto count = it.getComponentCount();
-                    for(auto i = 0; i < count; ++i) {
+                    for(unsigned i = 0; i < count; ++i) {
                         glVertexAttribPointer(m_vertexIndex,
                                               count,
                                               ElementTypeToOpenGL(it.type),
