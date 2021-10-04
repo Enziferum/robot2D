@@ -22,21 +22,17 @@ source distribution.
 #include <robot2D/Ecs/EntityManager.hpp>
 #include <robot2D/Ecs/Entity.hpp>
 
-
 namespace robot2D::ecs {
 
-    Entity::Entity():m_entityManager(nullptr), m_id(-1) {}
+    Entity::Entity(): m_entityManager(nullptr), m_id(-1), m_tag("") {}
     Entity::Entity(EntityManager* entityManager, const EntityID& id): m_entityManager(entityManager),
     m_id(id) {}
 
-
-    bool operator==(const Entity& l, const Entity& r){
-        return l.m_id == r.m_id;
+    bool operator==(const Entity& left, const Entity& right) {
+        return (left.m_id == right.m_id) && (left.m_tag == right.m_tag);
     }
 
     Bitmask Entity::getComponentMask() const {
-        return m_entityManager->getComponentBitmask(*this);
+        return m_entityManager -> getComponentBitmask(*this);
     }
-
-
 }

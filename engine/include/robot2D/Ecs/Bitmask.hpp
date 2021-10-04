@@ -20,13 +20,14 @@ source distribution.
 *********************************************************************/
 
 #pragma once
+
 #include <cstdint>
 #include <vector>
-
 
 namespace robot2D::ecs {
     using Bitset = uint32_t;
 
+    // todo hash code
     class Bitmask {
     public:
         Bitmask();
@@ -45,6 +46,7 @@ namespace robot2D::ecs {
         void turnOnBits(const Bitset& bitset);
         void toggleBit(const unsigned int& pos);
         void clear(const unsigned int& pos);
+
         void Clear();
     private:
         Bitset m_bits;

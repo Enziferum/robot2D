@@ -19,8 +19,14 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include <GLFW/glfw3.h>
+#include <robot2D/Core/Clock.hpp>
 #include "sandbox/Sandbox.hpp"
+
+namespace {
+    robot2D::Clock m_frameClock;
+    constexpr float timePerFrame = 1.F / 60.F;
+    float processedTime = 0.F;
+}
 
 Sandbox::Sandbox(robot2D::RenderWindow& window):
     m_window(window), m_scene(nullptr) {
@@ -32,9 +38,15 @@ void Sandbox::setScene(Scene::Ptr scene) {
 }
 
 void Sandbox::run() {
+    m_frameClock.restart();
     while (m_window.isOpen()) {
-        handleEvents();
-        update(glfwGetTime());
+        float elapsed = m_frameClock.restart().asSeconds();
+        processedTime += elapsed;
+        while (processedTime > timePerFrame) {
+            processedTime -= timePerFrame;
+            handleEvents();
+            update(timePerFrame);
+        }
         render();
     }
 }
@@ -50,7 +62,6 @@ void Sandbox::handleEvents() {
 }
 
 void Sandbox::update(float dt) {
-
     m_scene -> update(dt);
 }
 

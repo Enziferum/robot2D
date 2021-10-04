@@ -59,6 +59,7 @@ namespace robot2D {
             case ElementType::Bool:
                 return 1;
         }
+        return 0;
     }
 
     struct ROBOT2D_EXPORT_API Element {
@@ -95,6 +96,7 @@ namespace robot2D {
                 case ElementType::Bool:
                     return 1;
             }
+            return 0;
         }
 
         std::string name;

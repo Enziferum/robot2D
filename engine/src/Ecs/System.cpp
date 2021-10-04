@@ -35,6 +35,7 @@ namespace robot2D::ecs {
         return false;
     }
 
+
     bool System::addEntity(Entity entity) {
         if(hasEntity(entity))
             return false;
@@ -43,18 +44,19 @@ namespace robot2D::ecs {
         return true;
     }
 
-    bool System::hasEntity(Entity entityId) {
+    bool System::hasEntity(Entity entity) {
         auto it = std::find_if(m_entities.begin(), m_entities.end(),
-                               [&entityId](const Entity& id) {
-                                   return entityId == id;
+                               [&entity](const Entity& id) {
+                                   return entity == id;
                                });
         return it != m_entities.end();
     }
 
-    bool System::removeEntity(Entity entityId) {
+
+    bool System::removeEntity(Entity entity) {
         auto it = std::find_if(m_entities.begin(), m_entities.end(),
-                               [&entityId](const Entity& id) {
-            return entityId == id;
+                               [&entity](const Entity& id) {
+            return entity == id;
         });
 
         if(it == m_entities.end())
@@ -66,6 +68,7 @@ namespace robot2D::ecs {
     void System::onMessage(const robot2D::Message& message) {
         (void)message;
     }
+
 
     void System::update(float dt) {
         (void)dt;

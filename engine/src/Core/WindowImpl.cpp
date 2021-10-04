@@ -32,12 +32,12 @@ namespace robot2D {
         WindowImpl::WindowImpl() {}
         WindowImpl::~WindowImpl() {}
 
-        WindowImpl* WindowImpl::create() {
-            return new WindowImplType();
+        WindowImpl::Ptr WindowImpl::create() {
+            return std::make_unique<WindowImplType>();
         }
 
-        WindowImpl* WindowImpl::create(const vec2u &size, const std::string &name, WindowContext &context) {
-            return new WindowImplType(size, name, context);
+        WindowImpl::Ptr WindowImpl::create(const vec2u &size, const std::string &name, WindowContext &context) {
+            return std::make_unique<WindowImplType>(size, name, context);
         }
 
     }
