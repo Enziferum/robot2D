@@ -45,7 +45,7 @@ namespace editor {
 
     template<typename T, typename ...Args>
     T& PanelManager::addPanel(Args&& ...args) {
-        auto& panel = m_panels.emplace_back(std::shared_ptr<T>(std::forward<Args>(args)...));
+        auto& panel = m_panels.emplace_back(std::make_shared<T>(std::forward<Args>(args)...));
         return *(dynamic_cast<T*>(m_panels.back().get()));
     }
 

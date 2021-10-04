@@ -34,14 +34,22 @@ namespace robot2D {
 
     using CursorHandle = void* ;
 
+    enum class CursorType {
+        Arrow,
+        TextInput,
+        ResizeUpDown,
+        ResizeLeftRight,
+        Hand
+    };
+
     class ROBOT2D_EXPORT_API Cursor {
     public:
         Cursor();
         ~Cursor();
 
-        bool createFromPixels(const unsigned char* pixes, const vec2u& size);
+        bool createFromPixels(unsigned char* pixes, const vec2u& size);
         void createDefault();
-        void create();
+        void create(const CursorType& cursorType);
         CursorHandle getRaw() const;
     private:
         std::unique_ptr<priv::CursorImpl> m_cursorImpl;

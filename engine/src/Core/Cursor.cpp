@@ -20,7 +20,29 @@ source distribution.
 *********************************************************************/
 
 #include <robot2D/Core/Cursor.hpp>
+#include "CursorImpl.hpp"
 
 namespace robot2D {
 
+    Cursor::Cursor(): m_cursorImpl(nullptr) {
+        m_cursorImpl = priv::CursorImpl::createImpl();
+    }
+
+    Cursor::~Cursor() {}
+
+    bool Cursor::createFromPixels(unsigned char* pixels, const vec2u& size) {
+        return m_cursorImpl ->createFromPixels(pixels, size);
+    }
+
+    void Cursor::createDefault() {
+        m_cursorImpl -> createDefault();
+    }
+
+    void Cursor::create(const CursorType& cursorType) {
+        m_cursorImpl ->create(cursorType);
+    }
+
+    CursorHandle Cursor::getRaw() const {
+        return m_cursorImpl -> getRaw();
+    }
 }

@@ -19,10 +19,18 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
+#include <robot2D/Core/Clock.hpp>
 #include <editor/Editor.hpp>
 #include <editor/ComponentPanel.hpp>
 
 namespace editor {
+
+    namespace {
+        robot2D::Clock frameClock;
+        constexpr float timePerFrame = 1.F / 60.F;
+        float processedTime = 0.F;
+    }
+
 
     Editor::Editor(): m_window({1280, 920}, "Editor", robot2D::WindowContext::Default) {}
 
@@ -33,12 +41,17 @@ namespace editor {
 
     void Editor::run() {
         setup();
-
+        frameClock.restart();
         while(m_window.isOpen()) {
-            handleEvents();
-            handleMessages();
-            update(0.F);
-            m_guiWrapper.update(0.F);
+            float elapsed = frameClock.restart().asSeconds();
+            processedTime += elapsed;
+            while (processedTime > timePerFrame) {
+                processedTime -= timePerFrame;
+                handleEvents();
+                handleMessages();
+                update(timePerFrame);
+            }
+            m_guiWrapper.update(elapsed);
             render();
         }
     }

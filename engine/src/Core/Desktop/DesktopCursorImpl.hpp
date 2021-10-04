@@ -8,10 +8,16 @@ namespace robot2D {
         class DesktopCursorImpl: public CursorImpl {
         public:
             DesktopCursorImpl();
-            ~DesktopCursorImpl() override = default;
+            ~DesktopCursorImpl() override;
 
-            
+            bool createFromPixels(unsigned char* pixels, const vec2u &size) override;
+            void createDefault() override;
+            void create(const CursorType& cursorType) override;
+
+            void* getRaw() const override;
+
         private:
+            GLFWcursor* m_cursor;
         };
     }
 }
