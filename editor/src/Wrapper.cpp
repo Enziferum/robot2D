@@ -27,7 +27,6 @@ source distribution.
 
 namespace ImGui {
     #define IMGUI_IMPL_OPENGL_USE_VERTEX_ARRAY
-    GLFWcursor*             MouseCursors[ImGuiMouseCursor_COUNT];
 
     static const char* Glfw_GetClipboardText(void* user_data)
     {
@@ -73,7 +72,6 @@ namespace ImGui {
         io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;
         io.BackendPlatformName = "imgui_impl_robot2D";
 
-
         io.KeyMap[ImGuiKey_Tab] = robot2D::key2Int(robot2D::Key::TAB);
         io.KeyMap[ImGuiKey_LeftArrow] = robot2D::key2Int(robot2D::Key::LEFT);
         io.KeyMap[ImGuiKey_RightArrow] =robot2D::key2Int(robot2D::Key::RIGHT);
@@ -103,16 +101,16 @@ namespace ImGui {
         auto sz = window.getSize();
         io.DisplaySize = ImVec2(sz.x, sz.y);
 
+        m_cursors[ImGuiMouseCursor_Arrow].createDefault();
+        m_cursors[ImGuiMouseCursor_TextInput].create(robot2D::CursorType::TextInput);
+        m_cursors[ImGuiMouseCursor_ResizeNS].create(robot2D::CursorType::ResizeUpDown);
+        m_cursors[ImGuiMouseCursor_ResizeEW].create(robot2D::CursorType::ResizeLeftRight);
+        m_cursors[ImGuiMouseCursor_Hand].create(robot2D::CursorType::Hand);
+        m_cursors[ImGuiMouseCursor_ResizeAll].createDefault();
+        m_cursors[ImGuiMouseCursor_ResizeNESW].createDefault();;
+        m_cursors[ImGuiMouseCursor_ResizeNWSE].createDefault();
+        m_cursors[ImGuiMouseCursor_NotAllowed].createDefault();
 
-        MouseCursors[ImGuiMouseCursor_Arrow] = glfwCreateStandardCursor(GLFW_ARROW_CURSOR);
-        MouseCursors[ImGuiMouseCursor_TextInput] = glfwCreateStandardCursor(GLFW_IBEAM_CURSOR);
-        MouseCursors[ImGuiMouseCursor_ResizeNS] = glfwCreateStandardCursor(GLFW_VRESIZE_CURSOR);
-        MouseCursors[ImGuiMouseCursor_ResizeEW] = glfwCreateStandardCursor(GLFW_HRESIZE_CURSOR);
-        MouseCursors[ImGuiMouseCursor_Hand] = glfwCreateStandardCursor(GLFW_HAND_CURSOR);
-        MouseCursors[ImGuiMouseCursor_ResizeAll] = glfwCreateStandardCursor(GLFW_ARROW_CURSOR);
-        MouseCursors[ImGuiMouseCursor_ResizeNESW] = glfwCreateStandardCursor(GLFW_ARROW_CURSOR);
-        MouseCursors[ImGuiMouseCursor_ResizeNWSE] = glfwCreateStandardCursor(GLFW_ARROW_CURSOR);
-        MouseCursors[ImGuiMouseCursor_NotAllowed] = glfwCreateStandardCursor(GLFW_ARROW_CURSOR);
 
         createDeviceObjects();
         setupFonts();
@@ -514,9 +512,10 @@ namespace ImGui {
                 m_window -> setMouseCursorVisible(false);
             } else {
                 m_window -> setMouseCursorVisible(true);
-                auto glfwWindow = (GLFWwindow*)m_window -> getRaw();
-                glfwSetCursor(glfwWindow, MouseCursors[cursor] ? MouseCursors[cursor]
-                : MouseCursors[ImGuiMouseCursor_Arrow]);
+                if(cursor < ImGuiMouseCursor_COUNT)
+                    m_window -> setCursor(m_cursors[cursor]);
+                else
+                    m_window -> setCursor(m_cursors[ImGuiMouseCursor_Arrow]);
             }
         }
     }

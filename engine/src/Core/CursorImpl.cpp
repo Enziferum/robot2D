@@ -22,8 +22,16 @@ source distribution.
 #include "Desktop/DesktopCursorImpl.hpp"
 #include "CursorImpl.hpp"
 
+namespace {
+    using CursorHandler = robot2D::priv::DesktopCursorImpl;
+}
+
 namespace robot2D {
     namespace priv {
+        CursorImpl::~CursorImpl() {}
 
+        std::unique_ptr<CursorImpl> CursorImpl::createImpl() {
+            return std::make_unique<CursorHandler>();
+        }
     }
 }

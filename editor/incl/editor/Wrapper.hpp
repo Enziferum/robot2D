@@ -21,6 +21,7 @@ source distribution.
 
 
 #pragma once
+#include <array>
 
 #include <robot2D/Graphics/RenderWindow.hpp>
 #include <robot2D/Graphics/Texture.hpp>
@@ -59,6 +60,7 @@ namespace ImGui {
         unsigned int VBO, EBO;
 
         robot2D::ShaderHandler m_shader;
+        std::array<robot2D::Cursor, ImGuiMouseCursor_COUNT> m_cursors;
     };
 
 
