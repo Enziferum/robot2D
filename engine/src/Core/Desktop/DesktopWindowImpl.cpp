@@ -324,5 +324,10 @@ namespace robot2D {
             window->m_event_queue.push(event);
         }
 
+        void DesktopWindowImpl::setCursor(const Cursor& cursor) {
+            auto rawCursor = (GLFWcursor*)cursor.getRaw();
+            glfwSetCursor(m_window, rawCursor);
+        }
+
     }
 }

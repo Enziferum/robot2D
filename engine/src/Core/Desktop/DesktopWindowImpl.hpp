@@ -57,8 +57,8 @@ namespace robot2D {
 
             void setDrapDropCallback(DrapDropCallback &&callback) override;
 
-
             void setMouseCursorVisible(const bool& flag) override;
+            void setCursor(const Cursor& cursor)override;
         private:
             void setup();
             void setup_callbacks();

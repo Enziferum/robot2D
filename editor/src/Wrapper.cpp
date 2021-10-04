@@ -513,7 +513,7 @@ namespace ImGui {
             if (io.MouseDrawCursor || cursor == ImGuiMouseCursor_None) {
                 m_window -> setMouseCursorVisible(false);
             } else {
-                m_window-> setMouseCursorVisible(true);
+                m_window -> setMouseCursorVisible(true);
                 auto glfwWindow = (GLFWwindow*)m_window -> getRaw();
                 glfwSetCursor(glfwWindow, MouseCursors[cursor] ? MouseCursors[cursor]
                 : MouseCursors[ImGuiMouseCursor_Arrow]);

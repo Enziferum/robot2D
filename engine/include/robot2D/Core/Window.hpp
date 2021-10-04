@@ -32,6 +32,7 @@ source distribution.
 #include "Vector2.hpp"
 #include "Event.hpp"
 #include "WindowContext.hpp"
+#include "Cursor.hpp"
 
 namespace robot2D {
 
@@ -90,6 +91,8 @@ namespace robot2D {
         static bool isKeyboardPressed(const Key& key);
 
         WindowHandle getRaw() const;
+
+        void setCursor(const Cursor& cursor);
 
         void setMouseCursorVisible(const bool& flag);
     protected:

@@ -128,5 +128,9 @@ namespace robot2D {
         m_windowImpl ->setMouseCursorVisible(flag);
     }
 
+    void Window::setCursor(const Cursor& cursor) {
+        m_windowImpl -> setCursor(cursor);
+    }
+
 
 }
