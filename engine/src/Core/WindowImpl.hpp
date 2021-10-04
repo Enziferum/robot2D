@@ -29,6 +29,7 @@ source distribution.
 #include <robot2D/Graphics/Texture.hpp>
 #include <robot2D/Core/Event.hpp>
 #include <robot2D/Core/WindowContext.hpp>
+#include <robot2D/Core/Cursor.hpp>
 
 namespace robot2D {
 
@@ -60,6 +61,7 @@ namespace robot2D {
             virtual void setDrapDropCallback(DrapDropCallback&& callback) = 0;
             virtual float getDeltaTime()const = 0;
             virtual void setMouseCursorVisible(const bool& flag) = 0;
+            virtual void setCursor(const Cursor& cursor) = 0;
         };
     }
 }

@@ -12,6 +12,7 @@ set(ENGINE_SRC
         ${INCLROOT}/Core/Message.hpp
         ${INCLROOT}/Core/Time.hpp
         ${INCLROOT}/Core/Clock.hpp
+        ${INCLROOT}/Core/Cursor.hpp
         ${INCLROOT}/Core/memory/Allocators.hpp
         ${INCLROOT}/Core/memory/MemoryManager.hpp
 
@@ -65,6 +66,8 @@ set(ENGINE_SRC ${ENGINE_SRC}
         ${SRCROOT}/Core/MessageBus.cpp
         ${SRCROOT}/Core/Clock.cpp
         ${SRCROOT}/Core/Time.cpp
+        ${SRCROOT}/Core/Cursor.cpp
+        ${SRCROOT}/Core/CursorImpl.cpp
         ${SRCROOT}/Core/memory/Allocators.cpp
         ${SRCROOT}/Core/memory/MemoryManager.cpp
 
@@ -102,6 +105,7 @@ set(ENGINE_SRC ${ENGINE_SRC}
 
         # Impls
         ${SRCROOT}/Core/Desktop/DesktopWindowImpl.cpp
+        ${SRCROOT}/Core/Desktop/DesktopCursorImpl.cpp
         ${SRCROOT}/Graphics/Desktop/OpenGLRender.cpp
         ${SRCROOT}/Graphics/Desktop/OpenGLBuffer.cpp
         ${SRCROOT}/Graphics/Desktop/OpenGLVertexArray.cpp
