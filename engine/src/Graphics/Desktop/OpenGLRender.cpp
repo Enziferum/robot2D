@@ -58,7 +58,7 @@ namespace robot2D {
             out vec4 fragColor;
             void main()
             {
-                fragColor = Color * texture(sprite, TexCoords);
+                fragColor = texture(sprite, TexCoords) * Color;
             }
         )";
 
@@ -260,7 +260,5 @@ namespace robot2D {
         const RenderStats &OpenGLRender::getStats() const {
             return m_stats;
         }
-
-
     }
 }

@@ -22,28 +22,39 @@ source distribution.
 #pragma once
 
 #include <string>
+#include <vector>
 #include "robot2D/Core/Vector2.hpp"
 
 namespace robot2D {
     class ROBOT2D_EXPORT_API Texture {
     public:
+        enum class ColorFormat {
+            Red = 1,
+            Rgb = 3,
+            Rgba = 4
+        };
+    public:
         Texture();
         ~Texture();
 
-        bool loadFromFile(const std::string& path, bool alpha = false);
+        bool loadFromFile(const std::string& path, bool usealpha = false);
+        unsigned char* getPixels() const;
 
         vec2u& getSize();
         const vec2u& getSize() const;
 
-        void create(const vec2u& size, void* data);
+        void create(const vec2u& size, void* data, const ColorFormat& colorFormat = ColorFormat::Rgba);
         const unsigned int& getID()const;
 
-        unsigned char* getPixels() const;
+        const ColorFormat& getColorFormat() const { return m_colorFormat; }
     private:
+        void bindBufferData(void* bufferData);
         void setupGL();
     private:
         vec2u m_size;
         unsigned int m_texture;
         unsigned char* buffer;
+        std::vector<unsigned char> m_data;
+        ColorFormat m_colorFormat;
     };
 }

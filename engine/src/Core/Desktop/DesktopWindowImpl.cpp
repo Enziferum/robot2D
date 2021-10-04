@@ -128,8 +128,9 @@ namespace robot2D {
             glfwSetWindowTitle(m_window, t);
         }
 
-        void DesktopWindowImpl::clear(const Color &color) {
-            glClearColor(color.red, color.green, color.blue, color.alpha);
+        void DesktopWindowImpl::clear(const Color& color) {
+            auto glColor = color.toGL();
+            glClearColor(glColor.red, glColor.green, glColor.blue, glColor.alpha);
             glClear(GL_COLOR_BUFFER_BIT);
         }
 
