@@ -22,7 +22,7 @@ source distribution.
 #pragma once
 
 #include <robot2D/Util/ResourceHandler.hpp>
-#include "ecs/Scene.hpp"
+#include <robot2D/Ecs/Scene.hpp>
 #include "Scene.hpp"
 
 // Scene for Implementing BatchRender
@@ -38,7 +38,7 @@ public:
     virtual void render() override;
 
 private:
-    ecs::Scene m_scene;
+    robot2D::ecs::Scene m_scene;
     robot2D::MessageBus messageBus;
     robot2D::ResourceHandler<robot2D::Texture> m_textures;
 };

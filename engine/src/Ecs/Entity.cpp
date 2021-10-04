@@ -19,11 +19,11 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include "EntityManager.hpp"
-#include "Entity.hpp"
+#include <robot2D/Ecs/EntityManager.hpp>
+#include <robot2D/Ecs/Entity.hpp>
 
 
-namespace ecs {
+namespace robot2D::ecs {
 
     Entity::Entity():m_entityManager(nullptr), m_id(-1) {}
     Entity::Entity(EntityManager* entityManager, const EntityID& id): m_entityManager(entityManager),

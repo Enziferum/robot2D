@@ -20,30 +20,21 @@ source distribution.
 *********************************************************************/
 
 #pragma once
+#include <queue>
 
-#include <cstdint>
-#include <vector>
+namespace robot2D::ecs {
 
-#include "Defines.hpp"
-
-namespace ecs {
-    // allow to work With Components without using ComponentID variable
-    class ComponentManager final {
+    template<typename ID>
+    class EventQueue {
     public:
-        ComponentManager();
-        ~ComponentManager() = default;
+        EventQueue();
+        ~EventQueue() = default;
 
-        using ID = uint32_t;
-
-        template<typename T>
-        ID getID() {
-            auto id = UniqueType(typeid(T));
-            return getIDFromIndex(id);
-        }
-
-        ID getIDFromIndex(const UniqueType& uniqueType);
+        void addEvent(const ID& eventID);
+        bool processEvents(const ID& eventID);
+        void clear();
     private:
-        std::vector<UniqueType> m_indices;
+        std::queue<ID> m_eventQueue;
     };
 
 

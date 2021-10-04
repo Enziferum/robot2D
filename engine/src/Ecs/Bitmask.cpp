@@ -20,9 +20,9 @@ source distribution.
 *********************************************************************/
 
 #include <algorithm>
-#include "Bitmask.hpp"
+#include <robot2D/Ecs/Bitmask.hpp>
 
-namespace ecs {
+namespace robot2D::ecs {
     Bitmask::Bitmask() : m_bits(0) {
 
     }

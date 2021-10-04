@@ -1,7 +1,7 @@
 /*********************************************************************
 (c) Alex Raag 2021
 https://github.com/Enziferum
-ZombieArena - Zlib license.
+robot2D - Zlib license.
 This software is provided 'as-is', without any express or
 implied warranty. In no event will the authors be held
 liable for any damages arising from the use of this software.
@@ -19,31 +19,23 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include "EntityManager.hpp"
-#include "SystemManager.hpp"
+#include <algorithm>
+#include <robot2D/Ecs/Component.hpp>
 
-namespace ecs {
+namespace robot2D::ecs {
 
-    EntityManager::EntityManager(ComponentManager& componentManager): m_entityCounter(0),
-    m_componentMasks(),
-    m_componentManager(componentManager),
-    m_componentContainers(64){
-        m_componentMasks.resize(50);
+    ComponentManager::ComponentManager(): m_indices() {}
+
+    ComponentManager::ID ComponentManager::getIDFromIndex(const UniqueType& uniqueType) {
+        auto iter = std::find_if(m_indices.begin(), m_indices.end(), [&](const UniqueType& type) {
+            return uniqueType == type;
+        });
+        if(iter == m_indices.end()) {
+            m_indices.emplace_back(uniqueType);
+            return m_indices.size() - 1;
+        }
+
+        return std::distance(m_indices.begin(), iter);
     }
 
-    Entity EntityManager::createEntity() {
-        Entity entity{this, m_entityCounter};
-        m_entityCounter++;
-        return entity;
-    }
-
-
-    Bitmask EntityManager::getComponentBitmask(Entity entity) {
-        const auto index = entity.getIndex();
-        assert(index < m_componentMasks.size());
-        return m_componentMasks[index];
-    }
-
-    // don't remove :)
-    bool EntityManager::removeEntity(Entity entity) {}
 }

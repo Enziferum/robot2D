@@ -29,7 +29,7 @@ source distribution.
 #include "Entity.hpp"
 #include "Component.hpp"
 
-namespace ecs {
+namespace robot2D::ecs {
     using EntityList = std::vector<Entity>;
 
     class System {

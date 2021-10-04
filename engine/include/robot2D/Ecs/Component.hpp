@@ -19,30 +19,32 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include "EventQueue.hpp"
+#pragma once
 
-namespace ecs {
-    template<typename ID>
-    EventQueue<ID>::EventQueue(): m_eventQueue() {}
+#include <cstdint>
+#include <vector>
 
-    template<typename ID>
-    bool EventQueue<ID>::processEvents(const ID& eventID) {
-        if(m_eventQueue.empty()) return false;
-        eventID = m_eventQueue.front();
-        m_eventQueue.pop();
-        return true;
-    }
+#include "Defines.hpp"
 
-    template<typename ID>
-    void EventQueue<ID>::clear() {
-        while(!m_eventQueue.empty())
-            m_eventQueue.pop;
-    }
+namespace robot2D::ecs {
+    // allow to work With Components without using ComponentID variable
+    class ComponentManager final {
+    public:
+        ComponentManager();
+        ~ComponentManager() = default;
 
-    template<typename ID>
-    void EventQueue<ID>::addEvent(const ID& eventID) {
-        m_eventQueue.push(eventID);
-    }
+        using ID = uint32_t;
+
+        template<typename T>
+        ID getID() {
+            auto id = UniqueType(typeid(T));
+            return getIDFromIndex(id);
+        }
+
+        ID getIDFromIndex(const UniqueType& uniqueType);
+    private:
+        std::vector<UniqueType> m_indices;
+    };
 
 
 }

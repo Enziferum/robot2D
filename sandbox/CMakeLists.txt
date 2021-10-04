@@ -9,9 +9,7 @@ set(LIBS robot2D robot2D-features)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/incl)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 
-file(GLOB SRC src/ecs/*.cpp)
-
-set(SRC ${ENGINE_SRC} ${SRC}
+set(SRC
         src/main.cpp
         src/Render2DScene.cpp
         src/Sandbox.cpp
