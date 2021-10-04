@@ -23,6 +23,7 @@ source distribution.
 
 #include <vector>
 #include <functional>
+#include <memory>
 
 #include <robot2D/Graphics/Color.hpp>
 #include <robot2D/Graphics/Texture.hpp>
@@ -35,13 +36,14 @@ namespace robot2D {
         class WindowImpl {
         protected:
             using DrapDropCallback = std::function<void(std::vector<std::string>)>;
+            using Ptr = std::unique_ptr<WindowImpl>;
         public:
             WindowImpl();
             virtual ~WindowImpl() = 0;
 
             virtual bool pollEvents(Event& event) = 0;
-            static WindowImpl* create();
-            static WindowImpl* create(const robot2D::vec2u& size,
+            static WindowImpl::Ptr create();
+            static WindowImpl::Ptr create(const robot2D::vec2u& size,
                                       const std::string& name, WindowContext& context);
 
             virtual void* getRaw() = 0;

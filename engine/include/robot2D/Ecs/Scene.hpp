@@ -28,6 +28,7 @@ source distribution.
 #include "SystemManager.hpp"
 
 namespace robot2D::ecs {
+
     // Ecs Manager as well, entites adding to Scene
     class Scene: public robot2D::Drawable {
     public:
@@ -47,7 +48,7 @@ namespace robot2D::ecs {
         void update(float dt);
         void draw(robot2D::RenderTarget& target, robot2D::RenderStates) const override;
     private:
-        [[maybe_unused]] robot2D::MessageBus& m_messageBus;
+        robot2D::MessageBus& m_messageBus;
         ComponentManager m_componentManager;
         EntityManager m_entityManager;
         SystemManager m_systemManager;
@@ -66,6 +67,7 @@ namespace robot2D::ecs {
             auto* drawable = dynamic_cast<robot2D::Drawable*>(&system);
             m_drawables.emplace_back(drawable);
         }
+
     }
 
 }

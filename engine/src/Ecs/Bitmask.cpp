@@ -31,7 +31,6 @@ namespace robot2D::ecs {
 
     }
 
-
     Bitset Bitmask::getBitset() const {
         return m_bits;
     }

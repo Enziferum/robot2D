@@ -10,6 +10,8 @@ set(ENGINE_SRC
         ${INCLROOT}/Core/Vector2.hpp
         ${INCLROOT}/Core/MessageBus.hpp
         ${INCLROOT}/Core/Message.hpp
+        ${INCLROOT}/Core/Time.hpp
+        ${INCLROOT}/Core/Clock.hpp
         ${INCLROOT}/Core/memory/Allocators.hpp
         ${INCLROOT}/Core/memory/MemoryManager.hpp
 
@@ -61,6 +63,8 @@ set(ENGINE_SRC ${ENGINE_SRC}
         ${SRCROOT}/Core/Keyboard.cpp
         ${SRCROOT}/Core/Mouse.cpp
         ${SRCROOT}/Core/MessageBus.cpp
+        ${SRCROOT}/Core/Clock.cpp
+        ${SRCROOT}/Core/Time.cpp
         ${SRCROOT}/Core/memory/Allocators.cpp
         ${SRCROOT}/Core/memory/MemoryManager.cpp
 

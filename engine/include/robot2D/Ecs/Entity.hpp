@@ -20,7 +20,7 @@ source distribution.
 *********************************************************************/
 
 #pragma once
-
+#include <string>
 #include "Defines.hpp"
 
 namespace robot2D::ecs {
@@ -43,17 +43,24 @@ namespace robot2D::ecs {
         template<typename T>
         const T& getComponent() const;
 
-        friend bool operator == (const Entity& l, const Entity& r);
-
         EntityID getIndex() const { return m_id; }
 
         Bitmask getComponentMask() const;
+
+        void setTag(const std::string& tag) { m_tag = tag; }
+
+        const std::string& getTag() const { return m_tag; }
+
+        std::string& getTag() { return m_tag; }
+
+        friend bool operator == (const Entity& l, const Entity& r);
     private:
         friend class EntityManager;
         explicit Entity(EntityManager* entityManager, const EntityID& id);
         EntityManager* m_entityManager;
 
         EntityID m_id;
+        std::string m_tag;
     };
 
 }

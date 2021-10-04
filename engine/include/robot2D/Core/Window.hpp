@@ -24,6 +24,7 @@ source distribution.
 #include <string>
 #include <vector>
 #include <functional>
+#include <memory>
 
 #include "robot2D/Graphics/Color.hpp"
 #include "robot2D/Graphics/Texture.hpp"
@@ -37,6 +38,8 @@ namespace robot2D {
     namespace priv {
         class WindowImpl;
     }
+
+    using WindowHandle = void*;
 
     /**
      * Window - heart of engine, you will use it if you want have onw Rendering part, but
@@ -86,7 +89,7 @@ namespace robot2D {
 
         static bool isKeyboardPressed(const Key& key);
 
-        void* getRaw() const;
+        WindowHandle getRaw() const;
 
         void setMouseCursorVisible(const bool& flag);
     protected:
@@ -96,7 +99,7 @@ namespace robot2D {
 
         float getDeltaTime();
     protected:
-        static priv::WindowImpl* m_windowImpl;
+        static std::unique_ptr<priv::WindowImpl> m_windowImpl;
 
         //window settings
         vec2u m_win_size;

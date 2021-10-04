@@ -127,7 +127,7 @@ DemoMoveSystem::DemoMoveSystem(robot2D::MessageBus& messageBus):
 void DemoMoveSystem::update(float dt) {
     for(auto& it: m_entities) {
         auto& transform = it.getComponent<TransformComponent>();
-        transform.move(robot2D::vec2f(1.f * dt, 0.f));
+        transform.move(robot2D::vec2f(10.f * dt, 0.f));
     }
 }
 

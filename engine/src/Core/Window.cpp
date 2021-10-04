@@ -25,7 +25,7 @@ source distribution.
 
 namespace robot2D {
 
-    priv::WindowImpl* Window::m_windowImpl = nullptr;
+    std::unique_ptr<priv::WindowImpl> Window::m_windowImpl = nullptr;
 
     Window::Window():
     m_win_size(800, 600),
@@ -44,12 +44,7 @@ namespace robot2D {
     }
 
 
-    Window::~Window() {
-        if(m_windowImpl != nullptr) {
-            delete m_windowImpl;
-            m_windowImpl = nullptr;
-        }
-    }
+    Window::~Window() {}
 
 
     bool Window::isOpen() const {
@@ -85,20 +80,18 @@ namespace robot2D {
         m_windowImpl -> setTitle(title);
     }
 
-
-    void Window::onResize(const int &w, const int &h) {
+    void Window::onResize(const int& w, const int& h) {
         //c++ hack before c++ 17 to set unused parameter
         (void)(w);
         //c++ hack before c++ 17 to set unused parameter
         (void)(h);
     }
 
-
     void Window::setIcon(std::vector<Texture>& icons) {
         m_windowImpl -> setIcon(icons);
     }
 
-    void* Window::getRaw() const {
+    WindowHandle Window::getRaw() const {
         return m_windowImpl -> getRaw();
     }
 
@@ -111,6 +104,7 @@ namespace robot2D {
     const vec2u& Window::getSize() {
         return m_win_size;
     }
+
 
     // todo create
     bool Window::isMousePressed(const Mouse& button) {

@@ -19,27 +19,20 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include "WindowImpl.hpp"
-
-//just now not check OS, only main desktop
-#include "Desktop/DesktopWindowImpl.hpp"
-
-using WindowImplType = robot2D::priv::DesktopWindowImpl;
+#pragma once
+#include <chrono>
+#include <robot2D/Config.hpp>
+#include "Time.hpp"
 
 namespace robot2D {
-    namespace priv {
+    class ROBOT2D_EXPORT_API Clock {
+    public:
+        Clock();
+        ~Clock() = default;
 
-        WindowImpl::WindowImpl() {}
-        WindowImpl::~WindowImpl() {}
-
-        WindowImpl::Ptr WindowImpl::create() {
-            return std::make_unique<WindowImplType>();
-        }
-
-        WindowImpl::Ptr WindowImpl::create(const vec2u &size, const std::string &name, WindowContext &context) {
-            return std::make_unique<WindowImplType>(size, name, context);
-        }
-
-    }
+        // returns delta Time
+        Time restart();
+    private:
+        std::chrono::time_point<std::chrono::high_resolution_clock> m_start;
+    };
 }
-

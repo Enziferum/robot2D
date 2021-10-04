@@ -49,6 +49,7 @@ namespace robot2D {
             case ElementType::Bool:
                 return GL_BOOL;
         }
+        return GL_FLOAT;
     }
 
     OpenGLVertexArray::OpenGLVertexArray(): m_vertexIndex(0) {
