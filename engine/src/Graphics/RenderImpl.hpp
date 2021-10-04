@@ -29,7 +29,7 @@ source distribution.
 
 namespace robot2D {
     namespace priv {
-        class RenderImpl {
+        class ROBOT2D_EXPORT_API RenderImpl {
         public:
             using Ptr = std::unique_ptr<RenderImpl>;
         public:

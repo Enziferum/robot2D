@@ -24,7 +24,7 @@ source distribution.
 #include <robot2D/Graphics/Buffer.hpp>
 
 namespace robot2D {
-    class OpenGLVertexBuffer final:  public VertexBuffer {
+    class ROBOT2D_EXPORT_API OpenGLVertexBuffer final:  public VertexBuffer {
     public:
         OpenGLVertexBuffer(const uint32_t& size);
         OpenGLVertexBuffer(float* data, const uint32_t& size);
@@ -41,7 +41,7 @@ namespace robot2D {
         AttributeLayout m_layout;
     };
 
-    class OpenGLIndexBuffer final: public IndexBuffer {
+    class ROBOT2D_EXPORT_API OpenGLIndexBuffer final: public IndexBuffer {
     public:
         OpenGLIndexBuffer(uint32_t* data, const uint32_t& size);
         ~OpenGLIndexBuffer();

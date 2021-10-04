@@ -26,7 +26,7 @@ source distribution.
 
 namespace robot2D {
     // in version 0.2 - 0.3 using only textureCoords for Quads
-    struct Vertex {
+    struct ROBOT2D_EXPORT_API Vertex {
         vec2f position;
         vec2f texCoords;
         Color color;

@@ -22,6 +22,8 @@ source distribution.
 #pragma once
 #include <memory>
 
+#include <robot2D/Config.hpp>
+
 #include "Drawable.hpp"
 #include "Sprite.hpp"
 #include "Shader.hpp"
@@ -35,7 +37,7 @@ namespace robot2D {
     }
 
 
-    class RenderTarget {
+    class ROBOT2D_EXPORT_API RenderTarget {
     public:
         RenderTarget(const vec2u& size);
         virtual ~RenderTarget() = 0;
@@ -59,7 +61,6 @@ namespace robot2D {
         void setup();
     protected:
         std::unique_ptr<priv::RenderImpl> m_render;
-        //priv::RenderImpl* m_render;
         vec2u m_size;
     };
 

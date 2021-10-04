@@ -34,7 +34,7 @@ namespace robot2D {
      * \brief in 2D worlds Sprite class is flyweight to wrap texture and make it Drawable on screen and
      * Have different Transformations. Core feature, which you will use to alive us apps
      */
-    class Sprite: public Transformable, public Drawable{
+    class ROBOT2D_EXPORT_API Sprite: public Transformable, public Drawable{
     public:
         Sprite();
         ~Sprite()override = default;

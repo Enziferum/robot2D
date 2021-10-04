@@ -33,7 +33,7 @@ namespace robot2D {
     using uint = unsigned int;
 
     namespace priv {
-        class OpenGLRender: public RenderImpl {
+        class ROBOT2D_EXPORT_API OpenGLRender: public RenderImpl {
         public:
             OpenGLRender();
             ~OpenGLRender();

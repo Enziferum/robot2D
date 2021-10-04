@@ -26,6 +26,8 @@ source distribution.
 #include <string>
 #include <vector>
 
+#include <robot2D/Config.hpp>
+
 namespace robot2D {
 
     enum class ElementType {
@@ -59,7 +61,7 @@ namespace robot2D {
         }
     }
 
-    struct Element {
+    struct ROBOT2D_EXPORT_API Element {
         Element(const ElementType& elementType, const std::string& name, bool normalized = false):
         name(name),
         type(elementType),
@@ -102,7 +104,7 @@ namespace robot2D {
         bool normalized;
     };
 
-    struct AttributeLayout {
+    struct ROBOT2D_EXPORT_API AttributeLayout {
     public:
         AttributeLayout() = default;
         AttributeLayout(std::initializer_list<Element> elements): m_elements(elements) {
@@ -134,7 +136,7 @@ namespace robot2D {
     };
 
     // Public Interface of VertexBuffer //
-    class VertexBuffer {
+    class ROBOT2D_EXPORT_API VertexBuffer {
     public:
         using Ptr = std::shared_ptr<VertexBuffer>;
     public:
@@ -157,7 +159,7 @@ namespace robot2D {
     };
 
     // Public Interface of IndexBuffer //
-    class IndexBuffer {
+    class ROBOT2D_EXPORT_API IndexBuffer {
     public:
         using Ptr = std::shared_ptr<IndexBuffer>;
     public:

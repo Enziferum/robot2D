@@ -32,7 +32,7 @@ namespace robot2D {
     };
 
 
-    class ShaderHandler {
+    class ROBOT2D_EXPORT_API ShaderHandler {
     public:
         ShaderHandler();
         ~ShaderHandler() = default;

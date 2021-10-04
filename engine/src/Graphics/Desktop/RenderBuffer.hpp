@@ -29,7 +29,7 @@ source distribution.
 namespace robot2D {
 
 #pragma pack(push, 1)
-    struct RenderVertex {
+    struct ROBOT2D_EXPORT_API RenderVertex {
         robot2D::vec2f Position;
         robot2D::vec2f TextureCoords;
         Color Color;
@@ -38,7 +38,7 @@ namespace robot2D {
 #pragma pack(pop)
 
 
-    struct RenderBuffer {
+    struct ROBOT2D_EXPORT_API RenderBuffer {
         unsigned int maxQuadsCount = 20000;
         unsigned int maxVerticesCount = maxQuadsCount * 4;
         unsigned int maxIndicesCount = maxQuadsCount * 6;

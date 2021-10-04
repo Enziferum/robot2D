@@ -24,7 +24,7 @@ source distribution.
 
 namespace robot2D {
 
-    class OpenGLVertexArray final: public VertexArray {
+    class ROBOT2D_EXPORT_API OpenGLVertexArray final: public VertexArray {
     public:
         OpenGLVertexArray();
         ~OpenGLVertexArray();

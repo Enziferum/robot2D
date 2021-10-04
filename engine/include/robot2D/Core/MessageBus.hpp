@@ -30,7 +30,7 @@ source distribution.
 
 namespace robot2D {
 
-    class MessageBus {
+    class ROBOT2D_EXPORT_API MessageBus final {
     public:
         MessageBus();
         ~MessageBus() = default;

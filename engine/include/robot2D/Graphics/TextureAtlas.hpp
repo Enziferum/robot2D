@@ -24,7 +24,7 @@ source distribution.
 #include "Texture.hpp"
 
 namespace robot2D {
-    class TextureAtlas {
+    class ROBOT2D_EXPORT_API TextureAtlas {
     public:
         TextureAtlas();
         ~TextureAtlas() = default;

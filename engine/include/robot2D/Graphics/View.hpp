@@ -26,7 +26,7 @@ source distribution.
 #include "robot2D/Core/Vector2.hpp"
 
 namespace robot2D {
-    class View {
+    class ROBOT2D_EXPORT_API View {
     public:
         View();
         explicit View(const FloatRect& viewport);

@@ -25,7 +25,7 @@ source distribution.
 #include "Buffer.hpp"
 
 namespace robot2D {
-    class VertexArray {
+    class ROBOT2D_EXPORT_API VertexArray {
     public:
         using Ptr = std::shared_ptr<VertexArray>;
     public:

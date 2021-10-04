@@ -21,6 +21,7 @@ source distribution.
 
 #pragma once
 
+#include <robot2D/Config.hpp>
 #include "Transform.hpp"
 #include "Color.hpp"
 #include "Shader.hpp"
@@ -28,12 +29,12 @@ source distribution.
 namespace robot2D {
     class Texture;
 
-    struct RenderInfo {
+    struct ROBOT2D_EXPORT_API RenderInfo {
         unsigned int customVao;
         bool useIndices;
     };
 
-    struct RenderStates {
+    struct ROBOT2D_EXPORT_API RenderStates {
         RenderStates();
         ~RenderStates() = default;
 

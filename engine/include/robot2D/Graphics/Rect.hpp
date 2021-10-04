@@ -22,11 +22,12 @@ source distribution.
 #pragma once
 
 #include <algorithm>
+#include <robot2D/Config.hpp>
 #include <robot2D/Core/Vector2.hpp>
 
 namespace robot2D {
     template<typename T>
-    struct Rect {
+    struct ROBOT2D_EXPORT_API Rect {
         Rect();
         Rect(const T& leftx, const T& lefty, const T& width, const T& height);
         Rect& operator=(const Rect& other);
