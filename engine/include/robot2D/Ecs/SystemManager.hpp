@@ -28,7 +28,7 @@ source distribution.
 #include "System.hpp"
 #include "EventQueue.hpp"
 
-namespace ecs {
+namespace robot2D::ecs {
 
     class SystemManager {
     public:

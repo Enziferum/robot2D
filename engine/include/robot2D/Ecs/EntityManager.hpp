@@ -32,7 +32,7 @@ source distribution.
 #include "Defines.hpp"
 #include "Entity.hpp"
 
-namespace ecs {
+namespace robot2D::ecs {
 
     // public non template API
     class IContainer {

@@ -21,8 +21,8 @@ source distribution.
 
 #include <robot2D/Graphics/Graphics.hpp>
 #include "sandbox/Render2DScene.hpp"
-#include "ecs/Component.hpp"
-#include "ecs/System.hpp"
+#include <robot2D/Ecs/Component.hpp>
+#include <robot2D/Ecs/System.hpp>
 
 class SpriteComponent final {
 public:
@@ -79,7 +79,7 @@ TransformComponent::TransformComponent() {}
 
 
 
-class RenderSystem: public ecs::System, public robot2D::Drawable {
+class RenderSystem: public robot2D::ecs::System, public robot2D::Drawable {
 public:
     RenderSystem(robot2D::MessageBus&);
     ~RenderSystem() override = default;
@@ -112,7 +112,7 @@ void RenderSystem::draw(robot2D::RenderTarget& target, robot2D::RenderStates sta
 
 
 
-class DemoMoveSystem: public ecs::System {
+class DemoMoveSystem: public robot2D::ecs::System {
 public:
     DemoMoveSystem(robot2D::MessageBus&);
     ~DemoMoveSystem() override = default;
@@ -123,7 +123,7 @@ private:
 
 
 DemoMoveSystem::DemoMoveSystem(robot2D::MessageBus& messageBus):
-        ecs::System(messageBus, typeid(DemoMoveSystem)) {
+        robot2D::ecs::System(messageBus, typeid(DemoMoveSystem)) {
     addRequirement<TransformComponent>();
 }
 
@@ -162,7 +162,7 @@ void Render2DScene::setup() {
     m_textures.loadFromFile("sprite", "awesomeface.png", true);
 
     for(auto it = 0; it < 5; ++it) {
-        ecs::Entity entity = m_scene.createEntity();
+        robot2D::ecs::Entity entity = m_scene.createEntity();
 
         auto& transform = entity.addComponent<TransformComponent>();
 

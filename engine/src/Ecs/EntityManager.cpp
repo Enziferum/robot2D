@@ -1,7 +1,7 @@
 /*********************************************************************
 (c) Alex Raag 2021
 https://github.com/Enziferum
-robot2D - Zlib license.
+ZombieArena - Zlib license.
 This software is provided 'as-is', without any express or
 implied warranty. In no event will the authors be held
 liable for any damages arising from the use of this software.
@@ -19,36 +19,31 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#pragma once
-#include <cstdint>
-#include <vector>
+#include <robot2D/Ecs/EntityManager.hpp>
+#include <robot2D/Ecs/SystemManager.hpp>
 
-namespace ecs {
-    using Bitset = uint32_t;
+namespace robot2D::ecs {
 
-    class Bitmask {
-    public:
-        Bitmask();
-        Bitmask(const Bitset& bits);
-        ~Bitmask() = default;
+    EntityManager::EntityManager(ComponentManager& componentManager): m_entityCounter(0),
+    m_componentMasks(),
+    m_componentManager(componentManager),
+    m_componentContainers(64){
+        m_componentMasks.resize(50);
+    }
 
-        Bitset getBitset() const;
-        void setBitset(const Bitset& bitset);
+    Entity EntityManager::createEntity() {
+        Entity entity{this, m_entityCounter};
+        m_entityCounter++;
+        return entity;
+    }
 
-        bool matches(const Bitmask& other,
-                     const Bitset& relevant = 0);
 
-        bool getBit(const unsigned int& pos) const;
+    Bitmask EntityManager::getComponentBitmask(Entity entity) {
+        const auto index = entity.getIndex();
+        assert(index < m_componentMasks.size());
+        return m_componentMasks[index];
+    }
 
-        void turnOnBit(const unsigned int& pos);
-        void turnOnBits(const Bitset& bitset);
-        void toggleBit(const unsigned int& pos);
-        void clear(const unsigned int& pos);
-        void Clear();
-    private:
-        Bitset m_bits;
-    };
-
-    // get mask from input components
-    Bitmask configureMask(std::vector<Bitset> bits);
+    // don't remove :)
+    bool EntityManager::removeEntity(Entity entity) {}
 }

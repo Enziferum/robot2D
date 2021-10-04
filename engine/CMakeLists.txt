@@ -13,6 +13,16 @@ set(ENGINE_SRC ${ENGINE_SRC}
         ${INCLROOT}/Core/memory/Allocators.hpp
         ${INCLROOT}/Core/memory/MemoryManager.hpp
 
+        #Ecs
+        ${INCLROOT}/Ecs/Bitmask.hpp
+        ${INCLROOT}/Ecs/Component.hpp
+        ${INCLROOT}/Ecs/Defines.hpp
+        ${INCLROOT}/Ecs/Entity.hpp
+        ${INCLROOT}/Ecs/EntityManager.hpp
+        ${INCLROOT}/Ecs/EventQueue.hpp
+        ${INCLROOT}/Ecs/Scene.hpp
+        ${INCLROOT}/Ecs/System.hpp
+        ${INCLROOT}/Ecs/SystemManager.hpp
 
         #Graphics
         ${INCLROOT}/Graphics/Buffer.hpp
@@ -72,6 +82,16 @@ set(ENGINE_SRC ${ENGINE_SRC}
         ${SRCROOT}/Graphics/TextureAtlas.cpp
         ${SRCROOT}/Graphics/Buffer.cpp
         ${SRCROOT}/Graphics/VertexArray.cpp
+
+        #Ecs
+        ${SRCROOT}/Ecs/Bitmask.cpp
+        ${SRCROOT}/Ecs/Component.cpp
+        ${SRCROOT}/Ecs/Entity.cpp
+        ${SRCROOT}/Ecs/EntityManager.cpp
+        ${SRCROOT}/Ecs/EventQueue.cpp
+        ${SRCROOT}/Ecs/Scene.cpp
+        ${SRCROOT}/Ecs/System.cpp
+        ${SRCROOT}/Ecs/SystemManager.cpp
 
         #Util
         ${SRCROOT}/Util/Logger.cpp

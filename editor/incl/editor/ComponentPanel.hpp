@@ -1,7 +1,7 @@
 /*********************************************************************
 (c) Alex Raag 2021
 https://github.com/Enziferum
-robot2D - Zlib license.
+ZombieArena - Zlib license.
 This software is provided 'as-is', without any express or
 implied warranty. In no event will the authors be held
 liable for any damages arising from the use of this software.
@@ -19,23 +19,16 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include <algorithm>
-#include "Component.hpp"
+#pragma once
 
-namespace ecs {
+#include "IPanel.hpp"
 
-    ComponentManager::ComponentManager(): m_indices() {}
+namespace editor {
+    class ComponentPanel final: public IPanel {
+    public:
+        ComponentPanel();
+        ~ComponentPanel() override = default;
 
-    ComponentManager::ID ComponentManager::getIDFromIndex(const UniqueType& uniqueType) {
-        auto iter = std::find_if(m_indices.begin(), m_indices.end(), [&](const UniqueType& type) {
-            return uniqueType == type;
-        });
-        if(iter == m_indices.end()) {
-            m_indices.emplace_back(uniqueType);
-            return m_indices.size() - 1;
-        }
-
-        return std::distance(m_indices.begin(), iter);
-    }
-
+        void render() override;
+    };
 }

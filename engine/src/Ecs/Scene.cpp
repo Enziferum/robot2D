@@ -20,9 +20,9 @@ source distribution.
 *********************************************************************/
 
 #include <robot2D/Graphics/RenderTarget.hpp>
-#include "Scene.hpp"
+#include <robot2D/Ecs/Scene.hpp>
 
-namespace ecs {
+namespace robot2D::ecs {
 
     Scene::Scene(robot2D::MessageBus& messageBus):
     m_messageBus(messageBus),

@@ -1,7 +1,7 @@
 /*********************************************************************
 (c) Alex Raag 2021
 https://github.com/Enziferum
-ZombieArena - Zlib license.
+robot2D - Zlib license.
 This software is provided 'as-is', without any express or
 implied warranty. In no event will the authors be held
 liable for any damages arising from the use of this software.
@@ -20,21 +20,40 @@ source distribution.
 *********************************************************************/
 
 #pragma once
-#include <memory>
+
 #include "Defines.hpp"
 
-namespace editor {
-    class IPanel {
-    public:
-        using Ptr = std::shared_ptr<IPanel>;
-    public:
-        IPanel(UniqueType uniqueType);
-        virtual ~IPanel() = 0;
+namespace robot2D::ecs {
+    class EntityManager;
 
-        virtual void update(float dt);
-        virtual void render() = 0;
-        UniqueType getID() const { return m_id; }
-    protected:
-        UniqueType m_id;
+    class Entity {
+    public:
+        Entity();
+        ~Entity() = default;
+
+        template<typename T, typename ...Args>
+        T& addComponent(Args&& ... args);
+
+        template<typename T>
+        bool hasComponent();
+
+        template<typename T>
+        T& getComponent();
+
+        template<typename T>
+        const T& getComponent() const;
+
+        friend bool operator == (const Entity& l, const Entity& r);
+
+        EntityID getIndex() const { return m_id; }
+
+        Bitmask getComponentMask() const;
+    private:
+        friend class EntityManager;
+        explicit Entity(EntityManager* entityManager, const EntityID& id);
+        EntityManager* m_entityManager;
+
+        EntityID m_id;
     };
+
 }

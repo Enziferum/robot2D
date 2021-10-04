@@ -20,9 +20,9 @@ source distribution.
 *********************************************************************/
 
 #include <algorithm>
-#include "System.hpp"
+#include <robot2D/Ecs/System.hpp>
 
-namespace ecs {
+namespace robot2D::ecs {
     System::System(robot2D::MessageBus& messageBus, UniqueType uniqueType):
     m_messageBus(messageBus), m_systemId(uniqueType) {}
 

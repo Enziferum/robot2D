@@ -27,7 +27,7 @@ source distribution.
 #include "EntityManager.hpp"
 #include "SystemManager.hpp"
 
-namespace ecs {
+namespace robot2D::ecs {
     // Ecs Manager as well, entites adding to Scene
     class Scene: public robot2D::Drawable {
     public:

@@ -1,7 +1,7 @@
 /*********************************************************************
 (c) Alex Raag 2021
 https://github.com/Enziferum
-ZombieArena - Zlib license.
+robot2D - Zlib license.
 This software is provided 'as-is', without any express or
 implied warranty. In no event will the authors be held
 liable for any damages arising from the use of this software.
@@ -20,21 +20,36 @@ source distribution.
 *********************************************************************/
 
 #pragma once
-#include <memory>
-#include "Defines.hpp"
+#include <cstdint>
+#include <vector>
 
-namespace editor {
-    class IPanel {
-    public:
-        using Ptr = std::shared_ptr<IPanel>;
-    public:
-        IPanel(UniqueType uniqueType);
-        virtual ~IPanel() = 0;
 
-        virtual void update(float dt);
-        virtual void render() = 0;
-        UniqueType getID() const { return m_id; }
-    protected:
-        UniqueType m_id;
+namespace robot2D::ecs {
+    using Bitset = uint32_t;
+
+    class Bitmask {
+    public:
+        Bitmask();
+        Bitmask(const Bitset& bits);
+        ~Bitmask() = default;
+
+        Bitset getBitset() const;
+        void setBitset(const Bitset& bitset);
+
+        bool matches(const Bitmask& other,
+                     const Bitset& relevant = 0);
+
+        bool getBit(const unsigned int& pos) const;
+
+        void turnOnBit(const unsigned int& pos);
+        void turnOnBits(const Bitset& bitset);
+        void toggleBit(const unsigned int& pos);
+        void clear(const unsigned int& pos);
+        void Clear();
+    private:
+        Bitset m_bits;
     };
+
+    // get mask from input components
+    Bitmask configureMask(std::vector<Bitset> bits);
 }

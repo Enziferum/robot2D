@@ -19,15 +19,30 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#pragma once
-#include <typeindex>
+#include <robot2D/Ecs/EventQueue.hpp>
 
-namespace ecs {
-    // max components per Entity
-    constexpr uint32_t maxComponents = 32;
-    using UniqueType = std::type_index;
+namespace robot2D::ecs {
+    template<typename ID>
+    EventQueue<ID>::EventQueue(): m_eventQueue() {}
 
-    using EntityID = uint32_t;
-    using ComponentID = uint32_t;
-    using SystemID = uint32_t;
+    template<typename ID>
+    bool EventQueue<ID>::processEvents(const ID& eventID) {
+        if(m_eventQueue.empty()) return false;
+        eventID = m_eventQueue.front();
+        m_eventQueue.pop();
+        return true;
+    }
+
+    template<typename ID>
+    void EventQueue<ID>::clear() {
+        while(!m_eventQueue.empty())
+            m_eventQueue.pop;
+    }
+
+    template<typename ID>
+    void EventQueue<ID>::addEvent(const ID& eventID) {
+        m_eventQueue.push(eventID);
+    }
+
+
 }
