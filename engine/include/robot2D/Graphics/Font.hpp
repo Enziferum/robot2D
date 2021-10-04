@@ -24,6 +24,7 @@ source distribution.
 #include <string>
 #include <map>
 
+#include <robot2D/Config.hpp>
 #include <robot2D/Core/Vector2.hpp>
 
 namespace robot2D {
@@ -36,7 +37,7 @@ namespace robot2D {
     };
 
 
-    class Font {
+    class ROBOT2D_EXPORT_API Font {
     public:
         Font();
         ~Font();

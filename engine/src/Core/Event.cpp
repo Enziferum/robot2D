@@ -20,5 +20,4 @@ source distribution.
 *********************************************************************/
 
 #include <robot2D/Core/Event.hpp>
-
 namespace robot2D {}

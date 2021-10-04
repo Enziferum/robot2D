@@ -21,8 +21,10 @@ source distribution.
 
 #pragma once
 
+#include <robot2D/Config.hpp>
+
 namespace robot2D {
-    class Message {
+    class ROBOT2D_EXPORT_API Message final {
     public:
 
         using ID = int32_t;

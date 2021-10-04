@@ -21,6 +21,7 @@ source distribution.
 
 #pragma once
 
+#include <robot2D/Config.hpp>
 #include "RenderStates.hpp"
 
 namespace robot2D {
@@ -30,7 +31,7 @@ namespace robot2D {
      * \brief This class allows to you custom class to be rendered with simple call
      * robot2D::RenderTarget / robot2D::RenderWindow draw() function
      */
-    class Drawable {
+    class ROBOT2D_EXPORT_API Drawable {
     public:
         virtual ~Drawable() = 0 ;
 

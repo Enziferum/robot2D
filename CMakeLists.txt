@@ -14,6 +14,9 @@ endif()
 include(CheckCXXCompilerFlag)
 
 set(CMAKE_CXX_STANDARD 17)
+# Some default variables which the user may change
+option(CMAKE_BUILD_TYPE "Choose the type of build (Debug or Release)" Debug)
+option(BUILD_SHARED_LIBS "Whether to build shared libraries" OFF)
 option(BUILD_SANDBOX "Build Sandbox Submodule?" ON)
 option(BUILD_EDITOR "Build Editor Submodule?" OFF)
 
@@ -44,14 +47,13 @@ else()
     enable_cxx_compiler_flag_if_supported("-Werror")
 endif()
 
+
 find_package(glfw3 REQUIRED)
 find_package(Freetype REQUIRED)
-
-message(STATUS "Found freetype in ${FREETYPE_INCLUDE_DIRS}")
-message(STATUS "Found GLFW3 in ${GLFW3_INCLUDE_DIR}")
-
 find_package(robot2D_ext QUIET)
 
+#TODO update finds
+message(STATUS "Found freetype in ${FREETYPE_INCLUDE_DIRS}")
 include_directories(${FREETYPE_INCLUDE_DIRS})
 
 if(WIN32)
@@ -65,18 +67,19 @@ else(APPLE)
     set(LIBS ${APPLE_LIBS})
 endif()
 
-#Todo remove it
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/engine/include)
 add_subdirectory(engine)
-
 
 add_library(${PROJECT_NAME} ${ENGINE_SRC})
 set(LIBS ${LIBS} glfw robot2D_ext ${FREETYPE_LIBRARIES})
 
 target_link_libraries(${PROJECT_NAME} ${LIBS})
 target_include_directories(${PROJECT_NAME} PUBLIC
-        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/engine/include>"
         "$<INSTALL_INTERFACE:include>")
+
+if(NOT BUILD_SHARED_LIBS)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC "ROBOT2D_STATIC")
+endif()
 
 if(BUILD_SANDBOX)
     add_subdirectory(sandbox)

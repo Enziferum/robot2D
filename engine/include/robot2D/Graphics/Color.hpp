@@ -21,9 +21,11 @@ source distribution.
 
 #pragma once
 
+#include <robot2D/Config.hpp>
+
 namespace robot2D {
 
-    class Color {
+    class ROBOT2D_EXPORT_API Color final {
     public:
         Color();
         Color(const float& red, const float& green, const float& blue,

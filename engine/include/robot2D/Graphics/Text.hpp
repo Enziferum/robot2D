@@ -31,7 +31,7 @@ source distribution.
 namespace robot2D{
 
     /// \brief Allows to render text on screen with custom font of type robot2D::Font
-    class Text: public Drawable {
+    class ROBOT2D_EXPORT_API Text: public Drawable {
     public:
         Text();
         ~Text() override = default;

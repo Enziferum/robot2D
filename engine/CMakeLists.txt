@@ -1,6 +1,6 @@
-set(INCLROOT ${CMAKE_CURRENT_SOURCE_DIR}/include/robot2D)
+set(INCLROOT ${PROJECT_SOURCE_DIR}/engine/include/robot2D)
 
-set(ENGINE_SRC ${ENGINE_SRC}
+set(ENGINE_SRC
         ${INCLROOT}/robot2D.hpp
 
         #Core
@@ -49,7 +49,7 @@ set(ENGINE_SRC ${ENGINE_SRC}
         PARENT_SCOPE
         )
 
-set(SRCROOT ${CMAKE_CURRENT_SOURCE_DIR}/src)
+set(SRCROOT ${PROJECT_SOURCE_DIR}/engine/src)
 
 set(ENGINE_SRC ${ENGINE_SRC}
         #Core

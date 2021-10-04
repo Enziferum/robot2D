@@ -3,9 +3,10 @@
 //
 
 #pragma once
+#include <robot2D/Config.hpp>
 
 namespace robot2D {
-    struct RenderStats {
+    struct ROBOT2D_EXPORT_API RenderStats final {
         unsigned drawCalls;
         unsigned drawQuads;
         unsigned drawVertices;
