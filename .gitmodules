@@ -1,0 +1,6 @@
+[submodule "editor/ext/yaml-cpp"]
+	path = editor/ext/yaml-cpp
+	url = git@github.com:jbeder/yaml-cpp.git
+[submodule "editor/ext/robot2D-imgui"]
+	path = editor/ext/robot2D-imgui
+	url = git@github.com:Enziferum/robot2D-imgui.git
