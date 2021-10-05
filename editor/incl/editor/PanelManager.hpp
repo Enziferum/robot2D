@@ -1,7 +1,7 @@
 /*********************************************************************
 (c) Alex Raag 2021
 https://github.com/Enziferum
-ZombieArena - Zlib license.
+robot2D - Zlib license.
 This software is provided 'as-is', without any express or
 implied warranty. In no event will the authors be held
 liable for any damages arising from the use of this software.
@@ -45,6 +45,7 @@ namespace editor {
 
     template<typename T, typename ...Args>
     T& PanelManager::addPanel(Args&& ...args) {
+        static_assert(std::is_base_of<IPanel, T>::value && "Adding T, must be IPanel child");
         auto& panel = m_panels.emplace_back(std::make_shared<T>(std::forward<Args>(args)...));
         return *(dynamic_cast<T*>(m_panels.back().get()));
     }
