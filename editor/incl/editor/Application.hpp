@@ -20,21 +20,31 @@ source distribution.
 *********************************************************************/
 
 #pragma once
-#include <memory>
-#include "Defines.hpp"
+
+#include <robot2D/Graphics/RenderWindow.hpp>
+#include <robot2D/Core/MessageBus.hpp>
+#include "Wrapper.hpp"
+#include "Editor.hpp"
 
 namespace editor {
-    class IPanel {
+    class Application {
     public:
-        using Ptr = std::shared_ptr<IPanel>;
-    public:
-        IPanel(UniqueType uniqueType);
-        virtual ~IPanel() = 0;
+        Application();
+        ~Application() = default;
 
-        virtual void update(float dt);
-        virtual void render() = 0;
-        UniqueType getID() const { return m_id; }
-    protected:
-        UniqueType m_id;
+        void run();
+    private:
+        void setup();
+        void handleEvents();
+        void handleMessages();
+        void update(float dt);
+        void render();
+
+    private:
+        robot2D::RenderWindow m_window;
+        robot2D::MessageBus m_messageBus;
+        ImGui::Wrapper m_guiWrapper;
+        Editor m_editor;
     };
 }
+

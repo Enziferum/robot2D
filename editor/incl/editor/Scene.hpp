@@ -20,21 +20,21 @@ source distribution.
 *********************************************************************/
 
 #pragma once
+
 #include <memory>
-#include "Defines.hpp"
+#include <robot2D/Ecs/Scene.hpp>
 
 namespace editor {
-    class IPanel {
+    class Scene {
     public:
-        using Ptr = std::shared_ptr<IPanel>;
+        using Ptr = std::shared_ptr<Scene>;
     public:
-        IPanel(UniqueType uniqueType);
-        virtual ~IPanel() = 0;
+        Scene();
+        ~Scene();
 
-        virtual void update(float dt);
-        virtual void render() = 0;
-        UniqueType getID() const { return m_id; }
-    protected:
-        UniqueType m_id;
+        void update(float dt);
+
+    private:
+        robot2D::ecs::Scene m_scene;
     };
 }

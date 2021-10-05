@@ -1,7 +1,7 @@
 /*********************************************************************
 (c) Alex Raag 2021
 https://github.com/Enziferum
-ZombieArena - Zlib license.
+robot2D - Zlib license.
 This software is provided 'as-is', without any express or
 implied warranty. In no event will the authors be held
 liable for any damages arising from the use of this software.
@@ -21,53 +21,25 @@ source distribution.
 
 #include <robot2D/Core/Clock.hpp>
 #include <editor/Editor.hpp>
+
 #include <editor/ComponentPanel.hpp>
+#include <editor/ScenePanel.hpp>
 
 namespace editor {
 
-    namespace {
-        robot2D::Clock frameClock;
-        constexpr float timePerFrame = 1.F / 60.F;
-        float processedTime = 0.F;
-    }
-
-
-    Editor::Editor(): m_window({1280, 920}, "Editor", robot2D::WindowContext::Default) {}
+    Editor::Editor(robot2D::RenderWindow& window): m_window{window} {}
 
     void Editor::setup() {
         auto& panel = m_panelManager.addPanel<ComponentPanel>();
-        m_guiWrapper.init(m_window);
+        m_panelManager.addPanel<ScenePanel>();
     }
 
-    void Editor::run() {
-        setup();
-        frameClock.restart();
-        while(m_window.isOpen()) {
-            float elapsed = frameClock.restart().asSeconds();
-            processedTime += elapsed;
-            while (processedTime > timePerFrame) {
-                processedTime -= timePerFrame;
-                handleEvents();
-                handleMessages();
-                update(timePerFrame);
-            }
-            m_guiWrapper.update(elapsed);
-            render();
-        }
+    void Editor::handleEvents(const robot2D::Event& event) {
+
     }
 
-    void Editor::handleEvents() {
-        robot2D::Event event{};
-        while (m_window.pollEvents(event)) {
-            m_guiWrapper.handleEvents(event);
-        }
-    }
+    void Editor::handleMessages(const robot2D::Message& message) {
 
-    void Editor::handleMessages() {
-        robot2D::Message message{};
-        while (m_messageBus.pollMessages(message)) {
-
-        }
     }
 
     void Editor::update(float dt) {
@@ -75,17 +47,12 @@ namespace editor {
     }
 
     void Editor::render() {
-        m_window.clear();
         m_window.beforeRender();
-
-        //
 
         m_window.afterRender();
         m_window.flushRender();
 
         m_panelManager.render();
-        m_guiWrapper.render();
-        m_window.display();
     }
 
 

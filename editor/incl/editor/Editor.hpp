@@ -1,7 +1,7 @@
 /*********************************************************************
 (c) Alex Raag 2021
 https://github.com/Enziferum
-ZombieArena - Zlib license.
+robot2D - Zlib license.
 This software is provided 'as-is', without any express or
 implied warranty. In no event will the authors be held
 liable for any damages arising from the use of this software.
@@ -23,30 +23,27 @@ source distribution.
 
 #include <robot2D/Graphics/RenderWindow.hpp>
 #include <robot2D/Core/MessageBus.hpp>
-#include "Wrapper.hpp"
 #include "PanelManager.hpp"
 
 namespace editor {
     class Editor {
     public:
-        Editor();
+        Editor(robot2D::RenderWindow& window);
         Editor(const Editor&)=delete;
         Editor(const Editor&&)=delete;
         Editor& operator=(const Editor&)=delete;
         Editor& operator=(const Editor&&)=delete;
         ~Editor() = default;
 
-        void run();
-    private:
         void setup();
-        void handleEvents();
-        void handleMessages();
+        void handleEvents(const robot2D::Event& event);
+        void handleMessages(const robot2D::Message& message);
         void update(float dt);
         void render();
     private:
-        robot2D::RenderWindow m_window;
-        robot2D::MessageBus m_messageBus;
-        ImGui::Wrapper m_guiWrapper;
+
+    private:
+        robot2D::RenderWindow& m_window;
         PanelManager m_panelManager;
     };
 }

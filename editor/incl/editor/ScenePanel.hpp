@@ -20,21 +20,16 @@ source distribution.
 *********************************************************************/
 
 #pragma once
-#include <memory>
-#include "Defines.hpp"
+
+#include "IPanel.hpp"
 
 namespace editor {
-    class IPanel {
+    class ScenePanel: public IPanel {
     public:
-        using Ptr = std::shared_ptr<IPanel>;
-    public:
-        IPanel(UniqueType uniqueType);
-        virtual ~IPanel() = 0;
+        ScenePanel();
+        ~ScenePanel()override = default;
 
-        virtual void update(float dt);
-        virtual void render() = 0;
-        UniqueType getID() const { return m_id; }
-    protected:
-        UniqueType m_id;
+        void render() override;
+    private:
     };
 }

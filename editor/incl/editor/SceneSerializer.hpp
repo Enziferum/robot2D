@@ -20,21 +20,20 @@ source distribution.
 *********************************************************************/
 
 #pragma once
+
 #include <memory>
-#include "Defines.hpp"
 
 namespace editor {
-    class IPanel {
-    public:
-        using Ptr = std::shared_ptr<IPanel>;
-    public:
-        IPanel(UniqueType uniqueType);
-        virtual ~IPanel() = 0;
 
-        virtual void update(float dt);
-        virtual void render() = 0;
-        UniqueType getID() const { return m_id; }
-    protected:
-        UniqueType m_id;
+    class Scene;
+    class SceneSerializer {
+    public:
+        SceneSerializer(std::shared_ptr<Scene>);
+        ~SceneSerializer() = default;
+
+        bool serialize(const std::string& path);
+        bool deserialize(const std::string& path);
+    private:
+        std::shared_ptr<Scene> m_scene;
     };
 }

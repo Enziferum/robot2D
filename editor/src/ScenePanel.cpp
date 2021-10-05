@@ -19,22 +19,17 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#pragma once
-#include <memory>
-#include "Defines.hpp"
+#include <imgui/imgui.h>
+#include <editor/ScenePanel.hpp>
 
 namespace editor {
-    class IPanel {
-    public:
-        using Ptr = std::shared_ptr<IPanel>;
-    public:
-        IPanel(UniqueType uniqueType);
-        virtual ~IPanel() = 0;
 
-        virtual void update(float dt);
-        virtual void render() = 0;
-        UniqueType getID() const { return m_id; }
-    protected:
-        UniqueType m_id;
-    };
+    ScenePanel::ScenePanel(): IPanel(UniqueType(typeid(ScenePanel))) {}
+
+    void ScenePanel::render() {
+//        ImGui::Begin("ScenePanel");
+//        ImGui::TreeNode("");
+//        ImGui::TreePop();
+//        ImGui::End();
+    }
 }
