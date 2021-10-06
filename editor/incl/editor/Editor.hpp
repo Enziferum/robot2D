@@ -23,7 +23,10 @@ source distribution.
 
 #include <robot2D/Graphics/RenderWindow.hpp>
 #include <robot2D/Core/MessageBus.hpp>
+#include <robot2D/Graphics/FrameBuffer.hpp>
+
 #include "PanelManager.hpp"
+#include "Scene.hpp"
 
 namespace editor {
     class Editor {
@@ -40,10 +43,14 @@ namespace editor {
         void handleMessages(const robot2D::Message& message);
         void update(float dt);
         void render();
-    private:
 
+    private:
+        void imguiRender();
     private:
         robot2D::RenderWindow& m_window;
         PanelManager m_panelManager;
+        Scene::Ptr m_activeScene;
+        robot2D::FrameBuffer::Ptr m_frameBuffer;
+        bool m_docking;
     };
 }

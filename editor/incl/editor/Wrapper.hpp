@@ -26,6 +26,7 @@ source distribution.
 #include <robot2D/Graphics/RenderWindow.hpp>
 #include <robot2D/Graphics/Texture.hpp>
 #include <robot2D/Graphics/Shader.hpp>
+#include <robot2D/Graphics/FrameBuffer.hpp>
 
 #include <imgui/imgui.h>
 
@@ -65,4 +66,5 @@ namespace ImGui {
 
 
     void Image(robot2D::Sprite& sprite, const robot2D::vec2f& size);
+    void RenderFrameBuffer(const robot2D::FrameBuffer::Ptr& frameBuffer, const robot2D::vec2f& size);
 }

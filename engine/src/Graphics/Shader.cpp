@@ -99,7 +99,8 @@ namespace robot2D{
 
     void ShaderHandler::set_parameter(const char* name, const int& value) const{
         glUniform1i(glGetUniformLocation(shaderProgram, name), value);
-        glUniform1f(glGetUniformLocation(shaderProgram, name), value);
+
+       // glUniform1f(glGetUniformLocation(shaderProgram, name), value);
     }
 
     void ShaderHandler::set_parameter(const char* name, const float& value) const{
@@ -126,5 +127,9 @@ namespace robot2D{
 
     int ShaderHandler::getProgram() const{
         return shaderProgram;
+    }
+
+    void ShaderHandler::set_parameter(const char* name, const int* value, const size_t& size) const {
+        glUniform1iv(glGetUniformLocation(shaderProgram, name), size, value);
     }
 }
