@@ -50,3 +50,8 @@ template<typename T, typename ID>
 const T& ResourceHandler<T, ID>::get(const ID &idx) const {
     return *m_resources.at(idx);
 }
+
+template<typename T, typename ID>
+T& ResourceHandler<T, ID>::get(const ID &idx){
+    return *m_resources.at(idx);
+}

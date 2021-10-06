@@ -23,6 +23,10 @@ option(BUILD_EDITOR "Build Editor Submodule?" ON)
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 cmake_policy(SET CMP0074 NEW)
 
+set(CONFIG_FILE "${CMAKE_CURRENT_SOURCE_DIR}/cmake/generated/${PROJECT_NAME}-config.cmake")
+set(CONFIG_DEST "lib${LIB_SUFFIX}/cmake/${PROJECT_NAME}")
+set(TARGETS_EXPORT_NAME "${PROJECT_NAME}Targets")
+
 function(enable_cxx_compiler_flag_if_supported flag)
     string(FIND "${CMAKE_CXX_FLAGS}" "${flag}" flag_already_set)
     if(flag_already_set EQUAL -1)
@@ -76,6 +80,25 @@ target_link_libraries(${PROJECT_NAME} ${LIBS})
 target_include_directories(${PROJECT_NAME} PUBLIC
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/engine/include>"
         "$<INSTALL_INTERFACE:include>")
+
+include(CMakePackageConfigHelpers)
+configure_package_config_file(
+        "${CMAKE_CURRENT_SOURCE_DIR}/cmake/robot2D-config.cmake.in"
+        ${CONFIG_FILE}
+        INSTALL_DESTINATION ${CONFIG_DEST}
+)
+
+# Install
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/engine/include/robot2D DESTINATION include)
+
+install(TARGETS ${PROJECT_NAME} EXPORT ${TARGETS_EXPORT_NAME}
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib)
+
+install(FILES ${CONFIG_FILE} DESTINATION ${CONFIG_DEST})
+
+install( EXPORT ${TARGETS_EXPORT_NAME}
+        DESTINATION "${CONFIG_DEST}")
 
 if(NOT BUILD_SHARED_LIBS)
     target_compile_definitions(${PROJECT_NAME} PUBLIC "ROBOT2D_STATIC")
