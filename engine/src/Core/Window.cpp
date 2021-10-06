@@ -35,7 +35,7 @@ namespace robot2D {
         Window::create();
     }
 
-    Window::Window(const vec2u& size, const std::string& name, WindowContext& context):
+    Window::Window(const vec2u& size, const std::string& name, const WindowContext& context):
             m_win_size(size.x, size.y),
             m_name(name),
             m_context(context)

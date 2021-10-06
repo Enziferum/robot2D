@@ -52,7 +52,7 @@ namespace robot2D {
     public:
         Window();
         Window(const vec2u& size,
-               const std::string& name, WindowContext& windowContext);
+               const std::string& name, const WindowContext& windowContext = robot2D::WindowContext::Default);
         ~Window();
 
         ////
