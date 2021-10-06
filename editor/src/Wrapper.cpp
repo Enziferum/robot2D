@@ -71,6 +71,7 @@ namespace ImGui {
         io.BackendFlags |= ImGuiBackendFlags_HasMouseCursors;
         io.BackendFlags |= ImGuiBackendFlags_HasSetMousePos;
         io.BackendPlatformName = "imgui_impl_robot2D";
+        io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 
         io.KeyMap[ImGuiKey_Tab] = robot2D::key2Int(robot2D::Key::TAB);
         io.KeyMap[ImGuiKey_LeftArrow] = robot2D::key2Int(robot2D::Key::LEFT);
@@ -186,7 +187,6 @@ namespace ImGui {
     void Wrapper::update(float dt) {
         ImGuiIO& io = ImGui::GetIO();
         updateMouseCursor();
-
 
         auto sz = m_window -> getSize();
         io.DisplaySize = ImVec2(sz.x, sz.y);
@@ -529,12 +529,16 @@ namespace ImGui {
         robot2D::vec2f textureSize = {texture.getSize().x, texture.getSize().y};
         auto textureRect = sprite.getLocalBounds();
 
-
         auto imID = convertTextureHandle(texture.getID());
         ImVec2 uv0(textureRect.lx / textureSize.x, textureRect.ly / textureSize.y);
         ImVec2 uv1((textureRect.lx + textureRect.width) / textureSize.x,
                    (textureRect.ly + textureRect.height) / textureSize.y);
         ImGui::Image(imID, ImVec2(size.x, size.y), uv0, uv1);
+    }
+
+    void RenderFrameBuffer(const robot2D::FrameBuffer::Ptr& frameBuffer, const robot2D::vec2f &size) {
+        auto imID = convertTextureHandle(frameBuffer -> getFrameBufferRenderID());
+        ImGui::Image(imID, ImVec2(size.x, size.y), {0,1}, {1, 0});
     }
 
 }

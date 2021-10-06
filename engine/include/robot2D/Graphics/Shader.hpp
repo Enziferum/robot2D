@@ -44,6 +44,7 @@ namespace robot2D {
         void set_parameter(const char* name, const float& x, const float& y,
                            const float& z) const;
         void set_parameter(const char* name, const int& value) const;
+        void set_parameter(const char* name, const int* value, const size_t& size) const;
         void set_parameter(const char* name, const float& value) const;
 
         void set_parameter(const char* name, const vec2f& vec) const;

@@ -21,36 +21,31 @@ source distribution.
 
 #pragma once
 
-#include <robot2D/Graphics/RenderWindow.hpp>
-#include <robot2D/Core/MessageBus.hpp>
-#include <robot2D/Graphics/FrameBuffer.hpp>
+#include <memory>
+#include <robot2D/Core/Vector2.hpp>
 
-#include "PanelManager.hpp"
-#include "Scene.hpp"
+namespace robot2D {
 
-namespace editor {
-    class Editor {
+    using RenderID = uint32_t;
+
+    struct FrameBufferSpecification {
+        vec2i size;
+        uint32_t Samples = 1;
+        bool SwapChainTarget = false;
+    };
+
+    class FrameBuffer {
     public:
-        Editor(robot2D::RenderWindow& window);
-        Editor(const Editor&)=delete;
-        Editor(const Editor&&)=delete;
-        Editor& operator=(const Editor&)=delete;
-        Editor& operator=(const Editor&&)=delete;
-        ~Editor() = default;
+        using Ptr = std::shared_ptr<FrameBuffer>;
+    public:
+        virtual ~FrameBuffer() = 0;
+        virtual void Bind() = 0;
+        virtual void unBind() = 0;
+        virtual void Invalidate() = 0;
+        virtual const RenderID& getFrameBufferRenderID() const = 0;
+        virtual const FrameBufferSpecification& getSpecification() const = 0;
+        virtual FrameBufferSpecification& getSpecification()= 0;
 
-        void setup();
-        void handleEvents(const robot2D::Event& event);
-        void handleMessages(const robot2D::Message& message);
-        void update(float dt);
-        void render();
-
-    private:
-        void imguiRender();
-    private:
-        robot2D::RenderWindow& m_window;
-        PanelManager m_panelManager;
-        Scene::Ptr m_activeScene;
-        robot2D::FrameBuffer::Ptr m_frameBuffer;
-        bool m_docking;
+        static Ptr Create(const FrameBufferSpecification& specification);
     };
 }

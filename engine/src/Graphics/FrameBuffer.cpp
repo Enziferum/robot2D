@@ -19,38 +19,13 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#pragma once
-
-#include <robot2D/Graphics/RenderWindow.hpp>
-#include <robot2D/Core/MessageBus.hpp>
 #include <robot2D/Graphics/FrameBuffer.hpp>
+#include "Desktop/OpenGLFrameBuffer.hpp"
 
-#include "PanelManager.hpp"
-#include "Scene.hpp"
+namespace robot2D {
+    FrameBuffer::~FrameBuffer() {}
 
-namespace editor {
-    class Editor {
-    public:
-        Editor(robot2D::RenderWindow& window);
-        Editor(const Editor&)=delete;
-        Editor(const Editor&&)=delete;
-        Editor& operator=(const Editor&)=delete;
-        Editor& operator=(const Editor&&)=delete;
-        ~Editor() = default;
-
-        void setup();
-        void handleEvents(const robot2D::Event& event);
-        void handleMessages(const robot2D::Message& message);
-        void update(float dt);
-        void render();
-
-    private:
-        void imguiRender();
-    private:
-        robot2D::RenderWindow& m_window;
-        PanelManager m_panelManager;
-        Scene::Ptr m_activeScene;
-        robot2D::FrameBuffer::Ptr m_frameBuffer;
-        bool m_docking;
-    };
+    FrameBuffer::Ptr FrameBuffer::Create(const FrameBufferSpecification& specification) {
+        return std::make_unique<priv::OpenGLFrameBuffer>(specification);
+    }
 }

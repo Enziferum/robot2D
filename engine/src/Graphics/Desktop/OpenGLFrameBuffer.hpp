@@ -21,36 +21,26 @@ source distribution.
 
 #pragma once
 
-#include <robot2D/Graphics/RenderWindow.hpp>
-#include <robot2D/Core/MessageBus.hpp>
 #include <robot2D/Graphics/FrameBuffer.hpp>
 
-#include "PanelManager.hpp"
-#include "Scene.hpp"
-
-namespace editor {
-    class Editor {
+namespace robot2D::priv {
+    class OpenGLFrameBuffer final: public FrameBuffer {
     public:
-        Editor(robot2D::RenderWindow& window);
-        Editor(const Editor&)=delete;
-        Editor(const Editor&&)=delete;
-        Editor& operator=(const Editor&)=delete;
-        Editor& operator=(const Editor&&)=delete;
-        ~Editor() = default;
+        OpenGLFrameBuffer(const FrameBufferSpecification& specification);
+        ~OpenGLFrameBuffer() override;
 
-        void setup();
-        void handleEvents(const robot2D::Event& event);
-        void handleMessages(const robot2D::Message& message);
-        void update(float dt);
-        void render();
+        void Bind() override;
+        void unBind() override;
+        void Invalidate() override;
+        const RenderID& getFrameBufferRenderID() const override;
+        const FrameBufferSpecification &getSpecification() const override;
+
+        FrameBufferSpecification &getSpecification() override;
 
     private:
-        void imguiRender();
-    private:
-        robot2D::RenderWindow& m_window;
-        PanelManager m_panelManager;
-        Scene::Ptr m_activeScene;
-        robot2D::FrameBuffer::Ptr m_frameBuffer;
-        bool m_docking;
+        FrameBufferSpecification m_specification;
+        RenderID m_renderID;
+        RenderID m_colorAttachment;
+        RenderID m_depthAttachment;
     };
 }

@@ -44,6 +44,7 @@ set(ENGINE_SRC
         ${INCLROOT}/Graphics/Transformable.hpp
         ${INCLROOT}/Graphics/View.hpp
         ${INCLROOT}/Graphics/VertexArray.hpp
+        ${INCLROOT}/Graphics/FrameBuffer.hpp
 
 
         #Util
@@ -89,6 +90,7 @@ set(ENGINE_SRC ${ENGINE_SRC}
         ${SRCROOT}/Graphics/TextureAtlas.cpp
         ${SRCROOT}/Graphics/Buffer.cpp
         ${SRCROOT}/Graphics/VertexArray.cpp
+        ${SRCROOT}/Graphics/FrameBuffer.cpp
 
         #Ecs
         ${SRCROOT}/Ecs/Bitmask.cpp
@@ -109,6 +111,7 @@ set(ENGINE_SRC ${ENGINE_SRC}
         ${SRCROOT}/Graphics/Desktop/OpenGLRender.cpp
         ${SRCROOT}/Graphics/Desktop/OpenGLBuffer.cpp
         ${SRCROOT}/Graphics/Desktop/OpenGLVertexArray.cpp
+        ${SRCROOT}/Graphics/Desktop/OpenGLFrameBuffer.cpp
 
         PARENT_SCOPE
         )
