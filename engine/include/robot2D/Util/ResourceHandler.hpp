@@ -38,6 +38,13 @@ namespace robot2D{
         template<typename ... Args>
         bool loadFromFile(const ID& idx, Args&&... args);
 
+        bool append(const ID& idx, T resource) {
+            auto Resource = std::make_unique<T>(std::move(resource));
+            m_resources.insert(std::pair<ID, Ptr>(idx,
+                                                  std::move(Resource)));
+        }
+
+        T& get(const ID& idx);
         const T& get(const ID& idx) const;
     private:
         std::unordered_map<ID, Ptr> m_resources;
