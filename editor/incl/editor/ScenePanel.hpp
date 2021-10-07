@@ -31,11 +31,11 @@ namespace editor {
         ~ScenePanel()override = default;
 
 
-        void setActiveScene(Scene::Ptr&& ptr) { m_scene = ptr;}
+        void setActiveScene(Scene::Ptr&& ptr) { m_scene = ptr; m_selectedEntity = {};}
         void render() override;
     private:
         void drawEntity(robot2D::ecs::Entity entity);
-        void drawComponents(robot2D::ecs::Entity entity);
+        void drawComponents(robot2D::ecs::Entity& entity);
     private:
         Scene::Ptr m_scene;
         robot2D::ecs::Entity m_selectedEntity;

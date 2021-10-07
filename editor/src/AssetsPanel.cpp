@@ -31,13 +31,13 @@ namespace editor {
     namespace fs = std::filesystem;
 
     // todo get it from Somewhere
-    constexpr char* assetsPath = "assets/";
+    constexpr char* assetsPath = "assets";
     constexpr char* iconsPath = "res/icons/";
 
     const std::unordered_map<ResourceIconType, std::string> iconPaths = {
-            {ResourceIconType::Image, "IconImage.png"},
-            {ResourceIconType::Scene, "IconScene.png"},
-            {ResourceIconType::Directory, "IconDirectory.png"}
+            {ResourceIconType::File, "FileIcon.png"},
+          //  {ResourceIconType::Scene, "IconScene.png"},
+            {ResourceIconType::Directory, "DirectoryIcon.png"}
     };
 
     AssetsPanel::AssetsPanel(): IPanel(UniqueType(typeid(AssetsPanel))),
@@ -50,14 +50,13 @@ namespace editor {
         }
     }
 
-    AssetsPanel::~AssetsPanel() {}
-
     void AssetsPanel::render() {
-
         ImGui::Begin("Assets");
 
-        if(ImGui::Button("<-")) {
-            m_currentPath = m_currentPath.parent_path();
+        if(m_currentPath != fs::path(assetsPath)) {
+            if(ImGui::Button("<-")) {
+                m_currentPath = m_currentPath.parent_path();
+            }
         }
 
         static float padding = 16.F;
@@ -71,13 +70,15 @@ namespace editor {
 
         ImGui::Columns(columnCount, 0, false);
 
-        for(auto& directoryEntry: fs::directory_iterator(assetsPath)) {
+        for(auto& directoryEntry: fs::directory_iterator(m_currentPath)) {
             const auto& path = directoryEntry.path();
             auto relativePath = fs::relative(path, assetsPath);
             std::string filenameString = relativePath.filename().string();
 
+
+            ImGui::PushID(filenameString.c_str());
             ResourceIconType iconType = directoryEntry.is_directory() ? ResourceIconType::Directory :
-                    ResourceIconType::Image;
+                    ResourceIconType::File;
             auto iconID = m_assetsIcons.get(iconType).getID();
             ImGui::PushStyleColor(ImGuiCol_Button, {0, 0, 0, 0});
             ImGui::ImageButton((void*)iconID, ImVec2{thumbNaleSize, thumbNaleSize},
@@ -85,19 +86,21 @@ namespace editor {
 
             // drag&drop feature
             if(ImGui::BeginDragDropSource()) {
-                std::string itemPath = relativePath.string();
-                ImGui::SetDragDropPayload("Content_Browser_Item", itemPath.c_str(), itemPath.size());
+                const wchar_t* itemPath = relativePath.c_str();
+                ImGui::SetDragDropPayload("CONTENT_BROWSER_ITEM", itemPath, (wcslen(itemPath) + 1) * sizeof(wchar_t ));
                 ImGui::EndDragDropSource();
             }
 
             ImGui::PopStyleColor();
 
-            if(ImGui::IsAnyItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+            if(ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
                 if(directoryEntry.is_directory())
                     m_currentPath /= path.filename();
             }
             ImGui::TextWrapped(filenameString.c_str());
             ImGui::NextColumn();
+
+            ImGui::PopID();
         }
 
         ImGui::End();
