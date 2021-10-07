@@ -21,14 +21,18 @@ source distribution.
 
 #include <editor/Scene.hpp>
 #include <editor/Components.hpp>
+#include <editor/Systems.hpp>
+#include <robot2D/Graphics/RenderTarget.hpp>
 
 namespace editor {
-    Scene::Scene(robot2D::MessageBus& messageBus): m_scene(messageBus) {
+    Scene::Scene(robot2D::MessageBus& messageBus): m_scene(messageBus, false),
+    m_messageBus{messageBus} {
         initScene();
     }
 
     void Scene::initScene() {
         //todo addBaseSystems to Work
+        m_scene.addSystem<RenderSystem>(m_messageBus);
     }
 
     robot2D::ecs::EntityList& Scene::getEntities() {
@@ -45,9 +49,10 @@ namespace editor {
 
     void Scene::addEmptyEntity() {
         auto entity = m_scene.createEntity();
-        entity.setTag("Untiled Entity");
+        entity.addComponent<TagComponent>();
         auto& transform = entity.addComponent<TransformComponent>();
         transform.setPosition({100.F, 100.F});
+        transform.setScale({100.F, 100.F});
         m_sceneEntities.emplace_back(entity);
     }
 
@@ -55,6 +60,20 @@ namespace editor {
         auto entity = m_scene.createEntity();
         m_sceneEntities.emplace_back(entity);
         return m_sceneEntities.back();
+    }
+
+    void Scene::removeEntity(robot2D::ecs::Entity entity) {
+        auto found = std::find_if(m_sceneEntities.begin(), m_sceneEntities.end(), [&entity](robot2D::ecs::Entity it) {
+            return it == entity;
+        });
+        if(found == m_sceneEntities.end())
+            return;
+        m_sceneEntities.erase(found);
+        m_scene.removeEntity(entity);
+    }
+
+    void Scene::draw(robot2D::RenderTarget& target, robot2D::RenderStates states) const {
+        target.draw(m_scene);
     }
 
 

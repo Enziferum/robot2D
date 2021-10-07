@@ -26,16 +26,20 @@ source distribution.
 
 namespace robot2D::ecs {
 
-    Scene::Scene(robot2D::MessageBus& messageBus):
+    Scene::Scene(robot2D::MessageBus& messageBus, const bool& useSystems):
     m_messageBus(messageBus),
     m_componentManager(),
     m_entityManager(m_componentManager),
-    m_systemManager(messageBus, m_componentManager) {
+    m_systemManager(messageBus, m_componentManager),
+    m_useSystems(useSystems) {
 
     }
 
     Entity Scene::createEntity() {
-        m_addPending.emplace_back(m_entityManager.createEntity());
+        Entity entity = m_entityManager.createEntity();
+        if(!m_useSystems)
+            return entity;
+        m_addPending.emplace_back(entity);
         return m_addPending.back();
     }
 
@@ -45,7 +49,8 @@ namespace robot2D::ecs {
 
     void Scene::update(float dt) {
         for(auto& entity: m_deletePending) {
-            m_systemManager.removeEntity(entity);
+            if(m_useSystems)
+                m_systemManager.removeEntity(entity);
             m_entityManager.removeEntity(entity);
         }
         m_deletePending.clear();
@@ -54,8 +59,8 @@ namespace robot2D::ecs {
             m_systemManager.addEntity(entity);
         }
         m_deletePending.clear();
-
-        m_systemManager.update(dt);
+        if(m_useSystems)
+            m_systemManager.update(dt);
     }
 
     void Scene::draw(robot2D::RenderTarget& target, robot2D::RenderStates states) const {

@@ -32,7 +32,7 @@ namespace robot2D::ecs {
     // Ecs Manager as well, entites adding to Scene
     class Scene: public robot2D::Drawable {
     public:
-        Scene(robot2D::MessageBus& messageBus);
+        Scene(robot2D::MessageBus& messageBus, const bool& useSystems = true);
         Scene(const Scene&)=delete;
         Scene(const Scene&&)=delete;
         Scene& operator=(const Scene&)=delete;
@@ -57,6 +57,8 @@ namespace robot2D::ecs {
         std::vector<Entity> m_addPending;
         std::vector<Entity> m_deletePending;
         std::vector<robot2D::Drawable*> m_drawables;
+
+        bool m_useSystems;
     };
 
     template<typename T, typename ...Args>

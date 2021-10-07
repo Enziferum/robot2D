@@ -24,9 +24,10 @@ source distribution.
 #include <memory>
 #include <robot2D/Ecs/Scene.hpp>
 #include <robot2D/Ecs/Entity.hpp>
+#include <robot2D/Graphics/Drawable.hpp>
 
 namespace editor {
-    class Scene {
+    class Scene: public robot2D::Drawable {
     public:
         using Ptr = std::shared_ptr<Scene>;
     public:
@@ -39,14 +40,22 @@ namespace editor {
         void update(float dt);
         // Serializer Api
         robot2D::ecs::Entity createEntity();
+        void removeEntity(robot2D::ecs::Entity entity);
 
         // ScenePanel API
         void addEmptyEntity();
+        void setPath(const std::string& path) {m_path = path;}
+        const std::string& getPath() const {return m_path;}
+        std::string& getPath()  {return m_path;}
+    protected:
+        void draw(robot2D::RenderTarget &target, robot2D::RenderStates states) const override;
 
     private:
         void initScene();
     private:
         robot2D::ecs::Scene m_scene;
         robot2D::ecs::EntityList m_sceneEntities;
+        robot2D::MessageBus& m_messageBus;
+        std::string m_path;
     };
 }

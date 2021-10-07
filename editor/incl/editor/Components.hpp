@@ -22,11 +22,46 @@ source distribution.
 #pragma once
 
 #include <robot2D/Graphics/Transformable.hpp>
+#include <robot2D/Graphics/Texture.hpp>
+#include <robot2D/Graphics/Color.hpp>
 
 namespace editor {
     class TransformComponent: public robot2D::Transformable {
     public:
-        TransformComponent() = default;
-        ~TransformComponent() override = default;
+        TransformComponent(){}
+        ~TransformComponent() override {}
+
     };
+
+    class TagComponent {
+    public:
+        TagComponent(const std::string& tag = "Untitled Entity"): m_tag(tag) {}
+        ~TagComponent() = default;
+
+        void setTag(const std::string& tag) {m_tag = tag;}
+        std::string& getTag() {return m_tag;}
+        const std::string& getTag() const {return m_tag;}
+    private:
+        std::string m_tag;
+    };
+
+
+    class SpriteComponent final {
+    public:
+        SpriteComponent();
+        ~SpriteComponent() = default;
+
+        void setTexture(const robot2D::Texture& texture);
+        robot2D::Texture& getTexture();
+        const robot2D::Texture& getTexture() const;
+        const robot2D::Texture* getTexturePointer() const {return m_texture;}
+
+        void setColor(const robot2D::Color& color);
+        const robot2D::Color& getColor() const;
+    private:
+        const robot2D::Texture* m_texture;
+        robot2D::Color m_color;
+    };
+
+    
 }

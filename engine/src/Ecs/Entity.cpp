@@ -35,4 +35,6 @@ namespace robot2D::ecs {
     Bitmask Entity::getComponentMask() const {
         return m_entityManager -> getComponentBitmask(*this);
     }
+
+
 }

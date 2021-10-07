@@ -19,6 +19,8 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 #include <stdexcept>
+#include <imgui/imgui.h>
+#include <tfd/tinyfiledialogs.h>
 
 #include <editor/Editor.hpp>
 // Panels
@@ -26,29 +28,15 @@ source distribution.
 #include <editor/ScenePanel.hpp>
 #include <editor/AssetsPanel.hpp>
 
-#include <imgui/imgui.h>
 #include <editor/Wrapper.hpp>
 #include <editor/SceneSerializer.hpp>
 #include <editor/Components.hpp>
 
+
+
 namespace editor {
-
-    struct Quad: public robot2D::Transformable, public robot2D::Drawable {
-        robot2D::Color color = robot2D::Color::White;
-
-        void draw(robot2D::RenderTarget &target, robot2D::RenderStates states) const override {
-            std::vector<robot2D::Vertex> vertices;
-            states.transform *= getTransform();
-            states.color = color;
-            states.texture = nullptr;
-            target.draw(states);
-        }
-    };
-
     // develop only flag
-    constexpr bool useGUI = false;
-    constexpr float rotateSpeed = 50.F;
-    std::array<robot2D::Sprite, 100> quads;
+    constexpr bool useGUI = true;
 
     Editor::Editor(robot2D::RenderWindow& window, robot2D::MessageBus& messageBus): m_window{window},
     m_messageBus{messageBus},
@@ -72,27 +60,36 @@ namespace editor {
         auto& panel = m_panelManager.addPanel<ComponentPanel>();
         auto& scenePanel = m_panelManager.addPanel<ScenePanel>();
         scenePanel.setActiveScene(std::move(m_activeScene));
-       // auto& assetsPanel = m_panelManager.addPanel<AssetsPanel>();
+        auto& assetsPanel = m_panelManager.addPanel<AssetsPanel>();
 
         robot2D::FrameBufferSpecification frameBufferSpecification;
         auto windowSize = m_window.getSize();
+
         frameBufferSpecification.size = {windowSize.x, windowSize.y};
         m_frameBuffer = robot2D::FrameBuffer::Create(frameBufferSpecification);
         m_window.setView({{0, 0}, {windowSize.x, windowSize.y}});
         m_camera.resize({0, 0, windowSize.x, windowSize.y});
-
-
-        auto entity = m_activeScene -> createEntity();
-        auto& transform = entity.addComponent<TransformComponent>();
-
-        robot2D::Sprite sp;
-        sp.setTexture(m_textures.get(TextureID::Logo));
-        sp.setPosition({100.F, 100.F});
-        sp.setSize({100.F, 100.F});
-        m_window.draw(sp);
     }
 
+    bool m_leftCtrlPressed = false;
+
     void Editor::handleEvents(const robot2D::Event& event) {
+        if(event.type == robot2D::Event::KeyPressed) {
+            if(event.key.code == robot2D::Key::LEFT_CONTROL) {
+                m_leftCtrlPressed = true;
+            }
+            if(event.key.code == robot2D::Key::S) {
+                if(m_leftCtrlPressed) {
+                    saveScene(m_activeScene->getPath());
+                }
+            }
+        }
+        if(event.type == robot2D::Event::KeyReleased) {
+            if(event.key.code == robot2D::Key::LEFT_CONTROL) {
+                m_leftCtrlPressed = false;
+            }
+        }
+
         m_camera.onEvent(event);
     }
 
@@ -113,23 +110,23 @@ namespace editor {
         m_window.beforeRender();
         m_window.setView(m_camera.getView());
 
-        robot2D::Sprite sp;
-        sp.setTexture(m_textures.get(TextureID::Logo));
-        sp.setPosition({100.F, 100.F});
-        sp.setSize({100.F, 100.F});
-        m_window.draw(sp);
+        for(auto& it: m_activeScene->getEntities()) {
+            if(!it.hasComponent<SpriteComponent>())
+                continue;
 
-        for (int it = 0; it < 10; ++it) {
-            for(int ij = 0; ij < 10; ++ij) {
-                auto& quad = quads[it * 10 + ij];
-                robot2D::vec2f startPos = {100.F, 100.F};
-                quad.setPosition({50 * it + startPos.x + 10.f, ij * 50 + startPos.y + 10.f});
-                quad.rotate(m_dt * rotateSpeed);
-                quad.setTexture(m_textures.get(TextureID::Logo));
-                quad.setSize({40.F, 40.F});
+            auto& sprite = it.getComponent<SpriteComponent>();
+            auto transform = it.getComponent<TransformComponent>();
 
-                m_window.draw(quad);
+
+            robot2D::RenderStates renderStates;
+            if(sprite.getTexturePointer() == nullptr) {
+                //continue;
+                sprite.setTexture(m_textures.get(TextureID::Logo));
             }
+            renderStates.texture = &sprite.getTexture();
+            renderStates.transform *= transform.getTransform();
+            renderStates.color = sprite.getColor();
+            m_window.draw(renderStates);
         }
 
         m_window.afterRender();
@@ -199,12 +196,24 @@ namespace editor {
             if (ImGui::BeginMenu("File"))
             {
                 if(ImGui::MenuItem("Open", "Ctrl+O")) {
-                    const std::string openPath;
-                    openScene(openPath);
+                    std::string openPath = "assets/scenes/demoScene.robot2D";
+                    const char *patterns[1] = {"*.robot2D"};
+                    char *path = tinyfd_openFileDialog("Load Scene", nullptr,
+                                                       1, patterns, "Scene", 0);
+                    if (path != nullptr) {
+                        openPath = std::string(path);
+                        openScene(path);
+                    }
                 }
-                if(ImGui::MenuItem("Save", "Ctrl+S")) {
-                    const std::string savePath;
-                    saveScene(savePath);
+                if(ImGui::MenuItem("Save", "Ctrl+Shift+S")) {
+                    std::string savePath = "assets/scenes/demoScene.robot2D";
+                    const char* patterns[1] = {"*.robot2D"};
+                    char* path = tinyfd_saveFileDialog("Load Scene", nullptr,
+                                          1, patterns, "Scene");
+                    if(path != nullptr) {
+                        savePath = std::string(path);
+                        saveScene(savePath);
+                    }
                 }
                 ImGui::Separator();
 
@@ -214,6 +223,7 @@ namespace editor {
         }
 
         ImGui::End();
+
 
         m_panelManager.render();
 
@@ -232,18 +242,35 @@ namespace editor {
             m_frameBuffer -> Resize(m_ViewportSize);
         }
         ImGui::RenderFrameBuffer(m_frameBuffer, {m_ViewportSize.x, m_ViewportSize.y});
+        if (ImGui::BeginDragDropTarget())
+        {
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+            {
+                const wchar_t* path = (const wchar_t*)payload->Data;
+                std::filesystem::path scenePath = std::filesystem::path("assets") / path;
+                LOG_INFO("PATH %", scenePath.string().c_str())
+                openScene(scenePath.string());
+            }
+            ImGui::EndDragDropTarget();
+        }
         ImGui::End();
         ImGui::PopStyleVar();
     }
 
     bool Editor::openScene(const std::string& path) {
         auto newScene = std::make_shared<Scene>(m_messageBus);
+        newScene -> setPath(path);
         if(newScene == nullptr)
             return false;
         m_activeScene.reset();
         m_activeScene = newScene;
         SceneSerializer serializer(m_activeScene);
-        return serializer.deserialize(path);
+        bool res = serializer.deserialize(path);
+        if(!res)
+            return false;
+        auto& scenePanel = m_panelManager.getPanel<ScenePanel>();
+        scenePanel.setActiveScene(std::move(m_activeScene));
+        return res;
     }
 
     bool Editor::saveScene(const std::string& path) {

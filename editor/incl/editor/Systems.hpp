@@ -21,23 +21,17 @@ source distribution.
 
 #pragma once
 
-#include "IPanel.hpp"
-#include "Scene.hpp"
+#include <robot2D/Ecs/System.hpp>
+#include <robot2D/Graphics/Drawable.hpp>
 
 namespace editor {
-    class ScenePanel: public IPanel {
+    class RenderSystem: public robot2D::ecs::System, public robot2D::Drawable {
     public:
-        ScenePanel();
-        ~ScenePanel()override = default;
+        RenderSystem(robot2D::MessageBus&);
+        ~RenderSystem() override = default;
 
-
-        void setActiveScene(Scene::Ptr&& ptr) { m_scene = ptr; m_selectedEntity = {};}
-        void render() override;
+        void draw(robot2D::RenderTarget &target, robot2D::RenderStates) const override;
     private:
-        void drawEntity(robot2D::ecs::Entity entity);
-        void drawComponents(robot2D::ecs::Entity& entity);
-    private:
-        Scene::Ptr m_scene;
-        robot2D::ecs::Entity m_selectedEntity;
     };
+
 }

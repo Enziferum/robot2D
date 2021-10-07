@@ -29,15 +29,15 @@ source distribution.
 namespace editor {
 
     enum class ResourceIconType {
-        Image,
+        File,
         Scene,
         Directory
     };
 
-    class AssetsPanel: IPanel {
+    class AssetsPanel: public IPanel {
     public:
         AssetsPanel();
-        ~AssetsPanel() override;
+        ~AssetsPanel() override = default;
 
         void render() override;
     private:

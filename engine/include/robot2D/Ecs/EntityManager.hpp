@@ -78,6 +78,12 @@ namespace robot2D::ecs {
         const T& at(std::size_t index) const {
            return m_components.at(index);
         }
+
+        void remove(std::size_t index) {
+            if(index >= m_components.size())
+                return;
+            m_components.erase(m_components.begin() + index);
+        }
     private:
         std::vector<T> m_components;
     };
@@ -93,11 +99,17 @@ namespace robot2D::ecs {
         template<typename T>
         void addComponent(Entity entity, T component);
 
+        template<typename T>
+        void removeComponent(Entity entity);
+
         template<typename T, typename ... Args>
         T& addComponent(Entity, Args&&...args);
 
         template<typename T>
         T& getComponent(Entity entity);
+
+        template<typename T>
+        const T& getComponent(Entity entity) const ;
 
         template<typename T>
         bool hasComponent(Entity entity);
@@ -152,6 +164,11 @@ namespace robot2D::ecs {
         return m_entityManager -> getComponent<T>(*this);
     }
 
+    template<typename T>
+    void Entity::removeComponent() {
+        m_entityManager -> removeComponent<T>(*this);
+    }
+
 
     template<typename T>
     void EntityManager::addComponent(Entity entity, T component) {
@@ -190,6 +207,16 @@ namespace robot2D::ecs {
         return container -> at(index);
     }
 
+    template<typename T>
+    const T& EntityManager::getComponent(Entity entity) const {
+        const auto componentID = m_componentManager.getID<T>();
+        const auto index = entity.getIndex();
+        assert(index < m_componentContainers.size());
+
+        auto* container = dynamic_cast<ComponentContainer<T>*>(m_componentContainers[componentID].get());
+        return container -> at(index);
+    }
+
 
     template<typename T>
     bool EntityManager::hasComponent(Entity entity) {
@@ -206,6 +233,23 @@ namespace robot2D::ecs {
         const auto index = entity.getIndex();
         assert(index < m_componentMasks.size());
         return m_componentMasks[index].getBit(componentID);
+    }
+
+    template<typename T>
+    void EntityManager::removeComponent(Entity entity) {
+        if(!hasComponent<T>(entity))
+            return;
+
+        const auto entityID = entity.getIndex();
+        // 1. get ComponentContainer by identifier
+        // 2. add component
+        // 3. update bitmask
+
+        ComponentContainer<T> container = getContainer<T>();
+
+        const auto componentID = m_componentManager.getID<T>();
+        container.remove(entityID);
+        m_componentMasks[entityID].clear(componentID);
     }
 
 }

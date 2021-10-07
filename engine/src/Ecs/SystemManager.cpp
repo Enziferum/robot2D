@@ -49,8 +49,7 @@ namespace robot2D::ecs {
                 it -> addEntity(entity);
             }
         }
+
     }
-
-
 
 }

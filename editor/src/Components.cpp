@@ -19,25 +19,30 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#pragma once
-
-#include "IPanel.hpp"
-#include "Scene.hpp"
+#include <editor/Components.hpp>
 
 namespace editor {
-    class ScenePanel: public IPanel {
-    public:
-        ScenePanel();
-        ~ScenePanel()override = default;
+    SpriteComponent::SpriteComponent():
+    m_color(robot2D::Color::White),
+    m_texture(nullptr) {}
 
+    void SpriteComponent::setTexture(const robot2D::Texture &texture) {
+        m_texture = &texture;
+    }
 
-        void setActiveScene(Scene::Ptr&& ptr) { m_scene = ptr; m_selectedEntity = {};}
-        void render() override;
-    private:
-        void drawEntity(robot2D::ecs::Entity entity);
-        void drawComponents(robot2D::ecs::Entity& entity);
-    private:
-        Scene::Ptr m_scene;
-        robot2D::ecs::Entity m_selectedEntity;
-    };
+    robot2D::Texture& SpriteComponent::getTexture() {
+        return const_cast<robot2D::Texture &>(*m_texture);
+    }
+
+    const robot2D::Texture& SpriteComponent::getTexture() const {
+        return *m_texture;
+    }
+
+    void SpriteComponent::setColor(const robot2D::Color& color) {
+        m_color = color;
+    }
+
+    const robot2D::Color& SpriteComponent::getColor() const {
+        return m_color;
+    }
 }
