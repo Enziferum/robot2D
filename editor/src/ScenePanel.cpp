@@ -245,11 +245,7 @@ namespace editor {
         if(entity.hasComponent<TransformComponent>()) {
             drawComponent<TransformComponent>("Transform", entity, [](auto& component)
             {
-
                 DrawVec3Control("Translation", component.getPosition());
-//                glm::vec3 rotation = glm::degrees(component.Rotation);
-//                DrawVec3Control("Rotation", rotation);
-//                component.Rotation = glm::radians(rotation);
                 DrawVec3Control("Scale", component.getScale(), 1.0f);
             });
         }

@@ -37,7 +37,14 @@ namespace editor {
         const robot2D::ecs::EntityList& getEntities() const;
 
         void update(float dt);
+        // Serializer Api
+        robot2D::ecs::Entity createEntity();
+
+        // ScenePanel API
         void addEmptyEntity();
+
+    private:
+        void initScene();
     private:
         robot2D::ecs::Scene m_scene;
         robot2D::ecs::EntityList m_sceneEntities;

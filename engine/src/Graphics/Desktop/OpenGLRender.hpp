@@ -49,6 +49,7 @@ namespace robot2D {
             virtual const RenderStats& getStats() const override;
         private:
             void init();
+            void initOpenGL();
             void destroy();
 
             virtual void beforeRender() const override;

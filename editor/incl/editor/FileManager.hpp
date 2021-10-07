@@ -19,29 +19,20 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include <editor/SceneSerializer.hpp>
-#include <editor/Scene.hpp>
+#pragma once
+
+#include <filesystem>
+#include <vector>
+#include <string>
 
 namespace editor {
-    SceneSerializer::SceneSerializer(Scene::Ptr scene): m_scene(scene) {}
+    using stringBuffer = std::vector<std::string>;
+    class FileManager {
+    public:
+        FileManager();
+        ~FileManager() = default;
 
-    bool SceneSerializer::serialize(const std::string& path) {
-        if(m_scene == nullptr)
-            return false;
-
-        // Write Header
-
-        for(auto& it: m_scene->getEntities()) {
-
-        }
-
-        return true;
-    }
-
-    bool SceneSerializer::deserialize(const std::string& path) {
-        // Read Header
-
-        // ProcessEntities
-        return true;
-    }
+        stringBuffer scanDirectory(const std::string& dirPath);
+    private:
+    };
 }

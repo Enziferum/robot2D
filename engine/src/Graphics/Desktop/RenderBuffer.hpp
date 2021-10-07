@@ -49,7 +49,7 @@ namespace robot2D {
         RenderVertex* quadBuffer = nullptr;
         RenderVertex* quadBufferPtr = nullptr;
 
-        uint32_t whiteTexture;
+        Texture whiteTexture;
         std::array<uint32_t, 32> textureSlots;
 
         uint32_t indexCount = 0;

@@ -19,29 +19,29 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include <editor/SceneSerializer.hpp>
-#include <editor/Scene.hpp>
+#include <filesystem>
+
+#include <robot2D/Graphics/Texture.hpp>
+#include <robot2D/Util/ResourceHandler.hpp>
+
+#include "IPanel.hpp"
 
 namespace editor {
-    SceneSerializer::SceneSerializer(Scene::Ptr scene): m_scene(scene) {}
 
-    bool SceneSerializer::serialize(const std::string& path) {
-        if(m_scene == nullptr)
-            return false;
+    enum class ResourceIconType {
+        Image,
+        Scene,
+        Directory
+    };
 
-        // Write Header
+    class AssetsPanel: IPanel {
+    public:
+        AssetsPanel();
+        ~AssetsPanel() override;
 
-        for(auto& it: m_scene->getEntities()) {
-
-        }
-
-        return true;
-    }
-
-    bool SceneSerializer::deserialize(const std::string& path) {
-        // Read Header
-
-        // ProcessEntities
-        return true;
-    }
+        void render() override;
+    private:
+        std::filesystem::path m_currentPath;
+        robot2D::ResourceHandler<robot2D::Texture, ResourceIconType> m_assetsIcons;
+    };
 }

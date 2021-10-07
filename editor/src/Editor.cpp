@@ -21,12 +21,15 @@ source distribution.
 #include <stdexcept>
 
 #include <editor/Editor.hpp>
-
+// Panels
 #include <editor/ComponentPanel.hpp>
 #include <editor/ScenePanel.hpp>
+#include <editor/AssetsPanel.hpp>
 
 #include <imgui/imgui.h>
 #include <editor/Wrapper.hpp>
+#include <editor/SceneSerializer.hpp>
+#include <editor/Components.hpp>
 
 namespace editor {
 
@@ -42,11 +45,10 @@ namespace editor {
         }
     };
 
-
-    robot2D::Sprite sprite;
-    std::array<robot2D::Sprite, 100> quads;
+    // develop only flag
+    constexpr bool useGUI = false;
     constexpr float rotateSpeed = 50.F;
-
+    std::array<robot2D::Sprite, 100> quads;
 
     Editor::Editor(robot2D::RenderWindow& window, robot2D::MessageBus& messageBus): m_window{window},
     m_messageBus{messageBus},
@@ -55,7 +57,6 @@ namespace editor {
     void Editor::setup() {
         const std::string texturesPath = "res/textures/";
         std::unordered_map<TextureID, std::string> texturePaths = {
-                {TextureID::Face, "awesomeface.png"},
                 {TextureID::Logo, "logo.png"}
         };
 
@@ -71,7 +72,7 @@ namespace editor {
         auto& panel = m_panelManager.addPanel<ComponentPanel>();
         auto& scenePanel = m_panelManager.addPanel<ScenePanel>();
         scenePanel.setActiveScene(std::move(m_activeScene));
-
+       // auto& assetsPanel = m_panelManager.addPanel<AssetsPanel>();
 
         robot2D::FrameBufferSpecification frameBufferSpecification;
         auto windowSize = m_window.getSize();
@@ -79,35 +80,38 @@ namespace editor {
         m_frameBuffer = robot2D::FrameBuffer::Create(frameBufferSpecification);
         m_window.setView({{0, 0}, {windowSize.x, windowSize.y}});
         m_camera.resize({0, 0, windowSize.x, windowSize.y});
+
+
+        auto entity = m_activeScene -> createEntity();
+        auto& transform = entity.addComponent<TransformComponent>();
+
+        robot2D::Sprite sp;
+        sp.setTexture(m_textures.get(TextureID::Logo));
+        sp.setPosition({100.F, 100.F});
+        sp.setSize({100.F, 100.F});
+        m_window.draw(sp);
     }
 
     void Editor::handleEvents(const robot2D::Event& event) {
         m_camera.onEvent(event);
     }
 
-    void Editor::handleMessages(const robot2D::Message& message) {
-
-    }
-
+    void Editor::handleMessages(const robot2D::Message& message) {}
 
     void Editor::update(float dt) {
         m_activeScene -> update(dt);
         m_panelManager.update(dt);
-        sprite.rotate(rotateSpeed * dt);
         m_dt = dt;
     }
 
     void Editor::render() {
-        m_frameBuffer -> Bind();
-        robot2D::Color clearColor = robot2D::Color::fromGL(0.1, 0.1, 0.1, 1);
-        m_window.clear(clearColor);
+        if(useGUI) {
+            m_frameBuffer -> Bind();
+            robot2D::Color clearColor = robot2D::Color::fromGL(0.1, 0.1, 0.1, 1);
+            m_window.clear(clearColor);
+        }
         m_window.beforeRender();
         m_window.setView(m_camera.getView());
-
-        sprite.setTexture(m_textures.get(TextureID::Face));
-        sprite.setSize({100.F, 100.F});
-        sprite.setPosition({200.F, 200.F});
-        m_window.draw(sprite);
 
         robot2D::Sprite sp;
         sp.setTexture(m_textures.get(TextureID::Logo));
@@ -118,7 +122,7 @@ namespace editor {
         for (int it = 0; it < 10; ++it) {
             for(int ij = 0; ij < 10; ++ij) {
                 auto& quad = quads[it * 10 + ij];
-                robot2D::vec2f startPos = {500.F, 400.F};
+                robot2D::vec2f startPos = {100.F, 100.F};
                 quad.setPosition({50 * it + startPos.x + 10.f, ij * 50 + startPos.y + 10.f});
                 quad.rotate(m_dt * rotateSpeed);
                 quad.setTexture(m_textures.get(TextureID::Logo));
@@ -131,9 +135,10 @@ namespace editor {
         m_window.afterRender();
         m_window.flushRender();
 
-        // render MainScreen
-        m_frameBuffer->unBind();
-        imguiRender();
+        if(useGUI) {
+            m_frameBuffer->unBind();
+            imguiRender();
+        }
     }
 
     void Editor::imguiRender() {
@@ -190,10 +195,17 @@ namespace editor {
 
         if (ImGui::BeginMenuBar())
         {
+            // TODO make filedialog
             if (ImGui::BeginMenu("File"))
             {
-                if(ImGui::MenuItem("Open", "Ctrl+O")) {}
-                if(ImGui::MenuItem("Save", "Ctrl+S")) {}
+                if(ImGui::MenuItem("Open", "Ctrl+O")) {
+                    const std::string openPath;
+                    openScene(openPath);
+                }
+                if(ImGui::MenuItem("Save", "Ctrl+S")) {
+                    const std::string savePath;
+                    saveScene(savePath);
+                }
                 ImGui::Separator();
 
                 ImGui::EndMenu();
@@ -201,18 +213,16 @@ namespace editor {
             ImGui::EndMenuBar();
         }
 
-
         ImGui::End();
 
         m_panelManager.render();
 
         ImGui::Begin("Statistics ");
-
-
         auto stats = m_window.getStats();
         ImGui::Text("Rendering 2D Stats ...");
         ImGui::Text("Quads Count %d", stats.drawQuads);
         ImGui::Text("Draw Calls Count %d", stats.drawCalls);
+        ImGui::End();
 
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
         ImGui::Begin("Viewport");
@@ -221,13 +231,24 @@ namespace editor {
             m_ViewportSize = {ViewPanelSize.x, ViewPanelSize.y};
             m_frameBuffer -> Resize(m_ViewportSize);
         }
-
         ImGui::RenderFrameBuffer(m_frameBuffer, {m_ViewportSize.x, m_ViewportSize.y});
         ImGui::End();
         ImGui::PopStyleVar();
-        ImGui::End();
-
     }
 
+    bool Editor::openScene(const std::string& path) {
+        auto newScene = std::make_shared<Scene>(m_messageBus);
+        if(newScene == nullptr)
+            return false;
+        m_activeScene.reset();
+        m_activeScene = newScene;
+        SceneSerializer serializer(m_activeScene);
+        return serializer.deserialize(path);
+    }
+
+    bool Editor::saveScene(const std::string& path) {
+        SceneSerializer serializer(m_activeScene);
+        return serializer.serialize(path);
+    }
 
 }

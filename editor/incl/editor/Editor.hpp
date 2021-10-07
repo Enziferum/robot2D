@@ -53,6 +53,8 @@ namespace editor {
 
     private:
         void imguiRender();
+        bool openScene(const std::string& path);
+        bool saveScene(const std::string& path);
     private:
         robot2D::RenderWindow& m_window;
         robot2D::MessageBus& m_messageBus;
