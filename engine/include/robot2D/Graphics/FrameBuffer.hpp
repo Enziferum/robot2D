@@ -42,6 +42,7 @@ namespace robot2D {
         virtual void Bind() = 0;
         virtual void unBind() = 0;
         virtual void Invalidate() = 0;
+        virtual void Resize(const robot2D::vec2u& newSize) = 0;
         virtual const RenderID& getFrameBufferRenderID() const = 0;
         virtual const FrameBufferSpecification& getSpecification() const = 0;
         virtual FrameBufferSpecification& getSpecification()= 0;

@@ -132,4 +132,8 @@ namespace robot2D{
     void ShaderHandler::set_parameter(const char* name, const int* value, const size_t& size) const {
         glUniform1iv(glGetUniformLocation(shaderProgram, name), size, value);
     }
+
+    void ShaderHandler::unUse() const {
+        glUseProgram(0);
+    }
 }

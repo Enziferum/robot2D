@@ -19,15 +19,25 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include <imgui/imgui.h>
-#include <editor/ComponentPanel.hpp>
+#pragma once
+
+#include <robot2D/Graphics/View.hpp>
+#include <robot2D/Core/Event.hpp>
 
 namespace editor {
+    class SceneCamera {
+    public:
+        SceneCamera();
+        ~SceneCamera() = default;
 
-    ComponentPanel::ComponentPanel(): IPanel(UniqueType(typeid(ComponentPanel))) {}
+        void onEvent(const robot2D::Event& event);
+        void resize(const robot2D::FloatRect& viewPort);
 
-    void ComponentPanel::render() {
 
-    }
-
+        robot2D::View& getView();
+        const robot2D::View& getView() const;
+    private:
+        robot2D::View m_view;
+        float m_zoom;
+    };
 }

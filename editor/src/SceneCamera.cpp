@@ -19,15 +19,39 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include <imgui/imgui.h>
-#include <editor/ComponentPanel.hpp>
+#include <editor/SceneCamera.hpp>
 
 namespace editor {
 
-    ComponentPanel::ComponentPanel(): IPanel(UniqueType(typeid(ComponentPanel))) {}
+    SceneCamera::SceneCamera(): m_view() {}
 
-    void ComponentPanel::render() {
+    void SceneCamera::onEvent(const robot2D::Event& event) {
+        if(event.type == robot2D::Event::MouseWheel) {
+            m_zoom = 1.f + event.wheel.scroll_y * 0.1;
+            m_view.zoom(m_zoom);
+        }
 
+        if(event.type == robot2D::Event::KeyPressed) {
+            if(event.key.code == robot2D::Key::W)
+                m_view.move(0, -10);
+            if(event.key.code == robot2D::Key::S)
+                m_view.move(0, 10);
+            if(event.key.code == robot2D::Key::A)
+                m_view.move(-10, 0);
+            if(event.key.code == robot2D::Key::D)
+                m_view.move(10, 0);
+        }
     }
 
+    void SceneCamera::resize(const robot2D::FloatRect& viewPort) {
+        m_view.reset(viewPort);
+    }
+
+    robot2D::View& SceneCamera::getView() {
+        return m_view;
+    }
+
+    const robot2D::View &SceneCamera::getView() const {
+        return m_view;
+    }
 }

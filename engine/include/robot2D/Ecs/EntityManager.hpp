@@ -137,6 +137,8 @@ namespace robot2D::ecs {
 
     template<typename T>
     bool Entity::hasComponent() {
+        if(!m_entityManager)
+            return false;
         return m_entityManager -> hasComponent<T>(*this);
     }
 

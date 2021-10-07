@@ -153,7 +153,7 @@ namespace robot2D {
             glfwSetCursorPosCallback(m_window, cursor_callback);
             glfwSetScrollCallback(m_window, mouseWhell_callback);
             glfwSetMouseButtonCallback(m_window, mouse_callback);
-            glfwSetFramebufferSizeCallback(m_window, view_callback);
+           // glfwSetFramebufferSizeCallback(m_window, view_callback);
             glfwSetWindowSizeCallback(m_window, size_callback);
             glfwSetWindowMaximizeCallback(m_window, maximized_callback);
             glfwSetDropCallback(m_window, dragdrop_callback);
@@ -231,12 +231,13 @@ namespace robot2D {
         }
 
         void DesktopWindowImpl::size_callback(GLFWwindow* wnd, int w, int h) {
-            //c++ hack before c++ 17 to set unused parameter
-            (void)(wnd);
-            //c++ hack before c++ 17 to set unused parameter
-            (void)(w);
-            //c++ hack before c++ 17 to set unused parameter
-            (void)(h);
+            DesktopWindowImpl* window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
+            Event event;
+            event.type = Event::Resized;
+            event.size.widht = w;
+            event.size.heigth = h;
+
+            window->m_event_queue.push(event);
         }
 
         void DesktopWindowImpl::view_callback(GLFWwindow* wnd, int w, int h) {

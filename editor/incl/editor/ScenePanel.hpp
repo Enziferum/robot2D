@@ -22,6 +22,7 @@ source distribution.
 #pragma once
 
 #include "IPanel.hpp"
+#include "Scene.hpp"
 
 namespace editor {
     class ScenePanel: public IPanel {
@@ -29,7 +30,14 @@ namespace editor {
         ScenePanel();
         ~ScenePanel()override = default;
 
+
+        void setActiveScene(Scene::Ptr&& ptr) { m_scene = ptr;}
         void render() override;
     private:
+        void drawEntity(robot2D::ecs::Entity entity);
+        void drawComponents(robot2D::ecs::Entity entity);
+    private:
+        Scene::Ptr m_scene;
+        robot2D::ecs::Entity m_selectedEntity;
     };
 }

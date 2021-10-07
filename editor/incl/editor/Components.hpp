@@ -19,15 +19,14 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include <imgui/imgui.h>
-#include <editor/ComponentPanel.hpp>
+#pragma once
+
+#include <robot2D/Graphics/Transformable.hpp>
 
 namespace editor {
-
-    ComponentPanel::ComponentPanel(): IPanel(UniqueType(typeid(ComponentPanel))) {}
-
-    void ComponentPanel::render() {
-
-    }
-
+    class TransformComponent: public robot2D::Transformable {
+    public:
+        TransformComponent() = default;
+        ~TransformComponent() override = default;
+    };
 }

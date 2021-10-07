@@ -20,8 +20,32 @@ source distribution.
 *********************************************************************/
 
 #include <editor/Scene.hpp>
+#include <editor/Components.hpp>
 
 namespace editor {
+    Scene::Scene(robot2D::MessageBus& messageBus): m_scene(messageBus) {
+
+    }
+
+    robot2D::ecs::EntityList& Scene::getEntities() {
+        return m_sceneEntities;
+    }
+
+    const robot2D::ecs::EntityList& Scene::getEntities() const {
+        return m_sceneEntities;
+    }
+
+    void Scene::update(float dt) {
+        m_scene.update(dt);
+    }
+
+    void Scene::addEmptyEntity() {
+        auto entity = m_scene.createEntity();
+        entity.setTag("Untiled Entity");
+        auto& transform = entity.addComponent<TransformComponent>();
+        transform.setPosition({100.F, 100.F});
+        m_sceneEntities.emplace_back(entity);
+    }
 
 }
 

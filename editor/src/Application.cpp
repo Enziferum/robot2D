@@ -31,7 +31,7 @@ namespace editor {
     }
 
     Application::Application(): m_window({1280, 920}, "Editor", robot2D::WindowContext::Default),
-                                m_editor{m_window} {}
+                                m_editor{m_window, m_messageBus} {}
 
     void Application::run() {
         setup();
@@ -58,6 +58,13 @@ namespace editor {
     void Application::handleEvents() {
         robot2D::Event event{};
         while (m_window.pollEvents(event)) {
+            if(event.type == robot2D::Event::Resized) {
+                LOG_INFO("New Size = % and % \n", event.size.widht, event.size.heigth)
+                m_window.resize({event.size.widht, event.size.heigth});
+                //robot2D::View{0, 0, event.size.widht, event.size.heigth}
+                m_window.setView({{0, 0}, {event.size.widht, event.size.heigth}});
+            }
+
             if(event.type == robot2D::Event::KeyPressed &&
             event.key.code == robot2D::Key::ESCAPE)
                 m_window.close();

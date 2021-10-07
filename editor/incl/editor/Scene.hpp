@@ -23,18 +23,23 @@ source distribution.
 
 #include <memory>
 #include <robot2D/Ecs/Scene.hpp>
+#include <robot2D/Ecs/Entity.hpp>
 
 namespace editor {
     class Scene {
     public:
         using Ptr = std::shared_ptr<Scene>;
     public:
-        Scene();
-        ~Scene();
+        Scene(robot2D::MessageBus& messageBus);
+        ~Scene() = default;
+
+        robot2D::ecs::EntityList& getEntities();
+        const robot2D::ecs::EntityList& getEntities() const;
 
         void update(float dt);
-
+        void addEmptyEntity();
     private:
         robot2D::ecs::Scene m_scene;
+        robot2D::ecs::EntityList m_sceneEntities;
     };
 }
