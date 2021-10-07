@@ -24,7 +24,11 @@ source distribution.
 
 namespace editor {
     Scene::Scene(robot2D::MessageBus& messageBus): m_scene(messageBus) {
+        initScene();
+    }
 
+    void Scene::initScene() {
+        //todo addBaseSystems to Work
     }
 
     robot2D::ecs::EntityList& Scene::getEntities() {
@@ -46,6 +50,14 @@ namespace editor {
         transform.setPosition({100.F, 100.F});
         m_sceneEntities.emplace_back(entity);
     }
+
+    robot2D::ecs::Entity Scene::createEntity() {
+        auto entity = m_scene.createEntity();
+        m_sceneEntities.emplace_back(entity);
+        return m_sceneEntities.back();
+    }
+
+
 
 }
 

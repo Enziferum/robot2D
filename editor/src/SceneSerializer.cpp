@@ -23,5 +23,25 @@ source distribution.
 #include <editor/Scene.hpp>
 
 namespace editor {
+    SceneSerializer::SceneSerializer(Scene::Ptr scene): m_scene(scene) {}
 
+    bool SceneSerializer::serialize(const std::string& path) {
+        if(m_scene == nullptr)
+            return false;
+
+        // Write Header
+
+        for(auto& it: m_scene->getEntities()) {
+
+        }
+
+        return true;
+    }
+
+    bool SceneSerializer::deserialize(const std::string& path) {
+        // Read Header
+
+        // ProcessEntities
+        return true;
+    }
 }

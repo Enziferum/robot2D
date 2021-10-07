@@ -78,14 +78,15 @@ namespace robot2D {
             /* Initialize the library */
             if (!glfwInit())
                 return;
+#ifdef __APPLE__
+            glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+          //  glfwWindowHint(GLFW_COCOA_RETINA_FRAMEBUFFER, GL_TRUE);
+#endif
 
             glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, opengl_major);
             glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, opengl_minor);
             glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-#ifdef __APPLE__
-            glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-#endif
 
             GLFWmonitor* primary = m_context.fullscreen ? glfwGetPrimaryMonitor() : nullptr;
 
@@ -153,7 +154,7 @@ namespace robot2D {
             glfwSetCursorPosCallback(m_window, cursor_callback);
             glfwSetScrollCallback(m_window, mouseWhell_callback);
             glfwSetMouseButtonCallback(m_window, mouse_callback);
-           // glfwSetFramebufferSizeCallback(m_window, view_callback);
+            //glfwSetFramebufferSizeCallback(m_window, view_callback);
             glfwSetWindowSizeCallback(m_window, size_callback);
             glfwSetWindowMaximizeCallback(m_window, maximized_callback);
             glfwSetDropCallback(m_window, dragdrop_callback);
@@ -318,11 +319,11 @@ namespace robot2D {
             window->m_event_queue.push(event);
         }
 
-        void DesktopWindowImpl::text_callback(GLFWwindow *wnd, unsigned int c) {
+        void DesktopWindowImpl::text_callback(GLFWwindow* wnd, unsigned int symbol) {
             DesktopWindowImpl* window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
             Event event{};
             event.type = Event::TextEntered;
-            event.text.symbol = c;
+            event.text.symbol = symbol;
             window->m_event_queue.push(event);
         }
 

@@ -56,7 +56,7 @@ namespace robot2D {
             in vec4 Color;
             in float TexIndex;
             out vec4 fragColor;
-            uniform sampler2D textureSamplers[32];
+            uniform sampler2D textureSamplers[16];
             void main()
             {
                 int index = int(TexIndex);
@@ -65,7 +65,8 @@ namespace robot2D {
         )";
 
         constexpr short quadVertexSize = 4;
-
+        // TODO check OpenGL Possibility
+        constexpr short maxTextureSlots = 16;
 
         OpenGLRender::OpenGLRender() {}
 
@@ -73,19 +74,29 @@ namespace robot2D {
             destroy();
         }
 
-        void OpenGLRender::init() {
-            glEnable(GL_BLEND);
+        void OpenGLRender::initOpenGL() {
+            LOG_INFO_E("OpenGL Info: \n");
+            LOG_INFO("  Vendor: % \n", glGetString(GL_VENDOR));
+            LOG_INFO("  Renderer: % \n", glGetString(GL_RENDERER));
+            LOG_INFO("  Version: % \n", glGetString(GL_VERSION));
+
+            glEnable(GL_BLEND); // blending function
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        }
+
+        void OpenGLRender::init() {
+            initOpenGL();
 
             m_renderBuffer.quadBuffer = new RenderVertex[m_renderBuffer.maxQuadsCount];
 
             m_renderBuffer.vertexArray = VertexArray::Create();
             m_renderBuffer.vertexBuffer = VertexBuffer::Create(sizeof(RenderVertex) * m_renderBuffer.maxQuadsCount);
+            // for OpenGL name - utility only
             m_renderBuffer.vertexBuffer -> setAttributeLayout({
-                    {ElementType::Float2, ""},
-                    {ElementType::Float2, ""},
-                    {ElementType::Float4, ""},
-                    {ElementType::Float1, ""}
+                    {ElementType::Float2, "Position"},
+                    {ElementType::Float2, "TextureCoords"},
+                    {ElementType::Float4, "Color(RGBA)"},
+                    {ElementType::Float1, "TextureIndex"}
             });
             m_renderBuffer.vertexArray -> setVertexBuffer(m_renderBuffer.vertexBuffer);
 
@@ -127,31 +138,20 @@ namespace robot2D {
                 throw std::runtime_error(reason);
             }
 
-            glGenTextures(1, &m_renderBuffer.whiteTexture);
-            glBindTexture(GL_TEXTURE_2D, m_renderBuffer.whiteTexture);
+            GLubyte texData[] = { 255, 255, 255, 255 }; // 0xffffffff;
 
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-
-            //uint32_t textureData = 0xffffffff;
-            GLubyte texData[] = { 255, 255, 255, 255 };
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE, texData);
-
-            m_renderBuffer.textureSlots[0] = m_renderBuffer.whiteTexture;
+            m_renderBuffer.whiteTexture.create({1, 1}, texData);
+            m_renderBuffer.textureSlots[0] = m_renderBuffer.whiteTexture.getID();
 
             m_quadShader.use();
 
-            int samples[32];
-            for(int it = 0; it < 32; ++it)
+            int samples[maxTextureSlots];
+            for(int it = 0; it < maxTextureSlots; ++it)
                 samples[it] = it;
 
-            m_quadShader.set_parameter("textureSamplers", samples, 32);
+            m_quadShader.set_parameter("textureSamplers", samples, maxTextureSlots);
 
-            for(int it = 1; it < 32; ++it)
+            for(int it = 1; it < maxTextureSlots; ++it)
                 m_renderBuffer.textureSlots[it] = 0;
 
             m_default.reset(FloatRect(0.F, 0.F,
@@ -160,15 +160,12 @@ namespace robot2D {
             m_view = m_default;
             m_quadShader.set_parameter("projection", m_view.getTransform().get_matrix());
             m_quadShader.unUse();
-
         }
 
 
         void OpenGLRender::destroy() {
-            glDeleteTextures(1, &m_renderBuffer.whiteTexture);
             delete[] m_renderBuffer.quadBuffer;
         }
-
 
         void OpenGLRender::setView(const View& view) {
             m_view = view;
@@ -212,7 +209,7 @@ namespace robot2D {
 
                 if (textureIndex == 0.F)
                 {
-//                if (m_renderBuffer.textureSlotIndex >= 32)
+                    //if (m_renderBuffer.textureSlotIndex >= maxTextureSlots)
 //                    NextBatch();
 
                     textureIndex = (float)m_renderBuffer.textureSlotIndex;
@@ -259,7 +256,7 @@ namespace robot2D {
         void OpenGLRender::applyCurrentView() {
             IntRect viewport = getViewport(m_view);
             int top = m_size.y - (viewport.ly + viewport.height);
-            glViewport(viewport.lx, top, viewport.width, viewport.height);\
+            glViewport(viewport.lx, top, viewport.width, viewport.height);
             m_quadShader.use();
             m_quadShader.set_parameter("projection", m_view.getTransform().get_matrix());
         }
@@ -283,8 +280,6 @@ namespace robot2D {
         }
 
         void OpenGLRender::flushRender() const {
-            // flush logic
-
             for(int it = 0; it < m_renderBuffer.textureSlotIndex; ++it) {
                 glActiveTexture(GL_TEXTURE0+it);
                 glBindTexture(GL_TEXTURE_2D, m_renderBuffer.textureSlots[it]);
