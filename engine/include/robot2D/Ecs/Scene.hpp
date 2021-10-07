@@ -47,6 +47,7 @@ namespace robot2D::ecs {
 
         void update(float dt);
         void draw(robot2D::RenderTarget& target, robot2D::RenderStates) const override;
+
     private:
         robot2D::MessageBus& m_messageBus;
         ComponentManager m_componentManager;

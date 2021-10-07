@@ -18,8 +18,8 @@ and must not be misrepresented as being the original software.
 3. This notice may not be removed or altered from any
 source distribution.
 *********************************************************************/
+#include <stdexcept>
 
-#include <robot2D/Core/Clock.hpp>
 #include <editor/Editor.hpp>
 
 #include <editor/ComponentPanel.hpp>
@@ -29,9 +29,6 @@ source distribution.
 #include <editor/Wrapper.hpp>
 
 namespace editor {
-
-    robot2D::Texture texture;
-    robot2D::Texture texture1;
 
     struct Quad: public robot2D::Transformable, public robot2D::Drawable {
         robot2D::Color color = robot2D::Color::White;
@@ -46,71 +43,90 @@ namespace editor {
     };
 
 
-    Editor::Editor(robot2D::RenderWindow& window): m_window{window}, m_docking{true},
-    m_activeScene{ nullptr }, m_frameBuffer{nullptr}{}
+    robot2D::Sprite sprite;
+    std::array<robot2D::Sprite, 100> quads;
+    constexpr float rotateSpeed = 50.F;
+
+
+    Editor::Editor(robot2D::RenderWindow& window, robot2D::MessageBus& messageBus): m_window{window},
+    m_messageBus{messageBus},
+    m_activeScene{ nullptr }, m_frameBuffer{nullptr}, m_ViewportSize{} {}
 
     void Editor::setup() {
+        const std::string texturesPath = "res/textures/";
+        std::unordered_map<TextureID, std::string> texturePaths = {
+                {TextureID::Face, "awesomeface.png"},
+                {TextureID::Logo, "logo.png"}
+        };
+
+        for(auto& it: texturePaths) {
+            auto fullPath = texturesPath + it.second;
+            if(!m_textures.loadFromFile(it.first, fullPath)) {
+                std::runtime_error("Can't load Texture");
+            }
+        }
+
+        m_activeScene = std::make_shared<Scene>(m_messageBus);
+
         auto& panel = m_panelManager.addPanel<ComponentPanel>();
-        m_panelManager.addPanel<ScenePanel>();
+        auto& scenePanel = m_panelManager.addPanel<ScenePanel>();
+        scenePanel.setActiveScene(std::move(m_activeScene));
+
 
         robot2D::FrameBufferSpecification frameBufferSpecification;
         auto windowSize = m_window.getSize();
         frameBufferSpecification.size = {windowSize.x, windowSize.y};
         m_frameBuffer = robot2D::FrameBuffer::Create(frameBufferSpecification);
-        texture.loadFromFile("awesomeface.png");
-        texture1.loadFromFile("logo.png");
+        m_window.setView({{0, 0}, {windowSize.x, windowSize.y}});
+        m_camera.resize({0, 0, windowSize.x, windowSize.y});
     }
 
     void Editor::handleEvents(const robot2D::Event& event) {
-
+        m_camera.onEvent(event);
     }
 
     void Editor::handleMessages(const robot2D::Message& message) {
 
     }
 
-    robot2D::Sprite sprite;
-
-    float _dt = 0.F;
 
     void Editor::update(float dt) {
+        m_activeScene -> update(dt);
         m_panelManager.update(dt);
-        sprite.rotate(50 * dt);
-        _dt = dt;
+        sprite.rotate(rotateSpeed * dt);
+        m_dt = dt;
     }
-
 
     void Editor::render() {
         m_frameBuffer -> Bind();
         robot2D::Color clearColor = robot2D::Color::fromGL(0.1, 0.1, 0.1, 1);
         m_window.clear(clearColor);
         m_window.beforeRender();
-//
-//
-        for (int it = 0; it < 10; ++it) {
-            for(int ij = 0; ij < 10; ++ij) {
-                robot2D::Sprite quad;
-                robot2D::vec2f startPos = {500.F, 400.F};
-                quad.setPosition({40 * it + startPos.x + 10.f, ij * 40 + startPos.y + 10.f});
-                quad.setTexture(texture);
-                quad.rotate(50 * _dt);
-                //quad.scale({20.F, 20.F});
-                quad.setSize({20.F, 20.F});
+        m_window.setView(m_camera.getView());
 
-                m_window.draw(quad);
-            }
-        }
-
-        sprite.setTexture(texture);
+        sprite.setTexture(m_textures.get(TextureID::Face));
         sprite.setSize({100.F, 100.F});
         sprite.setPosition({200.F, 200.F});
         m_window.draw(sprite);
 
         robot2D::Sprite sp;
-        sp.setTexture(texture1);
+        sp.setTexture(m_textures.get(TextureID::Logo));
         sp.setPosition({100.F, 100.F});
         sp.setSize({100.F, 100.F});
         m_window.draw(sp);
+
+        for (int it = 0; it < 10; ++it) {
+            for(int ij = 0; ij < 10; ++ij) {
+                auto& quad = quads[it * 10 + ij];
+                robot2D::vec2f startPos = {500.F, 400.F};
+                quad.setPosition({50 * it + startPos.x + 10.f, ij * 50 + startPos.y + 10.f});
+                quad.rotate(m_dt * rotateSpeed);
+                quad.setTexture(m_textures.get(TextureID::Logo));
+                quad.setSize({40.F, 40.F});
+
+                m_window.draw(quad);
+            }
+        }
 
         m_window.afterRender();
         m_window.flushRender();
@@ -157,7 +173,7 @@ namespace editor {
         // any change of dockspace/settings would lead to windows being stuck in limbo and never being visible.
         if (!opt_padding)
             ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-        ImGui::Begin("DockSpace Demo", &dockspace_open, window_flags);
+        ImGui::Begin("Scene", &dockspace_open, window_flags);
         if (!opt_padding)
             ImGui::PopStyleVar();
 
@@ -188,18 +204,27 @@ namespace editor {
 
         ImGui::End();
 
-       // m_panelManager.render();
+        m_panelManager.render();
 
-        ImGui::Begin("Stats");
+        ImGui::Begin("Statistics ");
+
+
         auto stats = m_window.getStats();
         ImGui::Text("Rendering 2D Stats ...");
         ImGui::Text("Quads Count %d", stats.drawQuads);
         ImGui::Text("Draw Calls Count %d", stats.drawCalls);
 
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
         ImGui::Begin("Viewport");
-        ImGui::RenderFrameBuffer(m_frameBuffer, {800, 600});
-        ImGui::End();
+        auto ViewPanelSize = ImGui::GetContentRegionAvail();
+        if(m_ViewportSize != robot2D::vec2u { ViewPanelSize.x, ViewPanelSize.y}) {
+            m_ViewportSize = {ViewPanelSize.x, ViewPanelSize.y};
+            m_frameBuffer -> Resize(m_ViewportSize);
+        }
 
+        ImGui::RenderFrameBuffer(m_frameBuffer, {m_ViewportSize.x, m_ViewportSize.y});
+        ImGui::End();
+        ImGui::PopStyleVar();
         ImGui::End();
 
     }

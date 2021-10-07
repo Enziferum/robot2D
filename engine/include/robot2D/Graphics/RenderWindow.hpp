@@ -40,7 +40,8 @@ namespace robot2D {
         RenderWindow& operator=(const RenderWindow&&) = delete;
         ~RenderWindow() override = default;
 
+        void resize(const robot2D::vec2i& newSize);
     protected:
-        void onResize(const int &w, const int &h) override;
+        void onResize(const int& w, const int& h) override;
     };
 }

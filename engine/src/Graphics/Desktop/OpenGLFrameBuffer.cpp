@@ -25,16 +25,19 @@ source distribution.
 namespace robot2D::priv {
 
     OpenGLFrameBuffer::OpenGLFrameBuffer(const FrameBufferSpecification& specification):
-    m_specification{specification} {
+    m_specification{specification}, m_renderID(0) {
         Invalidate();
     }
 
     OpenGLFrameBuffer::~OpenGLFrameBuffer() {
         glDeleteFramebuffers(1, &m_renderID);
+        glDeleteTextures(1, &m_colorAttachment);
+        glDeleteTextures(1, &m_depthAttachment);
     }
 
     void OpenGLFrameBuffer::Bind() {
         glBindFramebuffer(GL_FRAMEBUFFER, m_renderID);
+        glViewport(0, 0, m_specification.size.x, m_specification.size.y);
     }
 
     void OpenGLFrameBuffer::unBind() {
@@ -42,6 +45,12 @@ namespace robot2D::priv {
     }
 
     void OpenGLFrameBuffer::Invalidate() {
+        if(m_renderID != 0) {
+            glDeleteFramebuffers(1, &m_renderID);
+            glDeleteTextures(1, &m_colorAttachment);
+            glDeleteTextures(1, &m_depthAttachment);
+        }
+
         glGenFramebuffers(1, &m_renderID);
         Bind();
 
@@ -73,6 +82,11 @@ namespace robot2D::priv {
 
     const RenderID& OpenGLFrameBuffer::getFrameBufferRenderID() const {
         return m_colorAttachment;
+    }
+
+    void OpenGLFrameBuffer::Resize(const vec2u& newSize) {
+        m_specification.size = {newSize.x, newSize.y};
+        Invalidate();
     }
 
 

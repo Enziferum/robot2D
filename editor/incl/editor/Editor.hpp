@@ -24,14 +24,21 @@ source distribution.
 #include <robot2D/Graphics/RenderWindow.hpp>
 #include <robot2D/Core/MessageBus.hpp>
 #include <robot2D/Graphics/FrameBuffer.hpp>
+#include <robot2D/Util/ResourceHandler.hpp>
 
 #include "PanelManager.hpp"
 #include "Scene.hpp"
+#include "SceneCamera.hpp"
 
 namespace editor {
+
+    enum class TextureID {
+        Face, Logo
+    };
+
     class Editor {
     public:
-        Editor(robot2D::RenderWindow& window);
+        Editor(robot2D::RenderWindow& window, robot2D::MessageBus& messageBus);
         Editor(const Editor&)=delete;
         Editor(const Editor&&)=delete;
         Editor& operator=(const Editor&)=delete;
@@ -48,9 +55,15 @@ namespace editor {
         void imguiRender();
     private:
         robot2D::RenderWindow& m_window;
+        robot2D::MessageBus& m_messageBus;
         PanelManager m_panelManager;
         Scene::Ptr m_activeScene;
         robot2D::FrameBuffer::Ptr m_frameBuffer;
-        bool m_docking;
+        robot2D::ResourceHandler<robot2D::Texture, TextureID> m_textures;
+
+        SceneCamera m_camera;
+        robot2D::vec2u m_ViewportSize;
+
+        float m_dt = 0.F;
     };
 }

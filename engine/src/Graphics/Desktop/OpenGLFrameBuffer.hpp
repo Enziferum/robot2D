@@ -32,6 +32,7 @@ namespace robot2D::priv {
         void Bind() override;
         void unBind() override;
         void Invalidate() override;
+        void Resize(const robot2D::vec2u& newSize) override;
         const RenderID& getFrameBufferRenderID() const override;
         const FrameBufferSpecification &getSpecification() const override;
 

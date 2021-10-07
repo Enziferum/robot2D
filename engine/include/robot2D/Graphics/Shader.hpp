@@ -39,6 +39,7 @@ namespace robot2D {
 
         bool createShader(shaderType shader_type, const std::string& source, bool is_path);
         void use() const;
+        void unUse() const;
 
         void set_parameter(const char* name, const float* matrix) const;
         void set_parameter(const char* name, const float& x, const float& y,
