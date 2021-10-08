@@ -115,10 +115,6 @@ namespace robot2D {
         return m_windowImpl ->isKeyboardPressed(key);
     }
 
-    float Window::getDeltaTime() {
-        return m_windowImpl -> getDeltaTime();
-    }
-
     void Window::setDrapDropCallback(Window::DrapDropCallback&& callback) {
         m_windowImpl -> setDrapDropCallback(std::move(callback));
     }

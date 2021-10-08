@@ -66,7 +66,7 @@ namespace logger {
     }
 
     template<typename ...Args>
-    void log(logType type, const char *msg, Args... args) {
+    void log(logType type, const char* msg, Args... args) {
         if (debug)
             tprintf(type, msg, args...);
     }

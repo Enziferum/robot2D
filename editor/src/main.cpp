@@ -22,9 +22,11 @@ source distribution.
 
 #include <robot2D/Util/Logger.hpp>
 #include <editor/Application.hpp>
+#include <editor/Logger.hpp>
 
 int main() {
     editor::Application application;
+    robot2D::Log::Init();
 
     try {
         application.run();
