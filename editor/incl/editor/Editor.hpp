@@ -33,7 +33,7 @@ source distribution.
 namespace editor {
 
     enum class TextureID {
-        Face, Logo
+        Face, Logo, White
     };
 
     class Editor {
@@ -53,9 +53,19 @@ namespace editor {
 
     private:
         void imguiRender();
+        void mainMenubar();
+
+        bool createScene();
         bool openScene(const std::string& path);
         bool saveScene(const std::string& path);
     private:
+        enum class State {
+            Edit,
+            Run
+        };
+
+        State m_state;
+
         robot2D::RenderWindow& m_window;
         robot2D::MessageBus& m_messageBus;
         PanelManager m_panelManager;
@@ -65,6 +75,8 @@ namespace editor {
 
         SceneCamera m_camera;
         robot2D::vec2u m_ViewportSize;
+
+        robot2D::Color m_sceneClearColor;
 
         float m_dt = 0.F;
     };

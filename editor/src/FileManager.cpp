@@ -23,4 +23,13 @@ source distribution.
 
 namespace editor {
 
+    FileManager::FileManager() {}
+
+    stringBuffer FileManager::scanDirectory(const std::string& dirPath) {
+
+        for(auto& it: std::filesystem::directory_iterator(m_path)) {
+
+        }
+        return editor::stringBuffer();
+    }
 }

@@ -21,19 +21,12 @@ source distribution.
 
 #pragma once
 
-#include <filesystem>
-#include <vector>
-#include <string>
-
 namespace editor {
-    using stringBuffer = std::vector<std::string>;
-    class FileManager {
-    public:
-        FileManager();
-        ~FileManager() = default;
-
-        stringBuffer scanDirectory(const std::string& dirPath);
-    private:
-        std::filesystem::path m_path;
+    enum class EditorStyle {
+        GoldBlack
     };
+
+
+    void applyStyle(const EditorStyle& editorStyle);
 }
+

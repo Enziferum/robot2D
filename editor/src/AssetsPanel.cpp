@@ -36,7 +36,6 @@ namespace editor {
 
     const std::unordered_map<ResourceIconType, std::string> iconPaths = {
             {ResourceIconType::File, "FileIcon.png"},
-          //  {ResourceIconType::Scene, "IconScene.png"},
             {ResourceIconType::Directory, "DirectoryIcon.png"}
     };
 

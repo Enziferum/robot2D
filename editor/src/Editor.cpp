@@ -31,21 +31,22 @@ source distribution.
 #include <editor/Wrapper.hpp>
 #include <editor/SceneSerializer.hpp>
 #include <editor/Components.hpp>
-
-
+#include <editor/EditorStyles.hpp>
 
 namespace editor {
     // develop only flag
     constexpr bool useGUI = true;
+    const robot2D::Color defaultBackGround = robot2D::Color::fromGL(0.1, 0.1, 0.1, 1);
 
-    Editor::Editor(robot2D::RenderWindow& window, robot2D::MessageBus& messageBus): m_window{window},
+    Editor::Editor(robot2D::RenderWindow& window, robot2D::MessageBus& messageBus): m_state(State::Edit),
+    m_window{window},
     m_messageBus{messageBus},
     m_activeScene{ nullptr }, m_frameBuffer{nullptr}, m_ViewportSize{} {}
 
     void Editor::setup() {
         const std::string texturesPath = "res/textures/";
         std::unordered_map<TextureID, std::string> texturePaths = {
-                {TextureID::Logo, "logo.png"}
+                {TextureID::Logo, "logo.png"},
         };
 
         for(auto& it: texturePaths) {
@@ -55,12 +56,13 @@ namespace editor {
             }
         }
 
-        m_activeScene = std::make_shared<Scene>(m_messageBus);
-
         auto& panel = m_panelManager.addPanel<ComponentPanel>();
         auto& scenePanel = m_panelManager.addPanel<ScenePanel>();
-        scenePanel.setActiveScene(std::move(m_activeScene));
         auto& assetsPanel = m_panelManager.addPanel<AssetsPanel>();
+
+        if(!createScene()) {
+            LOG_ERROR_E("Can't create Scene on Init")
+        }
 
         robot2D::FrameBufferSpecification frameBufferSpecification;
         auto windowSize = m_window.getSize();
@@ -69,6 +71,9 @@ namespace editor {
         m_frameBuffer = robot2D::FrameBuffer::Create(frameBufferSpecification);
         m_window.setView({{0, 0}, {windowSize.x, windowSize.y}});
         m_camera.resize({0, 0, windowSize.x, windowSize.y});
+
+
+        //applyStyle(EditorStyle::GoldBlack);
     }
 
     bool m_leftCtrlPressed = false;
@@ -96,16 +101,24 @@ namespace editor {
     void Editor::handleMessages(const robot2D::Message& message) {}
 
     void Editor::update(float dt) {
-        m_activeScene -> update(dt);
-        m_panelManager.update(dt);
-        m_dt = dt;
+        switch(m_state) {
+            case State::Edit: {
+                m_activeScene -> update(dt);
+                m_panelManager.update(dt);
+                m_dt = dt;
+                break;
+            }
+            case State::Run: {
+                m_activeScene ->updateRuntime(dt);
+                break;
+            }
+        }
     }
 
     void Editor::render() {
         if(useGUI) {
             m_frameBuffer -> Bind();
-            robot2D::Color clearColor = robot2D::Color::fromGL(0.1, 0.1, 0.1, 1);
-            m_window.clear(clearColor);
+            m_window.clear(m_sceneClearColor);
         }
         m_window.beforeRender();
         m_window.setView(m_camera.getView());
@@ -120,7 +133,6 @@ namespace editor {
 
             robot2D::RenderStates renderStates;
             if(sprite.getTexturePointer() == nullptr) {
-                //continue;
                 sprite.setTexture(m_textures.get(TextureID::Logo));
             }
             renderStates.texture = &sprite.getTexture();
@@ -138,14 +150,15 @@ namespace editor {
         }
     }
 
-    void Editor::imguiRender() {
-        static bool opt_fullscreen = true;
-        static bool opt_padding = true;
-        static bool dockspace_open = false;
-        static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
+    // to be part of something
+    static bool opt_fullscreen = true;
+    static bool opt_padding = true;
+    static bool dockspace_open = false;
+    static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
 
-        // We are using the ImGuiWindowFlags_NoDocking flag to make the parent window not dockable into,
-        // because it would be confusing to have two docking targets within each others.
+    void Editor::imguiRender() {
+
+
         ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
         if (opt_fullscreen)
         {
@@ -168,11 +181,6 @@ namespace editor {
         if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
             window_flags |= ImGuiWindowFlags_NoBackground;
 
-        // Important: note that we proceed even if Begin() returns false (aka window is collapsed).
-        // This is because we want to keep our DockSpace() active. If a DockSpace() is inactive,
-        // all active windows docked into it will lose their parent and become undocked.
-        // We cannot preserve the docking relationship between an active window and an inactive docking, otherwise
-        // any change of dockspace/settings would lead to windows being stuck in limbo and never being visible.
         if (!opt_padding)
             ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
         ImGui::Begin("Scene", &dockspace_open, window_flags);
@@ -190,49 +198,46 @@ namespace editor {
             ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
         }
 
-        if (ImGui::BeginMenuBar())
-        {
-            // TODO make filedialog
-            if (ImGui::BeginMenu("File"))
-            {
-                if(ImGui::MenuItem("Open", "Ctrl+O")) {
-                    std::string openPath = "assets/scenes/demoScene.robot2D";
-                    const char *patterns[1] = {"*.robot2D"};
-                    char *path = tinyfd_openFileDialog("Load Scene", nullptr,
-                                                       1, patterns, "Scene", 0);
-                    if (path != nullptr) {
-                        openPath = std::string(path);
-                        openScene(path);
-                    }
-                }
-                if(ImGui::MenuItem("Save", "Ctrl+Shift+S")) {
-                    std::string savePath = "assets/scenes/demoScene.robot2D";
-                    const char* patterns[1] = {"*.robot2D"};
-                    char* path = tinyfd_saveFileDialog("Load Scene", nullptr,
-                                          1, patterns, "Scene");
-                    if(path != nullptr) {
-                        savePath = std::string(path);
-                        saveScene(savePath);
-                    }
-                }
-                ImGui::Separator();
 
-                ImGui::EndMenu();
-            }
-            ImGui::EndMenuBar();
-        }
-
+        mainMenubar();
         ImGui::End();
-
 
         m_panelManager.render();
 
+
+        /// Render Stats Panel ///
+
         ImGui::Begin("Statistics ");
         auto stats = m_window.getStats();
+
+        // todo Apply some styles
+
         ImGui::Text("Rendering 2D Stats ...");
-        ImGui::Text("Quads Count %d", stats.drawQuads);
-        ImGui::Text("Draw Calls Count %d", stats.drawCalls);
+        ImGui::Text("Quads Count: %d", stats.drawQuads);
+        ImGui::Text("Draw Calls Count: %d", stats.drawCalls);
+        // todo zoom precision
+        ImGui::Text("Camera Zoom: %.2f", m_camera.getZoom());
+        ImGui::Text("Camera Speed: ");
+        ImGui::SameLine();
+        ImGui::DragFloat("##Y", &m_camera.getCameraSpeed(), 0.1f, 10.0f, 100.0f, "%.2f");
+
+        auto cameraCenter = m_camera.getView().getCenter();
+        auto cameraSize = m_camera.getView().getSize();
+        ImGui::Text("Viewport Center := %.2f, %.2f", cameraCenter.x, cameraCenter.y);
+        ImGui::Text("Viewport Size := %.2f, %.2f", cameraSize.x, cameraSize.y);
+
+        auto color = m_sceneClearColor.toGL();
+        float colors[4];
+        colors[0] = color.red; colors[1] = color.green;
+        colors[2] = color.blue; colors[3] = color.alpha;
+        ImGui::ColorEdit4("Color", colors);
+        m_sceneClearColor = {robot2D::Color::fromGL(colors[0], colors[1], colors[2], colors[3])};
         ImGui::End();
+
+        /// Render Stats Panel ///
+
+
+        /// Viewport Panel ///
 
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
         ImGui::Begin("Viewport");
@@ -255,6 +260,8 @@ namespace editor {
         }
         ImGui::End();
         ImGui::PopStyleVar();
+
+        /// Viewport Panel ///
     }
 
     bool Editor::openScene(const std::string& path) {
@@ -276,6 +283,56 @@ namespace editor {
     bool Editor::saveScene(const std::string& path) {
         SceneSerializer serializer(m_activeScene);
         return serializer.serialize(path);
+    }
+
+    void Editor::mainMenubar() {
+        if (ImGui::BeginMenuBar())
+        {
+            if (ImGui::BeginMenu("File"))
+            {
+                if(ImGui::MenuItem("New", "Ctrl+N")) {
+                    createScene();
+                }
+                ImGui::Separator();
+
+                if(ImGui::MenuItem("Open", "Ctrl+O")) {
+                    std::string openPath = "assets/scenes/demoScene.robot2D";
+                    const char* patterns[1] = {"*.robot2D"};
+                    char *path = tinyfd_openFileDialog("Load Scene", nullptr,
+                                                       1, patterns, "Scene", 0);
+                    if (path != nullptr) {
+                        openPath = std::string(path);
+                        openScene(path);
+                    }
+                }
+
+                if(ImGui::MenuItem("Save", "Ctrl+Shift+S")) {
+                    std::string savePath = "assets/scenes/demoScene.robot2D";
+                    const char* patterns[1] = {"*.robot2D"};
+                    char* path = tinyfd_saveFileDialog("Load Scene", nullptr,
+                                                       1, patterns, "Scene");
+                    if(path != nullptr) {
+                        savePath = std::string(path);
+                        saveScene(savePath);
+                    }
+                }
+
+                ImGui::EndMenu();
+            }
+            ImGui::EndMenuBar();
+        }
+    }
+
+    bool Editor::createScene() {
+        if(m_activeScene != nullptr) {
+            m_activeScene.reset();
+            // todo show dialog
+        }
+        m_activeScene = std::make_shared<Scene>(m_messageBus);
+        auto& scenePanel = m_panelManager.getPanel<ScenePanel>();
+        scenePanel.setActiveScene(std::move(m_activeScene));
+        m_sceneClearColor = defaultBackGround;
+        return true;
     }
 
 }

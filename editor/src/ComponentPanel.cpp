@@ -27,7 +27,6 @@ namespace editor {
     ComponentPanel::ComponentPanel(): IPanel(UniqueType(typeid(ComponentPanel))) {}
 
     void ComponentPanel::render() {
-
     }
 
 }

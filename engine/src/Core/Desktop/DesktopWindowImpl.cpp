@@ -26,10 +26,6 @@ source distribution.
 
 namespace robot2D {
     namespace priv {
-
-        constexpr int opengl_major = 3;
-        constexpr int opengl_minor = 3;
-
         DesktopWindowImpl::DesktopWindowImpl():
 
         m_window(nullptr),
@@ -41,8 +37,8 @@ namespace robot2D {
             setup();
         }
 
-        DesktopWindowImpl::DesktopWindowImpl(const vec2u &size, const std::string &name,
-                                             WindowContext &context):
+        DesktopWindowImpl::DesktopWindowImpl(const vec2u& size, const std::string &name,
+                                             WindowContext& context):
                 m_window(nullptr),
                 m_cursorVisible(true),
                 m_size(size),
@@ -57,9 +53,8 @@ namespace robot2D {
         }
 
         bool DesktopWindowImpl::pollEvents(Event& event) {
-            if(m_event_queue.empty()){
-                //what todo ??
-            }
+            //what todo ??
+            if(m_event_queue.empty()){}
 
             if(!m_event_queue.empty()) {
                 event = m_event_queue.front();
@@ -77,16 +72,28 @@ namespace robot2D {
         void DesktopWindowImpl::setup() {
             /* Initialize the library */
             if (!glfwInit())
-                return;
-#ifdef __APPLE__
+                throw std::runtime_error("Can't Init GLFW3");
+#ifdef ROBOT2D_MACOS
             glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-          //  glfwWindowHint(GLFW_COCOA_RETINA_FRAMEBUFFER, GL_TRUE);
 #endif
+            int opengl_major = 0;
+            int opengl_minor = 0;
 
+            switch(m_context.renderApi) {
+                case WindowContext::RenderApi::OpenGL3_3: {
+                    opengl_major = 3;
+                    opengl_minor = 3;
+                    break;
+                }
+                case WindowContext::RenderApi::OpenGL4_1: {
+                    opengl_major = 4;
+                    opengl_minor = 1;
+                    break;
+                }
+            }
             glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, opengl_major);
             glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, opengl_minor);
             glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
 
             GLFWmonitor* primary = m_context.fullscreen ? glfwGetPrimaryMonitor() : nullptr;
 
@@ -95,7 +102,6 @@ namespace robot2D {
                                         m_name.c_str(), primary, nullptr);
             if (!m_window)
             {
-                //todo throw expeption, after termimate
                 glfwTerminate();
                 exit(1);
             }
@@ -110,7 +116,7 @@ namespace robot2D {
         }
 
         void DesktopWindowImpl::setup_WGL() {
-#ifdef WIN32
+#ifdef ROBOT2D_WINDOWS
             if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
             {
                 LOG_ERROR_E("Failed to initialize GLAD")
@@ -132,7 +138,8 @@ namespace robot2D {
         void DesktopWindowImpl::clear(const Color& color) {
             auto glColor = color.toGL();
             glClearColor(glColor.red, glColor.green, glColor.blue, glColor.alpha);
-            glClear(GL_COLOR_BUFFER_BIT);
+            //glClear(GL_COLOR_BUFFER_BIT);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         }
 
         void DesktopWindowImpl::close() {
@@ -146,7 +153,8 @@ namespace robot2D {
 
         void DesktopWindowImpl::setup_callbacks() {
             if(m_window == nullptr)
-                return;
+                throw std::runtime_error("Window is nullptr");
+
 
             glfwSetWindowUserPointer(m_window, this);
             glfwSetWindowCloseCallback(m_window, close_callback);
@@ -154,7 +162,6 @@ namespace robot2D {
             glfwSetCursorPosCallback(m_window, cursor_callback);
             glfwSetScrollCallback(m_window, mouseWhell_callback);
             glfwSetMouseButtonCallback(m_window, mouse_callback);
-            //glfwSetFramebufferSizeCallback(m_window, view_callback);
             glfwSetWindowSizeCallback(m_window, size_callback);
             glfwSetWindowMaximizeCallback(m_window, maximized_callback);
             glfwSetDropCallback(m_window, dragdrop_callback);
@@ -241,16 +248,6 @@ namespace robot2D {
             window->m_event_queue.push(event);
         }
 
-        void DesktopWindowImpl::view_callback(GLFWwindow* wnd, int w, int h) {
-            DesktopWindowImpl* window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
-            Event event;
-            event.type = Event::Resized;
-            event.size.widht = w;
-            event.size.heigth = h;
-
-            window->m_event_queue.push(event);
-        }
-
         void DesktopWindowImpl::maximized_callback(GLFWwindow* wnd, int state) {
             //c++ hack before c++ 17 to set unused parameter
             (void)(state);
@@ -258,53 +255,6 @@ namespace robot2D {
             DesktopWindowImpl* window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
             //c++ hack before c++ 17 to set unused parameter
             (void)(window);
-        }
-
-        void DesktopWindowImpl::setIcon(std::vector<robot2D::Texture>& icons) {
-            if(icons.empty())
-                return;
-            std::vector<GLFWimage> images;
-            for(auto &it: icons){
-                GLFWimage img;
-                auto size = it.getSize();
-                img.width = size.x;
-                img.height = size.y;
-                img.pixels = it.getPixels();
-                images.emplace_back(img);
-            }
-            glfwSetWindowIcon(m_window, images.size(), &images[0]);
-        }
-
-        float DesktopWindowImpl::getDeltaTime() const {
-            return glfwGetTime();
-        }
-
-        bool DesktopWindowImpl::isMousePressed(const Mouse& button) {
-            return glfwGetMouseButton(m_window, button);
-        }
-
-        bool DesktopWindowImpl::isKeyboardPressed(const Key &key) {
-            return glfwGetKey(m_window, key2Int(key));
-        }
-
-        void DesktopWindowImpl::dragdrop_callback(GLFWwindow* wnd, int count, const char** paths) {
-            DesktopWindowImpl* window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
-            std::vector<std::string> outputPaths;
-            for(int it = 0; it < count; ++it) {
-                if(paths[it] != nullptr)
-                    outputPaths.emplace_back(paths[it]);
-            }
-            if(window -> m_dragdrop_function)
-                window -> m_dragdrop_function(outputPaths);
-        }
-
-        void DesktopWindowImpl::setDrapDropCallback(DrapDropCallback&& callback) {
-            m_dragdrop_function = callback;
-        }
-
-        void DesktopWindowImpl::setMouseCursorVisible(const bool& flag) {
-            m_cursorVisible = flag;
-            glfwSetInputMode(m_window, GLFW_CURSOR, (m_cursorVisible ? GLFW_CURSOR_NORMAL: GLFW_CURSOR_HIDDEN));
         }
 
         void DesktopWindowImpl::focus_callback(GLFWwindow* wnd, int focus) {
@@ -325,6 +275,49 @@ namespace robot2D {
             event.type = Event::TextEntered;
             event.text.symbol = symbol;
             window->m_event_queue.push(event);
+        }
+
+        void DesktopWindowImpl::dragdrop_callback(GLFWwindow* wnd, int count, const char** paths) {
+            DesktopWindowImpl* window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
+            std::vector<std::string> outputPaths;
+            for(int it = 0; it < count; ++it) {
+                if(paths[it] != nullptr)
+                    outputPaths.emplace_back(paths[it]);
+            }
+            if(window -> m_dragdrop_function)
+                window -> m_dragdrop_function(outputPaths);
+        }
+
+        void DesktopWindowImpl::setDrapDropCallback(DrapDropCallback&& callback) {
+            m_dragdrop_function = callback;
+        }
+
+        void DesktopWindowImpl::setIcon(std::vector<robot2D::Texture>& icons) {
+            if(icons.empty())
+                return;
+            std::vector<GLFWimage> images;
+            for(auto &it: icons){
+                GLFWimage img;
+                auto size = it.getSize();
+                img.width = size.x;
+                img.height = size.y;
+                img.pixels = it.getPixels();
+                images.emplace_back(img);
+            }
+            glfwSetWindowIcon(m_window, images.size(), &images[0]);
+        }
+
+        bool DesktopWindowImpl::isMousePressed(const Mouse& button) {
+            return glfwGetMouseButton(m_window, button);
+        }
+
+        bool DesktopWindowImpl::isKeyboardPressed(const Key &key) {
+            return glfwGetKey(m_window, key2Int(key));
+        }
+
+        void DesktopWindowImpl::setMouseCursorVisible(const bool& flag) {
+            m_cursorVisible = flag;
+            glfwSetInputMode(m_window, GLFW_CURSOR, (m_cursorVisible ? GLFW_CURSOR_NORMAL: GLFW_CURSOR_HIDDEN));
         }
 
         void DesktopWindowImpl::setCursor(const Cursor& cursor) {
