@@ -34,5 +34,6 @@ namespace editor {
 
         stringBuffer scanDirectory(const std::string& dirPath);
     private:
+        std::filesystem::path m_path;
     };
 }

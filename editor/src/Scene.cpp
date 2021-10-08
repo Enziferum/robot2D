@@ -47,6 +47,10 @@ namespace editor {
         m_scene.update(dt);
     }
 
+    void Scene::updateRuntime(float dt) {
+
+    }
+
     void Scene::addEmptyEntity() {
         auto entity = m_scene.createEntity();
         entity.addComponent<TagComponent>();

@@ -38,12 +38,16 @@ namespace editor {
         const robot2D::ecs::EntityList& getEntities() const;
 
         void update(float dt);
+
+        void updateRuntime(float dt);
+
         // Serializer Api
         robot2D::ecs::Entity createEntity();
         void removeEntity(robot2D::ecs::Entity entity);
 
         // ScenePanel API
         void addEmptyEntity();
+
         void setPath(const std::string& path) {m_path = path;}
         const std::string& getPath() const {return m_path;}
         std::string& getPath()  {return m_path;}
@@ -57,5 +61,7 @@ namespace editor {
         robot2D::ecs::EntityList m_sceneEntities;
         robot2D::MessageBus& m_messageBus;
         std::string m_path;
+
+
     };
 }

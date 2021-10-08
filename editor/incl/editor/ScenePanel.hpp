@@ -30,7 +30,6 @@ namespace editor {
         ScenePanel();
         ~ScenePanel()override = default;
 
-
         void setActiveScene(Scene::Ptr&& ptr) { m_scene = ptr; m_selectedEntity = {};}
         void render() override;
     private:

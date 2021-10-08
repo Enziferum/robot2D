@@ -20,30 +20,34 @@ source distribution.
 *********************************************************************/
 
 #include <editor/SceneCamera.hpp>
+#include <robot2D/Util/Logger.hpp>
 
 namespace editor {
+    constexpr float cameraSpeed = 10.F;
 
-    SceneCamera::SceneCamera(): m_view() {}
+
+    SceneCamera::SceneCamera(): m_view(), m_zoom(0.F) {}
 
     void SceneCamera::onEvent(const robot2D::Event& event) {
         if(event.type == robot2D::Event::MouseWheel) {
-            m_zoom = 1.f + event.wheel.scroll_y * 0.1;
+            m_zoom = 1.F + event.wheel.scroll_y * 0.1;
             m_view.zoom(m_zoom);
         }
 
         if(event.type == robot2D::Event::KeyPressed) {
             if(event.key.code == robot2D::Key::W)
-                m_view.move(0, -10);
+                m_view.move(0, -m_cameraSpeed);
             if(event.key.code == robot2D::Key::S)
-                m_view.move(0, 10);
+                m_view.move(0, m_cameraSpeed);
             if(event.key.code == robot2D::Key::A)
-                m_view.move(-10, 0);
+                m_view.move(-m_cameraSpeed, 0);
             if(event.key.code == robot2D::Key::D)
-                m_view.move(10, 0);
+                m_view.move(m_cameraSpeed, 0);
         }
     }
 
     void SceneCamera::resize(const robot2D::FloatRect& viewPort) {
+        m_sizeRect = viewPort;
         m_view.reset(viewPort);
     }
 
@@ -53,5 +57,12 @@ namespace editor {
 
     const robot2D::View &SceneCamera::getView() const {
         return m_view;
+    }
+
+    const float SceneCamera::getZoom() const {
+        auto actualSize = m_view.getSize();
+        robot2D::vec2f defaultSize = {m_sizeRect.width, m_sizeRect.height};
+        robot2D::vec2f zoom = {defaultSize.x / actualSize.x, defaultSize.y / actualSize.y};
+        return zoom.x;
     }
 }

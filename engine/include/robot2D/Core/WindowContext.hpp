@@ -25,10 +25,17 @@ source distribution.
 
 namespace robot2D {
     struct ROBOT2D_EXPORT_API WindowContext {
+        enum class RenderApi {
+            OpenGL3_3,
+            OpenGL4_1
+        };
+
         bool vsync;
         bool fullscreen;
+        RenderApi renderApi;
 
-        WindowContext(const bool& vsync = false, const bool& fullscreen = false);
+        WindowContext(const bool& vsync = false, const bool& fullscreen = false,
+                      const RenderApi& renderApi = WindowContext::RenderApi::OpenGL3_3);
 
         static const WindowContext Default;
     };

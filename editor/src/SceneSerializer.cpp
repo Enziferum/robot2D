@@ -140,6 +140,23 @@ namespace editor {
         return true;
     }
 
+    enum class SerializeID {
+        Scene,
+        Entities,
+        Tag,
+        Transform,
+        Sprite
+    };
+
+    std::unordered_map<SerializeID, std::string> serializeKeys = {
+            {SerializeID::Scene, "Scene"},
+            {SerializeID::Entities, "Entities"},
+            {SerializeID::Tag, "TagComponent"},
+            {SerializeID::Transform, "TransformComponent"},
+            {SerializeID::Sprite, "SpriteComponent"},
+            {SerializeID::Tag, "TransformComponent"},
+    };
+
     bool SceneSerializer::deserialize(const std::string& path) {
         std::ifstream ifstream(path);
         if(!ifstream.is_open())

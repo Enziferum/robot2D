@@ -21,7 +21,10 @@ source distribution.
 
 #pragma once
 #include <typeindex>
+#include <string>
 
 namespace editor {
     using UniqueType = std::type_index;
+
+    const std::string drapDrogID = "CONTENT_BROWSER_ID";
 }

@@ -33,11 +33,15 @@ namespace editor {
         void onEvent(const robot2D::Event& event);
         void resize(const robot2D::FloatRect& viewPort);
 
+        float& getCameraSpeed() { return m_cameraSpeed; }
+        const float getZoom() const;
 
         robot2D::View& getView();
         const robot2D::View& getView() const;
     private:
         robot2D::View m_view;
         float m_zoom;
+        float m_cameraSpeed = 10.F;
+        robot2D::FloatRect m_sizeRect;
     };
 }

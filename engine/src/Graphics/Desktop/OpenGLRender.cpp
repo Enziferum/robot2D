@@ -82,6 +82,7 @@ namespace robot2D {
 
             glEnable(GL_BLEND); // blending function
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            glEnable(GL_DEPTH_TEST);
         }
 
         void OpenGLRender::init() {
@@ -140,10 +141,10 @@ namespace robot2D {
 
             GLubyte texData[] = { 255, 255, 255, 255 }; // 0xffffffff;
 
+            m_quadShader.use();
+
             m_renderBuffer.whiteTexture.create({1, 1}, texData);
             m_renderBuffer.textureSlots[0] = m_renderBuffer.whiteTexture.getID();
-
-            m_quadShader.use();
 
             int samples[maxTextureSlots];
             for(int it = 0; it < maxTextureSlots; ++it)

@@ -41,6 +41,12 @@ namespace editor {
             return;
 
         ImGui::Begin("ScenePanel");
+        ImGuiIO& io = ImGui::GetIO();
+        auto boldFont = io.Fonts->Fonts[0];
+        ImGui::PushFont(boldFont);
+        ImGui::Text(m_scene -> getPath().c_str());
+        ImGui::PopFont();
+
         if (ImGui::IsMouseDown(0) && ImGui::IsWindowHovered())
             m_selectedEntity = {};
 
@@ -71,8 +77,6 @@ namespace editor {
     }
 
     void ScenePanel::drawEntity(robot2D::ecs::Entity entity) {
-        //auto& tag = entity.GetComponent<TagComponent>().Tag;
-
         auto& tag = entity.getComponent<TagComponent>().getTag();
 
         ImGuiTreeNodeFlags flags = ((m_selectedEntity == entity) ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_OpenOnArrow;
@@ -211,16 +215,15 @@ namespace editor {
         if(!entity.hasComponent<TagComponent>())
             return;
         auto& tag = entity.getComponent<TagComponent>().getTag();
-        if (!tag.empty())
+        char buffer[256];
+        memset(buffer, 0, sizeof(buffer));
+        std::strncpy(buffer, tag.c_str(), sizeof(buffer));
+        if (ImGui::InputText("##Tag", buffer, sizeof(buffer)))
         {
-            char buffer[256];
-            memset(buffer, 0, sizeof(buffer));
-            std::strncpy(buffer, tag.c_str(), sizeof(buffer));
-            if (ImGui::InputText("##Tag", buffer, sizeof(buffer)))
-            {
-                tag = std::string(buffer);
-                LOG_INFO("TAG := % \n", tag.c_str())
-            }
+            tag = std::string(buffer);
+            if(tag.empty())
+                tag = "Untitled Entity";
+            LOG_INFO("TAG := % \n", tag.c_str())
         }
 
         ImGui::SameLine();

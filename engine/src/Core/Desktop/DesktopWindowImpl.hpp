@@ -44,7 +44,7 @@ namespace robot2D {
             bool isOpen() const override;
             void setTitle(const std::string& title) const override;
 
-            void clear(const Color &color) override;
+            void clear(const Color& color) override;
             void close() override;
             void display() override;
 
@@ -52,8 +52,6 @@ namespace robot2D {
             bool isKeyboardPressed(const Key& key)override;
 
             void setIcon(std::vector<robot2D::Texture>& ) override;
-
-            float getDeltaTime() const override;
 
             void setDrapDropCallback(DrapDropCallback &&callback) override;
 
@@ -71,7 +69,6 @@ namespace robot2D {
             static void mouseWhell_callback(GLFWwindow* window, double xpos, double ypos);
             static void mouse_callback(GLFWwindow* window, int key, int action, int mods);
             static void size_callback(GLFWwindow* window, int w, int h);
-            static void view_callback(GLFWwindow* window, int w, int h);
             static void maximized_callback(GLFWwindow* window, int state);
             static void dragdrop_callback(GLFWwindow* wnd, int count, const char** paths);
             static void focus_callback(GLFWwindow* wnd, int focus);
@@ -79,12 +76,10 @@ namespace robot2D {
         private:
             GLFWwindow* m_window;
             std::queue<Event> m_event_queue;
-
-            bool m_cursorVisible;
-
             vec2u m_size;
             std::string m_name;
             WindowContext m_context;
+            bool m_cursorVisible;
             std::function<void(std::vector<std::string>)> m_dragdrop_function;
         };
     }

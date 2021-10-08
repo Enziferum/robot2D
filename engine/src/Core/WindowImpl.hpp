@@ -59,7 +59,6 @@ namespace robot2D {
 
             virtual void setIcon(std::vector<robot2D::Texture>& icons) = 0;
             virtual void setDrapDropCallback(DrapDropCallback&& callback) = 0;
-            virtual float getDeltaTime()const = 0;
             virtual void setMouseCursorVisible(const bool& flag) = 0;
             virtual void setCursor(const Cursor& cursor) = 0;
         };
