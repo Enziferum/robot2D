@@ -55,6 +55,7 @@ endif()
 find_package(glfw3 REQUIRED)
 find_package(Freetype REQUIRED)
 find_package(robot2D_ext QUIET)
+find_package(spdlog)
 
 #TODO update finds
 message(STATUS "Found freetype in ${FREETYPE_INCLUDE_DIRS}")
@@ -71,10 +72,11 @@ else(APPLE)
     set(LIBS ${APPLE_LIBS})
 endif()
 
+# use spdlog for some time
 add_subdirectory(engine)
 
 add_library(${PROJECT_NAME} ${ENGINE_SRC})
-set(LIBS ${LIBS} glfw robot2D_ext ${FREETYPE_LIBRARIES})
+set(LIBS ${LIBS} glfw robot2D_ext ${FREETYPE_LIBRARIES} spdlog::spdlog)
 
 target_link_libraries(${PROJECT_NAME} ${LIBS})
 target_include_directories(${PROJECT_NAME} PUBLIC

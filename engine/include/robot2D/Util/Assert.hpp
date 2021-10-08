@@ -18,20 +18,6 @@ and must not be misrepresented as being the original software.
 3. This notice may not be removed or altered from any
 source distribution.
 *********************************************************************/
-#include <exception>
 
-#include <robot2D/Util/Logger.hpp>
-#include <editor/Application.hpp>
-#include <editor/Logger.hpp>
+#pragma once
 
-int main() {
-    editor::Application application;
-    robot2D::Log::Init();
-
-    try {
-        application.run();
-    }
-    catch(const std::exception& exception) {
-        LOG_ERROR_E(exception.what())
-    }
-}
