@@ -45,4 +45,19 @@ namespace editor {
     const robot2D::Color& SpriteComponent::getColor() const {
         return m_color;
     }
+
+    CameraComponent::CameraComponent(): m_view(), m_actualViewport() {}
+
+    void CameraComponent::setViewport(const robot2D::FloatRect& viewport) {
+        m_actualViewport = viewport;
+        m_view.reset(m_actualViewport);
+    }
+
+    float CameraComponent::getZoom() const {
+        auto actualSize = m_view.getSize();
+        robot2D::vec2f defaultSize = { m_actualViewport.width, m_actualViewport.height};
+        robot2D::vec2f zoom = {defaultSize.x / actualSize.x, defaultSize.y / actualSize.y};
+        return zoom.x;
+    }
+
 }

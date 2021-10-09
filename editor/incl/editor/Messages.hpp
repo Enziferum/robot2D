@@ -18,19 +18,19 @@ and must not be misrepresented as being the original software.
 3. This notice may not be removed or altered from any
 source distribution.
 *********************************************************************/
-#include <exception>
 
-#include <robot2D/Util/Logger.hpp>
-#include <editor/Application.hpp>
+#pragma once
+#include <string>
+#include <robot2D/Core/Message.hpp>
 
-int main() {
-    logger::Log::Init();
-    editor::Application application;
+namespace editor {
 
-    try {
-        application.run();
-    }
-    catch(const std::exception& exception) {
-        RB_EDITOR_CRITICAL(exception.what());
-    }
+    enum MessageIDs {
+        CreateProject = robot2D::Message::Count
+    };
+
+    struct CreateProjectMessage {
+        std::string path;
+    };
+
 }

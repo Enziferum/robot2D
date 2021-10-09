@@ -24,6 +24,7 @@ source distribution.
 #include <robot2D/Graphics/Transformable.hpp>
 #include <robot2D/Graphics/Texture.hpp>
 #include <robot2D/Graphics/Color.hpp>
+#include <robot2D/Graphics/View.hpp>
 
 namespace editor {
     class TransformComponent: public robot2D::Transformable {
@@ -63,5 +64,21 @@ namespace editor {
         robot2D::Color m_color;
     };
 
-    
+
+    class CameraComponent final {
+    public:
+        CameraComponent();
+        ~CameraComponent() = default;
+
+        void setViewport(const robot2D::FloatRect& viewport);
+
+        robot2D::View& getView() { return m_view; }
+        const robot2D::View& getView() const { return m_view; }
+
+        float getZoom() const;
+    private:
+        robot2D::View m_view;
+        robot2D::FloatRect m_actualViewport;
+    };
+
 }

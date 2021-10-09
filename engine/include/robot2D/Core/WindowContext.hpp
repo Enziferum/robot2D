@@ -22,6 +22,7 @@ source distribution.
 #pragma once
 
 #include <robot2D/Config.hpp>
+#include "Vector2.hpp"
 
 namespace robot2D {
     struct ROBOT2D_EXPORT_API WindowContext {
@@ -33,6 +34,9 @@ namespace robot2D {
         bool vsync;
         bool fullscreen;
         RenderApi renderApi;
+
+        robot2D::vec2f minimumSize = {};
+        robot2D::vec2f maximumSize = {};
 
         WindowContext(const bool& vsync = false, const bool& fullscreen = false,
                       const RenderApi& renderApi = WindowContext::RenderApi::OpenGL3_3);

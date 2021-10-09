@@ -119,8 +119,8 @@ namespace robot2D {
 #ifdef ROBOT2D_WINDOWS
             if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
             {
-                LOG_ERROR_E("Failed to initialize GLAD")
-                return ;
+                RB_CORE_CRITICAL("Failed to initialize GLAD");
+                throw std::runtime_error("Failed to initialize GLAD");
             }
 #endif
             glViewport(0, 0, m_size.x, m_size.y);
@@ -323,6 +323,28 @@ namespace robot2D {
         void DesktopWindowImpl::setCursor(const Cursor& cursor) {
             auto rawCursor = (GLFWcursor*)cursor.getRaw();
             glfwSetCursor(m_window, rawCursor);
+        }
+
+        robot2D::vec2u DesktopWindowImpl::getMonitorSize() const {
+            auto videoMode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+            if(videoMode == nullptr)
+                return {};
+
+            return {videoMode->width, videoMode->height};
+        }
+
+        void DesktopWindowImpl::setPosition(const vec2u& position) {
+            glfwSetWindowPos(m_window, static_cast<int>(position.x), static_cast<int>(position.y));
+        }
+
+        robot2D::vec2u DesktopWindowImpl::getPosition() const {
+            robot2D::vec2i pos;
+            glfwGetWindowPos(m_window, &pos.x, &pos.y);
+            return robot2D::vec2u{pos.x, pos.y};
+        }
+
+        void DesktopWindowImpl::setSize(const vec2u& size) {
+            glfwSetWindowSize(m_window, static_cast<int>(size.x), static_cast<int>(size.y));
         }
 
     }

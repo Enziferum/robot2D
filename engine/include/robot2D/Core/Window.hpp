@@ -79,6 +79,8 @@ namespace robot2D {
 
         void setTitle(const std::string& title);
 
+        void setSize(const robot2D::vec2u& size);
+
         const vec2u& getSize();
 
         /// \brief allow you to set big/small icons to your app
@@ -95,12 +97,18 @@ namespace robot2D {
         void setCursor(const Cursor& cursor);
 
         void setMouseCursorVisible(const bool& flag);
+
+        // Window manipulate options //
+
+        robot2D::vec2u getMonitorSize() const;
+        void setPosition(const robot2D::vec2u& position);
+        robot2D::vec2u getPosition() const;
+
+        // Window manipulate options //
     protected:
         virtual void onResize(const int& w, const int& h);
     private:
         void create();
-
-        float getDeltaTime();
     protected:
         static std::unique_ptr<priv::WindowImpl> m_windowImpl;
 

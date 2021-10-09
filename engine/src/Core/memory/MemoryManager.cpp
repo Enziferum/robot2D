@@ -26,17 +26,17 @@ namespace mem {
 
     MemoryManager::MemoryManager()
     {
-        std::cout << "Initialize MemoryManager!" << std::endl;
+        RB_CORE_INFO("Initialize MemoryManager!");
 
         // allocate global memory
         this->m_GlobalMemory = malloc(MemoryManager::MEMORY_CAPACITY);
         if (this->m_GlobalMemory != nullptr)
         {
-            std::cout << "%d bytes of memory allocated. " <<  MemoryManager::MEMORY_CAPACITY << std::endl;
+            RB_CORE_INFO("{0} bytes of memory allocated.", MemoryManager::MEMORY_CAPACITY);
         }
         else
         {
-            std::cerr << "Failed to allocate %d bytes of memory! " << MemoryManager::MEMORY_CAPACITY << std::endl;
+            RB_CORE_ERROR("Failed to allocate %d bytes of memory!", MemoryManager::MEMORY_CAPACITY);
             assert(this->m_GlobalMemory != nullptr && "Failed to allocate global memory.");
         }
 
@@ -50,7 +50,7 @@ namespace mem {
 
     MemoryManager::~MemoryManager()
     {
-        std::cout << "Releasing MemoryManager! \n";
+        RB_CORE_INFO("Releasing MemoryManager!");
 
         this->m_MemoryAllocator->clear();
 
@@ -67,10 +67,7 @@ namespace mem {
 
         if (this->m_PendingMemory.size() > 0)
         {
-            std::cerr << "!!!  M E M O R Y   L E A K   D E T E C T E D  !!!" << std::endl;
-            std::cerr << "!!!  M E M O R Y   L E A K   D E T E C T E D  !!!" << std::endl;
-            std::cerr << "!!!  M E M O R Y   L E A K   D E T E C T E D  !!!" << std::endl;
-
+            RB_CORE_ERROR("!!!  M E M O R Y   L E A K   D E T E C T E D  !!!");
 
             for (auto i : this->m_PendingMemory)
             {
@@ -87,7 +84,7 @@ namespace mem {
 
                 if (isFreed == false)
                 {
-                    std::cerr << "\'%s\' memory user didn't release allocated memory %p!" <<  i.first << i.second << std::endl;
+                    RB_CORE_ERROR("\'%s\' memory user didn't release allocated memory %p!", i.first, i.second);
                 }
             }
         }

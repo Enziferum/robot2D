@@ -18,19 +18,35 @@ and must not be misrepresented as being the original software.
 3. This notice may not be removed or altered from any
 source distribution.
 *********************************************************************/
-#include <exception>
 
-#include <robot2D/Util/Logger.hpp>
-#include <editor/Application.hpp>
+#pragma once
+#include <functional>
+#include <vector>
+#include <robot2D/Graphics/RenderWindow.hpp>
 
-int main() {
-    logger::Log::Init();
-    editor::Application application;
+namespace editor {
+    struct ProjectDescription {
+        std::string name;
+        std::string path;
+    };
 
-    try {
-        application.run();
-    }
-    catch(const std::exception& exception) {
-        RB_EDITOR_CRITICAL(exception.what());
-    }
+    using ProcessFunction = std::function<void(std::string)>;
+
+    class ProjectCreator final {
+    public:
+        ProjectCreator(robot2D::RenderWindow& window);
+        ~ProjectCreator() = default;
+
+        void setup(ProcessFunction&& createFunction, ProcessFunction&& deleteFunction);
+        void render();
+    private:
+        void createProject();
+        void deleteProject(const unsigned& index);
+    private:
+        robot2D::RenderWindow& m_window;
+        std::vector<ProjectDescription> m_descriptions;
+
+        ProcessFunction m_createFunction;
+        ProcessFunction m_deleteFunction;
+    };
 }

@@ -75,10 +75,13 @@ namespace robot2D {
         }
 
         void OpenGLRender::initOpenGL() {
-            LOG_INFO_E("OpenGL Info: \n");
-            LOG_INFO("  Vendor: % \n", glGetString(GL_VENDOR));
-            LOG_INFO("  Renderer: % \n", glGetString(GL_RENDERER));
-            LOG_INFO("  Version: % \n", glGetString(GL_VERSION));
+#ifdef ROBOT2D_WINDOWS
+            RB_CORE_INFO("{0}", __FUNCTION__ );
+#endif
+            RB_CORE_INFO("OpenGL Info:");
+            RB_CORE_INFO("Vendor: {0} ", glGetString(GL_VENDOR));
+            RB_CORE_INFO("Renderer: {0}", glGetString(GL_RENDERER));
+            RB_CORE_INFO("Version: {0}", glGetString(GL_VERSION));
 
             glEnable(GL_BLEND); // blending function
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);

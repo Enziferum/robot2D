@@ -51,12 +51,17 @@ namespace robot2D {
             bool isMousePressed(const Mouse& button)override;
             bool isKeyboardPressed(const Key& key)override;
 
-            void setIcon(std::vector<robot2D::Texture>& ) override;
+            void setSize(const robot2D::vec2u& size) override;
 
+            void setIcon(std::vector<robot2D::Texture>& ) override;
             void setDrapDropCallback(DrapDropCallback &&callback) override;
 
             void setMouseCursorVisible(const bool& flag) override;
             void setCursor(const Cursor& cursor)override;
+
+            robot2D::vec2u getMonitorSize() const override;
+            void setPosition(const robot2D::vec2u& position) override;
+            robot2D::vec2u getPosition() const override;
         private:
             void setup();
             void setup_callbacks();

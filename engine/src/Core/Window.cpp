@@ -127,5 +127,29 @@ namespace robot2D {
         m_windowImpl -> setCursor(cursor);
     }
 
+    robot2D::vec2u Window::getMonitorSize() const {
+        if(!m_windowImpl) {
+            return {};
+        }
+        return m_windowImpl -> getMonitorSize();
+    }
+
+    void Window::setPosition(const vec2u& position) {
+        if(!m_windowImpl)
+            return;
+        m_windowImpl -> setPosition(position);
+    }
+
+    robot2D::vec2u Window::getPosition() const {
+        if(!m_windowImpl) {
+            return {};
+        }
+        return m_windowImpl -> getPosition();
+    }
+
+    void Window::setSize(const vec2u& size) {
+        m_win_size = size;
+        m_windowImpl -> setSize(size);
+    }
 
 }
