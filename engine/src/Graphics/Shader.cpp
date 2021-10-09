@@ -50,7 +50,7 @@ namespace robot2D{
             std::string shaderCode;
             std::tie(ok, shaderCode) = loadFromFile(path);
             if (!ok) {
-                LOG_ERROR("ERROR::SHADER::LOAD_FAILED % \n", infoLog)
+                RB_CORE_ERROR("ERROR::SHADER::LOAD_FAILED {0} \n", infoLog);
                 return -1;
             }
             text = shaderCode.c_str();
@@ -71,7 +71,7 @@ namespace robot2D{
         glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
         if (!success) {
             glGetShaderInfoLog(shader, 512, NULL, infoLog);
-            LOG_ERROR("ERROR::SHADER::COMPILATION_FAILED %\n", infoLog)
+            RB_CORE_ERROR("ERROR::SHADER::COMPILATION_FAILED {0}\n", infoLog);
         }
 
         return shader;
@@ -85,7 +85,7 @@ namespace robot2D{
         glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
         if (!success) {
             glGetProgramInfoLog(shaderProgram, 512, nullptr, infoLog);
-            LOG_ERROR("ERROR::SHADER::PROGRAM::LINKING_FAILED % \n", infoLog)
+            RB_CORE_ERROR("ERROR::SHADER::PROGRAM::LINKING_FAILED {0} \n", infoLog);
         }
         glDeleteShader(shader);
 
@@ -99,8 +99,6 @@ namespace robot2D{
 
     void ShaderHandler::set_parameter(const char* name, const int& value) const{
         glUniform1i(glGetUniformLocation(shaderProgram, name), value);
-
-       // glUniform1f(glGetUniformLocation(shaderProgram, name), value);
     }
 
     void ShaderHandler::set_parameter(const char* name, const float& value) const{

@@ -43,7 +43,10 @@ namespace editor {
     m_messageBus{messageBus},
     m_activeScene{ nullptr }, m_frameBuffer{nullptr}, m_ViewportSize{} {}
 
+
     void Editor::setup() {
+
+        auto windowSize = m_window.getSize();
         const std::string texturesPath = "res/textures/";
         std::unordered_map<TextureID, std::string> texturePaths = {
                 {TextureID::Logo, "logo.png"},
@@ -52,7 +55,7 @@ namespace editor {
         for(auto& it: texturePaths) {
             auto fullPath = texturesPath + it.second;
             if(!m_textures.loadFromFile(it.first, fullPath)) {
-                std::runtime_error("Can't load Texture");
+                throw std::runtime_error("Can't load Texture");
             }
         }
 
@@ -61,11 +64,11 @@ namespace editor {
         auto& assetsPanel = m_panelManager.addPanel<AssetsPanel>();
 
         if(!createScene()) {
-            LOG_ERROR_E("Can't create Scene on Init")
+            RB_EDITOR_ERROR("Can't create Scene on Init");
         }
 
         robot2D::FrameBufferSpecification frameBufferSpecification;
-        auto windowSize = m_window.getSize();
+
 
         frameBufferSpecification.size = {windowSize.x, windowSize.y};
         m_frameBuffer = robot2D::FrameBuffer::Create(frameBufferSpecification);
@@ -253,7 +256,7 @@ namespace editor {
             {
                 const wchar_t* path = (const wchar_t*)payload->Data;
                 std::filesystem::path scenePath = std::filesystem::path("assets") / path;
-                LOG_INFO("PATH %", scenePath.string().c_str())
+                RB_EDITOR_INFO("PATH {0}", scenePath.string().c_str());
                 openScene(scenePath.string());
             }
             ImGui::EndDragDropTarget();
@@ -333,6 +336,32 @@ namespace editor {
         scenePanel.setActiveScene(std::move(m_activeScene));
         m_sceneClearColor = defaultBackGround;
         return true;
+    }
+
+    namespace fs = std::filesystem;
+
+    void Editor::createProject(const std::string& path) {
+        setup();
+
+        fs::path dirPath(path);
+        dirPath += fs::path("assets");
+        if(!fs::create_directory(dirPath)) {
+            // error
+        }
+        dirPath += fs::path("scenes");
+        if(!fs::create_directory(dirPath)) {
+            // error
+        }
+        dirPath /= "scenes";
+        dirPath += fs::path("textures");
+        if(!fs::create_directory(dirPath)) {
+            // error
+        }
+        createScene();
+    }
+
+    void Editor::deleteProject(const std::string &path) {
+
     }
 
 }

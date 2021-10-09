@@ -22,16 +22,15 @@ source distribution.
 
 #include <robot2D/Util/Logger.hpp>
 #include <editor/Application.hpp>
-#include <editor/Logger.hpp>
 
 int main() {
+    logger::Log::Init();
     editor::Application application;
-    robot2D::Log::Init();
 
     try {
         application.run();
     }
     catch(const std::exception& exception) {
-        LOG_ERROR_E(exception.what())
+        RB_EDITOR_CRITICAL(exception.what());
     }
 }

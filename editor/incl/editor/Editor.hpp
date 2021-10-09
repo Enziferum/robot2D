@@ -51,6 +51,8 @@ namespace editor {
         void update(float dt);
         void render();
 
+        void createProject(const std::string& path);
+        void deleteProject(const std::string& path);
     private:
         void imguiRender();
         void mainMenubar();
@@ -58,6 +60,8 @@ namespace editor {
         bool createScene();
         bool openScene(const std::string& path);
         bool saveScene(const std::string& path);
+
+
     private:
         enum class State {
             Edit,

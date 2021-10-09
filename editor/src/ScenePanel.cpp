@@ -223,7 +223,6 @@ namespace editor {
             tag = std::string(buffer);
             if(tag.empty())
                 tag = "Untitled Entity";
-            LOG_INFO("TAG := % \n", tag.c_str())
         }
 
         ImGui::SameLine();
@@ -237,7 +236,10 @@ namespace editor {
         {
             if (ImGui::MenuItem("Camera"))
             {
-                //TODO CameraComponent
+                if (!m_selectedEntity.hasComponent<CameraComponent>())
+                    m_selectedEntity.addComponent<CameraComponent>();
+                else
+                    RB_EDITOR_WARN("This entity already has the Camera Component!");
                 ImGui::CloseCurrentPopup();
             }
 
@@ -246,7 +248,7 @@ namespace editor {
                 if (!m_selectedEntity.hasComponent<SpriteComponent>())
                     m_selectedEntity.addComponent<SpriteComponent>();
                 else
-                    LOG_ERROR_E("This entity already has the Sprite Renderer Component!");
+                    RB_EDITOR_WARN("This entity already has the Sprite Renderer Component!");
                 ImGui::CloseCurrentPopup();
             }
 
@@ -284,7 +286,7 @@ namespace editor {
                 {
                     const wchar_t* path = (const wchar_t*)payload->Data;
                     std::filesystem::path texturePath = std::filesystem::path("assets") / path;
-                    LOG_INFO("PATH %", texturePath.string().c_str())
+                    RB_EDITOR_INFO("PATH {0}", texturePath.string().c_str());
                     if(!texture.loadFromFile(texturePath.string()))
                         return;
                     component.setTexture(texture);

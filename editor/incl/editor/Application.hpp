@@ -25,6 +25,7 @@ source distribution.
 #include <robot2D/Core/MessageBus.hpp>
 #include "Wrapper.hpp"
 #include "Editor.hpp"
+#include "ProjectCreator.hpp"
 
 namespace editor {
     class Application {
@@ -40,11 +41,22 @@ namespace editor {
         void update(float dt);
         void render();
 
+        void deleteProject(std::string path);
+        void createProject(std::string path);
     private:
+        robot2D::vec2u defaultWindowSize;
         robot2D::RenderWindow m_window;
         robot2D::MessageBus m_messageBus;
         ImGui::Wrapper m_guiWrapper;
         Editor m_editor;
+
+        enum class State {
+            CreateProject,
+            Editor
+        };
+
+        State m_state;
+        ProjectCreator m_projectCreator;
     };
 }
 

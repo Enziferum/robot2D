@@ -57,10 +57,16 @@ namespace robot2D {
             virtual bool isMousePressed(const Mouse& button) = 0;
             virtual bool isKeyboardPressed(const Key& key) = 0;
 
+            virtual void setSize(const robot2D::vec2u& size) = 0;
+
             virtual void setIcon(std::vector<robot2D::Texture>& icons) = 0;
             virtual void setDrapDropCallback(DrapDropCallback&& callback) = 0;
             virtual void setMouseCursorVisible(const bool& flag) = 0;
             virtual void setCursor(const Cursor& cursor) = 0;
+
+            virtual robot2D::vec2u getMonitorSize() const = 0;
+            virtual void setPosition(const robot2D::vec2u& position) = 0;
+            virtual robot2D::vec2u getPosition() const = 0;
         };
     }
 }
