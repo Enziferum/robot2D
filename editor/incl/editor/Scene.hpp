@@ -61,7 +61,5 @@ namespace editor {
         robot2D::ecs::EntityList m_sceneEntities;
         robot2D::MessageBus& m_messageBus;
         std::string m_path;
-
-
     };
 }

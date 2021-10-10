@@ -138,7 +138,7 @@ namespace editor {
         ImGuiIO& io = ImGui::GetIO();
         auto boldFont = io.Fonts->Fonts[0];
         ImGui::PushFont(boldFont);
-        ImGui::Text(m_scene -> getPath().c_str());
+        ImGui::Text("Scene");
         ImGui::PopFont();
 
         if (ImGui::IsMouseDown(0) && ImGui::IsWindowHovered())

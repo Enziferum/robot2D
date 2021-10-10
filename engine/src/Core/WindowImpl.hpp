@@ -59,6 +59,7 @@ namespace robot2D {
             virtual void setSize(const robot2D::vec2u& size) = 0;
 
             virtual void setIcon(std::vector<robot2D::Texture>& icons) = 0;
+            virtual void setIcon(robot2D::Texture&& icon) = 0;
             virtual void setMouseCursorVisible(const bool& flag) = 0;
             virtual void setCursor(const Cursor& cursor) = 0;
 

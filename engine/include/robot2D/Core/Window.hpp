@@ -80,7 +80,7 @@ namespace robot2D {
 
         /// \brief allow you to set big/small icons to your app
         void setIcon(std::vector<Texture>& icons);
-
+        void setIcon(robot2D::Texture&& icon);
 
         WindowHandle getRaw() const;
 

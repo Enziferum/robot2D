@@ -37,6 +37,13 @@ namespace editor {
     // develop only flag
     constexpr bool useGUI = true;
     const robot2D::Color defaultBackGround = robot2D::Color::fromGL(0.1, 0.1, 0.1, 1);
+    namespace fs = std::filesystem;
+    bool m_leftCtrlPressed = false;
+    // to be part of something
+    static bool opt_fullscreen = true;
+    static bool opt_padding = true;
+    static bool dockspace_open = false;
+    static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
 
     Editor::Editor(robot2D::RenderWindow& window, robot2D::MessageBus& messageBus): m_state(State::Edit),
     m_window{window},
@@ -46,7 +53,6 @@ namespace editor {
 
 
     void Editor::setup() {
-
         auto windowSize = m_window.getSize();
         const std::string texturesPath = "res/textures/";
         std::unordered_map<TextureID, std::string> texturePaths = {
@@ -69,18 +75,14 @@ namespace editor {
         }
 
         robot2D::FrameBufferSpecification frameBufferSpecification;
-
-
         frameBufferSpecification.size = {windowSize.x, windowSize.y};
+
         m_frameBuffer = robot2D::FrameBuffer::Create(frameBufferSpecification);
         m_window.setView({{0, 0}, {windowSize.x, windowSize.y}});
         m_camera.resize({0, 0, windowSize.x, windowSize.y});
 
-
-        //applyStyle(EditorStyle::GoldBlack);
+        applyStyle(EditorStyle::GoldBlack);
     }
-
-    bool m_leftCtrlPressed = false;
 
     void Editor::handleEvents(const robot2D::Event& event) {
         if(event.type == robot2D::Event::KeyPressed) {
@@ -153,14 +155,7 @@ namespace editor {
         }
     }
 
-    // to be part of something
-    static bool opt_fullscreen = true;
-    static bool opt_padding = true;
-    static bool dockspace_open = false;
-    static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
-
     void Editor::imguiRender() {
-
 
         ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
         if (opt_fullscreen)
@@ -267,27 +262,6 @@ namespace editor {
         /// Viewport Panel ///
     }
 
-    bool Editor::openScene(const std::string& path) {
-        auto newScene = std::make_shared<Scene>(m_messageBus);
-        newScene -> setPath(path);
-        if(newScene == nullptr)
-            return false;
-        m_activeScene.reset();
-        m_activeScene = newScene;
-        SceneSerializer serializer(m_activeScene);
-        bool res = serializer.deserialize(path);
-        if(!res)
-            return false;
-        auto& scenePanel = m_panelManager.getPanel<ScenePanel>();
-        scenePanel.setActiveScene(std::move(m_activeScene));
-        return res;
-    }
-
-    bool Editor::saveScene(const std::string& path) {
-        SceneSerializer serializer(m_activeScene);
-        return serializer.serialize(path);
-    }
-
     void Editor::mainMenubar() {
         if (ImGui::BeginMenuBar())
         {
@@ -326,6 +300,27 @@ namespace editor {
         }
     }
 
+    bool Editor::openScene(const std::string& path) {
+        auto newScene = std::make_shared<Scene>(m_messageBus);
+        newScene -> setPath(path);
+        if(newScene == nullptr)
+            return false;
+        m_activeScene.reset();
+        m_activeScene = newScene;
+        SceneSerializer serializer(m_activeScene);
+        bool res = serializer.deserialize(path);
+        if(!res)
+            return false;
+        auto& scenePanel = m_panelManager.getPanel<ScenePanel>();
+        scenePanel.setActiveScene(std::move(m_activeScene));
+        return res;
+    }
+
+    bool Editor::saveScene(const std::string& path) {
+        SceneSerializer serializer(m_activeScene);
+        return serializer.serialize(path);
+    }
+
     bool Editor::createScene() {
         if(m_activeScene != nullptr) {
             m_activeScene.reset();
@@ -337,9 +332,6 @@ namespace editor {
         m_sceneClearColor = defaultBackGround;
         return true;
     }
-
-    namespace fs = std::filesystem;
-
 
     void Editor::createProject(Project::Ptr project) {
         m_currentProject = project;
@@ -355,7 +347,6 @@ namespace editor {
         dirPath.append("assets");
         assetsPanel.setAssetsPath(dirPath.string());
     }
-
 
     void Editor::loadProject(Project::Ptr project) {
         m_currentProject = project;

@@ -144,4 +144,8 @@ namespace robot2D {
         m_windowImpl -> setSize(size);
     }
 
+    void Window::setIcon(Texture&& icon) {
+        m_windowImpl -> setIcon(std::move(icon));
+    }
+
 }

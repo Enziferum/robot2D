@@ -18,42 +18,21 @@ and must not be misrepresented as being the original software.
 3. This notice may not be removed or altered from any
 source distribution.
 *********************************************************************/
-
 #pragma once
-#include <functional>
-#include <vector>
-#include <robot2D/Graphics/RenderWindow.hpp>
 
-#include "ProjectDescription.hpp"
-#include "EditorCache.hpp"
+#include <unordered_map>
+#include <vector>
+#include <memory>
 
 namespace editor {
-
-    using ProcessFunction = std::function<void(ProjectDescription)>;
-
-    class ProjectInspector final {
+    class SceneManager {
     public:
-        enum class CallbackType {
-            Create, Load, Delete
-        };
-    public:
-        ProjectInspector(robot2D::RenderWindow& window, EditorCache& editorCache);
-        ~ProjectInspector() = default;
+        SceneManager();
+        ~SceneManager() = default;
 
-        void addCallback(const CallbackType& callbackType, ProcessFunction&& function);
-        void setup();
-        void render();
+        bool add();
+        bool load();
+        bool remove();
     private:
-        void createProject();
-        void loadProject(const unsigned& index);
-        void deleteProject(const unsigned& index);
-    private:
-        robot2D::RenderWindow& m_window;
-        EditorCache& m_editorCache;
-        std::vector<ProjectDescription> m_descriptions;
-
-        ProcessFunction m_createFunction;
-        ProcessFunction m_deleteFunction;
-        ProcessFunction m_loadFunction;
     };
 }

@@ -85,7 +85,8 @@ namespace editor {
     }
 
     bool ProjectManager::remove(const ProjectDescription& description) {
-
+        //todo move smart way of deleting
+        if(!std::filesystem::remove_all(std::filesystem::path(description.path))){}
         return true;
     }
 
@@ -93,7 +94,7 @@ namespace editor {
         return m_currentProject;
     }
 
-    const ProjectManagerError &ProjectManager::getError() const {
+    const ProjectManagerError& ProjectManager::getError() const {
         return m_error;
     }
 }
