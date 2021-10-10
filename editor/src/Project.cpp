@@ -19,30 +19,49 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include <filesystem>
-
-#include <robot2D/Graphics/Texture.hpp>
-#include <robot2D/Util/ResourceHandler.hpp>
-
-#include "IPanel.hpp"
+#pragma once
+#include <cassert>
+#include <editor/Project.hpp>
 
 namespace editor {
 
-    enum class ResourceIconType {
-        File,
-        Scene,
-        Directory
-    };
+    Project::Project():
+    m_name{"Untitled Project"}, m_path{""}, m_startSceneName("") {}
 
-    class AssetsPanel: public IPanel {
-    public:
-        AssetsPanel();
-        ~AssetsPanel() override = default;
 
-        void setAssetsPath(const std::string& path);
-        void render() override;
-    private:
-        std::filesystem::path m_currentPath;
-        robot2D::ResourceHandler<robot2D::Texture, ResourceIconType> m_assetsIcons;
-    };
+    void Project::setName(const std::string& name) {
+        if(name.empty())
+            return;
+        m_name = name;
+    }
+
+    void Project::setPath(const std::string& path) {
+        if(path.empty())
+            return;
+        m_path = path;
+    }
+
+    const std::string& Project::getName() {
+        return m_name;
+    }
+
+    const std::string& Project::getPath() {
+        return m_path;
+    }
+
+    void Project::setEditorVersion(const std::string& version) {
+        m_editorVersion = version;
+    }
+
+    void Project::setStartScene(const std::string& name) {
+        m_startSceneName = name;
+    }
+
+    const std::string& Project::getStartScene() {
+        return m_startSceneName;
+    }
+
+    const std::string& Project::getEditorVersion() {
+        return m_editorVersion;
+    }
 }

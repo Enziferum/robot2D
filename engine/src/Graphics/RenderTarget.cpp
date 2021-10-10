@@ -44,6 +44,10 @@ namespace robot2D {
         m_render -> setSize(m_size);
     }
 
+    void RenderTarget::clear(const Color& color) {
+        m_render -> clear(color);
+    }
+
     void RenderTarget::draw(const Drawable& drawable, const RenderStates& states) {
         drawable.draw(*this, states);
     }

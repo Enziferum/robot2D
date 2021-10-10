@@ -30,6 +30,8 @@ source distribution.
 #include "View.hpp"
 #include "Vertex.hpp"
 #include "RenderStats.hpp"
+#include "Color.hpp"
+#include "RenderContext.hpp"
 
 namespace robot2D {
     namespace priv {
@@ -46,6 +48,8 @@ namespace robot2D {
         virtual const View& getView();
         virtual const View& getDefaultView();
 
+        //virtual void init(const RenderContext& renderContext);
+        void clear(const Color& color = Color::Black);
 
         virtual void draw(const RenderStates& states);
         virtual void draw(const VertexData& data, const RenderStates& states);

@@ -38,6 +38,8 @@ namespace robot2D {
             OpenGLRender();
             ~OpenGLRender();
 
+            void clear(const Color &color = Color::Black) override;
+
             void render(const RenderStates& states) override;
             void render(const VertexData& data, const RenderStates& states) const override;
 

@@ -41,7 +41,8 @@ namespace editor {
     Editor::Editor(robot2D::RenderWindow& window, robot2D::MessageBus& messageBus): m_state(State::Edit),
     m_window{window},
     m_messageBus{messageBus},
-    m_activeScene{ nullptr }, m_frameBuffer{nullptr}, m_ViewportSize{} {}
+    m_activeScene{ nullptr }, m_frameBuffer{nullptr}, m_ViewportSize{},
+    m_currentProject{nullptr} {}
 
 
     void Editor::setup() {
@@ -132,7 +133,6 @@ namespace editor {
 
             auto& sprite = it.getComponent<SpriteComponent>();
             auto transform = it.getComponent<TransformComponent>();
-
 
             robot2D::RenderStates renderStates;
             if(sprite.getTexturePointer() == nullptr) {
@@ -300,7 +300,7 @@ namespace editor {
 
                 if(ImGui::MenuItem("Open", "Ctrl+O")) {
                     std::string openPath = "assets/scenes/demoScene.robot2D";
-                    const char* patterns[1] = {"*.robot2D"};
+                    const char* patterns[1] = {"*.scene"};
                     char *path = tinyfd_openFileDialog("Load Scene", nullptr,
                                                        1, patterns, "Scene", 0);
                     if (path != nullptr) {
@@ -311,7 +311,7 @@ namespace editor {
 
                 if(ImGui::MenuItem("Save", "Ctrl+Shift+S")) {
                     std::string savePath = "assets/scenes/demoScene.robot2D";
-                    const char* patterns[1] = {"*.robot2D"};
+                    const char* patterns[1] = {"*.scene"};
                     char* path = tinyfd_saveFileDialog("Load Scene", nullptr,
                                                        1, patterns, "Scene");
                     if(path != nullptr) {
@@ -340,28 +340,56 @@ namespace editor {
 
     namespace fs = std::filesystem;
 
-    void Editor::createProject(const std::string& path) {
+
+    void Editor::createProject(Project::Ptr project) {
+        m_currentProject = project;
         setup();
 
+        auto path = project->getPath();
         fs::path dirPath(path);
-        dirPath += fs::path("assets");
-        if(!fs::create_directory(dirPath)) {
-            // error
+        dirPath += fs::path("/assets");
+
+        if(!fs::create_directories(dirPath)) {
+            RB_EDITOR_ERROR("Can't create folder {0}", dirPath.string());
         }
-        dirPath += fs::path("scenes");
-        if(!fs::create_directory(dirPath)) {
-            // error
+        dirPath += fs::path("/scenes");
+        if(!fs::create_directories(dirPath)) {
+            RB_EDITOR_ERROR("Can't create folder {0}", dirPath.string());
         }
-        dirPath /= "scenes";
-        dirPath += fs::path("textures");
-        if(!fs::create_directory(dirPath)) {
-            // error
+        dirPath = fs::path(path);
+        dirPath += fs::path("/assets/textures");
+        if(!fs::create_directories(dirPath)) {
+            RB_EDITOR_ERROR("Can't create folder {0}", dirPath.string());
         }
-        createScene();
+
+        if(!createScene()) {
+            RB_EDITOR_ERROR("Can't create Scene at Project creating");
+        }
+        auto& assetsPanel = m_panelManager.getPanel<AssetsPanel>();
+        dirPath = fs::path(path);
+        dirPath.append("assets");
+        assetsPanel.setAssetsPath(dirPath.string());
     }
 
-    void Editor::deleteProject(const std::string &path) {
 
+    void Editor::loadProject(Project::Ptr project) {
+        m_currentProject = project;
+        setup();
+
+        auto path = project->getPath();
+        fs::path dirPath(path);
+        auto localPath = std::filesystem::path("assets/scenes/" + project->getStartScene());
+        dirPath.append(localPath.string());
+        openScene(dirPath.string());
+        auto& assetsPanel = m_panelManager.getPanel<AssetsPanel>();
+        dirPath = fs::path(path);
+        dirPath.append("assets");
+        assetsPanel.setAssetsPath(dirPath.string());
     }
+
+    void Editor::deleteProject(const std::string& path) {
+        // TODO delete folders
+    }
+
 
 }

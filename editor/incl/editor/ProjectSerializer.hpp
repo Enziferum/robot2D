@@ -19,30 +19,21 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include <filesystem>
+#pragma once
 
-#include <robot2D/Graphics/Texture.hpp>
-#include <robot2D/Util/ResourceHandler.hpp>
-
-#include "IPanel.hpp"
+#include <string>
+#include <memory>
 
 namespace editor {
-
-    enum class ResourceIconType {
-        File,
-        Scene,
-        Directory
-    };
-
-    class AssetsPanel: public IPanel {
+    class Project;
+    class ProjectSerializer {
     public:
-        AssetsPanel();
-        ~AssetsPanel() override = default;
+        ProjectSerializer(std::shared_ptr<Project> project);
+        ~ProjectSerializer() = default;
 
-        void setAssetsPath(const std::string& path);
-        void render() override;
+        bool serialize(const std::string& path);
+        bool deserialize(const std::string& path);
     private:
-        std::filesystem::path m_currentPath;
-        robot2D::ResourceHandler<robot2D::Texture, ResourceIconType> m_assetsIcons;
+        std::shared_ptr<Project> m_project;
     };
 }

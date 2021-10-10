@@ -23,7 +23,6 @@ source distribution.
 #include <queue>
 #include <string>
 #include <vector>
-#include <functional>
 #include <memory>
 
 #include "robot2D/Graphics/Color.hpp"
@@ -48,8 +47,6 @@ namespace robot2D {
      */
     class ROBOT2D_EXPORT_API Window {
     public:
-        using DrapDropCallback = std::function<void(std::vector<std::string>)>;
-    public:
         Window();
         Window(const vec2u& size,
                const std::string& name, const WindowContext& windowContext = robot2D::WindowContext::Default);
@@ -70,8 +67,6 @@ namespace robot2D {
         ///
         void close();
 
-        void clear(const Color& color = Color::Black);
-
         ///
         /// \brief make swap buffers in render context
         ///
@@ -86,11 +81,6 @@ namespace robot2D {
         /// \brief allow you to set big/small icons to your app
         void setIcon(std::vector<Texture>& icons);
 
-        void setDrapDropCallback(DrapDropCallback&& callback);
-
-        static bool isMousePressed(const Mouse& button);
-
-        static bool isKeyboardPressed(const Key& key);
 
         WindowHandle getRaw() const;
 
@@ -105,6 +95,10 @@ namespace robot2D {
         robot2D::vec2u getPosition() const;
 
         // Window manipulate options //
+
+
+        static bool isMousePressed(const Mouse& button);
+        static bool isKeyboardPressed(const Key& key);
     protected:
         virtual void onResize(const int& w, const int& h);
     private:

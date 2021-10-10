@@ -193,7 +193,7 @@ namespace logger {
 #define LOG_INFO_E(msg, ...) logger::log(logger::logType::info, msg, #__VA_ARGS__);
 
 // Core log macros
-#define RB_CORE_TRACE(...)    ::logger:Log::getCoreLogger()->trace(__VA_ARGS__)
+#define RB_CORE_TRACE(...)    ::logger::Log::getCoreLogger()->trace(__VA_ARGS__)
 #define RB_CORE_INFO(...)     ::logger::Log::getCoreLogger()->info(__VA_ARGS__)
 #define RB_CORE_WARN(...)     ::logger::Log::getCoreLogger()->warn(__VA_ARGS__)
 #define RB_CORE_ERROR(...)    ::logger::Log::getCoreLogger()->error(__VA_ARGS__)

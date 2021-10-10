@@ -49,6 +49,7 @@ namespace robot2D {
             virtual void afterRender() const = 0;
             virtual void flushRender() const = 0;
             virtual const RenderStats& getStats() const = 0;
+            virtual void clear(const Color& color = Color::Black) = 0;
         protected:
             vec2u m_size;
         };

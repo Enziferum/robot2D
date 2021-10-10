@@ -19,30 +19,11 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include <filesystem>
+#include <robot2D/Graphics/RenderContext.hpp>
 
-#include <robot2D/Graphics/Texture.hpp>
-#include <robot2D/Util/ResourceHandler.hpp>
+namespace robot2D {
+    RenderContext::RenderContext(const bool& blending, const bool& depth, const bool& logs):
+    useBlending(blending), useDepthTest(depth), useLogs(logs) {}
 
-#include "IPanel.hpp"
-
-namespace editor {
-
-    enum class ResourceIconType {
-        File,
-        Scene,
-        Directory
-    };
-
-    class AssetsPanel: public IPanel {
-    public:
-        AssetsPanel();
-        ~AssetsPanel() override = default;
-
-        void setAssetsPath(const std::string& path);
-        void render() override;
-    private:
-        std::filesystem::path m_currentPath;
-        robot2D::ResourceHandler<robot2D::Texture, ResourceIconType> m_assetsIcons;
-    };
+    const RenderContext RenderContext::Default = RenderContext{};
 }

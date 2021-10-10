@@ -21,6 +21,8 @@ source distribution.
 
 #pragma once
 
+#include <vector>
+#include <string>
 #include <robot2D/Config.hpp>
 #include "Mouse.hpp"
 #include "Keyboard.hpp"
@@ -43,6 +45,7 @@ namespace robot2D {
             KeyPressed,
             KeyReleased,
             TextEntered,
+            DragDrop,
             Count
         };
 
@@ -81,6 +84,7 @@ namespace robot2D {
         struct TextEnterEvent {
             unsigned int symbol;
         };
+
 
         union {
             SizeEvent size;

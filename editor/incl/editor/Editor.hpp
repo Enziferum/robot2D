@@ -29,6 +29,7 @@ source distribution.
 #include "PanelManager.hpp"
 #include "Scene.hpp"
 #include "SceneCamera.hpp"
+#include "Project.hpp"
 
 namespace editor {
 
@@ -51,7 +52,8 @@ namespace editor {
         void update(float dt);
         void render();
 
-        void createProject(const std::string& path);
+        void loadProject(Project::Ptr project);
+        void createProject(Project::Ptr project);
         void deleteProject(const std::string& path);
     private:
         void imguiRender();
@@ -60,7 +62,6 @@ namespace editor {
         bool createScene();
         bool openScene(const std::string& path);
         bool saveScene(const std::string& path);
-
 
     private:
         enum class State {
@@ -81,6 +82,7 @@ namespace editor {
         robot2D::vec2u m_ViewportSize;
 
         robot2D::Color m_sceneClearColor;
+        Project::Ptr m_currentProject;
 
         float m_dt = 0.F;
     };

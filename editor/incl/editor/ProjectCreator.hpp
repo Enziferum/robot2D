@@ -30,17 +30,21 @@ namespace editor {
         std::string path;
     };
 
-    using ProcessFunction = std::function<void(std::string)>;
+    using ProcessFunction = std::function<void(ProjectDescription)>;
 
     class ProjectCreator final {
     public:
         ProjectCreator(robot2D::RenderWindow& window);
         ~ProjectCreator() = default;
 
-        void setup(ProcessFunction&& createFunction, ProcessFunction&& deleteFunction);
+        void setProjects(std::vector<ProjectDescription>&& desciptions);
+
+        void setup(ProcessFunction&& createFunction, ProcessFunction&& deleteFunction,
+                   ProcessFunction&& loadFunction);
         void render();
     private:
         void createProject();
+        void loadProject(const unsigned& index);
         void deleteProject(const unsigned& index);
     private:
         robot2D::RenderWindow& m_window;
@@ -48,5 +52,6 @@ namespace editor {
 
         ProcessFunction m_createFunction;
         ProcessFunction m_deleteFunction;
+        ProcessFunction m_loadFunction;
     };
 }

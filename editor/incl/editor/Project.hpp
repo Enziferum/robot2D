@@ -19,30 +19,34 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include <filesystem>
+#pragma once
 
-#include <robot2D/Graphics/Texture.hpp>
-#include <robot2D/Util/ResourceHandler.hpp>
-
-#include "IPanel.hpp"
+#include <vector>
+#include <string>
+#include <memory>
+#include "Scene.hpp"
 
 namespace editor {
-
-    enum class ResourceIconType {
-        File,
-        Scene,
-        Directory
-    };
-
-    class AssetsPanel: public IPanel {
+    class Project {
     public:
-        AssetsPanel();
-        ~AssetsPanel() override = default;
+        using Ptr = std::shared_ptr<Project>;
+    public:
+        Project();
+        ~Project() = default;
 
-        void setAssetsPath(const std::string& path);
-        void render() override;
+        void setEditorVersion(const std::string& version);
+        void setStartScene(const std::string& name);
+        void setName(const std::string& name);
+        void setPath(const std::string& path);
+
+        const std::string& getName();
+        const std::string& getPath();
+        const std::string& getStartScene();
+        const std::string& getEditorVersion();
     private:
-        std::filesystem::path m_currentPath;
-        robot2D::ResourceHandler<robot2D::Texture, ResourceIconType> m_assetsIcons;
+        std::string m_name;
+        std::string m_path;
+        std::string m_startSceneName;
+        std::string m_editorVersion;
     };
 }
