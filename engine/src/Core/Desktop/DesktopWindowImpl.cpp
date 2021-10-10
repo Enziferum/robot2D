@@ -294,6 +294,7 @@ namespace robot2D {
             if(icons.empty())
                 return;
             std::vector<GLFWimage> images;
+
             for(auto &it: icons){
                 GLFWimage img;
                 auto size = it.getSize();
@@ -303,6 +304,15 @@ namespace robot2D {
                 images.emplace_back(img);
             }
             glfwSetWindowIcon(m_window, images.size(), &images[0]);
+        }
+
+        void DesktopWindowImpl::setIcon(Texture&& icon) {
+            GLFWimage img;
+            auto size = icon.getSize();
+            img.width = size.x;
+            img.height = size.y;
+            img.pixels = icon.getPixels();
+            glfwSetWindowIcon(m_window, 1, &img);
         }
 
         bool DesktopWindowImpl::isMousePressed(const Mouse& button) {
@@ -344,6 +354,8 @@ namespace robot2D {
         void DesktopWindowImpl::setSize(const vec2u& size) {
             glfwSetWindowSize(m_window, static_cast<int>(size.x), static_cast<int>(size.y));
         }
+
+
 
     }
 }

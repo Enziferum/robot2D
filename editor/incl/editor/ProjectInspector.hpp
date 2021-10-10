@@ -33,11 +33,15 @@ namespace editor {
 
     class ProjectInspector final {
     public:
+        enum class CallbackType {
+            Create, Load, Delete
+        };
+    public:
         ProjectInspector(robot2D::RenderWindow& window, EditorCache& editorCache);
         ~ProjectInspector() = default;
 
-        void setup(ProcessFunction&& createFunction, ProcessFunction&& deleteFunction,
-                   ProcessFunction&& loadFunction);
+        void addCallback(const CallbackType& callbackType, ProcessFunction&& function);
+        void setup();
         void render();
     private:
         void createProject();

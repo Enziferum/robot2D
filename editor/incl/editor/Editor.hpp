@@ -61,28 +61,25 @@ namespace editor {
         bool createScene();
         bool openScene(const std::string& path);
         bool saveScene(const std::string& path);
-
     private:
         enum class State {
             Edit,
             Run
         };
-
+    private:
         State m_state;
 
         robot2D::RenderWindow& m_window;
         robot2D::MessageBus& m_messageBus;
         PanelManager m_panelManager;
+        Project::Ptr m_currentProject;
         Scene::Ptr m_activeScene;
+        SceneCamera m_camera;
+
         robot2D::FrameBuffer::Ptr m_frameBuffer;
         robot2D::ResourceHandler<robot2D::Texture, TextureID> m_textures;
-
-        SceneCamera m_camera;
         robot2D::vec2u m_ViewportSize;
-
         robot2D::Color m_sceneClearColor;
-        Project::Ptr m_currentProject;
-
         float m_dt = 0.F;
     };
 }

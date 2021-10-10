@@ -44,12 +44,22 @@ namespace editor {
     m_editorCache{editorCache},
     m_descriptions() {}
 
+    void ProjectInspector::addCallback(const ProjectInspector::CallbackType& callbackType,
+                                       ProcessFunction &&function) {
+        switch(callbackType) {
+            case CallbackType::Create:
+                m_createFunction = std::move(function);
+                break;
+            case CallbackType::Load:
+                m_loadFunction = std::move(function);
+                break;
+            case CallbackType::Delete:
+                m_deleteFunction = std::move(function);
+                break;
+        }
+    }
 
-    void ProjectInspector::setup(ProcessFunction&& createFunction, ProcessFunction&& deleteFunction,
-                               ProcessFunction&& loadFunction) {
-        m_createFunction = std::move(createFunction);
-        m_deleteFunction = std::move(deleteFunction);
-        m_loadFunction = std::move(loadFunction);
+    void ProjectInspector::setup() {
         m_descriptions = m_editorCache.getProjects();
     }
 
@@ -117,8 +127,10 @@ namespace editor {
             }
             ImGui::EndListBox();
         }
+
         ImGui::SameLine();
         ImGui::BeginGroup();
+
         if(ImGui::Button("Create Project", createButtonSize))
             createProject();
         if(ImGui::Checkbox("Open always", &openAlways)) {
@@ -136,7 +148,6 @@ namespace editor {
         if(path == nullptr) {
             return;
         }
-        // TODO already exists ??
         std::string creationPath(path);
         ProjectDescription description;
         description.name = "Project";

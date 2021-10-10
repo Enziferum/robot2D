@@ -36,7 +36,7 @@ namespace editor {
         float processedTime = 0.F;
         const std::string editorCachePath = "editor.cache";
         const std::string editorVersion = "0.1";
-
+        const robot2D::vec2u inspectorSize = {600, 400};
         robot2D::vec2u getCenterPoint(const robot2D::vec2u& objectSize, const robot2D::vec2u& frameSize) {
             robot2D::vec2u normalCenter = {frameSize.x / 2, frameSize.y / 2};
             robot2D::vec2u objectHalfSize = {objectSize.x / 2, objectSize.y / 2};
@@ -53,7 +53,13 @@ namespace editor {
             m_projectInspector{m_window, m_editorCache} {}
 
 
+
     void Application::setup() {
+        {
+            robot2D::Texture iconTexture;
+            iconTexture.loadFromFile("assets/textures/icon.png");
+            m_window.setIcon(std::move(iconTexture));
+        }
         m_guiWrapper.init(m_window);
 
         if(!m_editorCache.parseCache(editorCachePath)) {
@@ -65,35 +71,37 @@ namespace editor {
             }
         }
 
-        if(m_editorCache.isShowInspector()) {
+        if(m_editorCache.isShowInspector())
             m_state = State::ProjectInspector;
-        } else {
+        else
             m_state = State::Editor;
-        }
 
         if(m_state == State::ProjectInspector) {
-            /// centeraize window ///
             auto windowSize = m_window.getSize();
             auto monitorSize = m_window.getMonitorSize();
             auto centerPoint = getCenterPoint(windowSize, monitorSize);
             m_window.setPosition(centerPoint);
-            auto windowPos = m_window.getPosition();
 
             //todo setWindow not to be resizable
+            //todo subscribeLogic
 
-            m_window.setSize({600, 400});
+            m_window.setSize(inspectorSize);
             applyStyle(EditorStyle::GoldBlack);
 
-            //TODO subscribeLogic
-            m_projectInspector.setup([this](ProjectDescription project) {
-                                         createProject(project);
-                                     },
-                                     [this](ProjectDescription project) {
-                                         deleteProject(project);
-                                     },
-                                     [this](ProjectDescription project) {
-                                         loadProject(project);
-                                     });
+
+            m_projectInspector.addCallback(ProjectInspector::CallbackType::Create,
+                                           [this](ProjectDescription project) {
+                                               createProject(std::move(project));
+                                           });
+            m_projectInspector.addCallback(ProjectInspector::CallbackType::Load,
+                                           [this](ProjectDescription project) {
+                                               loadProject(std::move(project));
+                                           });
+            m_projectInspector.addCallback(ProjectInspector::CallbackType::Delete,
+                                           [this](ProjectDescription project) {
+                                               deleteProject(std::move(project));
+                                           });
+            m_projectInspector.setup();
         } else {
             const auto& projectDescription = m_editorCache.getCurrentProject();
             if(projectDescription.empty())

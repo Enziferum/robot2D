@@ -36,7 +36,7 @@ namespace editor {
         }
     }
 
-    std::string errorToString(const ProjectManagerError &error) {
+    std::string errorToString(const ProjectManagerError& error) {
         return "";
     }
 }
