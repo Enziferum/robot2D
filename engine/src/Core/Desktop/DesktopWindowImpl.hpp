@@ -54,7 +54,6 @@ namespace robot2D {
             void setSize(const robot2D::vec2u& size) override;
 
             void setIcon(std::vector<robot2D::Texture>& ) override;
-            void setDrapDropCallback(DrapDropCallback &&callback) override;
 
             void setMouseCursorVisible(const bool& flag) override;
             void setCursor(const Cursor& cursor)override;
@@ -85,7 +84,6 @@ namespace robot2D {
             std::string m_name;
             WindowContext m_context;
             bool m_cursorVisible;
-            std::function<void(std::vector<std::string>)> m_dragdrop_function;
         };
     }
 }

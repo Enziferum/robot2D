@@ -64,10 +64,6 @@ namespace robot2D {
         return false;
     }
 
-    void Window::clear(const Color& color) {
-       m_windowImpl -> clear(color);
-    }
-
     void Window::display() {
         m_windowImpl -> display();
     }
@@ -115,12 +111,8 @@ namespace robot2D {
         return m_windowImpl ->isKeyboardPressed(key);
     }
 
-    void Window::setDrapDropCallback(Window::DrapDropCallback&& callback) {
-        m_windowImpl -> setDrapDropCallback(std::move(callback));
-    }
-
     void Window::setMouseCursorVisible(const bool& flag) {
-        m_windowImpl ->setMouseCursorVisible(flag);
+        m_windowImpl -> setMouseCursorVisible(flag);
     }
 
     void Window::setCursor(const Cursor& cursor) {

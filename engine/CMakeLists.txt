@@ -33,6 +33,7 @@ set(ENGINE_SRC
         ${INCLROOT}/Graphics/Drawable.hpp
         ${INCLROOT}/Graphics/GL.hpp
         ${INCLROOT}/Graphics/Rect.hpp
+        ${INCLROOT}/Graphics/RenderContext.hpp
         ${INCLROOT}/Graphics/RenderStates.hpp
         ${INCLROOT}/Graphics/RenderTarget.hpp
         ${INCLROOT}/Graphics/RenderWindow.hpp
@@ -76,6 +77,7 @@ set(ENGINE_SRC ${ENGINE_SRC}
         ${SRCROOT}/Graphics/Color.cpp
         ${SRCROOT}/Graphics/Drawable.cpp
         ${SRCROOT}/Graphics/Font.cpp
+        ${SRCROOT}/Graphics/RenderContext.cpp
         ${SRCROOT}/Graphics/RenderStates.cpp
         ${SRCROOT}/Graphics/RenderWindow.cpp
         ${SRCROOT}/Graphics/RenderTarget.cpp

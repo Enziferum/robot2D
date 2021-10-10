@@ -284,12 +284,10 @@ namespace robot2D {
                 if(paths[it] != nullptr)
                     outputPaths.emplace_back(paths[it]);
             }
-            if(window -> m_dragdrop_function)
-                window -> m_dragdrop_function(outputPaths);
-        }
 
-        void DesktopWindowImpl::setDrapDropCallback(DrapDropCallback&& callback) {
-            m_dragdrop_function = callback;
+            Event event{};
+            event.type = Event::DragDrop;
+            //event.dragDrop.paths = outputPaths;
         }
 
         void DesktopWindowImpl::setIcon(std::vector<robot2D::Texture>& icons) {

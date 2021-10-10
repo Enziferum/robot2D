@@ -39,6 +39,7 @@ namespace editor {
         AssetsPanel();
         ~AssetsPanel() override = default;
 
+        void setAssetsPath(const std::string& path);
         void render() override;
     private:
         std::filesystem::path m_currentPath;

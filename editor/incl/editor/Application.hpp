@@ -21,11 +21,15 @@ source distribution.
 
 #pragma once
 
+#include <memory>
+#include <vector>
+
 #include <robot2D/Graphics/RenderWindow.hpp>
 #include <robot2D/Core/MessageBus.hpp>
 #include "Wrapper.hpp"
 #include "Editor.hpp"
 #include "ProjectCreator.hpp"
+#include "Project.hpp"
 
 namespace editor {
     class Application {
@@ -42,7 +46,10 @@ namespace editor {
         void render();
 
         void deleteProject(std::string path);
-        void createProject(std::string path);
+        void createProject(ProjectDescription project);
+        void loadProject(ProjectDescription project);
+
+        bool parseProjectCache();
     private:
         robot2D::vec2u defaultWindowSize;
         robot2D::RenderWindow m_window;
@@ -57,6 +64,7 @@ namespace editor {
 
         State m_state;
         ProjectCreator m_projectCreator;
+        std::vector<Project::Ptr> m_projectsCache;
     };
 }
 

@@ -40,7 +40,7 @@ namespace editor {
     };
 
     AssetsPanel::AssetsPanel(): IPanel(UniqueType(typeid(AssetsPanel))),
-    m_currentPath(assetsPath){
+    m_currentPath(assetsPath) {
         for(auto& it: iconPaths) {
             auto fullPath = iconsPath + it.second;
             if(!m_assetsIcons.loadFromFile(it.first, fullPath)) {
@@ -103,5 +103,9 @@ namespace editor {
         }
 
         ImGui::End();
+    }
+
+    void AssetsPanel::setAssetsPath(const std::string &path) {
+        m_currentPath = fs::path(path);
     }
 }

@@ -36,7 +36,6 @@ namespace robot2D {
     namespace priv {
         class WindowImpl {
         protected:
-            using DrapDropCallback = std::function<void(std::vector<std::string>)>;
             using Ptr = std::unique_ptr<WindowImpl>;
         public:
             WindowImpl();
@@ -60,7 +59,6 @@ namespace robot2D {
             virtual void setSize(const robot2D::vec2u& size) = 0;
 
             virtual void setIcon(std::vector<robot2D::Texture>& icons) = 0;
-            virtual void setDrapDropCallback(DrapDropCallback&& callback) = 0;
             virtual void setMouseCursorVisible(const bool& flag) = 0;
             virtual void setCursor(const Cursor& cursor) = 0;
 

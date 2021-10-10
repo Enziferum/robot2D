@@ -20,6 +20,8 @@ source distribution.
 *********************************************************************/
 
 #include <stdexcept>
+#include <cassert>
+
 #include <robot2D/Graphics/GL.hpp>
 #include <robot2D/Graphics/Texture.hpp>
 #include <robot2D/Graphics/Buffer.hpp>
@@ -30,7 +32,7 @@ source distribution.
 
 namespace robot2D {
     namespace priv {
-
+#define ROBOT2D_DEBUG
         const std::string vertexSource = R"(
             #version 330 core
             layout (location = 0) in vec2 position;
@@ -65,8 +67,27 @@ namespace robot2D {
         )";
 
         constexpr short quadVertexSize = 4;
-        // TODO check OpenGL Possibility
         constexpr short maxTextureSlots = 16;
+
+        void OpenGLMessageCallback(
+                unsigned source,
+                unsigned type,
+                unsigned id,
+                unsigned severity,
+                int length,
+                const char* message,
+                const void* userParam)
+        {
+            switch (severity)
+            {
+                case GL_DEBUG_SEVERITY_HIGH:         RB_CORE_CRITICAL(message); return;
+                case GL_DEBUG_SEVERITY_MEDIUM:       RB_CORE_ERROR(message); return;
+                case GL_DEBUG_SEVERITY_LOW:          RB_CORE_WARN(message); return;
+                case GL_DEBUG_SEVERITY_NOTIFICATION: RB_CORE_TRACE(message); return;
+            }
+
+            assert(false && "Unknown severity level!");
+        }
 
         OpenGLRender::OpenGLRender() {}
 
@@ -82,10 +103,16 @@ namespace robot2D {
             RB_CORE_INFO("Vendor: {0} ", glGetString(GL_VENDOR));
             RB_CORE_INFO("Renderer: {0}", glGetString(GL_RENDERER));
             RB_CORE_INFO("Version: {0}", glGetString(GL_VERSION));
+            
+#ifdef ROBOT2D_DEBUG
+            glEnable(GL_DEBUG_OUTPUT);
+            glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
+            glDebugMessageCallback(OpenGLMessageCallback, nullptr);
 
+            glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_NOTIFICATION, 0, NULL, GL_FALSE);
+#endif
             glEnable(GL_BLEND); // blending function
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-            glEnable(GL_DEPTH_TEST);
         }
 
         void OpenGLRender::init() {
@@ -174,6 +201,12 @@ namespace robot2D {
         void OpenGLRender::setView(const View& view) {
             m_view = view;
             applyCurrentView();
+        }
+
+        void OpenGLRender::clear(const Color& color) {
+            auto glColor = color.toGL();
+            glClearColor(glColor.red, glColor.green, glColor.blue, glColor.alpha);
+            glClear(GL_COLOR_BUFFER_BIT);
         }
 
         void OpenGLRender::render(const RenderStates& states) {
@@ -305,5 +338,7 @@ namespace robot2D {
         const RenderStats& OpenGLRender::getStats() const {
             return m_stats;
         }
+
+
     }
 }
