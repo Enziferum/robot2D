@@ -19,26 +19,25 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#pragma once
-
-#include <filesystem>
-#include <vector>
-#include <string>
+#include <editor/Errors.hpp>
 
 namespace editor {
-    using stringBuffer = std::vector<std::string>;
-    class FileManager {
-    public:
-        FileManager();
-        ~FileManager() = default;
 
-        stringBuffer scanDirectory(const std::string& dirPath);
-    private:
-        std::filesystem::path m_path;
-    };
-
-    namespace util {
-        namespace fs = std::filesystem;
+    std::string errorToString(const EditorCacheError& error) {
+        switch(error) {
+            case EditorCacheError::NoCacheFile:
+                return "Don't Have Cache file";
+            case EditorCacheError::EditorTagNone:
+                return "Cache file don't have tag Editor";
+            case EditorCacheError::ProjectsTagNone:
+                return "Cache file don't have tag Projects";
+            default:
+                return "Undefined Error";
+        }
     }
 
+    std::string errorToString(const ProjectManagerError &error) {
+        return "";
+    }
 }
+

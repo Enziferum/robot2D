@@ -345,28 +345,13 @@ namespace editor {
         m_currentProject = project;
         setup();
 
-        auto path = project->getPath();
-        fs::path dirPath(path);
-        dirPath += fs::path("/assets");
-
-        if(!fs::create_directories(dirPath)) {
-            RB_EDITOR_ERROR("Can't create folder {0}", dirPath.string());
-        }
-        dirPath += fs::path("/scenes");
-        if(!fs::create_directories(dirPath)) {
-            RB_EDITOR_ERROR("Can't create folder {0}", dirPath.string());
-        }
-        dirPath = fs::path(path);
-        dirPath += fs::path("/assets/textures");
-        if(!fs::create_directories(dirPath)) {
-            RB_EDITOR_ERROR("Can't create folder {0}", dirPath.string());
-        }
-
         if(!createScene()) {
             RB_EDITOR_ERROR("Can't create Scene at Project creating");
+            return;
         }
         auto& assetsPanel = m_panelManager.getPanel<AssetsPanel>();
-        dirPath = fs::path(path);
+        auto path = m_currentProject -> getPath();
+        auto dirPath = fs::path(path);
         dirPath.append("assets");
         assetsPanel.setAssetsPath(dirPath.string());
     }
@@ -380,16 +365,14 @@ namespace editor {
         fs::path dirPath(path);
         auto localPath = std::filesystem::path("assets/scenes/" + project->getStartScene());
         dirPath.append(localPath.string());
+
         openScene(dirPath.string());
+
         auto& assetsPanel = m_panelManager.getPanel<AssetsPanel>();
         dirPath = fs::path(path);
         dirPath.append("assets");
+
         assetsPanel.setAssetsPath(dirPath.string());
     }
-
-    void Editor::deleteProject(const std::string& path) {
-        // TODO delete folders
-    }
-
 
 }

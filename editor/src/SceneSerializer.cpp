@@ -69,6 +69,23 @@ namespace YAML {
 }
 
 namespace editor {
+    enum class SerializeID {
+        Scene,
+        Entities,
+        Tag,
+        Transform,
+        Sprite
+    };
+
+    std::unordered_map<SerializeID, std::string> serializeKeys = {
+            {SerializeID::Scene, "Scene"},
+            {SerializeID::Entities, "Entities"},
+            {SerializeID::Tag, "TagComponent"},
+            {SerializeID::Transform, "TransformComponent"},
+            {SerializeID::Sprite, "SpriteComponent"},
+            {SerializeID::Tag, "TransformComponent"},
+    };
+
     SceneSerializer::SceneSerializer(Scene::Ptr scene): m_scene(scene) {}
 
     YAML::Emitter& operator<<(YAML::Emitter& out, const robot2D::vec2f& value) {
@@ -139,23 +156,6 @@ namespace editor {
 
         return true;
     }
-
-    enum class SerializeID {
-        Scene,
-        Entities,
-        Tag,
-        Transform,
-        Sprite
-    };
-
-    std::unordered_map<SerializeID, std::string> serializeKeys = {
-            {SerializeID::Scene, "Scene"},
-            {SerializeID::Entities, "Entities"},
-            {SerializeID::Tag, "TagComponent"},
-            {SerializeID::Transform, "TransformComponent"},
-            {SerializeID::Sprite, "SpriteComponent"},
-            {SerializeID::Tag, "TransformComponent"},
-    };
 
     bool SceneSerializer::deserialize(const std::string& path) {
         std::ifstream ifstream(path);

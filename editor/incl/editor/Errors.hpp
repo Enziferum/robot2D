@@ -21,24 +21,20 @@ source distribution.
 
 #pragma once
 
-#include <filesystem>
-#include <vector>
 #include <string>
 
 namespace editor {
-    using stringBuffer = std::vector<std::string>;
-    class FileManager {
-    public:
-        FileManager();
-        ~FileManager() = default;
-
-        stringBuffer scanDirectory(const std::string& dirPath);
-    private:
-        std::filesystem::path m_path;
+    enum class EditorCacheError {
+        None,
+        NoCacheFile,
+        EditorTagNone,
+        ProjectsTagNone
     };
 
-    namespace util {
-        namespace fs = std::filesystem;
-    }
+    enum class ProjectManagerError {
+        None
+    };
 
+    std::string errorToString(const EditorCacheError& error);
+    std::string errorToString(const ProjectManagerError& error);
 }

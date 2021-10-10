@@ -19,26 +19,26 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#pragma once
+#include <robot2D/Graphics/Image.hpp>
 
-#include <filesystem>
-#include <vector>
-#include <string>
+namespace robot2D {
 
-namespace editor {
-    using stringBuffer = std::vector<std::string>;
-    class FileManager {
-    public:
-        FileManager();
-        ~FileManager() = default;
+    Image::Image() {}
 
-        stringBuffer scanDirectory(const std::string& dirPath);
-    private:
-        std::filesystem::path m_path;
-    };
-
-    namespace util {
-        namespace fs = std::filesystem;
+    bool Image::loadFromFile(const std::string& path) {
+        return true;
     }
 
+    const robot2D::vec2u& Image::getSize() const {
+        return m_size;
+    }
+
+    const ImageColorFormat& Image::getColorFormat() const {
+        return m_colorFormat;
+    }
+
+    const std::vector<uint8_t>& Image::getBuffer() const {
+        return m_buffer;
+    }
 }
+

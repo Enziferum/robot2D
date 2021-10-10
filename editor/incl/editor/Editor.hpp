@@ -52,9 +52,8 @@ namespace editor {
         void update(float dt);
         void render();
 
-        void loadProject(Project::Ptr project);
         void createProject(Project::Ptr project);
-        void deleteProject(const std::string& path);
+        void loadProject(Project::Ptr project);
     private:
         void imguiRender();
         void mainMenubar();

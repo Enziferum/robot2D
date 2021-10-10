@@ -20,25 +20,36 @@ source distribution.
 *********************************************************************/
 
 #pragma once
-
-#include <filesystem>
+#include <functional>
 #include <vector>
-#include <string>
+#include <robot2D/Graphics/RenderWindow.hpp>
+
+#include "ProjectDescription.hpp"
+#include "EditorCache.hpp"
 
 namespace editor {
-    using stringBuffer = std::vector<std::string>;
-    class FileManager {
+
+    using ProcessFunction = std::function<void(ProjectDescription)>;
+
+    class ProjectInspector final {
     public:
-        FileManager();
-        ~FileManager() = default;
+        ProjectInspector(robot2D::RenderWindow& window, EditorCache& editorCache);
+        ~ProjectInspector() = default;
 
-        stringBuffer scanDirectory(const std::string& dirPath);
+        void setup(ProcessFunction&& createFunction, ProcessFunction&& deleteFunction,
+                   ProcessFunction&& loadFunction);
+        void render();
     private:
-        std::filesystem::path m_path;
+        void createProject();
+        void loadProject(const unsigned& index);
+        void deleteProject(const unsigned& index);
+    private:
+        robot2D::RenderWindow& m_window;
+        EditorCache& m_editorCache;
+        std::vector<ProjectDescription> m_descriptions;
+
+        ProcessFunction m_createFunction;
+        ProcessFunction m_deleteFunction;
+        ProcessFunction m_loadFunction;
     };
-
-    namespace util {
-        namespace fs = std::filesystem;
-    }
-
 }

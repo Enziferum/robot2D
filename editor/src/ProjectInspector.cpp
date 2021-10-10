@@ -21,46 +21,50 @@ source distribution.
 
 #include <cassert>
 #include <imgui/imgui.h>
-// textCalculation options
 #include <imgui/imgui_internal.h>
 #include <tfd/tinyfiledialogs.h>
-#include <editor/ProjectCreator.hpp>
+
+#include <editor/ProjectInspector.hpp>
 
 namespace editor {
 
-    const ImVec2 createButtonSize = ImVec2(200.F, 50.F);
-
-    ProjectCreator::ProjectCreator(robot2D::RenderWindow& window): m_window{window}, m_descriptions() {}
-
-    void ProjectCreator::setProjects(std::vector<ProjectDescription>&& desciptions) {
-        m_descriptions = std::move(desciptions);
+    namespace {
+        const ImVec2 createButtonSize = ImVec2(200.F, 50.F);
+        constexpr float textOffset = 10.F;
+        constexpr unsigned colID = 0xFFFFFFFF;
+        bool isOpen = true;
+        ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoTitleBar |
+                                       ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoResize;
+        ImGuiSelectableFlags_ selectableFlags = ImGuiSelectableFlags_AllowItemOverlap;
+        int m_selectedItem = -1;
+        bool openAlways = true;
     }
 
-    void ProjectCreator::setup(ProcessFunction&& createFunction, ProcessFunction&& deleteFunction,
+    ProjectInspector::ProjectInspector(robot2D::RenderWindow& window, EditorCache& editorCache): m_window{window},
+    m_editorCache{editorCache},
+    m_descriptions() {}
+
+
+    void ProjectInspector::setup(ProcessFunction&& createFunction, ProcessFunction&& deleteFunction,
                                ProcessFunction&& loadFunction) {
         m_createFunction = std::move(createFunction);
         m_deleteFunction = std::move(deleteFunction);
         m_loadFunction = std::move(loadFunction);
+        m_descriptions = m_editorCache.getProjects();
     }
 
-    void ProjectCreator::render() {
-        static bool isOpen = true;
-        ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoTitleBar |
-                ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoResize;
+    void ProjectInspector::render() {
+        auto font = ImGui::GetFont();
         auto windowSize = m_window.getSize();
 
         ImGui::SetNextWindowSize(ImVec2(windowSize.x, windowSize.y));
-        ImGui::Begin("ProjectCreator", &isOpen, windowFlags);
+        ImGui::Begin("ProjectInspector", &isOpen, windowFlags);
         ImGui::SetWindowPos(ImVec2(0.F, 0.F));
 
-        static const float textOffset = 10.F;
         static const float fontSize = ImGui::GetFontSize();
 
-        int m_selectedItem = -1;
         auto halfWidth = windowSize.x / 2;
-        auto font = ImGui::GetFont();
         auto height = ImGui::GetContentRegionAvail().y;
-        ImGuiSelectableFlags_ selectableFlags = ImGuiSelectableFlags_AllowItemOverlap;
 
         if (ImGui::BeginListBox("##label", ImVec2(halfWidth, height)))
         {
@@ -87,7 +91,6 @@ namespace editor {
                 }
 
 
-
                 if(ImGui::BeginPopup(itemid.c_str())) {
                     if(ImGui::MenuItem("Load")) {
                         loadProject(it);
@@ -101,10 +104,10 @@ namespace editor {
                 }
 
                 auto drawList = ImGui::GetWindowDrawList();
-                drawList -> AddText(font, fontSize, startPos, 0xFFFFFFFF,
+                drawList -> AddText(font, fontSize, startPos, colID,
                                     description.name.c_str(), nullptr, halfWidth);
                 startPos.y += nameTextSize.y;
-                drawList -> AddText(font, fontSize, ImVec2(startPos.x, startPos.y + textOffset), 0xFFFFFFFF,
+                drawList -> AddText(font, fontSize, ImVec2(startPos.x, startPos.y + textOffset), colID,
                                     description.path.c_str(), nullptr, halfWidth);
 
                 startPos.y += pathTextSize.y + 3 * textOffset;
@@ -115,30 +118,42 @@ namespace editor {
             ImGui::EndListBox();
         }
         ImGui::SameLine();
+        ImGui::BeginGroup();
         if(ImGui::Button("Create Project", createButtonSize))
             createProject();
+        if(ImGui::Checkbox("Open always", &openAlways)) {
+            m_editorCache.setShowInspector(openAlways);
+        }
+
+        ImGui::EndGroup();
 
         ImGui::End();
     }
 
-    void ProjectCreator::deleteProject(const unsigned int& index) {
+    void ProjectInspector::createProject() {
+        char* path = tinyfd_selectFolderDialog("Create Robot2D Project", nullptr);
+        // close, either
+        if(path == nullptr) {
+            return;
+        }
+        // TODO already exists ??
+        std::string creationPath(path);
+        ProjectDescription description;
+        description.name = "Project";
+        description.path = creationPath;
+        m_createFunction(description);
+    }
+
+    void ProjectInspector::loadProject(const unsigned int& index) {
+        auto project = m_descriptions[index];
+        m_loadFunction(project);
+    }
+
+    void ProjectInspector::deleteProject(const unsigned int& index) {
         assert(index < m_descriptions.size() && "Index out of Range");
         auto project = m_descriptions[index];
         m_descriptions.erase(m_descriptions.begin() + index);
         m_deleteFunction(project);
-    }
-
-    void ProjectCreator::createProject() {
-        char* path = tinyfd_selectFolderDialog("Create Robot2D Project", nullptr);
-        if(!path)
-            return;
-        std::string creationPath(path);
-        m_createFunction({"Project", creationPath});
-    }
-
-    void ProjectCreator::loadProject(const unsigned int& index) {
-        auto project = m_descriptions[index];
-        m_loadFunction(project);
     }
 
 }

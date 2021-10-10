@@ -19,26 +19,21 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
+
 #pragma once
 
-#include <filesystem>
-#include <vector>
 #include <string>
 
 namespace editor {
-    using stringBuffer = std::vector<std::string>;
-    class FileManager {
-    public:
-        FileManager();
-        ~FileManager() = default;
+    struct ProjectDescription {
+        std::string name;
+        std::string path;
 
-        stringBuffer scanDirectory(const std::string& dirPath);
-    private:
-        std::filesystem::path m_path;
+        ProjectDescription(): name{""}, path{""} {}
+
+        bool empty() const {
+            bool res = (name.empty() and path.empty());
+            return res;
+        }
     };
-
-    namespace util {
-        namespace fs = std::filesystem;
-    }
-
 }

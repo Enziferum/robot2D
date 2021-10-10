@@ -26,10 +26,12 @@ source distribution.
 
 #include <robot2D/Graphics/RenderWindow.hpp>
 #include <robot2D/Core/MessageBus.hpp>
+
 #include "Wrapper.hpp"
 #include "Editor.hpp"
-#include "ProjectCreator.hpp"
-#include "Project.hpp"
+#include "ProjectInspector.hpp"
+#include "ProjectManager.hpp"
+#include "EditorCache.hpp"
 
 namespace editor {
     class Application {
@@ -37,34 +39,36 @@ namespace editor {
         Application();
         ~Application() = default;
 
+        void setup();
         void run();
     private:
-        void setup();
         void handleEvents();
         void handleMessages();
         void update(float dt);
         void render();
 
-        void deleteProject(std::string path);
+        /// Subsription Api callbacks //
         void createProject(ProjectDescription project);
         void loadProject(ProjectDescription project);
-
-        bool parseProjectCache();
+        void deleteProject(ProjectDescription projectDescription);
+        /// Subsription Api callbacks //
+    private:
+        enum class State {
+            ProjectInspector,
+            Editor
+        };
     private:
         robot2D::vec2u defaultWindowSize;
         robot2D::RenderWindow m_window;
+
         robot2D::MessageBus m_messageBus;
         ImGui::Wrapper m_guiWrapper;
         Editor m_editor;
 
-        enum class State {
-            CreateProject,
-            Editor
-        };
-
         State m_state;
-        ProjectCreator m_projectCreator;
-        std::vector<Project::Ptr> m_projectsCache;
+        ProjectInspector m_projectInspector;
+        EditorCache m_editorCache;
+        ProjectManager m_projectManager;
     };
 }
 

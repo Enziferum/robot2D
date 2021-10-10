@@ -21,24 +21,25 @@ source distribution.
 
 #pragma once
 
-#include <filesystem>
-#include <vector>
-#include <string>
+#include "Project.hpp"
+#include "ProjectDescription.hpp"
+#include "Errors.hpp"
 
 namespace editor {
-    using stringBuffer = std::vector<std::string>;
-    class FileManager {
+    class ProjectManager {
     public:
-        FileManager();
-        ~FileManager() = default;
+        ProjectManager();
+        ~ProjectManager() = default;
 
-        stringBuffer scanDirectory(const std::string& dirPath);
+
+        bool add(const ProjectDescription&);
+        bool load(const ProjectDescription&);
+        bool remove(const ProjectDescription&);
+        Project::Ptr getCurrentProject() const;
+
+        const ProjectManagerError& getError() const;
     private:
-        std::filesystem::path m_path;
+        Project::Ptr m_currentProject;
+        ProjectManagerError m_error;
     };
-
-    namespace util {
-        namespace fs = std::filesystem;
-    }
-
 }

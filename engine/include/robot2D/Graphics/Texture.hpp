@@ -21,9 +21,8 @@ source distribution.
 
 #pragma once
 
-#include <string>
-#include <vector>
-#include "robot2D/Core/Vector2.hpp"
+#include "Image.hpp"
+
 
 namespace robot2D {
     class ROBOT2D_EXPORT_API Texture {
@@ -56,5 +55,7 @@ namespace robot2D {
         unsigned char* buffer;
         std::vector<unsigned char> m_data;
         ColorFormat m_colorFormat;
+
+        Image m_image;
     };
 }

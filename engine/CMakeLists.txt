@@ -46,6 +46,7 @@ set(ENGINE_SRC
         ${INCLROOT}/Graphics/View.hpp
         ${INCLROOT}/Graphics/VertexArray.hpp
         ${INCLROOT}/Graphics/FrameBuffer.hpp
+        ${INCLROOT}/Graphics/Image.hpp
 
 
         #Util
@@ -93,6 +94,7 @@ set(ENGINE_SRC ${ENGINE_SRC}
         ${SRCROOT}/Graphics/Buffer.cpp
         ${SRCROOT}/Graphics/VertexArray.cpp
         ${SRCROOT}/Graphics/FrameBuffer.cpp
+        ${SRCROOT}/Graphics/Image.cpp
 
         #Ecs
         ${SRCROOT}/Ecs/Bitmask.cpp

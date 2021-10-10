@@ -21,24 +21,33 @@ source distribution.
 
 #pragma once
 
-#include <filesystem>
-#include <vector>
 #include <string>
+#include <vector>
+#include <robot2D/Core/Vector2.hpp>
 
-namespace editor {
-    using stringBuffer = std::vector<std::string>;
-    class FileManager {
-    public:
-        FileManager();
-        ~FileManager() = default;
+namespace robot2D {
 
-        stringBuffer scanDirectory(const std::string& dirPath);
-    private:
-        std::filesystem::path m_path;
+    enum ImageColorFormat {
+        Red = 1,
+        RGB = 3,
+        RGBA = 4
     };
 
-    namespace util {
-        namespace fs = std::filesystem;
-    }
+    /// Image stores Texture Data as Buffer
+    class ROBOT2D_EXPORT_API Image {
+    public:
+        Image();
+        ~Image() = default;
+
+        bool loadFromFile(const std::string& path);
+
+        const robot2D::vec2u& getSize() const;
+        const ImageColorFormat& getColorFormat() const;
+        const std::vector<uint8_t>& getBuffer() const;
+    private:
+        vec2u m_size;
+        std::vector<uint8_t> m_buffer;
+        ImageColorFormat m_colorFormat;
+    };
 
 }

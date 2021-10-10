@@ -20,38 +20,27 @@ source distribution.
 *********************************************************************/
 
 #pragma once
-#include <functional>
-#include <vector>
-#include <robot2D/Graphics/RenderWindow.hpp>
+
+#include <mutex>
+#include <thread>
+
+#include <robot2D/Util/ResourceHandler.hpp>
+#include <robot2D/Graphics/Image.hpp>
 
 namespace editor {
-    struct ProjectDescription {
-        std::string name;
-        std::string path;
-    };
-
-    using ProcessFunction = std::function<void(ProjectDescription)>;
-
-    class ProjectCreator final {
+    class ResourceHolder {
     public:
-        ProjectCreator(robot2D::RenderWindow& window);
-        ~ProjectCreator() = default;
+        static ResourceHolder& getInstance();
 
-        void setProjects(std::vector<ProjectDescription>&& desciptions);
+        bool load(const std::string& path);
+        // thread version
+        bool loadThread(const std::string& path);
 
-        void setup(ProcessFunction&& createFunction, ProcessFunction&& deleteFunction,
-                   ProcessFunction&& loadFunction);
-        void render();
     private:
-        void createProject();
-        void loadProject(const unsigned& index);
-        void deleteProject(const unsigned& index);
-    private:
-        robot2D::RenderWindow& m_window;
-        std::vector<ProjectDescription> m_descriptions;
+        ResourceHolder();
+        ~ResourceHolder();
 
-        ProcessFunction m_createFunction;
-        ProcessFunction m_deleteFunction;
-        ProcessFunction m_loadFunction;
+    private:
+        static robot2D::ResourceHandler<robot2D::Image> m_imageHolder;
     };
 }

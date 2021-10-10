@@ -21,24 +21,36 @@ source distribution.
 
 #pragma once
 
-#include <filesystem>
 #include <vector>
-#include <string>
+#include "ProjectDescription.hpp"
+#include "Errors.hpp"
 
 namespace editor {
-    using stringBuffer = std::vector<std::string>;
-    class FileManager {
+    class EditorCache {
     public:
-        FileManager();
-        ~FileManager() = default;
+        EditorCache();
+        ~EditorCache() = default;
 
-        stringBuffer scanDirectory(const std::string& dirPath);
+        bool parseCache(const std::string& path);
+        bool isShowInspector() const;
+        void setShowInspector(const bool& flag);
+
+        const EditorCacheError& getError() const;
+
+        bool addProject(const ProjectDescription& description);
+        bool removeProject(const ProjectDescription& description);
+        bool loadProject(const ProjectDescription& description);
+        std::vector<ProjectDescription>& getProjects();
+
+        const ProjectDescription& getCurrentProject() const;
     private:
-        std::filesystem::path m_path;
+        void createCacheFile(const std::string& path);
+    private:
+        bool m_showInspector;
+        std::string m_cachePath;
+        EditorCacheError m_cacheError;
+
+        mutable ProjectDescription m_currentDescription;
+        std::vector<ProjectDescription> m_cacheDescriptions;
     };
-
-    namespace util {
-        namespace fs = std::filesystem;
-    }
-
 }
