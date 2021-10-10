@@ -49,6 +49,13 @@ namespace editor {
         }
     }
 
+    static float padding = 16.F;
+    static float thumbNaleSize = 128.F;
+
+    void AssetsPanel::setAssetsPath(const std::string &path) {
+        m_currentPath = fs::path(path);
+    }
+
     void AssetsPanel::render() {
         ImGui::Begin("Assets");
 
@@ -58,8 +65,6 @@ namespace editor {
             }
         }
 
-        static float padding = 16.F;
-        static float thumbNaleSize = 128.F;
         float cellSize = thumbNaleSize + padding;
 
         auto panelWidth = ImGui::GetContentRegionAvail().x;
@@ -73,7 +78,6 @@ namespace editor {
             const auto& path = directoryEntry.path();
             auto relativePath = fs::relative(path, assetsPath);
             std::string filenameString = relativePath.filename().string();
-
 
             ImGui::PushID(filenameString.c_str());
             ResourceIconType iconType = directoryEntry.is_directory() ? ResourceIconType::Directory :
@@ -103,9 +107,5 @@ namespace editor {
         }
 
         ImGui::End();
-    }
-
-    void AssetsPanel::setAssetsPath(const std::string &path) {
-        m_currentPath = fs::path(path);
     }
 }

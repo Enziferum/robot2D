@@ -41,6 +41,7 @@ namespace editor {
 
         void setAssetsPath(const std::string& path);
         void render() override;
+
     private:
         std::filesystem::path m_currentPath;
         robot2D::ResourceHandler<robot2D::Texture, ResourceIconType> m_assetsIcons;

@@ -36,4 +36,9 @@ namespace editor {
     private:
         std::filesystem::path m_path;
     };
+
+    namespace util {
+        namespace fs = std::filesystem;
+    }
+
 }

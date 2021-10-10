@@ -46,14 +46,70 @@ namespace editor {
 
 
     Application::Application():
-    defaultWindowSize{1280, 920},
-    m_window(defaultWindowSize, "Editor", robot2D::WindowContext::Default),
-                                m_editor{m_window, m_messageBus},
-                                m_state{State::CreateProject},
-                                m_projectCreator{m_window} {}
+            defaultWindowSize{1280, 920},
+            m_window(defaultWindowSize, "Editor", robot2D::WindowContext::Default),
+            m_editor{m_window, m_messageBus},
+            m_state{State::ProjectInspector},
+            m_projectInspector{m_window, m_editorCache} {}
+
+
+    void Application::setup() {
+        m_guiWrapper.init(m_window);
+
+        if(!m_editorCache.parseCache(editorCachePath)) {
+            if(m_editorCache.getError() == EditorCacheError::NoCacheFile){}
+            else {
+                RB_EDITOR_ERROR("Error to parse Editor Cache, description := {0}",
+                                errorToString(m_editorCache.getError()));
+                return;
+            }
+        }
+
+        if(m_editorCache.isShowInspector()) {
+            m_state = State::ProjectInspector;
+        } else {
+            m_state = State::Editor;
+        }
+
+        if(m_state == State::ProjectInspector) {
+            /// centeraize window ///
+            auto windowSize = m_window.getSize();
+            auto monitorSize = m_window.getMonitorSize();
+            auto centerPoint = getCenterPoint(windowSize, monitorSize);
+            m_window.setPosition(centerPoint);
+            auto windowPos = m_window.getPosition();
+
+            //todo setWindow not to be resizable
+
+            m_window.setSize({600, 400});
+            applyStyle(EditorStyle::GoldBlack);
+
+            //TODO subscribeLogic
+            m_projectInspector.setup([this](ProjectDescription project) {
+                                         createProject(project);
+                                     },
+                                     [this](ProjectDescription project) {
+                                         deleteProject(project);
+                                     },
+                                     [this](ProjectDescription project) {
+                                         loadProject(project);
+                                     });
+        } else {
+            const auto& projectDescription = m_editorCache.getCurrentProject();
+            if(projectDescription.empty())
+                RB_EDITOR_WARN("projectDescription.empty()");
+
+            if(!m_projectManager.load(projectDescription)) {
+                RB_EDITOR_ERROR("ProjectManager can't load Project := {0}", errorToString(m_projectManager.getError()));
+                return;
+            }
+            auto project = m_projectManager.getCurrentProject();
+            m_editor.loadProject(project);
+        }
+
+    }
 
     void Application::run() {
-        setup();
         frameClock.restart();
         while(m_window.isOpen()) {
             float elapsed = frameClock.restart().asSeconds();
@@ -66,60 +122,6 @@ namespace editor {
             }
             m_guiWrapper.update(elapsed);
             render();
-        }
-    }
-
-    void Application::setup() {
-        m_guiWrapper.init(m_window);
-
-        if(!std::filesystem::exists(editorCachePath)) {
-            YAML::Emitter out;
-            out << YAML::BeginMap;
-            out << YAML::Key << "Robot2D Editor" << YAML::Value << editorVersion;
-            out << YAML::EndMap;
-
-            std::ofstream ofstream(editorCachePath);
-            if(!ofstream.is_open()) {
-                RB_EDITOR_ERROR("Can't create Cache file");
-                return;
-            }
-
-            ofstream << out.c_str();
-            ofstream.close();
-            m_state = State::Editor;
-        } else {
-            parseProjectCache();
-        }
-
-        if(m_state == State::CreateProject) {
-            /// centeraize window ///
-            auto windowSize = m_window.getSize();
-            auto monitorSize = m_window.getMonitorSize();
-            auto centerPoint = getCenterPoint(windowSize, monitorSize);
-            m_window.setPosition(centerPoint);
-            auto windowPos = m_window.getPosition();
-            RB_EDITOR_INFO("Target Monitor size = {0}", monitorSize);
-            RB_EDITOR_INFO("Window Position = {0}", windowPos);
-
-            //todo setWindow not to be resizable
-
-            m_window.setSize({600, 400});
-            applyStyle(EditorStyle::GoldBlack);
-
-            std::vector<ProjectDescription> projectDescriptions;
-            for(auto& it: m_projectsCache) {
-                projectDescriptions.emplace_back(ProjectDescription{it->getName(), it->getPath()});
-            }
-            m_projectCreator.setProjects(std::move(projectDescriptions));
-            m_projectCreator.setup([this](ProjectDescription project) {
-                createProject(project);
-            },[this](ProjectDescription project) {
-                deleteProject(project.path);
-            },[this](ProjectDescription project) {
-                loadProject(project);
-            });
-        } else {
-            m_editor.setup();
         }
     }
 
@@ -159,137 +161,61 @@ namespace editor {
         m_window.clear();
         if(m_state == State::Editor)
             m_editor.render();
-        else if(m_state == State::CreateProject)
-            m_projectCreator.render();
+        else if(m_state == State::ProjectInspector)
+            m_projectInspector.render();
         m_guiWrapper.render();
         m_window.display();
     }
 
-    // need write to cache file
+
     void Application::createProject(ProjectDescription projectDescription) {
-        std::ifstream ifstream(editorCachePath);
-        if(!ifstream.is_open())
+        if(!m_editorCache.addProject(projectDescription)) {
+            RB_EDITOR_ERROR("Can't add Project to Cache := {0}",
+                            errorToString(m_editorCache.getError()));
             return;
-        std::stringstream sstr;
-        sstr << ifstream.rdbuf();
-        ifstream.close();
+        }
 
-        YAML::Node data = YAML::Load(sstr.str());
-        YAML::Emitter out;
-        if(!data["Robot2D Editor"])
+        if(!m_projectManager.add(projectDescription)) {
+            RB_EDITOR_ERROR("Can't create Project := {0}",
+                            errorToString(m_projectManager.getError()));
             return;
+        }
 
-        YAML::Node projectsNode(YAML::NodeType::Map);
-        projectsNode["Path"] = (projectDescription.path);
-        projectsNode["Name"] = (projectDescription.name);
-        data["Projects"].push_back(projectsNode);
+        auto project = m_projectManager.getCurrentProject();
 
-        std::ofstream ofstream(editorCachePath);
-        ofstream << data;
-        ofstream.close();
-
-        Project::Ptr project = std::make_shared<Project>();
-        project -> setPath(projectDescription.path);
-        project -> setEditorVersion(editorVersion);
-        project -> setName(projectDescription.name);
-        project -> setStartScene("Scene.scene");
-
-        std::filesystem::path fullPath(projectDescription.path);
-        auto fullname = projectDescription.name + ".robot2D";
-        fullPath.append(fullname);
-        ProjectSerializer(project).serialize(fullPath.string());
         m_editor.createProject(project);
         m_state = State::Editor;
         m_window.setSize(defaultWindowSize);
     }
 
-    void Application::deleteProject(std::string path) {
-        m_editor.deleteProject(path);
-        std::ifstream ifstream(editorCachePath);
-        if(!ifstream.is_open())
-            return;
-        std::stringstream sstr;
-        sstr << ifstream.rdbuf();
-        ifstream.close();
+    void Application::deleteProject(ProjectDescription projectDescription) {
 
-        YAML::Node data = YAML::Load(sstr.str());
-        YAML::Emitter out;
-        if(!data["Robot2D Editor"] || !data["Projects"])
+        if(!m_editorCache.removeProject(projectDescription)) {
+            RB_EDITOR_ERROR("EditorCache can't delete Project := {0}",
+                            errorToString(m_editorCache.getError()));
             return;
-        std::vector<ProjectDescription> descriptions;
-
-        for(auto project: data["Projects"]) {
-            ProjectDescription description;
-            description.path = project["Path"].as<std::string>();
-            description.name = project["Name"].as<std::string>();
-            if (description.path == path)
-                continue;
-            descriptions.emplace_back(std::move(description));
         }
 
-        auto version = data["Robot2D Editor"].as<std::string>();
-        out << YAML::BeginMap;
-        out << YAML::Key << "Robot2D Editor" << YAML::Value << version;
-        out << YAML::Key << "Projects" << YAML::Value << YAML::BeginSeq;
-        for(const auto& it: descriptions) {
-            out << YAML::BeginMap;
-            out << YAML::Key << "Path" << YAML::Value << it.path;
-            out << YAML::Key << "Name" << YAML::Value << it.name;
-            out << YAML::EndMap;
+        if(!m_projectManager.remove(projectDescription)) {
+            RB_EDITOR_ERROR("ProjectManager can't delete Project := {0}",
+                            errorToString(m_projectManager.getError()));
+            return;
         }
-        out << YAML::EndSeq;
-        out << YAML::EndMap;
-
-        std::ofstream ofstream(editorCachePath);
-        ofstream << out.c_str();
-        ofstream.close();
     }
 
-    bool Application::parseProjectCache() {
-        std::ifstream ifstream(editorCachePath);
-        if(!ifstream.is_open())
-            return false;
-        std::stringstream sstr;
-        sstr << ifstream.rdbuf();
-
-        YAML::Node data = YAML::Load(sstr.str());
-        if(!data["Robot2D Editor"])
-            return false;
-
-        auto projects = data["Projects"];
-        if(!projects)
-            return false;
-
-        for(auto it: projects) {
-            Project::Ptr currentProject = std::make_shared<Project>();
-            auto path = it["Path"].as<std::string>();
-            auto name = it["Name"].as<std::string>();
-            std::filesystem::path fullPath(path);
-            auto fullname = name + ".robot2D";
-            fullPath.append(fullname);
-            if(!ProjectSerializer(currentProject).deserialize(fullPath.string())) {
-                RB_EDITOR_ERROR("Can't load {0} from editor cache", fullPath);
-                return false;
-            }
-            m_projectsCache.emplace_back(currentProject);
+    void Application::loadProject(ProjectDescription projectDescription) {
+        if(!m_editorCache.loadProject(projectDescription)) {
+            RB_EDITOR_ERROR("Cache can't load Project := {0}", errorToString(m_editorCache.getError()));
+            return;
         }
 
-        return true;
-    }
-
-    void Application::loadProject(ProjectDescription project) {
-        auto found = std::find_if(m_projectsCache.begin(), m_projectsCache.end(),
-                                  [&project](const Project::Ptr it) {
-            return (it->getName() == project.name) && (it->getPath() == project.path);
-        });
-        if(found == m_projectsCache.end()) {
-            RB_EDITOR_WARN("Can't load Load project, but have project as disk");
+        if(!m_projectManager.load(projectDescription)) {
+            RB_EDITOR_ERROR("ProjectManager can't load Project := {0}", errorToString(m_projectManager.getError()));
             return;
         }
 
         m_state = State::Editor;
         m_window.setSize(defaultWindowSize);
-        m_editor.loadProject(*found);
+        m_editor.loadProject(m_projectManager.getCurrentProject());
     }
-
 }

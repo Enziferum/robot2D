@@ -28,6 +28,7 @@ int main() {
     editor::Application application;
 
     try {
+        application.setup();
         application.run();
     }
     catch(const std::exception& exception) {
