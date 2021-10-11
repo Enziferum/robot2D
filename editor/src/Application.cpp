@@ -61,6 +61,7 @@ namespace editor {
             m_window.setIcon(std::move(iconTexture));
         }
         m_guiWrapper.init(m_window);
+        m_editor.setup();
 
         if(!m_editorCache.parseCache(editorCachePath)) {
             if(m_editorCache.getError() == EditorCacheError::NoCacheFile){}

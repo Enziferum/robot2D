@@ -89,8 +89,13 @@ namespace editor {
 
             // drag&drop feature
             if(ImGui::BeginDragDropSource()) {
+#ifdef ROBOT2D_MACOS
+                const char* itemPath = relativePath.c_str();
+                ImGui::SetDragDropPayload("CONTENT_BROWSER_ITEM", itemPath, (strlen(itemPath) + 1) * sizeof(char));
+#else
                 const wchar_t* itemPath = relativePath.c_str();
                 ImGui::SetDragDropPayload("CONTENT_BROWSER_ITEM", itemPath, (wcslen(itemPath) + 1) * sizeof(wchar_t ));
+#endif
                 ImGui::EndDragDropSource();
             }
 

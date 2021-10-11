@@ -27,6 +27,9 @@ source distribution.
 #include <editor/ComponentPanel.hpp>
 #include <editor/ScenePanel.hpp>
 #include <editor/AssetsPanel.hpp>
+#include <editor/MenuPanel.hpp>
+#include <editor/ViewportPanel.hpp>
+#include <editor/InspectorPanel.hpp>
 
 #include <editor/Wrapper.hpp>
 #include <editor/SceneSerializer.hpp>
@@ -34,13 +37,11 @@ source distribution.
 #include <editor/EditorStyles.hpp>
 
 namespace editor {
+    namespace fs = std::filesystem;
     // develop only flag
     constexpr bool useGUI = true;
-    const robot2D::Color defaultBackGround = robot2D::Color::fromGL(0.1, 0.1, 0.1, 1);
-    namespace fs = std::filesystem;
+
     bool m_leftCtrlPressed = false;
-    // to be part of something
-    static bool opt_fullscreen = true;
     static bool opt_padding = true;
     static bool dockspace_open = false;
     static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
@@ -51,9 +52,7 @@ namespace editor {
     m_activeScene{ nullptr }, m_frameBuffer{nullptr}, m_ViewportSize{},
     m_currentProject{nullptr} {}
 
-
     void Editor::setup() {
-        auto windowSize = m_window.getSize();
         const std::string texturesPath = "res/textures/";
         std::unordered_map<TextureID, std::string> texturePaths = {
                 {TextureID::Logo, "logo.png"},
@@ -69,7 +68,13 @@ namespace editor {
         auto& panel = m_panelManager.addPanel<ComponentPanel>();
         auto& scenePanel = m_panelManager.addPanel<ScenePanel>();
         auto& assetsPanel = m_panelManager.addPanel<AssetsPanel>();
+        auto& viewportPanel = m_panelManager.addPanel<ViewportPanel>(std::move(m_activeScene));
+        auto& inspectorPanel = m_panelManager.addPanel<InspectorPanel>(m_camera);
+        auto& menuPanel = m_panelManager.addPanel<MenuPanel>();
+    }
 
+    void Editor::prepare() {
+        auto windowSize = m_window.getSize();
         if(!createScene()) {
             RB_EDITOR_ERROR("Can't create Scene on Init");
         }
@@ -124,7 +129,8 @@ namespace editor {
     void Editor::render() {
         if(useGUI) {
             m_frameBuffer -> Bind();
-            m_window.clear(m_sceneClearColor);
+            const auto& clearColor = m_panelManager.getPanel<InspectorPanel>().getColor();
+            m_window.clear(clearColor);
         }
         m_window.beforeRender();
         m_window.setView(m_camera.getView());
@@ -151,44 +157,28 @@ namespace editor {
 
         if(useGUI) {
             m_frameBuffer->unBind();
-            imguiRender();
+            guiRender();
         }
     }
 
-    void Editor::imguiRender() {
-
+    void Editor::guiRender() {
         ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
-        if (opt_fullscreen)
-        {
-            const ImGuiViewport* viewport = ImGui::GetMainViewport();
-            ImGui::SetNextWindowPos(viewport->WorkPos);
-            ImGui::SetNextWindowSize(viewport->WorkSize);
-            ImGui::SetNextWindowViewport(viewport->ID);
-            ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-            ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-            window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
-            window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
-        }
-        else
-        {
-            dockspace_flags &= ~ImGuiDockNodeFlags_PassthruCentralNode;
-        }
+        window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
+        window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
 
-        // When using ImGuiDockNodeFlags_PassthruCentralNode, DockSpace() will render our background
-        // and handle the pass-thru hole, so we ask Begin() to not render a background.
+        const ImGuiViewport* viewport = ImGui::GetMainViewport();
+        ImGui::SetNextWindowPos(viewport->WorkPos);
+        ImGui::SetNextWindowSize(viewport->WorkSize);
+        ImGui::SetNextWindowViewport(viewport->ID);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+
         if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
             window_flags |= ImGuiWindowFlags_NoBackground;
 
-        if (!opt_padding)
-            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
         ImGui::Begin("Scene", &dockspace_open, window_flags);
-        if (!opt_padding)
-            ImGui::PopStyleVar();
+        ImGui::PopStyleVar(2);
 
-        if (opt_fullscreen)
-            ImGui::PopStyleVar(2);
-
-        // Submit the DockSpace
         ImGuiIO& io = ImGui::GetIO();
         if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
         {
@@ -196,44 +186,13 @@ namespace editor {
             ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
         }
 
-
         mainMenubar();
-        ImGui::End();
+
+        auto stats = m_window.getStats();
+        m_panelManager.getPanel<InspectorPanel>().setRenderStats(std::move(stats));
 
         m_panelManager.render();
-
-
-        /// Render Stats Panel ///
-
-        ImGui::Begin("Statistics ");
-        auto stats = m_window.getStats();
-
-        // todo Apply some styles
-
-        ImGui::Text("Rendering 2D Stats ...");
-        ImGui::Text("Quads Count: %d", stats.drawQuads);
-        ImGui::Text("Draw Calls Count: %d", stats.drawCalls);
-        // todo zoom precision
-        ImGui::Text("Camera Zoom: %.2f", m_camera.getZoom());
-        ImGui::Text("Camera Speed: ");
-        ImGui::SameLine();
-        ImGui::DragFloat("##Y", &m_camera.getCameraSpeed(), 0.1f, 10.0f, 100.0f, "%.2f");
-
-        auto cameraCenter = m_camera.getView().getCenter();
-        auto cameraSize = m_camera.getView().getSize();
-        ImGui::Text("Viewport Center := %.2f, %.2f", cameraCenter.x, cameraCenter.y);
-        ImGui::Text("Viewport Size := %.2f, %.2f", cameraSize.x, cameraSize.y);
-
-        auto color = m_sceneClearColor.toGL();
-        float colors[4];
-        colors[0] = color.red; colors[1] = color.green;
-        colors[2] = color.blue; colors[3] = color.alpha;
-        ImGui::ColorEdit4("Color", colors);
-        m_sceneClearColor = {robot2D::Color::fromGL(colors[0], colors[1], colors[2], colors[3])};
         ImGui::End();
-
-        /// Render Stats Panel ///
-
 
         /// Viewport Panel ///
 
@@ -249,7 +208,11 @@ namespace editor {
         {
             if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
             {
+#ifdef ROBOT2D_WINDOWS
                 const wchar_t* path = (const wchar_t*)payload->Data;
+#else
+                const char* path = (const char*)payload->Data;
+#endif
                 std::filesystem::path scenePath = std::filesystem::path("assets") / path;
                 RB_EDITOR_INFO("PATH {0}", scenePath.string().c_str());
                 openScene(scenePath.string());
@@ -300,6 +263,18 @@ namespace editor {
         }
     }
 
+//// TODO Move Scene Processing to SceneManager ////
+    bool Editor::createScene() {
+        if(m_activeScene != nullptr) {
+            m_activeScene.reset();
+            // todo show dialog
+        }
+        m_activeScene = std::make_shared<Scene>(m_messageBus);
+        auto& scenePanel = m_panelManager.getPanel<ScenePanel>();
+        scenePanel.setActiveScene(std::move(m_activeScene));
+        return true;
+    }
+
     bool Editor::openScene(const std::string& path) {
         auto newScene = std::make_shared<Scene>(m_messageBus);
         newScene -> setPath(path);
@@ -321,26 +296,11 @@ namespace editor {
         return serializer.serialize(path);
     }
 
-    bool Editor::createScene() {
-        if(m_activeScene != nullptr) {
-            m_activeScene.reset();
-            // todo show dialog
-        }
-        m_activeScene = std::make_shared<Scene>(m_messageBus);
-        auto& scenePanel = m_panelManager.getPanel<ScenePanel>();
-        scenePanel.setActiveScene(std::move(m_activeScene));
-        m_sceneClearColor = defaultBackGround;
-        return true;
-    }
 
     void Editor::createProject(Project::Ptr project) {
         m_currentProject = project;
-        setup();
+        prepare();
 
-        if(!createScene()) {
-            RB_EDITOR_ERROR("Can't create Scene at Project creating");
-            return;
-        }
         auto& assetsPanel = m_panelManager.getPanel<AssetsPanel>();
         auto path = m_currentProject -> getPath();
         auto dirPath = fs::path(path);
@@ -350,7 +310,7 @@ namespace editor {
 
     void Editor::loadProject(Project::Ptr project) {
         m_currentProject = project;
-        setup();
+        prepare();
 
         auto path = project->getPath();
         fs::path dirPath(path);

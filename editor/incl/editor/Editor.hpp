@@ -55,7 +55,9 @@ namespace editor {
         void createProject(Project::Ptr project);
         void loadProject(Project::Ptr project);
     private:
-        void imguiRender();
+        void prepare();
+
+        void guiRender();
         void mainMenubar();
 
         bool createScene();

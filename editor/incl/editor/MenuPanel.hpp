@@ -20,47 +20,17 @@ source distribution.
 *********************************************************************/
 
 #pragma once
-#include <vector>
-#include <algorithm>
 
 #include "IPanel.hpp"
 
 namespace editor {
-    class PanelManager {
+    class MenuPanel: public IPanel {
     public:
-        PanelManager();
-        ~PanelManager() = default;
+        MenuPanel();
+        ~MenuPanel() override = default;
 
-        template<typename T, typename ...Args>
-        T& addPanel(Args&& ...args);
 
-        template<typename T>
-        T& getPanel();
-
-        void update(float dt);
-        void render();
-
+        void render() override;
     private:
-
-    private:
-        std::vector<IPanel::Ptr> m_panels;
     };
-
-    template<typename T, typename ...Args>
-    T& PanelManager::addPanel(Args&& ...args) {
-        static_assert(std::is_base_of<IPanel, T>::value && "Adding T, must be IPanel child");
-        auto& panel = m_panels.emplace_back(std::make_shared<T>(std::forward<Args>(args)...));
-        return *(dynamic_cast<T*>(m_panels.back().get()));
-    }
-
-
-    template<typename T>
-    T& PanelManager::getPanel() {
-        UniqueType uniqueType(typeid(T));
-        auto found = std::find_if(m_panels.begin(), m_panels.end(), [uniqueType](const IPanel::Ptr& ptr) {
-            return ptr->getID() == uniqueType;
-        });
-
-        return *(dynamic_cast<T*>(found->get()));
-    }
 }
