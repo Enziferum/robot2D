@@ -68,7 +68,7 @@ namespace robot2D {
 
         constexpr short quadVertexSize = 4;
         constexpr short maxTextureSlots = 16;
-
+#ifdef ROBOT2D_WINDOWS
         void OpenGLMessageCallback(
                 unsigned source,
                 unsigned type,
@@ -88,7 +88,7 @@ namespace robot2D {
 
             assert(false && "Unknown severity level!");
         }
-
+#endif
         OpenGLRender::OpenGLRender() {}
 
         OpenGLRender::~OpenGLRender() {
@@ -104,7 +104,7 @@ namespace robot2D {
             RB_CORE_INFO("Renderer: {0}", glGetString(GL_RENDERER));
             RB_CORE_INFO("Version: {0}", glGetString(GL_VERSION));
             
-#ifdef ROBOT2D_DEBUG
+#ifdef ROBOT2D_WINDOWS
             glEnable(GL_DEBUG_OUTPUT);
             glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
             glDebugMessageCallback(OpenGLMessageCallback, nullptr);

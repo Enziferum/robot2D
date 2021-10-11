@@ -39,6 +39,9 @@ namespace editor {
 
         void update(float dt);
         void render();
+
+    private:
+
     private:
         std::vector<IPanel::Ptr> m_panels;
     };
