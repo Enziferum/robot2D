@@ -25,7 +25,11 @@ source distribution.
 #include <robot2D/Ecs/Scene.hpp>
 #include "Scene.hpp"
 
-// Scene for Implementing BatchRender
+
+enum class ResourceID {
+    Face
+};
+
 class Render2DScene: public Scene {
 public:
     explicit Render2DScene(robot2D::RenderWindow&);
@@ -40,5 +44,5 @@ public:
 private:
     robot2D::ecs::Scene m_scene;
     robot2D::MessageBus messageBus;
-    robot2D::ResourceHandler<robot2D::Texture> m_textures;
+    robot2D::ResourceHandler<robot2D::Texture, ResourceID> m_textures;
 };

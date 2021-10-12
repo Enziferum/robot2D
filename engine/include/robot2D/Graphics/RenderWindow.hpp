@@ -33,7 +33,7 @@ namespace robot2D {
     public:
         RenderWindow();
         RenderWindow(const vec2u& size, const std::string& name,
-                     WindowContext context);
+                     const WindowContext& context = robot2D::WindowContext::Default);
         RenderWindow(const RenderWindow&) = delete;
         RenderWindow(const RenderWindow&&) = delete;
         RenderWindow& operator=(const RenderWindow&) = delete;

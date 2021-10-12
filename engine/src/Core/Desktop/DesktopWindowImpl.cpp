@@ -290,28 +290,12 @@ namespace robot2D {
             //event.dragDrop.paths = outputPaths;
         }
 
-        void DesktopWindowImpl::setIcon(std::vector<robot2D::Texture>& icons) {
-            if(icons.empty())
-                return;
-            std::vector<GLFWimage> images;
-
-            for(auto &it: icons){
-                GLFWimage img;
-                auto size = it.getSize();
-                img.width = size.x;
-                img.height = size.y;
-                img.pixels = it.getPixels();
-                images.emplace_back(img);
-            }
-            glfwSetWindowIcon(m_window, images.size(), &images[0]);
-        }
-
-        void DesktopWindowImpl::setIcon(Texture&& icon) {
+        void DesktopWindowImpl::setIcon(Image&& icon) {
             GLFWimage img;
             auto size = icon.getSize();
             img.width = size.x;
             img.height = size.y;
-            img.pixels = icon.getPixels();
+            img.pixels = icon.getBuffer();
             glfwSetWindowIcon(m_window, 1, &img);
         }
 

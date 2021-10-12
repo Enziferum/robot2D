@@ -83,8 +83,8 @@ namespace robot2D {
         (void)(h);
     }
 
-    void Window::setIcon(std::vector<Texture>& icons) {
-        m_windowImpl -> setIcon(icons);
+    void Window::setIcon(robot2D::Image&& icon) {
+        m_windowImpl -> setIcon(std::move(icon));
     }
 
     WindowHandle Window::getRaw() const {
@@ -144,8 +144,6 @@ namespace robot2D {
         m_windowImpl -> setSize(size);
     }
 
-    void Window::setIcon(Texture&& icon) {
-        m_windowImpl -> setIcon(std::move(icon));
-    }
+
 
 }

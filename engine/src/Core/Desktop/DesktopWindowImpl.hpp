@@ -53,8 +53,7 @@ namespace robot2D {
 
             void setSize(const robot2D::vec2u& size) override;
 
-            void setIcon(std::vector<robot2D::Texture>& ) override;
-            void setIcon(robot2D::Texture&& icon)override;
+            void setIcon(robot2D::Image&& icon)override;
 
             void setMouseCursorVisible(const bool& flag) override;
             void setCursor(const Cursor& cursor)override;

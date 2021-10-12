@@ -116,18 +116,20 @@ public:
 
     void update(float dt) override;
 private:
+    float m_speed;
 };
 
 
 DemoMoveSystem::DemoMoveSystem(robot2D::MessageBus& messageBus):
-        robot2D::ecs::System(messageBus, typeid(DemoMoveSystem)) {
+        robot2D::ecs::System(messageBus, typeid(DemoMoveSystem)),
+        m_speed{10.F}{
     addRequirement<TransformComponent>();
 }
 
 void DemoMoveSystem::update(float dt) {
     for(auto& it: m_entities) {
         auto& transform = it.getComponent<TransformComponent>();
-        transform.move(robot2D::vec2f(10.f * dt, 0.f));
+        transform.move(robot2D::vec2f(m_speed * dt, 0.f));
     }
 }
 
@@ -142,7 +144,11 @@ struct Quad: public robot2D::Transformable, public robot2D::Drawable {
     }
 };
 
-
+namespace {
+    const robot2D::vec2f position = robot2D::vec2f {100.F, 100.F};
+    const robot2D::vec2f size = robot2D::vec2f {100.F, 100.F};
+    constexpr char* texturePath = "res/textures/awesomeface.png";
+}
 
 Render2DScene::Render2DScene(robot2D::RenderWindow& window) : Scene(window),
                                                               m_scene(messageBus) {
@@ -156,18 +162,18 @@ void Render2DScene::setup() {
 
     ///// setup Ecs /////
 
-    m_textures.loadFromFile("sprite", "awesomeface.png", true);
+    m_textures.loadFromFile(ResourceID::Face, texturePath);
 
     for(auto it = 0; it < 5; ++it) {
         robot2D::ecs::Entity entity = m_scene.createEntity();
 
         auto& transform = entity.addComponent<TransformComponent>();
 
-        transform.setPosition({100.F, 100.F + 100.F * it} );
-        transform.scale({100.F, 100.F});
+        transform.setPosition({position.x, position.y + size.x * it} );
+        transform.scale({size});
 
         auto& sprite = entity.addComponent<SpriteComponent>();
-        sprite.setTexture(m_textures.get("sprite"));
+        sprite.setTexture(m_textures.get(ResourceID::Face));
     }
 
 }
@@ -186,17 +192,7 @@ void Render2DScene::imGuiRender() {
 
 void Render2DScene::render() {
     m_window.beforeRender();
-
-//    robot2D::Sprite sprite;
-//    sprite.setTexture(m_textures.get("sprite"));
-//    sprite.setPosition({300.F, 300.F});
-//    sprite.setSize({150.F, 150.F});
-//
-//    sprite.setTextureRect({48, 82, 83, 91});
-//    m_window.draw(sprite);
-
     m_window.draw(m_scene);
-
     m_window.afterRender();
     m_window.flushRender();
 }

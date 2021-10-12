@@ -56,9 +56,9 @@ namespace editor {
 
     void Application::setup() {
         {
-            robot2D::Texture iconTexture;
-            iconTexture.loadFromFile("assets/textures/icon.png");
-            m_window.setIcon(std::move(iconTexture));
+            robot2D::Image iconImage;
+            iconImage.loadFromFile("res/textures/logo.png");
+            m_window.setIcon(std::move(iconImage));
         }
         m_guiWrapper.init(m_window);
         m_editor.setup();

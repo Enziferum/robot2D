@@ -26,7 +26,7 @@ source distribution.
 #include <memory>
 
 #include <robot2D/Graphics/Color.hpp>
-#include <robot2D/Graphics/Texture.hpp>
+#include <robot2D/Graphics/Image.hpp>
 #include <robot2D/Core/Event.hpp>
 #include <robot2D/Core/WindowContext.hpp>
 #include <robot2D/Core/Cursor.hpp>
@@ -58,8 +58,7 @@ namespace robot2D {
 
             virtual void setSize(const robot2D::vec2u& size) = 0;
 
-            virtual void setIcon(std::vector<robot2D::Texture>& icons) = 0;
-            virtual void setIcon(robot2D::Texture&& icon) = 0;
+            virtual void setIcon(robot2D::Image&& icon) = 0;
             virtual void setMouseCursorVisible(const bool& flag) = 0;
             virtual void setCursor(const Cursor& cursor) = 0;
 
