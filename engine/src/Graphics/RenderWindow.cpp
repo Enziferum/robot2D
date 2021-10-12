@@ -30,7 +30,7 @@ namespace robot2D{
     }
 
     RenderWindow::RenderWindow(const vec2u& size, const std::string& name,
-                               WindowContext context):
+                               const WindowContext& context):
                                Window(size, name, context),
                                RenderTarget(m_win_size)
                                {}

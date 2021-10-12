@@ -20,63 +20,46 @@ source distribution.
 *********************************************************************/
 
 #include <robot2D/Graphics/GL.hpp>
-#ifdef WIN32
-    #include <robot2D/ext/stb_image.h>
-#elif __APPLE__
-    #include <ext/stb_image.h>
-#endif
 #include <robot2D/Graphics/Texture.hpp>
 
 namespace robot2D{
 
-    GLenum convertColorType(const Texture::ColorFormat& format) {
+    GLenum convertColorType(const ImageColorFormat& format) {
         switch(format) {
-            case Texture::ColorFormat::Red:
+            case ImageColorFormat::Red:
                 return GL_RED;
-            case Texture::ColorFormat::Rgb:
+            case ImageColorFormat::RGB:
                 return GL_RGB;
-            case Texture::ColorFormat::Rgba:
+            case ImageColorFormat::RGBA:
                 return GL_RGBA;
         }
     }
 
     Texture::Texture():
-    m_size(),
-    buffer(nullptr),
     m_data() {}
 
-    Texture::~Texture() {
-        if(buffer)
-            stbi_image_free(buffer);
-    }
+    Texture::~Texture() {}
 
-    bool Texture::loadFromFile(const std::string& path, bool usealpha) {
-        int width, height, nrChannels;
-        buffer = stbi_load(path.c_str(), &width, &height,
-                                        &nrChannels, 0);
-
-        if(buffer == nullptr)
+    bool Texture::loadFromFile(const std::string& path) {
+        if(!m_image.loadFromFile(path))
             return false;
+        auto size = m_image.getSize();
 
-        m_data.resize(width * height * 4);
-        m_size.x = width;
-        m_size.y = height;
-        m_colorFormat = static_cast<ColorFormat>(nrChannels);
-        if(usealpha)
-            m_colorFormat = ColorFormat::Rgba;
+        m_data.resize(size.x * size.y * 4);
+
         setupGL();
-        bindBufferData(buffer);
+        bindBufferData(m_image.getBuffer());
         glGenerateMipmap(GL_TEXTURE_2D);
 
         return true;
     }
 
     vec2u& Texture::getSize() {
-        return m_size;
+        return m_image.getSize();
     }
 
     const vec2u& Texture::getSize() const {
-        return m_size;
+        return m_image.getSize();
     }
 
     void Texture::setupGL() {
@@ -88,10 +71,9 @@ namespace robot2D{
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     }
 
-    void Texture::create(const vec2u& size, void* data, const ColorFormat& colorFormat) {
-        m_size = size;
-        m_colorFormat = colorFormat;
+    void Texture::create(const vec2u& size, void* data, const ImageColorFormat& colorFormat) {
         setupGL();
+        m_image.create(size, data, colorFormat);
         bindBufferData(data);
     }
 
@@ -99,13 +81,18 @@ namespace robot2D{
         return m_texture;
     }
 
-    unsigned char* Texture::getPixels() const {
-        return buffer;
+    const unsigned char* Texture::getPixels() const {
+        return m_image.getBuffer().data();
+    }
+
+    unsigned char* Texture::getPixels(){
+        return m_image.getBuffer();
     }
 
     void Texture::bindBufferData(void* bufferData) {
-        auto glFormat = convertColorType(m_colorFormat);
-        glTexImage2D(GL_TEXTURE_2D, 0, glFormat, m_size.x, m_size.y, 0, glFormat, GL_UNSIGNED_BYTE, bufferData);
+        auto glFormat = convertColorType(m_image.getColorFormat());
+        auto size = m_image.getSize();
+        glTexImage2D(GL_TEXTURE_2D, 0, glFormat, size.x, size.y, 0, glFormat, GL_UNSIGNED_BYTE, bufferData);
     }
 
 }
