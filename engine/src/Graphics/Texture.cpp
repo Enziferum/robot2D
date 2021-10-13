@@ -35,18 +35,15 @@ namespace robot2D{
         }
     }
 
-    Texture::Texture():
-    m_data() {}
+    Texture::Texture(){}
 
-    Texture::~Texture() {}
+    Texture::~Texture() {
+        glDeleteTextures(1, &m_texture);
+    }
 
     bool Texture::loadFromFile(const std::string& path) {
         if(!m_image.loadFromFile(path))
             return false;
-        auto size = m_image.getSize();
-
-        m_data.resize(size.x * size.y * 4);
-
         setupGL();
         bindBufferData(m_image.getBuffer());
         glGenerateMipmap(GL_TEXTURE_2D);

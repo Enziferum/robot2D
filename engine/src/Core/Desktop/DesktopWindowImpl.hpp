@@ -44,7 +44,6 @@ namespace robot2D {
             bool isOpen() const override;
             void setTitle(const std::string& title) const override;
 
-            void clear(const Color& color) override;
             void close() override;
             void display() override;
 
@@ -64,8 +63,6 @@ namespace robot2D {
         private:
             void setup();
             void setup_callbacks();
-            void setup_WGL();
-
         private:
             static void close_callback(GLFWwindow* wnd);
             static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);

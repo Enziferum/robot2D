@@ -43,5 +43,7 @@ namespace robot2D {
         void resize(const robot2D::vec2i& newSize);
     protected:
         void onResize(const int& w, const int& h) override;
+    private:
+        void setupGL();
     };
 }

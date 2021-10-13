@@ -68,16 +68,12 @@ namespace editor {
         auto& panel = m_panelManager.addPanel<ComponentPanel>();
         auto& scenePanel = m_panelManager.addPanel<ScenePanel>();
         auto& assetsPanel = m_panelManager.addPanel<AssetsPanel>();
-        auto& viewportPanel = m_panelManager.addPanel<ViewportPanel>(std::move(m_activeScene));
         auto& inspectorPanel = m_panelManager.addPanel<InspectorPanel>(m_camera);
         auto& menuPanel = m_panelManager.addPanel<MenuPanel>();
     }
 
     void Editor::prepare() {
         auto windowSize = m_window.getSize();
-        if(!createScene()) {
-            RB_EDITOR_ERROR("Can't create Scene on Init");
-        }
 
         robot2D::FrameBufferSpecification frameBufferSpecification;
         frameBufferSpecification.size = {windowSize.x, windowSize.y};
