@@ -43,9 +43,7 @@ namespace robot2D {
         Window::create();
     }
 
-
     Window::~Window() {}
-
 
     bool Window::isOpen() const {
         return m_windowImpl -> isOpen();
@@ -143,7 +141,4 @@ namespace robot2D {
         m_win_size = size;
         m_windowImpl -> setSize(size);
     }
-
-
-
 }

@@ -24,16 +24,15 @@ source distribution.
 
 namespace robot2D{
 
-    RenderWindow::RenderWindow():
-    Window(),
-    RenderTarget(m_win_size) {
+    RenderWindow::RenderWindow():Window(), RenderTarget(m_win_size) {
     }
 
     RenderWindow::RenderWindow(const vec2u& size, const std::string& name,
                                const WindowContext& context):
                                Window(size, name, context),
-                               RenderTarget(m_win_size)
-                               {}
+                               RenderTarget(m_win_size) {
+                                    setupGL();
+                               }
 
 
     void RenderWindow::onResize(const int& width, const int& height) {
@@ -43,6 +42,17 @@ namespace robot2D{
     void RenderWindow::resize(const vec2i& newSize) {
         m_size = vec2u { newSize.x, newSize.y};
         m_win_size = m_size;
+        glViewport(0, 0, m_size.x, m_size.y);
+    }
+
+    void RenderWindow::setupGL() {
+        #ifdef ROBOT2D_WINDOWS
+                if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
+                {
+                    RB_CORE_CRITICAL("Failed to initialize GLAD");
+                    throw std::runtime_error("Failed to initialize GLAD");
+                }
+        #endif
         glViewport(0, 0, m_size.x, m_size.y);
     }
 

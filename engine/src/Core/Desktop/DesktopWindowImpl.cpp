@@ -27,7 +27,6 @@ source distribution.
 namespace robot2D {
     namespace priv {
         DesktopWindowImpl::DesktopWindowImpl():
-
         m_window(nullptr),
         m_cursorVisible(true),
         m_size(800, 600),
@@ -112,18 +111,6 @@ namespace robot2D {
                 glfwSwapInterval(1);
 
             setup_callbacks();
-            setup_WGL();
-        }
-
-        void DesktopWindowImpl::setup_WGL() {
-#ifdef ROBOT2D_WINDOWS
-            if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
-            {
-                RB_CORE_CRITICAL("Failed to initialize GLAD");
-                throw std::runtime_error("Failed to initialize GLAD");
-            }
-#endif
-            glViewport(0, 0, m_size.x, m_size.y);
         }
 
         bool DesktopWindowImpl::isOpen() const {
@@ -131,15 +118,8 @@ namespace robot2D {
         }
 
         void DesktopWindowImpl::setTitle(const std::string& title) const {
-            const char* t = title.c_str();
-            glfwSetWindowTitle(m_window, t);
-        }
-
-        void DesktopWindowImpl::clear(const Color& color) {
-            auto glColor = color.toGL();
-            glClearColor(glColor.red, glColor.green, glColor.blue, glColor.alpha);
-            //glClear(GL_COLOR_BUFFER_BIT);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            const char* c_str = title.c_str();
+            glfwSetWindowTitle(m_window, c_str);
         }
 
         void DesktopWindowImpl::close() {
@@ -154,7 +134,6 @@ namespace robot2D {
         void DesktopWindowImpl::setup_callbacks() {
             if(m_window == nullptr)
                 throw std::runtime_error("Window is nullptr");
-
 
             glfwSetWindowUserPointer(m_window, this);
             glfwSetWindowCloseCallback(m_window, close_callback);
@@ -287,7 +266,6 @@ namespace robot2D {
 
             Event event{};
             event.type = Event::DragDrop;
-            //event.dragDrop.paths = outputPaths;
         }
 
         void DesktopWindowImpl::setIcon(Image&& icon) {
@@ -338,8 +316,6 @@ namespace robot2D {
         void DesktopWindowImpl::setSize(const vec2u& size) {
             glfwSetWindowSize(m_window, static_cast<int>(size.x), static_cast<int>(size.y));
         }
-
-
 
     }
 }

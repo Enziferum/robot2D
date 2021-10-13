@@ -34,9 +34,13 @@ namespace editor {
         robot2D::Clock frameClock;
         constexpr float timePerFrame = 1.F / 60.F;
         float processedTime = 0.F;
+
         const std::string editorCachePath = "editor.cache";
         const std::string editorVersion = "0.1";
+        const std::string logoPath = "res/textures/logo.png";
+
         const robot2D::vec2u inspectorSize = {600, 400};
+
         robot2D::vec2u getCenterPoint(const robot2D::vec2u& objectSize, const robot2D::vec2u& frameSize) {
             robot2D::vec2u normalCenter = {frameSize.x / 2, frameSize.y / 2};
             robot2D::vec2u objectHalfSize = {objectSize.x / 2, objectSize.y / 2};
@@ -57,7 +61,7 @@ namespace editor {
     void Application::setup() {
         {
             robot2D::Image iconImage;
-            iconImage.loadFromFile("res/textures/logo.png");
+            iconImage.loadFromFile(logoPath);
             m_window.setIcon(std::move(iconImage));
         }
         m_guiWrapper.init(m_window);
