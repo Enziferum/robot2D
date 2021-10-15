@@ -22,26 +22,14 @@ source distribution.
 #pragma once
 
 #include <filesystem>
-#include <vector>
 #include <string>
 
 namespace editor {
-    using stringBuffer = std::vector<std::string>;
-    class FileManager {
-    public:
-        FileManager();
-        ~FileManager() = default;
+    bool createDirectory(const std::string& path);
 
-        bool addProject();
-        bool removeProject();
+    bool createDirectory(const std::string& basePath, const std::string& appendPath);
 
-        stringBuffer scanDirectory(const std::string& dirPath);
-    private:
-        std::filesystem::path m_path;
-    };
+    bool deleteDirectory(const std::string& path);
 
-    namespace util {
-        namespace fs = std::filesystem;
-    }
-
+    std::string addFilename(const std::string& path, const std::string& filename);
 }

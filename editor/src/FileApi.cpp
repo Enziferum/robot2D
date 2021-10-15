@@ -19,29 +19,35 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#pragma once
-
-#include <filesystem>
-#include <vector>
-#include <string>
+#include <editor/FileApi.hpp>
 
 namespace editor {
-    using stringBuffer = std::vector<std::string>;
-    class FileManager {
-    public:
-        FileManager();
-        ~FileManager() = default;
+    namespace fs = std::filesystem;
 
-        bool addProject();
-        bool removeProject();
-
-        stringBuffer scanDirectory(const std::string& dirPath);
-    private:
-        std::filesystem::path m_path;
-    };
-
-    namespace util {
-        namespace fs = std::filesystem;
+    bool createDirectory(const std::string& path) {
+        if(path.empty())
+            return false;
+        return fs::create_directories(fs::path(path));
     }
 
+    bool createDirectory(const std::string& basePath, const std::string& appendPath){}
+
+    bool deleteDirectory(const std::string& path) {
+        if(path.empty())
+            return false;
+
+        auto result = fs::remove_all(fs::path(path));
+        return true;
+    }
+
+    std::string addFilename(const std::string& path, const std::string& filename) {
+        if(path.empty())
+            return "";
+        if(filename.empty())
+            return "";
+        fs::path resultPath = fs::path(path);
+        resultPath.append(filename);
+        return resultPath.string();
+    }
 }
+

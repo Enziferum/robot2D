@@ -27,7 +27,6 @@ source distribution.
 #include <robot2D/Graphics/Buffer.hpp>
 #include <robot2D/Graphics/VertexArray.hpp>
 #include <robot2D/Util/Logger.hpp>
-
 #include "OpenGLRender.hpp"
 
 namespace robot2D {
@@ -96,6 +95,8 @@ namespace robot2D {
         }
 
         void OpenGLRender::initOpenGL() {
+
+
 #ifdef ROBOT2D_WINDOWS
             RB_CORE_INFO("{0}", __FUNCTION__ );
 #endif
