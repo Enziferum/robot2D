@@ -34,9 +34,11 @@ namespace editor {
         robot2D::Clock frameClock;
         constexpr float timePerFrame = 1.F / 60.F;
         float processedTime = 0.F;
+
         const std::string editorCachePath = "editor.cache";
         const std::string editorVersion = "0.1";
         const robot2D::vec2u inspectorSize = {600, 400};
+
         robot2D::vec2u getCenterPoint(const robot2D::vec2u& objectSize, const robot2D::vec2u& frameSize) {
             robot2D::vec2u normalCenter = {frameSize.x / 2, frameSize.y / 2};
             robot2D::vec2u objectHalfSize = {objectSize.x / 2, objectSize.y / 2};
@@ -56,6 +58,7 @@ namespace editor {
 
     void Application::setup() {
         {
+            //TODO use robot2D::Image file
             robot2D::Texture iconTexture;
             iconTexture.loadFromFile("assets/textures/icon.png");
             m_window.setIcon(std::move(iconTexture));
@@ -140,7 +143,6 @@ namespace editor {
             if(event.type == robot2D::Event::Resized) {
                 RB_EDITOR_INFO("New Size = {0} and {1}", event.size.widht, event.size.heigth);
                 m_window.resize({event.size.widht, event.size.heigth});
-                //robot2D::View{0, 0, event.size.widht, event.size.heigth}
                 m_window.setView({{0, 0}, {event.size.widht, event.size.heigth}});
             }
 
@@ -194,7 +196,6 @@ namespace editor {
 
         m_editor.createProject(project);
         m_state = State::Editor;
-        m_window.setSize(defaultWindowSize);
     }
 
     void Application::deleteProject(ProjectDescription projectDescription) {
@@ -224,7 +225,6 @@ namespace editor {
         }
 
         m_state = State::Editor;
-        m_window.setSize(defaultWindowSize);
         m_editor.loadProject(m_projectManager.getCurrentProject());
     }
 }

@@ -32,7 +32,11 @@ namespace editor {
     };
 
     enum class ProjectManagerError {
-        None
+        None,
+        ProjectSerialize,
+        ProjectDerialize,
+        CreateFolder,
+        RemoveFolder
     };
 
     std::string errorToString(const EditorCacheError& error);

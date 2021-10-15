@@ -37,7 +37,18 @@ namespace editor {
     }
 
     std::string errorToString(const ProjectManagerError& error) {
-        return "";
+        switch(error) {
+            case ProjectManagerError::ProjectSerialize:
+                return "Can't Serialize Project";
+            case ProjectManagerError::ProjectDerialize:
+                return "Cant' Deserialize Project";
+            case ProjectManagerError::CreateFolder:
+                return "Can't create Project Folder";
+            case ProjectManagerError::RemoveFolder:
+                return "Can't remove Project Folder";
+            default:
+                return "Undefined Error";
+        }
     }
 }
 
