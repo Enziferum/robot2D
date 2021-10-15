@@ -32,6 +32,9 @@ namespace editor {
         FileManager();
         ~FileManager() = default;
 
+        bool addProject();
+        bool removeProject();
+
         stringBuffer scanDirectory(const std::string& dirPath);
     private:
         std::filesystem::path m_path;
