@@ -19,15 +19,15 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include <filesystem>
 #include <editor/ProjectManager.hpp>
 #include <editor/ProjectSerializer.hpp>
+#include <editor/FileApi.hpp>
 
 namespace editor {
 
     namespace  {
-        namespace fs = std::filesystem;
         const std::string startSceneName = "Scene.scene";
+        const std::string projectExtension = ".robot2D";
     }
 
     ProjectManager::ProjectManager(): m_currentProject{nullptr},
@@ -40,53 +40,56 @@ namespace editor {
         project -> setEditorVersion("0.1");
         project -> setStartScene(startSceneName);
 
-        std::filesystem::path fullPath(description.path);
-        auto fullname = description.name + ".robot2D";
-        fullPath.append(fullname);
-        ProjectSerializer(project).serialize(fullPath.string());
-        m_currentProject = project;
+        auto fullname = description.name + projectExtension;
+        auto fullPath = addFilename(description.path, fullname);
 
-        // directories create
+        if(!ProjectSerializer(project).serialize(fullPath)) {
+            m_error = ProjectManagerError::ProjectSerialize;
+            return false;
+        }
 
         auto path = project -> getPath();
-        fs::path dirPath(path);
-        dirPath += fs::path("/assets");
 
-        if(!fs::create_directories(dirPath)) {
-            RB_EDITOR_ERROR("Can't create folder {0}", dirPath.string());
+        if(!createDirectory(path, "assets")) {
+            m_error = ProjectManagerError::CreateFolder;
             return false;
         }
-        dirPath += fs::path("/scenes");
-        if(!fs::create_directories(dirPath)) {
-            RB_EDITOR_ERROR("Can't create folder {0}", dirPath.string());
+
+        if(!createDirectory(path, "assets/scenes")){
+            m_error = ProjectManagerError::CreateFolder;
             return false;
         }
-        dirPath = fs::path(path);
-        dirPath += fs::path("/assets/textures");
-        if(!fs::create_directories(dirPath)) {
-            RB_EDITOR_ERROR("Can't create folder {0}", dirPath.string());
+
+        if(!createDirectory(path, "assets/textures")) {
+            m_error = ProjectManagerError::CreateFolder;
+            return false;
+        }
+
+        m_currentProject = project;
+        return true;
+    }
+
+    bool ProjectManager::load(const ProjectDescription& description) {
+        if(m_currentProject)
+            return true;
+        m_currentProject = std::make_shared<Project>();
+        ProjectSerializer serializer(m_currentProject);
+        auto fullname = description.name + projectExtension;
+        auto fullPath = addFilename(description.name, fullname);
+
+        if(!serializer.deserialize(fullPath)) {
+            m_error = ProjectManagerError::ProjectDerialize;
             return false;
         }
 
         return true;
     }
 
-    bool ProjectManager::load(const ProjectDescription& description) {
-        if(m_currentProject) {
-            return true;
-        }
-        m_currentProject = std::make_shared<Project>();
-        ProjectSerializer serializer(m_currentProject);
-        std::filesystem::path fullPath(description.path);
-        auto fullname = description.name + ".robot2D";
-        fullPath.append(fullname);
-        bool res = serializer.deserialize(fullPath.string());
-        return res;
-    }
-
     bool ProjectManager::remove(const ProjectDescription& description) {
-        //todo move smart way of deleting
-        if(!std::filesystem::remove_all(std::filesystem::path(description.path))){}
+        if(!deleteDirectory(description.path)) {
+            m_error = ProjectManagerError::RemoveFolder;
+            return false;
+        }
         return true;
     }
 

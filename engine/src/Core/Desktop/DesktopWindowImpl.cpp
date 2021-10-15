@@ -111,6 +111,16 @@ namespace robot2D {
                 glfwSwapInterval(1);
 
             setup_callbacks();
+
+#ifdef ROBOT2D_WINDOWS
+            //gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)
+            if (!gladLoadGL())
+            {
+                RB_CORE_CRITICAL("Failed to initialize GLAD");
+                throw std::runtime_error("Failed to initialize GLAD");
+            }
+#endif
+            glViewport(0, 0, m_size.x, m_size.y);
         }
 
         bool DesktopWindowImpl::isOpen() const {

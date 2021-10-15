@@ -25,8 +25,8 @@ source distribution.
 #pragma warning(push, 0)
 #include <spdlog/spdlog.h>
 #include <spdlog/fmt/ostr.h>
-//#include <spdlog/fmt/bundled/format.h>
-#include <fmt/format.h>
+#include <spdlog/fmt/bundled/format.h>
+//#include <fmt/format.h>
 #pragma warning(pop)
 
 #include <robot2D/Core/Vector2.hpp>

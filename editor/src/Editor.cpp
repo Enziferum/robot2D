@@ -65,7 +65,7 @@ namespace editor {
             }
         }
 
-        auto& panel = m_panelManager.addPanel<ComponentPanel>();
+        //auto& panel = m_panelManager.addPanel<ComponentPanel>();
         auto& scenePanel = m_panelManager.addPanel<ScenePanel>();
         auto& assetsPanel = m_panelManager.addPanel<AssetsPanel>();
         auto& inspectorPanel = m_panelManager.addPanel<InspectorPanel>(m_camera);
@@ -112,7 +112,6 @@ namespace editor {
             case State::Edit: {
                 m_activeScene -> update(dt);
                 m_panelManager.update(dt);
-                m_dt = dt;
                 break;
             }
             case State::Run: {

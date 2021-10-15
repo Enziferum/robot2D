@@ -144,7 +144,6 @@ namespace editor {
             if(event.type == robot2D::Event::Resized) {
                 RB_EDITOR_INFO("New Size = {0} and {1}", event.size.widht, event.size.heigth);
                 m_window.resize({event.size.widht, event.size.heigth});
-                //robot2D::View{0, 0, event.size.widht, event.size.heigth}
                 m_window.setView({{0, 0}, {event.size.widht, event.size.heigth}});
             }
 
@@ -198,7 +197,6 @@ namespace editor {
 
         m_editor.createProject(project);
         m_state = State::Editor;
-        m_window.setSize(defaultWindowSize);
     }
 
     void Application::deleteProject(ProjectDescription projectDescription) {
@@ -228,7 +226,6 @@ namespace editor {
         }
 
         m_state = State::Editor;
-        m_window.setSize(defaultWindowSize);
         m_editor.loadProject(m_projectManager.getCurrentProject());
     }
 }

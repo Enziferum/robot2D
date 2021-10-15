@@ -74,6 +74,7 @@ namespace editor {
         robot2D::RenderWindow& m_window;
         robot2D::MessageBus& m_messageBus;
         PanelManager m_panelManager;
+
         Project::Ptr m_currentProject;
         Scene::Ptr m_activeScene;
         SceneCamera m_camera;
@@ -82,6 +83,5 @@ namespace editor {
         robot2D::ResourceHandler<robot2D::Texture, TextureID> m_textures;
         robot2D::vec2u m_ViewportSize;
         robot2D::Color m_sceneClearColor;
-        float m_dt = 0.F;
     };
 }
