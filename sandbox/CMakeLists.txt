@@ -12,6 +12,8 @@ set(SRC
         src/Render2DScene.cpp
         src/Sandbox.cpp
         src/Scene.cpp
+        src/Components.cpp
+        src/Systems.cpp
         )
 
 add_executable(${PROJECT_NAME} ${SRC})

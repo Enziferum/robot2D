@@ -33,6 +33,8 @@ namespace editor {
     // todo get it from Somewhere
     constexpr char* assetsPath = "assets";
     constexpr char* iconsPath = "res/icons/";
+    static float padding = 16.F;
+    static float thumbNaleSize = 128.F;
 
     const std::unordered_map<ResourceIconType, std::string> iconPaths = {
             {ResourceIconType::File, "FileIcon.png"},
@@ -48,9 +50,6 @@ namespace editor {
             }
         }
     }
-
-    static float padding = 16.F;
-    static float thumbNaleSize = 128.F;
 
     void AssetsPanel::setAssetsPath(const std::string &path) {
         m_currentPath = fs::path(path);

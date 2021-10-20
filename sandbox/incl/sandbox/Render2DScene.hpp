@@ -25,7 +25,6 @@ source distribution.
 #include <robot2D/Ecs/Scene.hpp>
 #include "Scene.hpp"
 
-
 enum class ResourceID {
     Face
 };
@@ -41,6 +40,8 @@ public:
     virtual void imGuiRender() override;
     virtual void render() override;
 
+private:
+    void createEntity(const robot2D::vec2f& position);
 private:
     robot2D::ecs::Scene m_scene;
     robot2D::MessageBus messageBus;

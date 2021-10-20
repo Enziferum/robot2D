@@ -26,13 +26,9 @@ source distribution.
 #include <editor/EditorCache.hpp>
 
 namespace editor {
-
-    namespace  {
-        const std::string editorVersion = "0.1";
-    }
-
-    EditorCache::EditorCache(): m_showInspector(true),
-                                m_cacheDescriptions() {}
+    EditorCache::EditorCache(const Configuration& configuration): m_showInspector(false),
+                                m_cacheDescriptions(),
+                                m_configuration(configuration) {}
 
     bool EditorCache::parseCache(const std::string& path) {
         m_cachePath = path;
@@ -73,6 +69,48 @@ namespace editor {
             m_currentDescription.path = data["CurrentProject"].as<std::string>();
         }
 
+        return true;
+    }
+
+    void EditorCache::createCacheFile(const std::string& path) {
+        YAML::Emitter out;
+        out << YAML::BeginMap;
+        auto [status, result] = m_configuration.getValue(ConfigurationKey::Version);
+        out << YAML::Key << "Robot2D Editor" << YAML::Value << result;
+        out << YAML::EndMap;
+
+        std::ofstream ofstream(path);
+        if(!ofstream.is_open()) {
+            m_cacheError = EditorCacheError::NoCacheFile;
+            return;
+        }
+
+        ofstream << out.c_str();
+        ofstream.close();
+    }
+
+    bool EditorCache::loadProject(const ProjectDescription& description) {
+        std::ifstream ifstream(m_cachePath);
+        if(!ifstream.is_open()) {
+            return false;
+        }
+        std::stringstream sstr;
+        sstr << ifstream.rdbuf();
+        ifstream.close();
+
+        YAML::Node data = YAML::Load(sstr.str());
+        YAML::Emitter out;
+        if(!data["Robot2D Editor"]) {
+            m_cacheError = EditorCacheError::EditorTagNone;
+            return false;
+        }
+
+        data["CurrentProject"] = description.path;
+        data["ShowInspector"] = m_showInspector;
+
+        std::ofstream ofstream(m_cachePath);
+        ofstream << data;
+        ofstream.close();
         return true;
     }
 
@@ -169,49 +207,8 @@ namespace editor {
         return m_cacheError;
     }
 
-    void EditorCache::createCacheFile(const std::string& path) {
-        YAML::Emitter out;
-        out << YAML::BeginMap;
-        out << YAML::Key << "Robot2D Editor" << YAML::Value << editorVersion;
-        out << YAML::EndMap;
-
-        std::ofstream ofstream(path);
-        if(!ofstream.is_open()) {
-            m_cacheError = EditorCacheError::NoCacheFile;
-            return;
-        }
-
-        ofstream << out.c_str();
-        ofstream.close();
-    }
-
     std::vector<ProjectDescription>& EditorCache::getProjects() {
         return m_cacheDescriptions;
-    }
-
-    bool EditorCache::loadProject(const ProjectDescription& description) {
-        std::ifstream ifstream(m_cachePath);
-        if(!ifstream.is_open()) {
-            return false;
-        }
-        std::stringstream sstr;
-        sstr << ifstream.rdbuf();
-        ifstream.close();
-
-        YAML::Node data = YAML::Load(sstr.str());
-        YAML::Emitter out;
-        if(!data["Robot2D Editor"]) {
-            m_cacheError = EditorCacheError::EditorTagNone;
-            return false;
-        }
-
-        data["CurrentProject"] = description.path;
-        data["ShowInspector"] = m_showInspector;
-
-        std::ofstream ofstream(m_cachePath);
-        ofstream << data;
-        ofstream.close();
-        return true;
     }
 
     const ProjectDescription& EditorCache::getCurrentProject() const {

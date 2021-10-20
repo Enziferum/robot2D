@@ -100,7 +100,6 @@ namespace editor {
                     ImGui::OpenPopup(itemid.c_str());
                 }
 
-
                 if(ImGui::BeginPopup(itemid.c_str())) {
                     if(ImGui::MenuItem("Load")) {
                         loadProject(it);

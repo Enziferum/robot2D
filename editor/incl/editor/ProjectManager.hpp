@@ -24,11 +24,12 @@ source distribution.
 #include "Project.hpp"
 #include "ProjectDescription.hpp"
 #include "Errors.hpp"
+#include "Configuration.hpp"
 
 namespace editor {
     class ProjectManager {
     public:
-        ProjectManager();
+        ProjectManager(const Configuration& configuration);
         ~ProjectManager() = default;
 
 
@@ -41,5 +42,6 @@ namespace editor {
     private:
         Project::Ptr m_currentProject;
         ProjectManagerError m_error;
+        Configuration m_configuration;
     };
 }

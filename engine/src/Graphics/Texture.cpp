@@ -21,6 +21,7 @@ source distribution.
 
 #include <robot2D/Graphics/GL.hpp>
 #include <robot2D/Graphics/Texture.hpp>
+#include <robot2D/Util/Logger.hpp>
 
 namespace robot2D{
 

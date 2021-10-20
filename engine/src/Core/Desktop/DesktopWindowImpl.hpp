@@ -70,6 +70,7 @@ namespace robot2D {
             static void mouseWhell_callback(GLFWwindow* window, double xpos, double ypos);
             static void mouse_callback(GLFWwindow* window, int key, int action, int mods);
             static void size_callback(GLFWwindow* window, int w, int h);
+            static void framebuffer_callback(GLFWwindow* window, int width, int height);
             static void maximized_callback(GLFWwindow* window, int state);
             static void dragdrop_callback(GLFWwindow* wnd, int count, const char** paths);
             static void focus_callback(GLFWwindow* wnd, int focus);

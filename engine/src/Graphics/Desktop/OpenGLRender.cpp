@@ -294,9 +294,10 @@ namespace robot2D {
         void OpenGLRender::applyCurrentView() {
             IntRect viewport = getViewport(m_view);
             int top = m_size.y - (viewport.ly + viewport.height);
-            glViewport(viewport.lx, top, viewport.width, viewport.height);
             m_quadShader.use();
             m_quadShader.set_parameter("projection", m_view.getTransform().get_matrix());
+            m_quadShader.unUse();
+           // glViewport(viewport.lx, top, viewport.width, viewport.height);
         }
 
         const View& OpenGLRender::getView() {

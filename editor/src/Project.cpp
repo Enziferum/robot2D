@@ -19,7 +19,6 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#pragma once
 #include <cassert>
 #include <editor/Project.hpp>
 

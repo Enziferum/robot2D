@@ -80,5 +80,4 @@ namespace editor {
         robot2D::View m_view;
         robot2D::FloatRect m_actualViewport;
     };
-
 }
