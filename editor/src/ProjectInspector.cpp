@@ -28,21 +28,11 @@ source distribution.
 
 namespace editor {
 
-    namespace {
-        const ImVec2 createButtonSize = ImVec2(200.F, 50.F);
-        constexpr float textOffset = 10.F;
-        constexpr unsigned colID = 0xFFFFFFFF;
-        bool isOpen = true;
-        ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoTitleBar |
-                                       ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoResize;
-        ImGuiSelectableFlags_ selectableFlags = ImGuiSelectableFlags_AllowItemOverlap;
-        int m_selectedItem = -1;
-        bool openAlways = true;
-    }
-
-    ProjectInspector::ProjectInspector(robot2D::RenderWindow& window, EditorCache& editorCache): m_window{window},
+    ProjectInspector::ProjectInspector(robot2D::RenderWindow& window, EditorCache& editorCache):
+    m_window{window},
     m_editorCache{editorCache},
-    m_descriptions() {}
+    m_descriptions(),
+    m_configuration{}{}
 
     void ProjectInspector::addCallback(const ProjectInspector::CallbackType& callbackType,
                                        ProcessFunction &&function) {
@@ -68,7 +58,7 @@ namespace editor {
         auto windowSize = m_window.getSize();
 
         ImGui::SetNextWindowSize(ImVec2(windowSize.x, windowSize.y));
-        ImGui::Begin("ProjectInspector", &isOpen, windowFlags);
+        ImGui::Begin("ProjectInspector", &m_configuration.isOpen, m_configuration.windowFlags);
         ImGui::SetWindowPos(ImVec2(0.F, 0.F));
 
         static const float fontSize = ImGui::GetFontSize();
@@ -78,7 +68,7 @@ namespace editor {
 
         if (ImGui::BeginListBox("##label", ImVec2(halfWidth, height)))
         {
-            ImVec2 startPos{textOffset, textOffset};
+            ImVec2 startPos{m_configuration.textOffset, m_configuration.textOffset};
 
             for (int it = 0; it < m_descriptions.size(); ++it)
             {
@@ -91,12 +81,13 @@ namespace editor {
                                                         halfWidth, description.name.c_str());
                 ImVec2 pathTextSize = font -> CalcTextSizeA(fontSize, halfWidth,
                                                             halfWidth, description.path.c_str());
-                ImVec2 textSize = ImVec2(nameTextSize.x + pathTextSize.x + 2 * textOffset,
-                                         nameTextSize.y + pathTextSize.y + 2 * textOffset);
+                ImVec2 textSize = ImVec2(nameTextSize.x + pathTextSize.x + 2 * m_configuration.textOffset,
+                                         nameTextSize.y + pathTextSize.y + 2 * m_configuration.textOffset);
 
-                if (ImGui::Selectable(itemid.c_str(), it == m_selectedItem, selectableFlags,
+                if (ImGui::Selectable(itemid.c_str(), it == m_configuration.m_selectedItem,
+                                      m_configuration.selectableFlags,
                                       ImVec2(textSize.x, textSize.y))) {
-                    m_selectedItem = it;
+                    m_configuration.m_selectedItem = it;
                     ImGui::OpenPopup(itemid.c_str());
                 }
 
@@ -113,13 +104,14 @@ namespace editor {
                 }
 
                 auto drawList = ImGui::GetWindowDrawList();
-                drawList -> AddText(font, fontSize, startPos, colID,
+                drawList -> AddText(font, fontSize, startPos, m_configuration.colID,
                                     description.name.c_str(), nullptr, halfWidth);
                 startPos.y += nameTextSize.y;
-                drawList -> AddText(font, fontSize, ImVec2(startPos.x, startPos.y + textOffset), colID,
+                drawList -> AddText(font, fontSize, ImVec2(startPos.x, startPos.y + m_configuration.textOffset),
+                                    m_configuration.colID,
                                     description.path.c_str(), nullptr, halfWidth);
 
-                startPos.y += pathTextSize.y + 3 * textOffset;
+                startPos.y += pathTextSize.y + 3 * m_configuration.textOffset;
 
                 ImGui::Separator();
                 ImGui::PopID();
@@ -130,10 +122,10 @@ namespace editor {
         ImGui::SameLine();
         ImGui::BeginGroup();
 
-        if(ImGui::Button("Create Project", createButtonSize))
+        if(ImGui::Button("Create Project", m_configuration.createButtonSize))
             createProject();
-        if(ImGui::Checkbox("Open always", &openAlways)) {
-            m_editorCache.setShowInspector(openAlways);
+        if(ImGui::Checkbox("Open always", &m_configuration.openAlways)) {
+            m_editorCache.setShowInspector(m_configuration.openAlways);
         }
 
         ImGui::EndGroup();

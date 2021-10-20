@@ -23,14 +23,14 @@ source distribution.
 #include <robot2D/Util/Logger.hpp>
 
 namespace editor {
-    constexpr float cameraSpeed = 10.F;
-
-
-    SceneCamera::SceneCamera(): m_view(), m_zoom(0.F) {}
+    SceneCamera::SceneCamera():
+    m_view(),
+    m_zoom(0.F),
+    m_configuration{} {}
 
     void SceneCamera::onEvent(const robot2D::Event& event) {
         if(event.type == robot2D::Event::MouseWheel) {
-            m_zoom = 1.F + event.wheel.scroll_y * 0.1;
+            m_zoom = m_configuration.zoomOffset + event.wheel.scroll_y * m_configuration.zoomMultiplier;
             m_view.zoom(m_zoom);
         }
 

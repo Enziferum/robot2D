@@ -25,11 +25,12 @@ source distribution.
 #include <editor/InspectorPanel.hpp>
 
 namespace editor {
-    const robot2D::Color defaultBackGround = robot2D::Color::fromGL(0.1, 0.1, 0.1, 1);
 
-    InspectorPanel::InspectorPanel(SceneCamera& sceneCamera): IPanel(UniqueType(typeid(InspectorPanel))),
-    m_camera{sceneCamera}{
-        m_clearColor = defaultBackGround;
+    InspectorPanel::InspectorPanel(SceneCamera& sceneCamera):
+    IPanel(UniqueType(typeid(InspectorPanel))),
+    m_camera{sceneCamera},
+    m_configuration{} {
+        m_clearColor = m_configuration.defaultBackGround;
     }
 
     const robot2D::Color& InspectorPanel::getColor() const {

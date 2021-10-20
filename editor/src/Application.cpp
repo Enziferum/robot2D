@@ -27,41 +27,33 @@ source distribution.
 #include <editor/Application.hpp>
 #include <editor/EditorStyles.hpp>
 #include <editor/ProjectSerializer.hpp>
+#include <editor/Utils.hpp>
 
 namespace editor {
 
     namespace {
-        robot2D::Clock frameClock;
         constexpr float timePerFrame = 1.F / 60.F;
+        robot2D::Clock frameClock;
         float processedTime = 0.F;
-
-        const std::string logoPath = "res/textures/logo.png";
-        const robot2D::vec2u inspectorSize = {600, 400};
-
-        robot2D::vec2u getCenterPoint(const robot2D::vec2u& objectSize, const robot2D::vec2u& frameSize) {
-            robot2D::vec2u normalCenter = {frameSize.x / 2, frameSize.y / 2};
-            robot2D::vec2u objectHalfSize = {objectSize.x / 2, objectSize.y / 2};
-            return {normalCenter.x - objectHalfSize.x, normalCenter.y - objectHalfSize.y};
-        }
     }
 
 
     Application::Application():
-            defaultWindowSize{1280, 920},
-            m_window(defaultWindowSize, "Editor", robot2D::WindowContext::Default),
+            m_appConfiguration{},
+            m_window(m_appConfiguration.defaultWindowSize,
+                     "Editor", robot2D::WindowContext::Default),
             m_editor{m_window, m_messageBus},
             m_state{State::ProjectInspector},
             m_configuration{},
             m_editorCache{m_configuration},
             m_projectManager{m_configuration},
-            m_projectInspector{m_window, m_editorCache} {}
-
-
+            m_projectInspector{m_window, m_editorCache}
+             {}
 
     void Application::setup() {
         {
             robot2D::Image iconImage;
-            iconImage.loadFromFile(logoPath);
+            iconImage.loadFromFile(m_appConfiguration.logoPath);
             m_window.setIcon(std::move(iconImage));
         }
         m_guiWrapper.init(m_window);
@@ -92,7 +84,7 @@ namespace editor {
             //todo setWindow not to be resizable
             //todo subscribeLogic
 
-            m_window.setSize(inspectorSize);
+            m_window.setSize(m_appConfiguration.inspectorSize);
             applyStyle(EditorStyle::GoldBlack);
 
 
