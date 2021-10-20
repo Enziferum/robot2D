@@ -24,11 +24,9 @@ source distribution.
 
 #include <editor/Editor.hpp>
 // Panels
-#include <editor/ComponentPanel.hpp>
 #include <editor/ScenePanel.hpp>
 #include <editor/AssetsPanel.hpp>
 #include <editor/MenuPanel.hpp>
-#include <editor/ViewportPanel.hpp>
 #include <editor/InspectorPanel.hpp>
 
 #include <editor/Wrapper.hpp>
@@ -38,27 +36,18 @@ source distribution.
 
 namespace editor {
     namespace fs = std::filesystem;
-    // develop only flag
-    constexpr bool useGUI = true;
-    const std::string texturesPath = "res/textures/";
-    bool m_leftCtrlPressed = false;
-    static bool opt_padding = true;
-    static bool dockspace_open = false;
-    static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
 
-    std::unordered_map<TextureID, std::string> texturePaths = {
-            {TextureID::Logo, "logo.png"},
-    };
-
-    Editor::Editor(robot2D::RenderWindow& window, robot2D::MessageBus& messageBus): m_state(State::Edit),
+    Editor::Editor(robot2D::RenderWindow& window, robot2D::MessageBus& messageBus):
+    m_state(State::Edit),
     m_window{window},
     m_messageBus{messageBus},
     m_activeScene{ nullptr }, m_frameBuffer{nullptr}, m_ViewportSize{},
-    m_currentProject{nullptr} {}
+    m_currentProject{nullptr},
+    m_configuration{}{}
 
     void Editor::setup() {
-        for(auto& it: texturePaths) {
-            auto fullPath = texturesPath + it.second;
+        for(auto& it: m_configuration.texturePaths) {
+            auto fullPath = m_configuration.texturesPath + it.second;
             if(!m_textures.loadFromFile(it.first, fullPath)) {
                 throw std::runtime_error("Can't load Texture");
             }
@@ -87,17 +76,17 @@ namespace editor {
     void Editor::handleEvents(const robot2D::Event& event) {
         if(event.type == robot2D::Event::KeyPressed) {
             if(event.key.code == robot2D::Key::LEFT_CONTROL) {
-                m_leftCtrlPressed = true;
+                m_configuration.m_leftCtrlPressed = true;
             }
             if(event.key.code == robot2D::Key::S) {
-                if(m_leftCtrlPressed) {
+                if(m_configuration.m_leftCtrlPressed) {
                     saveScene(m_activeScene->getPath());
                 }
             }
         }
         if(event.type == robot2D::Event::KeyReleased) {
             if(event.key.code == robot2D::Key::LEFT_CONTROL) {
-                m_leftCtrlPressed = false;
+                m_configuration.m_leftCtrlPressed = false;
             }
         }
 
@@ -121,7 +110,7 @@ namespace editor {
     }
 
     void Editor::render() {
-        if(useGUI) {
+        if(m_configuration.useGUI) {
             m_frameBuffer -> Bind();
             const auto& clearColor = m_panelManager.getPanel<InspectorPanel>().getColor();
             m_window.clear(clearColor);
@@ -138,7 +127,7 @@ namespace editor {
 
             robot2D::RenderStates renderStates;
             if(sprite.getTexturePointer() == nullptr) {
-                sprite.setTexture(m_textures.get(TextureID::Logo));
+                sprite.setTexture(m_textures.get(EditorConfiguration::TextureID::Logo));
             }
             renderStates.texture = &sprite.getTexture();
             renderStates.transform *= transform.getTransform();
@@ -149,7 +138,7 @@ namespace editor {
         m_window.afterRender();
         m_window.flushRender();
 
-        if(useGUI) {
+        if(m_configuration.useGUI) {
             m_frameBuffer->unBind();
             guiRender();
         }
@@ -167,17 +156,17 @@ namespace editor {
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
 
-        if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
+        if (m_configuration.dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
             window_flags |= ImGuiWindowFlags_NoBackground;
 
-        ImGui::Begin("Scene", &dockspace_open, window_flags);
+        ImGui::Begin("Scene", &m_configuration.dockspace_open, window_flags);
         ImGui::PopStyleVar(2);
 
         ImGuiIO& io = ImGui::GetIO();
         if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
         {
             ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
-            ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
+            ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), m_configuration.dockspace_flags);
         }
 
         mainMenubar();

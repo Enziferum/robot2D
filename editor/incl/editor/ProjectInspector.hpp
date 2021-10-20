@@ -29,6 +29,19 @@ source distribution.
 
 namespace editor {
 
+    struct ProjectInspectorConfiguration {
+        const ImVec2 createButtonSize = ImVec2(200.F, 50.F);
+        const float textOffset = 10.F;
+        const unsigned colID = 0xFFFFFFFF;
+        bool isOpen = true;
+        ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoTitleBar |
+                                       ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar
+                                       | ImGuiWindowFlags_NoResize;
+        ImGuiSelectableFlags_ selectableFlags = ImGuiSelectableFlags_AllowItemOverlap;
+        int m_selectedItem = -1;
+        bool openAlways = true;
+    };
+
     using ProcessFunction = std::function<void(ProjectDescription)>;
 
     class ProjectInspector final {
@@ -55,5 +68,6 @@ namespace editor {
         ProcessFunction m_createFunction;
         ProcessFunction m_deleteFunction;
         ProcessFunction m_loadFunction;
+        ProjectInspectorConfiguration m_configuration;
     };
 }

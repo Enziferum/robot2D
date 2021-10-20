@@ -21,34 +21,8 @@ source distribution.
 
 #pragma once
 
-#include <robot2D/Graphics/View.hpp>
-#include <robot2D/Core/Event.hpp>
+#include <robot2D/Core/Vector2.hpp>
 
 namespace editor {
-
-    struct SceneCameraConfiguration {
-        float zoomOffset = 1.F;
-        float zoomMultiplier = 0.1F;
-    };
-
-    class SceneCamera {
-    public:
-        SceneCamera();
-        ~SceneCamera() = default;
-
-        void onEvent(const robot2D::Event& event);
-        void resize(const robot2D::FloatRect& viewPort);
-
-        float& getCameraSpeed() { return m_cameraSpeed; }
-        const float getZoom() const;
-
-        robot2D::View& getView();
-        const robot2D::View& getView() const;
-    private:
-        robot2D::View m_view;
-        robot2D::FloatRect m_sizeRect;
-        SceneCameraConfiguration m_configuration;
-        float m_zoom;
-        float m_cameraSpeed = 10.F;
-    };
+    robot2D::vec2u getCenterPoint(const robot2D::vec2u& objectSize, const robot2D::vec2u& frameSize);
 }

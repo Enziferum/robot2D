@@ -27,8 +27,6 @@ source distribution.
 #include <filesystem>
 
 namespace editor {
-    constexpr int rightMouseButton = 1;
-
     static void DrawVec2Control(const std::string& label, robot2D::vec2f& values,
                                 float resetValue = 0.0f, float columnWidth = 100.0f)
     {
@@ -126,8 +124,11 @@ namespace editor {
         }
     }
 
-    ScenePanel::ScenePanel(): IPanel(UniqueType(typeid(ScenePanel))),
-    m_scene(nullptr), m_selectedEntity{} {
+    ScenePanel::ScenePanel():
+    IPanel(UniqueType(typeid(ScenePanel))),
+    m_scene(nullptr),
+    m_selectedEntity{},
+    m_configuration{} {
     }
 
     void ScenePanel::render() {
@@ -149,7 +150,7 @@ namespace editor {
         }
 
         // Right-click on blank space
-        if (ImGui::BeginPopupContextWindow(0, rightMouseButton, false))
+        if (ImGui::BeginPopupContextWindow(0, m_configuration.rightMouseButton, false))
         {
             if (ImGui::MenuItem("Create Empty Entity")) {
                 m_scene -> addEmptyEntity();

@@ -25,6 +25,11 @@ source distribution.
 #include "Scene.hpp"
 
 namespace editor {
+
+    struct ScenePanelConfiguration {
+        const int rightMouseButton = 1;
+    };
+
     class ScenePanel: public IPanel {
     public:
         ScenePanel();
@@ -38,5 +43,6 @@ namespace editor {
     private:
         Scene::Ptr m_scene;
         robot2D::ecs::Entity m_selectedEntity;
+        ScenePanelConfiguration m_configuration;
     };
 }

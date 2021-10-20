@@ -36,6 +36,13 @@ source distribution.
 
 
 namespace editor {
+
+    struct ApplicationConfiguration {
+        const std::string logoPath = "res/textures/logo.png";
+        const robot2D::vec2u inspectorSize = {600, 400};
+        robot2D::vec2u defaultWindowSize{1280, 920};
+    };
+
     class Application {
     public:
         Application();
@@ -60,7 +67,7 @@ namespace editor {
             Editor
         };
     private:
-        robot2D::vec2u defaultWindowSize;
+        ApplicationConfiguration m_appConfiguration;
         robot2D::RenderWindow m_window;
 
         robot2D::MessageBus m_messageBus;

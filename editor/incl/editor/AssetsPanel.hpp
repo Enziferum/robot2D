@@ -28,10 +28,20 @@ source distribution.
 
 namespace editor {
 
-    enum class ResourceIconType {
-        File,
-        Scene,
-        Directory
+    struct AssetsPanelConfiguration {
+        enum class ResourceIconType {
+            File,
+            Scene,
+            Directory
+        };
+
+        const std::string iconsPath = "res/icons/";
+        const float m_padding = 16.F;
+        const float m_thumbnaleSize = 128.F;
+        const std::unordered_map<ResourceIconType, std::string> iconPaths = {
+                {ResourceIconType::File, "FileIcon.png"},
+                {ResourceIconType::Directory, "DirectoryIcon.png"}
+        };
     };
 
     class AssetsPanel: public IPanel {
@@ -44,6 +54,8 @@ namespace editor {
 
     private:
         std::filesystem::path m_currentPath;
-        robot2D::ResourceHandler<robot2D::Texture, ResourceIconType> m_assetsIcons;
+        std::filesystem::path m_assetsPath;
+        robot2D::ResourceHandler<robot2D::Texture, AssetsPanelConfiguration::ResourceIconType> m_assetsIcons;
+        AssetsPanelConfiguration m_configuration;
     };
 }

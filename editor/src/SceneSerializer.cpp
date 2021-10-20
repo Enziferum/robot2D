@@ -69,22 +69,10 @@ namespace YAML {
 }
 
 namespace editor {
-    enum class SerializeID {
-        Scene,
-        Entities,
-        Tag,
-        Transform,
-        Sprite
-    };
-
-    std::unordered_map<SerializeID, std::string> serializeKeys = {
-            {SerializeID::Scene, "Scene"},
-            {SerializeID::Entities, "Entities"},
-            {SerializeID::Tag, "TagComponent"},
-            {SerializeID::Transform, "TransformComponent"},
-            {SerializeID::Sprite, "SpriteComponent"},
-            {SerializeID::Tag, "TransformComponent"},
-    };
+    namespace {
+        // tmp value before UUID Manager
+        const std::string fakeUUID = "9012510123";
+    }
 
     SceneSerializer::SceneSerializer(Scene::Ptr scene): m_scene(scene) {}
 
@@ -103,7 +91,7 @@ namespace editor {
 
     void SerializeEntity(YAML::Emitter& out, robot2D::ecs::Entity entity) {
         out << YAML::BeginMap;
-        out << YAML::Key << "Entity" << YAML::Value << "9012510123";
+        out << YAML::Key << "Entity" << YAML::Value << fakeUUID;
         if(entity.hasComponent<TagComponent>()) {
             out << YAML::Key << "TagComponent";
             out << YAML::BeginMap;
