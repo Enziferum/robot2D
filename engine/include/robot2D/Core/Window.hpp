@@ -93,6 +93,8 @@ namespace robot2D {
         void setPosition(const robot2D::vec2u& position);
         robot2D::vec2u getPosition() const;
 
+        void setResizable(const bool& flag);
+
         // Window manipulate options //
 
 

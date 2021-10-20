@@ -141,4 +141,8 @@ namespace robot2D {
         m_win_size = size;
         m_windowImpl -> setSize(size);
     }
+
+    void Window::setResizable(const bool& flag) {
+        m_windowImpl -> setResizable(flag);
+    }
 }

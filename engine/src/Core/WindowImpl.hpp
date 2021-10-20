@@ -64,6 +64,7 @@ namespace robot2D {
             virtual robot2D::vec2u getMonitorSize() const = 0;
             virtual void setPosition(const robot2D::vec2u& position) = 0;
             virtual robot2D::vec2u getPosition() const = 0;
+            virtual void setResizable(const bool& flag) = 0;
         };
     }
 }

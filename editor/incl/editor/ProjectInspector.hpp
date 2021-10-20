@@ -22,12 +22,15 @@ source distribution.
 #pragma once
 #include <functional>
 #include <vector>
+#include <unordered_map>
 #include <robot2D/Graphics/RenderWindow.hpp>
 
 #include "ProjectDescription.hpp"
 #include "EditorCache.hpp"
 
 namespace editor {
+
+    using ProcessFunction = std::function<void(ProjectDescription)>;
 
     struct ProjectInspectorConfiguration {
         const ImVec2 createButtonSize = ImVec2(200.F, 50.F);
@@ -41,8 +44,6 @@ namespace editor {
         int m_selectedItem = -1;
         bool openAlways = true;
     };
-
-    using ProcessFunction = std::function<void(ProjectDescription)>;
 
     class ProjectInspector final {
     public:
@@ -65,9 +66,7 @@ namespace editor {
         EditorCache& m_editorCache;
         std::vector<ProjectDescription> m_descriptions;
 
-        ProcessFunction m_createFunction;
-        ProcessFunction m_deleteFunction;
-        ProcessFunction m_loadFunction;
+        std::unordered_map<CallbackType, ProcessFunction> m_functions;
         ProjectInspectorConfiguration m_configuration;
     };
 }

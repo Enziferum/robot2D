@@ -60,6 +60,8 @@ namespace robot2D {
             robot2D::vec2u getMonitorSize() const override;
             void setPosition(const robot2D::vec2u& position) override;
             robot2D::vec2u getPosition() const override;
+
+            void setResizable(const bool &flag) override;
         private:
             void setup();
             void setup_callbacks();
