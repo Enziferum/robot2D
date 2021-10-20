@@ -40,7 +40,7 @@ namespace editor {
         switch(error) {
             case ProjectManagerError::ProjectSerialize:
                 return "Can't Serialize Project";
-            case ProjectManagerError::ProjectDerialize:
+            case ProjectManagerError::ProjectDeserialize:
                 return "Cant' Deserialize Project";
             case ProjectManagerError::CreateFolder:
                 return "Can't create Project Folder";

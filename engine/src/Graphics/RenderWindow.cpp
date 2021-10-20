@@ -43,11 +43,7 @@ namespace robot2D{
     void RenderWindow::resize(const vec2i& newSize) {
         m_size = vec2u { newSize.x, newSize.y};
         m_win_size = m_size;
-        glViewport(0, 0, m_size.x, m_size.y);
     }
 
-    void RenderWindow::setupGL() {
-
-    }
-
+    void RenderWindow::setupGL() {}
 }

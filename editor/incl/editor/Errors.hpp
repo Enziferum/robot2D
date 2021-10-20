@@ -34,7 +34,7 @@ namespace editor {
     enum class ProjectManagerError {
         None,
         ProjectSerialize,
-        ProjectDerialize,
+        ProjectDeserialize,
         CreateFolder,
         RemoveFolder
     };

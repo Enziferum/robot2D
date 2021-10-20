@@ -40,11 +40,15 @@ namespace editor {
     namespace fs = std::filesystem;
     // develop only flag
     constexpr bool useGUI = true;
-
+    const std::string texturesPath = "res/textures/";
     bool m_leftCtrlPressed = false;
     static bool opt_padding = true;
     static bool dockspace_open = false;
     static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
+
+    std::unordered_map<TextureID, std::string> texturePaths = {
+            {TextureID::Logo, "logo.png"},
+    };
 
     Editor::Editor(robot2D::RenderWindow& window, robot2D::MessageBus& messageBus): m_state(State::Edit),
     m_window{window},
@@ -53,11 +57,6 @@ namespace editor {
     m_currentProject{nullptr} {}
 
     void Editor::setup() {
-        const std::string texturesPath = "res/textures/";
-        std::unordered_map<TextureID, std::string> texturePaths = {
-                {TextureID::Logo, "logo.png"},
-        };
-
         for(auto& it: texturePaths) {
             auto fullPath = texturesPath + it.second;
             if(!m_textures.loadFromFile(it.first, fullPath)) {

@@ -24,23 +24,25 @@ source distribution.
 #include <editor/FileApi.hpp>
 
 namespace editor {
-
-    namespace  {
-        const std::string startSceneName = "Scene.scene";
-        const std::string projectExtension = ".robot2D";
-    }
-
-    ProjectManager::ProjectManager(): m_currentProject{nullptr},
-    m_error{ProjectManagerError::None} {}
+    ProjectManager::ProjectManager(const Configuration& configuration): m_currentProject{nullptr},
+    m_error{ProjectManagerError::None},
+    m_configuration{configuration} {}
 
     bool ProjectManager::add(const ProjectDescription& description) {
         Project::Ptr project = std::make_shared<Project>();
         project -> setPath(description.path);
         project -> setName(description.name);
-        project -> setEditorVersion("0.1");
-        project -> setStartScene(startSceneName);
+        {
+            auto [status, result] = m_configuration.getValue(ConfigurationKey::Version);
+            project->setEditorVersion(result);
+        }
+        {
+            auto [status, result] = m_configuration.getValue(ConfigurationKey::DefaultSceneName);
+            project -> setStartScene(result);
+        }
 
-        auto fullname = description.name + projectExtension;
+        auto [status, extension] = m_configuration.getValue(ConfigurationKey::ProjectExtension);
+        auto fullname = description.name + extension;
         auto fullPath = addFilename(description.path, fullname);
 
         if(!ProjectSerializer(project).serialize(fullPath)) {
@@ -74,11 +76,12 @@ namespace editor {
             return true;
         m_currentProject = std::make_shared<Project>();
         ProjectSerializer serializer(m_currentProject);
-        auto fullname = description.name + projectExtension;
+        auto [status, extension] = m_configuration.getValue(ConfigurationKey::ProjectExtension);
+        auto fullname = description.name + extension;
         auto fullPath = addFilename(description.name, fullname);
 
         if(!serializer.deserialize(fullPath)) {
-            m_error = ProjectManagerError::ProjectDerialize;
+            m_error = ProjectManagerError::ProjectDeserialize;
             return false;
         }
 

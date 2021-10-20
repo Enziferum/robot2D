@@ -114,7 +114,7 @@ namespace robot2D {
 
 #ifdef ROBOT2D_WINDOWS
             //gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)
-            if (!gladLoadGL())
+            if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
             {
                 RB_CORE_CRITICAL("Failed to initialize GLAD");
                 throw std::runtime_error("Failed to initialize GLAD");
@@ -151,6 +151,7 @@ namespace robot2D {
             glfwSetCursorPosCallback(m_window, cursor_callback);
             glfwSetScrollCallback(m_window, mouseWhell_callback);
             glfwSetMouseButtonCallback(m_window, mouse_callback);
+            glfwSetFramebufferSizeCallback(m_window, framebuffer_callback);
             glfwSetWindowSizeCallback(m_window, size_callback);
             glfwSetWindowMaximizeCallback(m_window, maximized_callback);
             glfwSetDropCallback(m_window, dragdrop_callback);
@@ -235,6 +236,11 @@ namespace robot2D {
             event.size.heigth = h;
 
             window->m_event_queue.push(event);
+        }
+
+        void DesktopWindowImpl::framebuffer_callback(GLFWwindow* window, int width, int height)
+        {
+            glViewport(0, 0, width, height);
         }
 
         void DesktopWindowImpl::maximized_callback(GLFWwindow* wnd, int state) {

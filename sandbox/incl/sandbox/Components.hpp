@@ -20,35 +20,33 @@ source distribution.
 *********************************************************************/
 
 #pragma once
-#include <unordered_map>
-#include <string>
-#include <memory>
 
-#include <robot2D/Config.hpp>
+#include <robot2D/Graphics/Texture.hpp>
+#include <robot2D/Graphics/Color.hpp>
+#include <robot2D/Graphics/Transformable.hpp>
 
-namespace robot2D{
-    template<typename T, typename ID = std::string>
-    class ROBOT2D_EXPORT_API ResourceHandler{
-    public:
-        using Ptr = std::unique_ptr<T>;
-    public:
-        ResourceHandler();
-        ~ResourceHandler() = default;
+class SpriteComponent final {
+public:
+    SpriteComponent();
+    ~SpriteComponent() = default;
 
-        template<typename ... Args>
-        bool loadFromFile(const ID& idx, Args&&... args);
+    void setTexture(const robot2D::Texture& texture);
+    robot2D::Texture& getTexture();
+    const robot2D::Texture& getTexture() const;
 
-        bool append(const ID& idx, T resource) {
-            auto Resource = std::make_unique<T>(std::move(resource));
-            return m_resources.insert(std::pair<ID, Ptr>(idx,
-                                                  std::move(Resource))).inserted;
-        }
 
-        T& get(const ID& idx);
-        const T& get(const ID& idx) const;
-    private:
-        std::unordered_map<ID, Ptr> m_resources;
-    };
+    void setColor(const robot2D::Color& color);
+    const robot2D::Color& getColor() const;
+private:
+    const robot2D::Texture* m_texture;
+    robot2D::Color m_color;
+};
 
-    #include "ResourceHandler.inl"
-}
+
+class TransformComponent final: public robot2D::Transformable {
+public:
+    TransformComponent();
+    ~TransformComponent() override = default;
+
+};
+

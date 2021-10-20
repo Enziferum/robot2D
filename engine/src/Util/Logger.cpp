@@ -24,14 +24,6 @@ source distribution.
 #include <spdlog/sinks/basic_file_sink.h>
 
 namespace logger {
-    bool debug = true;
-
-    void tprintf(logType type, const char* msg){
-        if(type == logType::info)
-            std::cout << msg;
-        if(type == logType::error)
-            std::cerr << msg;
-    }
 
     std::shared_ptr<spdlog::logger> Log::s_CoreLogger;
     std::shared_ptr<spdlog::logger> Log::s_EditorLogger;

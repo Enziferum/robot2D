@@ -32,6 +32,8 @@ source distribution.
 #include "ProjectInspector.hpp"
 #include "ProjectManager.hpp"
 #include "EditorCache.hpp"
+#include "Configuration.hpp"
+
 
 namespace editor {
     class Application {
@@ -48,9 +50,9 @@ namespace editor {
         void render();
 
         /// Subsription Api callbacks //
-        void createProject(ProjectDescription project);
-        void loadProject(ProjectDescription project);
-        void deleteProject(ProjectDescription projectDescription);
+        void createProject(ProjectDescription&& project);
+        void loadProject(ProjectDescription&& project);
+        void deleteProject(ProjectDescription&& projectDescription);
         /// Subsription Api callbacks //
     private:
         enum class State {
@@ -64,11 +66,12 @@ namespace editor {
         robot2D::MessageBus m_messageBus;
         ImGui::Wrapper m_guiWrapper;
         Editor m_editor;
-
         State m_state;
-        ProjectInspector m_projectInspector;
+
+        Configuration m_configuration;
         EditorCache m_editorCache;
         ProjectManager m_projectManager;
+        ProjectInspector m_projectInspector;
     };
 }
 

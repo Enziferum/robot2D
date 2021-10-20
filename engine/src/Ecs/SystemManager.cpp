@@ -45,11 +45,10 @@ namespace robot2D::ecs {
     void SystemManager::addEntity(Entity entity) {
         const auto mask = entity.getComponentMask();
         for(auto& it: m_systems) {
-            if(it-> fitsRequirements(mask)) {
+            if(it -> fitsRequirements(mask)) {
                 it -> addEntity(entity);
             }
         }
-
     }
 
 }

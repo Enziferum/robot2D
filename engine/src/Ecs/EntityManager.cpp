@@ -24,11 +24,16 @@ source distribution.
 
 namespace robot2D::ecs {
 
+    namespace {
+        constexpr unsigned maxComponentsValue = 1024;
+        constexpr unsigned maxComponentsMasks = 64;
+    }
+
     EntityManager::EntityManager(ComponentManager& componentManager): m_entityCounter(0),
     m_componentManager(componentManager),
-    m_componentContainers(64),
+    m_componentContainers(maxComponentsValue),
     m_componentMasks() {
-        m_componentMasks.resize(50);
+        m_componentMasks.resize(maxComponentsMasks);
     }
 
     Entity EntityManager::createEntity() {
@@ -49,6 +54,5 @@ namespace robot2D::ecs {
         (void)entity;
         return true;
     }
-
 
 }

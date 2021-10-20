@@ -19,36 +19,30 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#pragma once
-#include <unordered_map>
-#include <string>
-#include <memory>
+#include <sandbox/Components.hpp>
 
-#include <robot2D/Config.hpp>
+SpriteComponent::SpriteComponent(): m_color(robot2D::Color::White) {
 
-namespace robot2D{
-    template<typename T, typename ID = std::string>
-    class ROBOT2D_EXPORT_API ResourceHandler{
-    public:
-        using Ptr = std::unique_ptr<T>;
-    public:
-        ResourceHandler();
-        ~ResourceHandler() = default;
-
-        template<typename ... Args>
-        bool loadFromFile(const ID& idx, Args&&... args);
-
-        bool append(const ID& idx, T resource) {
-            auto Resource = std::make_unique<T>(std::move(resource));
-            return m_resources.insert(std::pair<ID, Ptr>(idx,
-                                                  std::move(Resource))).inserted;
-        }
-
-        T& get(const ID& idx);
-        const T& get(const ID& idx) const;
-    private:
-        std::unordered_map<ID, Ptr> m_resources;
-    };
-
-    #include "ResourceHandler.inl"
 }
+
+void SpriteComponent::setTexture(const robot2D::Texture &texture) {
+    m_texture = &texture;
+}
+
+robot2D::Texture& SpriteComponent::getTexture() {
+    return const_cast<robot2D::Texture &>(*m_texture);
+}
+
+const robot2D::Texture& SpriteComponent::getTexture() const {
+    return *m_texture;
+}
+
+void SpriteComponent::setColor(const robot2D::Color& color) {
+    m_color = color;
+}
+
+const robot2D::Color& SpriteComponent::getColor() const {
+    return m_color;
+}
+
+TransformComponent::TransformComponent() {}

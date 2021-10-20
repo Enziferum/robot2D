@@ -35,10 +35,7 @@ namespace editor {
         constexpr float timePerFrame = 1.F / 60.F;
         float processedTime = 0.F;
 
-        const std::string editorCachePath = "editor.cache";
-        const std::string editorVersion = "0.1";
         const std::string logoPath = "res/textures/logo.png";
-
         const robot2D::vec2u inspectorSize = {600, 400};
 
         robot2D::vec2u getCenterPoint(const robot2D::vec2u& objectSize, const robot2D::vec2u& frameSize) {
@@ -54,6 +51,9 @@ namespace editor {
             m_window(defaultWindowSize, "Editor", robot2D::WindowContext::Default),
             m_editor{m_window, m_messageBus},
             m_state{State::ProjectInspector},
+            m_configuration{},
+            m_editorCache{m_configuration},
+            m_projectManager{m_configuration},
             m_projectInspector{m_window, m_editorCache} {}
 
 
@@ -67,7 +67,9 @@ namespace editor {
         m_guiWrapper.init(m_window);
         m_editor.setup();
 
-        if(!m_editorCache.parseCache(editorCachePath)) {
+        auto [status, result] = m_configuration.getValue(ConfigurationKey::CachePath);
+
+        if(!m_editorCache.parseCache(result)) {
             if(m_editorCache.getError() == EditorCacheError::NoCacheFile){}
             else {
                 RB_EDITOR_ERROR("Error to parse Editor Cache, description := {0}",
@@ -180,7 +182,7 @@ namespace editor {
     }
 
 
-    void Application::createProject(ProjectDescription projectDescription) {
+    void Application::createProject(ProjectDescription&& projectDescription) {
         if(!m_editorCache.addProject(projectDescription)) {
             RB_EDITOR_ERROR("Can't add Project to Cache := {0}",
                             errorToString(m_editorCache.getError()));
@@ -199,7 +201,7 @@ namespace editor {
         m_state = State::Editor;
     }
 
-    void Application::deleteProject(ProjectDescription projectDescription) {
+    void Application::deleteProject(ProjectDescription&& projectDescription) {
 
         if(!m_editorCache.removeProject(projectDescription)) {
             RB_EDITOR_ERROR("EditorCache can't delete Project := {0}",
@@ -214,7 +216,7 @@ namespace editor {
         }
     }
 
-    void Application::loadProject(ProjectDescription projectDescription) {
+    void Application::loadProject(ProjectDescription&& projectDescription) {
         if(!m_editorCache.loadProject(projectDescription)) {
             RB_EDITOR_ERROR("Cache can't load Project := {0}", errorToString(m_editorCache.getError()));
             return;

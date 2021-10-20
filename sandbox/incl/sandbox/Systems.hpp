@@ -19,36 +19,25 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#pragma once
-#include <unordered_map>
-#include <string>
-#include <memory>
+#include <robot2D/Ecs/System.hpp>
+#include <robot2D/Graphics/RenderTarget.hpp>
 
-#include <robot2D/Config.hpp>
+class RenderSystem: public robot2D::ecs::System, public robot2D::Drawable {
+public:
+    RenderSystem(robot2D::MessageBus&);
+    ~RenderSystem() override = default;
 
-namespace robot2D{
-    template<typename T, typename ID = std::string>
-    class ROBOT2D_EXPORT_API ResourceHandler{
-    public:
-        using Ptr = std::unique_ptr<T>;
-    public:
-        ResourceHandler();
-        ~ResourceHandler() = default;
+    void draw(robot2D::RenderTarget &target, robot2D::RenderStates) const override;
+private:
+};
 
-        template<typename ... Args>
-        bool loadFromFile(const ID& idx, Args&&... args);
 
-        bool append(const ID& idx, T resource) {
-            auto Resource = std::make_unique<T>(std::move(resource));
-            return m_resources.insert(std::pair<ID, Ptr>(idx,
-                                                  std::move(Resource))).inserted;
-        }
+class DemoMoveSystem: public robot2D::ecs::System {
+public:
+    DemoMoveSystem(robot2D::MessageBus&);
+    ~DemoMoveSystem() override = default;
 
-        T& get(const ID& idx);
-        const T& get(const ID& idx) const;
-    private:
-        std::unordered_map<ID, Ptr> m_resources;
-    };
-
-    #include "ResourceHandler.inl"
-}
+    void update(float dt) override;
+private:
+    float m_speed;
+};

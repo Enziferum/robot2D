@@ -24,11 +24,12 @@ source distribution.
 #include <vector>
 #include "ProjectDescription.hpp"
 #include "Errors.hpp"
+#include "Configuration.hpp"
 
 namespace editor {
     class EditorCache {
     public:
-        EditorCache();
+        EditorCache(const Configuration& configuration);
         ~EditorCache() = default;
 
         bool parseCache(const std::string& path);
@@ -52,5 +53,6 @@ namespace editor {
 
         mutable ProjectDescription m_currentDescription;
         std::vector<ProjectDescription> m_cacheDescriptions;
+        Configuration m_configuration;
     };
 }

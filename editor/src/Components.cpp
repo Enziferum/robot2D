@@ -46,6 +46,7 @@ namespace editor {
         return m_color;
     }
 
+
     CameraComponent::CameraComponent(): m_view(), m_actualViewport() {}
 
     void CameraComponent::setViewport(const robot2D::FloatRect& viewport) {
