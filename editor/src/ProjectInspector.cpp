@@ -36,17 +36,13 @@ namespace editor {
 
     void ProjectInspector::addCallback(const ProjectInspector::CallbackType& callbackType,
                                        ProcessFunction &&function) {
-        switch(callbackType) {
-            case CallbackType::Create:
-                m_createFunction = std::move(function);
-                break;
-            case CallbackType::Load:
-                m_loadFunction = std::move(function);
-                break;
-            case CallbackType::Delete:
-                m_deleteFunction = std::move(function);
-                break;
-        }
+
+        auto found = m_functions.find(callbackType);
+        if(found != m_functions.end())
+            return;
+
+        m_functions.insert(std::pair<CallbackType, ProcessFunction>(callbackType,
+                                                                    std::move(function)));
     }
 
     void ProjectInspector::setup() {
@@ -143,19 +139,19 @@ namespace editor {
         ProjectDescription description;
         description.name = "Project";
         description.path = creationPath;
-        m_createFunction(description);
+        m_functions[CallbackType::Create](description);
     }
 
     void ProjectInspector::loadProject(const unsigned int& index) {
         auto project = m_descriptions[index];
-        m_loadFunction(project);
+        m_functions[CallbackType::Load](project);
     }
 
     void ProjectInspector::deleteProject(const unsigned int& index) {
         assert(index < m_descriptions.size() && "Index out of Range");
         auto project = m_descriptions[index];
         m_descriptions.erase(m_descriptions.begin() + index);
-        m_deleteFunction(project);
+        m_functions[CallbackType::Delete](project);
     }
 
 }

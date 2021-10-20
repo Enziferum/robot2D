@@ -26,7 +26,7 @@ source distribution.
 #include <editor/EditorCache.hpp>
 
 namespace editor {
-    EditorCache::EditorCache(const Configuration& configuration): m_showInspector(false),
+    EditorCache::EditorCache(const Configuration& configuration): m_showInspector(true),
                                 m_cacheDescriptions(),
                                 m_configuration(configuration) {}
 

@@ -333,5 +333,9 @@ namespace robot2D {
             glfwSetWindowSize(m_window, static_cast<int>(size.x), static_cast<int>(size.y));
         }
 
+        void DesktopWindowImpl::setResizable(const bool& flag) {
+            glfwSetWindowAttrib(m_window, GLFW_RESIZABLE, flag ? GLFW_TRUE : GLFW_FALSE);
+        }
+
     }
 }

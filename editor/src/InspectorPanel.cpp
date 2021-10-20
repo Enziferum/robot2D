@@ -19,8 +19,6 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#pragma once
-
 #include <imgui/imgui.h>
 #include <editor/InspectorPanel.hpp>
 

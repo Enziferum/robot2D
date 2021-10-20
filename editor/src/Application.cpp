@@ -80,9 +80,7 @@ namespace editor {
             auto monitorSize = m_window.getMonitorSize();
             auto centerPoint = getCenterPoint(windowSize, monitorSize);
             m_window.setPosition(centerPoint);
-
-            //todo setWindow not to be resizable
-            //todo subscribeLogic
+            m_window.setResizable(false);
 
             m_window.setSize(m_appConfiguration.inspectorSize);
             applyStyle(EditorStyle::GoldBlack);
@@ -190,6 +188,7 @@ namespace editor {
         auto project = m_projectManager.getCurrentProject();
 
         m_editor.createProject(project);
+        m_window.setResizable(true);
         m_state = State::Editor;
     }
 
@@ -220,6 +219,7 @@ namespace editor {
         }
 
         m_state = State::Editor;
+        m_window.setResizable(true);
         m_editor.loadProject(m_projectManager.getCurrentProject());
     }
 }
