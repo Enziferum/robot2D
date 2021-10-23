@@ -29,6 +29,7 @@ source distribution.
 #include "PanelManager.hpp"
 #include "Scene.hpp"
 #include "SceneCamera.hpp"
+#include "SceneManager.hpp"
 #include "Project.hpp"
 
 namespace editor {
@@ -73,8 +74,7 @@ namespace editor {
         void mainMenubar();
 
         bool createScene();
-        bool openScene(const std::string& path);
-        bool saveScene(const std::string& path);
+        void openScene(const std::string& path);
     private:
         enum class State {
             Edit,
@@ -96,5 +96,6 @@ namespace editor {
         robot2D::vec2u m_ViewportSize;
         robot2D::Color m_sceneClearColor;
         EditorConfiguration m_configuration;
+        SceneManager m_sceneManager;
     };
 }

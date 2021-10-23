@@ -22,6 +22,7 @@ source distribution.
 #pragma once
 
 #include <memory>
+#include "Errors.hpp"
 
 namespace editor {
 
@@ -33,7 +34,10 @@ namespace editor {
 
         bool serialize(const std::string& path);
         bool deserialize(const std::string& path);
+        SceneSerializerError getError() const;
+
     private:
         std::shared_ptr<Scene> m_scene;
+        SceneSerializerError m_error;
     };
 }

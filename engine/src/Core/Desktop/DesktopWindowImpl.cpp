@@ -337,5 +337,9 @@ namespace robot2D {
             glfwSetWindowAttrib(m_window, GLFW_RESIZABLE, flag ? GLFW_TRUE : GLFW_FALSE);
         }
 
+        void DesktopWindowImpl::setMaximazed(const bool &flag) {
+            glfwMaximizeWindow(m_window);
+        }
+
     }
 }

@@ -26,11 +26,14 @@ source distribution.
 
 namespace editor {
 
-    ProjectSerializer::ProjectSerializer(std::shared_ptr<Project> project): m_project{project} {}
+    ProjectSerializer::ProjectSerializer(std::shared_ptr<Project> project):
+    m_project{ project } {}
 
     bool ProjectSerializer::serialize(const std::string& path) {
-        if(m_project == nullptr)
+        if(m_project == nullptr) {
+            m_error = ProjectSerializerError::ProjectNull;
             return false;
+        }
 
         YAML::Emitter out;
         out << YAML::BeginMap;
@@ -41,8 +44,10 @@ namespace editor {
         out << YAML::EndMap;
 
         std::ofstream ofstream(path);
-        if(!ofstream.is_open())
+        if(!ofstream.is_open()) {
+            m_error = ProjectSerializerError::FileNotOpened;
             return false;
+        }
 
         ofstream << out.c_str();
         ofstream.close();
@@ -51,18 +56,24 @@ namespace editor {
     }
 
     bool ProjectSerializer::deserialize(const std::string& path) {
-        if(m_project == nullptr)
+        if(m_project == nullptr) {
+            m_error = ProjectSerializerError::ProjectNull;
             return false;
+        }
 
         std::ifstream ifstream(path);
-        if(!ifstream.is_open())
+        if(!ifstream.is_open()) {
+            m_error = ProjectSerializerError::FileNotOpened;
             return false;
+        }
         std::stringstream sstr;
         sstr << ifstream.rdbuf();
 
         YAML::Node data = YAML::Load(sstr.str());
-        if(!data["Name"])
+        if(!data["Name"]) {
+            m_error = ProjectSerializerError::NotValidProject;
             return false;
+        }
 
         auto parsePath = data["Path"].as<std::string>();
         m_project -> setPath(parsePath);
@@ -72,4 +83,9 @@ namespace editor {
 
         return true;
     }
+
+    ProjectSerializerError ProjectSerializer::getError() const {
+        return m_error;
+    }
+
 }

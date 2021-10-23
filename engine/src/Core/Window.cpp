@@ -145,4 +145,8 @@ namespace robot2D {
     void Window::setResizable(const bool& flag) {
         m_windowImpl -> setResizable(flag);
     }
+
+    void Window::setMaximazed(const bool &flag) {
+        m_windowImpl ->setMaximazed(flag);
+    }
 }

@@ -19,7 +19,8 @@ namespace editor {
         return true;
     }
 
-    bool ResourceHolder::loadThread(const std::string &path) {
+    bool ResourceHolder::loadThread(const std::string& path) {
         return true;
     }
+
 }

@@ -33,6 +33,7 @@ source distribution.
 #include <editor/SceneSerializer.hpp>
 #include <editor/Components.hpp>
 #include <editor/EditorStyles.hpp>
+#include <editor/FileApi.hpp>
 
 namespace editor {
     namespace fs = std::filesystem;
@@ -43,7 +44,8 @@ namespace editor {
     m_messageBus{messageBus},
     m_activeScene{ nullptr }, m_frameBuffer{nullptr}, m_ViewportSize{},
     m_currentProject{nullptr},
-    m_configuration{}{}
+    m_configuration{},
+    m_sceneManager{m_messageBus}{}
 
     void Editor::setup() {
         for(auto& it: m_configuration.texturePaths) {
@@ -53,7 +55,6 @@ namespace editor {
             }
         }
 
-        //auto& panel = m_panelManager.addPanel<ComponentPanel>();
         auto& scenePanel = m_panelManager.addPanel<ScenePanel>();
         auto& assetsPanel = m_panelManager.addPanel<AssetsPanel>();
         auto& inspectorPanel = m_panelManager.addPanel<InspectorPanel>(m_camera);
@@ -80,7 +81,7 @@ namespace editor {
             }
             if(event.key.code == robot2D::Key::S) {
                 if(m_configuration.m_leftCtrlPressed) {
-                    saveScene(m_activeScene->getPath());
+                    m_sceneManager.save(std::move(m_activeScene));
                 }
             }
         }
@@ -153,8 +154,8 @@ namespace editor {
         ImGui::SetNextWindowPos(viewport->WorkPos);
         ImGui::SetNextWindowSize(viewport->WorkSize);
         ImGui::SetNextWindowViewport(viewport->ID);
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.F);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.F);
 
         if (m_configuration.dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
             window_flags |= ImGuiWindowFlags_NoBackground;
@@ -208,6 +209,7 @@ namespace editor {
         /// Viewport Panel ///
     }
 
+    //Todo Use Menubar to Open Projects, and not scenes
     void Editor::mainMenubar() {
         if (ImGui::BeginMenuBar())
         {
@@ -236,7 +238,6 @@ namespace editor {
                                                        1, patterns, "Scene");
                     if(path != nullptr) {
                         savePath = std::string(path);
-                        saveScene(savePath);
                     }
                 }
 
@@ -246,67 +247,54 @@ namespace editor {
         }
     }
 
-//// TODO Move Scene Processing to SceneManager ////
     bool Editor::createScene() {
-        if(m_activeScene != nullptr) {
-            m_activeScene.reset();
-            // todo show dialog
+        if(!m_sceneManager.add(std::move(m_currentProject))) {
+            RB_EDITOR_ERROR("Can't Create Scene. Reason: {0}",
+                            errorToString(m_sceneManager.getError()));
+            return false;
         }
-        m_activeScene = std::make_shared<Scene>(m_messageBus);
-        auto& scenePanel = m_panelManager.getPanel<ScenePanel>();
-        scenePanel.setActiveScene(std::move(m_activeScene));
+        m_activeScene = m_sceneManager.getActiveScene();
+        openScene(m_activeScene->getPath());
         return true;
     }
 
-    bool Editor::openScene(const std::string& path) {
-        auto newScene = std::make_shared<Scene>(m_messageBus);
-        newScene -> setPath(path);
-        if(newScene == nullptr)
-            return false;
-        m_activeScene.reset();
-        m_activeScene = newScene;
-        SceneSerializer serializer(m_activeScene);
-        bool res = serializer.deserialize(path);
-        if(!res)
-            return false;
+    void Editor::openScene(const std::string& path) {
         auto& scenePanel = m_panelManager.getPanel<ScenePanel>();
         scenePanel.setActiveScene(std::move(m_activeScene));
-        return res;
-    }
 
-    bool Editor::saveScene(const std::string& path) {
-        SceneSerializer serializer(m_activeScene);
-        return serializer.serialize(path);
+        auto projectPath = m_currentProject -> getPath();
+        auto assetsPath = combinePath(projectPath, "assets");
+        auto& assetsPanel = m_panelManager.getPanel<AssetsPanel>();
+        assetsPanel.setAssetsPath(assetsPath);
     }
-
 
     void Editor::createProject(Project::Ptr project) {
         m_currentProject = project;
         prepare();
 
-        auto& assetsPanel = m_panelManager.getPanel<AssetsPanel>();
-        auto path = m_currentProject -> getPath();
-        auto dirPath = fs::path(path);
-        dirPath.append("assets");
-        assetsPanel.setAssetsPath(dirPath.string());
+        if(!m_sceneManager.add(std::move(project))) {
+            RB_EDITOR_ERROR("Can't Create Scene. Reason: {0}",
+                            errorToString(m_sceneManager.getError()));
+            return;
+        }
+        m_activeScene = m_sceneManager.getActiveScene();
+        openScene(m_activeScene->getPath());
+        m_window.setMaximazed(true);
     }
 
     void Editor::loadProject(Project::Ptr project) {
         m_currentProject = project;
         prepare();
 
-        auto path = project->getPath();
-        fs::path dirPath(path);
-        auto localPath = std::filesystem::path("assets/scenes/" + project->getStartScene());
-        dirPath.append(localPath.string());
+        if(!m_sceneManager.load(std::move(project))) {
+            RB_EDITOR_ERROR("Can't Load Scene. Reason: {0}",
+                            errorToString(m_sceneManager.getError()));
+            return;
+        }
+        m_activeScene = m_sceneManager.getActiveScene();
+        openScene(m_activeScene->getPath());
 
-        openScene(dirPath.string());
-
-        auto& assetsPanel = m_panelManager.getPanel<AssetsPanel>();
-        dirPath = fs::path(path);
-        dirPath.append("assets");
-
-        assetsPanel.setAssetsPath(dirPath.string());
+        m_window.setMaximazed(true);
     }
 
 }
