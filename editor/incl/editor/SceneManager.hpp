@@ -22,17 +22,30 @@ source distribution.
 
 #include <unordered_map>
 #include <vector>
-#include <memory>
+#include <robot2D/Core/MessageBus.hpp>
+
+#include "Scene.hpp"
+#include "Errors.hpp"
+#include "Project.hpp"
 
 namespace editor {
     class SceneManager {
     public:
-        SceneManager();
+        SceneManager(robot2D::MessageBus& messageBus);
         ~SceneManager() = default;
 
-        bool add();
-        bool load();
+        bool add(Project::Ptr&& project);
+        bool load(Project::Ptr&& project);
         bool remove();
+        bool save(Scene::Ptr&& scene);
+
+        Project::Ptr getAssociatedProject() const;
+        Scene::Ptr getActiveScene() const;
+        const SceneManagerError& getError() const;
     private:
+        robot2D::MessageBus& m_messageBus;
+        Project::Ptr m_associatedProject;
+        Scene::Ptr m_activeScene;
+        SceneManagerError m_error;
     };
 }

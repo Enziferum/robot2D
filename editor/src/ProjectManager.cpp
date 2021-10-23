@@ -78,7 +78,7 @@ namespace editor {
         ProjectSerializer serializer(m_currentProject);
         auto [status, extension] = m_configuration.getValue(ConfigurationKey::ProjectExtension);
         auto fullname = description.name + extension;
-        auto fullPath = addFilename(description.name, fullname);
+        auto fullPath = combinePath(description.path, fullname);
 
         if(!serializer.deserialize(fullPath)) {
             m_error = ProjectManagerError::ProjectDeserialize;

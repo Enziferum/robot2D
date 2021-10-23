@@ -20,7 +20,91 @@ source distribution.
 *********************************************************************/
 
 #include <editor/SceneManager.hpp>
+#include <editor/FileApi.hpp>
+#include <editor/SceneSerializer.hpp>
 
 namespace editor {
+    namespace {
+        const std::string scenePath = "assets/scenes";
+    }
 
+    SceneManager::SceneManager(robot2D::MessageBus& messageBus):
+            m_messageBus{messageBus},
+            m_activeScene{nullptr},
+            m_associatedProject{nullptr},
+            m_error{SceneManagerError::None} {
+
+    }
+
+    bool SceneManager::add(Project::Ptr&& project) {
+        Scene::Ptr scene = std::make_shared<Scene>(m_messageBus);
+        if(scene == nullptr) {
+            m_error = SceneManagerError::MemoryAlloc;
+            return false;
+        }
+        m_activeScene = scene;
+        auto path = project -> getPath();
+        auto appendPath = combinePath(scenePath, project -> getStartScene());
+        auto scenePath = combinePath(path, appendPath);
+        m_activeScene -> setPath(scenePath);
+
+        SceneSerializer serializer(m_activeScene);
+        if(!serializer.serialize(m_activeScene->getPath())) {
+            m_error = SceneManagerError::SceneSerialize;
+            return false;
+        }
+
+        return true;
+    }
+
+    bool SceneManager::load(Project::Ptr&& project) {
+        Scene::Ptr scene = std::make_shared<Scene>(m_messageBus);
+        if(scene == nullptr) {
+            m_error = SceneManagerError::MemoryAlloc;
+            return false;
+        }
+        m_activeScene = scene;
+        auto path = project -> getPath();
+        auto appendPath = combinePath(scenePath, project->getStartScene());
+        auto scenePath = combinePath(path, appendPath);
+        m_activeScene -> setPath(scenePath);
+        SceneSerializer serializer(m_activeScene);
+        if(!serializer.deserialize(m_activeScene->getPath())) {
+            m_error = SceneManagerError::SceneDeserialize;
+            return false;
+        }
+        return true;
+    }
+
+    bool SceneManager::remove() {
+        if(!deleteDirectory(m_activeScene->getPath())) {
+            return false;
+        }
+        return true;
+    }
+
+    Scene::Ptr SceneManager::getActiveScene() const {
+        return m_activeScene;
+    }
+
+    const SceneManagerError& SceneManager::getError() const {
+        return m_error;
+    }
+
+    bool SceneManager::save(Scene::Ptr&& scene) {
+        if(scene == nullptr)
+            return false;
+
+        SceneSerializer serializer{scene};
+        if(!serializer.serialize(scene->getPath())) {
+            m_error = SceneManagerError::SceneSerialize;
+            return false;
+        }
+
+        return true;
+    }
+
+    Project::Ptr SceneManager::getAssociatedProject() const {
+        return m_associatedProject;
+    }
 }
