@@ -64,7 +64,7 @@ namespace editor {
         }
     }
 
-    std::string editor::errorToString(const ProjectSerializerError& error) {
+    std::string errorToString(const ProjectSerializerError& error) {
         switch (error) {
             case ProjectSerializerError::ProjectNull:
                 return "Can't ProjectNull";
@@ -77,7 +77,7 @@ namespace editor {
         }
     }
 
-    std::string editor::errorToString(const SceneSerializerError& error) {
+    std::string errorToString(const SceneSerializerError& error) {
         switch (error) {
             case SceneSerializerError::NotSceneTag:
                 return "No Scene Tag";

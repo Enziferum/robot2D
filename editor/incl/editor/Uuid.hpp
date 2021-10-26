@@ -19,37 +19,43 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include <robot2D/Ecs/EntityManager.hpp>
-#include <robot2D/Ecs/Entity.hpp>
+#pragma once
 
-namespace robot2D::ecs {
+#include <unordered_map>
+#include <functional>
+#include <cstdint>
+#include <string>
 
-    Entity::Entity(): m_entityManager(nullptr), m_id(INT_MAX), m_tag("") {}
-    Entity::Entity(EntityManager* entityManager, const EntityID& id):
-    m_entityManager(entityManager),
-    m_id(id) {}
-
-    bool operator==(const Entity& left, const Entity& right) {
-        return (left.m_id == right.m_id) && (left.m_tag == right.m_tag);
-    }
-
-    Bitmask Entity::getComponentMask() const {
-        return m_entityManager -> getComponentBitmask(*this);
-    }
-
-    Entity::Entity(const Entity& other): m_entityManager{other.m_entityManager},
-    m_id{other.m_id} {}
-
-    Entity::Entity(Entity&& other): m_entityManager{other.m_entityManager},
-                                    m_id{other.m_id} {
-
-    }
-
-    Entity& Entity::operator=(const Entity& other) {
-        m_entityManager = other.m_entityManager;
-        m_id = other.m_id;
-        return *this;
-    }
+namespace editor {
 
 
+    class Uuid {
+    public:
+        Uuid();
+        Uuid(uint64_t uuid);
+        Uuid(const Uuid&) = default;
+
+        operator uint64_t() const { return m_uuid; }
+    private:
+        uint64_t m_uuid;
+    };
+
+    class UuidManager {
+    public:
+        UuidManager();
+        ~UuidManager();
+
+
+    private:
+        std::unordered_map<uint64_t, std::string> m_uuids;
+    };
+
+}
+namespace std {
+    template<>
+    struct hash<editor::Uuid> {
+        std::size_t operator()(const editor::Uuid& uuid) const {
+            return hash<uint64_t>()((uint64_t)uuid);
+        }
+    };
 }

@@ -19,37 +19,29 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include <robot2D/Ecs/EntityManager.hpp>
-#include <robot2D/Ecs/Entity.hpp>
+#pragma once
+#include <robot2D/Graphics/Shader.hpp>
+#include <robot2D/Graphics/Texture.hpp>
 
-namespace robot2D::ecs {
+#include <imgui/imgui.h>
+#include "OrthoView.hpp"
 
-    Entity::Entity(): m_entityManager(nullptr), m_id(INT_MAX), m_tag("") {}
-    Entity::Entity(EntityManager* entityManager, const EntityID& id):
-    m_entityManager(entityManager),
-    m_id(id) {}
+namespace ImGui {
+    class GuiRender {
+    public:
+        GuiRender();
+        ~GuiRender();
 
-    bool operator==(const Entity& left, const Entity& right) {
-        return (left.m_id == right.m_id) && (left.m_tag == right.m_tag);
-    }
-
-    Bitmask Entity::getComponentMask() const {
-        return m_entityManager -> getComponentBitmask(*this);
-    }
-
-    Entity::Entity(const Entity& other): m_entityManager{other.m_entityManager},
-    m_id{other.m_id} {}
-
-    Entity::Entity(Entity&& other): m_entityManager{other.m_entityManager},
-                                    m_id{other.m_id} {
-
-    }
-
-    Entity& Entity::operator=(const Entity& other) {
-        m_entityManager = other.m_entityManager;
-        m_id = other.m_id;
-        return *this;
-    }
-
-
+        void setup();
+        void render(ImDrawData* drawData);
+    private:
+        bool setupGL();
+        void setupFonts();
+        void setupRenderState(ImDrawData* draw_data, int fb_width, int fb_height, unsigned int );
+    private:
+        robot2D::Texture m_fontTexture;
+        robot2D::ShaderHandler m_shader;
+        unsigned VAO, VBO, EBO;
+        OrthoView orthoView;
+    };
 }

@@ -19,37 +19,39 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include <robot2D/Ecs/EntityManager.hpp>
-#include <robot2D/Ecs/Entity.hpp>
+#pragma once
 
-namespace robot2D::ecs {
+#include <array>
 
-    Entity::Entity(): m_entityManager(nullptr), m_id(INT_MAX), m_tag("") {}
-    Entity::Entity(EntityManager* entityManager, const EntityID& id):
-    m_entityManager(entityManager),
-    m_id(id) {}
+#include <robot2D/Graphics/RenderWindow.hpp>
 
-    bool operator==(const Entity& left, const Entity& right) {
-        return (left.m_id == right.m_id) && (left.m_tag == right.m_tag);
-    }
+#include <imgui/imgui.h>
+#include "Render.hpp"
 
-    Bitmask Entity::getComponentMask() const {
-        return m_entityManager -> getComponentBitmask(*this);
-    }
+namespace ImGui {
 
-    Entity::Entity(const Entity& other): m_entityManager{other.m_entityManager},
-    m_id{other.m_id} {}
+    class Gui {
+    public:
+        Gui();
+        Gui(const Gui&)=delete;
+        Gui& operator=(const Gui&)=delete;
+        ~Gui();
 
-    Entity::Entity(Entity&& other): m_entityManager{other.m_entityManager},
-                                    m_id{other.m_id} {
+        void init(robot2D::Window& window);
+        void handleEvents(const robot2D::Event& event);
+        void update(float dt);
+        void render();
+    private:
+        void shutdown();
+        void updateMouseCursor();
+    private:
+        robot2D::Window* m_window;
+        GuiRender m_render;
+        std::array<robot2D::Cursor, ImGuiMouseCursor_COUNT> m_cursors;
 
-    }
-
-    Entity& Entity::operator=(const Entity& other) {
-        m_entityManager = other.m_entityManager;
-        m_id = other.m_id;
-        return *this;
-    }
-
+        bool m_windowHasFocus;
+        bool m_mouseMoved;
+        bool m_mousePressed[3];
+    };
 
 }

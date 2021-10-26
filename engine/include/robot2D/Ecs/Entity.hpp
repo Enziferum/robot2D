@@ -63,7 +63,7 @@ namespace robot2D::ecs {
         friend bool operator == (const Entity& l, const Entity& r);
 
         operator bool() {
-            return m_entityManager != nullptr && m_id != 0;
+            return m_entityManager != nullptr && m_id != INT_MAX;
         }
     private:
         friend class EntityManager;

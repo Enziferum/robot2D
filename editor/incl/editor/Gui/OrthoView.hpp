@@ -19,37 +19,24 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include <robot2D/Ecs/EntityManager.hpp>
-#include <robot2D/Ecs/Entity.hpp>
+#pragma once
 
-namespace robot2D::ecs {
+#include <robot2D/Core/Vector2.hpp>
 
-    Entity::Entity(): m_entityManager(nullptr), m_id(INT_MAX), m_tag("") {}
-    Entity::Entity(EntityManager* entityManager, const EntityID& id):
-    m_entityManager(entityManager),
-    m_id(id) {}
+namespace ImGui {
 
-    bool operator==(const Entity& left, const Entity& right) {
-        return (left.m_id == right.m_id) && (left.m_tag == right.m_tag);
-    }
+    class OrthoView {
+    public:
+        OrthoView();
+        ~OrthoView() = default;
 
-    Bitmask Entity::getComponentMask() const {
-        return m_entityManager -> getComponentBitmask(*this);
-    }
-
-    Entity::Entity(const Entity& other): m_entityManager{other.m_entityManager},
-    m_id{other.m_id} {}
-
-    Entity::Entity(Entity&& other): m_entityManager{other.m_entityManager},
-                                    m_id{other.m_id} {
-
-    }
-
-    Entity& Entity::operator=(const Entity& other) {
-        m_entityManager = other.m_entityManager;
-        m_id = other.m_id;
-        return *this;
-    }
-
+        void update(robot2D::vec2f pos, robot2D::vec2f size);
+        const float* getMatrix();
+    private:
+        robot2D::vec2f currentPos;
+        robot2D::vec2f currentSize;
+        bool needUpdate;
+        float matrix[4][4];
+    };
 
 }

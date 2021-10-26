@@ -294,7 +294,7 @@ namespace robot2D {
         }
 
         bool DesktopWindowImpl::isMousePressed(const Mouse& button) {
-            return glfwGetMouseButton(m_window, button);
+            return (glfwGetMouseButton(m_window, static_cast<int>(button)) == GLFW_PRESS);
         }
 
         bool DesktopWindowImpl::isKeyboardPressed(const Key &key) {
@@ -339,6 +339,17 @@ namespace robot2D {
 
         void DesktopWindowImpl::setMaximazed(const bool &flag) {
             glfwMaximizeWindow(m_window);
+        }
+
+        void DesktopWindowImpl::setMousePos(const vec2f& pos) {
+            glfwSetCursorPos(m_window, pos.x, pos.y);
+        }
+
+        vec2f DesktopWindowImpl::getMousePos() const {
+            double pos_x, pos_y;
+            glfwGetCursorPos(m_window, &pos_x, &pos_y);
+            return {static_cast<float>(pos_x),
+                    static_cast<float>(pos_y)};
         }
 
     }

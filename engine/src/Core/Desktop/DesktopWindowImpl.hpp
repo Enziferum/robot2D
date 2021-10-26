@@ -63,6 +63,9 @@ namespace robot2D {
 
             void setResizable(const bool &flag) override;
             void setMaximazed(const bool& flag) override;
+
+            void setMousePos(const vec2f& pos) override;
+            vec2f getMousePos() const override;
         private:
             void setup();
             void setup_callbacks();
