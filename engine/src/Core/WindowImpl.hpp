@@ -66,6 +66,9 @@ namespace robot2D {
             virtual robot2D::vec2u getPosition() const = 0;
             virtual void setResizable(const bool& flag) = 0;
             virtual void setMaximazed(const bool& flag) = 0;
+
+            virtual void setMousePos(const vec2f& pos) = 0;
+            virtual vec2f getMousePos() const = 0;
         };
     }
 }

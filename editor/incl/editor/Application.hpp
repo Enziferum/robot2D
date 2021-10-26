@@ -27,7 +27,7 @@ source distribution.
 #include <robot2D/Graphics/RenderWindow.hpp>
 #include <robot2D/Core/MessageBus.hpp>
 
-#include "Wrapper.hpp"
+#include "Gui/Gui.hpp"
 #include "Editor.hpp"
 #include "ProjectInspector.hpp"
 #include "ProjectManager.hpp"
@@ -71,7 +71,7 @@ namespace editor {
         robot2D::RenderWindow m_window;
 
         robot2D::MessageBus m_messageBus;
-        ImGui::Wrapper m_guiWrapper;
+        ImGui::Gui m_guiWrapper;
         Editor m_editor;
         State m_state;
 

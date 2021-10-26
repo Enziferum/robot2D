@@ -29,7 +29,7 @@ source distribution.
 #include <editor/MenuPanel.hpp>
 #include <editor/InspectorPanel.hpp>
 
-#include <editor/Wrapper.hpp>
+#include <editor/Gui/Api.hpp>
 #include <editor/SceneSerializer.hpp>
 #include <editor/Components.hpp>
 #include <editor/EditorStyles.hpp>
@@ -260,7 +260,7 @@ namespace editor {
 
     void Editor::openScene(const std::string& path) {
         auto& scenePanel = m_panelManager.getPanel<ScenePanel>();
-        scenePanel.setActiveScene(std::move(m_activeScene));
+        scenePanel.setActiveScene(m_activeScene);
 
         auto projectPath = m_currentProject -> getPath();
         auto assetsPath = combinePath(projectPath, "assets");

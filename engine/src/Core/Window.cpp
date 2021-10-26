@@ -99,10 +99,8 @@ namespace robot2D {
         return m_win_size;
     }
 
-    // todo create
     bool Window::isMousePressed(const Mouse& button) {
-        (void)button;
-        return false;
+        return m_windowImpl->isMousePressed(button);
     }
 
     bool Window::isKeyboardPressed(const Key& key) {
@@ -148,5 +146,13 @@ namespace robot2D {
 
     void Window::setMaximazed(const bool &flag) {
         m_windowImpl ->setMaximazed(flag);
+    }
+
+    void Window::setMousePos(const vec2f& pos) {
+        m_windowImpl ->setMousePos(pos);
+    }
+
+    vec2f Window::getMousePos() const {
+        return m_windowImpl->getMousePos();
     }
 }

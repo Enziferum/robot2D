@@ -19,12 +19,12 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
+#include <cstring>
+#include <filesystem>
 #include <imgui/imgui.h>
 #include <imgui/imgui_internal.h>
 #include <editor/ScenePanel.hpp>
 #include <editor/Components.hpp>
-#include <cstring>
-#include <filesystem>
 
 namespace editor {
     static void DrawVec2Control(const std::string& label, robot2D::vec2f& values,

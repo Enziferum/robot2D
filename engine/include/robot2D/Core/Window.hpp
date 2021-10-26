@@ -98,6 +98,9 @@ namespace robot2D {
         // Window manipulate options //
 
 
+        void setMousePos(const vec2f& pos);
+        vec2f getMousePos() const;
+
         static bool isMousePressed(const Mouse& button);
         static bool isKeyboardPressed(const Key& key);
     protected:
