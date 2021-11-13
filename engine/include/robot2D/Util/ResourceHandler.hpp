@@ -41,7 +41,7 @@ namespace robot2D{
         bool append(const ID& idx, T resource) {
             auto Resource = std::make_unique<T>(std::move(resource));
             return m_resources.insert(std::pair<ID, Ptr>(idx,
-                                                  std::move(Resource))).inserted;
+                                                  std::move(Resource))).second;
         }
 
         T& get(const ID& idx);

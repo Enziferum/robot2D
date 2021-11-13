@@ -18,7 +18,7 @@ and must not be misrepresented as being the original software.
 3. This notice may not be removed or altered from any
 source distribution.
 *********************************************************************/
-
+#include <robot2D/Graphics/GL.hpp>
 #include <editor/Gui/OrthoView.hpp>
 
 namespace ImGui {
@@ -46,6 +46,10 @@ namespace ImGui {
         float T = currentPos.y;
         float B = currentPos.y + currentSize.y;
 
+#if defined(GL_CLIP_ORIGIN)
+        bool clip_origin_lower_left = true;
+        if (!clip_origin_lower_left) { float tmp = T; T = B; B = tmp; } // Swap top and bottom if origin is upper left
+#endif
         matrix[0][0] = 2.0F/(R-L);
         matrix[3][0] = (R+L)/(L-R);
         matrix[1][1] = 2.0F/(T-B);

@@ -47,8 +47,6 @@ namespace robot2D{
             return false;
         setupGL();
         bindBufferData(m_image.getBuffer());
-        glGenerateMipmap(GL_TEXTURE_2D);
-
         return true;
     }
 
@@ -61,17 +59,24 @@ namespace robot2D{
     }
 
     void Texture::setupGL() {
-        glGenTextures(1, &m_texture);
-        glBindTexture(GL_TEXTURE_2D, m_texture);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glCreateTextures(GL_TEXTURE_2D, 1, &m_texture);
+        auto size = m_image.getSize();
+        GLint internalFormat = GL_RGB8;
+        auto glFormat = convertColorType(m_image.getColorFormat());
+        if(glFormat == GL_RGBA)
+            internalFormat = GL_RGBA8;
+        glTextureStorage2D(m_texture, 1, internalFormat, size.x, size.y);
+
+        glTextureParameteri(m_texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTextureParameteri(m_texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        glTextureParameteri(m_texture, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTextureParameteri(m_texture, GL_TEXTURE_WRAP_T, GL_REPEAT);
     }
 
     void Texture::create(const vec2u& size, void* data, const ImageColorFormat& colorFormat) {
-        setupGL();
         m_image.create(size, data, colorFormat);
+        setupGL();
         bindBufferData(data);
     }
 
@@ -90,7 +95,11 @@ namespace robot2D{
     void Texture::bindBufferData(void* bufferData) {
         auto glFormat = convertColorType(m_image.getColorFormat());
         auto size = m_image.getSize();
-        glTexImage2D(GL_TEXTURE_2D, 0, glFormat, size.x, size.y, 0, glFormat, GL_UNSIGNED_BYTE, bufferData);
+        glTextureSubImage2D(m_texture, 0, 0, 0, size.x, size.y, glFormat, GL_UNSIGNED_BYTE, bufferData);
+    }
+
+    void Texture::bind(uint32_t slot) {
+        glBindTextureUnit(slot, m_texture);
     }
 
 }

@@ -57,7 +57,7 @@ namespace robot2D {
         m_scale(1.f),
         m_color(Color::White)
         {
-            setup_GL();
+          //  setup_GL();
         }
 
     void Text::setText(const std::string& text) {
@@ -90,13 +90,14 @@ namespace robot2D {
     }
 
     void Text::draw(RenderTarget& target, RenderStates states) const {
+        return;
         (void)target;
         if(!m_font)
             return;
 
         update_geometry();
 
-        glActiveTexture(GL_TEXTURE0);
+       // glActiveTexture(GL_TEXTURE0);
         m_textShader.use();
         m_textShader.set_parameter("textColor", m_color.red, m_color.green, m_color.blue);
 

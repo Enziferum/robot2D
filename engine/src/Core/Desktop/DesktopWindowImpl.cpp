@@ -84,9 +84,9 @@ namespace robot2D {
                     opengl_minor = 3;
                     break;
                 }
-                case WindowContext::RenderApi::OpenGL4_1: {
+                case WindowContext::RenderApi::OpenGL4_5: {
                     opengl_major = 4;
-                    opengl_minor = 1;
+                    opengl_minor = 5;
                     break;
                 }
             }

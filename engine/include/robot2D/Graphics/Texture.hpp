@@ -40,6 +40,7 @@ namespace robot2D {
         const unsigned int& getID()const;
 
         const ImageColorFormat& getColorFormat() const { return m_image.getColorFormat(); }
+        void bind(uint32_t slot);
     private:
         void bindBufferData(void* bufferData);
         void setupGL();
