@@ -28,7 +28,7 @@ source distribution.
 
 int main() {
     logger::Log::Init();
-    robot2D::RenderWindow window{{1280, 920}, {"Sandbox"}};
+    robot2D::RenderWindow window{{800, 600}, {"Sandbox"}};
 
     Sandbox sandbox(window);
 

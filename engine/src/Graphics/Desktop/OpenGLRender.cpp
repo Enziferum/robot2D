@@ -33,10 +33,10 @@ namespace robot2D {
     namespace priv {
 #define ROBOT2D_DEBUG
         const std::string vertexSource = R"(
-            #version 330 core
+            #version 450 core
             layout (location = 0) in vec2 position;
-            layout (location = 1) in vec2 textureCoords;
-            layout (location = 2) in vec4 color;
+            layout (location = 1) in vec4 color;
+            layout (location = 2) in vec2 textureCoords;
             layout (location = 3) in float textureIndex;
             out vec2 TexCoords;
             out vec4 Color;
@@ -52,11 +52,11 @@ namespace robot2D {
         )";
 
         const std::string fragmentSource = R"(
-            #version 330 core
+            #version 450 core
+            layout (location = 0) out vec4 fragColor;
             in vec2 TexCoords;
             in vec4 Color;
             in float TexIndex;
-            out vec4 fragColor;
             uniform sampler2D textureSamplers[16];
             void main()
             {
@@ -64,7 +64,7 @@ namespace robot2D {
                 fragColor = texture(textureSamplers[index], TexCoords) * Color;
             }
         )";
-
+//
         constexpr short quadVertexSize = 4;
         constexpr short maxTextureSlots = 16;
 #ifdef ROBOT2D_WINDOWS
@@ -126,8 +126,8 @@ namespace robot2D {
             // for OpenGL name - utility only
             m_renderBuffer.vertexBuffer -> setAttributeLayout({
                     {ElementType::Float2, "Position"},
-                    {ElementType::Float2, "TextureCoords"},
                     {ElementType::Float4, "Color(RGBA)"},
+                    {ElementType::Float2, "TextureCoords"},
                     {ElementType::Float1, "TextureIndex"}
             });
             m_renderBuffer.vertexArray -> setVertexBuffer(m_renderBuffer.vertexBuffer);
@@ -148,10 +148,9 @@ namespace robot2D {
                 offset += 4;
             }
             auto indexBuffer = IndexBuffer::Create(quadIndices, m_renderBuffer.maxIndicesCount);
-            m_renderBuffer.vertexArray ->setIndexBuffer(indexBuffer);
+            m_renderBuffer.vertexArray -> setIndexBuffer(indexBuffer);
 
             delete[] quadIndices;
-
 
             m_renderBuffer.quadVertexPositions[0] = {-0.5F, -0.5F};
             m_renderBuffer.quadVertexPositions[1] = {0.5F, -0.5F};
@@ -172,8 +171,6 @@ namespace robot2D {
 
             GLubyte texData[] = { 255, 255, 255, 255 }; // 0xffffffff;
 
-            m_quadShader.use();
-
             m_renderBuffer.whiteTexture.create({1, 1}, texData);
             m_renderBuffer.textureSlots[0] = m_renderBuffer.whiteTexture.getID();
 
@@ -181,6 +178,7 @@ namespace robot2D {
             for(int it = 0; it < maxTextureSlots; ++it)
                 samples[it] = it;
 
+            m_quadShader.use();
             m_quadShader.set_parameter("textureSamplers", samples, maxTextureSlots);
 
             for(int it = 1; it < maxTextureSlots; ++it)
@@ -264,7 +262,6 @@ namespace robot2D {
             for (auto it = 0; it < quadVertexSize; ++it) {
                 m_renderBuffer.quadBufferPtr->Position = states.transform * m_renderBuffer.quadVertexPositions[it];
                 m_renderBuffer.quadBufferPtr->Color = states.color.toGL();
-
                 m_renderBuffer.quadBufferPtr->textureIndex = textureIndex;
                 //data[it].texCoords
                 m_renderBuffer.quadBufferPtr->TextureCoords = textureCoords[it];
@@ -314,14 +311,13 @@ namespace robot2D {
         }
 
         void OpenGLRender::afterRender() const {
-            auto size = (uint8_t*)m_renderBuffer.quadBufferPtr - (uint8_t*)m_renderBuffer.quadBuffer;
+            uint32_t size = uint32_t((uint8_t*)m_renderBuffer.quadBufferPtr - (uint8_t*)m_renderBuffer.quadBuffer);
             m_renderBuffer.vertexBuffer -> setData(m_renderBuffer.quadBuffer, size);
         }
 
         void OpenGLRender::flushRender() const {
             for(int it = 0; it < m_renderBuffer.textureSlotIndex; ++it) {
-                glActiveTexture(GL_TEXTURE0+it);
-                glBindTexture(GL_TEXTURE_2D, m_renderBuffer.textureSlots[it]);
+                glBindTextureUnit(it, m_renderBuffer.textureSlots[it]);
             }
             m_quadShader.use();
 

@@ -32,14 +32,14 @@ namespace robot2D{
 
     Font::Font():
         m_library(nullptr),
-        m_face(nullptr){
-    }
+        m_face(nullptr) {}
 
     Font::~Font() {
         cleanup();
     }
 
     bool Font::loadFromFile(const std::string& path, const unsigned int& char_size) {
+        return true;
         cleanup();
 
         FT_Library ft;
@@ -62,12 +62,12 @@ namespace robot2D{
         // set size to load glyphs as
         FT_Set_Pixel_Sizes(face, 0, char_size);
         // disable byte-alignment restriction
-        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+       // glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
         // then for the first 128 ASCII characters, pre-load/compile their characters and store them
         setup_cache();
 
-        glBindTexture(GL_TEXTURE_2D, 0);
+        //glBindTexture(GL_TEXTURE_2D, 0);
 
         return true;
     }

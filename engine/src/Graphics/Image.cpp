@@ -39,6 +39,7 @@ namespace robot2D {
         int height = 0;
         int channels = 0;
         //STBI_rgb_alpha
+      //  stbi_set_flip_vertically_on_load(1);
         unsigned char* ptr = stbi_load(path.c_str(), &width, &height, &channels, 0);
 
         if (ptr)

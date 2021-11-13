@@ -7,7 +7,7 @@
 namespace ImGui {
 #define IMGUI_IMPL_OPENGL_USE_VERTEX_ARRAY
     const GLchar* vertex_shader =
-            "#version 330 core\n"
+            "#version 450 core\n"
             "layout (location = 0) in vec2 Position;\n"
             "layout (location = 1) in vec2 UV;\n"
             "layout (location = 2) in vec4 Color;\n"
@@ -24,7 +24,7 @@ namespace ImGui {
 
 
     const GLchar* fragment_shader =
-            "#version 330 core\n"
+            "#version 450 core\n"
             "in vec2 Frag_UV;\n"
             "in vec4 Frag_Color;\n"
             "uniform sampler2D Texture;\n"

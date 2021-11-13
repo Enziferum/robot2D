@@ -26,7 +26,8 @@ source distribution.
 #include "Scene.hpp"
 
 enum class ResourceID {
-    Face
+    Face, Logo, City,
+    Paddle
 };
 
 class Render2DScene: public Scene {

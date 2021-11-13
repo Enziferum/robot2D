@@ -28,7 +28,7 @@ namespace robot2D {
     struct ROBOT2D_EXPORT_API WindowContext {
         enum class RenderApi {
             OpenGL3_3,
-            OpenGL4_1
+            OpenGL4_5
         };
 
         bool vsync;
@@ -39,7 +39,7 @@ namespace robot2D {
         robot2D::vec2f maximumSize = {};
 
         WindowContext(const bool& vsync = false, const bool& fullscreen = false,
-                      const RenderApi& renderApi = WindowContext::RenderApi::OpenGL3_3);
+                      const RenderApi& renderApi = WindowContext::RenderApi::OpenGL4_5);
 
         static const WindowContext Default;
     };
