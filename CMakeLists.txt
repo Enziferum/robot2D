@@ -51,15 +51,9 @@ else()
     #enable_cxx_compiler_flag_if_supported("-Werror")
 endif()
 
-
 find_package(glfw3 REQUIRED)
-find_package(Freetype REQUIRED)
 find_package(robot2D_ext QUIET)
 find_package(spdlog)
-
-#TODO update finds
-message(STATUS "Found freetype in ${FREETYPE_INCLUDE_DIRS}")
-include_directories(${FREETYPE_INCLUDE_DIRS})
 
 if(WIN32)
     set(LIBS opengl32)
@@ -76,7 +70,7 @@ endif()
 add_subdirectory(engine)
 
 add_library(${PROJECT_NAME} ${ENGINE_SRC})
-set(LIBS ${LIBS} glfw robot2D_ext ${FREETYPE_LIBRARIES} spdlog::spdlog)
+set(LIBS ${LIBS} glfw robot2D_ext spdlog::spdlog)
 
 target_link_libraries(${PROJECT_NAME} ${LIBS})
 target_include_directories(${PROJECT_NAME} PUBLIC

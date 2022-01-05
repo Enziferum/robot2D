@@ -19,7 +19,7 @@ namespace ImGui {
         ImGui::Image(imID, ImVec2(size.x, size.y), uv0, uv1);
     }
 
-    void RenderFrameBuffer(const robot2D::FrameBuffer::Ptr& frameBuffer, const robot2D::vec2f &size) {
+    void RenderFrameBuffer(const robot2D::FrameBuffer::Ptr& frameBuffer, const robot2D::vec2f& size) {
         auto imID = convertTextureHandle(frameBuffer -> getFrameBufferRenderID());
         ImGui::Image(imID, ImVec2(size.x, size.y), {0,1}, {1, 0});
     }

@@ -294,7 +294,6 @@ namespace robot2D {
             m_quadShader.use();
             m_quadShader.set_parameter("projection", m_view.getTransform().get_matrix());
             m_quadShader.unUse();
-           // glViewport(viewport.lx, top, viewport.width, viewport.height);
         }
 
         const View& OpenGLRender::getView() {

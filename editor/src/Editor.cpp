@@ -119,7 +119,7 @@ namespace editor {
         m_window.beforeRender();
         m_window.setView(m_camera.getView());
 
-        for(auto& it: m_activeScene->getEntities()) {
+        for(auto& it: m_activeScene -> getEntities()) {
             if(!it.hasComponent<SpriteComponent>())
                 continue;
 
@@ -140,14 +140,15 @@ namespace editor {
         m_window.flushRender();
 
         if(m_configuration.useGUI) {
-            m_frameBuffer->unBind();
+            m_frameBuffer -> unBind();
             guiRender();
         }
     }
 
     void Editor::guiRender() {
         ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
-        window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
+        window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse
+                | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
         window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
 
         const ImGuiViewport* viewport = ImGui::GetMainViewport();
@@ -185,7 +186,7 @@ namespace editor {
         auto ViewPanelSize = ImGui::GetContentRegionAvail();
         if(m_ViewportSize != robot2D::vec2u { ViewPanelSize.x, ViewPanelSize.y}) {
             m_ViewportSize = {ViewPanelSize.x, ViewPanelSize.y};
-            m_frameBuffer -> Resize(m_ViewportSize);
+            //m_frameBuffer -> Resize(m_ViewportSize);
         }
         ImGui::RenderFrameBuffer(m_frameBuffer, {m_ViewportSize.x, m_ViewportSize.y});
         if (ImGui::BeginDragDropTarget())
@@ -223,7 +224,7 @@ namespace editor {
                 if(ImGui::MenuItem("Open", "Ctrl+O")) {
                     std::string openPath = "assets/scenes/demoScene.robot2D";
                     const char* patterns[1] = {"*.scene"};
-                    char *path = tinyfd_openFileDialog("Load Scene", nullptr,
+                    char* path = tinyfd_openFileDialog("Load Scene", nullptr,
                                                        1, patterns, "Scene", 0);
                     if (path != nullptr) {
                         openPath = std::string(path);
@@ -270,8 +271,6 @@ namespace editor {
 
     void Editor::createProject(Project::Ptr project) {
         m_currentProject = project;
-        prepare();
-
         if(!m_sceneManager.add(std::move(project))) {
             RB_EDITOR_ERROR("Can't Create Scene. Reason: {0}",
                             errorToString(m_sceneManager.getError()));
@@ -280,11 +279,11 @@ namespace editor {
         m_activeScene = m_sceneManager.getActiveScene();
         openScene(m_activeScene->getPath());
         m_window.setMaximazed(true);
+        prepare();
     }
 
     void Editor::loadProject(Project::Ptr project) {
         m_currentProject = project;
-        prepare();
 
         if(!m_sceneManager.load(std::move(project))) {
             RB_EDITOR_ERROR("Can't Load Scene. Reason: {0}",
@@ -295,6 +294,7 @@ namespace editor {
         openScene(m_activeScene->getPath());
 
         m_window.setMaximazed(true);
+        prepare();
     }
 
 }
