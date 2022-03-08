@@ -52,7 +52,9 @@ namespace robot2D::priv {
         }
 
         bool isOldGL = false;
-
+#ifdef ROBOT2D_MACOS
+        isOldGL = true;
+#endif
 
         if (isOldGL) {
             glGenFramebuffers(1, &m_renderID);
@@ -76,9 +78,15 @@ namespace robot2D::priv {
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, m_depthAttachment, 0);
             unBind();
         } else {
+#if defined(ROBOT2D_WINDOWS) || defined(ROBOT2D_LINUX)
             glCreateFramebuffers(1, &m_renderID);
+#endif
+
             Bind();
+#if defined(ROBOT2D_WINDOWS) || defined(ROBOT2D_LINUX)
             glCreateTextures(GL_TEXTURE_2D, 1, &m_colorAttachment);
+#endif
+
             glBindTexture(GL_TEXTURE_2D, m_colorAttachment);
             glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, m_specification.size.x, m_specification.size.y, 0, GL_RGBA, GL_UNSIGNED_BYTE,
                          nullptr);
@@ -86,8 +94,10 @@ namespace robot2D::priv {
             glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_colorAttachment, 0);
-
+#if defined(ROBOT2D_WINDOWS) || defined(ROBOT2D_LINUX)
             glCreateTextures(GL_TEXTURE_2D, 1, &m_depthAttachment);
+#endif
+
             glBindTexture(GL_TEXTURE_2D, m_depthAttachment);
 
             glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, m_specification.size.x, m_specification.size.y, 0,
@@ -114,6 +124,4 @@ namespace robot2D::priv {
         m_specification.size = {newSize.x, newSize.y};
         Invalidate();
     }
-
-
 }

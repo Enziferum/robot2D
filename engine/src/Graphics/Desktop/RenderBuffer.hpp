@@ -31,7 +31,7 @@ namespace robot2D {
 #pragma pack(push, 1)
     struct ROBOT2D_EXPORT_API RenderVertex {
         robot2D::vec2f Position;
-        Color Color;
+        Color color;
         robot2D::vec2f TextureCoords;
         float textureIndex;
     };

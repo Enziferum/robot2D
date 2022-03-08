@@ -25,13 +25,10 @@ source distribution.
 #include <sandbox/Components.hpp>
 
 namespace {
-    const robot2D::vec2f position = robot2D::vec2f {100.F, 100.F};
+    const robot2D::vec2f position = robot2D::vec2f {0.F, 0.F};
     const robot2D::vec2f size = robot2D::vec2f {200.F, 200.F};
-    constexpr char* texturePath = "awesomeface.png";
-    constexpr char* texturePath1 = "old_logo.png";
-    constexpr char* texturePath2 = "cityskyline.png";
-    constexpr char* texturePath3 = "paddle.png";
-    constexpr unsigned startEntitiesCount = 1;
+    constexpr char* texturePath = "old_logo.png";
+    constexpr unsigned startEntitiesCount = 5;
 }
 
 Render2DScene::Render2DScene(robot2D::RenderWindow& window) : Scene(window),
@@ -42,15 +39,11 @@ Render2DScene::Render2DScene(robot2D::RenderWindow& window) : Scene(window),
 void Render2DScene::setup() {
     ///// setup Ecs /////
     m_scene.addSystem<RenderSystem>(messageBus);
-   // m_scene.addSystem<DemoMoveSystem>(messageBus);
+    m_scene.addSystem<DemoMoveSystem>(messageBus);
 
     ///// setup Ecs /////
 
-    m_textures.loadFromFile(ResourceID::Face, texturePath);
-    m_textures.loadFromFile(ResourceID::Logo, texturePath1);
-    m_textures.loadFromFile(ResourceID::City, texturePath2);
-    m_textures.loadFromFile(ResourceID::Paddle, texturePath3);
-
+    m_textures.loadFromFile(ResourceID::Logo, texturePath);
     for(auto it = 0; it < startEntitiesCount; ++it)
         createEntity({position.x, position.y + size.x * it});
 }
@@ -60,8 +53,6 @@ void Render2DScene::handleEvents(const robot2D::Event& event) {
         RB_INFO("New Size = {0} and {1}", event.size.widht, event.size.heigth);
         m_window.resize({event.size.widht, event.size.heigth});
         m_window.setView(robot2D::View(robot2D::FloatRect{0, 0, event.size.widht, event.size.heigth}));
-
-        //createEntity({position.x, position.y + size.x});
     }
 }
 
@@ -87,26 +78,7 @@ struct Quad: robot2D::Drawable, robot2D::Transformable {
 void Render2DScene::render() {
     m_window.beforeRender();
 
-    Quad quad;
-    quad.texture = &m_textures.get(ResourceID::City);
-    quad.setScale({800.F, 600.F});
-    quad.setPosition({400.F, 300.F});
-
-    Quad quad0;
-    quad0.texture = &m_textures.get(ResourceID::Paddle);
-    quad0.setScale({100.F, 100.F});
-    quad0.setPosition({350.F, 350.F});
-
-
-    Quad quad1;
-    quad1.texture = &m_textures.get(ResourceID::Logo);
-    quad1.setScale({200.F, 200.F});
-    quad1.setPosition({200.F, 200.F});
-
-    m_window.draw(quad);
-    m_window.draw(quad0);
     m_window.draw(m_scene);
-    m_window.draw(quad1);
 
     m_window.afterRender();
     m_window.flushRender();
@@ -121,5 +93,5 @@ void Render2DScene::createEntity(const robot2D::vec2f& position) {
     transform.scale({size});
 
     auto& sprite = entity.addComponent<SpriteComponent>();
-    sprite.setTexture(m_textures.get(ResourceID::Face));
+    sprite.setTexture(m_textures.get(ResourceID::Logo));
 }
