@@ -3,8 +3,9 @@
 <img align="right" src="https://github.com/Enziferum/robot2D/blob/master/logo/logo.png" alt="logo" width="256"/>
 
 
-
-Robot2D - simple 2D Engine. 
+Mac/Linux: [![Build Status](https://app.travis-ci.com/Enziferum/robot2D.svg?branch=master)](https://app.travis-ci.com/Enziferum/robot2D) \
+\
+Robot2D - simple 2D Engine.   
 \
 Idea of project - learning, have fun and sometimes make games on it :) 
 \
