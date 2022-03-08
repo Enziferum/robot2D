@@ -21,27 +21,8 @@ source distribution.
 
 #pragma once
 
-#include <filesystem>
-#include <vector>
-#include <string>
+#include <robot2D/Core/Vector2.hpp>
 
 namespace editor {
-    using stringBuffer = std::vector<std::string>;
-    class FileManager {
-    public:
-        FileManager();
-        ~FileManager() = default;
-
-        bool addProject();
-        bool removeProject();
-
-        stringBuffer scanDirectory(const std::string& dirPath);
-    private:
-        std::filesystem::path m_path;
-    };
-
-    namespace util {
-        namespace fs = std::filesystem;
-    }
-
+    robot2D::vec2u getCenterPoint(const robot2D::vec2u& objectSize, const robot2D::vec2u& frameSize);
 }

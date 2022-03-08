@@ -44,7 +44,6 @@ namespace robot2D {
             bool isOpen() const override;
             void setTitle(const std::string& title) const override;
 
-            void clear(const Color& color) override;
             void close() override;
             void display() override;
 
@@ -53,8 +52,7 @@ namespace robot2D {
 
             void setSize(const robot2D::vec2u& size) override;
 
-            void setIcon(std::vector<robot2D::Texture>& ) override;
-            void setIcon(robot2D::Texture&& icon)override;
+            void setIcon(robot2D::Image&& icon)override;
 
             void setMouseCursorVisible(const bool& flag) override;
             void setCursor(const Cursor& cursor)override;
@@ -62,11 +60,15 @@ namespace robot2D {
             robot2D::vec2u getMonitorSize() const override;
             void setPosition(const robot2D::vec2u& position) override;
             robot2D::vec2u getPosition() const override;
+
+            void setResizable(const bool &flag) override;
+            void setMaximazed(const bool& flag) override;
+
+            void setMousePos(const vec2f& pos) override;
+            vec2f getMousePos() const override;
         private:
             void setup();
             void setup_callbacks();
-            void setup_WGL();
-
         private:
             static void close_callback(GLFWwindow* wnd);
             static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
@@ -74,6 +76,7 @@ namespace robot2D {
             static void mouseWhell_callback(GLFWwindow* window, double xpos, double ypos);
             static void mouse_callback(GLFWwindow* window, int key, int action, int mods);
             static void size_callback(GLFWwindow* window, int w, int h);
+            static void framebuffer_callback(GLFWwindow* window, int width, int height);
             static void maximized_callback(GLFWwindow* window, int state);
             static void dragdrop_callback(GLFWwindow* wnd, int count, const char** paths);
             static void focus_callback(GLFWwindow* wnd, int focus);

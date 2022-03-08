@@ -38,7 +38,6 @@ namespace editor {
         const robot2D::ecs::EntityList& getEntities() const;
 
         void update(float dt);
-
         void updateRuntime(float dt);
 
         // Serializer Api

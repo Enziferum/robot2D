@@ -31,5 +31,7 @@ namespace editor {
 
     bool deleteDirectory(const std::string& path);
 
+    std::string combinePath(const std::string& basePath, const std::string& appendPath);
+
     std::string addFilename(const std::string& path, const std::string& filename);
 }

@@ -18,7 +18,7 @@ set(CMAKE_CXX_STANDARD 17)
 option(CMAKE_BUILD_TYPE "Choose the type of build (Debug or Release)" Debug)
 option(BUILD_SHARED_LIBS "Whether to build shared libraries" OFF)
 option(BUILD_SANDBOX "Build Sandbox Submodule?" ON)
-option(BUILD_EDITOR "Build Editor Submodule?" ON)
+option(BUILD_EDITOR "Build Editor Submodule?" OFF)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 cmake_policy(SET CMP0074 NEW)
@@ -51,15 +51,9 @@ else()
     #enable_cxx_compiler_flag_if_supported("-Werror")
 endif()
 
-
 find_package(glfw3 REQUIRED)
-find_package(Freetype REQUIRED)
 find_package(robot2D_ext QUIET)
 find_package(spdlog)
-
-#TODO update finds
-message(STATUS "Found freetype in ${FREETYPE_INCLUDE_DIRS}")
-include_directories(${FREETYPE_INCLUDE_DIRS})
 
 if(WIN32)
     set(LIBS opengl32)
@@ -76,7 +70,7 @@ endif()
 add_subdirectory(engine)
 
 add_library(${PROJECT_NAME} ${ENGINE_SRC})
-set(LIBS ${LIBS} glfw robot2D_ext ${FREETYPE_LIBRARIES} spdlog::spdlog)
+set(LIBS ${LIBS} glfw robot2D_ext spdlog::spdlog)
 
 target_link_libraries(${PROJECT_NAME} ${LIBS})
 target_include_directories(${PROJECT_NAME} PUBLIC

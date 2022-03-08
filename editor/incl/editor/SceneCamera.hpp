@@ -25,6 +25,12 @@ source distribution.
 #include <robot2D/Core/Event.hpp>
 
 namespace editor {
+
+    struct SceneCameraConfiguration {
+        float zoomOffset = 1.F;
+        float zoomMultiplier = 0.1F;
+    };
+
     class SceneCamera {
     public:
         SceneCamera();
@@ -40,8 +46,9 @@ namespace editor {
         const robot2D::View& getView() const;
     private:
         robot2D::View m_view;
+        robot2D::FloatRect m_sizeRect;
+        SceneCameraConfiguration m_configuration;
         float m_zoom;
         float m_cameraSpeed = 10.F;
-        robot2D::FloatRect m_sizeRect;
     };
 }

@@ -22,6 +22,7 @@ source distribution.
 #pragma once
 #include <functional>
 #include <vector>
+#include <unordered_map>
 #include <robot2D/Graphics/RenderWindow.hpp>
 
 #include "ProjectDescription.hpp"
@@ -30,6 +31,19 @@ source distribution.
 namespace editor {
 
     using ProcessFunction = std::function<void(ProjectDescription)>;
+
+    struct ProjectInspectorConfiguration {
+        const ImVec2 createButtonSize = ImVec2(200.F, 50.F);
+        const float textOffset = 10.F;
+        const unsigned colID = 0xFFFFFFFF;
+        bool isOpen = true;
+        ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoTitleBar |
+                                       ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar
+                                       | ImGuiWindowFlags_NoResize;
+        ImGuiSelectableFlags_ selectableFlags = ImGuiSelectableFlags_AllowItemOverlap;
+        int m_selectedItem = -1;
+        bool openAlways = true;
+    };
 
     class ProjectInspector final {
     public:
@@ -52,8 +66,7 @@ namespace editor {
         EditorCache& m_editorCache;
         std::vector<ProjectDescription> m_descriptions;
 
-        ProcessFunction m_createFunction;
-        ProcessFunction m_deleteFunction;
-        ProcessFunction m_loadFunction;
+        std::unordered_map<CallbackType, ProcessFunction> m_functions;
+        ProjectInspectorConfiguration m_configuration;
     };
 }

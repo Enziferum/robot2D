@@ -29,12 +29,25 @@ source distribution.
 #include "PanelManager.hpp"
 #include "Scene.hpp"
 #include "SceneCamera.hpp"
+#include "SceneManager.hpp"
 #include "Project.hpp"
 
 namespace editor {
 
-    enum class TextureID {
-        Face, Logo, White
+    struct EditorConfiguration {
+        enum class TextureID {
+            Face, Logo, White
+        };
+
+        const bool useGUI = true;
+        const std::string texturesPath = "res/textures/";
+        bool m_leftCtrlPressed = false;
+        bool opt_padding = true;
+        bool dockspace_open = false;
+        ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
+        std::unordered_map<TextureID, std::string> texturePaths = {
+                {TextureID::Logo, "logo.png"},
+        };
     };
 
     class Editor {
@@ -61,8 +74,7 @@ namespace editor {
         void mainMenubar();
 
         bool createScene();
-        bool openScene(const std::string& path);
-        bool saveScene(const std::string& path);
+        void openScene(const std::string& path);
     private:
         enum class State {
             Edit,
@@ -80,8 +92,10 @@ namespace editor {
         SceneCamera m_camera;
 
         robot2D::FrameBuffer::Ptr m_frameBuffer;
-        robot2D::ResourceHandler<robot2D::Texture, TextureID> m_textures;
+        robot2D::ResourceHandler<robot2D::Texture, EditorConfiguration::TextureID> m_textures;
         robot2D::vec2u m_ViewportSize;
         robot2D::Color m_sceneClearColor;
+        EditorConfiguration m_configuration;
+        SceneManager m_sceneManager;
     };
 }

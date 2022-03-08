@@ -24,8 +24,9 @@ source distribution.
 
 namespace robot2D::ecs {
 
-    Entity::Entity(): m_entityManager(nullptr), m_id(-1), m_tag("") {}
-    Entity::Entity(EntityManager* entityManager, const EntityID& id): m_entityManager(entityManager),
+    Entity::Entity(): m_entityManager(nullptr), m_id(INT_MAX), m_tag("") {}
+    Entity::Entity(EntityManager* entityManager, const EntityID& id):
+    m_entityManager(entityManager),
     m_id(id) {}
 
     bool operator==(const Entity& left, const Entity& right) {
@@ -34,6 +35,20 @@ namespace robot2D::ecs {
 
     Bitmask Entity::getComponentMask() const {
         return m_entityManager -> getComponentBitmask(*this);
+    }
+
+    Entity::Entity(const Entity& other): m_entityManager{other.m_entityManager},
+    m_id{other.m_id} {}
+
+    Entity::Entity(Entity&& other): m_entityManager{other.m_entityManager},
+                                    m_id{other.m_id} {
+
+    }
+
+    Entity& Entity::operator=(const Entity& other) {
+        m_entityManager = other.m_entityManager;
+        m_id = other.m_id;
+        return *this;
     }
 
 

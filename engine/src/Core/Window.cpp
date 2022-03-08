@@ -43,9 +43,7 @@ namespace robot2D {
         Window::create();
     }
 
-
     Window::~Window() {}
-
 
     bool Window::isOpen() const {
         return m_windowImpl -> isOpen();
@@ -83,8 +81,8 @@ namespace robot2D {
         (void)(h);
     }
 
-    void Window::setIcon(std::vector<Texture>& icons) {
-        m_windowImpl -> setIcon(icons);
+    void Window::setIcon(robot2D::Image&& icon) {
+        m_windowImpl -> setIcon(std::move(icon));
     }
 
     WindowHandle Window::getRaw() const {
@@ -101,10 +99,8 @@ namespace robot2D {
         return m_win_size;
     }
 
-    // todo create
     bool Window::isMousePressed(const Mouse& button) {
-        (void)button;
-        return false;
+        return m_windowImpl->isMousePressed(button);
     }
 
     bool Window::isKeyboardPressed(const Key& key) {
@@ -144,8 +140,19 @@ namespace robot2D {
         m_windowImpl -> setSize(size);
     }
 
-    void Window::setIcon(Texture&& icon) {
-        m_windowImpl -> setIcon(std::move(icon));
+    void Window::setResizable(const bool& flag) {
+        m_windowImpl -> setResizable(flag);
     }
 
+    void Window::setMaximazed(const bool &flag) {
+        m_windowImpl ->setMaximazed(flag);
+    }
+
+    void Window::setMousePos(const vec2f& pos) {
+        m_windowImpl ->setMousePos(pos);
+    }
+
+    vec2f Window::getMousePos() const {
+        return m_windowImpl->getMousePos();
+    }
 }

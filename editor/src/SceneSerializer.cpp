@@ -69,22 +69,10 @@ namespace YAML {
 }
 
 namespace editor {
-    enum class SerializeID {
-        Scene,
-        Entities,
-        Tag,
-        Transform,
-        Sprite
-    };
-
-    std::unordered_map<SerializeID, std::string> serializeKeys = {
-            {SerializeID::Scene, "Scene"},
-            {SerializeID::Entities, "Entities"},
-            {SerializeID::Tag, "TagComponent"},
-            {SerializeID::Transform, "TransformComponent"},
-            {SerializeID::Sprite, "SpriteComponent"},
-            {SerializeID::Tag, "TransformComponent"},
-    };
+    namespace {
+        // tmp value before UUID Manager
+        const std::string fakeUUID = "9012510123";
+    }
 
     SceneSerializer::SceneSerializer(Scene::Ptr scene): m_scene(scene) {}
 
@@ -103,7 +91,8 @@ namespace editor {
 
     void SerializeEntity(YAML::Emitter& out, robot2D::ecs::Entity entity) {
         out << YAML::BeginMap;
-        out << YAML::Key << "Entity" << YAML::Value << "9012510123";
+        out << YAML::Key << "Entity" << YAML::Value << fakeUUID;
+
         if(entity.hasComponent<TagComponent>()) {
             out << YAML::Key << "TagComponent";
             out << YAML::BeginMap;
@@ -141,15 +130,17 @@ namespace editor {
         out << YAML::BeginMap;
         out << YAML::Key << "Scene" << YAML::Value << "Unnamed Scene";
         out << YAML::Key << "Entities" << YAML::Value << YAML::BeginSeq;
-        for(auto& it: m_scene->getEntities()) {
+        for(auto& it: m_scene -> getEntities()) {
             SerializeEntity(out, it);
         }
         out << YAML::EndSeq;
         out << YAML::EndMap;
 
         std::ofstream ofstream(path);
-        if(!ofstream.is_open())
+        if(!ofstream.is_open()) {
+            m_error = SceneSerializerError::NoFileOpen;
             return false;
+        }
 
         ofstream << out.c_str();
         ofstream.close();
@@ -159,21 +150,28 @@ namespace editor {
 
     bool SceneSerializer::deserialize(const std::string& path) {
         std::ifstream ifstream(path);
-        if(!ifstream.is_open())
+        if(!ifstream.is_open()) {
+            m_error = SceneSerializerError::NoFileOpen;
             return false;
+        }
+
         std::stringstream sstr;
         sstr << ifstream.rdbuf();
 
         YAML::Node data = YAML::Load(sstr.str());
-        if(!data["Scene"])
+        if(!data["Scene"]) {
+            m_error = SceneSerializerError::NotSceneTag;
             return false;
+        }
 
         std::string sceneName = data["Scene"].as<std::string>();
         auto entites = data["Entities"];
         if(entites) {
             for(auto entity: entites) {
+
                 uint64_t uuid = entity["Entity"].as<uint64_t>();
                 std::string name;
+
                 auto tagComponent = entity["TagComponent"];
                 if(tagComponent)
                     name = tagComponent["Tag"].as<std::string>();
@@ -195,8 +193,13 @@ namespace editor {
                     auto& sp = deserializedEntity.addComponent<SpriteComponent>();
                     sp.setColor(spriteComponent["Color"].as<robot2D::Color>());
                 }
+
             }
         }
         return true;
+    }
+
+    SceneSerializerError SceneSerializer::getError() const {
+        return SceneSerializerError::None;
     }
 }

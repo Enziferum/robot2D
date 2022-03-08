@@ -19,52 +19,39 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-
 #pragma once
+
 #include <array>
 
 #include <robot2D/Graphics/RenderWindow.hpp>
-#include <robot2D/Graphics/Texture.hpp>
-#include <robot2D/Graphics/Shader.hpp>
-#include <robot2D/Graphics/FrameBuffer.hpp>
 
 #include <imgui/imgui.h>
+#include "Render.hpp"
 
 namespace ImGui {
 
-    class Wrapper {
+    class Gui {
     public:
-        Wrapper();
-        ~Wrapper();
+        Gui();
+        Gui(const Gui&)=delete;
+        Gui& operator=(const Gui&)=delete;
+        ~Gui();
 
         void init(robot2D::Window& window);
         void handleEvents(const robot2D::Event& event);
         void update(float dt);
         void render();
     private:
-
         void shutdown();
-        void setupFonts();
         void updateMouseCursor();
-        void setupRenderState(ImDrawData* draw_data, int fb_width, int fb_height,
-                              unsigned int vertex_array_object);
-        bool createDeviceObjects();
-
     private:
         robot2D::Window* m_window;
-
-        bool m_windowHasFocus = true;
-        bool m_mouseMoved = false;
-        bool m_mousePressed[3] = {false, false, false};
-
-        robot2D::Texture m_fontTexture;
-        unsigned int VBO, EBO;
-
-        robot2D::ShaderHandler m_shader;
+        GuiRender m_render;
         std::array<robot2D::Cursor, ImGuiMouseCursor_COUNT> m_cursors;
+
+        bool m_windowHasFocus;
+        bool m_mouseMoved;
+        bool m_mousePressed[3];
     };
 
-
-    void Image(robot2D::Sprite& sprite, const robot2D::vec2f& size);
-    void RenderFrameBuffer(const robot2D::FrameBuffer::Ptr& frameBuffer, const robot2D::vec2f& size);
 }

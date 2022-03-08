@@ -34,11 +34,36 @@ namespace editor {
     enum class ProjectManagerError {
         None,
         ProjectSerialize,
-        ProjectDerialize,
+        ProjectDeserialize,
         CreateFolder,
         RemoveFolder
     };
 
+    enum class SceneManagerError {
+        None,
+        MemoryAlloc,
+        SceneSerialize,
+        SceneDeserialize,
+    };
+
+    enum class ProjectSerializerError {
+        None,
+        ProjectNull,
+        FileNotOpened,
+        NotValidProject
+    };
+
+    enum class SceneSerializerError {
+        None,
+        NotSceneTag,
+        NoFileOpen
+    };
+
+
     std::string errorToString(const EditorCacheError& error);
     std::string errorToString(const ProjectManagerError& error);
+    std::string errorToString(const SceneManagerError& error);
+    std::string errorToString(const ProjectSerializerError& error);
+    std::string errorToString(const SceneSerializerError& error);
+
 }

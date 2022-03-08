@@ -51,7 +51,6 @@ namespace editor {
 
     }
 
-
     void Scene::addEmptyEntity() {
         auto entity = m_scene.createEntity();
         entity.addComponent<TagComponent>();

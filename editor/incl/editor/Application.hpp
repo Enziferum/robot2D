@@ -27,13 +27,22 @@ source distribution.
 #include <robot2D/Graphics/RenderWindow.hpp>
 #include <robot2D/Core/MessageBus.hpp>
 
-#include "Wrapper.hpp"
+#include "Gui/Gui.hpp"
 #include "Editor.hpp"
 #include "ProjectInspector.hpp"
 #include "ProjectManager.hpp"
 #include "EditorCache.hpp"
+#include "Configuration.hpp"
+
 
 namespace editor {
+
+    struct ApplicationConfiguration {
+        const std::string logoPath = "res/textures/logo.png";
+        const robot2D::vec2u inspectorSize = {600, 400};
+        robot2D::vec2u defaultWindowSize{1280, 920};
+    };
+
     class Application {
     public:
         Application();
@@ -48,9 +57,9 @@ namespace editor {
         void render();
 
         /// Subsription Api callbacks //
-        void createProject(ProjectDescription project);
-        void loadProject(ProjectDescription project);
-        void deleteProject(ProjectDescription projectDescription);
+        void createProject(ProjectDescription&& project);
+        void loadProject(ProjectDescription&& project);
+        void deleteProject(ProjectDescription&& projectDescription);
         /// Subsription Api callbacks //
     private:
         enum class State {
@@ -58,17 +67,18 @@ namespace editor {
             Editor
         };
     private:
-        robot2D::vec2u defaultWindowSize;
+        ApplicationConfiguration m_appConfiguration;
         robot2D::RenderWindow m_window;
 
         robot2D::MessageBus m_messageBus;
-        ImGui::Wrapper m_guiWrapper;
+        ImGui::Gui m_guiWrapper;
         Editor m_editor;
-
         State m_state;
-        ProjectInspector m_projectInspector;
+
+        Configuration m_configuration;
         EditorCache m_editorCache;
         ProjectManager m_projectManager;
+        ProjectInspector m_projectInspector;
     };
 }
 

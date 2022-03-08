@@ -31,8 +31,8 @@ namespace robot2D {
 #pragma pack(push, 1)
     struct ROBOT2D_EXPORT_API RenderVertex {
         robot2D::vec2f Position;
+        Color color;
         robot2D::vec2f TextureCoords;
-        Color Color;
         float textureIndex;
     };
 #pragma pack(pop)
@@ -53,7 +53,7 @@ namespace robot2D {
         std::array<uint32_t, 32> textureSlots;
 
         uint32_t indexCount = 0;
-        uint32_t textureSlotIndex = 1;
+        uint32_t textureSlotIndex = 0;
 
         robot2D::vec2f quadVertexPositions[4];
     };

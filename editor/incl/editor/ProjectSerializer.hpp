@@ -23,8 +23,10 @@ source distribution.
 
 #include <string>
 #include <memory>
+#include "Errors.hpp"
 
 namespace editor {
+
     class Project;
     class ProjectSerializer {
     public:
@@ -33,7 +35,10 @@ namespace editor {
 
         bool serialize(const std::string& path);
         bool deserialize(const std::string& path);
+
+        ProjectSerializerError getError() const;
     private:
         std::shared_ptr<Project> m_project;
+        ProjectSerializerError m_error;
     };
 }

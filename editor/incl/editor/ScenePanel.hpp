@@ -25,12 +25,17 @@ source distribution.
 #include "Scene.hpp"
 
 namespace editor {
+
+    struct ScenePanelConfiguration {
+        const int rightMouseButton = 1;
+    };
+
     class ScenePanel: public IPanel {
     public:
         ScenePanel();
         ~ScenePanel()override = default;
 
-        void setActiveScene(Scene::Ptr&& ptr) { m_scene = ptr; m_selectedEntity = {};}
+        void setActiveScene(Scene::Ptr ptr) { m_scene = ptr; m_selectedEntity = {};}
         void render() override;
     private:
         void drawEntity(robot2D::ecs::Entity entity);
@@ -38,5 +43,6 @@ namespace editor {
     private:
         Scene::Ptr m_scene;
         robot2D::ecs::Entity m_selectedEntity;
+        ScenePanelConfiguration m_configuration;
     };
 }

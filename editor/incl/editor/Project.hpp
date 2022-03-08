@@ -24,6 +24,7 @@ source distribution.
 #include <vector>
 #include <string>
 #include <memory>
+
 #include "Scene.hpp"
 
 namespace editor {

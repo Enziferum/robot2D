@@ -27,7 +27,6 @@ source distribution.
 namespace robot2D {
     namespace priv {
         DesktopWindowImpl::DesktopWindowImpl():
-
         m_window(nullptr),
         m_cursorVisible(true),
         m_size(800, 600),
@@ -85,9 +84,9 @@ namespace robot2D {
                     opengl_minor = 3;
                     break;
                 }
-                case WindowContext::RenderApi::OpenGL4_1: {
+                case WindowContext::RenderApi::OpenGL4_5: {
                     opengl_major = 4;
-                    opengl_minor = 1;
+                    opengl_minor = 5;
                     break;
                 }
             }
@@ -112,11 +111,9 @@ namespace robot2D {
                 glfwSwapInterval(1);
 
             setup_callbacks();
-            setup_WGL();
-        }
 
-        void DesktopWindowImpl::setup_WGL() {
 #ifdef ROBOT2D_WINDOWS
+            //gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)
             if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
             {
                 RB_CORE_CRITICAL("Failed to initialize GLAD");
@@ -131,15 +128,8 @@ namespace robot2D {
         }
 
         void DesktopWindowImpl::setTitle(const std::string& title) const {
-            const char* t = title.c_str();
-            glfwSetWindowTitle(m_window, t);
-        }
-
-        void DesktopWindowImpl::clear(const Color& color) {
-            auto glColor = color.toGL();
-            glClearColor(glColor.red, glColor.green, glColor.blue, glColor.alpha);
-            //glClear(GL_COLOR_BUFFER_BIT);
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            const char* c_str = title.c_str();
+            glfwSetWindowTitle(m_window, c_str);
         }
 
         void DesktopWindowImpl::close() {
@@ -155,13 +145,13 @@ namespace robot2D {
             if(m_window == nullptr)
                 throw std::runtime_error("Window is nullptr");
 
-
             glfwSetWindowUserPointer(m_window, this);
             glfwSetWindowCloseCallback(m_window, close_callback);
             glfwSetKeyCallback(m_window, key_callback);
             glfwSetCursorPosCallback(m_window, cursor_callback);
             glfwSetScrollCallback(m_window, mouseWhell_callback);
             glfwSetMouseButtonCallback(m_window, mouse_callback);
+            glfwSetFramebufferSizeCallback(m_window, framebuffer_callback);
             glfwSetWindowSizeCallback(m_window, size_callback);
             glfwSetWindowMaximizeCallback(m_window, maximized_callback);
             glfwSetDropCallback(m_window, dragdrop_callback);
@@ -248,6 +238,11 @@ namespace robot2D {
             window->m_event_queue.push(event);
         }
 
+        void DesktopWindowImpl::framebuffer_callback(GLFWwindow* window, int width, int height)
+        {
+            glViewport(0, 0, width, height);
+        }
+
         void DesktopWindowImpl::maximized_callback(GLFWwindow* wnd, int state) {
             //c++ hack before c++ 17 to set unused parameter
             (void)(state);
@@ -287,36 +282,19 @@ namespace robot2D {
 
             Event event{};
             event.type = Event::DragDrop;
-            //event.dragDrop.paths = outputPaths;
         }
 
-        void DesktopWindowImpl::setIcon(std::vector<robot2D::Texture>& icons) {
-            if(icons.empty())
-                return;
-            std::vector<GLFWimage> images;
-
-            for(auto &it: icons){
-                GLFWimage img;
-                auto size = it.getSize();
-                img.width = size.x;
-                img.height = size.y;
-                img.pixels = it.getPixels();
-                images.emplace_back(img);
-            }
-            glfwSetWindowIcon(m_window, images.size(), &images[0]);
-        }
-
-        void DesktopWindowImpl::setIcon(Texture&& icon) {
+        void DesktopWindowImpl::setIcon(Image&& icon) {
             GLFWimage img;
             auto size = icon.getSize();
             img.width = size.x;
             img.height = size.y;
-            img.pixels = icon.getPixels();
+            img.pixels = icon.getBuffer();
             glfwSetWindowIcon(m_window, 1, &img);
         }
 
         bool DesktopWindowImpl::isMousePressed(const Mouse& button) {
-            return glfwGetMouseButton(m_window, button);
+            return (glfwGetMouseButton(m_window, static_cast<int>(button)) == GLFW_PRESS);
         }
 
         bool DesktopWindowImpl::isKeyboardPressed(const Key &key) {
@@ -355,7 +333,24 @@ namespace robot2D {
             glfwSetWindowSize(m_window, static_cast<int>(size.x), static_cast<int>(size.y));
         }
 
+        void DesktopWindowImpl::setResizable(const bool& flag) {
+            glfwSetWindowAttrib(m_window, GLFW_RESIZABLE, flag ? GLFW_TRUE : GLFW_FALSE);
+        }
 
+        void DesktopWindowImpl::setMaximazed(const bool &flag) {
+            glfwMaximizeWindow(m_window);
+        }
+
+        void DesktopWindowImpl::setMousePos(const vec2f& pos) {
+            glfwSetCursorPos(m_window, pos.x, pos.y);
+        }
+
+        vec2f DesktopWindowImpl::getMousePos() const {
+            double pos_x, pos_y;
+            glfwGetCursorPos(m_window, &pos_x, &pos_y);
+            return {static_cast<float>(pos_x),
+                    static_cast<float>(pos_y)};
+        }
 
     }
 }
