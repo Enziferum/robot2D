@@ -78,7 +78,8 @@ namespace robot2D {
         states.transform *= t;
         states.texture = m_texture;
         states.color = m_color;
-        target.draw({vertices[0], vertices[1], vertices[2], vertices[3]}, states);
+        //{vertices[0], vertices[1], vertices[2], vertices[3]},
+        target.draw(states);
     }
 
     // Not best way ?

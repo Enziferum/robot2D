@@ -77,14 +77,14 @@ set(ENGINE_SRC ${ENGINE_SRC}
         #Graphics
         ${SRCROOT}/Graphics/Color.cpp
         ${SRCROOT}/Graphics/Drawable.cpp
-        ${SRCROOT}/Graphics/Font.cpp
+       # ${SRCROOT}/Graphics/Font.cpp
+        # ${SRCROOT}/Graphics/Text.cpp
         ${SRCROOT}/Graphics/RenderContext.cpp
         ${SRCROOT}/Graphics/RenderStates.cpp
         ${SRCROOT}/Graphics/RenderWindow.cpp
         ${SRCROOT}/Graphics/RenderTarget.cpp
         ${SRCROOT}/Graphics/Shader.cpp
         ${SRCROOT}/Graphics/Sprite.cpp
-        ${SRCROOT}/Graphics/Text.cpp
         ${SRCROOT}/Graphics/Texture.cpp
         ${SRCROOT}/Graphics/Transform.cpp
         ${SRCROOT}/Graphics/Transformable.cpp

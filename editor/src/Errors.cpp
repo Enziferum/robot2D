@@ -40,7 +40,7 @@ namespace editor {
         switch(error) {
             case ProjectManagerError::ProjectSerialize:
                 return "Can't Serialize Project";
-            case ProjectManagerError::ProjectDerialize:
+            case ProjectManagerError::ProjectDeserialize:
                 return "Cant' Deserialize Project";
             case ProjectManagerError::CreateFolder:
                 return "Can't create Project Folder";
@@ -50,5 +50,43 @@ namespace editor {
                 return "Undefined Error";
         }
     }
+
+    std::string errorToString(const SceneManagerError& error) {
+        switch(error) {
+            case SceneManagerError::MemoryAlloc:
+                return "Can't allocate memory";
+            case SceneManagerError::SceneSerialize:
+                return "Can't Serialize Scene";
+            case SceneManagerError::SceneDeserialize:
+                return "Can't Deserialize Scene";
+            default:
+                return "Undefined Error";
+        }
+    }
+
+    std::string errorToString(const ProjectSerializerError& error) {
+        switch (error) {
+            case ProjectSerializerError::ProjectNull:
+                return "Can't ProjectNull";
+            case ProjectSerializerError::FileNotOpened:
+                return "Can't FileNotOpened";
+            case ProjectSerializerError::NotValidProject:
+                return "Can't NotValidProject";
+            default:
+                return "Undefined Error";
+        }
+    }
+
+    std::string errorToString(const SceneSerializerError& error) {
+        switch (error) {
+            case SceneSerializerError::NotSceneTag:
+                return "No Scene Tag";
+            case SceneSerializerError::NoFileOpen:
+                return "Can't file open";
+            default:
+                return "Undefined Error";
+        }
+    }
+
 }
 

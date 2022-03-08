@@ -48,7 +48,7 @@ namespace robot2D{
 
 
 ////////////////////////////////////////////////////////////
-    vec2f Transform::transformPoint(const vec2f & point) const
+    vec2f Transform::transformPoint(const vec2f& point) const
     {
         return transformPoint(point.x, point.y);
     }
@@ -176,7 +176,7 @@ namespace robot2D{
 
 
 ////////////////////////////////////////////////////////////
-    vec2f operator *(const Transform& left, const vec2f & right)
+    vec2f operator *(const Transform& left, const vec2f& right)
     {
         return left.transformPoint(right);
     }

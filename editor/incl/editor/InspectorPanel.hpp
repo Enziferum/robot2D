@@ -27,6 +27,11 @@ source distribution.
 #include "IPanel.hpp"
 
 namespace editor {
+
+    struct InspectorPanelConfiguration {
+        const robot2D::Color defaultBackGround = robot2D::Color::fromGL(0.1, 0.1, 0.1, 1);
+    };
+
     class InspectorPanel: public IPanel {
     public:
         InspectorPanel(SceneCamera& sceneCamera);
@@ -40,5 +45,6 @@ namespace editor {
         SceneCamera& m_camera;
         robot2D::Color m_clearColor;
         robot2D::RenderStats m_renderStats;
+        InspectorPanelConfiguration m_configuration;
     };
 }

@@ -21,7 +21,7 @@ source distribution.
 
 #include <imgui/imgui.h>
 #include <editor/ViewportPanel.hpp>
-#include <editor/Wrapper.hpp>
+#include <editor/Gui/Api.hpp>
 
 namespace editor {
 

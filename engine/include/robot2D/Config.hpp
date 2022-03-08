@@ -28,6 +28,8 @@ source distribution.
     #define ROBOT2D_WINDOWS
 #elif defined(__APPLE__)
     #define ROBOT2D_MACOS
+#elif defined(__unix__)
+    #define ROBOT2D_LINUX
 #endif
 
 #if(!defined(ROBOT2D_STATIC))

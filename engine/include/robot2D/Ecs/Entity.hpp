@@ -22,6 +22,7 @@ source distribution.
 #pragma once
 #include <string>
 #include "Defines.hpp"
+#include "Bitmask.hpp"
 
 namespace robot2D::ecs {
     class EntityManager;
@@ -29,6 +30,9 @@ namespace robot2D::ecs {
     class Entity {
     public:
         Entity();
+        Entity(const Entity& other);
+        Entity& operator=(const Entity& other);
+        Entity(Entity&& other);
         ~Entity() = default;
 
         template<typename T, typename ...Args>
@@ -59,7 +63,7 @@ namespace robot2D::ecs {
         friend bool operator == (const Entity& l, const Entity& r);
 
         operator bool() {
-            return m_entityManager != nullptr && m_id != -1;
+            return m_entityManager != nullptr && m_id != INT_MAX;
         }
     private:
         friend class EntityManager;

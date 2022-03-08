@@ -25,8 +25,8 @@ source distribution.
 #include <vector>
 #include <memory>
 
-#include "robot2D/Graphics/Color.hpp"
-#include "robot2D/Graphics/Texture.hpp"
+#include <robot2D/Graphics/Color.hpp>
+#include <robot2D/Graphics/Image.hpp>
 
 #include "Vector2.hpp"
 #include "Event.hpp"
@@ -79,8 +79,7 @@ namespace robot2D {
         const vec2u& getSize();
 
         /// \brief allow you to set big/small icons to your app
-        void setIcon(std::vector<Texture>& icons);
-        void setIcon(robot2D::Texture&& icon);
+        void setIcon(robot2D::Image&& icon);
 
         WindowHandle getRaw() const;
 
@@ -94,8 +93,13 @@ namespace robot2D {
         void setPosition(const robot2D::vec2u& position);
         robot2D::vec2u getPosition() const;
 
+        void setResizable(const bool& flag);
+        void setMaximazed(const bool& flag);
         // Window manipulate options //
 
+
+        void setMousePos(const vec2f& pos);
+        vec2f getMousePos() const;
 
         static bool isMousePressed(const Mouse& button);
         static bool isKeyboardPressed(const Key& key);

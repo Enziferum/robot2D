@@ -20,129 +20,16 @@ source distribution.
 *********************************************************************/
 
 #include <robot2D/Graphics/Graphics.hpp>
-#include "sandbox/Render2DScene.hpp"
-#include <robot2D/Ecs/Component.hpp>
-#include <robot2D/Ecs/System.hpp>
+#include <sandbox/Render2DScene.hpp>
+#include <sandbox/Systems.hpp>
+#include <sandbox/Components.hpp>
 
-class SpriteComponent final {
-public:
-    SpriteComponent();
-    ~SpriteComponent() = default;
-
-    void setTexture(const robot2D::Texture& texture);
-    robot2D::Texture& getTexture();
-    const robot2D::Texture& getTexture() const;
-
-
-    void setColor(const robot2D::Color& color);
-    const robot2D::Color& getColor() const;
-private:
-    const robot2D::Texture* m_texture;
-    robot2D::Color m_color;
-};
-
-
-SpriteComponent::SpriteComponent(): m_color(robot2D::Color::White) {
-
+namespace {
+    const robot2D::vec2f position = robot2D::vec2f {0.F, 0.F};
+    const robot2D::vec2f size = robot2D::vec2f {200.F, 200.F};
+    constexpr char* texturePath = "old_logo.png";
+    constexpr unsigned startEntitiesCount = 5;
 }
-
-void SpriteComponent::setTexture(const robot2D::Texture &texture) {
-    m_texture = &texture;
-}
-
-robot2D::Texture& SpriteComponent::getTexture() {
-    return const_cast<robot2D::Texture &>(*m_texture);
-}
-
-const robot2D::Texture& SpriteComponent::getTexture() const {
-    return *m_texture;
-}
-
-void SpriteComponent::setColor(const robot2D::Color& color) {
-    m_color = color;
-}
-
-const robot2D::Color& SpriteComponent::getColor() const {
-    return m_color;
-}
-
-
-
-class TransformComponent final: public robot2D::Transformable {
-public:
-    TransformComponent();
-    ~TransformComponent() override = default;
-
-};
-
-TransformComponent::TransformComponent() {}
-
-
-
-class RenderSystem: public robot2D::ecs::System, public robot2D::Drawable {
-public:
-    RenderSystem(robot2D::MessageBus&);
-    ~RenderSystem() override = default;
-
-    void draw(robot2D::RenderTarget &target, robot2D::RenderStates) const override;
-private:
-};
-
-RenderSystem::RenderSystem(robot2D::MessageBus& messageBus):
-        System(messageBus, typeid(RenderSystem)) {
-    addRequirement<SpriteComponent>();
-    addRequirement<TransformComponent>();
-}
-
-
-void RenderSystem::draw(robot2D::RenderTarget& target, robot2D::RenderStates states) const {
-    for(auto& it: m_entities) {
-        auto& transform = it.getComponent<TransformComponent>();
-
-        auto& sprite = it.getComponent<SpriteComponent>();
-        states.transform = transform.getTransform();
-        states.texture = &sprite.getTexture();
-        states.color = sprite.getColor();
-        target.draw(states);
-    }
-}
-
-
-
-class DemoMoveSystem: public robot2D::ecs::System {
-public:
-    DemoMoveSystem(robot2D::MessageBus&);
-    ~DemoMoveSystem() override = default;
-
-    void update(float dt) override;
-private:
-};
-
-
-DemoMoveSystem::DemoMoveSystem(robot2D::MessageBus& messageBus):
-        robot2D::ecs::System(messageBus, typeid(DemoMoveSystem)) {
-    addRequirement<TransformComponent>();
-}
-
-void DemoMoveSystem::update(float dt) {
-    for(auto& it: m_entities) {
-        auto& transform = it.getComponent<TransformComponent>();
-        transform.move(robot2D::vec2f(10.f * dt, 0.f));
-    }
-}
-
-
-struct Quad: public robot2D::Transformable, public robot2D::Drawable {
-    void draw(robot2D::RenderTarget &target, robot2D::RenderStates states) const override {
-        std::vector<robot2D::Vertex> vertices;
-        states.transform *= getTransform();
-        states.color = robot2D::Color::Blue;
-        states.texture = nullptr;
-        target.draw(states);
-    }
-};
-
-
 
 Render2DScene::Render2DScene(robot2D::RenderWindow& window) : Scene(window),
                                                               m_scene(messageBus) {
@@ -156,24 +43,17 @@ void Render2DScene::setup() {
 
     ///// setup Ecs /////
 
-    m_textures.loadFromFile("sprite", "awesomeface.png", true);
-
-    for(auto it = 0; it < 5; ++it) {
-        robot2D::ecs::Entity entity = m_scene.createEntity();
-
-        auto& transform = entity.addComponent<TransformComponent>();
-
-        transform.setPosition({100.F, 100.F + 100.F * it} );
-        transform.scale({100.F, 100.F});
-
-        auto& sprite = entity.addComponent<SpriteComponent>();
-        sprite.setTexture(m_textures.get("sprite"));
-    }
-
+    m_textures.loadFromFile(ResourceID::Logo, texturePath);
+    for(auto it = 0; it < startEntitiesCount; ++it)
+        createEntity({position.x, position.y + size.x * it});
 }
 
 void Render2DScene::handleEvents(const robot2D::Event& event) {
-    (void)event;
+    if(event.type == robot2D::Event::Resized) {
+        RB_INFO("New Size = {0} and {1}", event.size.widht, event.size.heigth);
+        m_window.resize({event.size.widht, event.size.heigth});
+        m_window.setView(robot2D::View(robot2D::FloatRect{0, 0, event.size.widht, event.size.heigth}));
+    }
 }
 
 void Render2DScene::update(float dt) {
@@ -184,19 +64,34 @@ void Render2DScene::imGuiRender() {
 
 }
 
+struct Quad: robot2D::Drawable, robot2D::Transformable {
+    robot2D::Texture* texture = nullptr;
+    robot2D::Color color = robot2D::Color::White;
+    void draw(robot2D::RenderTarget& target, robot2D::RenderStates states) const override {
+        states.transform *= getTransform();
+        states.texture = texture;
+        states.color = color;
+        target.draw(states);
+    }
+};
+
 void Render2DScene::render() {
     m_window.beforeRender();
-
-//    robot2D::Sprite sprite;
-//    sprite.setTexture(m_textures.get("sprite"));
-//    sprite.setPosition({300.F, 300.F});
-//    sprite.setSize({150.F, 150.F});
-//
-//    sprite.setTextureRect({48, 82, 83, 91});
-//    m_window.draw(sprite);
 
     m_window.draw(m_scene);
 
     m_window.afterRender();
     m_window.flushRender();
+}
+
+void Render2DScene::createEntity(const robot2D::vec2f& position) {
+    robot2D::ecs::Entity entity = m_scene.createEntity();
+
+    auto& transform = entity.addComponent<TransformComponent>();
+
+    transform.setPosition({position.x, position.y} );
+    transform.scale({size});
+
+    auto& sprite = entity.addComponent<SpriteComponent>();
+    sprite.setTexture(m_textures.get(ResourceID::Logo));
 }

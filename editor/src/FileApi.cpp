@@ -30,7 +30,11 @@ namespace editor {
         return fs::create_directories(fs::path(path));
     }
 
-    bool createDirectory(const std::string& basePath, const std::string& appendPath){}
+    bool createDirectory(const std::string& basePath, const std::string& appendPath) {
+        auto fullPath = fs::path(basePath);
+        fullPath /= fs::path(appendPath);
+        return fs::create_directories(fullPath);
+    }
 
     bool deleteDirectory(const std::string& path) {
         if(path.empty())
@@ -48,6 +52,12 @@ namespace editor {
         fs::path resultPath = fs::path(path);
         resultPath.append(filename);
         return resultPath.string();
+    }
+
+    std::string combinePath(const std::string &basePath, const std::string &appendPath) {
+        auto fullPath = fs::path(basePath);
+        fullPath /= fs::path(appendPath);
+        return fullPath.string();
     }
 }
 

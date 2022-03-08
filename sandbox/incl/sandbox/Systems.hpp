@@ -19,17 +19,25 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include <editor/FileManager.hpp>
+#include <robot2D/Ecs/System.hpp>
+#include <robot2D/Graphics/RenderTarget.hpp>
 
-namespace editor {
+class RenderSystem: public robot2D::ecs::System, public robot2D::Drawable {
+public:
+    RenderSystem(robot2D::MessageBus&);
+    ~RenderSystem() override = default;
 
-    FileManager::FileManager() {}
+    void draw(robot2D::RenderTarget &target, robot2D::RenderStates) const override;
+private:
+};
 
-    stringBuffer FileManager::scanDirectory(const std::string& dirPath) {
 
-        for(auto& it: std::filesystem::directory_iterator(m_path)) {
+class DemoMoveSystem: public robot2D::ecs::System {
+public:
+    DemoMoveSystem(robot2D::MessageBus&);
+    ~DemoMoveSystem() override = default;
 
-        }
-        return editor::stringBuffer();
-    }
-}
+    void update(float dt) override;
+private:
+    float m_speed;
+};

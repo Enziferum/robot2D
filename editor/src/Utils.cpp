@@ -19,14 +19,12 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include <imgui/imgui.h>
-#include <editor/ComponentPanel.hpp>
+#include <editor/Utils.hpp>
 
 namespace editor {
-
-    ComponentPanel::ComponentPanel(): IPanel(UniqueType(typeid(ComponentPanel))) {}
-
-    void ComponentPanel::render() {
+    robot2D::vec2u getCenterPoint(const robot2D::vec2u& objectSize, const robot2D::vec2u& frameSize) {
+        robot2D::vec2u normalCenter = {frameSize.x / 2, frameSize.y / 2};
+        robot2D::vec2u objectHalfSize = {objectSize.x / 2, objectSize.y / 2};
+        return {normalCenter.x - objectHalfSize.x, normalCenter.y - objectHalfSize.y};
     }
-
 }

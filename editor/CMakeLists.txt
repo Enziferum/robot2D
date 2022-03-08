@@ -3,7 +3,7 @@ project(robot2D-editor)
 set(CMAKE_CXX_STANDARD 17)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/incl)
-file(GLOB SRC src/*.cpp)
+file(GLOB_RECURSE SRC src/*.cpp)
 
 add_subdirectory(ext/robot2D-imgui)
 add_subdirectory(ext/yaml-cpp)

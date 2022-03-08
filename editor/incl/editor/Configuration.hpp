@@ -20,15 +20,29 @@ source distribution.
 *********************************************************************/
 
 #pragma once
-
-#include "IPanel.hpp"
+#include <unordered_map>
+#include <string>
+#include <tuple>
 
 namespace editor {
-    class ComponentPanel final: public IPanel {
-    public:
-        ComponentPanel();
-        ~ComponentPanel() override = default;
 
-        void render() override;
+    enum class ConfigurationKey {
+        Version,
+        ProjectExtension,
+        DefaultSceneName,
+        CachePath
+    };
+
+    /// Stores Editor Defaults
+    class Configuration {
+    public:
+        Configuration();
+        ~Configuration() = default;
+
+        std::tuple<bool, std::string> getValue(const ConfigurationKey& key);
+    private:
+        void setup();
+    private:
+        std::unordered_map<ConfigurationKey, std::string> m_properties;
     };
 }

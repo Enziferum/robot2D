@@ -18,22 +18,22 @@ and must not be misrepresented as being the original software.
 3. This notice may not be removed or altered from any
 source distribution.
 *********************************************************************/
-
+#include <stdexcept>
 #include <robot2D/Graphics/GL.hpp>
 #include <robot2D/Graphics/RenderWindow.hpp>
+#include <robot2D/Util/Logger.hpp>
 
 namespace robot2D{
 
-    RenderWindow::RenderWindow():
-    Window(),
-    RenderTarget(m_win_size) {
+    RenderWindow::RenderWindow():Window(), RenderTarget(m_win_size) {
     }
 
     RenderWindow::RenderWindow(const vec2u& size, const std::string& name,
-                               WindowContext context):
+                               const WindowContext& context):
                                Window(size, name, context),
-                               RenderTarget(m_win_size)
-                               {}
+                               RenderTarget(m_win_size) {
+                                    setupGL();
+                               }
 
 
     void RenderWindow::onResize(const int& width, const int& height) {
@@ -43,7 +43,7 @@ namespace robot2D{
     void RenderWindow::resize(const vec2i& newSize) {
         m_size = vec2u { newSize.x, newSize.y};
         m_win_size = m_size;
-        glViewport(0, 0, m_size.x, m_size.y);
     }
 
+    void RenderWindow::setupGL() {}
 }

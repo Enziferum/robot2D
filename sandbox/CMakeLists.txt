@@ -3,17 +3,17 @@ project(robot2D-Sandbox)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_subdirectory(features)
-set(LIBS robot2D robot2D-features)
+set(LIBS robot2D)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/incl)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 set(SRC
         src/main.cpp
         src/Render2DScene.cpp
         src/Sandbox.cpp
         src/Scene.cpp
+        src/Components.cpp
+        src/Systems.cpp
         )
 
 add_executable(${PROJECT_NAME} ${SRC})

@@ -42,11 +42,15 @@ namespace robot2D {
         bool loadFromFile(const std::string& path);
 
         const robot2D::vec2u& getSize() const;
+        robot2D::vec2u& getSize();
         const ImageColorFormat& getColorFormat() const;
-        const std::vector<uint8_t>& getBuffer() const;
+        const std::vector<unsigned char>& getBuffer() const;
+        unsigned char* getBuffer();
+
+        bool create(const vec2u& size, void* data, const ImageColorFormat&);
     private:
         vec2u m_size;
-        std::vector<uint8_t> m_buffer;
+        std::vector<unsigned char> m_pixels;
         ImageColorFormat m_colorFormat;
     };
 

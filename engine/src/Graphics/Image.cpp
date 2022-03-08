@@ -19,13 +19,53 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
+#ifdef WIN32
+    #include <robot2D/ext/stb_image.h>
+#elif __APPLE__
+    #include <ext/stb_image.h>
+#endif
 #include <robot2D/Graphics/Image.hpp>
+#include <robot2D/Util/Logger.hpp>
 
 namespace robot2D {
 
-    Image::Image() {}
+    Image::Image(): m_pixels() {}
 
     bool Image::loadFromFile(const std::string& path) {
+        m_pixels.clear();
+
+        // Load the image and get a pointer to the pixels in memory
+        int width = 0;
+        int height = 0;
+        int channels = 0;
+        //STBI_rgb_alpha
+      //  stbi_set_flip_vertically_on_load(1);
+        unsigned char* ptr = stbi_load(path.c_str(), &width, &height, &channels, 0);
+
+        if (ptr)
+        {
+            // Assign the image properties
+            m_size.x = width;
+            m_size.y = height;
+
+            if (width && height)
+            {
+                // Copy the loaded pixels to the pixel buffer
+                m_pixels.resize(width * height * 4);
+                memcpy(&m_pixels[0], ptr, m_pixels.size());
+            }
+
+            // Free the loaded pixels (they are now in our own pixel buffer)
+            stbi_image_free(ptr);
+            m_colorFormat = static_cast<ImageColorFormat>(channels);
+            return true;
+        }
+        else
+        {
+            // Error, failed to load the image
+            RB_CORE_ERROR("Failed to load image {0}. Reason: {1}", path, stbi_failure_reason());
+            return false;
+        }
         return true;
     }
 
@@ -37,8 +77,25 @@ namespace robot2D {
         return m_colorFormat;
     }
 
-    const std::vector<uint8_t>& Image::getBuffer() const {
-        return m_buffer;
+    const std::vector<unsigned char>& Image::getBuffer() const {
+        return m_pixels;
     }
+
+    robot2D::vec2u &Image::getSize() {
+        return m_size;
+    }
+
+    unsigned char* Image::getBuffer() {
+        if(m_pixels.empty())
+            return nullptr;
+        return m_pixels.data();
+    }
+
+    bool Image::create(const vec2u& size, void *data, const ImageColorFormat& colorFormat) {
+        m_colorFormat = colorFormat;
+        m_size = size;
+        return true;
+    }
+
 }
 

@@ -21,14 +21,14 @@ source distribution.
 
 #include <memory>
 #include <robot2D/Graphics/RenderWindow.hpp>
+#include <robot2D/Util/Logger.hpp>
 #include "sandbox/Sandbox.hpp"
 #include "sandbox/Render2DScene.hpp"
 
-#define ROBOT2D_SCENE
-#ifdef ROBOT2D_SCENE
 
 int main() {
-    robot2D::RenderWindow window{{1280, 920}, {"Sandbox"}, {true, false}};
+    logger::Log::Init();
+    robot2D::RenderWindow window{{800, 600}, {"Sandbox"}};
 
     Sandbox sandbox(window);
 
@@ -42,82 +42,3 @@ int main() {
 
     return 0;
 }
-#else
-
-namespace logger {
-    /// RBLogger v0.1 Single Thread Solution
-    enum class LogLevel {
-        Info,
-        Warn,
-        Error
-    };
-
-    class RBLogger {
-    public:
-        RBLogger() = default;
-
-        ~RBLogger() = default;
-
-        template<typename ... Args>
-        void warn(Args &&... args) {
-            baseLog(LogLevel::Warn, std::forward<Args>(args)...);
-        }
-
-        template<typename ... Args>
-        void error(Args &&... args) {
-            baseLog(LogLevel::Error, std::forward<Args>(args)...);
-        }
-
-        template<typename ... Args>
-        void info(Args &&... args) {
-            baseLog(LogLevel::Info, std::forward<Args>(args)...);
-        }
-
-    private:
-        template<typename ... Args>
-        void baseLog(const LogLevel &logLevel, Args &&... args);
-
-    private:
-
-    };
-
-    template<typename ... Args>
-    void RBLogger::baseLog(const LogLevel &logLevel, Args &&... args) {
-
-    }
-
-    class Logger {
-    public:
-        static void Init();
-
-        static std::shared_ptr<RBLogger>& getCoreLogger() { return coreLogger; }
-        static std::shared_ptr<RBLogger>& getUserLogger() { return userLogger; }
-    private:
-        static std::shared_ptr<RBLogger> coreLogger;
-        static std::shared_ptr<RBLogger> userLogger;
-    };
-
-    std::shared_ptr<RBLogger> Logger::coreLogger = nullptr;
-    std::shared_ptr<RBLogger> Logger::userLogger = nullptr;
-
-    void Logger::Init() {
-        coreLogger = std::make_shared<RBLogger>();
-        userLogger = std::make_shared<RBLogger>();
-    }
-}
-
-#define RB_LOG_WARN(...) logger::Logger::getCoreLogger() -> warn(__VA_ARGS__);
-#define RB_LOG_ERROR(...) logger::Logger::getCoreLogger() -> error(__VA_ARGS__);
-#define RB_LOG_INFO(...) logger::Logger::getCoreLogger() -> info(__VA_ARGS__);
-
-
-int main() {
-    logger::Logger::Init();
-
-    RB_LOG_INFO("Info Message")
-    RB_LOG_ERROR("Error Message")
-    RB_LOG_WARN("Warn Message")
-
-    return 0;
-}
-#endif

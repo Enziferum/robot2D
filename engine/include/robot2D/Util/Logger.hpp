@@ -21,39 +21,36 @@ source distribution.
 
 #pragma once
 #include <iostream>
+#include <robot2D/Config.hpp>
 
-#pragma warning(push, 0)
+// Microsoft Visual Studio Warning
+#ifdef _MSVC
+    #pragma warning(push, 0)
+#endif
+
 #include <spdlog/spdlog.h>
-#include <spdlog/fmt/ostr.h>
-//#include <spdlog/fmt/bundled/format.h>
-#include <fmt/format.h>
-#pragma warning(pop)
+#if defined(ROBOT2D_MACOS) || defined(ROBOT2D_WINDOWS)
+    #include <spdlog/fmt/ostr.h>
+    #include <spdlog/fmt/bundled/format.h>
+#elif defined(ROBOT2D_LINUX)
+    #include <fmt/format.h>
+#endif
+#ifdef _MSVC
+    #pragma warning(pop)
+#endif
 
 #include <robot2D/Core/Vector2.hpp>
 
 namespace fmt {
-    // todo remove presentation for int param
     template <>
     struct formatter<::robot2D::vec2u> {
-        // Presentation format: 'f' - fixed, 'e' - exponential.
-        char presentation = 'f';
+        // Presentation format: 'd'.
+        char presentation = 'd';
 
         // Parses format specifications of the form ['f' | 'e'].
         constexpr auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
-            // [ctx.begin(), ctx.end()) is a character range that contains a part of
-            // the format string starting from the format specifications to be parsed,
-            // e.g. in
-            //
-            //   fmt::format("{:f} - point of interest", point{1, 2});
-            //
-            // the range will contain "f} - point of interest". The formatter should
-            // parse specifiers until '}' or the end of the range. In this example
-            // the formatter should parse the 'f' specifier and return an iterator
-            // pointing to '}'.
-
-            // Parse the presentation format and store it in the formatter:
             auto it = ctx.begin(), end = ctx.end();
-            if (it != end && (*it == 'f' || *it == 'e')) presentation = *it++;
+            if (it != end && (*it == 'd' )) presentation = *it++;
 
             // Check if reached the end of the range:
             if (it != end && *it != '}')
@@ -63,12 +60,8 @@ namespace fmt {
             return it;
         }
 
-        // Formats the point p using the parsed format specification (presentation)
-        // stored in this formatter.
         template <typename FormatContext>
         auto format(const robot2D::vec2u& value, FormatContext& ctx) -> decltype(ctx.out()) {
-            // ctx.out() is an output iterator to write to.
-            //= 'f' ? "({:.1f}, {:.1f})" : "({:.1e}, {:.1e})"
             return format_to(
                     ctx.out(),
                     "({:d}, {:d})",
@@ -83,18 +76,6 @@ namespace fmt {
 
         // Parses format specifications of the form ['f' | 'e'].
         constexpr auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
-            // [ctx.begin(), ctx.end()) is a character range that contains a part of
-            // the format string starting from the format specifications to be parsed,
-            // e.g. in
-            //
-            //   fmt::format("{:f} - point of interest", point{1, 2});
-            //
-            // the range will contain "f} - point of interest". The formatter should
-            // parse specifiers until '}' or the end of the range. In this example
-            // the formatter should parse the 'f' specifier and return an iterator
-            // pointing to '}'.
-
-            // Parse the presentation format and store it in the formatter:
             auto it = ctx.begin(), end = ctx.end();
             if (it != end && (*it == 'f' || *it == 'e')) presentation = *it++;
 
@@ -106,8 +87,6 @@ namespace fmt {
             return it;
         }
 
-        // Formats the point p using the parsed format specification (presentation)
-        // stored in this formatter.
         template <typename FormatContext>
         auto format(const robot2D::vec2u& value, FormatContext& ctx) -> decltype(ctx.out()) {
             // ctx.out() is an output iterator to write to.
@@ -122,55 +101,6 @@ namespace fmt {
 
 
 namespace logger {
-    enum class logType {
-        error,
-        warn,
-        info
-    };
-
-    extern bool debug;
-
-    template<template<typename, typename ...> class Container,
-            typename ValueType, typename ... Args>
-    std::ostream &operator<<(std::ostream &os, const Container<ValueType, Args...> &c) {
-        for (const auto &it: c)
-            os << it;
-        return os;
-    }
-
-    template<typename K, typename V>
-    std::ostream &operator<<(std::ostream &os, const std::pair<K, V> &pair) {
-        os << '[' << pair.first << ':' << pair.second << ']';
-        return os;
-    }
-
-    void tprintf(logType type, const char *msg);
-
-    template<typename T, typename ...Args>
-    void tprintf(logType type, const char *format, const T &value, Args...args) {
-        for (; *format != '\0'; format++) {
-            if (*format == '%') {
-                if (type == logType::info)
-                    std::cout << value;
-                if (type == logType::error)
-                    std::cerr << value;
-                tprintf(type, format + 1, args...);
-                return;
-            }
-            if (type == logType::info)
-                std::cout << *format;
-            if (type == logType::error)
-                std::cerr << *format;
-        }
-    }
-
-    template<typename ...Args>
-    void log(logType type, const char* msg, Args... args) {
-        if (debug)
-            tprintf(type, msg, args...);
-    }
-
-
     class Log
     {
     public:
@@ -187,12 +117,6 @@ namespace logger {
 
 }
 
-#define LOG_ERROR_E(msg, ...) logger::log(logger::logType::error, msg, #__VA_ARGS__);
-#define LOG_ERROR(msg, ...) logger::log(logger::logType::error, msg, __VA_ARGS__);
-#define LOG_WARN(msg, ...) logger::log(logger::logType::warn, msg, __VA_ARGS__);
-#define LOG_INFO(msg, ...) logger::log(logger::logType::info, msg, __VA_ARGS__);
-#define LOG_INFO_E(msg, ...) logger::log(logger::logType::info, msg, #__VA_ARGS__);
-
 // Core log macros
 #define RB_CORE_TRACE(...)    ::logger::Log::getCoreLogger()->trace(__VA_ARGS__)
 #define RB_CORE_INFO(...)     ::logger::Log::getCoreLogger()->info(__VA_ARGS__)
@@ -200,6 +124,7 @@ namespace logger {
 #define RB_CORE_ERROR(...)    ::logger::Log::getCoreLogger()->error(__VA_ARGS__)
 #define RB_CORE_CRITICAL(...) ::logger::Log::getCoreLogger()->critical(__VA_ARGS__)
 
+// Editor log macros
 #define RB_EDITOR_TRACE(...)    ::logger::Log::getEditorLogger()->trace(__VA_ARGS__)
 #define RB_EDITOR_INFO(...)     ::logger::Log::getEditorLogger()->info(__VA_ARGS__)
 #define RB_EDITOR_WARN(...)     ::logger::Log::getEditorLogger()->warn(__VA_ARGS__)
