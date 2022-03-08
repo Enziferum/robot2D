@@ -24,3 +24,7 @@ source distribution.
 #include <robot2D/Core/Core.hpp>
 #include <robot2D/Graphics/Graphics.hpp>
 #include <robot2D/Util/Util.hpp>
+
+namespace robot2D {
+    static void InitalizeEngine();
+}

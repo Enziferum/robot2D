@@ -33,7 +33,7 @@ namespace robot2D {
     namespace priv {
 #define ROBOT2D_DEBUG
         const std::string vertexSource = R"(
-            #version 450 core
+            #version 330 core
             layout (location = 0) in vec2 position;
             layout (location = 1) in vec4 color;
             layout (location = 2) in vec2 textureCoords;
@@ -52,7 +52,7 @@ namespace robot2D {
         )";
 
         const std::string fragmentSource = R"(
-            #version 450 core
+            #version 330 core
             layout (location = 0) out vec4 fragColor;
             in vec2 TexCoords;
             in vec4 Color;
@@ -64,7 +64,7 @@ namespace robot2D {
                 fragColor = texture(textureSamplers[index], TexCoords) * Color;
             }
         )";
-//
+
         constexpr short quadVertexSize = 4;
         constexpr short maxTextureSlots = 16;
 #ifdef ROBOT2D_WINDOWS
@@ -261,7 +261,7 @@ namespace robot2D {
 
             for (auto it = 0; it < quadVertexSize; ++it) {
                 m_renderBuffer.quadBufferPtr->Position = states.transform * m_renderBuffer.quadVertexPositions[it];
-                m_renderBuffer.quadBufferPtr->Color = states.color.toGL();
+                m_renderBuffer.quadBufferPtr->color = states.color.toGL();
                 m_renderBuffer.quadBufferPtr->textureIndex = textureIndex;
                 //data[it].texCoords
                 m_renderBuffer.quadBufferPtr->TextureCoords = textureCoords[it];
@@ -316,7 +316,12 @@ namespace robot2D {
 
         void OpenGLRender::flushRender() const {
             for(int it = 0; it < m_renderBuffer.textureSlotIndex; ++it) {
+#ifdef ROBOT2D_MACOS
+                glActiveTexture(GL_TEXTURE0+it);
+                glBindTexture(GL_TEXTURE_2D, m_renderBuffer.textureSlots[it]);
+#elif ROBOT2D_WINDOWS
                 glBindTextureUnit(it, m_renderBuffer.textureSlots[it]);
+#endif
             }
             m_quadShader.use();
 

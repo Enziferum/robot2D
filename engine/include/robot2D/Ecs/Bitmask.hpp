@@ -23,6 +23,7 @@ source distribution.
 
 #include <cstdint>
 #include <vector>
+#include <cstdlib>
 
 namespace robot2D::ecs {
     using Bitset = uint32_t;

@@ -21,6 +21,7 @@ source distribution.
 
 #pragma once
 #include <iostream>
+#include <robot2D/Config.hpp>
 
 // Microsoft Visual Studio Warning
 #ifdef _MSVC
@@ -28,8 +29,12 @@ source distribution.
 #endif
 
 #include <spdlog/spdlog.h>
-#include <spdlog/fmt/ostr.h>
-#include <spdlog/fmt/bundled/format.h>
+#if defined(ROBOT2D_MACOS) || defined(ROBOT2D_WINDOWS)
+    #include <spdlog/fmt/ostr.h>
+    #include <spdlog/fmt/bundled/format.h>
+#elif defined(ROBOT2D_LINUX)
+    #include <fmt/format.h>
+#endif
 #ifdef _MSVC
     #pragma warning(pop)
 #endif

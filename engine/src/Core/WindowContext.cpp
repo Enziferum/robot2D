@@ -20,11 +20,16 @@ source distribution.
 *********************************************************************/
 
 #include <robot2D/Core/WindowContext.hpp>
+#include <robot2D/Config.hpp>
 
 namespace robot2D {
     WindowContext::WindowContext(const bool& vsync, const bool& fullscreen, const RenderApi& renderApi):
     vsync(vsync), fullscreen(fullscreen),
-    renderApi{renderApi}{}
+    renderApi{renderApi}{
+#if defined(ROBOT2D_MACOS)
+        this -> renderApi = RenderApi::OpenGL3_3;
+#endif
+    }
 
     const WindowContext WindowContext::Default = WindowContext();
 }
