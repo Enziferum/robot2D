@@ -13,8 +13,9 @@ Just now make course is make Editor and started to be real Engine!
 Many Api's will be make private and using only in Engine Ecosystem and you will work with it like Unity, Godot and other big projects.
 
 ## Requirements
-   * C++14 compiler
+   * C++17 compiler
    * Cmake
    * glfw3.3
    * robot2D_ext
+   * spdlog
 
