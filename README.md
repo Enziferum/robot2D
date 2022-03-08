@@ -2,6 +2,8 @@
 
 <img align="right" src="https://github.com/Enziferum/robot2D/blob/master/logo/logo.png" alt="logo" width="256"/>
 
+![CodeFactor](https://www.codefactor.io/repository/github/enziferum/robot2d/badge)
+
 
 Robot2D - simple 2D Engine. 
 \
