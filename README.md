@@ -2,7 +2,6 @@
 
 <img align="right" src="https://github.com/Enziferum/robot2D/blob/master/logo/logo.png" alt="logo" width="256"/>
 
-![CodeFactor](https://www.codefactor.io/repository/github/enziferum/robot2d/badge)
 
 
 Robot2D - simple 2D Engine. 
@@ -13,6 +12,13 @@ Before Version 0.3 it was like small framework.
 Just now make course is make Editor and started to be real Engine!
 
 Many Api's will be make private and using only in Engine Ecosystem and you will work with it like Unity, Godot and other big projects.
+
+Code Guards
+-------
+
+[![CodeFactor](https://www.codefactor.io/repository/github/enziferum/robot2d/badge)](https://www.codefactor.io/repository/github/enziferum/robot2d)
+[![BCH compliance](https://bettercodehub.com/edge/badge/Enziferum/robot2D?branch=master)](https://bettercodehub.com/)
+-------
 
 ## Requirements
    * C++17 compiler
