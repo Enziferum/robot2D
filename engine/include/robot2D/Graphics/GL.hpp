@@ -22,7 +22,7 @@ source distribution.
 #pragma once
 #include <robot2D/Config.hpp>
 #if defined(ROBOT2D_WINDOWS)
-    #include <robot2D/ext/glad.h>
+    #include <ext/glad.h>
 #elif __APPLE__
     #define GL_SILENCE_DEPRECATION
     #include <OpenGL/gl3.h>
