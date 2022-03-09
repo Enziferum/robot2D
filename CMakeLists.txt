@@ -57,13 +57,16 @@ find_package(spdlog)
 
 if(WIN32)
     set(LIBS opengl32)
-else(APPLE)
+elseif(APPLE)
     include_directories(/System/Library/Frameworks)
     find_library(OpenGL_LIBRARY OpenGL)
     mark_as_advanced(OpenGL_LIBRARY)
     set(APPLE_LIBS ${OpenGL_LIBRARY} )
     set(APPLE_LIBS ${APPLE_LIBS})
     set(LIBS ${APPLE_LIBS})
+elseif(UNIX)
+    find_package(OpenGL REQUIRED)
+    set(LIBS OpenGL::GL)
 endif()
 
 # use spdlog for some time

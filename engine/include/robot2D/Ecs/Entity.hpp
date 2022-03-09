@@ -21,6 +21,7 @@ source distribution.
 
 #pragma once
 #include <string>
+#include <limits.h>
 #include "Defines.hpp"
 #include "Bitmask.hpp"
 

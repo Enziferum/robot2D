@@ -25,10 +25,13 @@ source distribution.
 #include <sandbox/Components.hpp>
 
 namespace {
-    const robot2D::vec2f position = robot2D::vec2f {0.F, 0.F};
-    const robot2D::vec2f size = robot2D::vec2f {200.F, 200.F};
+    const robot2D::vec2f position = robot2D::vec2f {100.F, 100.F};
+    const robot2D::vec2f size = robot2D::vec2f {100.F, 100.F};
     constexpr char* texturePath = "old_logo.png";
-    constexpr unsigned startEntitiesCount = 5;
+    constexpr char* texturePath1 = "cityskyline.png";
+    constexpr char* texturePath2 = "awesomeface.png ";
+    constexpr char* texturePath3 = "menu_button.png";
+    constexpr unsigned startEntitiesCount = 0;
 }
 
 Render2DScene::Render2DScene(robot2D::RenderWindow& window) : Scene(window),
@@ -44,6 +47,10 @@ void Render2DScene::setup() {
     ///// setup Ecs /////
 
     m_textures.loadFromFile(ResourceID::Logo, texturePath);
+    m_textures.loadFromFile(ResourceID::City, texturePath1);
+    m_textures.loadFromFile(ResourceID::Paddle, texturePath2);
+    m_textures.loadFromFile(ResourceID::Face, texturePath3);
+
     for(auto it = 0; it < startEntitiesCount; ++it)
         createEntity({position.x, position.y + size.x * it});
 }
@@ -68,6 +75,8 @@ struct Quad: robot2D::Drawable, robot2D::Transformable {
     robot2D::Texture* texture = nullptr;
     robot2D::Color color = robot2D::Color::White;
     void draw(robot2D::RenderTarget& target, robot2D::RenderStates states) const override {
+
+
         states.transform *= getTransform();
         states.texture = texture;
         states.color = color;
@@ -75,9 +84,44 @@ struct Quad: robot2D::Drawable, robot2D::Transformable {
     }
 };
 
+robot2D::vec2f getScale(robot2D::vec2f targetSize, robot2D::vec2u originSize) {
+    assert(originSize != robot2D::vec2u{});
+    if(targetSize.x == originSize.x && targetSize.y == originSize.y)
+        return {1.f, 1.f};
+    return {targetSize.x / originSize.x, targetSize.y / originSize.y};
+}
+
 void Render2DScene::render() {
     m_window.beforeRender();
 
+    Quad background;
+    background.texture = &m_textures.get(ResourceID::City);
+
+//    auto size = background.texture -> getSize();
+//    auto scale = getScale({800, 600}, size);
+//    background.setScale(scale);
+    background.setScale({800.F, 600.F});
+    background.setPosition({400.F, 300.F});
+
+    Quad quad0;
+    quad0.texture = &m_textures.get(ResourceID::Paddle);
+    quad0.setScale({100.F, 100.F});
+    quad0.setPosition({350.F, 450.F});
+
+    Quad quad1;
+    quad1.texture = &m_textures.get(ResourceID::Face);
+    quad1.setScale({200.F, 100.F});
+    quad1.setPosition({350.F, 350.F});
+
+    Quad quad2;
+    quad2.texture = &m_textures.get(ResourceID::Face);
+    quad2.setScale({200.F, 100.F});
+    quad2.setPosition({450.F, 350.F});
+
+    m_window.draw(background);
+    m_window.draw(quad1);
+    m_window.draw(quad2);
+    m_window.draw(quad0);
     m_window.draw(m_scene);
 
     m_window.afterRender();
