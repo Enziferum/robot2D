@@ -41,7 +41,8 @@ namespace robot2D{
     }
 
     void RenderWindow::resize(const vec2i& newSize) {
-        m_size = vec2u { newSize.x, newSize.y};
+        m_size = vec2u { static_cast<unsigned int>(newSize.x),
+                         static_cast<unsigned int>(newSize.y)};
         m_win_size = m_size;
     }
 

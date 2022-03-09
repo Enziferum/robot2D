@@ -91,9 +91,10 @@ namespace robot2D {
         return m_pixels.data();
     }
 
-    bool Image::create(const vec2u& size, void *data, const ImageColorFormat& colorFormat) {
+    bool Image::create(const vec2u& size, void* data, const ImageColorFormat& colorFormat) {
         m_colorFormat = colorFormat;
         m_size = size;
+        (void)data;
         return true;
     }
 

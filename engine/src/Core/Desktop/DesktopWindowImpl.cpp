@@ -240,6 +240,7 @@ namespace robot2D {
 
         void DesktopWindowImpl::framebuffer_callback(GLFWwindow* window, int width, int height)
         {
+            (void) window;
             glViewport(0, 0, width, height);
         }
 
@@ -274,14 +275,12 @@ namespace robot2D {
 
         void DesktopWindowImpl::dragdrop_callback(GLFWwindow* wnd, int count, const char** paths) {
             DesktopWindowImpl* window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
+            (void)window;
             std::vector<std::string> outputPaths;
             for(int it = 0; it < count; ++it) {
                 if(paths[it] != nullptr)
                     outputPaths.emplace_back(paths[it]);
             }
-
-            Event event{};
-            event.type = Event::DragDrop;
         }
 
         void DesktopWindowImpl::setIcon(Image&& icon) {
@@ -339,7 +338,8 @@ namespace robot2D {
             glfwSetWindowAttrib(m_window, GLFW_RESIZABLE, flag ? GLFW_TRUE : GLFW_FALSE);
         }
 
-        void DesktopWindowImpl::setMaximazed(const bool &flag) {
+        void DesktopWindowImpl::setMaximazed(const bool& flag) {
+            (void)flag;
             glfwMaximizeWindow(m_window);
         }
 

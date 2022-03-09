@@ -34,6 +34,7 @@ namespace robot2D{
             case ImageColorFormat::RGBA:
                 return GL_RGBA;
         }
+        return GL_RGB;
     }
 
     Texture::Texture(){}
