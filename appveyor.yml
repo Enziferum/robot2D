@@ -18,19 +18,18 @@ environment:
   
   matrix:
     - APPVEYOR_BUILD_WORKER_IMAGE: 'Visual Studio 2017'
-      PLATFORM: x86      
-      ARCHITECTURE: x86
-      GENERATOR: Visual Studio 15 2017
-      CMAKE_DEPENDENCIES_DIR: Depends_WIN32
-      CMAKE_SOLUTION_DIR: Win32
-    - APPVEYOR_BUILD_WORKER_IMAGE: 'Visual Studio 2017'
       PLATFORM: x64
       ARCHITECTURE: x86_amd64
       GENERATOR: Visual Studio 15 2017 Win64
       CMAKE_DEPENDENCIES_DIR: Depends_WIN64
       CMAKE_SOLUTION_DIR: Win64
 install:
-  - cinst glfw3
+  - git clone https://github.com/glfw/glfw.git
+  - cd glfw
+  - mkdir build && cd build
+  - cmake .. -G "%GENERATOR%" -T %TOOLSET% -DCMAKE_CONFIGURATION_TYPES:STRING="%configuration%" -DCMAKE_BUILD_TYPE=%configuration% -DCMAKE_VS_INCLUDE_INSTALL_TO_DEFAULT_BUILD=ON
+  - cmake --build . --config %configuration%
+  - echo "glfw3 done!"
   
 build_script:
 - echo "Platform '%PLATFORM%'"
