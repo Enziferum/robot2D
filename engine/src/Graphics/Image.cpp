@@ -22,7 +22,7 @@ source distribution.
 #include <robot2D/Config.hpp>
 
 #ifdef WIN32
-    #include <robot2D/ext/stb_image.h>
+    #include <ext/stb_image.h>
 #elif defined(ROBOT2D_MACOS) || defined(ROBOT2D_LINUX)
     #include <ext/stb_image.h>
 #endif
