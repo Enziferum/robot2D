@@ -31,9 +31,9 @@ source distribution.
 
 namespace robot2D {
     namespace priv {
-#define ROBOT2D_DEBUG
+
         const std::string vertexSource = R"(
-            #version 330 core
+            #version 450 core
             layout (location = 0) in vec2 position;
             layout (location = 1) in vec4 color;
             layout (location = 2) in vec2 textureCoords;
@@ -52,7 +52,7 @@ namespace robot2D {
         )";
 
         const std::string fragmentSource = R"(
-            #version 330 core
+            #version 450 core
             layout (location = 0) out vec4 fragColor;
             in vec2 TexCoords;
             in vec4 Color;
@@ -67,7 +67,7 @@ namespace robot2D {
 
         constexpr short quadVertexSize = 4;
         constexpr short maxTextureSlots = 16;
-#ifdef ROBOT2D_WINDOWS
+#if defined(ROBOT2D_WINDOWS) or defined(ROBOT2D_LINUX)
         void OpenGLMessageCallback(
                 unsigned source,
                 unsigned type,
@@ -97,15 +97,15 @@ namespace robot2D {
         void OpenGLRender::initOpenGL() {
 
 
-#ifdef ROBOT2D_WINDOWS
+#if defined(ROBOT2D_WINDOWS) or defined(ROBOT2D_LINUX)
             RB_CORE_INFO("{0}", __FUNCTION__ );
 #endif
             RB_CORE_INFO("OpenGL Info:");
             RB_CORE_INFO("Vendor: {0} ", glGetString(GL_VENDOR));
             RB_CORE_INFO("Renderer: {0}", glGetString(GL_RENDERER));
             RB_CORE_INFO("Version: {0}", glGetString(GL_VERSION));
-            
-#ifdef ROBOT2D_WINDOWS
+
+#if defined(ROBOT2D_WINDOWS) or defined(ROBOT2D_LINUX)
             glEnable(GL_DEBUG_OUTPUT);
             glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
             glDebugMessageCallback(OpenGLMessageCallback, nullptr);
@@ -319,7 +319,7 @@ namespace robot2D {
 #ifdef ROBOT2D_MACOS
                 glActiveTexture(GL_TEXTURE0+it);
                 glBindTexture(GL_TEXTURE_2D, m_renderBuffer.textureSlots[it]);
-#elif ROBOT2D_WINDOWS
+#elif defined(ROBOT2D_WINDOWS) or defined(ROBOT2D_LINUX)
                 glBindTextureUnit(it, m_renderBuffer.textureSlots[it]);
 #endif
             }
