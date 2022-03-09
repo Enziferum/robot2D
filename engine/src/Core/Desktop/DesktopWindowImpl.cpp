@@ -28,10 +28,10 @@ namespace robot2D {
     namespace priv {
         DesktopWindowImpl::DesktopWindowImpl():
         m_window(nullptr),
-        m_cursorVisible(true),
         m_size(800, 600),
         m_name("Robot2D"),
-        m_context()
+        m_context(),
+        m_cursorVisible(true)
         {
             setup();
         }
@@ -39,10 +39,10 @@ namespace robot2D {
         DesktopWindowImpl::DesktopWindowImpl(const vec2u& size, const std::string &name,
                                              WindowContext& context):
                 m_window(nullptr),
-                m_cursorVisible(true),
                 m_size(size),
                 m_name(name),
-                m_context(context)
+                m_context(context),
+                m_cursorVisible(true)
                 {
             setup();
         }
@@ -316,7 +316,8 @@ namespace robot2D {
             if(videoMode == nullptr)
                 return {};
 
-            return {videoMode->width, videoMode->height};
+            return {static_cast<unsigned int>(videoMode->width),
+                    static_cast<unsigned int>(videoMode->height)};
         }
 
         void DesktopWindowImpl::setPosition(const vec2u& position) {
@@ -326,7 +327,8 @@ namespace robot2D {
         robot2D::vec2u DesktopWindowImpl::getPosition() const {
             robot2D::vec2i pos;
             glfwGetWindowPos(m_window, &pos.x, &pos.y);
-            return robot2D::vec2u{pos.x, pos.y};
+            return robot2D::vec2u{static_cast<unsigned int>(pos.x),
+                                  static_cast<unsigned int>(pos.y)};
         }
 
         void DesktopWindowImpl::setSize(const vec2u& size) {
