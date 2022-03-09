@@ -48,7 +48,7 @@ else()
     enable_cxx_compiler_flag_if_supported("-Wall")
     enable_cxx_compiler_flag_if_supported("-Wextra")
     enable_cxx_compiler_flag_if_supported("-Wpedantic")
-    #enable_cxx_compiler_flag_if_supported("-Werror")
+    enable_cxx_compiler_flag_if_supported("-Werror")
 endif()
 
 find_package(glfw3 REQUIRED)

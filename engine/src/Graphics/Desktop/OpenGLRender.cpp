@@ -76,6 +76,11 @@ namespace robot2D {
                 const char* message,
                 const void* userParam)
         {
+            (void) source;
+            (void) type;
+            (void) id;
+            (void) length;
+            (void) userParam;
             switch (severity)
             {
                 case GL_DEBUG_SEVERITY_HIGH:         RB_CORE_CRITICAL(message); return;
@@ -299,6 +304,7 @@ namespace robot2D {
         void OpenGLRender::applyCurrentView() {
             IntRect viewport = getViewport(m_view);
             int top = m_size.y - (viewport.ly + viewport.height);
+            (void) top;
             m_quadShader.use();
             m_quadShader.set_parameter("projection", m_view.getTransform().get_matrix());
             m_quadShader.unUse();
@@ -325,7 +331,7 @@ namespace robot2D {
         }
 
         void OpenGLRender::flushRender() const {
-            for(int it = 0; it < m_renderBuffer.textureSlotIndex; ++it) {
+            for(auto it = 0; it < static_cast<int>(m_renderBuffer.textureSlotIndex); ++it) {
 #ifdef ROBOT2D_MACOS
                 glActiveTexture(GL_TEXTURE0+it);
                 glBindTexture(GL_TEXTURE_2D, m_renderBuffer.textureSlots[it]);
