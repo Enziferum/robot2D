@@ -112,7 +112,7 @@ namespace robot2D {
 
             setup_callbacks();
 
-#ifdef ROBOT2D_WINDOWS
+#if defined(ROBOT2D_WINDOWS) || defined(ROBOT2D_LINUX)
             //gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)
             if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
             {
