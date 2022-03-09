@@ -63,7 +63,7 @@ namespace robot2D {
         msg.id = messageType;
         msg.buffer_sz = messageSize;
         m_messageQueue.push(msg);
-        clearBuffer.template emplace_back(msg.buffer);
+        clearBuffer.emplace_back(msg.buffer);
         return static_cast<T*>(msg.buffer);
     }
 
