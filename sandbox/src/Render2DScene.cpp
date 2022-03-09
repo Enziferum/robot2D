@@ -25,8 +25,8 @@ source distribution.
 #include <sandbox/Components.hpp>
 
 namespace {
-    const robot2D::vec2f position = robot2D::vec2f {0.F, 0.F};
-    const robot2D::vec2f size = robot2D::vec2f {200.F, 200.F};
+    const robot2D::vec2f position = robot2D::vec2f {100.F, 100.F};
+    const robot2D::vec2f size = robot2D::vec2f {100.F, 100.F};
     constexpr char* texturePath = "old_logo.png";
     constexpr unsigned startEntitiesCount = 5;
 }
@@ -44,6 +44,7 @@ void Render2DScene::setup() {
     ///// setup Ecs /////
 
     m_textures.loadFromFile(ResourceID::Logo, texturePath);
+
     for(auto it = 0; it < startEntitiesCount; ++it)
         createEntity({position.x, position.y + size.x * it});
 }
@@ -67,6 +68,7 @@ void Render2DScene::imGuiRender() {
 struct Quad: robot2D::Drawable, robot2D::Transformable {
     robot2D::Texture* texture = nullptr;
     robot2D::Color color = robot2D::Color::White;
+
     void draw(robot2D::RenderTarget& target, robot2D::RenderStates states) const override {
         states.transform *= getTransform();
         states.texture = texture;
@@ -75,13 +77,17 @@ struct Quad: robot2D::Drawable, robot2D::Transformable {
     }
 };
 
+robot2D::vec2f getScale(robot2D::vec2f targetSize, robot2D::vec2u originSize) {
+    assert(originSize != robot2D::vec2u{});
+    if(targetSize.x == originSize.x && targetSize.y == originSize.y)
+        return {1.f, 1.f};
+    return {targetSize.x / originSize.x, targetSize.y / originSize.y};
+}
+
 void Render2DScene::render() {
     m_window.beforeRender();
-
     m_window.draw(m_scene);
-
     m_window.afterRender();
-    m_window.flushRender();
 }
 
 void Render2DScene::createEntity(const robot2D::vec2f& position) {

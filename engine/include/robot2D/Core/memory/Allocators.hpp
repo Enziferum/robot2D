@@ -22,6 +22,8 @@ source distribution.
 #pragma once
 #include <cstdint>
 #include <cassert>
+#include <cstdlib>
+
 namespace mem {
     using u8 = uint8_t;
     using u64 = uint64_t;

@@ -27,13 +27,13 @@ source distribution.
 #include <robot2D/Graphics/Buffer.hpp>
 #include <robot2D/Graphics/VertexArray.hpp>
 #include <robot2D/Util/Logger.hpp>
+#include <robot2D/Config.hpp>
 #include "OpenGLRender.hpp"
 
 namespace robot2D {
     namespace priv {
-#define ROBOT2D_DEBUG
+
         const std::string vertexSource = R"(
-            #version 330 core
             layout (location = 0) in vec2 position;
             layout (location = 1) in vec4 color;
             layout (location = 2) in vec2 textureCoords;
@@ -52,7 +52,6 @@ namespace robot2D {
         )";
 
         const std::string fragmentSource = R"(
-            #version 330 core
             layout (location = 0) out vec4 fragColor;
             in vec2 TexCoords;
             in vec4 Color;
@@ -67,7 +66,7 @@ namespace robot2D {
 
         constexpr short quadVertexSize = 4;
         constexpr short maxTextureSlots = 16;
-#ifdef ROBOT2D_WINDOWS
+#if defined(ROBOT2D_WINDOWS) or defined(ROBOT2D_LINUX)
         void OpenGLMessageCallback(
                 unsigned source,
                 unsigned type,
@@ -97,15 +96,15 @@ namespace robot2D {
         void OpenGLRender::initOpenGL() {
 
 
-#ifdef ROBOT2D_WINDOWS
+#if defined(ROBOT2D_WINDOWS) or defined(ROBOT2D_LINUX)
             RB_CORE_INFO("{0}", __FUNCTION__ );
 #endif
             RB_CORE_INFO("OpenGL Info:");
             RB_CORE_INFO("Vendor: {0} ", glGetString(GL_VENDOR));
             RB_CORE_INFO("Renderer: {0}", glGetString(GL_RENDERER));
             RB_CORE_INFO("Version: {0}", glGetString(GL_VERSION));
-            
-#ifdef ROBOT2D_WINDOWS
+
+#if defined(ROBOT2D_WINDOWS) or defined(ROBOT2D_LINUX)
             glEnable(GL_DEBUG_OUTPUT);
             glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
             glDebugMessageCallback(OpenGLMessageCallback, nullptr);
@@ -157,14 +156,22 @@ namespace robot2D {
             m_renderBuffer.quadVertexPositions[2] = {0.5F, 0.5F};
             m_renderBuffer.quadVertexPositions[3] = {-0.5F, 0.5F};
 
+#if defined(ROBOT2D_MACOS)
+            std::string openGLVersion = "#version 330 core \n";
+#else
+            std::string openGLVersion = "#version 450 core \n";
+#endif
+
+            auto openGLVertexSource = openGLVersion + vertexSource;
+            auto openGLFragmentSource = openGLVersion + fragmentSource;
             if(!m_quadShader.createShader(shaderType::vertex,
-                                             vertexSource, false)) {
+                                          openGLVertexSource, false)) {
                 std::string reason = "Can't load Quad Vertex Shader";
                 throw std::runtime_error(reason);
             }
 
             if(!m_quadShader.createShader(shaderType::fragment,
-                                             fragmentSource, false)) {
+                                             openGLFragmentSource, false)) {
                 std::string reason = "Can't load Quad Fragment Shader";
                 throw std::runtime_error(reason);
             }
@@ -245,8 +252,10 @@ namespace robot2D {
 
                 if (textureIndex == 0.F)
                 {
-                    //if (m_renderBuffer.textureSlotIndex >= maxTextureSlots)
-//                    NextBatch();
+                    if (m_renderBuffer.textureSlotIndex >= maxTextureSlots) {
+                        flushRender();
+                        beforeRender();
+                    }
 
                     textureIndex = (float)m_renderBuffer.textureSlotIndex;
                     m_renderBuffer.textureSlots[m_renderBuffer.textureSlotIndex] = states.texture->getID();
@@ -263,7 +272,6 @@ namespace robot2D {
                 m_renderBuffer.quadBufferPtr->Position = states.transform * m_renderBuffer.quadVertexPositions[it];
                 m_renderBuffer.quadBufferPtr->color = states.color.toGL();
                 m_renderBuffer.quadBufferPtr->textureIndex = textureIndex;
-                //data[it].texCoords
                 m_renderBuffer.quadBufferPtr->TextureCoords = textureCoords[it];
                 m_renderBuffer.quadBufferPtr++;
             }
@@ -312,6 +320,8 @@ namespace robot2D {
         void OpenGLRender::afterRender() const {
             uint32_t size = uint32_t((uint8_t*)m_renderBuffer.quadBufferPtr - (uint8_t*)m_renderBuffer.quadBuffer);
             m_renderBuffer.vertexBuffer -> setData(m_renderBuffer.quadBuffer, size);
+
+            flushRender();
         }
 
         void OpenGLRender::flushRender() const {
@@ -319,7 +329,7 @@ namespace robot2D {
 #ifdef ROBOT2D_MACOS
                 glActiveTexture(GL_TEXTURE0+it);
                 glBindTexture(GL_TEXTURE_2D, m_renderBuffer.textureSlots[it]);
-#elif ROBOT2D_WINDOWS
+#elif defined(ROBOT2D_WINDOWS) or defined(ROBOT2D_LINUX)
                 glBindTextureUnit(it, m_renderBuffer.textureSlots[it]);
 #endif
             }
@@ -340,7 +350,5 @@ namespace robot2D {
         const RenderStats& OpenGLRender::getStats() const {
             return m_stats;
         }
-
-
     }
 }

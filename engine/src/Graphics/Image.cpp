@@ -19,9 +19,11 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
+#include <robot2D/Config.hpp>
+
 #ifdef WIN32
     #include <robot2D/ext/stb_image.h>
-#elif __APPLE__
+#elif defined(ROBOT2D_MACOS) || defined(ROBOT2D_LINUX)
     #include <ext/stb_image.h>
 #endif
 #include <robot2D/Graphics/Image.hpp>
@@ -38,8 +40,6 @@ namespace robot2D {
         int width = 0;
         int height = 0;
         int channels = 0;
-        //STBI_rgb_alpha
-      //  stbi_set_flip_vertically_on_load(1);
         unsigned char* ptr = stbi_load(path.c_str(), &width, &height, &channels, 0);
 
         if (ptr)
