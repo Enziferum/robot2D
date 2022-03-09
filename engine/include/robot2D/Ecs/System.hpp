@@ -68,7 +68,7 @@ namespace robot2D::ecs {
     template<typename T>
     void System::addRequirement() {
         UniqueType uniqueType(typeid(T));
-        m_pendingTypes.template emplace_back(uniqueType);
+        m_pendingTypes.emplace_back(uniqueType);
     }
 
 }
