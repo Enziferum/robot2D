@@ -2,10 +2,9 @@
 
 <img align="right" src="https://github.com/Enziferum/robot2D/blob/master/logo/logo.png" alt="logo" width="256"/>
 
-
-Mac/Linux: [![Build Status](https://app.travis-ci.com/Enziferum/robot2D.svg?branch=master)](https://app.travis-ci.com/Enziferum/robot2D) 
 \
 Windows: [![Build status](https://ci.appveyor.com/api/projects/status/ilga4qquggcsfy65?svg=true)](https://ci.appveyor.com/project/Enziferum/robot2d) \
+Mac/Linux: [![Build Status](https://app.travis-ci.com/Enziferum/robot2D.svg?branch=master)](https://app.travis-ci.com/Enziferum/robot2D) 
 \
 Robot2D - simple 2D Engine.   
 \
