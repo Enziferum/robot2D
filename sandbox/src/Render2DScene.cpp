@@ -27,7 +27,7 @@ source distribution.
 namespace {
     const robot2D::vec2f position = robot2D::vec2f {100.F, 100.F};
     const robot2D::vec2f size = robot2D::vec2f {100.F, 100.F};
-    constexpr char* texturePath = "old_logo.png";
+    constexpr const char* texturePath = "old_logo.png";
     constexpr unsigned startEntitiesCount = 5;
 }
 
@@ -45,15 +45,19 @@ void Render2DScene::setup() {
 
     m_textures.loadFromFile(ResourceID::Logo, texturePath);
 
-    for(auto it = 0; it < startEntitiesCount; ++it)
-        createEntity({position.x, position.y + size.x * it});
+    for(unsigned int it = 0; it < startEntitiesCount; ++it)
+        createEntity({position.x, position.y + size.x * static_cast<float>(it)});
 }
 
 void Render2DScene::handleEvents(const robot2D::Event& event) {
     if(event.type == robot2D::Event::Resized) {
         RB_INFO("New Size = {0} and {1}", event.size.widht, event.size.heigth);
-        m_window.resize({event.size.widht, event.size.heigth});
-        m_window.setView(robot2D::View(robot2D::FloatRect{0, 0, event.size.widht, event.size.heigth}));
+        m_window.resize({static_cast<int>(event.size.widht),
+                         static_cast<int>(event.size.heigth)});
+        m_window.setView(robot2D::View(robot2D::FloatRect{0, 0,
+                                                          static_cast<float>(event.size.widht),
+                                                          static_cast<float>(event.size.heigth)
+        }));
     }
 }
 
