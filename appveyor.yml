@@ -24,13 +24,30 @@ environment:
       CMAKE_DEPENDENCIES_DIR: Depends_WIN64
       CMAKE_SOLUTION_DIR: Win64
 install:
+  - cd ..
   - git clone https://github.com/glfw/glfw.git
   - cd glfw
   - mkdir build && cd build
-  - cmake .. -G "%GENERATOR%" -T %TOOLSET% -DCMAKE_CONFIGURATION_TYPES:STRING="%configuration%" -DCMAKE_BUILD_TYPE=%configuration% -DCMAKE_VS_INCLUDE_INSTALL_TO_DEFAULT_BUILD=ON
+  - cmake .. -G "%GENERATOR%" -T %TOOLSET% -DCMAKE_CONFIGURATION_TYPES:STRING="%configuration%" -DCMAKE_BUILD_TYPE=%configuration% -DCMAKE_VS_INCLUDE_INSTALL_TO_DEFAULT_BUILD=ON -DGLFW_BUILD_EXAMPLES=OFF -DGLFW_BUILD_TESTS=OFF -GLFW_BUILD_DOCS=OFF
   - cmake --build . --config %configuration%
   - echo "glfw3 done!"
-  
+  - cd .. && cd ..
+  - git clone https://github.com/Enziferum/robot2D_ext.git
+  - cd robot2D_ext
+  - mkdir build && cd build
+  - cmake .. -G "%GENERATOR%" -T %TOOLSET% -DCMAKE_CONFIGURATION_TYPES:STRING="%configuration%" -DCMAKE_BUILD_TYPE=%configuration% -DCMAKE_VS_INCLUDE_INSTALL_TO_DEFAULT_BUILD=ON
+  - cmake --build . --config %configuration%
+  - echo "robot2D_ext done!"
+  - cd .. && cd ..
+  - git clone https://github.com/gabime/spdlog.git
+  - cd spdlog
+  - mkdir build && cd build
+  - cmake .. -G "%GENERATOR%" -T %TOOLSET% -DCMAKE_CONFIGURATION_TYPES:STRING="%configuration%" -DCMAKE_BUILD_TYPE=%configuration% -DCMAKE_VS_INCLUDE_INSTALL_TO_DEFAULT_BUILD=ON
+  - cmake --build . --config %configuration%
+  - echo "spdlog done!"
+  - cd .. && cd ..
+  - cd robot2d
+
 build_script:
 - echo "Platform '%PLATFORM%'"
 - echo "Generator '%GENERATOR%'"
