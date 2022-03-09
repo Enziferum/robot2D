@@ -31,6 +31,7 @@ install:
   - cmake .. -G "%GENERATOR%" -T %TOOLSET% -DCMAKE_CONFIGURATION_TYPES:STRING="%configuration%" -DCMAKE_BUILD_TYPE=%configuration% -DCMAKE_VS_INCLUDE_INSTALL_TO_DEFAULT_BUILD=ON -DGLFW_BUILD_EXAMPLES=OFF -DGLFW_BUILD_TESTS=OFF -DGLFW_BUILD_DOCS=OFF
   - cmake --build . --config %configuration%
   - cmake --install .
+  - set glfw3_DIR=C:\Program Files (x86)\GLFW\lib\cmake\glfw3
   - echo "glfw3 done!"
   - cd .. && cd ..
   - git clone https://github.com/Enziferum/robot2D_ext.git
@@ -39,6 +40,7 @@ install:
   - cmake .. -G "%GENERATOR%" -T %TOOLSET% -DCMAKE_CONFIGURATION_TYPES:STRING="%configuration%" -DCMAKE_BUILD_TYPE=%configuration% -DCMAKE_VS_INCLUDE_INSTALL_TO_DEFAULT_BUILD=ON
   - cmake --build . --config %configuration%
   - cmake --install .
+  - set robot2D_ext_DIR=C:\Program Files (x86)\robot2D_ext\lib\cmake\robot2D_ext
   - echo "robot2D_ext done!"
   - cd .. && cd ..
   - git clone https://github.com/gabime/spdlog.git
@@ -47,6 +49,7 @@ install:
   - cmake .. -G "%GENERATOR%" -T %TOOLSET% -DCMAKE_CONFIGURATION_TYPES:STRING="%configuration%" -DCMAKE_BUILD_TYPE=%configuration% -DCMAKE_VS_INCLUDE_INSTALL_TO_DEFAULT_BUILD=ON
   - cmake --build . --config %configuration%
   - cmake --install .
+  - set spdlog_DIR=C:\Program Files (x86)\spdlog\lib\cmake\spdlog
   - echo "spdlog done!"
   - cd .. && cd ..
   - cd robot2d
