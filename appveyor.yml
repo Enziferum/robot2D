@@ -20,7 +20,7 @@ environment:
     - APPVEYOR_BUILD_WORKER_IMAGE: 'Visual Studio 2019'
       PLATFORM: x64
       ARCHITECTURE: x86_amd64
-      GENERATOR: Visual Studio 16 2019 Win64
+      GENERATOR: Visual Studio 16 2019
       CMAKE_DEPENDENCIES_DIR: Depends_WIN64
       CMAKE_SOLUTION_DIR: Win64
 install:
