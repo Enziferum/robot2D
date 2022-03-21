@@ -29,8 +29,12 @@ else()
     enable_cxx_compiler_flag_if_supported("-Werror")
 endif()
 
-find_package(OpenGL REQUIRED)
-set(LIBS OpenGL::GL robot2D robot2D_ext ${CMAKE_DL_LIBS})
+set(LIBS)
+if(UNIX)
+    find_package(OpenGL REQUIRED)
+    set(LIBS OpenGL::GL ${CMAKE_DL_LIBS})
+endif()
+set(LIBS robot2D robot2D_ext ${LIBS})
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/incl)
 
@@ -46,7 +50,15 @@ set(SRC
 
 add_executable(${PROJECT_NAME} ${SRC})
 
-SET(GCC_COVERAGE_LINK_FLAGS "-ldl -Wl --start-group")
-add_definitions(${GCC_COVERAGE_COMPILE_FLAGS})
+if(UNIX)
+    SET(GCC_COVERAGE_LINK_FLAGS "-ldl -Wl --start-group")
+    add_definitions(${GCC_COVERAGE_COMPILE_FLAGS})
+endif()
 
 target_link_libraries(${PROJECT_NAME} ${LIBS})
+
+add_custom_command(
+        TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_CURRENT_SOURCE_DIR}/res/
+        ${CMAKE_CURRENT_BINARY_DIR}/res/)

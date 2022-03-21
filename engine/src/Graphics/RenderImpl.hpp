@@ -26,6 +26,7 @@ source distribution.
 #include <robot2D/Graphics/View.hpp>
 #include <robot2D/Graphics/Vertex.hpp>
 #include <robot2D/Graphics/RenderStats.hpp>
+#include "robot2D/Graphics/VertexArray.hpp"
 
 namespace robot2D {
     namespace priv {
@@ -39,6 +40,7 @@ namespace robot2D {
             static Ptr create();
             virtual void render(const RenderStates& states) = 0;
             virtual void render(const VertexData& data, const RenderStates& states) const = 0;
+            virtual void render(const VertexArray::Ptr& vertexArray, RenderStates states) const = 0;
 
             virtual void setView(const View& view) = 0;
             virtual const View& getView() = 0;

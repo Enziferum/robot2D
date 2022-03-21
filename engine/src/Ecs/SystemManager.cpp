@@ -21,10 +21,13 @@ source distribution.
 
 #include <robot2D/Ecs/SystemManager.hpp>
 #include <robot2D/Ecs/EntityManager.hpp>
+#include <robot2D/Ecs/Scene.hpp>
 
 namespace robot2D::ecs {
-    SystemManager::SystemManager(robot2D::MessageBus& messageBus, ComponentManager& componentManager):
-        m_messageBus(messageBus), m_componentManager(componentManager) {}
+    SystemManager::SystemManager(robot2D::MessageBus& messageBus, ComponentManager& componentManager,
+                                 Scene* scene):
+        m_messageBus(messageBus), m_componentManager(componentManager),
+        m_scene{scene} {}
 
     void SystemManager::removeEntity(Entity entity) {
         for(auto& it: m_systems) {

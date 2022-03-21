@@ -91,5 +91,11 @@ namespace robot2D {
         return m_render -> getStats();
     }
 
+    void RenderTarget::draw(const VertexArray::Ptr& vertexArray, RenderStates states) const {
+        if(m_render == nullptr)
+            return;
+        m_render -> render(vertexArray, states);
+    }
+
 
 }

@@ -52,6 +52,14 @@ namespace robot2D::ecs {
         return it != m_entities.end();
     }
 
+    void System::setScene(Scene* scene) {
+        m_scene = scene;
+    }
+
+
+    Scene* System::getScene() {
+        return m_scene;
+    }
 
     bool System::removeEntity(Entity entity) {
         auto it = std::find_if(m_entities.begin(), m_entities.end(),
@@ -85,5 +93,6 @@ namespace robot2D::ecs {
         }
         m_pendingTypes.clear();
     }
+
 
 }

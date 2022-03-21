@@ -45,7 +45,7 @@ namespace robot2D {
 
         Color color;
         Transform transform;
-
+        uint32_t indexCount = 0;
         static const RenderStates Default;
     };
 }

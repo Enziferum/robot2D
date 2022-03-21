@@ -135,10 +135,10 @@ namespace robot2D {
     }
 
     const VertexBuffer::Ptr OpenGLVertexArray::getVertexBuffer() const {
-        return robot2D::VertexBuffer::Ptr();
+        return m_vertexBuffer;
     }
 
     const IndexBuffer::Ptr OpenGLVertexArray::getIndexBuffer() const {
-        return robot2D::IndexBuffer::Ptr();
+        return m_indexBuffer;
     }
 }

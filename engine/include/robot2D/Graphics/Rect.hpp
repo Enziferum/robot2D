@@ -34,6 +34,8 @@ namespace robot2D {
         Rect(const Rect& other);
         ~Rect() = default;
 
+        bool intersects(const Rect<T>& rect);
+        bool intersects(const Rect<T>& other, Rect<T>& overlap);
         bool contains(const Vector2<T>& point);
 
         T lx;
@@ -74,6 +76,43 @@ namespace robot2D {
     }
 
     template<typename T>
+    bool Rect<T>::intersects(const Rect<T>& other) {
+        Rect<T> overlap;
+        return intersects(other, overlap);
+    }
+
+
+    template<typename T>
+    bool Rect<T>::intersects(const Rect<T>& other, Rect<T>& overlap) {
+        T minX = std::min(lx, static_cast<T>(lx + width));
+        T maxX = std::max(lx, static_cast<T>(lx + width));
+        T minY = std::min(ly, static_cast<T>(ly + height));
+        T maxY = std::max(ly, static_cast<T>(ly + height));
+
+        T minX2 = std::min(other.lx, static_cast<T>(other.lx + other.width));
+        T maxX2 = std::max(other.lx, static_cast<T>(other.lx + other.width));
+        T minY2 = std::min(other.ly, static_cast<T>(other.ly + other.height));
+        T maxY2 = std::max(other.ly, static_cast<T>(other.ly + other.height));
+
+        T innerLeft = std::max(minX, minX2);
+        T innerTop = std::max(minY, minY2);
+        T innerRight = std::min(maxX, maxX2);
+        T innerBottom = std::min(maxY, maxY2);
+
+        bool result = false;
+        if(((innerLeft < innerRight) && (innerTop < innerBottom))) {
+            overlap = {innerLeft, innerTop, innerRight - innerLeft, innerBottom - innerTop};
+            result = true;
+        } else {
+            overlap = {};
+            result = false;
+        }
+
+        return result;
+    }
+
+
+    template<typename T>
     Rect<T> &Rect<T>::operator=(const Rect &other) {
         if(*this == other)
             return *this;
@@ -85,6 +124,7 @@ namespace robot2D {
 
         return *this;
     }
+
 
     template<typename T>
     bool operator ==(const Rect<T>& lhs, const Rect<T>& rhs){

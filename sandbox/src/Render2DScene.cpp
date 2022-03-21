@@ -27,7 +27,7 @@ source distribution.
 namespace {
     const robot2D::vec2f position = robot2D::vec2f {100.F, 100.F};
     const robot2D::vec2f size = robot2D::vec2f {100.F, 100.F};
-    constexpr const char* texturePath = "old_logo.png";
+    constexpr const char* texturePath = "res/textures/old_logo.png";
     constexpr unsigned startEntitiesCount = 5;
 }
 
@@ -100,8 +100,10 @@ void Render2DScene::createEntity(const robot2D::vec2f& position) {
     auto& transform = entity.addComponent<TransformComponent>();
 
     transform.setPosition({position.x, position.y} );
-    transform.scale({size});
+
 
     auto& sprite = entity.addComponent<SpriteComponent>();
     sprite.setTexture(m_textures.get(ResourceID::Logo));
+    auto tx_sz = sprite.getTexture().getSize();
+    transform.scale({100.f / tx_sz.y, 100.f / tx_sz.y });
 }

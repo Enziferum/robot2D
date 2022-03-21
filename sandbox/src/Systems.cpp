@@ -12,9 +12,13 @@ RenderSystem::RenderSystem(robot2D::MessageBus& messageBus):
 void RenderSystem::draw(robot2D::RenderTarget& target, robot2D::RenderStates states) const {
     for(auto& it: m_entities) {
         auto& transform = it.getComponent<TransformComponent>();
-
         auto& sprite = it.getComponent<SpriteComponent>();
-        states.transform = transform.getTransform();
+
+        auto size = sprite.getTexture().getSize();
+        auto t = transform.getTransform();
+        t.scale(size.x, size.y);
+
+        states.transform = t;
         states.texture = &sprite.getTexture();
         states.color = sprite.getColor();
         target.draw(states);
