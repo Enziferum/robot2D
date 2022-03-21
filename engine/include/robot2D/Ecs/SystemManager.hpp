@@ -30,9 +30,12 @@ source distribution.
 
 namespace robot2D::ecs {
 
+    class Scene;
     class SystemManager {
     public:
-        SystemManager(robot2D::MessageBus& messageBus, ComponentManager& m_componentManager);
+        SystemManager(robot2D::MessageBus& messageBus,
+                      ComponentManager& m_componentManager,
+                      Scene* scene);
         ~SystemManager() = default;
 
         template<class T, typename ...Args>
@@ -50,6 +53,8 @@ namespace robot2D::ecs {
         robot2D::MessageBus& m_messageBus;
         std::vector<System::Ptr> m_systems;
         ComponentManager& m_componentManager;
+
+        Scene* m_scene;
     };
 
 

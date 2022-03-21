@@ -47,9 +47,7 @@ namespace robot2D {
             setup();
         }
 
-        DesktopWindowImpl::~DesktopWindowImpl() {
-            glfwTerminate();
-        }
+        DesktopWindowImpl::~DesktopWindowImpl() {}
 
         bool DesktopWindowImpl::pollEvents(Event& event) {
             //what todo ??
@@ -134,6 +132,7 @@ namespace robot2D {
 
         void DesktopWindowImpl::close() {
             glfwSetWindowShouldClose(m_window, true);
+            glfwTerminate();
         }
 
         void DesktopWindowImpl::display() {

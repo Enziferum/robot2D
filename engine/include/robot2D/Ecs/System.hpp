@@ -32,6 +32,7 @@ source distribution.
 namespace robot2D::ecs {
     using EntityList = std::vector<Entity>;
 
+    class Scene;
     class System {
     public:
         using Ptr = std::shared_ptr<System>;
@@ -45,7 +46,6 @@ namespace robot2D::ecs {
         bool removeEntity(Entity entityId);
         Bitmask getSystemMask() const { return m_mask; }
 
-
         virtual void update(float dt);
         virtual void onMessage(const robot2D::Message& message);
     protected:
@@ -58,11 +58,16 @@ namespace robot2D::ecs {
         friend class SystemManager;
         virtual void onEntityAdded(Entity entity);
 
+        void setScene(Scene*);
+        Scene* getScene();
+
         UniqueType m_systemId;
         EntityList m_entities;
         robot2D::MessageBus& m_messageBus;
         std::vector<UniqueType> m_pendingTypes;
         Bitmask m_mask;
+    private:
+        Scene* m_scene;
     };
 
     template<typename T>

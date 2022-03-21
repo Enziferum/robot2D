@@ -42,6 +42,7 @@ namespace robot2D {
 
             void render(const RenderStates& states) override;
             void render(const VertexData& data, const RenderStates& states) const override;
+            void render(const VertexArray::Ptr& vertexArray, RenderStates states) const override;
 
             void setSize(const vec2u& size) override;
             void setView(const View& view) override;

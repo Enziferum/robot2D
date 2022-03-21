@@ -32,6 +32,7 @@ source distribution.
 #include "RenderStats.hpp"
 #include "Color.hpp"
 #include "RenderContext.hpp"
+#include "VertexArray.hpp"
 
 namespace robot2D {
     namespace priv {
@@ -55,6 +56,7 @@ namespace robot2D {
         virtual void draw(const VertexData& data, const RenderStates& states);
         virtual void draw(const Drawable& drawable, const RenderStates& states
                                                     = RenderStates::Default);
+        virtual void draw(const VertexArray::Ptr& vertexArray, RenderStates states) const;
 
         virtual void beforeRender() const;
         virtual void afterRender() const;

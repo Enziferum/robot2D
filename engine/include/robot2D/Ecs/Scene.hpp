@@ -45,6 +45,9 @@ namespace robot2D::ecs {
         template<class T, typename ...Args>
         void addSystem(Args&& ...args);
 
+        template<typename T>
+        T* getSystem();
+
         void update(float dt);
         void draw(robot2D::RenderTarget& target, robot2D::RenderStates) const override;
 
@@ -71,6 +74,11 @@ namespace robot2D::ecs {
             m_drawables.emplace_back(drawable);
         }
 
+    }
+
+    template<typename T>
+    T* Scene::getSystem() {
+        return m_systemManager.getSystem<T>();
     }
 
 }

@@ -33,6 +33,14 @@ namespace robot2D::ecs {
         return (left.m_id == right.m_id) && (left.m_tag == right.m_tag);
     }
 
+    bool operator != (const Entity& l, const Entity& r) {
+        return !(l == r);
+    }
+
+    bool operator < (const Entity& l, const Entity& r) {
+        return (l.m_id < r.m_id);
+    }
+
     Bitmask Entity::getComponentMask() const {
         return m_entityManager -> getComponentBitmask(*this);
     }

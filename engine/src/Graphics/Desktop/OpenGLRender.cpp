@@ -239,7 +239,6 @@ namespace robot2D {
 
             if(m_renderBuffer.indexCount >= m_renderBuffer.maxIndicesCount) {
                 afterRender();
-                flushRender();
                 beforeRender();
             }
 
@@ -351,6 +350,16 @@ namespace robot2D {
             m_renderBuffer.indexCount = 0;
             m_renderBuffer.textureSlotIndex = 1;
             m_stats.drawCalls++;
+        }
+
+        void OpenGLRender::render(const VertexArray::Ptr& vertexArray, RenderStates states) const {
+            glBindTextureUnit(0, states.texture->getID());
+            vertexArray -> Bind();
+            const auto& indexBuffer = vertexArray -> getIndexBuffer();
+            glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(states.indexCount), GL_UNSIGNED_INT, nullptr);
+            vertexArray -> unBind();
+            glBindTexture(GL_TEXTURE_2D, 0);
+            glActiveTexture(GL_TEXTURE0);
         }
 
         const RenderStats& OpenGLRender::getStats() const {

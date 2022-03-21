@@ -50,7 +50,7 @@ namespace robot2D {
         bool create(const vec2u& size, void* data, const ImageColorFormat&);
     private:
         vec2u m_size;
-        std::vector<unsigned char> m_pixels;
+        std::vector<uint8_t> m_pixels;
         ImageColorFormat m_colorFormat;
     };
 

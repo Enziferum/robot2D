@@ -40,19 +40,21 @@ namespace robot2D {
         int width = 0;
         int height = 0;
         int channels = 0;
+        //STBI_rgb_alpha)
         unsigned char* ptr = stbi_load(path.c_str(), &width, &height, &channels, 0);
 
         if (ptr)
         {
             // Assign the image properties
-            m_size.x = width;
-            m_size.y = height;
+            m_size.x = static_cast<unsigned int>(width);
+            m_size.y = static_cast<unsigned int>(height);
 
-            if (width && height)
+            if (width > 0 && height > 0)
             {
                 // Copy the loaded pixels to the pixel buffer
-                m_pixels.resize(width * height * 4);
-                memcpy(&m_pixels[0], ptr, m_pixels.size());
+                m_pixels.resize(static_cast<std::size_t>(width * height * 4));
+                m_pixels.shrink_to_fit();
+                memcpy(m_pixels.data(), ptr, m_pixels.size());
             }
 
             // Free the loaded pixels (they are now in our own pixel buffer)
@@ -63,7 +65,7 @@ namespace robot2D {
         else
         {
             // Error, failed to load the image
-            RB_CORE_ERROR("Failed to load image {0}. Reason: {1}", path, stbi_failure_reason());
+            RB_CORE_ERROR("Failed to load image {0}. Reason: {1}", path, std::string{stbi_failure_reason()});
             return false;
         }
         return true;

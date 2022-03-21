@@ -30,7 +30,7 @@ namespace robot2D::ecs {
     m_messageBus(messageBus),
     m_componentManager(),
     m_entityManager(m_componentManager),
-    m_systemManager(messageBus, m_componentManager),
+    m_systemManager(messageBus, m_componentManager, this),
     m_useSystems(useSystems) {
 
     }
