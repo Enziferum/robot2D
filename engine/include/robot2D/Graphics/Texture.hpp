@@ -36,11 +36,15 @@ namespace robot2D {
         vec2u& getSize();
         const vec2u& getSize() const;
 
-        void create(const vec2u& size, void* data, const ImageColorFormat& colorFormat = ImageColorFormat::RGBA);
+        void create(const vec2u& size, const void* data, int texParam = 0,
+                    const ImageColorFormat& colorFormat = ImageColorFormat::RGBA);
         const unsigned int& getID()const;
+        unsigned int& getID();
 
         const ImageColorFormat& getColorFormat() const { return m_image.getColorFormat(); }
         void bind(uint32_t slot);
+
+        bool save(const std::string& path);
     private:
         void bindBufferData(void* bufferData);
         void setupGL();
@@ -48,5 +52,6 @@ namespace robot2D {
         unsigned int m_texture;
         std::vector<unsigned char> m_data;
         Image m_image;
+        int m_texParam = 0;
     };
 }

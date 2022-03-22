@@ -27,8 +27,10 @@ namespace robot2D{
 
     GLenum convertColorType(const ImageColorFormat& format) {
         switch(format) {
-            case ImageColorFormat::Red:
+            case ImageColorFormat::RED:
                 return GL_RED;
+            case ImageColorFormat::LUMINANCE:
+                return GL_LUMINANCE_ALPHA;
             case ImageColorFormat::RGB:
                 return GL_RGB;
             case ImageColorFormat::RGBA:
@@ -73,8 +75,13 @@ namespace robot2D{
         if(glFormat == GL_RGBA)
             internalFormat = GL_RGBA8;
 #ifdef ROBOT2D_MACOS
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        if(m_texParam == 0) {
+            glTexParameteri(m_texture, GL_TEXTURE_WRAP_S, GL_REPEAT);
+            glTexParameteri(m_texture, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        } else if(m_texParam == 1) {
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        }
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 #elif defined(ROBOT2D_WINDOWS) or defined(ROBOT2D_LINUX)
@@ -83,15 +90,21 @@ namespace robot2D{
         glTextureParameteri(m_texture, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTextureParameteri(m_texture, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-        glTextureParameteri(m_texture, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTextureParameteri(m_texture, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        if(m_texParam == 0) {
+            glTextureParameteri(m_texture, GL_TEXTURE_WRAP_S, GL_REPEAT);
+            glTextureParameteri(m_texture, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        } else if(m_texParam == 1) {
+            glTextureParameteri(m_texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTextureParameteri(m_texture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        }
 #endif
     }
 
-    void Texture::create(const vec2u& size, void* data, const ImageColorFormat& colorFormat) {
+    void Texture::create(const vec2u& size, const void* data, int texParam, const ImageColorFormat& colorFormat) {
         m_image.create(size, data, colorFormat);
+        m_texParam = texParam;
         setupGL();
-        bindBufferData(data);
+        bindBufferData(m_image.getBuffer());
     }
 
     const unsigned int& Texture::getID() const {
@@ -124,6 +137,14 @@ namespace robot2D{
 #elif defined(ROBOT2D_WINDOWS) or defined(ROBOT2D_LINUX)
         glBindTextureUnit(slot, m_texture);
 #endif
+    }
+
+    unsigned int& Texture::getID() {
+        return m_texture;
+    }
+
+    bool Texture::save(const std::string& path) {
+        return m_image.save(path);
     }
 
 }

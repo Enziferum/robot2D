@@ -23,9 +23,10 @@ source distribution.
 #include <robot2D/Config.hpp>
 #if defined(ROBOT2D_WINDOWS)
     #include <ext/glad.h>
-#elif __APPLE__
+#elif defined(ROBOT2D_MACOS)
     #define GL_SILENCE_DEPRECATION
-    #include <OpenGL/gl3.h>
+    //#include <OpenGL/gl3.h>
+    #include <ext/glad.h>
 #elif defined(ROBOT2D_LINUX)
     #include <ext/glad.h>
 #endif
