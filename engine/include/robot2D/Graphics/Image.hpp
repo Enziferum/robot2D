@@ -28,7 +28,8 @@ source distribution.
 namespace robot2D {
 
     enum ImageColorFormat {
-        Red = 1,
+        RED = 1,
+        LUMINANCE = 2,
         RGB = 3,
         RGBA = 4
     };
@@ -47,11 +48,12 @@ namespace robot2D {
         const std::vector<unsigned char>& getBuffer() const;
         unsigned char* getBuffer();
 
-        bool create(const vec2u& size, void* data, const ImageColorFormat&);
+        bool create(const vec2u& size, const void* data, const ImageColorFormat&);
+        bool save(const std::string& path);
     private:
         vec2u m_size;
         std::vector<uint8_t> m_pixels;
-        ImageColorFormat m_colorFormat;
+        ImageColorFormat m_colorFormat = ImageColorFormat::RED;
     };
 
 }

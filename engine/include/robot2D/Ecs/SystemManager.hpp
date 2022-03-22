@@ -70,6 +70,7 @@ namespace robot2D::ecs {
         }
 
         auto& system = m_systems.emplace_back(std::make_shared<T>(std::forward<Args>(args)...));
+        system -> setScene(m_scene);
         system -> processRequirements(m_componentManager);
         return *(dynamic_cast<T*>(m_systems.back().get()));
     }

@@ -225,10 +225,17 @@ namespace robot2D {
                                                { 1.0f, 0.0f },
                                                { 1.0f, 1.0f },
                                                { 0.0f, 1.0f } };
-            render({{{}, textureCoords[0], robot2D::Color::White},
-                         {{}, textureCoords[1], robot2D::Color::White},
-                         {{}, textureCoords[2], robot2D::Color::White},
-                         {{}, textureCoords[3], robot2D::Color::White}}, states);
+            render({{{states.transform * m_renderBuffer.quadVertexPositions[0]},
+                     textureCoords[0],
+                     robot2D::Color::White},
+                         {{states.transform * m_renderBuffer.quadVertexPositions[1]},
+                          textureCoords[1],
+                          robot2D::Color::White},
+                         {{states.transform * m_renderBuffer.quadVertexPositions[2]},
+                          textureCoords[2],
+                          robot2D::Color::White},
+                         {{states.transform * m_renderBuffer.quadVertexPositions[3]},
+                          textureCoords[3], robot2D::Color::White}}, states);
         }
 
         void OpenGLRender::render(const VertexData& data, const RenderStates& states) const {
@@ -238,6 +245,7 @@ namespace robot2D {
             // Default Quad Drawing
 
             if(m_renderBuffer.indexCount >= m_renderBuffer.maxIndicesCount) {
+                RB_CORE_INFO("INDEX COUNT > MAX, VALUE : {0}", m_renderBuffer.indexCount);
                 afterRender();
                 beforeRender();
             }
@@ -257,7 +265,7 @@ namespace robot2D {
                 if (textureIndex == 0.F)
                 {
                     if (m_renderBuffer.textureSlotIndex >= maxTextureSlots) {
-                        flushRender();
+                        afterRender();
                         beforeRender();
                     }
 
@@ -267,16 +275,11 @@ namespace robot2D {
                 }
             }
 
-            robot2D::vec2f textureCoords[] = { { 0.0f, 0.0f },
-                                               { 1.0f, 0.0f },
-                                               { 1.0f, 1.0f },
-                                               { 0.0f, 1.0f } };
-
             for (auto it = 0; it < quadVertexSize; ++it) {
-                m_renderBuffer.quadBufferPtr->Position = states.transform * m_renderBuffer.quadVertexPositions[it];
+                m_renderBuffer.quadBufferPtr->Position = data[it].position;
                 m_renderBuffer.quadBufferPtr->color = states.color.toGL();
                 m_renderBuffer.quadBufferPtr->textureIndex = textureIndex;
-                m_renderBuffer.quadBufferPtr->TextureCoords = textureCoords[it];
+                m_renderBuffer.quadBufferPtr->TextureCoords = data[it].texCoords;
                 m_renderBuffer.quadBufferPtr++;
             }
 
@@ -355,7 +358,6 @@ namespace robot2D {
         void OpenGLRender::render(const VertexArray::Ptr& vertexArray, RenderStates states) const {
             glBindTextureUnit(0, states.texture->getID());
             vertexArray -> Bind();
-            const auto& indexBuffer = vertexArray -> getIndexBuffer();
             glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(states.indexCount), GL_UNSIGNED_INT, nullptr);
             vertexArray -> unBind();
             glBindTexture(GL_TEXTURE_2D, 0);
