@@ -46,7 +46,8 @@ namespace robot2D {
     const Color Color::Transparent(0.F, 0.F, 0.F, 0.F);
 
     Color Color::toGL(const float& red, const float& green, const float& blue, const float& alpha) {
-        return Color(red / maxColorComponent, green / maxColorComponent, blue / maxColorComponent, alpha / maxColorComponent);
+        return Color(red / maxColorComponent, green / maxColorComponent,
+                     blue / maxColorComponent, alpha / maxColorComponent);
     }
 
     Color Color::fromGL(const float& red, const float& green, const float& blue, const float& alpha) {
@@ -55,6 +56,7 @@ namespace robot2D {
     }
 
     Color Color::toGL() const {
-        return Color(red / maxColorComponent, green / maxColorComponent, blue / maxColorComponent, alpha / maxColorComponent);
+        return Color(red / maxColorComponent, green / maxColorComponent,
+                     blue / maxColorComponent, alpha / maxColorComponent);
     }
 }

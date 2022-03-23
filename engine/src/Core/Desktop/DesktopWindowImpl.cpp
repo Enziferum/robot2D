@@ -88,14 +88,19 @@ namespace robot2D {
                     break;
                 }
             }
-            glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, opengl_major);
-            glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, opengl_minor);
-            glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+
+            if(m_context.renderApi == WindowContext::RenderApi::OpenGL3_3 ||
+                    m_context.renderApi == WindowContext::RenderApi::OpenGL4_5) {
+                glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, opengl_major);
+                glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, opengl_minor);
+                glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+            }
 
             GLFWmonitor* primary = m_context.fullscreen ? glfwGetPrimaryMonitor() : nullptr;
 
             /* Create a windowed mode window and its OpenGL context */
-            m_window = glfwCreateWindow(m_size.x, m_size.y,
+            m_window = glfwCreateWindow(static_cast<int>(m_size.x),
+                                        static_cast<int>(m_size.y),
                                         m_name.c_str(), primary, nullptr);
             if (!m_window)
             {
@@ -111,7 +116,6 @@ namespace robot2D {
             setup_callbacks();
 
 #if defined(ROBOT2D_WINDOWS) || defined(ROBOT2D_LINUX)
-            //gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)
             if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
             {
                 RB_CORE_CRITICAL("Failed to initialize GLAD");

@@ -96,6 +96,4 @@ namespace robot2D {
             return;
         m_render -> render(vertexArray, states);
     }
-
-
 }

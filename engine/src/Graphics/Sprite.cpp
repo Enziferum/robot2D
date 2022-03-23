@@ -24,11 +24,11 @@ source distribution.
 
 namespace robot2D {
 
-    Sprite::Sprite(): m_texture(nullptr),
+    Sprite::Sprite():
+    m_texture(nullptr),
     m_color(Color::White) {}
 
     void Sprite::setTexture(const Texture& texture, const IntRect& textureRect ) {
-        (void)textureRect;
         if(!m_texture && (m_texture_rect == IntRect())){
             auto size = texture.getSize();
             //it's not correct for us
@@ -36,8 +36,8 @@ namespace robot2D {
             setSize(size.x, size.y);
         }
         m_texture = &texture;
+        m_texture_rect = textureRect;
     }
-
 
     const Texture* Sprite::getTexture() {
         return m_texture;
@@ -66,7 +66,11 @@ namespace robot2D {
         m_color = color;
     }
 
-    Color &Sprite::getColor() {
+    Color& Sprite::getColor() {
+        return m_color;
+    }
+
+    const Color& Sprite::getColor() const {
         return m_color;
     }
 
@@ -75,14 +79,19 @@ namespace robot2D {
             return;
         auto t = getTransform();
         t = t.scale(m_size);
+
         states.transform *= t;
         states.texture = m_texture;
         states.color = m_color;
-        //{vertices[0], vertices[1], vertices[2], vertices[3]},
-        target.draw(states);
+
+        vertices[0];
+        vertices[1];
+        vertices[2];
+        vertices[3];
+
+        target.draw({vertices[0], vertices[1], vertices[2], vertices[3]}, states);
     }
 
-    // Not best way ?
     void Sprite::setTextureRect(const IntRect& textureRect) {
         m_texture_rect = textureRect;
 
@@ -106,5 +115,7 @@ namespace robot2D {
         vertices[3].texCoords = {convertToGL(left, static_cast<float>(tx_s.x)),
                                  convertToGL(top, static_cast<float>(tx_s.y))};
     }
+
+
 
 }

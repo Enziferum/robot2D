@@ -124,7 +124,6 @@ namespace robot2D {
             initOpenGL();
 
             m_renderBuffer.quadBuffer = new RenderVertex[m_renderBuffer.maxQuadsCount];
-
             m_renderBuffer.vertexArray = VertexArray::Create();
             m_renderBuffer.vertexBuffer = VertexBuffer::Create(sizeof(RenderVertex) * m_renderBuffer.maxQuadsCount);
             // for OpenGL name - utility only
@@ -191,7 +190,7 @@ namespace robot2D {
                 samples[it] = it;
 
             m_quadShader.use();
-            m_quadShader.set_parameter("textureSamplers", samples, maxTextureSlots);
+            m_quadShader.setArray("textureSamplers", samples, maxTextureSlots);
 
             for(int it = 1; it < maxTextureSlots; ++it)
                 m_renderBuffer.textureSlots[it] = 0;
@@ -200,7 +199,7 @@ namespace robot2D {
                                       static_cast<float>(m_size.x),
                                       static_cast<float>(m_size.y)));
             m_view = m_default;
-            m_quadShader.set_parameter("projection", m_view.getTransform().get_matrix());
+            m_quadShader.set("projection", m_view.getTransform().get_matrix());
             m_quadShader.unUse();
         }
 
@@ -220,29 +219,34 @@ namespace robot2D {
             glClear(GL_COLOR_BUFFER_BIT);
         }
 
+        robot2D::vec2f textureCoords[] = { { 0.0f, 0.0f },
+                                           { 1.0f, 0.0f },
+                                           { 1.0f, 1.0f },
+                                           { 0.0f, 1.0f } };
+
         void OpenGLRender::render(const RenderStates& states) {
-            robot2D::vec2f textureCoords[] = { { 0.0f, 0.0f },
-                                               { 1.0f, 0.0f },
-                                               { 1.0f, 1.0f },
-                                               { 0.0f, 1.0f } };
-            render({{{states.transform * m_renderBuffer.quadVertexPositions[0]},
-                     textureCoords[0],
-                     robot2D::Color::White},
-                         {{states.transform * m_renderBuffer.quadVertexPositions[1]},
-                          textureCoords[1],
-                          robot2D::Color::White},
-                         {{states.transform * m_renderBuffer.quadVertexPositions[2]},
-                          textureCoords[2],
-                          robot2D::Color::White},
-                         {{states.transform * m_renderBuffer.quadVertexPositions[3]},
-                          textureCoords[3], robot2D::Color::White}}, states);
+            VertexData quadVertexData = {
+                    {
+                            states.transform * m_renderBuffer.quadVertexPositions[0],
+                            textureCoords[0]
+                    },
+                    {
+                            states.transform * m_renderBuffer.quadVertexPositions[1],
+                            textureCoords[1]
+                    },
+                    {states.transform * m_renderBuffer.quadVertexPositions[2],
+                            textureCoords[2]
+                    },
+                    {states.transform * m_renderBuffer.quadVertexPositions[3],
+                            textureCoords[3]
+                    }
+            };
+            render(quadVertexData, states);
         }
 
         void OpenGLRender::render(const VertexData& data, const RenderStates& states) const {
-            // Rendering not quads in version 0.2 - 0.3 not supported todo runtime error
-            if(data.size() != quadVertexSize)
-                return;
-            // Default Quad Drawing
+            // Rendering not quads in version 0.2 - 0.3 not supported
+            assert(data.size() == quadVertexSize && "Supports only Quad Vertex Data.");
 
             if(m_renderBuffer.indexCount >= m_renderBuffer.maxIndicesCount) {
                 RB_CORE_INFO("INDEX COUNT > MAX, VALUE : {0}", m_renderBuffer.indexCount);
@@ -251,7 +255,6 @@ namespace robot2D {
             }
 
             float textureIndex = 0.F;
-
             if(states.texture) {
                 for (uint32_t it = 1; it < m_renderBuffer.textureSlotIndex; it++)
                 {
@@ -308,7 +311,7 @@ namespace robot2D {
             int top = m_size.y - (viewport.ly + viewport.height);
             (void) top;
             m_quadShader.use();
-            m_quadShader.set_parameter("projection", m_view.getTransform().get_matrix());
+            m_quadShader.set("projection", m_view.getTransform().get_matrix());
             m_quadShader.unUse();
         }
 

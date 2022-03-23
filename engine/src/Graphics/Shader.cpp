@@ -27,7 +27,7 @@ source distribution.
 #include <robot2D/Graphics/Shader.hpp>
 #include <robot2D/Util/Logger.hpp>
 
-namespace robot2D{
+namespace robot2D {
     ShaderHandler::ShaderHandler() {
         shaderProgram = glCreateProgram();
     }
@@ -93,45 +93,44 @@ namespace robot2D{
     }
 
 
+    template<>
+    void ShaderHandler::set<const float>(const char* name, const float value) {
+        glUniform1f(glGetUniformLocation(shaderProgram, name), value);
+    }
+
+    template<>
+    void ShaderHandler::set<const float*>(const char* name, const float* value) {
+        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, name),
+                           1, GL_FALSE, value);
+    }
+
+    template<>
+    void ShaderHandler::set<int>(const char* name, const int value) {
+        glUniform1i(glGetUniformLocation(shaderProgram, name), value);
+    }
+
+    template<>
+    void ShaderHandler::set<vec2f>(const char* name, const vec2f vec) {
+        glUniform2f(glGetUniformLocation(shaderProgram, name), vec.x, vec.y);
+    }
+
+
     void ShaderHandler::use() const{
         glUseProgram(shaderProgram);
     }
 
-    void ShaderHandler::set_parameter(const char* name, const int& value) const{
-        glUniform1i(glGetUniformLocation(shaderProgram, name), value);
+
+    void ShaderHandler::unUse() const {
+        glUseProgram(0);
     }
 
-    void ShaderHandler::set_parameter(const char* name, const float& value) const{
-        glUniform1f(glGetUniformLocation(shaderProgram, name), value);
-    }
-
-    void ShaderHandler::set_parameter(const char* name, const float *matrix) const{
-        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, name),
-                           1, GL_FALSE, matrix);
-    }
-
-    void ShaderHandler::set_parameter(const char *name, const float& x, const float& y, const float& z) const{
-        glUniform3f(glGetUniformLocation(shaderProgram, name), x, y, z);
-    }
-
-    void ShaderHandler::set_parameter(const char *name, const vec2f &vec) const{
-        glUniform2f(glGetUniformLocation(shaderProgram, name), vec.x, vec.y);
-    }
-
-    void
-    ShaderHandler::set_parameter(const char *name, const float &x, const float &y, const float &z, const float &w) const{
-        glUniform4f(glGetUniformLocation(shaderProgram, name), x, y, z, w);
+    void ShaderHandler::setArray(const char* name, const int* value, const size_t& size) const {
+        glUniform1iv(glGetUniformLocation(shaderProgram, name), size, value);
     }
 
     int ShaderHandler::getProgram() const{
         return shaderProgram;
     }
 
-    void ShaderHandler::set_parameter(const char* name, const int* value, const size_t& size) const {
-        glUniform1iv(glGetUniformLocation(shaderProgram, name), size, value);
-    }
 
-    void ShaderHandler::unUse() const {
-        glUseProgram(0);
-    }
 }

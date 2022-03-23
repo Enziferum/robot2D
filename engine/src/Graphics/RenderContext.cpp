@@ -22,7 +22,9 @@ source distribution.
 #include <robot2D/Graphics/RenderContext.hpp>
 
 namespace robot2D {
-    RenderContext::RenderContext(const bool& blending, const bool& depth, const bool& logs):
+    RenderContext::RenderContext(const bool& blending,
+                                 const bool& depth,
+                                 const bool& logs):
     useBlending(blending), useDepthTest(depth), useLogs(logs) {}
 
     const RenderContext RenderContext::Default = RenderContext{};

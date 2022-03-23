@@ -29,7 +29,7 @@ namespace robot2D {
     struct ROBOT2D_EXPORT_API Vertex {
         vec2f position;
         vec2f texCoords;
-        Color color;
+        Color color = Color::White;
     };
 
     using VertexData = std::vector<Vertex>;
