@@ -43,7 +43,8 @@ namespace robot2D {
         template<typename T>
         void set(const char* name, const T value);
 
-        void setArray(const char* name, const int* value, const size_t& size) const;
+        template<typename T>
+        void setArray(const char* name, const T* value, const size_t& size) const;
 
         void use() const;
         void unUse() const;

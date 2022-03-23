@@ -24,12 +24,18 @@ source distribution.
 #include <robot2D/Graphics/RenderTarget.hpp>
 
 #include "RenderImpl.hpp"
+#include "robot2D/Graphics/RenderAPI.hpp"
 
 namespace robot2D {
 
-    RenderTarget::RenderTarget(const vec2u& size):
+    RenderTarget::RenderTarget(const vec2u& size,
+                               const WindowContext::RenderApi openGLVersion):
     m_render(nullptr),
     m_size(size) {
+        if(openGLVersion == WindowContext::RenderApi::OpenGL3_3)
+            RenderAPI::m_api = RenderApi::OpenGL3_3;
+        else if(openGLVersion == WindowContext::RenderApi::OpenGL4_5)
+            RenderAPI::m_api = RenderApi::OpenGL4_5;
         setup();
     }
 
@@ -37,11 +43,11 @@ namespace robot2D {
 
     void RenderTarget::setup() {
         if(!m_render)
-            m_render = robot2D::priv::RenderImpl::create();
+            m_render = robot2D::priv::RenderImpl::create(m_size);
 
         assert(m_render != nullptr && "Render Impl must be not null");
 
-        m_render -> setSize(m_size);
+        m_render -> setup();
     }
 
     void RenderTarget::clear(const Color& color) {

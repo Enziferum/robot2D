@@ -47,6 +47,7 @@ set(ENGINE_SRC
         ${INCLROOT}/Graphics/VertexArray.hpp
         ${INCLROOT}/Graphics/FrameBuffer.hpp
         ${INCLROOT}/Graphics/Image.hpp
+        ${INCLROOT}/Graphics/RenderAPI.hpp
 
 
         #Util
@@ -93,6 +94,7 @@ set(ENGINE_SRC ${ENGINE_SRC}
         ${SRCROOT}/Graphics/VertexArray.cpp
         ${SRCROOT}/Graphics/FrameBuffer.cpp
         ${SRCROOT}/Graphics/Image.cpp
+        ${SRCROOT}/Graphics/RenderAPI.cpp
 
         #Ecs
         ${SRCROOT}/Ecs/Bitmask.cpp
@@ -110,10 +112,10 @@ set(ENGINE_SRC ${ENGINE_SRC}
         # Impls
         ${SRCROOT}/Core/Desktop/DesktopWindowImpl.cpp
         ${SRCROOT}/Core/Desktop/DesktopCursorImpl.cpp
-        ${SRCROOT}/Graphics/Desktop/OpenGLRender.cpp
-        ${SRCROOT}/Graphics/Desktop/OpenGLBuffer.cpp
-        ${SRCROOT}/Graphics/Desktop/OpenGLVertexArray.cpp
-        ${SRCROOT}/Graphics/Desktop/OpenGLFrameBuffer.cpp
+        ${SRCROOT}/Graphics/OpenGL/OpenGLRender.cpp
+        ${SRCROOT}/Graphics/OpenGL/OpenGLBuffer.cpp
+        ${SRCROOT}/Graphics/OpenGL/OpenGLVertexArray.cpp
+        ${SRCROOT}/Graphics/OpenGL/OpenGLFrameBuffer.cpp
 
         PARENT_SCOPE
         )

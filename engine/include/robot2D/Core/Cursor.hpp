@@ -53,6 +53,5 @@ namespace robot2D {
         CursorHandle getRaw() const;
     private:
         std::unique_ptr<priv::CursorImpl> m_cursorImpl;
-        bool m_visible;
     };
 }

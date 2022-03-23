@@ -21,6 +21,8 @@ source distribution.
 
 #pragma once
 
+#include <unordered_map>
+
 #include <robot2D/Graphics/RenderStates.hpp>
 #include <robot2D/Graphics/Shader.hpp>
 #include <robot2D/Graphics/View.hpp>
@@ -28,6 +30,7 @@ source distribution.
 
 #include "../RenderImpl.hpp"
 #include "RenderBuffer.hpp"
+#include "robot2D/Graphics/RenderAPI.hpp"
 
 namespace robot2D {
     using uint = unsigned int;
@@ -35,7 +38,7 @@ namespace robot2D {
     namespace priv {
         class ROBOT2D_EXPORT_API OpenGLRender: public RenderImpl {
         public:
-            OpenGLRender();
+            OpenGLRender(const vec2u& windowSize);
             ~OpenGLRender();
 
             void clear(const Color &color = Color::Black) override;
@@ -44,15 +47,14 @@ namespace robot2D {
             void render(const VertexData& data, const RenderStates& states) const override;
             void render(const VertexArray::Ptr& vertexArray, RenderStates states) const override;
 
-            void setSize(const vec2u& size) override;
+            void setup() override;
             void setView(const View& view) override;
 
             const View& getView() override;
             const View& getDefaultView() override;
             virtual const RenderStats& getStats() const override;
         private:
-            void init();
-            void initOpenGL();
+            void setupOpenGL();
             void destroy();
 
             virtual void beforeRender() const override;
@@ -68,6 +70,14 @@ namespace robot2D {
             View m_view;
             View m_default;
             mutable RenderStats m_stats;
+            RenderApi m_renderApi;
+
+            enum class ShaderKey {
+                TextureSamples,
+                Projection
+            };
+            /// Instead using raw text in shader better have correct setup map
+            std::unordered_map<ShaderKey, std::string> m_shaderKeys;
         };
     }
 }

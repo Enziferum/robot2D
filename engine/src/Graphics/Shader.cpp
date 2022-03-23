@@ -124,8 +124,10 @@ namespace robot2D {
         glUseProgram(0);
     }
 
+    template<>
     void ShaderHandler::setArray(const char* name, const int* value, const size_t& size) const {
-        glUniform1iv(glGetUniformLocation(shaderProgram, name), size, value);
+        glUniform1iv(glGetUniformLocation(shaderProgram, name),
+                     static_cast<GLsizei>(size), value);
     }
 
     int ShaderHandler::getProgram() const{

@@ -23,7 +23,6 @@ source distribution.
 #include <memory>
 
 #include <robot2D/Config.hpp>
-
 #include "Drawable.hpp"
 #include "Sprite.hpp"
 #include "Shader.hpp"
@@ -33,16 +32,21 @@ source distribution.
 #include "Color.hpp"
 #include "RenderContext.hpp"
 #include "VertexArray.hpp"
+#include "robot2D/Core/WindowContext.hpp"
 
 namespace robot2D {
     namespace priv {
         class RenderImpl;
     }
 
-
+    /**
+     * \brief Make possible to render either Robot2D's Drawables or render custom VertexArray
+     *  It's usefull to render own ParticleEmitters, Custom Entites or etc ...
+     *  Under hood setups BatchRender of quad. By default in 2D Space everything is quad.
+     */
     class ROBOT2D_EXPORT_API RenderTarget {
     public:
-        RenderTarget(const vec2u& size);
+        RenderTarget(const vec2u& size, const WindowContext::RenderApi openGLVersion);
         virtual ~RenderTarget() = 0;
 
         virtual void setView(const View& view);
@@ -52,16 +56,17 @@ namespace robot2D {
         //virtual void init(const RenderContext& renderContext);
         void clear(const Color& color = Color::Black);
 
-        virtual void draw(const RenderStates& states);
-        virtual void draw(const VertexData& data, const RenderStates& states);
         virtual void draw(const Drawable& drawable, const RenderStates& states
                                                     = RenderStates::Default);
+        virtual void draw(const RenderStates& states);
+        virtual void draw(const VertexData& data, const RenderStates& states);
         virtual void draw(const VertexArray::Ptr& vertexArray, RenderStates states) const;
 
         virtual void beforeRender() const;
         virtual void afterRender() const;
         virtual void flushRender() const;
 
+        /// Get BatchRender's Stats
         const RenderStats& getStats() const;
     private:
         void setup();

@@ -29,9 +29,16 @@ source distribution.
 namespace robot2D {
     class Texture;
 
+    enum class PrimitiveRenderType {
+        Point,
+        Lines,
+        Triangles,
+        Quads
+    };
+
     struct ROBOT2D_EXPORT_API RenderInfo {
-        unsigned int customVao;
-        bool useIndices;
+        PrimitiveRenderType renderType = PrimitiveRenderType::Triangles;
+        uint32_t indexCount = 0;
     };
 
     struct ROBOT2D_EXPORT_API RenderStates {
@@ -40,12 +47,11 @@ namespace robot2D {
 
         const Texture* texture;
         ShaderHandler* shader;
-        RenderInfo* renderInfo;
-        const unsigned int* customVao;
-
         Color color;
         Transform transform;
-        uint32_t indexCount = 0;
+        RenderInfo* renderInfo;
+
+
         static const RenderStates Default;
     };
 }
