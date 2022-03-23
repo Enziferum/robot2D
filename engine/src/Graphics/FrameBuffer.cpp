@@ -20,7 +20,7 @@ source distribution.
 *********************************************************************/
 
 #include <robot2D/Graphics/FrameBuffer.hpp>
-#include "Desktop/OpenGLFrameBuffer.hpp"
+#include "OpenGL/OpenGLFrameBuffer.hpp"
 
 namespace robot2D {
     FrameBuffer::~FrameBuffer() {}

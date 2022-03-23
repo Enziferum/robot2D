@@ -20,7 +20,7 @@ source distribution.
 *********************************************************************/
 
 #include <robot2D/Graphics/VertexArray.hpp>
-#include "Desktop/OpenGLVertexArray.hpp"
+#include "OpenGL/OpenGLVertexArray.hpp"
 
 namespace robot2D {
     VertexArray::Ptr VertexArray::Create() {

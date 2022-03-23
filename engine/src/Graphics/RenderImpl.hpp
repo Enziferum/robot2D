@@ -37,7 +37,7 @@ namespace robot2D {
             RenderImpl();
             virtual ~RenderImpl() = 0;
 
-            static Ptr create();
+            static Ptr create(const vec2u& size);
             virtual void render(const RenderStates& states) = 0;
             virtual void render(const VertexData& data, const RenderStates& states) const = 0;
             virtual void render(const VertexArray::Ptr& vertexArray, RenderStates states) const = 0;
@@ -45,7 +45,7 @@ namespace robot2D {
             virtual void setView(const View& view) = 0;
             virtual const View& getView() = 0;
             virtual const View& getDefaultView() = 0;
-            virtual void setSize(const vec2u& size);
+            virtual void setup() = 0;
 
             virtual void beforeRender() const = 0;
             virtual void afterRender() const = 0;

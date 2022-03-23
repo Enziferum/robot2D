@@ -20,7 +20,7 @@ source distribution.
 *********************************************************************/
 
 #include "RenderImpl.hpp"
-#include "Desktop/OpenGLRender.hpp"
+#include "OpenGL/OpenGLRender.hpp"
 
 using RenderHandle = robot2D::priv::OpenGLRender;
 
@@ -31,12 +31,8 @@ namespace robot2D {
 
         RenderImpl::~RenderImpl() {}
 
-        RenderImpl::Ptr RenderImpl::create() {
-            return std::make_unique<RenderHandle>();
-        }
-
-        void RenderImpl::setSize(const vec2u& size) {
-            m_size = size;
+        RenderImpl::Ptr RenderImpl::create(const vec2u& size) {
+            return std::make_unique<RenderHandle>(size);
         }
     }
 }

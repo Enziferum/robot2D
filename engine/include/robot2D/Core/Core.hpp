@@ -24,8 +24,6 @@ source distribution.
 #include "Event.hpp"
 #include "Keyboard.hpp"
 #include "Mouse.hpp"
-#include "Sensor.hpp"
-#include "Touch.hpp"
 #include "Vector2.hpp"
 #include "Window.hpp"
 #include "WindowContext.hpp"

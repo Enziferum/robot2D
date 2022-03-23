@@ -26,14 +26,16 @@ source distribution.
 namespace robot2D{
 
     RenderWindow::RenderWindow():
-            Window{}, RenderTarget{m_win_size} {
+            Window{}, RenderTarget{m_win_size,
+                                   m_context.renderApi} {
     }
 
     RenderWindow::RenderWindow(const vec2u& size,
                                const std::string& name,
                                const WindowContext& context):
                                Window(size, name, context),
-                               RenderTarget(m_win_size) {
+                               RenderTarget(m_win_size,
+                                            context.renderApi) {
     }
 
 
@@ -46,6 +48,4 @@ namespace robot2D{
                          static_cast<unsigned int>(newSize.y)};
         m_win_size = m_size;
     }
-
-    void RenderWindow::setupGL() {}
 }

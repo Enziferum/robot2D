@@ -27,7 +27,7 @@ source distribution.
 namespace robot2D {
 
     /**
-     * \brief Heart of Engine's Rendering part
+     * \brief RenderWindow is mix of Window Management and Rendering Stuff
      */
     class ROBOT2D_EXPORT_API RenderWindow: public Window, public RenderTarget {
     public:
@@ -43,7 +43,5 @@ namespace robot2D {
         void resize(const robot2D::vec2i& newSize);
     protected:
         void onResize(const int& w, const int& h) override;
-    private:
-        void setupGL();
     };
 }
