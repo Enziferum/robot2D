@@ -25,12 +25,12 @@ source distribution.
 
 namespace robot2D{
 
+
+
     GLenum convertColorType(const ImageColorFormat& format) {
         switch(format) {
             case ImageColorFormat::RED:
                 return GL_RED;
-            case ImageColorFormat::LUMINANCE:
-                return GL_LUMINANCE_ALPHA;
             case ImageColorFormat::RGB:
                 return GL_RGB;
             case ImageColorFormat::RGBA:

@@ -43,6 +43,8 @@ namespace robot2D {
         void setColor(const Color& color);
         Color& getColor();
 
+        const Color& getColor() const;
+
         /// \brief allow to set Size/Scale of object
         void setScale(const vec2f& factor) override;
 
@@ -51,7 +53,6 @@ namespace robot2D {
         const Texture* getTexture();
 
         void setTextureRect(const IntRect& textureRect);
-
 
         /// \brief return to you rect in world coordinates
         FloatRect getGlobalBounds() const;

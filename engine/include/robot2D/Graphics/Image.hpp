@@ -29,7 +29,6 @@ namespace robot2D {
 
     enum ImageColorFormat {
         RED = 1,
-        LUMINANCE = 2,
         RGB = 3,
         RGBA = 4
     };
@@ -45,6 +44,7 @@ namespace robot2D {
         const robot2D::vec2u& getSize() const;
         robot2D::vec2u& getSize();
         const ImageColorFormat& getColorFormat() const;
+
         const std::vector<unsigned char>& getBuffer() const;
         unsigned char* getBuffer();
 

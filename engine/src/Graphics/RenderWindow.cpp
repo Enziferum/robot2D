@@ -25,15 +25,16 @@ source distribution.
 
 namespace robot2D{
 
-    RenderWindow::RenderWindow():Window(), RenderTarget(m_win_size) {
+    RenderWindow::RenderWindow():
+            Window{}, RenderTarget{m_win_size} {
     }
 
-    RenderWindow::RenderWindow(const vec2u& size, const std::string& name,
+    RenderWindow::RenderWindow(const vec2u& size,
+                               const std::string& name,
                                const WindowContext& context):
                                Window(size, name, context),
                                RenderTarget(m_win_size) {
-                                    setupGL();
-                               }
+    }
 
 
     void RenderWindow::onResize(const int& width, const int& height) {

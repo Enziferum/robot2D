@@ -22,13 +22,14 @@ source distribution.
 #pragma once
 
 #include <string>
-#include "robot2D/Core/Vector2.hpp"
+#include <robot2D/Core/Vector2.hpp>
 
 namespace robot2D {
 
     enum class shaderType {
         vertex,
-        fragment
+        fragment,
+        geometry
     };
 
 
@@ -38,19 +39,14 @@ namespace robot2D {
         ~ShaderHandler() = default;
 
         bool createShader(shaderType shader_type, const std::string& source, bool is_path);
+
+        template<typename T>
+        void set(const char* name, const T value);
+
+        void setArray(const char* name, const int* value, const size_t& size) const;
+
         void use() const;
         void unUse() const;
-
-        void set_parameter(const char* name, const float* matrix) const;
-        void set_parameter(const char* name, const float& x, const float& y,
-                           const float& z) const;
-        void set_parameter(const char* name, const int& value) const;
-        void set_parameter(const char* name, const int* value, const size_t& size) const;
-        void set_parameter(const char* name, const float& value) const;
-
-        void set_parameter(const char* name, const vec2f& vec) const;
-        void set_parameter(const char* name, const float& x, const float& y, const float& z,
-                           const float& w) const;
 
         int getProgram() const;
     private:
