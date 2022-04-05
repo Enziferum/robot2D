@@ -28,15 +28,17 @@ namespace robot2D {
     m_texture(nullptr),
     m_color(Color::White) {}
 
-    void Sprite::setTexture(const Texture& texture, const IntRect& textureRect ) {
-        if(!m_texture && (m_texture_rect == IntRect())){
+    void Sprite::setTexture(const Texture& texture, const IntRect& textureRect) {
+        m_texture_rect = textureRect;
+
+        if(!m_texture && (textureRect == IntRect())){
             auto size = texture.getSize();
-            //it's not correct for us
             m_texture_rect = IntRect(0, 0, size.x, size.y);
             setSize(size.x, size.y);
         }
+
         m_texture = &texture;
-        m_texture_rect = textureRect;
+        setTextureRect(m_texture_rect);
     }
 
     const Texture* Sprite::getTexture() {
@@ -78,16 +80,17 @@ namespace robot2D {
         if(!m_texture)
             return;
         auto t = getTransform();
-        t = t.scale(m_size);
+        if(m_size != robot2D::vec2f{})
+            t = t.scale(m_size);
 
         states.transform *= t;
         states.texture = m_texture;
         states.color = m_color;
 
-        vertices[0];
-        vertices[1];
-        vertices[2];
-        vertices[3];
+        vertices[0].position = states.transform * robot2D::vec2f {-0.5F, -0.5F};
+        vertices[1].position = states.transform * robot2D::vec2f {0.5F, -0.5F};
+        vertices[2].position = states.transform * robot2D::vec2f {0.5F, 0.5F};
+        vertices[3].position = states.transform * robot2D::vec2f {-0.5F, 0.5F};
 
         target.draw({vertices[0], vertices[1], vertices[2], vertices[3]}, states);
     }
@@ -115,7 +118,5 @@ namespace robot2D {
         vertices[3].texCoords = {convertToGL(left, static_cast<float>(tx_s.x)),
                                  convertToGL(top, static_cast<float>(tx_s.y))};
     }
-
-
 
 }

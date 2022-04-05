@@ -31,8 +31,8 @@ namespace robot2D {
 
         virtual void Bind() override;
         virtual void unBind() override;
-        virtual void setVertexBuffer(const VertexBuffer::Ptr& vertexBuffer) override;
-        virtual void setIndexBuffer(const IndexBuffer::Ptr& indexBuffer) override;
+        virtual void setVertexBuffer(const VertexBuffer::Ptr vertexBuffer) override;
+        virtual void setIndexBuffer(const IndexBuffer::Ptr indexBuffer) override;
         virtual const VertexBuffer::Ptr getVertexBuffer() const override;
         virtual const IndexBuffer::Ptr getIndexBuffer() const override;
     private:

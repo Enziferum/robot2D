@@ -68,7 +68,7 @@ namespace robot2D {
         glBindVertexArray(0);
     }
 
-    void OpenGLVertexArray::setVertexBuffer(const VertexBuffer::Ptr& vertexBuffer) {
+    void OpenGLVertexArray::setVertexBuffer(const VertexBuffer::Ptr vertexBuffer) {
         Bind();
         vertexBuffer -> Bind();
 
@@ -128,7 +128,7 @@ namespace robot2D {
         m_vertexBuffer = vertexBuffer;
     }
 
-    void OpenGLVertexArray::setIndexBuffer(const IndexBuffer::Ptr& indexBuffer) {
+    void OpenGLVertexArray::setIndexBuffer(const IndexBuffer::Ptr indexBuffer) {
         Bind();
         indexBuffer -> Bind();
         m_indexBuffer = indexBuffer;
