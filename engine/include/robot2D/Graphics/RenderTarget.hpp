@@ -40,26 +40,56 @@ namespace robot2D {
     }
 
     /**
-     * \brief Make possible to render either Robot2D's Drawables or render custom VertexArray
-     *  It's usefull to render own ParticleEmitters, Custom Entites or etc ...
-     *  Under hood setups BatchRender of quad. By default in 2D Space everything is quad.
+     * \brief Make possible to render either Robot2D's Drawables or render custom VertexArray.
+     * \details It's usefull to render own ParticleEmitters, Custom Entites or etc ...
+     *  Under hood setups BatchRender works with objects like quads because \n
+     *  by default in 2D Space everything is simple to understand like quad.
      */
     class ROBOT2D_EXPORT_API RenderTarget {
     public:
-        RenderTarget(const vec2u& size, const WindowContext::RenderApi openGLVersion);
+        RenderTarget(const vec2u& size,
+                     const WindowContext::RenderApi openGLVersion);
         virtual ~RenderTarget() = 0;
 
+        /// Set new Viewport.
         virtual void setView(const View& view);
+
+        /// get current Viewport.
         virtual const View& getView();
+
+        /// get default viewport for Window.
         virtual const View& getDefaultView();
 
-        //virtual void init(const RenderContext& renderContext);
+        /// Clear Window background space with custom color
         void clear(const Color& color = Color::Black);
 
+        /// \brief Makes possible to draw your custom Drawable inherit.
+        /// \details Also you are able to specify additional information.
+        /// Check RenderStates to get more information.
         virtual void draw(const Drawable& drawable, const RenderStates& states
                                                     = RenderStates::Default);
+        /// \brief Your custom Drawable inherit use it.
+        /// \details Drawable use to specify how to draw itself. \n
+        /// For example get Viewport or rendering stats.
+        /// In this method you don't set your data because your drawable is quad \n
+        /// In other case prefer other methods.
+        /// Check RenderStates to get more information.
         virtual void draw(const RenderStates& states);
+
+        /// \brief Your custom Drawable inherit use it.
+        /// \details Drawable use to specify how to draw itself. \n
+        /// For example get Viewport or rendering stats.
+        /// In this method you don't set your data because your drawable is quad \n
+        /// In other case prefer other methods.
+        /// Check RenderStates to get more information.
         virtual void draw(const VertexData& data, const RenderStates& states);
+
+        /// \brief Your custom Drawable inherit use it.
+        /// \details Drawable use to specify how to draw itself. \n
+        /// For example get Viewport or rendering stats.
+        /// In this method you don't set your data because your drawable is quad \n
+        /// In other case prefer other methods.
+        /// Check RenderStates to get more information.
         virtual void draw(const VertexArray::Ptr& vertexArray, RenderStates states) const;
 
         virtual void beforeRender() const;

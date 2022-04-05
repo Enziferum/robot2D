@@ -41,15 +41,31 @@ namespace robot2D {
         ResizeLeftRight,
         Hand
     };
-
+/**
+ * \brief Allow to use Cursor as object and set custom.
+ */
     class ROBOT2D_EXPORT_API Cursor {
     public:
+        /// Only initialize private implementation. To create use one of create methods.
         Cursor();
         ~Cursor();
 
+        /**
+         * \brief Allow to create own cursor from binary data.
+         * \details Don't use Graphics module format such Image / Texture due to use Core module with Graphics Depedency.
+         */
         bool createFromPixels(unsigned char* pixes, const vec2u& size);
+
+        /// Default one is OS - specific Arrow style cursor.
         void createDefault();
+
+        /// Allow to create specific cursor.
         void create(const CursorType& cursorType);
+
+        /**
+         * Returns OS specific or Internal Window Library.
+         * Ex for Desktop Cursor is GlfwCursor.
+         */
         CursorHandle getRaw() const;
     private:
         std::unique_ptr<priv::CursorImpl> m_cursorImpl;

@@ -27,7 +27,7 @@ source distribution.
 namespace robot2D {
 
     /**
-     * \brief RenderWindow is mix of Window Management and Rendering Stuff
+     * \brief RenderWindow is mix of Window Management and Render Stuff
      */
     class ROBOT2D_EXPORT_API RenderWindow: public Window, public RenderTarget {
     public:

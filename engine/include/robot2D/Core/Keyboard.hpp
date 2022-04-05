@@ -149,8 +149,10 @@ namespace robot2D {
         MENU =          348
     };
 
+    /// Create Robot2D Key format from raw code
     Key Int2Key(const int& code);
 
+    /// Create raw code format from Robot2D Key
     int key2Int(const Key& key);
 
     namespace Keyboard {

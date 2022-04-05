@@ -1,6 +1,5 @@
 ////////////////////////////////////////////////////////////
 /// \mainpage
-///
 /// \section welcome Welcome
 /// Welcome to the official robot2D documentation. Here you will find a
 /// view of the robot2D classes and functions. <br/>
@@ -20,7 +19,7 @@
 ///
 ///     // Load a sprite to display
 ///     robot2D::Texture texture;
-///     if (!texture.loadFromFile("cute_image.jpg"))
+///     if (!texture.loadFromFile("awesomeface.png"))
 ///         return EXIT_FAILURE;
 ///     robot2D::Sprite sprite(texture);
 ///
@@ -40,18 +39,25 @@
 ///         while (window.pollEvent(event))
 ///         {
 ///             // Close window: exit
-///             if (event.type == robot2D::Event::Closed)
-///                 window.close();
+///             if (event.type == robot2D::KeyboardPressed 
+///					&& event.key.code == robot2D::Key::ESC)
+///                 	window.close();
 ///         }
 ///
 ///         // Clear screen
 ///         window.clear();
+///			
+///			// Setup Render			
+///			window.beforeRender();
 ///
-///         // Draw the sprite
+///         // Insert the sprite to RenderBuffer
 ///         window.draw(sprite);
 ///
-///         // Draw the string
+///         // Insert the text to RenderBuffer
 ///         window.draw(text);
+///
+///			// Processing Render
+///			window.afterRender();
 ///
 ///         // Update the window
 ///         window.display();
