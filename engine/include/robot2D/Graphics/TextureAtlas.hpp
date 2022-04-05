@@ -24,17 +24,27 @@ source distribution.
 #include "Texture.hpp"
 
 namespace robot2D {
+    /**
+     * \brief Packed several textures into one.
+     * \details To optimize rendering stuff more simple to work with one texture. \n
+     * Allow to load texture and get packed texture with their frames.
+     */
     class ROBOT2D_EXPORT_API TextureAtlas {
     public:
         TextureAtlas();
         ~TextureAtlas() = default;
 
+        /// Load texture and fill information about packed textures
         bool loadFromFile(const std::string& file, const robot2D::vec2u& itemSize,
                           const robot2D::vec2f& offset = {});
 
+        /// How many textures are packed
         const size_t& getItemsCount() const;
+        /// Whole texture
         const Texture& getTexture() const;
+        /// Size of one packed texture
         const robot2D::vec2u& getItemSize() const;
+        /// Frame = Rectangle of packed texture with offsets from topleft coordinate
         robot2D::FloatRect getItemFrame(const robot2D::vec2u& index) const;
     private:
         Texture m_texture;

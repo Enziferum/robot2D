@@ -24,10 +24,16 @@ source distribution.
 #include <robot2D/Config.hpp>
 
 namespace robot2D {
-
+    /**
+     * \brief RGBA Color format.
+     * \details RGBA = Red, Green, Blue, Alpha.
+     * Values in RGBA from 0 to 255, but in OpenGL(for example) from 0.0 to 1.0.
+     */
     class ROBOT2D_EXPORT_API Color final {
     public:
+        /// Defalut color is black (0, 0, 0, 255).
         Color();
+        /// Custom color by RGBA components.
         Color(const float& red, const float& green, const float& blue,
               const float& alpha = 255.F);
         ~Color() = default;
@@ -42,9 +48,12 @@ namespace robot2D {
         static const Color Cyan;        //!< Cyan predefined color
         static const Color Transparent; //!< Transparent (black) predefined color
 
+        /// Convert current object in OpenGL color format
         Color toGL() const;
 
+        /// Convert from OpenGL 0 to 1 by RGBA 0 to 255 format.
         static Color fromGL(const float& red, const float& green, const float& blue, const float& alpha = 255.F);
+        /// Convert from RGBA 0 to 255 format by OpenGL 0 to 1.
         static Color toGL(const float& red, const float& green, const float& blue, const float& alpha = 1.F);
     public:
         float red;

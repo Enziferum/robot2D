@@ -26,29 +26,52 @@ source distribution.
 #include <robot2D/Core/Vector2.hpp>
 
 namespace robot2D {
-
+    /// Image color channels
     enum ImageColorFormat {
         RED = 1,
         RGB = 3,
         RGBA = 4
     };
 
-    /// Image stores Texture Data as Buffer
+    /**
+     * \brief Stores Pixel Buffer in independ format.
+     * \details Under robot2D::Texture using Image.
+     * Also better to use Image when you need store / modificate Pixel Buffer and don't need Graphics API wrapper.
+     */
     class ROBOT2D_EXPORT_API Image {
     public:
+        /// \brief Not create pixel buffer only initialize.
+        /// \details To fill pixel buffer either use create method to create from own pixel buffer or
+        /// load image from disk.
         Image();
         ~Image() = default;
 
+        /**
+         * \brief load image from disk.
+         * @param path absolute or relative path to file on disk.
+         * @return Were loading process is success?
+         */
         bool loadFromFile(const std::string& path);
 
+        /// Full size.
         const robot2D::vec2u& getSize() const;
+
+        /// Full size.
         robot2D::vec2u& getSize();
+
+        /// Image has several variant of channels.
         const ImageColorFormat& getColorFormat() const;
 
+        /// Returns pixelBuffer which not possible to modificate.
         const std::vector<unsigned char>& getBuffer() const;
+
+        /// Returns pixelBuffer which possible to modificate.
         unsigned char* getBuffer();
 
+        /// Creating image from PixelBuffer and specify Color channels directly.
         bool create(const vec2u& size, const void* data, const ImageColorFormat&);
+
+        /// Save onto disk by absolute or relative path.
         bool save(const std::string& path);
     private:
         vec2u m_size;

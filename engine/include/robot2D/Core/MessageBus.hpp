@@ -30,16 +30,29 @@ source distribution.
 
 namespace robot2D {
 
+    /**
+     * \brief Postman for custom Data as Message.
+     * \details To communicate with different parts of your project you can use  \n
+     * either 'callbacks' or notifications / messages.
+     * Post Message is for flexible process if compare to callbacks because it's allow to don't worry \name
+     * about callbacks memory / lifetime and catched objects.
+    */
     class ROBOT2D_EXPORT_API MessageBus final {
     public:
+        ///\brief Only initialize MessageBus.
+        ///\details to pack / post message use postMessage method.
         MessageBus();
+
         ~MessageBus() = default;
 
+        /// Process input message and deliver to your Message Handler
         bool pollMessages(Message& message);
 
+        /// Push your message into processing queue
         template<typename T>
         T* postMessage(Message::ID);
 
+        /// Clear internal buffers
         void clear();
     private:
         std::vector<void*> clearBuffer;

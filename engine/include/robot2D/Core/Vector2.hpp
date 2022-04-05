@@ -23,9 +23,14 @@ source distribution.
 
 #include <robot2D/Config.hpp>
 
-namespace robot2D{
+namespace robot2D {
+
+    /**
+     * \brief 2-dimensional format of storing Data. Usefull for Coordinate system.
+     * @tparam T internal x, y format. Using prebased formats for float, int, unsigned int
+     */
     template<typename T>
-    struct ROBOT2D_EXPORT_API Vector2{
+    struct ROBOT2D_EXPORT_API Vector2 {
         Vector2();
         Vector2(const T& x, const T& y);
 

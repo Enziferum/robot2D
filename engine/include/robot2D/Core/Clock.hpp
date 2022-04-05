@@ -25,12 +25,16 @@ source distribution.
 #include "Time.hpp"
 
 namespace robot2D {
+/**
+ * \brief OS - independent Time clocking object.
+ * \details
+ */
     class ROBOT2D_EXPORT_API Clock {
     public:
         Clock();
         ~Clock() = default;
 
-        // returns delta Time
+        /// Returns process delta in Time format.
         Time restart();
     private:
         std::chrono::time_point<std::chrono::high_resolution_clock> m_start;

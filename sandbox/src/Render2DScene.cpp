@@ -25,7 +25,8 @@ source distribution.
 #include <sandbox/Components.hpp>
 
 namespace {
-    const robot2D::vec2f position = robot2D::vec2f {100.F, 100.F};
+    const robot2D::vec2f
+    position = robot2D::vec2f {100.F, 100.F};
     const robot2D::vec2f size = robot2D::vec2f {100.F, 100.F};
     constexpr const char* texturePath = "res/textures/old_logo.png";
     constexpr unsigned startEntitiesCount = 5;

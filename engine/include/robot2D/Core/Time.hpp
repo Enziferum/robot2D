@@ -24,6 +24,13 @@ source distribution.
 #include <robot2D/Config.hpp>
 
 namespace robot2D {
+
+    /**
+     * \brief Time wraps raw variable format and allow to use in Human.
+     * \details Formats:
+     * Seconds, Milli / Micro seconds.
+     * Also returning format for Clock entity.
+     */
     class ROBOT2D_EXPORT_API Time {
     public:
         Time(int64_t time = 0LL);
