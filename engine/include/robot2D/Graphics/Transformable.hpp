@@ -58,7 +58,7 @@ namespace robot2D {
         const Transform& getTransform() const;
 
     protected:
-         vec2f m_pos;
+         mutable vec2f m_pos;
          vec2f m_origin;
          vec2f m_scale_factor;
          vec2f m_size;

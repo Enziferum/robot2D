@@ -41,7 +41,7 @@ namespace robot2D {
         bool createShader(shaderType shader_type, const std::string& source, bool is_path);
 
         template<typename T>
-        void set(const char* name, const T value);
+        void set(const char* name, const T value) const;
 
         template<typename T>
         void setArray(const char* name, const T* value, const size_t& size) const;

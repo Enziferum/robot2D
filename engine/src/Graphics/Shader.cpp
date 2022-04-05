@@ -26,6 +26,7 @@ source distribution.
 #include <robot2D/Graphics/GL.hpp>
 #include <robot2D/Graphics/Shader.hpp>
 #include <robot2D/Util/Logger.hpp>
+#include <robot2D/Graphics/Color.hpp>
 
 namespace robot2D {
     ShaderHandler::ShaderHandler() {
@@ -94,26 +95,41 @@ namespace robot2D {
 
 
     template<>
-    void ShaderHandler::set<const float>(const char* name, const float value) {
+    void ShaderHandler::set<const float>(const char* name, const float value) const {
         glUniform1f(glGetUniformLocation(shaderProgram, name), value);
     }
 
     template<>
-    void ShaderHandler::set<const float*>(const char* name, const float* value) {
+    void ShaderHandler::set<const float*>(const char* name, const float* value) const  {
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram, name),
                            1, GL_FALSE, value);
     }
 
     template<>
-    void ShaderHandler::set<int>(const char* name, const int value) {
+    void ShaderHandler::set<int>(const char* name, const int value) const  {
         glUniform1i(glGetUniformLocation(shaderProgram, name), value);
     }
 
     template<>
-    void ShaderHandler::set<vec2f>(const char* name, const vec2f vec) {
+    void ShaderHandler::set<bool>(const char* name, const bool value) const  {
+        glUniform1i(glGetUniformLocation(shaderProgram, name), value);
+    }
+
+    template<>
+    void ShaderHandler::set<float>(const char* name, const float value) const  {
+        glUniform1f(glGetUniformLocation(shaderProgram, name), value);
+    }
+
+    template<>
+    void ShaderHandler::set<vec2f>(const char* name, const vec2f vec) const  {
         glUniform2f(glGetUniformLocation(shaderProgram, name), vec.x, vec.y);
     }
 
+    template<>
+    void ShaderHandler::set<Color>(const char* name, const Color vec) const  {
+        glUniform4f(glGetUniformLocation(shaderProgram, name), vec.red, vec.green,
+                    vec.blue, vec.alpha);
+    }
 
     void ShaderHandler::use() const{
         glUseProgram(shaderProgram);

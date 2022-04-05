@@ -30,6 +30,7 @@ namespace robot2D {
             in vec4 Color;
             in float TexIndex;
             uniform sampler2D textureSamplers[16];
+
             void main()
             {
                 int index = int(TexIndex);

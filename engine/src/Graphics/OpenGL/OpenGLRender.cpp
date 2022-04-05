@@ -43,6 +43,11 @@ namespace robot2D {
         // TODO from RenderAPI ?
         constexpr bool useBlending = true;
 
+        const robot2D::vec2f textureCoords[4] = { { 0.0f, 0.0f },
+                                           { 1.0f, 0.0f },
+                                           { 1.0f, 1.0f },
+                                           { 0.0f, 1.0f } };
+
 #if defined(ROBOT2D_WINDOWS) or defined(ROBOT2D_LINUX)
         void OpenGLMessageCallback(
                 unsigned source,
@@ -206,11 +211,6 @@ namespace robot2D {
             glClear(GL_COLOR_BUFFER_BIT);
         }
 
-        robot2D::vec2f textureCoords[] = { { 0.0f, 0.0f },
-                                           { 1.0f, 0.0f },
-                                           { 1.0f, 1.0f },
-                                           { 0.0f, 1.0f } };
-
         void OpenGLRender::render(const RenderStates& states) {
             VertexData quadVertexData = {
                     {
@@ -230,8 +230,6 @@ namespace robot2D {
             };
             render(quadVertexData, states);
         }
-
-
 
         void OpenGLRender::render(const VertexData& data, const RenderStates& states) const {
             // Rendering quads only not supported
@@ -385,7 +383,7 @@ namespace robot2D {
             }
 
             GLsizei drawIndexCount = states.renderInfo ? static_cast<GLsizei>(states.renderInfo -> indexCount)
-                    : static_cast<GLsizei>(vertexArray -> getIndexBuffer() ->getSize());
+                    : static_cast<GLsizei>(vertexArray -> getIndexBuffer() -> getSize() / 4);
 
             glDrawElements(drawMode,
                            drawIndexCount,

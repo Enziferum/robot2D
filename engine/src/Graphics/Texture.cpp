@@ -24,9 +24,6 @@ source distribution.
 #include <robot2D/Util/Logger.hpp>
 
 namespace robot2D{
-
-
-
     GLenum convertColorType(const ImageColorFormat& format) {
         switch(format) {
             case ImageColorFormat::RED:
