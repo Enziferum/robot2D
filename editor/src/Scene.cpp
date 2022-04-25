@@ -25,8 +25,10 @@ source distribution.
 #include <robot2D/Graphics/RenderTarget.hpp>
 
 namespace editor {
-    Scene::Scene(robot2D::MessageBus& messageBus): m_scene(messageBus, false),
-    m_messageBus{messageBus} {
+    Scene::Scene(robot2D::MessageBus& messageBus):
+    m_scene(messageBus, false),
+    m_messageBus{messageBus}
+    {
         initScene();
     }
 
@@ -67,7 +69,9 @@ namespace editor {
     }
 
     void Scene::removeEntity(robot2D::ecs::Entity entity) {
-        auto found = std::find_if(m_sceneEntities.begin(), m_sceneEntities.end(), [&entity](robot2D::ecs::Entity it) {
+        auto found = std::find_if(m_sceneEntities.begin(),
+                                  m_sceneEntities.end(),
+                                  [&entity](robot2D::ecs::Entity it) {
             return it == entity;
         });
         if(found == m_sceneEntities.end())
@@ -79,8 +83,6 @@ namespace editor {
     void Scene::draw(robot2D::RenderTarget& target, robot2D::RenderStates states) const {
         target.draw(m_scene);
     }
-
-
 
 }
 

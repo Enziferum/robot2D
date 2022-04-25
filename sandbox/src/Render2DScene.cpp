@@ -90,9 +90,7 @@ robot2D::vec2f getScale(robot2D::vec2f targetSize, robot2D::vec2u originSize) {
 }
 
 void Render2DScene::render() {
-    m_window.beforeRender();
-    m_window.draw(m_scene);
-    m_window.afterRender();
+    m_window.render(m_scene);
 }
 
 void Render2DScene::createEntity(const robot2D::vec2f& position) {

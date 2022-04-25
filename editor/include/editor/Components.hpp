@@ -80,4 +80,20 @@ namespace editor {
         robot2D::View m_view;
         robot2D::FloatRect m_actualViewport;
     };
+
+
+    class Collider2DComponent final {
+    public:
+        Collider2DComponent(){}
+    };
+
+    class Physics2DComponent final {
+    public:
+        Physics2DComponent(){}
+    };
+
+    class NativeScriptComponent final {
+    public:
+        NativeScriptComponent(){}
+    };
 }

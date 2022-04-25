@@ -74,11 +74,11 @@ namespace robot2D {
     }
 
     const View& RenderTarget::getView() {
-        return m_render->getView();
+        return m_render -> getView();
     }
 
     const View& RenderTarget::getDefaultView() {
-        return m_render->getDefaultView();
+        return m_render -> getDefaultView();
     }
 
     void RenderTarget::beforeRender() const {
@@ -101,5 +101,13 @@ namespace robot2D {
         if(m_render == nullptr)
             return;
         m_render -> render(vertexArray, states);
+    }
+
+    void RenderTarget::render(const Drawable& drawable, const RenderStates& states) {
+        if(m_render == nullptr)
+            return;
+        beforeRender();
+        drawable.draw(*this, states);
+        afterRender();
     }
 }

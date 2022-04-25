@@ -36,7 +36,8 @@ namespace robot2D {
             setup();
         }
 
-        DesktopWindowImpl::DesktopWindowImpl(const vec2u& size, const std::string &name,
+        DesktopWindowImpl::DesktopWindowImpl(const vec2u& size,
+                                             const std::string& name,
                                              WindowContext& context):
                 m_window(nullptr),
                 m_size(size),
@@ -205,7 +206,7 @@ namespace robot2D {
             Event event;
             event.type = Event::MouseWheel;
             event.wheel.scroll_x = 0;
-            event.wheel.scroll_y += float(ypos);
+            event.wheel.scroll_y = float(ypos);
             window->m_event_queue.push(event);
         }
 

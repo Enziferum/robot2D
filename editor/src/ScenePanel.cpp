@@ -249,6 +249,33 @@ namespace editor {
                 ImGui::CloseCurrentPopup();
             }
 
+            if (ImGui::MenuItem("Physics2D"))
+            {
+                if (!m_selectedEntity.hasComponent<Physics2DComponent>())
+                    m_selectedEntity.addComponent<Physics2DComponent>();
+                else
+                    RB_EDITOR_WARN("This entity already has the Physics2D Component!");
+                ImGui::CloseCurrentPopup();
+            }
+
+            if (ImGui::MenuItem("Collider2D"))
+            {
+                if (!m_selectedEntity.hasComponent<Collider2DComponent>())
+                    m_selectedEntity.addComponent<Collider2DComponent>();
+                else
+                    RB_EDITOR_WARN("This entity already has the Collider2D Component!");
+                ImGui::CloseCurrentPopup();
+            }
+
+            if (ImGui::MenuItem("Scripting"))
+            {
+                if (!m_selectedEntity.hasComponent<NativeScriptComponent>())
+                    m_selectedEntity.addComponent<NativeScriptComponent>();
+                else
+                    RB_EDITOR_WARN("This entity already has the Scripting Component!");
+                ImGui::CloseCurrentPopup();
+            }
+
             ImGui::EndPopup();
         }
 
@@ -283,17 +310,23 @@ namespace editor {
                 {
                     const wchar_t* path = (const wchar_t*)payload->Data;
                     std::filesystem::path texturePath = std::filesystem::path("assets") / path;
-
-
-                    RB_EDITOR_INFO("PATH {0}", texturePath.string().c_str());
-//                    if(!texture.loadFromFile(texturePath.string()))
-//                        return;
-//
-//
-//                    component.setTexture(texture);
+                    // todo load if neaded
                 }
                 ImGui::EndDragDropTarget();
             }
+        });
+
+
+        drawComponent<Physics2DComponent>("Physics2D", entity, [](auto& component) {
+        });
+
+        drawComponent<Collider2DComponent>("Collider2D", entity, [](auto& component) {
+            robot2D::vec2f box{};
+            DrawVec2Control("Box", box);
+        });
+
+        drawComponent<NativeScriptComponent>("Scripting", entity, [](auto& component) {
+
         });
     }
 

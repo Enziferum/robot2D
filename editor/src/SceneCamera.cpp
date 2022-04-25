@@ -30,7 +30,8 @@ namespace editor {
 
     void SceneCamera::onEvent(const robot2D::Event& event) {
         if(event.type == robot2D::Event::MouseWheel) {
-            m_zoom = m_configuration.zoomOffset + event.wheel.scroll_y * m_configuration.zoomMultiplier;
+            float wheelScroll = event.wheel.scroll_y;
+            m_zoom = m_configuration.zoomOffset +  wheelScroll * m_configuration.zoomMultiplier;
             m_view.zoom(m_zoom);
         }
 

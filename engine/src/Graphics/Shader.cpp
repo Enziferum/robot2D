@@ -29,9 +29,8 @@ source distribution.
 #include <robot2D/Graphics/Color.hpp>
 
 namespace robot2D {
-    ShaderHandler::ShaderHandler() {
-        shaderProgram = glCreateProgram();
-    }
+    ShaderHandler::ShaderHandler():
+    shaderProgram{-1} {}
 
     //todo rewrite reading file
     std::tuple<bool, std::string> loadFromFile(const char* path) {
@@ -79,6 +78,8 @@ namespace robot2D {
     }
 
     bool ShaderHandler::createShader(shaderType shader_type, const std::string& source, bool is_path) {
+        if(shaderProgram == -1)
+            shaderProgram = glCreateProgram();
         int shader = setupShader(shader_type, source.c_str(), is_path);
         glAttachShader(shaderProgram, shader);
         glLinkProgram(shaderProgram);

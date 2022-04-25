@@ -18,8 +18,12 @@ and must not be misrepresented as being the original software.
 3. This notice may not be removed or altered from any
 source distribution.
 *********************************************************************/
+
 #include <stdexcept>
+#include <map>
+
 #include <imgui/imgui.h>
+#include <robot2D/Extra/Api.hpp>
 #include <tfd/tinyfiledialogs.h>
 
 #include <editor/Editor.hpp>
@@ -29,7 +33,7 @@ source distribution.
 #include <editor/MenuPanel.hpp>
 #include <editor/InspectorPanel.hpp>
 
-#include <editor/Gui/Api.hpp>
+
 #include <editor/SceneSerializer.hpp>
 #include <editor/Components.hpp>
 #include <editor/EditorStyles.hpp>
@@ -42,10 +46,14 @@ namespace editor {
     m_state(State::Edit),
     m_window{window},
     m_messageBus{messageBus},
-    m_activeScene{ nullptr }, m_frameBuffer{nullptr}, m_ViewportSize{},
     m_currentProject{nullptr},
+    m_activeScene{ nullptr },
+    m_frameBuffer{nullptr},
+    m_ViewportSize{},
     m_configuration{},
-    m_sceneManager{m_messageBus}{}
+    m_sceneManager{m_messageBus} {
+
+    }
 
     void Editor::setup() {
         for(auto& it: m_configuration.texturePaths) {
@@ -74,7 +82,21 @@ namespace editor {
         applyStyle(EditorStyle::GoldBlack);
     }
 
+    struct Binding {
+
+    };
+
+    struct EventBinder {
+
+        template<typename Func>
+        void bind(const Binding&& binding, const Func&& func){}
+    };
+
     void Editor::handleEvents(const robot2D::Event& event) {
+        EventBinder m_eventBinder;
+        m_eventBinder.bind({}, [](){});
+
+
         if(event.type == robot2D::Event::KeyPressed) {
             if(event.key.code == robot2D::Key::LEFT_CONTROL) {
                 m_configuration.m_leftCtrlPressed = true;
@@ -100,14 +122,14 @@ namespace editor {
         switch(m_state) {
             case State::Edit: {
                 m_activeScene -> update(dt);
-                m_panelManager.update(dt);
                 break;
             }
             case State::Run: {
-                m_activeScene ->updateRuntime(dt);
+                m_activeScene -> updateRuntime(dt);
                 break;
             }
         }
+        m_panelManager.update(dt);
     }
 
     void Editor::render() {
@@ -127,9 +149,6 @@ namespace editor {
             auto transform = it.getComponent<TransformComponent>();
 
             robot2D::RenderStates renderStates;
-            if(sprite.getTexturePointer() == nullptr) {
-                sprite.setTexture(m_textures.get(EditorConfiguration::TextureID::Logo));
-            }
             renderStates.texture = &sprite.getTexture();
             renderStates.transform *= transform.getTransform();
             renderStates.color = sprite.getColor();
@@ -137,7 +156,6 @@ namespace editor {
         }
 
         m_window.afterRender();
-        m_window.flushRender();
 
         if(m_configuration.useGUI) {
             m_frameBuffer -> unBind();
@@ -152,9 +170,9 @@ namespace editor {
         window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
 
         const ImGuiViewport* viewport = ImGui::GetMainViewport();
-        ImGui::SetNextWindowPos(viewport->WorkPos);
-        ImGui::SetNextWindowSize(viewport->WorkSize);
-        ImGui::SetNextWindowViewport(viewport->ID);
+        ImGui::SetNextWindowPos(viewport -> WorkPos);
+        ImGui::SetNextWindowSize(viewport -> WorkSize);
+        ImGui::SetNextWindowViewport(viewport -> ID);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.F);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.F);
 
@@ -175,18 +193,20 @@ namespace editor {
 
         auto stats = m_window.getStats();
         m_panelManager.getPanel<InspectorPanel>().setRenderStats(std::move(stats));
-
         m_panelManager.render();
+
         ImGui::End();
+
+        ui_toolbar();
 
         /// Viewport Panel ///
 
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
-        ImGui::Begin("Viewport");
+        ImGui::Begin("##Viewport", nullptr, ImGuiWindowFlags_NoTitleBar);
         auto ViewPanelSize = ImGui::GetContentRegionAvail();
         if(m_ViewportSize != robot2D::vec2u { ViewPanelSize.x, ViewPanelSize.y}) {
             m_ViewportSize = {ViewPanelSize.x, ViewPanelSize.y};
-            //m_frameBuffer -> Resize(m_ViewportSize);
+            m_frameBuffer -> Resize(m_ViewportSize);
         }
         ImGui::RenderFrameBuffer(m_frameBuffer, {m_ViewportSize.x, m_ViewportSize.y});
         if (ImGui::BeginDragDropTarget())
@@ -224,8 +244,11 @@ namespace editor {
                 if(ImGui::MenuItem("Open", "Ctrl+O")) {
                     std::string openPath = "assets/scenes/demoScene.robot2D";
                     const char* patterns[1] = {"*.scene"};
-                    char* path = tinyfd_openFileDialog("Load Scene", nullptr,
-                                                       1, patterns, "Scene", 0);
+                    const char* path = tinyfd_openFileDialog("Load Scene", nullptr,
+                                                       1,
+                                                       patterns,
+                                                       "Scene",
+                                                       0);
                     if (path != nullptr) {
                         openPath = std::string(path);
                         openScene(path);
@@ -235,7 +258,7 @@ namespace editor {
                 if(ImGui::MenuItem("Save", "Ctrl+Shift+S")) {
                     std::string savePath = "assets/scenes/demoScene.robot2D";
                     const char* patterns[1] = {"*.scene"};
-                    char* path = tinyfd_saveFileDialog("Load Scene", nullptr,
+                    const char* path = tinyfd_saveFileDialog("Load Scene", nullptr,
                                                        1, patterns, "Scene");
                     if(path != nullptr) {
                         savePath = std::string(path);
@@ -255,7 +278,7 @@ namespace editor {
             return false;
         }
         m_activeScene = m_sceneManager.getActiveScene();
-        openScene(m_activeScene->getPath());
+        openScene(m_activeScene -> getPath());
         return true;
     }
 
@@ -295,6 +318,56 @@ namespace editor {
 
         m_window.setMaximazed(true);
         prepare();
+    }
+
+    void Editor::ui_toolbar() {
+        const auto& colors = ::ImGui::GetStyle().Colors;
+        const auto& buttonHovered = colors[ImGuiCol_ButtonHovered];
+        const auto& buttonActive = colors[ImGuiCol_ButtonActive];
+
+        ImGui::WindowOptions windowOptions {
+                {
+                    {ImGuiStyleVar_WindowPadding, {0, 2}},
+                    {ImGuiStyleVar_ItemInnerSpacing, {}}
+                },
+                {
+                    {ImGuiCol_Button, robot2D::Color::fromGL(0.F, 0.F, 0.F, 0.F)},
+                    {ImGuiCol_ButtonHovered, robot2D::Color::fromGL(buttonHovered.x,buttonHovered.z, 0.5F)},
+                    {ImGuiCol_ButtonActive,robot2D::Color::fromGL(buttonActive.x,buttonActive.z, 0.5F)}
+                }
+        };
+        windowOptions.name = "##toolbar";
+        windowOptions.flagsMask = ImGuiWindowFlags_NoScrollbar;
+
+        ImGui::createWindow(windowOptions, [this]() {
+            auto texID = m_state == State::Edit ? EditorConfiguration::TextureID::RunButton
+                                                : EditorConfiguration::TextureID::EditButton;
+            float size = ::ImGui::GetWindowHeight() - 4.F;
+            ::ImGui::SetCursorPosX((::ImGui::GetWindowContentRegionMax().x * 0.5F) - (size * 0.5F));
+            if(::ImGui::ImageButton(m_textures.get(texID), robot2D::vec2f{size, size}))
+            {
+                if (m_state == State::Edit) {
+                    onSceneRun();
+                    return;
+                }
+
+                if (m_state == State::Run) {
+                    onSceneEdit();
+                    return;
+                }
+            }
+        });
+    }
+
+    void Editor::onSceneRun() {
+        m_state = State::Run;
+        // 1. load dll
+        // 2. setup
+    }
+
+    void Editor::onSceneEdit() {
+        m_state = State::Edit;
+        // unload dll
     }
 
 }

@@ -399,6 +399,7 @@ namespace robot2D {
                 currentShader -> unUse();
         }
 
+
         const RenderStats& OpenGLRender::getStats() const {
             return m_stats;
         }

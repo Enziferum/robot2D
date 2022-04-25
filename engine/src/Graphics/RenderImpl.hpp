@@ -27,6 +27,7 @@ source distribution.
 #include <robot2D/Graphics/Vertex.hpp>
 #include <robot2D/Graphics/RenderStats.hpp>
 #include "robot2D/Graphics/VertexArray.hpp"
+#include <robot2D/Graphics/Drawable.hpp>
 
 namespace robot2D {
     namespace priv {

@@ -36,7 +36,7 @@ namespace editor {
 
     struct EditorConfiguration {
         enum class TextureID {
-            Face, Logo, White
+            Face, Logo, White, RunButton, EditButton
         };
 
         const bool useGUI = true;
@@ -47,6 +47,8 @@ namespace editor {
         ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
         std::unordered_map<TextureID, std::string> texturePaths = {
                 {TextureID::Logo, "logo.png"},
+                {TextureID::EditButton, "StopButton.png"},
+                {TextureID::RunButton, "PlayButton.png"},
         };
     };
 
@@ -75,6 +77,10 @@ namespace editor {
 
         bool createScene();
         void openScene(const std::string& path);
+
+        void onSceneRun();
+        void onSceneEdit();
+        void ui_toolbar();
     private:
         enum class State {
             Edit,
@@ -95,6 +101,7 @@ namespace editor {
         robot2D::ResourceHandler<robot2D::Texture, EditorConfiguration::TextureID> m_textures;
         robot2D::vec2u m_ViewportSize;
         robot2D::Color m_sceneClearColor;
+
         EditorConfiguration m_configuration;
         SceneManager m_sceneManager;
     };
