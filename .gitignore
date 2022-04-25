@@ -5,3 +5,4 @@ cmake-build-debug/
 cmake/generated/
 docs/html
 docs/latex
+venv/

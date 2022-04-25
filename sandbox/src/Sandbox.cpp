@@ -19,46 +19,35 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include <robot2D/Core/Clock.hpp>
-#include "sandbox/Sandbox.hpp"
+#include <sandbox/Sandbox.hpp>
+/// Scenes ///
+#include <sandbox/Render2DScene.hpp>
+#include <sandbox/LayerScene.hpp>
+/// Scenes ///
 
-namespace {
-    robot2D::Clock m_frameClock;
-    constexpr float timePerFrame = 1.F / 60.F;
-    float processedTime = 0.F;
+Sandbox::Sandbox():
+robot2D::Application(),
+m_scene(nullptr)
+{
 }
 
-Sandbox::Sandbox(robot2D::RenderWindow& window):
-    m_window(window), m_scene(nullptr) {
+void Sandbox::setup() {
+    //// Put own scenes here /////
+    Render2DScene::Ptr render2DScene = std::make_unique<Render2DScene>(*m_window);
+    render2DScene -> setup();
 
+    LayerScene::Ptr  layerScene = std::make_unique<LayerScene>(*m_window);
+    layerScene -> setup();
+    //// Put own scenes here /////
+
+    m_scene = std::move(render2DScene);
 }
 
-void Sandbox::setScene(Scene::Ptr scene) {
-    m_scene = std::move(scene);
-}
-
-void Sandbox::run() {
-    m_frameClock.restart();
-    while (m_window.isOpen()) {
-        float elapsed = m_frameClock.restart().asSeconds();
-        processedTime += elapsed;
-        while (processedTime > timePerFrame) {
-            processedTime -= timePerFrame;
-            handleEvents();
-            update(timePerFrame);
-        }
-        render();
-    }
-}
-
-void Sandbox::handleEvents() {
-    robot2D::Event event{};
-    while (m_window.pollEvents(event)) {
-        if(event.type == robot2D::Event::KeyPressed &&
-            event.key.code == robot2D::Key::ESCAPE)
-            m_window.close();
-        m_scene -> handleEvents(event);
-    }
+void Sandbox::handleEvents(const robot2D::Event& event) {
+    if(event.type == robot2D::Event::KeyPressed &&
+       event.key.code == robot2D::Key::ESCAPE)
+        m_running = false;
+    m_scene -> handleEvents(event);
 }
 
 void Sandbox::update(float dt) {
@@ -66,7 +55,7 @@ void Sandbox::update(float dt) {
 }
 
 void Sandbox::render() {
-    m_window.clear(robot2D::Color::White);
+    m_window -> clear(robot2D::Color::White);
     m_scene -> render();
-    m_window.display();
+    m_window -> display();
 }

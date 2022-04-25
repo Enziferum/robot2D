@@ -23,7 +23,7 @@ source distribution.
 #include <robot2D/Util/Logger.hpp>
 #include <editor/Application.hpp>
 
-int main() {
+int oldrun() {
     logger::Log::Init();
     editor::Application application;
 
@@ -34,4 +34,17 @@ int main() {
     catch(const std::exception& exception) {
         RB_EDITOR_CRITICAL(exception.what());
     }
+
+    return 0;
+}
+
+//#define NEWRUN 1
+
+int main() {
+#if defined(NEWRUN)
+    return 0;
+#else
+    return oldrun();
+#endif
+
 }

@@ -21,13 +21,48 @@ source distribution.
 
 #include <imgui/imgui.h>
 #include <editor/ViewportPanel.hpp>
-#include <editor/Gui/Api.hpp>
+#include <robot2D/Extra/Api.hpp>
+
+#include <filesystem>
 
 namespace editor {
 
-    ViewportPanel::ViewportPanel(Scene::Ptr&& scene): IPanel(UniqueType(typeid(ViewportPanel))),
+    ViewportPanel::ViewportPanel(Scene::Ptr&& scene):
+        IPanel(UniqueType(typeid(ViewportPanel))),
     m_scene(std::move(scene)),
     m_frameBuffer(nullptr) {}
 
-    void ViewportPanel::render() {}
+    void ViewportPanel::render() {
+        return;
+        robot2D::vec2u  m_ViewportSize{};
+
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
+        ImGui::Begin("##Viewport", nullptr, ImGuiWindowFlags_NoTitleBar);
+
+        auto ViewPanelSize = ImGui::GetContentRegionAvail();
+
+        if(m_ViewportSize != robot2D::vec2u { ViewPanelSize.x, ViewPanelSize.y}) {
+            m_ViewportSize = {ViewPanelSize.x, ViewPanelSize.y};
+            m_frameBuffer -> Resize(m_ViewportSize);
+        }
+
+        ImGui::RenderFrameBuffer(m_frameBuffer, {m_ViewportSize.x, m_ViewportSize.y});
+        if (ImGui::BeginDragDropTarget())
+        {
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+            {
+#ifdef ROBOT2D_WINDOWS
+                const wchar_t* path = (const wchar_t*)payload->Data;
+#else
+                const char* path = (const char*)payload->Data;
+#endif
+                std::filesystem::path scenePath = std::filesystem::path("assets") / path;
+                RB_EDITOR_INFO("PATH {0}", scenePath.string().c_str());
+               // openScene(scenePath.string());
+            }
+            ImGui::EndDragDropTarget();
+        }
+        ImGui::End();
+        ImGui::PopStyleVar();
+    }
 }

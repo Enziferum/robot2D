@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2022
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -19,12 +19,32 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#pragma once
+#include <vector>
+#include "Scene.hpp"
 
-#include <robot2D/Graphics/Sprite.hpp>
-#include <robot2D/Graphics/FrameBuffer.hpp>
+class Layer: public robot2D::Drawable {
+public:
+    Layer();
+    ~Layer();
 
-namespace ImGui {
-    void Image(robot2D::Sprite& sprite, const robot2D::vec2f& size);
-    void RenderFrameBuffer(const robot2D::FrameBuffer::Ptr& frameBuffer, const robot2D::vec2f& size);
-}
+    void draw(const robot2D::Drawable& drawable,
+              const robot2D::RenderStates& states = robot2D::RenderStates::Default);
+    void draw(robot2D::RenderTarget& target, robot2D::RenderStates states) const override;
+private:
+};
+
+
+class LayerScene final: public Scene {
+public:
+    LayerScene(robot2D::RenderWindow& window);
+    ~LayerScene() override;
+
+    void setup() override;
+    void handleEvents(const robot2D::Event &event) override;
+    void update(float dt) override;
+    void imGuiRender() override;
+    void render() override;
+
+private:
+    std::vector<Layer> m_layers;
+};

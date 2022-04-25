@@ -21,8 +21,6 @@ source distribution.
 
 #include <robot2D/Graphics/RenderTarget.hpp>
 #include <robot2D/Ecs/Scene.hpp>
-#include "../../../editor/incl/editor/Scene.hpp"
-
 
 namespace robot2D::ecs {
 

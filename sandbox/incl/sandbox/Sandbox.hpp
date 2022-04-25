@@ -21,22 +21,19 @@ source distribution.
 
 #pragma once
 
-#include <robot2D/Graphics/RenderWindow.hpp>
+#include <robot2D/Application.hpp>
 #include "Scene.hpp"
 
-class Sandbox {
+class Sandbox: public robot2D::Application {
 public:
-    Sandbox(robot2D::RenderWindow& window);
-    ~Sandbox() = default;
+    Sandbox();
+    ~Sandbox()override = default;
 
-    void setScene(Scene::Ptr scene);
-    void run();
+    void setup() override;
+protected:
+    void handleEvents(const robot2D::Event& event) override;
+    void update(float dt) override;
+    void render() override;
 private:
-    void handleEvents();
-    void update(float dt);
-    void render();
-
-private:
-    robot2D::RenderWindow& m_window;
     Scene::Ptr m_scene;
 };

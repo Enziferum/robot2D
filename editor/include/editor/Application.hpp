@@ -26,8 +26,8 @@ source distribution.
 
 #include <robot2D/Graphics/RenderWindow.hpp>
 #include <robot2D/Core/MessageBus.hpp>
+#include <robot2D/Extra/Gui.hpp>
 
-#include "Gui/Gui.hpp"
 #include "Editor.hpp"
 #include "ProjectInspector.hpp"
 #include "ProjectManager.hpp"
@@ -56,11 +56,11 @@ namespace editor {
         void update(float dt);
         void render();
 
-        /// Subsription Api callbacks //
+        /// Subsription Api callbacks ///
         void createProject(ProjectDescription&& project);
         void loadProject(ProjectDescription&& project);
         void deleteProject(ProjectDescription&& projectDescription);
-        /// Subsription Api callbacks //
+        /// Subsription Api callbacks ///
     private:
         enum class State {
             ProjectInspector,
