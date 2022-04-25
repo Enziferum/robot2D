@@ -30,34 +30,27 @@ source distribution.
 #include <editor/Utils.hpp>
 
 namespace editor {
-
-    namespace {
-        constexpr float timePerFrame = 1.F / 60.F;
-        robot2D::Clock frameClock;
-        float processedTime = 0.F;
-    }
-
-
+    //make autotranslator son of bitches from middle east
     Application::Application():
+            robot2D::Application(),
             m_appConfiguration{},
-            m_window(m_appConfiguration.defaultWindowSize,
-                     "Editor", robot2D::WindowContext::Default),
-            m_editor{m_window, m_messageBus},
+            m_editor{m_messageBus},
             m_state{State::ProjectInspector},
             m_configuration{},
             m_editorCache{m_configuration},
             m_projectManager{m_configuration},
-            m_projectInspector{m_window, m_editorCache}
+            m_projectInspector{m_editorCache}
              {}
 
     void Application::setup() {
+
         {
             robot2D::Image iconImage;
             iconImage.loadFromFile(m_appConfiguration.logoPath);
-            m_window.setIcon(std::move(iconImage));
+            m_window -> setIcon(std::move(iconImage));
         }
-        m_guiWrapper.init(m_window);
-        m_editor.setup();
+
+        m_guiWrapper.init(*m_window);
 
         auto [status, result] = m_configuration.getValue(ConfigurationKey::CachePath);
 
@@ -76,13 +69,14 @@ namespace editor {
             m_state = State::Editor;
 
         if(m_state == State::ProjectInspector) {
-            auto windowSize = m_window.getSize();
-            auto monitorSize = m_window.getMonitorSize();
+            auto windowSize = m_window -> getSize();
+            auto monitorSize = m_window -> getMonitorSize();
             auto centerPoint = getCenterPoint(windowSize, monitorSize);
-            m_window.setPosition(centerPoint);
-            m_window.setResizable(false);
 
-            m_window.setSize(m_appConfiguration.inspectorSize);
+            m_window -> setPosition(centerPoint);
+            m_window -> setResizable(false);
+            m_window -> setSize(m_appConfiguration.inspectorSize);
+
             applyStyle(EditorStyle::GoldBlack);
 
 
@@ -98,54 +92,51 @@ namespace editor {
                                            [this](ProjectDescription project) {
                                                deleteProject(std::move(project));
                                            });
-            m_projectInspector.setup();
+
+            m_projectInspector.setup(m_window);
         } else {
             const auto& projectDescription = m_editorCache.getCurrentProject();
             if(projectDescription.empty())
                 RB_EDITOR_WARN("projectDescription.empty()");
 
             if(!m_projectManager.load(projectDescription)) {
-                RB_EDITOR_ERROR("ProjectManager can't load Project := {0}", errorToString(m_projectManager.getError()));
+                RB_EDITOR_ERROR("ProjectManager can't load Project := {0}",
+                                errorToString(m_projectManager.getError()));
                 return;
             }
             auto project = m_projectManager.getCurrentProject();
+            m_editor.setup(m_window);
             m_editor.loadProject(project);
         }
-
     }
 
-    void Application::run() {
-        frameClock.restart();
-        while(m_window.isOpen()) {
-            float elapsed = frameClock.restart().asSeconds();
-            processedTime += elapsed;
-            while (processedTime > timePerFrame) {
-                processedTime -= timePerFrame;
-                handleEvents();
-                handleMessages();
-                update(timePerFrame);
-            }
-            m_guiWrapper.update(elapsed);
-            render();
-        }
-    }
+//    struct EventDispatcher {
+//        EventDispatcher(const robot2D::Event& event);
+//        ~EventDispatcher();
+//
+//        template<typename Func>
+//        bool Dispatch(robot2D::Event::EventType eventType, Func&& func);
+//    };
 
-    void Application::handleEvents() {
-        robot2D::Event event{};
-        while (m_window.pollEvents(event)) {
-            if(event.type == robot2D::Event::Resized) {
-                RB_EDITOR_INFO("New Size = {0} and {1}", event.size.widht, event.size.heigth);
-                m_window.resize({event.size.widht, event.size.heigth});
-                m_window.setView({{0, 0}, {event.size.widht, event.size.heigth}});
-            }
+    void Application::handleEvents(const robot2D::Event& event) {
+//        EventDispatcher eventDispatcher{event};
+//
+//        eventDispatcher.Dispatch(robot2D::Event::Resized,
+//                                 [this](const robot2D::Event& evt) {
+//            RB_EDITOR_INFO("New Size = {0} and {1}", evt.size.widht, evt.size.heigth);
+//            m_window -> resize({evt.size.widht, evt.size.heigth});
+//            m_window -> setView({{0, 0}, {evt.size.widht, evt.size.heigth}});
+//        });
+//
+//        eventDispatcher.Dispatch(robot2D::Event::KeyPressed,
+//                                 [this](const robot2D::Event& evt) {
+//            if(evt.key.code == robot2D::Key::ESCAPE)
+//                m_running = false;
+//        });
 
-            if(event.type == robot2D::Event::KeyPressed &&
-            event.key.code == robot2D::Key::ESCAPE)
-                m_window.close();
-            m_guiWrapper.handleEvents(event);
-            if(m_state == State::Editor)
-                m_editor.handleEvents(event);
-        }
+        m_guiWrapper.handleEvents(event);
+        if(m_state == State::Editor)
+            m_editor.handleEvents(event);
     }
 
     void Application::handleMessages() {
@@ -161,14 +152,18 @@ namespace editor {
             m_editor.update(dt);
     }
 
+    void Application::guiUpdate(float dt) {
+        m_guiWrapper.update(dt);
+    }
+
     void Application::render() {
-        m_window.clear();
+        m_window -> clear();
         if(m_state == State::Editor)
             m_editor.render();
         else if(m_state == State::ProjectInspector)
             m_projectInspector.render();
         m_guiWrapper.render();
-        m_window.display();
+        m_window -> display();
     }
 
 
@@ -188,7 +183,7 @@ namespace editor {
         auto project = m_projectManager.getCurrentProject();
 
         m_editor.createProject(project);
-        m_window.setResizable(true);
+        m_window -> setResizable(true);
         m_state = State::Editor;
     }
 
@@ -219,7 +214,9 @@ namespace editor {
         }
 
         m_state = State::Editor;
-        m_window.setResizable(true);
+        m_window -> setResizable(true);
         m_editor.loadProject(m_projectManager.getCurrentProject());
     }
+
+
 }

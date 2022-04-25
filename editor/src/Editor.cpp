@@ -42,9 +42,9 @@ source distribution.
 namespace editor {
     namespace fs = std::filesystem;
 
-    Editor::Editor(robot2D::RenderWindow& window, robot2D::MessageBus& messageBus):
+    Editor::Editor(robot2D::MessageBus& messageBus):
     m_state(State::Edit),
-    m_window{window},
+    m_window{nullptr},
     m_messageBus{messageBus},
     m_currentProject{nullptr},
     m_activeScene{ nullptr },
@@ -55,7 +55,10 @@ namespace editor {
 
     }
 
-    void Editor::setup() {
+    void Editor::setup(robot2D::RenderWindow* window) {
+        if(m_window == nullptr)
+            m_window = window;
+
         for(auto& it: m_configuration.texturePaths) {
             auto fullPath = m_configuration.texturesPath + it.second;
             if(!m_textures.loadFromFile(it.first, fullPath)) {
@@ -70,13 +73,13 @@ namespace editor {
     }
 
     void Editor::prepare() {
-        auto windowSize = m_window.getSize();
+        auto windowSize = m_window -> getSize();
 
         robot2D::FrameBufferSpecification frameBufferSpecification;
         frameBufferSpecification.size = {windowSize.x, windowSize.y};
 
         m_frameBuffer = robot2D::FrameBuffer::Create(frameBufferSpecification);
-        m_window.setView({{0, 0}, {windowSize.x, windowSize.y}});
+        m_window -> setView({{0, 0}, {windowSize.x, windowSize.y}});
         m_camera.resize({0, 0, windowSize.x, windowSize.y});
 
         applyStyle(EditorStyle::GoldBlack);
@@ -136,10 +139,10 @@ namespace editor {
         if(m_configuration.useGUI) {
             m_frameBuffer -> Bind();
             const auto& clearColor = m_panelManager.getPanel<InspectorPanel>().getColor();
-            m_window.clear(clearColor);
+            m_window -> clear(clearColor);
         }
-        m_window.beforeRender();
-        m_window.setView(m_camera.getView());
+        m_window -> beforeRender();
+        m_window -> setView(m_camera.getView());
 
         for(auto& it: m_activeScene -> getEntities()) {
             if(!it.hasComponent<SpriteComponent>())
@@ -152,10 +155,10 @@ namespace editor {
             renderStates.texture = &sprite.getTexture();
             renderStates.transform *= transform.getTransform();
             renderStates.color = sprite.getColor();
-            m_window.draw(renderStates);
+            m_window -> draw(renderStates);
         }
 
-        m_window.afterRender();
+        m_window -> afterRender();
 
         if(m_configuration.useGUI) {
             m_frameBuffer -> unBind();
@@ -191,7 +194,7 @@ namespace editor {
 
         mainMenubar();
 
-        auto stats = m_window.getStats();
+        auto stats = m_window -> getStats();
         m_panelManager.getPanel<InspectorPanel>().setRenderStats(std::move(stats));
         m_panelManager.render();
 
@@ -204,7 +207,7 @@ namespace editor {
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
         ImGui::Begin("##Viewport", nullptr, ImGuiWindowFlags_NoTitleBar);
         auto ViewPanelSize = ImGui::GetContentRegionAvail();
-        if(m_ViewportSize != robot2D::vec2u { ViewPanelSize.x, ViewPanelSize.y}) {
+        if(m_ViewportSize != robot2D::vec2u (ViewPanelSize.x, ViewPanelSize.y)) {
             m_ViewportSize = {ViewPanelSize.x, ViewPanelSize.y};
             m_frameBuffer -> Resize(m_ViewportSize);
         }
@@ -301,7 +304,7 @@ namespace editor {
         }
         m_activeScene = m_sceneManager.getActiveScene();
         openScene(m_activeScene->getPath());
-        m_window.setMaximazed(true);
+        m_window -> setMaximazed(true);
         prepare();
     }
 
@@ -316,7 +319,7 @@ namespace editor {
         m_activeScene = m_sceneManager.getActiveScene();
         openScene(m_activeScene->getPath());
 
-        m_window.setMaximazed(true);
+        m_window -> setMaximazed(true);
         prepare();
     }
 

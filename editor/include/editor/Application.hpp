@@ -28,6 +28,8 @@ source distribution.
 #include <robot2D/Core/MessageBus.hpp>
 #include <robot2D/Extra/Gui.hpp>
 
+#include <robot2D/Application.hpp>
+
 #include "Editor.hpp"
 #include "ProjectInspector.hpp"
 #include "ProjectManager.hpp"
@@ -43,19 +45,21 @@ namespace editor {
         robot2D::vec2u defaultWindowSize{1280, 920};
     };
 
-    class Application {
+    class Application: public robot2D::Application {
     public:
         Application();
         ~Application() = default;
 
-        void setup();
-        void run();
-    private:
-        void handleEvents();
-        void handleMessages();
-        void update(float dt);
-        void render();
+        void setup() override;
 
+    protected:
+        void handleEvents(const robot2D::Event& event) override;
+        void handleMessages();
+        void update(float dt) override;
+        void guiUpdate(float dt)override;
+        void render() override;
+
+    private:
         /// Subsription Api callbacks ///
         void createProject(ProjectDescription&& project);
         void loadProject(ProjectDescription&& project);
@@ -68,7 +72,6 @@ namespace editor {
         };
     private:
         ApplicationConfiguration m_appConfiguration;
-        robot2D::RenderWindow m_window;
 
         robot2D::MessageBus m_messageBus;
         ImGui::Gui m_guiWrapper;

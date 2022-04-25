@@ -40,7 +40,7 @@ namespace editor {
         void resize(const robot2D::FloatRect& viewPort);
 
         float& getCameraSpeed() { return m_cameraSpeed; }
-        const float getZoom() const;
+        float getZoom() const;
 
         robot2D::View& getView();
         const robot2D::View& getView() const;

@@ -92,7 +92,6 @@ namespace robot2D {
         if(application == nullptr)
             return -1;
 
-        robot2DInit();
         return constructEngine(std::move(application),
                                std::move(engineConfiguration));
     }
