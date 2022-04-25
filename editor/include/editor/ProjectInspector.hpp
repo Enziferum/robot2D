@@ -51,18 +51,18 @@ namespace editor {
             Create, Load, Delete
         };
     public:
-        ProjectInspector(robot2D::RenderWindow& window, EditorCache& editorCache);
+        ProjectInspector(EditorCache& editorCache);
         ~ProjectInspector() = default;
 
         void addCallback(const CallbackType& callbackType, ProcessFunction&& function);
-        void setup();
+        void setup(robot2D::RenderWindow* window);
         void render();
     private:
         void createProject();
         void loadProject(const unsigned& index);
         void deleteProject(const unsigned& index);
     private:
-        robot2D::RenderWindow& m_window;
+        robot2D::RenderWindow* m_window;
         EditorCache& m_editorCache;
         std::vector<ProjectDescription> m_descriptions;
 

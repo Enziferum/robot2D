@@ -54,14 +54,14 @@ namespace editor {
 
     class Editor {
     public:
-        Editor(robot2D::RenderWindow& window, robot2D::MessageBus& messageBus);
+        Editor(robot2D::MessageBus& messageBus);
         Editor(const Editor&)=delete;
         Editor(const Editor&&)=delete;
         Editor& operator=(const Editor&)=delete;
         Editor& operator=(const Editor&&)=delete;
         ~Editor() = default;
 
-        void setup();
+        void setup(robot2D::RenderWindow* window);
         void handleEvents(const robot2D::Event& event);
         void handleMessages(const robot2D::Message& message);
         void update(float dt);
@@ -89,7 +89,7 @@ namespace editor {
     private:
         State m_state;
 
-        robot2D::RenderWindow& m_window;
+        robot2D::RenderWindow* m_window;
         robot2D::MessageBus& m_messageBus;
         PanelManager m_panelManager;
 

@@ -43,11 +43,13 @@ namespace robot2D {
                   EngineConfiguration&& engineConfiguration = std::move(EngineConfiguration::Default));
 
 #define ROBOT2D_RUN_ENGINE(AppClass, configuration) \
+    robot2D::robot2DInit();                                                \
     AppClass::Ptr myApplication = std::make_unique<AppClass>(); \
     return robot2D::runEngine(std::move(myApplication), std::move(configuration));
 
 #define ROBOT2D_MAIN(AppClass) \
-int main() {         \
+int main() {                   \
+    robot2D::robot2DInit();         \
     AppClass::Ptr myApplication = std::make_unique<AppClass>(); \
     return robot2D::runEngine(std::move(myApplication)); \
 }

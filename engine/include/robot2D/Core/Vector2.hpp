@@ -31,11 +31,13 @@ namespace robot2D {
      */
     template<typename T>
     struct ROBOT2D_EXPORT_API Vector2 {
-        Vector2();
-        Vector2(const T& x, const T& y);
+        constexpr Vector2();
+        constexpr Vector2(const T& x, const T& y);
 
-        Vector2(const Vector2& other);
-        Vector2& operator=(const Vector2& other);
+        template<typename U>
+        constexpr explicit Vector2(const Vector2<U>& other);
+
+       // Vector2& operator=(const Vector2& other);
         ~Vector2() = default;
 
         Vector2& operator+= (const Vector2& other);
@@ -61,30 +63,29 @@ namespace robot2D {
     using vec2u = Vector2<unsigned int>;
 
     template<typename T>
-    Vector2<T>::Vector2(): x(0), y(0) {
-
-    }
-
-    template<typename T>
-    Vector2<T>::Vector2(const T& _x, const T& _y):x(_x), y(_y)  {
-
-    }
+    constexpr Vector2<T>::Vector2():
+    x(0), y(0) {}
 
     template<typename T>
-    Vector2<T>::Vector2(const Vector2& other):x(other.x), y(other.y) {
-
-    }
+    constexpr Vector2<T>::Vector2(const T& _x, const T& _y):
+    x(_x), y(_y)  {}
 
     template<typename T>
-    Vector2<T> &Vector2<T>::operator=(const Vector2& other) {
-        if( *this == other)
-            return *this;
+    template<typename U>
+    constexpr Vector2<T>::Vector2(const Vector2<U>& other):
+            x(static_cast<T>(other.x)),
+            y(static_cast<T>(other.y)){}
 
-        x = other.x;
-        y = other.y;
-
-        return *this;
-    }
+//    template<typename T>
+//    Vector2<T> &Vector2<T>::operator=(const Vector2& other) {
+//        if( *this == other)
+//            return *this;
+//
+//        x = other.x;
+//        y = other.y;
+//
+//        return *this;
+//    }
 
     template<typename T>
     Vector2<T> &Vector2<T>::operator+=(const Vector2 &other) {

@@ -60,7 +60,7 @@ namespace editor {
         return m_view;
     }
 
-    const float SceneCamera::getZoom() const {
+    float SceneCamera::getZoom() const {
         auto actualSize = m_view.getSize();
         robot2D::vec2f defaultSize = {m_sizeRect.width, m_sizeRect.height};
         robot2D::vec2f zoom = {defaultSize.x / actualSize.x, defaultSize.y / actualSize.y};
