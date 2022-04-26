@@ -54,6 +54,14 @@ namespace robot2D {
             return l;
         }
 
+        template<typename U>
+        Vector2<U> as() {
+            return Vector2<U> {
+                static_cast<U>(x),
+                static_cast<U>(y)
+            };
+        }
+
         T x;
         T y;
     };

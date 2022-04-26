@@ -27,6 +27,7 @@ source distribution.
 #include <tfd/tinyfiledialogs.h>
 
 #include <editor/Editor.hpp>
+#include <editor/EventBinder.hpp>
 // Panels
 #include <editor/ScenePanel.hpp>
 #include <editor/AssetsPanel.hpp>
@@ -66,55 +67,44 @@ namespace editor {
             }
         }
 
-        auto& scenePanel = m_panelManager.addPanel<ScenePanel>();
-        auto& assetsPanel = m_panelManager.addPanel<AssetsPanel>();
-        auto& inspectorPanel = m_panelManager.addPanel<InspectorPanel>(m_camera);
-        auto& menuPanel = m_panelManager.addPanel<MenuPanel>();
+        m_panelManager.addPanel<ScenePanel>();
+        m_panelManager.addPanel<AssetsPanel>();
+        m_panelManager.addPanel<InspectorPanel>(m_camera);
+        m_panelManager.addPanel<MenuPanel>();
     }
 
     void Editor::prepare() {
         auto windowSize = m_window -> getSize();
 
         robot2D::FrameBufferSpecification frameBufferSpecification;
-        frameBufferSpecification.size = {windowSize.x, windowSize.y};
+        frameBufferSpecification.size = windowSize.as<int>();
 
         m_frameBuffer = robot2D::FrameBuffer::Create(frameBufferSpecification);
-        m_window -> setView({{0, 0}, {windowSize.x, windowSize.y}});
-        m_camera.resize({0, 0, windowSize.x, windowSize.y});
+        m_window -> setView({{0, 0}, windowSize.as<float>()});
+        m_camera.resize({0, 0, windowSize.as<float>().x,
+                         windowSize.as<float>().y});
 
         applyStyle(EditorStyle::GoldBlack);
     }
 
-    struct Binding {
-
-    };
-
-    struct EventBinder {
-
-        template<typename Func>
-        void bind(const Binding&& binding, const Func&& func){}
-    };
-
     void Editor::handleEvents(const robot2D::Event& event) {
-        EventBinder m_eventBinder;
-        m_eventBinder.bind({}, [](){});
-
-
-        if(event.type == robot2D::Event::KeyPressed) {
-            if(event.key.code == robot2D::Key::LEFT_CONTROL) {
+        EventBinder m_eventBinder{event};
+        m_eventBinder.Dispatch(robot2D::Event::KeyPressed,
+                               [this](const robot2D::Event& event){
+            if(event.key.code == robot2D::Key::LEFT_CONTROL)
                 m_configuration.m_leftCtrlPressed = true;
-            }
             if(event.key.code == robot2D::Key::S) {
-                if(m_configuration.m_leftCtrlPressed) {
+                if(m_configuration.m_leftCtrlPressed)
                     m_sceneManager.save(std::move(m_activeScene));
-                }
             }
-        }
-        if(event.type == robot2D::Event::KeyReleased) {
-            if(event.key.code == robot2D::Key::LEFT_CONTROL) {
+        });
+
+        m_eventBinder.Dispatch(robot2D::Event::KeyReleased,
+                               [this](const robot2D::Event& event){
+            if(event.key.code == robot2D::Key::LEFT_CONTROL)
                 m_configuration.m_leftCtrlPressed = false;
-            }
-        }
+        });
+
 
         m_camera.onEvent(event);
     }
@@ -211,7 +201,7 @@ namespace editor {
             m_ViewportSize = {ViewPanelSize.x, ViewPanelSize.y};
             m_frameBuffer -> Resize(m_ViewportSize);
         }
-        ImGui::RenderFrameBuffer(m_frameBuffer, {m_ViewportSize.x, m_ViewportSize.y});
+        ImGui::RenderFrameBuffer(m_frameBuffer, m_ViewportSize.as<float>());
         if (ImGui::BeginDragDropTarget())
         {
             if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))

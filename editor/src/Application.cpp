@@ -28,6 +28,7 @@ source distribution.
 #include <editor/EditorStyles.hpp>
 #include <editor/ProjectSerializer.hpp>
 #include <editor/Utils.hpp>
+#include <editor/EventBinder.hpp>
 
 namespace editor {
     //make autotranslator son of bitches from middle east
@@ -51,6 +52,7 @@ namespace editor {
         }
 
         m_guiWrapper.init(*m_window);
+        m_editor.setup(m_window);
 
         auto [status, result] = m_configuration.getValue(ConfigurationKey::CachePath);
 
@@ -105,34 +107,26 @@ namespace editor {
                 return;
             }
             auto project = m_projectManager.getCurrentProject();
-            m_editor.setup(m_window);
             m_editor.loadProject(project);
         }
     }
 
-//    struct EventDispatcher {
-//        EventDispatcher(const robot2D::Event& event);
-//        ~EventDispatcher();
-//
-//        template<typename Func>
-//        bool Dispatch(robot2D::Event::EventType eventType, Func&& func);
-//    };
-
     void Application::handleEvents(const robot2D::Event& event) {
-//        EventDispatcher eventDispatcher{event};
-//
-//        eventDispatcher.Dispatch(robot2D::Event::Resized,
-//                                 [this](const robot2D::Event& evt) {
-//            RB_EDITOR_INFO("New Size = {0} and {1}", evt.size.widht, evt.size.heigth);
-//            m_window -> resize({evt.size.widht, evt.size.heigth});
-//            m_window -> setView({{0, 0}, {evt.size.widht, evt.size.heigth}});
-//        });
-//
-//        eventDispatcher.Dispatch(robot2D::Event::KeyPressed,
-//                                 [this](const robot2D::Event& evt) {
-//            if(evt.key.code == robot2D::Key::ESCAPE)
-//                m_running = false;
-//        });
+        EventBinder eventBinder{event};
+
+        eventBinder.Dispatch(robot2D::Event::Resized,
+                                 [this](const robot2D::Event& evt) {
+            RB_EDITOR_INFO("New Size = {0} and {1}", evt.size.widht, evt.size.heigth);
+            m_window -> resize({static_cast<int>(evt.size.widht),
+                                static_cast<int>(evt.size.heigth)});
+            m_window -> setView({{0, 0}, {evt.size.widht, evt.size.heigth}});
+        });
+
+        eventBinder.Dispatch(robot2D::Event::KeyPressed,
+                                 [this](const robot2D::Event& evt) {
+            if(evt.key.code == robot2D::Key::ESCAPE)
+                m_running = false;
+        });
 
         m_guiWrapper.handleEvents(event);
         if(m_state == State::Editor)
