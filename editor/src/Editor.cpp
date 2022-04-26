@@ -33,6 +33,7 @@ source distribution.
 #include <editor/AssetsPanel.hpp>
 #include <editor/MenuPanel.hpp>
 #include <editor/InspectorPanel.hpp>
+#include <editor/ViewportPanel.hpp>
 
 
 #include <editor/SceneSerializer.hpp>
@@ -48,13 +49,11 @@ namespace editor {
     m_window{nullptr},
     m_messageBus{messageBus},
     m_currentProject{nullptr},
-    m_activeScene{ nullptr },
+    m_activeScene{nullptr},
     m_frameBuffer{nullptr},
     m_ViewportSize{},
     m_configuration{},
-    m_sceneManager{m_messageBus} {
-
-    }
+    m_sceneManager{m_messageBus} {}
 
     void Editor::setup(robot2D::RenderWindow* window) {
         if(m_window == nullptr)
@@ -71,6 +70,7 @@ namespace editor {
         m_panelManager.addPanel<AssetsPanel>();
         m_panelManager.addPanel<InspectorPanel>(m_camera);
         m_panelManager.addPanel<MenuPanel>();
+        m_panelManager.addPanel<ViewportPanel>(nullptr);
     }
 
     void Editor::prepare() {
@@ -172,55 +172,30 @@ namespace editor {
         if (m_configuration.dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
             window_flags |= ImGuiWindowFlags_NoBackground;
 
-        ImGui::Begin("Scene", &m_configuration.dockspace_open, window_flags);
-        ImGui::PopStyleVar(2);
+        ImGui::WindowOptions dockWindowOptions{};
+        dockWindowOptions.flagsMask = window_flags;
+        dockWindowOptions.name = "Scene";
 
-        ImGuiIO& io = ImGui::GetIO();
-        if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
-        {
-            ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
-            ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), m_configuration.dockspace_flags);
-        }
+        ImGui::createWindow(dockWindowOptions, [this]() {
 
-        mainMenubar();
+            ImGui::PopStyleVar(2);
 
-        auto stats = m_window -> getStats();
-        m_panelManager.getPanel<InspectorPanel>().setRenderStats(std::move(stats));
-        m_panelManager.render();
-
-        ImGui::End();
-
-        ui_toolbar();
-
-        /// Viewport Panel ///
-
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
-        ImGui::Begin("##Viewport", nullptr, ImGuiWindowFlags_NoTitleBar);
-        auto ViewPanelSize = ImGui::GetContentRegionAvail();
-        if(m_ViewportSize != robot2D::vec2u (ViewPanelSize.x, ViewPanelSize.y)) {
-            m_ViewportSize = {ViewPanelSize.x, ViewPanelSize.y};
-            m_frameBuffer -> Resize(m_ViewportSize);
-        }
-        ImGui::RenderFrameBuffer(m_frameBuffer, m_ViewportSize.as<float>());
-        if (ImGui::BeginDragDropTarget())
-        {
-            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+            ImGuiIO& io = ImGui::GetIO();
+            if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
             {
-#ifdef ROBOT2D_WINDOWS
-                const wchar_t* path = (const wchar_t*)payload->Data;
-#else
-                const char* path = (const char*)payload->Data;
-#endif
-                std::filesystem::path scenePath = std::filesystem::path("assets") / path;
-                RB_EDITOR_INFO("PATH {0}", scenePath.string().c_str());
-                openScene(scenePath.string());
+                ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
+                ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f),
+                                 m_configuration.dockspace_flags);
             }
-            ImGui::EndDragDropTarget();
-        }
-        ImGui::End();
-        ImGui::PopStyleVar();
 
-        /// Viewport Panel ///
+            // Todo like panels
+            mainMenubar();
+            ui_toolbar();
+
+            auto stats = m_window -> getStats();
+            m_panelManager.getPanel<InspectorPanel>().setRenderStats(std::move(stats));
+            m_panelManager.render();
+        });
     }
 
     //Todo Use Menubar to Open Projects, and not scenes
@@ -279,6 +254,9 @@ namespace editor {
         auto& scenePanel = m_panelManager.getPanel<ScenePanel>();
         scenePanel.setActiveScene(m_activeScene);
 
+        auto& viewportPanel = m_panelManager.getPanel<ViewportPanel>();
+        viewportPanel.set(m_activeScene, m_frameBuffer);
+
         auto projectPath = m_currentProject -> getPath();
         auto assetsPath = combinePath(projectPath, "assets");
         auto& assetsPanel = m_panelManager.getPanel<AssetsPanel>();
@@ -306,11 +284,12 @@ namespace editor {
                             errorToString(m_sceneManager.getError()));
             return;
         }
+        prepare();
+
         m_activeScene = m_sceneManager.getActiveScene();
         openScene(m_activeScene->getPath());
 
         m_window -> setMaximazed(true);
-        prepare();
     }
 
     void Editor::ui_toolbar() {
@@ -336,8 +315,8 @@ namespace editor {
             auto texID = m_state == State::Edit ? EditorConfiguration::TextureID::RunButton
                                                 : EditorConfiguration::TextureID::EditButton;
             float size = ::ImGui::GetWindowHeight() - 4.F;
-            ::ImGui::SetCursorPosX((::ImGui::GetWindowContentRegionMax().x * 0.5F) - (size * 0.5F));
-            if(::ImGui::ImageButton(m_textures.get(texID), robot2D::vec2f{size, size}))
+            ImGui::SetCursorPosX((::ImGui::GetWindowContentRegionMax().x * 0.5F) - (size * 0.5F));
+            if(ImGui::ImageButton(m_textures.get(texID), robot2D::vec2f{size, size}))
             {
                 if (m_state == State::Edit) {
                     onSceneRun();
