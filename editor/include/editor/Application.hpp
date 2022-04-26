@@ -35,14 +35,13 @@ source distribution.
 #include "ProjectManager.hpp"
 #include "EditorCache.hpp"
 #include "Configuration.hpp"
-
+#include "MessageQueue.hpp"
 
 namespace editor {
 
     struct ApplicationConfiguration {
         const std::string logoPath = "res/textures/logo.png";
         const robot2D::vec2u inspectorSize = {600, 400};
-        robot2D::vec2u defaultWindowSize{1280, 920};
     };
 
     class Application: public robot2D::Application {
@@ -51,14 +50,11 @@ namespace editor {
         ~Application() = default;
 
         void setup() override;
-
-    protected:
         void handleEvents(const robot2D::Event& event) override;
         void handleMessages();
         void update(float dt) override;
         void guiUpdate(float dt)override;
         void render() override;
-
     private:
         /// Subsription Api callbacks ///
         void createProject(ProjectDescription&& project);
