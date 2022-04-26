@@ -21,8 +21,9 @@ source distribution.
 
 #pragma once
 
-#include <robot2D/Graphics/FrameBuffer.hpp>
 #include <utility>
+#include <robot2D/Graphics/FrameBuffer.hpp>
+#include <robot2D/Extra/Api.hpp>
 
 #include "Scene.hpp"
 #include "IPanel.hpp"
@@ -43,5 +44,6 @@ namespace editor {
         Scene::Ptr m_scene;
         robot2D::FrameBuffer::Ptr m_frameBuffer;
         robot2D::vec2u  m_ViewportSize{};
+        ImGui::WindowOptions m_windowOptions;
     };
 }

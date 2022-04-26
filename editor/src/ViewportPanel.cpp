@@ -29,37 +29,35 @@ namespace editor {
 
     ViewportPanel::ViewportPanel(Scene::Ptr&& scene):
         IPanel(UniqueType(typeid(ViewportPanel))),
-    m_scene(std::move(scene)),
-    m_frameBuffer(nullptr) {}
+        m_scene(std::move(scene)),
+        m_frameBuffer(nullptr) {
+        m_windowOptions = ImGui::WindowOptions {
+                {
+                        {ImGuiStyleVar_WindowPadding, {0, 0}}
+                },
+                {}
+        };
+        m_windowOptions.flagsMask = ImGuiWindowFlags_NoTitleBar;
+        m_windowOptions.name = "##Viewport";
+    }
 
     void ViewportPanel::render() {
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
-        ImGui::Begin("##Viewport", nullptr, ImGuiWindowFlags_NoTitleBar);
+        ImGui::createWindow(m_windowOptions, [this]() {
+            auto ViewPanelSize = ImGui::GetContentRegionAvail();
 
-        auto ViewPanelSize = ImGui::GetContentRegionAvail();
-
-        if(m_ViewportSize != robot2D::vec2u { ViewPanelSize.x, ViewPanelSize.y}) {
-            m_ViewportSize = {ViewPanelSize.x, ViewPanelSize.y};
-            m_frameBuffer -> Resize(m_ViewportSize);
-        }
-
-        ImGui::RenderFrameBuffer(m_frameBuffer, {m_ViewportSize.x, m_ViewportSize.y});
-        if (ImGui::BeginDragDropTarget())
-        {
-            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
-            {
-#ifdef ROBOT2D_WINDOWS
-                const wchar_t* path = (const wchar_t*)payload->Data;
-#else
-                const char* path = (const char*)payload->Data;
-#endif
-                std::filesystem::path scenePath = std::filesystem::path("assets") / path;
-                RB_EDITOR_INFO("PATH {0}", scenePath.string().c_str());
-               // openScene(scenePath.string());
+            if(m_ViewportSize != robot2D::vec2u { ViewPanelSize.x, ViewPanelSize.y}) {
+                m_ViewportSize = {ViewPanelSize.x, ViewPanelSize.y};
+                m_frameBuffer -> Resize(m_ViewportSize);
             }
-            ImGui::EndDragDropTarget();
-        }
-        ImGui::End();
-        ImGui::PopStyleVar();
+
+            ImGui::RenderFrameBuffer(m_frameBuffer, m_ViewportSize.as<float>());
+
+            ImGui::dummyDragDrop("CONTENT_BROWSER_ITEM", [](std::string path){
+                // todo validate input path
+                const wchar_t* rawPath = (const wchar_t*)path.c_str();
+                std::filesystem::path scenePath = std::filesystem::path("assets") / rawPath;
+                RB_EDITOR_INFO("PATH Got {0}", scenePath.string());
+            });
+        });
     }
 }
