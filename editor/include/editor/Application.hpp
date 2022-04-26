@@ -21,14 +21,9 @@ source distribution.
 
 #pragma once
 
-#include <memory>
-#include <vector>
-
-#include <robot2D/Graphics/RenderWindow.hpp>
+#include <robot2D/Application.hpp>
 #include <robot2D/Core/MessageBus.hpp>
 #include <robot2D/Extra/Gui.hpp>
-
-#include <robot2D/Application.hpp>
 
 #include "Editor.hpp"
 #include "ProjectInspector.hpp"
@@ -41,13 +36,13 @@ namespace editor {
 
     struct ApplicationConfiguration {
         const std::string logoPath = "res/textures/logo.png";
-        const robot2D::vec2u inspectorSize = {600, 400};
+        const robot2D::vec2u inspectorSize = {600, 400 };
     };
 
     class Application: public robot2D::Application {
     public:
         Application();
-        ~Application() = default;
+        ~Application() override = default;
 
         void setup() override;
         void handleEvents(const robot2D::Event& event) override;

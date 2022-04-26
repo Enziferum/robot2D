@@ -219,7 +219,7 @@ namespace editor {
                                                        0);
                     if (path != nullptr) {
                         openPath = std::string(path);
-                        openScene(path);
+                        openScene();
                     }
                 }
 
@@ -239,59 +239,6 @@ namespace editor {
         }
     }
 
-    bool Editor::createScene() {
-        if(!m_sceneManager.add(std::move(m_currentProject))) {
-            RB_EDITOR_ERROR("Can't Create Scene. Reason: {0}",
-                            errorToString(m_sceneManager.getError()));
-            return false;
-        }
-        m_activeScene = m_sceneManager.getActiveScene();
-        openScene(m_activeScene -> getPath());
-        return true;
-    }
-
-    void Editor::openScene(const std::string& path) {
-        auto& scenePanel = m_panelManager.getPanel<ScenePanel>();
-        scenePanel.setActiveScene(m_activeScene);
-
-        auto& viewportPanel = m_panelManager.getPanel<ViewportPanel>();
-        viewportPanel.set(m_activeScene, m_frameBuffer);
-
-        auto projectPath = m_currentProject -> getPath();
-        auto assetsPath = combinePath(projectPath, "assets");
-        auto& assetsPanel = m_panelManager.getPanel<AssetsPanel>();
-        assetsPanel.setAssetsPath(assetsPath);
-    }
-
-    void Editor::createProject(Project::Ptr project) {
-        m_currentProject = project;
-        if(!m_sceneManager.add(std::move(project))) {
-            RB_EDITOR_ERROR("Can't Create Scene. Reason: {0}",
-                            errorToString(m_sceneManager.getError()));
-            return;
-        }
-        m_activeScene = m_sceneManager.getActiveScene();
-        openScene(m_activeScene->getPath());
-        m_window -> setMaximazed(true);
-        prepare();
-    }
-
-    void Editor::loadProject(Project::Ptr project) {
-        m_currentProject = project;
-
-        if(!m_sceneManager.load(std::move(project))) {
-            RB_EDITOR_ERROR("Can't Load Scene. Reason: {0}",
-                            errorToString(m_sceneManager.getError()));
-            return;
-        }
-        prepare();
-
-        m_activeScene = m_sceneManager.getActiveScene();
-        openScene(m_activeScene->getPath());
-
-        m_window -> setMaximazed(true);
-    }
-
     void Editor::ui_toolbar() {
         const auto& colors = ::ImGui::GetStyle().Colors;
         const auto& buttonHovered = colors[ImGuiCol_ButtonHovered];
@@ -299,13 +246,13 @@ namespace editor {
 
         ImGui::WindowOptions windowOptions {
                 {
-                    {ImGuiStyleVar_WindowPadding, {0, 2}},
-                    {ImGuiStyleVar_ItemInnerSpacing, {}}
+                        {ImGuiStyleVar_WindowPadding, {0, 2}},
+                        {ImGuiStyleVar_ItemInnerSpacing, {}}
                 },
                 {
-                    {ImGuiCol_Button, robot2D::Color::fromGL(0.F, 0.F, 0.F, 0.F)},
-                    {ImGuiCol_ButtonHovered, robot2D::Color::fromGL(buttonHovered.x,buttonHovered.z, 0.5F)},
-                    {ImGuiCol_ButtonActive,robot2D::Color::fromGL(buttonActive.x,buttonActive.z, 0.5F)}
+                        {ImGuiCol_Button, robot2D::Color::fromGL(0.F, 0.F, 0.F, 0.F)},
+                        {ImGuiCol_ButtonHovered, robot2D::Color::fromGL(buttonHovered.x,buttonHovered.z, 0.5F)},
+                        {ImGuiCol_ButtonActive,robot2D::Color::fromGL(buttonActive.x,buttonActive.z, 0.5F)}
                 }
         };
         windowOptions.name = "##toolbar";
@@ -342,4 +289,58 @@ namespace editor {
         // unload dll
     }
 
+
+    bool Editor::createScene() {
+        if(!m_sceneManager.add(std::move(m_currentProject))) {
+            RB_EDITOR_ERROR("Can't Create Scene. Reason: {0}",
+                            errorToString(m_sceneManager.getError()));
+            return false;
+        }
+        m_activeScene = m_sceneManager.getActiveScene();
+        openScene();
+
+        return true;
+    }
+
+    void Editor::openScene() {
+        auto& scenePanel = m_panelManager.getPanel<ScenePanel>();
+        scenePanel.setActiveScene(m_activeScene);
+
+        auto& viewportPanel = m_panelManager.getPanel<ViewportPanel>();
+        viewportPanel.set(m_activeScene, m_frameBuffer);
+
+        auto projectPath = m_currentProject -> getPath();
+        auto assetsPath = combinePath(projectPath, "assets");
+        auto& assetsPanel = m_panelManager.getPanel<AssetsPanel>();
+        assetsPanel.setAssetsPath(assetsPath);
+    }
+
+    void Editor::createProject(Project::Ptr project) {
+        m_currentProject = project;
+        if(!m_sceneManager.add(std::move(project))) {
+            RB_EDITOR_ERROR("Can't Create Scene. Reason: {0}",
+                            errorToString(m_sceneManager.getError()));
+            return;
+        }
+        m_activeScene = m_sceneManager.getActiveScene();
+        openScene();
+        m_window -> setMaximazed(true);
+        prepare();
+    }
+
+    void Editor::loadProject(Project::Ptr project) {
+        m_currentProject = project;
+
+        if(!m_sceneManager.load(std::move(project))) {
+            RB_EDITOR_ERROR("Can't Load Scene. Reason: {0}",
+                            errorToString(m_sceneManager.getError()));
+            return;
+        }
+        prepare();
+
+        m_activeScene = m_sceneManager.getActiveScene();
+        openScene();
+
+        m_window -> setMaximazed(true);
+    }
 }

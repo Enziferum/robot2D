@@ -76,7 +76,7 @@ namespace editor {
         void mainMenubar();
 
         bool createScene();
-        void openScene(const std::string& path);
+        void openScene();
 
         void onSceneRun();
         void onSceneEdit();
