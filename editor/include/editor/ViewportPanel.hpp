@@ -22,6 +22,7 @@ source distribution.
 #pragma once
 
 #include <robot2D/Graphics/FrameBuffer.hpp>
+#include <utility>
 
 #include "Scene.hpp"
 #include "IPanel.hpp"
@@ -32,9 +33,15 @@ namespace editor {
         ViewportPanel(Scene::Ptr&& scene);
         ~ViewportPanel() override = default;
 
+        void set(Scene::Ptr ptr,
+                 robot2D::FrameBuffer::Ptr frameBuffer) {
+            m_scene = std::move(ptr);
+            m_frameBuffer = std::move(frameBuffer);
+        }
         void render() override;
     private:
         Scene::Ptr m_scene;
         robot2D::FrameBuffer::Ptr m_frameBuffer;
+        robot2D::vec2u  m_ViewportSize{};
     };
 }

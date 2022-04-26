@@ -33,9 +33,6 @@ namespace editor {
     m_frameBuffer(nullptr) {}
 
     void ViewportPanel::render() {
-        return;
-        robot2D::vec2u  m_ViewportSize{};
-
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
         ImGui::Begin("##Viewport", nullptr, ImGuiWindowFlags_NoTitleBar);
 
