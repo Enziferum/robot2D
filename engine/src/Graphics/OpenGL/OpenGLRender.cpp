@@ -166,6 +166,11 @@ namespace robot2D {
             m_renderBuffer.quadVertexPositions[2] = {1.F, 1.F};
             m_renderBuffer.quadVertexPositions[3] = {0.F, 1.F};
 
+            m_renderBuffer.quadVertexPositions[0] = {-0.5F, -0.5F};
+            m_renderBuffer.quadVertexPositions[1] = {0.5F, -0.5F};
+            m_renderBuffer.quadVertexPositions[2] = {0.5F, 0.5F};
+            m_renderBuffer.quadVertexPositions[3] = {-0.5F, 0.5F};
+
             std::string openGLVersion;
             if(m_renderApi == RenderApi::OpenGL3_3)
                 openGLVersion = "#version 330 core \n";
@@ -403,62 +408,78 @@ namespace robot2D {
             m_renderBuffer.indexCount = 0;
             m_renderBuffer.textureSlotIndex = 1;
             m_stats.drawCalls++;
+
+            renderCache(layerID);
         }
 
         void OpenGLRender::render(const VertexArray::Ptr& vertexArray, RenderStates states) const {
             auto layerID = states.layerID;
             if(layerID >= m_renderLayers.size())
                 layerID = m_renderLayers.size() - 1;
-            auto currentShader = states.shader;
-            if(currentShader == nullptr)
-                m_renderLayers[layerID].m_quadShader.use();
-            else
-                currentShader -> use();
-            if(m_renderApi == RenderApi::OpenGL3_3) {
-                glActiveTexture(GL_TEXTURE0);
-                glBindTexture(GL_TEXTURE_2D, states.texture->getID());
-            }
-            else if(m_renderApi == RenderApi::OpenGL4_5) {
-            #if !defined(ROBOT2D_MACOS)
-                glBindTextureUnit(0, states.texture->getID());
-            #endif
-            }
-            vertexArray -> Bind();
 
-            GLenum drawMode = GL_TRIANGLES;
-            if(states.renderInfo) {
-                switch (states.renderInfo->renderType) {
-                    case PrimitiveRenderType::Point:
-                        drawMode = GL_POINTS;
-                        break;
-                    case PrimitiveRenderType::Lines:
-                        drawMode = GL_LINES;
-                        break;
-                    case PrimitiveRenderType::Triangles:
-                        break;
-                    case PrimitiveRenderType::Quads:
-                        drawMode = GL_QUADS;
-                        break;
-                }
-            }
-
-            GLsizei drawIndexCount = states.renderInfo ? static_cast<GLsizei>(states.renderInfo -> indexCount)
-                    : static_cast<GLsizei>(vertexArray -> getIndexBuffer() -> getSize() / 4);
-
-            glDrawElements(drawMode,
-                           drawIndexCount,
-                           GL_UNSIGNED_INT,
-                           nullptr);
-            vertexArray -> unBind();
-            glBindTexture(GL_TEXTURE_2D, 0);
-            glActiveTexture(GL_TEXTURE0);
-
-            if(currentShader == nullptr)
-                m_renderLayers[layerID].m_quadShader.unUse();
-            else
-                currentShader -> unUse();
+            m_renderLayers[layerID].m_vertexArrayCache.push_back({vertexArray, states});
         }
 
+        void OpenGLRender::renderCache(unsigned int layerID) const {
+            for(const auto& it: m_renderLayers[layerID].m_vertexArrayCache) {
+                if(!it.m_vertexArray)
+                    continue;
+
+                auto& states = it.m_states;
+                auto& vertexArray = it.m_vertexArray;
+
+                auto currentShader = states.shader;
+                if(currentShader == nullptr)
+                    m_renderLayers[layerID].m_quadShader.use();
+                else
+                    currentShader -> use();
+                if(m_renderApi == RenderApi::OpenGL3_3) {
+                    glActiveTexture(GL_TEXTURE0);
+                    glBindTexture(GL_TEXTURE_2D, states.texture->getID());
+                }
+                else if(m_renderApi == RenderApi::OpenGL4_5) {
+                #if !defined(ROBOT2D_MACOS)
+                    glBindTextureUnit(0, states.texture->getID());
+                #endif
+                }
+                vertexArray -> Bind();
+
+                GLenum drawMode = GL_TRIANGLES;
+                if(states.renderInfo) {
+                    switch (states.renderInfo->renderType) {
+                        case PrimitiveRenderType::Point:
+                            drawMode = GL_POINTS;
+                            break;
+                        case PrimitiveRenderType::Lines:
+                            drawMode = GL_LINES;
+                            break;
+                        case PrimitiveRenderType::Triangles:
+                            break;
+                        case PrimitiveRenderType::Quads:
+                            drawMode = GL_QUADS;
+                            break;
+                    }
+                }
+
+                GLsizei drawIndexCount = states.renderInfo ? static_cast<GLsizei>(states.renderInfo -> indexCount)
+                                                           : static_cast<GLsizei>(vertexArray -> getIndexBuffer() -> getSize() / 4);
+
+                glDrawElements(drawMode,
+                               drawIndexCount,
+                               GL_UNSIGNED_INT,
+                               nullptr);
+                vertexArray -> unBind();
+                glBindTexture(GL_TEXTURE_2D, 0);
+                glActiveTexture(GL_TEXTURE0);
+
+                if(currentShader == nullptr)
+                    m_renderLayers[layerID].m_quadShader.unUse();
+                else
+                    currentShader -> unUse();
+            }
+
+            m_renderLayers[layerID].m_vertexArrayCache.clear();
+        }
 
         const RenderStats& OpenGLRender::getStats() const {
             return m_stats;
@@ -467,5 +488,6 @@ namespace robot2D {
         unsigned int OpenGLRender::getLayerCount() const {
             return m_renderLayers.size();
         }
+
     }
 }
