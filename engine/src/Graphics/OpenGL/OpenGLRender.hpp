@@ -72,8 +72,9 @@ namespace robot2D {
             IntRect getViewport(const View& view);
 
             void applyCurrentView(unsigned int layerID);
-        private:
+
             void setupLayer();
+            void renderCache(unsigned int layerID) const;
         private:
             mutable std::vector<RenderLayer> m_renderLayers;
             View m_default;
