@@ -65,6 +65,8 @@ namespace robot2D {
         /// Graphics API render information. Check RenderInfo.
         RenderInfo* renderInfo;
 
+        unsigned int layerID;
+
         static const RenderStates Default;
     };
 }

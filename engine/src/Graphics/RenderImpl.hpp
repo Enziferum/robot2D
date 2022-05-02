@@ -39,18 +39,22 @@ namespace robot2D {
             virtual ~RenderImpl() = 0;
 
             static Ptr create(const vec2u& size);
+
+            virtual void createLayer() = 0;
+            virtual unsigned int getLayerCount() const = 0;
+
             virtual void render(const RenderStates& states) = 0;
             virtual void render(const VertexData& data, const RenderStates& states) const = 0;
             virtual void render(const VertexArray::Ptr& vertexArray, RenderStates states) const = 0;
 
-            virtual void setView(const View& view) = 0;
-            virtual const View& getView() = 0;
+            virtual void setView(const View& view, unsigned int layerID) = 0;
+            virtual const View& getView(unsigned int layerID) = 0;
             virtual const View& getDefaultView() = 0;
             virtual void setup() = 0;
 
             virtual void beforeRender() const = 0;
             virtual void afterRender() const = 0;
-            virtual void flushRender() const = 0;
+            virtual void flushRender(unsigned int layerID) const = 0;
             virtual const RenderStats& getStats() const = 0;
             virtual void clear(const Color& color = Color::Black) = 0;
         protected:
