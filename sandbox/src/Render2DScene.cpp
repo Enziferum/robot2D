@@ -25,9 +25,8 @@ source distribution.
 #include <sandbox/Components.hpp>
 
 namespace {
-    const robot2D::vec2f
-    position = robot2D::vec2f {100.F, 100.F};
-    const robot2D::vec2f size = robot2D::vec2f {100.F, 100.F};
+    constexpr robot2D::vec2f position = robot2D::vec2f {100.F, 100.F};
+    constexpr robot2D::vec2f size = robot2D::vec2f {100.F, 100.F};
     constexpr const char* texturePath = "res/textures/old_logo.png";
     constexpr unsigned startEntitiesCount = 5;
 }
@@ -47,7 +46,7 @@ void Render2DScene::setup() {
     m_textures.loadFromFile(ResourceID::Logo, texturePath);
 
     for(unsigned int it = 0; it < startEntitiesCount; ++it)
-        createEntity({position.x, position.y + size.x * static_cast<float>(it)});
+        createEntity({position.x, position.y + size.x * static_cast<float>(it)}, 2);
 }
 
 void Render2DScene::handleEvents(const robot2D::Event& event) {
@@ -93,16 +92,17 @@ void Render2DScene::render() {
     m_window.render(m_scene);
 }
 
-void Render2DScene::createEntity(const robot2D::vec2f& position) {
+void Render2DScene::createEntity(const robot2D::vec2f& position, unsigned int layerIndex) {
     robot2D::ecs::Entity entity = m_scene.createEntity();
 
     auto& transform = entity.addComponent<TransformComponent>();
 
     transform.setPosition({position.x, position.y} );
 
-
     auto& sprite = entity.addComponent<SpriteComponent>();
     sprite.setTexture(m_textures.get(ResourceID::Logo));
+    sprite.layerIndex = layerIndex;
+
     auto tx_sz = sprite.getTexture().getSize();
     transform.scale({100.f / tx_sz.y, 100.f / tx_sz.y });
 }

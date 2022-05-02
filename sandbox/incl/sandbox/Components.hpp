@@ -37,9 +37,16 @@ public:
 
     void setColor(const robot2D::Color& color);
     const robot2D::Color& getColor() const;
+
+    unsigned int layerIndex = 1;
+    unsigned int depthIndex = 0;
 private:
     const robot2D::Texture* m_texture;
     robot2D::Color m_color;
+
+
+    bool m_needUpdateZbuffer = true;
+    friend class RenderSystem;
 };
 
 
