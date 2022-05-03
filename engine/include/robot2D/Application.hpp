@@ -3,6 +3,7 @@
 #include <memory>
 #include <robot2D/Core/Event.hpp>
 #include <robot2D/Graphics/RenderWindow.hpp>
+#include <robot2D/Core/MessageBus.hpp>
 
 namespace robot2D {
 
@@ -17,6 +18,7 @@ namespace robot2D {
         virtual void destroy();
 
         virtual void handleEvents(const robot2D::Event& event);
+        virtual void handleMessages();
         virtual void update(float deltaTime);
         virtual void guiUpdate(float deltaTime);
         virtual void render() = 0;

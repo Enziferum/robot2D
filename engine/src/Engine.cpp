@@ -61,6 +61,7 @@ namespace robot2D {
                 while(renderWindow.pollEvents(event)) {
                     m_application -> handleEvents(event);
                 }
+                m_application -> handleMessages();
                 m_application -> update(timePerFrame);
             }
 

@@ -37,6 +37,7 @@ Render2DScene::Render2DScene(robot2D::RenderWindow& window) : Scene(window),
                                                               m_scene(messageBus) {
 
 }
+robot2D::ecs::Entity ent;
 
 void Render2DScene::setup() {
     ///// setup Ecs /////
@@ -51,7 +52,8 @@ void Render2DScene::setup() {
 
     createEntity({100.F, 100.F}, 2);
     createEntity({100.F, 140.F}, 1);
-    createEntity({100.F, 180.F}, 0);
+    ent = createEntity({100.F, 180.F}, 0);
+
 
 //    for(unsigned int it = 0; it < startEntitiesCount; ++it)
 //        createEntity({position.x, position.y + size.x * static_cast<float>(it)}, 2);
@@ -71,6 +73,7 @@ void Render2DScene::handleEvents(const robot2D::Event& event) {
 
 void Render2DScene::update(float dt) {
     m_scene.update(dt);
+    m_scene.removeEntity(ent);
 }
 
 void Render2DScene::imGuiRender() {
@@ -100,7 +103,7 @@ void Render2DScene::render() {
     m_window.render(m_scene);
 }
 
-void Render2DScene::createEntity(const robot2D::vec2f& position, unsigned int layerIndex) {
+robot2D::ecs::Entity Render2DScene::createEntity(const robot2D::vec2f& position, unsigned int layerIndex) {
     robot2D::ecs::Entity entity = m_scene.createEntity();
 
     auto& transform = entity.addComponent<TransformComponent>();
@@ -119,4 +122,6 @@ void Render2DScene::createEntity(const robot2D::vec2f& position, unsigned int la
     sprite.layerIndex = layerIndex;
 
     transform.setSize({100.F, 100.F});
+
+    return entity;
 }

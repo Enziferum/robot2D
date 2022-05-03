@@ -44,6 +44,12 @@ namespace robot2D::ecs {
         template<typename T>
         T* getSystem();
 
+        template<typename T>
+        const T* getSystem() const;
+
+        template<typename T>
+        bool hasSystem() const;
+
         void addEntity(Entity entity);
         void removeEntity(Entity entity);
 
@@ -82,6 +88,25 @@ namespace robot2D::ecs {
             return ptr->m_systemId == systemId;
         });
         return dynamic_cast<T*>(it->get());
+    }
+
+    template<typename T>
+    const T* SystemManager::getSystem() const {
+        UniqueType systemId(typeid(T));
+        auto it = std::find_if(m_systems.begin(), m_systems.end(), [&systemId](const System::Ptr& ptr ) {
+            return ptr->m_systemId == systemId;
+        });
+        return dynamic_cast<T*>(it->get());
+    }
+
+    template<typename T>
+    bool SystemManager::hasSystem() const {
+        UniqueType systemId(typeid(T));
+        auto it = std::find_if(m_systems.begin(), m_systems.end(), [&systemId](const System::Ptr& ptr ) {
+            return ptr->m_systemId == systemId;
+        });
+
+        return it != m_systems.end();
     }
 
 }
