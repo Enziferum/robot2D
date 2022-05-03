@@ -428,6 +428,17 @@ namespace robot2D {
                 auto& states = it.m_states;
                 auto& vertexArray = it.m_vertexArray;
 
+                switch(states.blendMode) {
+                    default:
+                        break;
+                    case BlendMode::AlphaOne:
+                        glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+                        break;
+                    case BlendMode::MinusAlphaOne:
+                        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+                        break;
+                }
+
                 auto currentShader = states.shader;
                 if(currentShader == nullptr)
                     m_renderLayers[layerID].m_quadShader.use();
@@ -445,23 +456,21 @@ namespace robot2D {
                 vertexArray -> Bind();
 
                 GLenum drawMode = GL_TRIANGLES;
-                if(states.renderInfo) {
-                    switch (states.renderInfo->renderType) {
-                        case PrimitiveRenderType::Point:
-                            drawMode = GL_POINTS;
-                            break;
-                        case PrimitiveRenderType::Lines:
-                            drawMode = GL_LINES;
-                            break;
-                        case PrimitiveRenderType::Triangles:
-                            break;
-                        case PrimitiveRenderType::Quads:
-                            drawMode = GL_QUADS;
-                            break;
-                    }
+                switch (states.renderInfo.renderType) {
+                    case PrimitiveRenderType::Point:
+                        drawMode = GL_POINTS;
+                        break;
+                    case PrimitiveRenderType::Lines:
+                        drawMode = GL_LINES;
+                        break;
+                    case PrimitiveRenderType::Triangles:
+                        break;
+                    case PrimitiveRenderType::Quads:
+                        drawMode = GL_QUADS;
+                        break;
                 }
 
-                GLsizei drawIndexCount = states.renderInfo ? static_cast<GLsizei>(states.renderInfo -> indexCount)
+                GLsizei drawIndexCount = states.renderInfo.indexCount ? static_cast<GLsizei>(states.renderInfo.indexCount)
                                                            : static_cast<GLsizei>(vertexArray -> getIndexBuffer() -> getSize() / 4);
 
                 glDrawElements(drawMode,
@@ -476,6 +485,9 @@ namespace robot2D {
                     m_renderLayers[layerID].m_quadShader.unUse();
                 else
                     currentShader -> unUse();
+
+                if(states.blendMode != BlendMode::None)
+                    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             }
 
             m_renderLayers[layerID].m_vertexArrayCache.clear();
