@@ -14,6 +14,8 @@ namespace robot2D {
         (void)event;
     }
 
+    void Application::handleMessages() {}
+
     void Application::update(float deltaTime) {
         (void)deltaTime;
     }

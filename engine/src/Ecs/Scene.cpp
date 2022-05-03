@@ -66,6 +66,5 @@ namespace robot2D::ecs {
         for(auto& it: m_drawables)
             target.draw(*it);
     }
-
 }
 

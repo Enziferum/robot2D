@@ -444,14 +444,15 @@ namespace robot2D {
                     m_renderLayers[layerID].m_quadShader.use();
                 else
                     currentShader -> use();
-                if(m_renderApi == RenderApi::OpenGL3_3) {
-                    glActiveTexture(GL_TEXTURE0);
-                    glBindTexture(GL_TEXTURE_2D, states.texture->getID());
-                }
-                else if(m_renderApi == RenderApi::OpenGL4_5) {
-                #if !defined(ROBOT2D_MACOS)
-                    glBindTextureUnit(0, states.texture->getID());
-                #endif
+                if(states.texture) {
+                    if (m_renderApi == RenderApi::OpenGL3_3) {
+                        glActiveTexture(GL_TEXTURE0);
+                        glBindTexture(GL_TEXTURE_2D, states.texture->getID());
+                    } else if (m_renderApi == RenderApi::OpenGL4_5) {
+                        #if !defined(ROBOT2D_MACOS)
+                            glBindTextureUnit(0, states.texture->getID());
+                        #endif
+                    }
                 }
                 vertexArray -> Bind();
 
