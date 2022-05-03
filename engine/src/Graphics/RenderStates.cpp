@@ -29,8 +29,9 @@ namespace robot2D{
     shader(nullptr),
     color(robot2D::Color::White),
     transform(),
-    renderInfo(nullptr),
-    layerID(1)
+    renderInfo(),
+    layerID(1),
+    blendMode{BlendMode::None}
     {}
 
 }
