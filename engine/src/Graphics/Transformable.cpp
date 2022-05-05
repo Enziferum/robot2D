@@ -76,7 +76,7 @@ namespace robot2D{
     }
 
     void Transformable::move(const vec2f &offset) {
-        setPosition(vec2f(m_pos.x + offset.x, m_pos.y + offset.y));
+        setPosition(vec2f(m_pos + offset));
     }
 
     void Transformable::scale(const vec2f& factor) {

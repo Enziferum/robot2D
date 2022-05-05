@@ -179,12 +179,13 @@ namespace robot2D {
             DesktopWindowImpl* window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
 
             Event event;
-            if(action == GLFW_REPEAT || action == GLFW_PRESS)
+            //action == GLFW_REPEAT ||
+            if(action == GLFW_PRESS)
                 event.type = Event::KeyPressed;
             if(action == GLFW_RELEASE)
                 event.type = Event::KeyReleased;
             event.key.code = Int2Key(key);
-            window->m_event_queue.push(event);
+            window -> m_event_queue.push(event);
         }
 
         void DesktopWindowImpl::cursor_callback(GLFWwindow* wnd, double xpos, double ypos) {
