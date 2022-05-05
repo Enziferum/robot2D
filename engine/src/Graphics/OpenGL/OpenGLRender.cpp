@@ -166,11 +166,6 @@ namespace robot2D {
             m_renderBuffer.quadVertexPositions[2] = {1.F, 1.F};
             m_renderBuffer.quadVertexPositions[3] = {0.F, 1.F};
 
-            m_renderBuffer.quadVertexPositions[0] = {-0.5F, -0.5F};
-            m_renderBuffer.quadVertexPositions[1] = {0.5F, -0.5F};
-            m_renderBuffer.quadVertexPositions[2] = {0.5F, 0.5F};
-            m_renderBuffer.quadVertexPositions[3] = {-0.5F, 0.5F};
-
             std::string openGLVersion;
             if(m_renderApi == RenderApi::OpenGL3_3)
                 openGLVersion = "#version 330 core \n";
