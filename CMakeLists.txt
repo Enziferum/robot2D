@@ -52,8 +52,8 @@ else()
 endif()
 
 find_package(glfw3 REQUIRED)
-find_package(robot2D_ext QUIET)
 find_package(spdlog)
+find_package(robot2D_ext QUIET)
 
 if(WIN32)
     set(LIBS opengl32)
