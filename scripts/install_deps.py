@@ -2,7 +2,18 @@ import os
 import sys
 import functools
 import enum
+import subprocess
 
+GITHUB_URL = 'https://github.com/'
+GIT_END = '.git'
+
+"""
+    How to add new dep ?
+    1. Add Dep to LibType
+    2. In Consts update getURL to be able download by git
+    3. nixLibName add library. If Empty will be downloaded by git url. Need for packet manager
+    4. Add lib cmake options libCmakeOptions if no make empty string
+"""
 
 class bcolors:
     HEADER = '\033[95m'
@@ -14,6 +25,52 @@ class bcolors:
     ENDC = '\033[0m'
     BOLD = '\033[1m'
     UNDERLINE = '\033[4m'
+
+
+def printColored(color, text, endColor: bool = True):
+    print(f"{color}{text}{bcolors.ENDC if endColor else ''}")
+
+
+class PlatformType(str, enum.Enum):
+    Windows = 'Windows'
+    Linux = 'Linux'
+    MacOS = 'Mac'
+
+
+def get_platform():
+    platforms = {
+        'linux': 'Linux',
+        'linux1': 'Linux',
+        'linux2': 'Linux',
+        'darwin': 'Mac',
+        'win32': 'Windows'
+    }
+    if sys.platform not in platforms:
+        return sys.platform
+
+    return PlatformType(platforms[sys.platform])
+
+
+# new libs add here
+class LibType(str, enum.Enum):
+    GLFW = 'glfw'
+    SPDLOG = 'spdlog'
+    ROBOT2D_EXT = 'robot2D_ext'
+
+    @classmethod
+    def libs(cls) -> list:
+        return list(cls.__members__.values())
+
+
+class Consts:
+    @staticmethod
+    def getURL(lib: LibType) -> str:
+        githubUserNames = {
+            'glfw': 'glfw',
+            'robot2D_ext': 'Enziferum',
+            'spdlog': 'gabime'
+        }
+        return f'{GITHUB_URL}{githubUserNames[lib.value]}/{lib.value}{GIT_END}'
 
 
 class WinCompiler(enum.IntEnum):
@@ -37,31 +94,7 @@ class WinVSVersion(enum.IntEnum):
             return "Visual Studio 16 2022"
 
 
-
-def printColored(color, text, endColor: bool = True):
-    print(f"{color}{text}{bcolors.ENDC if endColor else ''}")
-
-
-def get_platform():
-    platforms = {
-        'linux': 'Linux',
-        'linux1': 'Linux',
-        'linux2': 'Linux',
-        'darwin': 'Mac',
-        'win32': 'Windows'
-    }
-    if sys.platform not in platforms:
-        return sys.platform
-
-    return platforms[sys.platform]
-
-
 class Cmd:
-    def getCmd(self) -> str:
-        raise NotImplementedError
-
-
-class NixCmd(Cmd):
     def __init__(self, cmd: str):
         self.cmd = cmd
 
@@ -69,17 +102,86 @@ class NixCmd(Cmd):
         return self.cmd
 
 
+class NixLibName:
+    MacOSName: str
+    LinuxName: str
+
+    def __init__(self, mac, linux):
+        self.MacOSName = mac
+        self.LinuxName = linux
+
+
+class CMakeOptions:
+    generator: str
+    os_make: str
+    options: str
+
+    def __init__(self, generator, options, os_make=''):
+        self.generator = generator
+        self.options = options
+        self.os_make = os_make
+
+
 class Lib:
-    def __init__(self, name: str):
+    def __init__(self, name: str, giturl: str,
+                 macOSname: str, linuxName: str,
+                 cmakeOptions: CMakeOptions):
         self.name = name
-        self.options = ''
+        self.giturl = giturl
+        self.macOSname = macOSname
+        self.linuxName = linuxName
+        self.cmakeOptions = cmakeOptions
         self.cmds = []
 
+    def __build_library(self, generator, os_make='', cmake_options=''):
+        cmake_cmd = Cmd(f'cd {self.name} && mkdir build '
+                           f'&& cd build && cmake .. -G "{generator}" {cmake_options} && {os_make}make '
+                           f'&& {os_make}make install')
+        self.cmds.append(cmake_cmd)
+
+    def __build_library_vs(self, generator, cmake_options=''):
+        cmake_cmd = Cmd(f'cd {self.name} && mkdir build '
+                           f'&& cd build && cmake .. -G "{generator}" -DCMAKE_VS_INCLUDE_INSTALL_TO_DEFAULT_BUILD=ON '
+                           f'{cmake_options} && cmake --build .'
+                           f'&& cmake install .')
+        self.cmds.append(cmake_cmd)
+
+    def __pack_cmds(self):
+        currentPlatform = get_platform()
+
+        if currentPlatform != PlatformType.Windows \
+                and (self.macOSname != '' and self.linuxName != ''):
+            packman_cmd = ''
+            libname = ''
+            if currentPlatform is PlatformType.MacOS:
+                packman_cmd = 'brew install'
+                libname = self.macOSname
+            if currentPlatform is PlatformType.Linux:
+                # todo support not only ubuntu
+                packman_cmd = 'apt install'
+                libname = self.linuxName
+
+            self.cmds.append(Cmd(f'{packman_cmd} {libname}'))
+        else:
+            git_cmd = f'git clone {self.giturl}'
+            self.cmds.append(Cmd(git_cmd))
+            if currentPlatform is PlatformType.Windows:
+                self.__build_library(self.cmakeOptions.generator,
+                                     self.cmakeOptions.os_make,
+                                     self.cmakeOptions.options)
+                self.__build_library_vs(self.cmakeOptions.generator,
+                                     self.cmakeOptions.options)
+                return
+            self.__build_library(self.cmakeOptions.generator,
+                                 self.cmakeOptions.os_make,
+                                 self.cmakeOptions.options)
+
     def run(self):
+        self.__pack_cmds()
+
         for cmd in self.cmds:
             printColored(bcolors.WARNING, f'Execute command {cmd.getCmd()}')
-            import subprocess
-            proc = subprocess.Popen(cmd.getCmd(), shell=True, executable="/bin/zsh")
+            proc = subprocess.Popen(cmd.getCmd(), shell=True)
             proc.wait()
 
     def __str__(self):
@@ -89,127 +191,16 @@ class Lib:
 class DepsInstaller:
     def __init__(self):
         self.libs = []
-        self.__setup()
         self.__wincompiler = WinCompiler.No
         self.__winvsversion = WinVSVersion.No
 
-    def __build_library(self, lib, giturl, libname, generator, os_make='', cmake_options=''):
-        git_cmd = f'git clone {giturl}'
-        lib.cmds.append(NixCmd(git_cmd))
-        cmake_cmd = NixCmd(f'cd {libname} && mkdir build '
-                           f'&& cd build && cmake .. -G "{generator}" {cmake_options} && {os_make}make '
-                           f'&& {os_make}make install')
-        lib.cmds.append(cmake_cmd)
-
-    def __build_library_vs(self, lib, giturl, libname, generator, cmake_options=''):
-        git_cmd = f'git clone {giturl}'
-        lib.cmds.append(NixCmd(git_cmd))
-        cmake_cmd = NixCmd(f'cd {libname} && mkdir build '
-                           f'&& cd build && cmake .. -G "{generator}" -DCMAKE_VS_INCLUDE_INSTALL_TO_DEFAULT_BUILD=ON '
-                           f'{cmake_options} && cmake --build .'
-                           f'&& cmake install .')
-        lib.cmds.append(cmake_cmd)
-
-    def __setupGLFW(self):
-        currentPlatform = get_platform()
-        libname = 'glfw'
-        lib = Lib(libname)
-
-        if currentPlatform == 'Mac':
-            cmd = NixCmd("brew install glfw3")
-            lib.cmds.append(cmd)
-
-        if currentPlatform == 'Linux':
-            cmd = NixCmd("apt install libglfw3 libglfw3-dev")
-            lib.cmds.append(cmd)
-
-        if currentPlatform == 'Windows':
-            giturl = 'https://github.com/glfw/glfw.git'
-            if self.__wincompiler == WinCompiler.MinGW:
-                self.__build_library(lib, giturl, libname, 'MinGW Makefiles', 'mingw32-',
-                                     '-DGLFW_BUILD_EXAMPLES=OFF -DGLFW_BUILD_TESTS=OFF -DGLFW_BUILD_DOCS=OFF')
-                return
-            if self.__wincompiler == WinCompiler.VS:
-                self.__build_library_vs(lib, giturl, libname, str(self.__winvsversion),
-                                     '-DGLFW_BUILD_EXAMPLES=OFF -DGLFW_BUILD_TESTS=OFF -DGLFW_BUILD_DOCS=OFF')
-                return
-
-        self.libs.append(lib)
-
-    def __setupRobot2D_ext(self):
-        currentPlatform = get_platform()
-        libname = 'robot2D_ext'
-        lib = Lib(libname)
-
-        giturl = 'https://github.com/Enziferum/robot2D_ext.git'
-        if currentPlatform == 'Mac' or currentPlatform == 'Linux':
-            generator = 'Unix Makefiles'
-            self.__build_library(lib, giturl, libname, generator)
-            return
-        if currentPlatform == 'Windows':
-            if self.__wincompiler == WinCompiler.MinGW:
-                self.__build_library(lib, giturl, libname, 'MinGW Makefiles', 'mingw32-')
-                return
-            if self.__wincompiler == WinCompiler.VS:
-                self.__build_library_vs(lib, giturl, libname, str(self.__winvsversion))
-                return
-
-        self.libs.append(lib)
-
-    def __setupSpdlog(self):
-        currentPlatform = get_platform()
-        libname = 'spdlog'
-        lib = Lib(libname)
-
-        if currentPlatform == 'Mac':
-            cmd = NixCmd('brew install spdlog')
-            lib.cmds.append(cmd)
-
-        if currentPlatform == 'Linux':
-            cmd = NixCmd('apt install libspdlog-dev')
-            lib.cmds.append(cmd)
-
-        if currentPlatform == 'Windows':
-            giturl = 'https://github.com/gabime/spdlog.git'
-            if self.__wincompiler == WinCompiler.MinGW:
-                self.__build_library(lib, giturl, libname, 'MinGW Makefiles', 'mingw32-')
-                return
-            if self.__wincompiler == WinCompiler.VS:
-                self.__build_library_vs(lib, giturl, libname, str(self.__winvsversion))
-                return
-
-        self.libs.append(lib)
-
-    def __setupFreetype(self):
-        libname = 'freetype'
-        currentPlatform = get_platform()
-        lib = Lib(libname)
-
-        if currentPlatform == 'Mac':
-            cmd = NixCmd('brew install freetype')
-            lib.cmds.append(cmd)
-
-        if currentPlatform == 'Linux':
-            cmd = NixCmd('apt install libfreetype6 libfreetype6-dev')
-            lib.cmds.append(cmd)
-
-        if currentPlatform == 'Windows':
-            printColored(bcolors.FAIL, "Can't install freetype directly in Windows")
-
-        self.libs.append(lib)
-
     def __setup(self):
-        self.__setupGLFW()
-        self.__setupSpdlog()
-        self.__setupRobot2D_ext()
-        self.__setupFreetype()
-
-    def run(self):
-        printColored(bcolors.WARNING, f'Current platform is: {get_platform()}')
-        if get_platform() == 'Windows':
+        currentPlatform = get_platform()
+        printColored(bcolors.WARNING, f'Current platform is: {currentPlatform.value}')
+        if get_platform() == PlatformType.Windows:
             compiler = input("Choose Compiler: \n"
-                  "1 - MinGW \n"
-                  "2 - VS \n")
+                             "1 - MinGW \n"
+                             "2 - VS \n")
             self.__wincompiler = WinCompiler(int(compiler))
             if self.__wincompiler == WinCompiler.VS:
                 version = input("Choose Version: \n"
@@ -218,6 +209,40 @@ class DepsInstaller:
                                 "3 - Visual Studio 2022 \n"
                                 )
                 self.__winvsversion = WinVSVersion(int(version))
+
+        nixLibNames = {
+            'glfw': NixLibName('glfw3', 'libglfw3 libglfw3-dev'),
+            'spdlog': NixLibName('spdlog', 'libspdlog-dev'),
+            'robot2D_ext': NixLibName('', ''),
+        }
+
+        libCmakeOptions = {
+            'glfw': '-DGLFW_BUILD_EXAMPLES=OFF -DGLFW_BUILD_TESTS=OFF -DGLFW_BUILD_DOCS=OFF',
+            'spdlog': '',
+            'robot2D_ext': ''
+        }
+
+        generator = ''
+        if currentPlatform != PlatformType.Windows:
+            generator = 'Unix Makefiles'
+        else:
+            if self.__wincompiler is WinCompiler.MinGW:
+                generator = 'MinGW Makefiles'
+            if self.__wincompiler is WinCompiler.VS:
+                generator = str(self.__winvsversion)
+
+        for it in LibType.libs():
+            key = it.value
+            cmakeOptions = CMakeOptions(generator,
+                                        libCmakeOptions[key],
+                                        'mingw32-' if self.__wincompiler is WinCompiler.MinGW else '')
+            lib = Lib(key, Consts.getURL(LibType(it)),
+                      nixLibNames[key].MacOSName, nixLibNames[key].LinuxName,
+                      cmakeOptions)
+            self.libs.append(lib)
+
+    def run(self):
+        self.__setup()
 
         deps = functools.reduce(lambda l, r: l + ', ' + r, [lib.name for lib in self.libs])
         print(f"Install dependencies: \n {deps}")
