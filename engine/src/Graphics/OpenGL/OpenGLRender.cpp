@@ -204,8 +204,8 @@ namespace robot2D {
                 m_renderBuffer.textureSlots[it] = 0;
 
             renderLayer.m_view = m_default;
-            m_quadShader.set(m_shaderKeys[ShaderKey::Projection].c_str(),
-                             renderLayer.m_view.getTransform().get_matrix());
+            m_quadShader.setMatrix(m_shaderKeys[ShaderKey::Projection].c_str(),
+                    const_cast<float*>(renderLayer.m_view.getTransform().get_matrix()));
             m_quadShader.unUse();
 
             m_renderLayers.emplace_back(std::move(renderLayer));
@@ -339,8 +339,8 @@ namespace robot2D {
             auto& m_quadShader = m_renderLayers[layerID].m_quadShader;
 
             m_quadShader.use();
-            m_quadShader.set(m_shaderKeys[ShaderKey::Projection].c_str(),
-                             m_view.getTransform().get_matrix());
+            m_quadShader.setMatrix(m_shaderKeys[ShaderKey::Projection].c_str(),
+                const_cast<float*>(m_view.getTransform().get_matrix()));
             m_quadShader.unUse();
         }
 

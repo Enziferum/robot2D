@@ -88,9 +88,9 @@ class WinVSVersion(enum.IntEnum):
     def __str__(self):
         if self.value == self.VS_17:
             return "Visual Studio 15 2017 Win64"
-        if self.value == self.VS_17:
+        if self.value == self.VS_19:
             return "Visual Studio 16 2019"
-        if self.value == self.VS_17:
+        if self.value == self.VS_22:
             return "Visual Studio 16 2022"
 
 
@@ -125,12 +125,15 @@ class CMakeOptions:
 class Lib:
     def __init__(self, name: str, giturl: str,
                  macOSname: str, linuxName: str,
-                 cmakeOptions: CMakeOptions):
+                 cmakeOptions: CMakeOptions, 
+                 configuration: str = "Debug"
+                 ):
         self.name = name
         self.giturl = giturl
         self.macOSname = macOSname
         self.linuxName = linuxName
         self.cmakeOptions = cmakeOptions
+        self.configuration = configuration
         self.cmds = []
 
     def __build_library(self, generator, os_make='', cmake_options=''):
@@ -141,9 +144,10 @@ class Lib:
 
     def __build_library_vs(self, generator, cmake_options=''):
         cmake_cmd = Cmd(f'cd {self.name} && mkdir build '
-                           f'&& cd build && cmake .. -G "{generator}" -DCMAKE_VS_INCLUDE_INSTALL_TO_DEFAULT_BUILD=ON '
+                           f'&& cd build && cmake .. -G "{generator}" -DCMAKE_CONFIGURATION_TYPES:STRING="{self.configuration}" '
+                           f' -DCMAKE_VS_INCLUDE_INSTALL_TO_DEFAULT_BUILD=ON '
                            f'{cmake_options} && cmake --build .'
-                           f'&& cmake install .')
+                           f' && cmake --install .')
         self.cmds.append(cmake_cmd)
 
     def __pack_cmds(self):
@@ -166,9 +170,6 @@ class Lib:
             git_cmd = f'git clone {self.giturl}'
             self.cmds.append(Cmd(git_cmd))
             if currentPlatform is PlatformType.Windows:
-                self.__build_library(self.cmakeOptions.generator,
-                                     self.cmakeOptions.os_make,
-                                     self.cmakeOptions.options)
                 self.__build_library_vs(self.cmakeOptions.generator,
                                      self.cmakeOptions.options)
                 return
@@ -187,6 +188,15 @@ class Lib:
     def __str__(self):
         return str(self.__dict__)
 
+class ConfigurationType(enum.IntEnum):
+    Debug = 1
+    Release = 2
+    
+    def __str__(self):
+        if self.value == self.Debug:
+            return "Debug"
+        if self.value == self.Release:
+            return "Release"
 
 class DepsInstaller:
     def __init__(self):
@@ -197,6 +207,10 @@ class DepsInstaller:
     def __setup(self):
         currentPlatform = get_platform()
         printColored(bcolors.WARNING, f'Current platform is: {currentPlatform.value}')
+        configuration = input("Choose Configuration: \n"
+                             "1 - Debug \n"
+                             "2 - Release \n")
+        configuration = ConfigurationType(int(configuration))
         if get_platform() == PlatformType.Windows:
             compiler = input("Choose Compiler: \n"
                              "1 - MinGW \n"
@@ -209,7 +223,6 @@ class DepsInstaller:
                                 "3 - Visual Studio 2022 \n"
                                 )
                 self.__winvsversion = WinVSVersion(int(version))
-
         nixLibNames = {
             'glfw': NixLibName('glfw3', 'libglfw3 libglfw3-dev'),
             'spdlog': NixLibName('spdlog', 'libspdlog-dev'),
@@ -218,7 +231,7 @@ class DepsInstaller:
 
         libCmakeOptions = {
             'glfw': '-DGLFW_BUILD_EXAMPLES=OFF -DGLFW_BUILD_TESTS=OFF -DGLFW_BUILD_DOCS=OFF',
-            'spdlog': '',
+            'spdlog': '-DSPDLOG_BUILD_EXAMPLE=OFF',
             'robot2D_ext': ''
         }
 
@@ -238,7 +251,8 @@ class DepsInstaller:
                                         'mingw32-' if self.__wincompiler is WinCompiler.MinGW else '')
             lib = Lib(key, Consts.getURL(LibType(it)),
                       nixLibNames[key].MacOSName, nixLibNames[key].LinuxName,
-                      cmakeOptions)
+                      cmakeOptions,
+                      str(configuration))
             self.libs.append(lib)
 
     def run(self):

@@ -100,8 +100,7 @@ namespace robot2D {
         glUniform1f(glGetUniformLocation(shaderProgram, name), value);
     }
 
-    template<>
-    void ShaderHandler::set<const float*>(const char* name, const float* value) const  {
+    void ShaderHandler::setMatrix(const char* name, float* value) const  {
         glUniformMatrix4fv(glGetUniformLocation(shaderProgram, name),
                            1, GL_FALSE, value);
     }
