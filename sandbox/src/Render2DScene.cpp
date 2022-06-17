@@ -28,8 +28,8 @@ namespace {
     constexpr robot2D::vec2f position = robot2D::vec2f {100.F, 100.F};
     constexpr robot2D::vec2f size = robot2D::vec2f {100.F, 100.F};
     constexpr const char* texturePath = "res/textures/old_logo.png";
-    constexpr const char* texturePath1 = "res/textures/paddle.png";
-    constexpr const char* texturePath2 = "res/textures/awesomeface.png";
+    constexpr const char* texturePath1 = "res/textures/old_logo.png";
+    constexpr const char* texturePath2 = "res/textures/old_logo.png";
     constexpr unsigned startEntitiesCount = 5;
 }
 
