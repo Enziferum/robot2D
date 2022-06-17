@@ -61,6 +61,8 @@ namespace robot2D::ecs {
         void setScene(Scene*);
         Scene* getScene();
 
+        const Scene* getScene() const { return m_scene; }
+
         UniqueType m_systemId;
         EntityList m_entities;
         robot2D::MessageBus& m_messageBus;

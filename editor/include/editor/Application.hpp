@@ -21,46 +21,41 @@ source distribution.
 
 #pragma once
 
-#include <memory>
-#include <vector>
-
-#include <robot2D/Graphics/RenderWindow.hpp>
+#include <robot2D/Application.hpp>
 #include <robot2D/Core/MessageBus.hpp>
+#include <robot2D/Extra/Gui.hpp>
 
-#include "Gui/Gui.hpp"
 #include "Editor.hpp"
 #include "ProjectInspector.hpp"
 #include "ProjectManager.hpp"
 #include "EditorCache.hpp"
 #include "Configuration.hpp"
-
+#include "MessageQueue.hpp"
 
 namespace editor {
 
     struct ApplicationConfiguration {
         const std::string logoPath = "res/textures/logo.png";
-        const robot2D::vec2u inspectorSize = {600, 400};
-        robot2D::vec2u defaultWindowSize{1280, 920};
+        const robot2D::vec2u inspectorSize = {600, 400 };
     };
 
-    class Application {
+    class Application: public robot2D::Application {
     public:
         Application();
-        ~Application() = default;
+        ~Application() override = default;
 
-        void setup();
-        void run();
-    private:
-        void handleEvents();
+        void setup() override;
+        void handleEvents(const robot2D::Event& event) override;
         void handleMessages();
-        void update(float dt);
-        void render();
-
-        /// Subsription Api callbacks //
+        void update(float dt) override;
+        void guiUpdate(float dt)override;
+        void render() override;
+    private:
+        /// Subsription Api callbacks ///
         void createProject(ProjectDescription&& project);
         void loadProject(ProjectDescription&& project);
         void deleteProject(ProjectDescription&& projectDescription);
-        /// Subsription Api callbacks //
+        /// Subsription Api callbacks ///
     private:
         enum class State {
             ProjectInspector,
@@ -68,7 +63,6 @@ namespace editor {
         };
     private:
         ApplicationConfiguration m_appConfiguration;
-        robot2D::RenderWindow m_window;
 
         robot2D::MessageBus m_messageBus;
         ImGui::Gui m_guiWrapper;

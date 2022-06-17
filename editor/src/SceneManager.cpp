@@ -73,6 +73,7 @@ namespace editor {
             m_error = SceneManagerError::SceneDeserialize;
             return false;
         }
+        m_associatedProject = std::move(project);
         return true;
     }
 

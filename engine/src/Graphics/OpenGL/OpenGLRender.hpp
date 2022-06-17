@@ -22,36 +22,44 @@ source distribution.
 #pragma once
 
 #include <unordered_map>
+#include <vector>
 
 #include <robot2D/Graphics/RenderStates.hpp>
 #include <robot2D/Graphics/Shader.hpp>
 #include <robot2D/Graphics/View.hpp>
 #include <robot2D/Graphics/RenderStats.hpp>
+#include <robot2D/Graphics/RenderAPI.hpp>
 
 #include "../RenderImpl.hpp"
 #include "RenderBuffer.hpp"
-#include "robot2D/Graphics/RenderAPI.hpp"
+#include "RenderLayer.hpp"
 
 namespace robot2D {
     using uint = unsigned int;
 
     namespace priv {
+
         class ROBOT2D_EXPORT_API OpenGLRender: public RenderImpl {
         public:
             OpenGLRender(const vec2u& windowSize);
             ~OpenGLRender();
+
+            void setup() override;
+            void createLayer() override;
+            unsigned int getLayerCount() const  override;
 
             void clear(const Color &color = Color::Black) override;
 
             void render(const RenderStates& states) override;
             void render(const VertexData& data, const RenderStates& states) const override;
             void render(const VertexArray::Ptr& vertexArray, RenderStates states) const override;
+            void setView(const View& view, unsigned int layerID) override;
 
-            void setup() override;
-            void setView(const View& view) override;
-
-            const View& getView() override;
+            /// 2D Render View ///
+            const View& getView(unsigned int layerID) override;
             const View& getDefaultView() override;
+            /// 2D Render View ///
+
             virtual const RenderStats& getStats() const override;
         private:
             void setupOpenGL();
@@ -59,15 +67,16 @@ namespace robot2D {
 
             virtual void beforeRender() const override;
             virtual void afterRender()const override;
-            virtual void flushRender() const override;
+            virtual void flushRender(unsigned int layerID) const override;
 
             IntRect getViewport(const View& view);
 
-            void applyCurrentView();
+            void applyCurrentView(unsigned int layerID);
+
+            void setupLayer();
+            void renderCache(unsigned int layerID) const;
         private:
-            mutable RenderBuffer m_renderBuffer;
-            ShaderHandler m_quadShader;
-            View m_view;
+            mutable std::vector<RenderLayer> m_renderLayers;
             View m_default;
             mutable RenderStats m_stats;
             RenderApi m_renderApi;
@@ -76,6 +85,7 @@ namespace robot2D {
                 TextureSamples,
                 Projection
             };
+
             /// Instead using raw text in shader better have correct setup map
             std::unordered_map<ShaderKey, std::string> m_shaderKeys;
         };

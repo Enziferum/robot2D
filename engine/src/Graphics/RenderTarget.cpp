@@ -69,16 +69,16 @@ namespace robot2D {
         m_render -> render(data, states);
     }
 
-    void RenderTarget::setView(const View& view) {
-        m_render -> setView(view);
+    void RenderTarget::setView(const View& view, unsigned int layerID) {
+        m_render -> setView(view, layerID);
     }
 
-    const View& RenderTarget::getView() {
-        return m_render->getView();
+    const View& RenderTarget::getView(unsigned int layerID) {
+        return m_render -> getView(layerID);
     }
 
     const View& RenderTarget::getDefaultView() {
-        return m_render->getDefaultView();
+        return m_render -> getDefaultView();
     }
 
     void RenderTarget::beforeRender() const {
@@ -89,8 +89,8 @@ namespace robot2D {
         m_render -> afterRender();
     }
 
-    void RenderTarget::flushRender() const {
-        m_render -> flushRender();
+    void RenderTarget::flushRender(unsigned int layerID) const {
+        m_render -> flushRender(layerID);
     }
 
     const RenderStats& RenderTarget::getStats() const {
@@ -101,5 +101,21 @@ namespace robot2D {
         if(m_render == nullptr)
             return;
         m_render -> render(vertexArray, states);
+    }
+
+    void RenderTarget::render(const Drawable& drawable, const RenderStates& states) {
+        if(m_render == nullptr)
+            return;
+        beforeRender();
+        drawable.draw(*this, states);
+        afterRender();
+    }
+
+    void RenderTarget::createLayer() {
+        m_render -> createLayer();
+    }
+
+    unsigned int RenderTarget::getLayerCount() const {
+        return m_render -> getLayerCount();
     }
 }

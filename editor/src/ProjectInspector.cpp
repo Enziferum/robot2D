@@ -28,8 +28,8 @@ source distribution.
 
 namespace editor {
 
-    ProjectInspector::ProjectInspector(robot2D::RenderWindow& window, EditorCache& editorCache):
-    m_window{window},
+    ProjectInspector::ProjectInspector(EditorCache& editorCache):
+    m_window{nullptr},
     m_editorCache{editorCache},
     m_descriptions(),
     m_configuration{}{}
@@ -45,13 +45,15 @@ namespace editor {
                                                                     std::move(function)));
     }
 
-    void ProjectInspector::setup() {
+    void ProjectInspector::setup(robot2D::RenderWindow* window) {
+        if(m_window == nullptr)
+            m_window = window;
         m_descriptions = m_editorCache.getProjects();
     }
 
     void ProjectInspector::render() {
         auto font = ImGui::GetFont();
-        auto windowSize = m_window.getSize();
+        auto windowSize = m_window -> getSize();
 
         ImGui::SetNextWindowSize(ImVec2(windowSize.x, windowSize.y));
         ImGui::Begin("ProjectInspector", &m_configuration.isOpen, m_configuration.windowFlags);

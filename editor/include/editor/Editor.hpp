@@ -36,7 +36,7 @@ namespace editor {
 
     struct EditorConfiguration {
         enum class TextureID {
-            Face, Logo, White
+            Face, Logo, White, RunButton, EditButton
         };
 
         const bool useGUI = true;
@@ -47,19 +47,21 @@ namespace editor {
         ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
         std::unordered_map<TextureID, std::string> texturePaths = {
                 {TextureID::Logo, "logo.png"},
+                {TextureID::EditButton, "StopButton.png"},
+                {TextureID::RunButton, "PlayButton.png"},
         };
     };
 
     class Editor {
     public:
-        Editor(robot2D::RenderWindow& window, robot2D::MessageBus& messageBus);
+        Editor(robot2D::MessageBus& messageBus);
         Editor(const Editor&)=delete;
         Editor(const Editor&&)=delete;
         Editor& operator=(const Editor&)=delete;
         Editor& operator=(const Editor&&)=delete;
         ~Editor() = default;
 
-        void setup();
+        void setup(robot2D::RenderWindow* window);
         void handleEvents(const robot2D::Event& event);
         void handleMessages(const robot2D::Message& message);
         void update(float dt);
@@ -74,7 +76,11 @@ namespace editor {
         void mainMenubar();
 
         bool createScene();
-        void openScene(const std::string& path);
+        void openScene();
+
+        void onSceneRun();
+        void onSceneEdit();
+        void ui_toolbar();
     private:
         enum class State {
             Edit,
@@ -83,7 +89,7 @@ namespace editor {
     private:
         State m_state;
 
-        robot2D::RenderWindow& m_window;
+        robot2D::RenderWindow* m_window;
         robot2D::MessageBus& m_messageBus;
         PanelManager m_panelManager;
 
@@ -95,6 +101,7 @@ namespace editor {
         robot2D::ResourceHandler<robot2D::Texture, EditorConfiguration::TextureID> m_textures;
         robot2D::vec2u m_ViewportSize;
         robot2D::Color m_sceneClearColor;
+
         EditorConfiguration m_configuration;
         SceneManager m_sceneManager;
     };
