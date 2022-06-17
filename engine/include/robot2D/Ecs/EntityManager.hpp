@@ -155,6 +155,13 @@ namespace robot2D::ecs {
     }
 
     template<typename T>
+    bool Entity::hasComponent() const {
+        if(!m_entityManager)
+            return false;
+        return m_entityManager -> hasComponent<T>(*this);
+    }
+
+    template<typename T>
     T& Entity::getComponent() {
         return m_entityManager -> getComponent<T>(*this);
     }
@@ -226,6 +233,7 @@ namespace robot2D::ecs {
 
         return m_componentMasks[index].getBit(componentID);
     }
+
 
     template<typename T>
     bool EntityManager::hasComponent(Entity entity) const {

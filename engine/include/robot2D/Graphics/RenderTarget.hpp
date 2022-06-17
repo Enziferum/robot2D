@@ -52,16 +52,22 @@ namespace robot2D {
         virtual ~RenderTarget() = 0;
 
         /// Set new Viewport.
-        virtual void setView(const View& view);
+        virtual void setView(const View& view, unsigned int layerID = 1);
 
         /// get current Viewport.
-        virtual const View& getView();
+        virtual const View& getView(unsigned int layerID = 1);
 
         /// get default viewport for Window.
         virtual const View& getDefaultView();
 
         /// Clear Window background space with custom color
         void clear(const Color& color = Color::Black);
+
+        /// Adding Layer inside Render Impl
+        void createLayer();
+
+        /// Get actual layer count
+        unsigned int getLayerCount() const;
 
         /// \brief Makes possible to draw your custom Drawable inherit.
         /// \details Also you are able to specify additional information.
@@ -92,9 +98,21 @@ namespace robot2D {
         /// Check RenderStates to get more information.
         virtual void draw(const VertexArray::Ptr& vertexArray, RenderStates states) const;
 
+        /// \brief Prepare render to current frame render
         virtual void beforeRender() const;
+
+        /// \brief Processing render of current frame render.
         virtual void afterRender() const;
-        virtual void flushRender() const;
+
+        /// \brief Direct render of current frame render.
+        virtual void flushRender(unsigned int layerID) const;
+
+        /// \brief allow to render one drawable in one call without before / after / flush ? .
+        /// \details don't use several render function to render several Drawables. \n
+        /// Use instead berofeRender -> n - times draw() afterRender.
+        /// Don't afraid n - time draws calls. draw function = pack into BatchRender.
+        virtual void render(const Drawable& drawable,
+                            const RenderStates& states = RenderStates::Default);
 
         /// Get BatchRender's Stats
         const RenderStats& getStats() const;

@@ -43,6 +43,9 @@ namespace robot2D::ecs {
         bool hasComponent();
 
         template<typename T>
+        bool hasComponent() const;
+
+        template<typename T>
         T& getComponent();
 
         template<typename T>

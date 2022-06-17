@@ -30,7 +30,8 @@ namespace editor {
 
     void SceneCamera::onEvent(const robot2D::Event& event) {
         if(event.type == robot2D::Event::MouseWheel) {
-            m_zoom = m_configuration.zoomOffset + event.wheel.scroll_y * m_configuration.zoomMultiplier;
+            float wheelScroll = event.wheel.scroll_y;
+            m_zoom = m_configuration.zoomOffset +  wheelScroll * m_configuration.zoomMultiplier;
             m_view.zoom(m_zoom);
         }
 
@@ -59,7 +60,7 @@ namespace editor {
         return m_view;
     }
 
-    const float SceneCamera::getZoom() const {
+    float SceneCamera::getZoom() const {
         auto actualSize = m_view.getSize();
         robot2D::vec2f defaultSize = {m_sizeRect.width, m_sizeRect.height};
         robot2D::vec2f zoom = {defaultSize.x / actualSize.x, defaultSize.y / actualSize.y};

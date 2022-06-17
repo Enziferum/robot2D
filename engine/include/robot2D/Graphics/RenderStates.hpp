@@ -37,6 +37,12 @@ namespace robot2D {
         Quads
     };
 
+    enum class BlendMode {
+        None,
+        AlphaOne,
+        MinusAlphaOne
+    };
+
     /// \brief Graphics API must know how to render your Entity / Buffer.
     struct ROBOT2D_EXPORT_API RenderInfo {
         /// How to render vertices
@@ -63,7 +69,11 @@ namespace robot2D {
         Transform transform;
 
         /// Graphics API render information. Check RenderInfo.
-        RenderInfo* renderInfo;
+        RenderInfo renderInfo;
+
+        unsigned int layerID;
+
+        BlendMode blendMode;
 
         static const RenderStates Default;
     };

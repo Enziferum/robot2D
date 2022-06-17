@@ -3,6 +3,9 @@ set(INCLROOT ${PROJECT_SOURCE_DIR}/engine/include/robot2D)
 set(ENGINE_SRC
         ${INCLROOT}/robot2D.hpp
 
+        ${INCLROOT}/Engine.hpp
+        ${INCLROOT}/Application.hpp
+
         #Core
         ${INCLROOT}/Core/Event.hpp
         ${INCLROOT}/Core/Window.hpp
@@ -59,6 +62,9 @@ set(ENGINE_SRC
 set(SRCROOT ${PROJECT_SOURCE_DIR}/engine/src)
 
 set(ENGINE_SRC ${ENGINE_SRC}
+        ${SRCROOT}/Engine.cpp
+        ${SRCROOT}/Application.cpp
+
         #Core
         ${SRCROOT}/Core/Window.cpp
         ${SRCROOT}/Core/Event.cpp

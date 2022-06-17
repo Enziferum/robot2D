@@ -18,18 +18,24 @@ and must not be misrepresented as being the original software.
 3. This notice may not be removed or altered from any
 source distribution.
 *********************************************************************/
+
 #include <stdexcept>
+#include <map>
+
 #include <imgui/imgui.h>
+#include <robot2D/Extra/Api.hpp>
 #include <tfd/tinyfiledialogs.h>
 
 #include <editor/Editor.hpp>
+#include <editor/EventBinder.hpp>
 // Panels
 #include <editor/ScenePanel.hpp>
 #include <editor/AssetsPanel.hpp>
 #include <editor/MenuPanel.hpp>
 #include <editor/InspectorPanel.hpp>
+#include <editor/ViewportPanel.hpp>
 
-#include <editor/Gui/Api.hpp>
+
 #include <editor/SceneSerializer.hpp>
 #include <editor/Components.hpp>
 #include <editor/EditorStyles.hpp>
@@ -38,16 +44,21 @@ source distribution.
 namespace editor {
     namespace fs = std::filesystem;
 
-    Editor::Editor(robot2D::RenderWindow& window, robot2D::MessageBus& messageBus):
+    Editor::Editor(robot2D::MessageBus& messageBus):
     m_state(State::Edit),
-    m_window{window},
+    m_window{nullptr},
     m_messageBus{messageBus},
-    m_activeScene{ nullptr }, m_frameBuffer{nullptr}, m_ViewportSize{},
     m_currentProject{nullptr},
+    m_activeScene{nullptr},
+    m_frameBuffer{nullptr},
+    m_ViewportSize{},
     m_configuration{},
-    m_sceneManager{m_messageBus}{}
+    m_sceneManager{m_messageBus} {}
 
-    void Editor::setup() {
+    void Editor::setup(robot2D::RenderWindow* window) {
+        if(m_window == nullptr)
+            m_window = window;
+
         for(auto& it: m_configuration.texturePaths) {
             auto fullPath = m_configuration.texturesPath + it.second;
             if(!m_textures.loadFromFile(it.first, fullPath)) {
@@ -55,41 +66,45 @@ namespace editor {
             }
         }
 
-        auto& scenePanel = m_panelManager.addPanel<ScenePanel>();
-        auto& assetsPanel = m_panelManager.addPanel<AssetsPanel>();
-        auto& inspectorPanel = m_panelManager.addPanel<InspectorPanel>(m_camera);
-        auto& menuPanel = m_panelManager.addPanel<MenuPanel>();
+        m_panelManager.addPanel<ScenePanel>();
+        m_panelManager.addPanel<AssetsPanel>();
+        m_panelManager.addPanel<InspectorPanel>(m_camera);
+        m_panelManager.addPanel<MenuPanel>();
+        m_panelManager.addPanel<ViewportPanel>(nullptr);
     }
 
     void Editor::prepare() {
-        auto windowSize = m_window.getSize();
+        auto windowSize = m_window -> getSize();
 
         robot2D::FrameBufferSpecification frameBufferSpecification;
-        frameBufferSpecification.size = {windowSize.x, windowSize.y};
+        frameBufferSpecification.size = windowSize.as<int>();
 
         m_frameBuffer = robot2D::FrameBuffer::Create(frameBufferSpecification);
-        m_window.setView({{0, 0}, {windowSize.x, windowSize.y}});
-        m_camera.resize({0, 0, windowSize.x, windowSize.y});
+        m_window -> setView({{0, 0}, windowSize.as<float>()});
+        m_camera.resize({0, 0, windowSize.as<float>().x,
+                         windowSize.as<float>().y});
 
         applyStyle(EditorStyle::GoldBlack);
     }
 
     void Editor::handleEvents(const robot2D::Event& event) {
-        if(event.type == robot2D::Event::KeyPressed) {
-            if(event.key.code == robot2D::Key::LEFT_CONTROL) {
+        EventBinder m_eventBinder{event};
+        m_eventBinder.Dispatch(robot2D::Event::KeyPressed,
+                               [this](const robot2D::Event& event){
+            if(event.key.code == robot2D::Key::LEFT_CONTROL)
                 m_configuration.m_leftCtrlPressed = true;
-            }
             if(event.key.code == robot2D::Key::S) {
-                if(m_configuration.m_leftCtrlPressed) {
+                if(m_configuration.m_leftCtrlPressed)
                     m_sceneManager.save(std::move(m_activeScene));
-                }
             }
-        }
-        if(event.type == robot2D::Event::KeyReleased) {
-            if(event.key.code == robot2D::Key::LEFT_CONTROL) {
+        });
+
+        m_eventBinder.Dispatch(robot2D::Event::KeyReleased,
+                               [this](const robot2D::Event& event){
+            if(event.key.code == robot2D::Key::LEFT_CONTROL)
                 m_configuration.m_leftCtrlPressed = false;
-            }
-        }
+        });
+
 
         m_camera.onEvent(event);
     }
@@ -100,24 +115,24 @@ namespace editor {
         switch(m_state) {
             case State::Edit: {
                 m_activeScene -> update(dt);
-                m_panelManager.update(dt);
                 break;
             }
             case State::Run: {
-                m_activeScene ->updateRuntime(dt);
+                m_activeScene -> updateRuntime(dt);
                 break;
             }
         }
+        m_panelManager.update(dt);
     }
 
     void Editor::render() {
         if(m_configuration.useGUI) {
             m_frameBuffer -> Bind();
             const auto& clearColor = m_panelManager.getPanel<InspectorPanel>().getColor();
-            m_window.clear(clearColor);
+            m_window -> clear(clearColor);
         }
-        m_window.beforeRender();
-        m_window.setView(m_camera.getView());
+        m_window -> beforeRender();
+        m_window -> setView(m_camera.getView());
 
         for(auto& it: m_activeScene -> getEntities()) {
             if(!it.hasComponent<SpriteComponent>())
@@ -127,17 +142,13 @@ namespace editor {
             auto transform = it.getComponent<TransformComponent>();
 
             robot2D::RenderStates renderStates;
-            if(sprite.getTexturePointer() == nullptr) {
-                sprite.setTexture(m_textures.get(EditorConfiguration::TextureID::Logo));
-            }
             renderStates.texture = &sprite.getTexture();
             renderStates.transform *= transform.getTransform();
             renderStates.color = sprite.getColor();
-            m_window.draw(renderStates);
+            m_window -> draw(renderStates);
         }
 
-        m_window.afterRender();
-        m_window.flushRender();
+        m_window -> afterRender();
 
         if(m_configuration.useGUI) {
             m_frameBuffer -> unBind();
@@ -152,62 +163,39 @@ namespace editor {
         window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
 
         const ImGuiViewport* viewport = ImGui::GetMainViewport();
-        ImGui::SetNextWindowPos(viewport->WorkPos);
-        ImGui::SetNextWindowSize(viewport->WorkSize);
-        ImGui::SetNextWindowViewport(viewport->ID);
+        ImGui::SetNextWindowPos(viewport -> WorkPos);
+        ImGui::SetNextWindowSize(viewport -> WorkSize);
+        ImGui::SetNextWindowViewport(viewport -> ID);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.F);
         ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.F);
 
         if (m_configuration.dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
             window_flags |= ImGuiWindowFlags_NoBackground;
 
-        ImGui::Begin("Scene", &m_configuration.dockspace_open, window_flags);
-        ImGui::PopStyleVar(2);
+        ImGui::WindowOptions dockWindowOptions{};
+        dockWindowOptions.flagsMask = window_flags;
+        dockWindowOptions.name = "Scene";
 
-        ImGuiIO& io = ImGui::GetIO();
-        if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
-        {
-            ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
-            ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), m_configuration.dockspace_flags);
-        }
+        ImGui::createWindow(dockWindowOptions, [this]() {
 
-        mainMenubar();
+            ImGui::PopStyleVar(2);
 
-        auto stats = m_window.getStats();
-        m_panelManager.getPanel<InspectorPanel>().setRenderStats(std::move(stats));
-
-        m_panelManager.render();
-        ImGui::End();
-
-        /// Viewport Panel ///
-
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2{0, 0});
-        ImGui::Begin("Viewport");
-        auto ViewPanelSize = ImGui::GetContentRegionAvail();
-        if(m_ViewportSize != robot2D::vec2u { ViewPanelSize.x, ViewPanelSize.y}) {
-            m_ViewportSize = {ViewPanelSize.x, ViewPanelSize.y};
-            //m_frameBuffer -> Resize(m_ViewportSize);
-        }
-        ImGui::RenderFrameBuffer(m_frameBuffer, {m_ViewportSize.x, m_ViewportSize.y});
-        if (ImGui::BeginDragDropTarget())
-        {
-            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+            ImGuiIO& io = ImGui::GetIO();
+            if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
             {
-#ifdef ROBOT2D_WINDOWS
-                const wchar_t* path = (const wchar_t*)payload->Data;
-#else
-                const char* path = (const char*)payload->Data;
-#endif
-                std::filesystem::path scenePath = std::filesystem::path("assets") / path;
-                RB_EDITOR_INFO("PATH {0}", scenePath.string().c_str());
-                openScene(scenePath.string());
+                ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
+                ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f),
+                                 m_configuration.dockspace_flags);
             }
-            ImGui::EndDragDropTarget();
-        }
-        ImGui::End();
-        ImGui::PopStyleVar();
 
-        /// Viewport Panel ///
+            // Todo like panels
+            mainMenubar();
+            ui_toolbar();
+
+            auto stats = m_window -> getStats();
+            m_panelManager.getPanel<InspectorPanel>().setRenderStats(std::move(stats));
+            m_panelManager.render();
+        });
     }
 
     //Todo Use Menubar to Open Projects, and not scenes
@@ -224,18 +212,21 @@ namespace editor {
                 if(ImGui::MenuItem("Open", "Ctrl+O")) {
                     std::string openPath = "assets/scenes/demoScene.robot2D";
                     const char* patterns[1] = {"*.scene"};
-                    char* path = tinyfd_openFileDialog("Load Scene", nullptr,
-                                                       1, patterns, "Scene", 0);
+                    const char* path = tinyfd_openFileDialog("Load Scene", nullptr,
+                                                       1,
+                                                       patterns,
+                                                       "Scene",
+                                                       0);
                     if (path != nullptr) {
                         openPath = std::string(path);
-                        openScene(path);
+                        openScene();
                     }
                 }
 
                 if(ImGui::MenuItem("Save", "Ctrl+Shift+S")) {
                     std::string savePath = "assets/scenes/demoScene.robot2D";
                     const char* patterns[1] = {"*.scene"};
-                    char* path = tinyfd_saveFileDialog("Load Scene", nullptr,
+                    const char* path = tinyfd_saveFileDialog("Load Scene", nullptr,
                                                        1, patterns, "Scene");
                     if(path != nullptr) {
                         savePath = std::string(path);
@@ -248,6 +239,57 @@ namespace editor {
         }
     }
 
+    void Editor::ui_toolbar() {
+        const auto& colors = ::ImGui::GetStyle().Colors;
+        const auto& buttonHovered = colors[ImGuiCol_ButtonHovered];
+        const auto& buttonActive = colors[ImGuiCol_ButtonActive];
+
+        ImGui::WindowOptions windowOptions {
+                {
+                        {ImGuiStyleVar_WindowPadding, {0, 2}},
+                        {ImGuiStyleVar_ItemInnerSpacing, {}}
+                },
+                {
+                        {ImGuiCol_Button, robot2D::Color::fromGL(0.F, 0.F, 0.F, 0.F)},
+                        {ImGuiCol_ButtonHovered, robot2D::Color::fromGL(buttonHovered.x,buttonHovered.z, 0.5F)},
+                        {ImGuiCol_ButtonActive,robot2D::Color::fromGL(buttonActive.x,buttonActive.z, 0.5F)}
+                }
+        };
+        windowOptions.name = "##toolbar";
+        windowOptions.flagsMask = ImGuiWindowFlags_NoScrollbar;
+
+        ImGui::createWindow(windowOptions, [this]() {
+            auto texID = m_state == State::Edit ? EditorConfiguration::TextureID::RunButton
+                                                : EditorConfiguration::TextureID::EditButton;
+            float size = ::ImGui::GetWindowHeight() - 4.F;
+            ImGui::SetCursorPosX((::ImGui::GetWindowContentRegionMax().x * 0.5F) - (size * 0.5F));
+            if(ImGui::ImageButton(m_textures.get(texID), robot2D::vec2f{size, size}))
+            {
+                if (m_state == State::Edit) {
+                    onSceneRun();
+                    return;
+                }
+
+                if (m_state == State::Run) {
+                    onSceneEdit();
+                    return;
+                }
+            }
+        });
+    }
+
+    void Editor::onSceneRun() {
+        m_state = State::Run;
+        // 1. load dll
+        // 2. setup
+    }
+
+    void Editor::onSceneEdit() {
+        m_state = State::Edit;
+        // unload dll
+    }
+
+
     bool Editor::createScene() {
         if(!m_sceneManager.add(std::move(m_currentProject))) {
             RB_EDITOR_ERROR("Can't Create Scene. Reason: {0}",
@@ -255,13 +297,17 @@ namespace editor {
             return false;
         }
         m_activeScene = m_sceneManager.getActiveScene();
-        openScene(m_activeScene->getPath());
+        openScene();
+
         return true;
     }
 
-    void Editor::openScene(const std::string& path) {
+    void Editor::openScene() {
         auto& scenePanel = m_panelManager.getPanel<ScenePanel>();
         scenePanel.setActiveScene(m_activeScene);
+
+        auto& viewportPanel = m_panelManager.getPanel<ViewportPanel>();
+        viewportPanel.set(m_activeScene, m_frameBuffer);
 
         auto projectPath = m_currentProject -> getPath();
         auto assetsPath = combinePath(projectPath, "assets");
@@ -277,8 +323,8 @@ namespace editor {
             return;
         }
         m_activeScene = m_sceneManager.getActiveScene();
-        openScene(m_activeScene->getPath());
-        m_window.setMaximazed(true);
+        openScene();
+        m_window -> setMaximazed(true);
         prepare();
     }
 
@@ -290,11 +336,11 @@ namespace editor {
                             errorToString(m_sceneManager.getError()));
             return;
         }
-        m_activeScene = m_sceneManager.getActiveScene();
-        openScene(m_activeScene->getPath());
-
-        m_window.setMaximazed(true);
         prepare();
-    }
 
+        m_activeScene = m_sceneManager.getActiveScene();
+        openScene();
+
+        m_window -> setMaximazed(true);
+    }
 }
