@@ -31,7 +31,7 @@ namespace robot2D {
     Cursor::~Cursor() {}
 
     bool Cursor::createFromPixels(unsigned char* pixels, const vec2u& size) {
-        return m_cursorImpl ->createFromPixels(pixels, size);
+        return m_cursorImpl -> createFromPixels(pixels, size);
     }
 
     void Cursor::createDefault() {

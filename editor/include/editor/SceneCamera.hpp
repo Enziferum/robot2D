@@ -21,20 +21,34 @@ source distribution.
 
 #pragma once
 
-#include <robot2D/Graphics/FrameBuffer.hpp>
-
-#include "Scene.hpp"
-#include "IPanel.hpp"
+#include <robot2D/Graphics/View.hpp>
+#include <robot2D/Core/Event.hpp>
 
 namespace editor {
-    class ViewportPanel final: public IPanel {
-    public:
-        ViewportPanel(Scene::Ptr&& scene);
-        ~ViewportPanel() override = default;
 
-        void render() override;
+    struct SceneCameraConfiguration {
+        float zoomOffset = 1.F;
+        float zoomMultiplier = 0.1F;
+    };
+
+    class SceneCamera {
+    public:
+        SceneCamera();
+        ~SceneCamera() = default;
+
+        void onEvent(const robot2D::Event& event);
+        void resize(const robot2D::FloatRect& viewPort);
+
+        float& getCameraSpeed() { return m_cameraSpeed; }
+        float getZoom() const;
+
+        robot2D::View& getView();
+        const robot2D::View& getView() const;
     private:
-        Scene::Ptr m_scene;
-        robot2D::FrameBuffer::Ptr m_frameBuffer;
+        robot2D::View m_view;
+        robot2D::FloatRect m_sizeRect;
+        SceneCameraConfiguration m_configuration;
+        float m_zoom;
+        float m_cameraSpeed = 10.F;
     };
 }

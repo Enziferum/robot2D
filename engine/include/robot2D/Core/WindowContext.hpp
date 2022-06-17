@@ -25,22 +25,34 @@ source distribution.
 #include "Vector2.hpp"
 
 namespace robot2D {
+    /**
+     * \brief Input Context how to create Window.
+     * \details In practice you want to set options: such display framerate synchronization, is Window should be fullscreen. \n
+     * And also important which one Graphics Api you want to use. (OpenGL / Vulkan / DirectX).
+     */
     struct ROBOT2D_EXPORT_API WindowContext {
+        /// Possible Graphics API
         enum class RenderApi {
             OpenGL3_3,
             OpenGL4_5
         };
 
+        /// Display framerate synchronization
         bool vsync;
+        /// is Window in Fullscreen mode
         bool fullscreen;
+        /// Graphics API
         RenderApi renderApi;
+        /// Window min size
+        robot2D::vec2f minimumSize;
+        /// Window max size
+        robot2D::vec2f maximumSize;
 
-        robot2D::vec2f minimumSize = {};
-        robot2D::vec2f maximumSize = {};
-
-        WindowContext(const bool& vsync = false, const bool& fullscreen = false,
+        /// According to documentation input parameters set options.
+        WindowContext(const bool& vsync = false,
+                      const bool& fullscreen = false,
                       const RenderApi& renderApi = WindowContext::RenderApi::OpenGL4_5);
-
+        /// Stores default values
         static const WindowContext Default;
     };
 

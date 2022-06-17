@@ -28,8 +28,8 @@ namespace robot2D {
     class RenderTarget;
 
     /**
-     * \brief This class allows to you custom class to be rendered with simple call
-     * robot2D::RenderTarget / robot2D::RenderWindow draw() function
+     * \brief Allows to you custom class in Rendering process.
+     * \details It's possible use it in robot2D::RenderTarget / robot2D::RenderWindow draw(Drawable&) function.
      */
     class ROBOT2D_EXPORT_API Drawable {
     public:

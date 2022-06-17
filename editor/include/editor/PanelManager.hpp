@@ -46,7 +46,7 @@ namespace editor {
     template<typename T, typename ...Args>
     T& PanelManager::addPanel(Args&& ...args) {
         static_assert(std::is_base_of<IPanel, T>::value && "Adding T, must be IPanel child");
-        auto& panel = m_panels.emplace_back(std::make_shared<T>(std::forward<Args>(args)...));
+        m_panels.emplace_back(std::make_shared<T>(std::forward<Args>(args)...));
         return *(dynamic_cast<T*>(m_panels.back().get()));
     }
 

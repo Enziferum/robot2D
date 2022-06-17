@@ -34,6 +34,9 @@ namespace robot2D {
         bool SwapChainTarget = false;
     };
 
+    /**
+     * Interface for Graphics API specific FrameBuffer.
+     */
     class FrameBuffer {
     public:
         using Ptr = std::shared_ptr<FrameBuffer>;

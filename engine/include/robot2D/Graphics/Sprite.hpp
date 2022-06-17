@@ -31,8 +31,8 @@ source distribution.
 namespace robot2D {
 
     /**
-     * \brief in 2D worlds Sprite class is flyweight to wrap texture and make it Drawable on screen and
-     * Have different Transformations. Core feature, which you will use to alive us apps
+     * \brief in 2D world is flyweight to wrap texture and make it Drawable on screen and
+     * \details Have different Transformations. Core feature, which you will use to alive us apps
      */
     class ROBOT2D_EXPORT_API Sprite: public Transformable, public Drawable{
     public:
@@ -52,12 +52,13 @@ namespace robot2D {
         void setTexture(const Texture&, const IntRect& textureRect = IntRect());
         const Texture* getTexture();
 
+        /// \brief specify which part of texture to use.
         void setTextureRect(const IntRect& textureRect);
 
-        /// \brief return to you rect in world coordinates
+        /// \brief Returns rect in world coordinates.
         FloatRect getGlobalBounds() const;
 
-        /// \brief return to you rect in local Sprite coordinates
+        /// \brief Returns rect in local Sprite coordinates.
         FloatRect getLocalBounds() const;
     protected:
         void draw(RenderTarget &target, RenderStates states) const override;

@@ -29,7 +29,7 @@ source distribution.
 
 namespace robot2D {
     /**
-     * Describe OS-Based event to one format
+     * \brief Describe OS-Based event to one format.
      */
     class ROBOT2D_EXPORT_API Event {
     public:
@@ -51,20 +51,24 @@ namespace robot2D {
 
         EventType type;
 
+        /// Window size
         struct SizeEvent {
             unsigned int widht;
             unsigned int heigth;
         };
 
+        /// Mouse movement
         struct MouseMoveEvent {
             float x;
             float y;
         };
 
+        /// Keyboard
         struct KeyboardEvent {
             Key code;
         };
 
+        /// Mouse buttons
         struct MouseButtonEvent {
             enum buttons {
                 left = 0,
@@ -76,15 +80,16 @@ namespace robot2D {
             int y;
         };
 
+        /// Mouse wheel
         struct MouseWheelEvent {
             float scroll_x;
             float scroll_y;
         };
 
+        /// Text entering
         struct TextEnterEvent {
             unsigned int symbol;
         };
-
 
         union {
             SizeEvent size;

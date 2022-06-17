@@ -24,6 +24,9 @@ source distribution.
 #include <robot2D/Config.hpp>
 
 namespace robot2D {
+    /**
+     * \brief Rather Window has own context you need Render information data.
+     */
     struct ROBOT2D_EXPORT_API RenderContext {
         bool useBlending;
         bool useDepthTest;

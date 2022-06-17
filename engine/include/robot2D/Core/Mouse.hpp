@@ -22,6 +22,7 @@ source distribution.
 #pragma once
 
 namespace robot2D {
+    /// Mouse buttons. Middle = wheel of mouse.
     enum Mouse {
         MouseLeft = 0,
         MouseRight = 1,

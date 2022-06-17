@@ -25,19 +25,29 @@ source distribution.
 #include "Buffer.hpp"
 
 namespace robot2D {
+    /// \brief Provide Data information to Render Pipeline.
+    /// \details According to name this class is array of vertices.
+    /// What important vertex array contains fully packed and prepared vertices. \n
+    /// To be ... you sets Vertexbuffer with Graphics API information what is it your buffer and vertices. \n
+    /// IndexBuffer provides order how to process vertices.
     class ROBOT2D_EXPORT_API VertexArray {
     public:
         using Ptr = std::shared_ptr<VertexArray>;
     public:
         virtual ~VertexArray() = default;
 
+        /// VertexArray must be directly call to be enabled.
         virtual void Bind() = 0;
+        /// VertexArray must be directly call to be disabled after each Render call.
         virtual void unBind() = 0;
+
         virtual void setVertexBuffer(const VertexBuffer::Ptr vertexBuffer) = 0;
         virtual void setIndexBuffer(const IndexBuffer::Ptr indexBuffer) = 0;
+
         virtual const VertexBuffer::Ptr getVertexBuffer() const = 0;
         virtual const IndexBuffer::Ptr getIndexBuffer() const = 0;
 
+        /// Create VertexArray in Graphics API format.
         static Ptr Create();
     };
 }

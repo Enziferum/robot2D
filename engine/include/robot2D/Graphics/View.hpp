@@ -26,6 +26,10 @@ source distribution.
 #include "robot2D/Core/Vector2.hpp"
 
 namespace robot2D {
+    /**
+     * \brief Provide information about Screen coordinates.
+     * \details
+     */
     class ROBOT2D_EXPORT_API View {
     public:
         View();
@@ -56,10 +60,10 @@ namespace robot2D {
 
         const Transform& getTransform() const;
     private:
-
         vec2f m_center;
         vec2f m_size;
         float m_rotation;
+
         FloatRect m_viewport;
         mutable Transform m_transform;
         mutable bool needTransformUpdate;

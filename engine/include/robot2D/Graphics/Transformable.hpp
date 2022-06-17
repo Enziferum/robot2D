@@ -26,37 +26,47 @@ source distribution.
 
 namespace robot2D {
     /**
-     * \brief This class allows to be your custom object
+     * \brief Provides api to manipulate entity's Transformation.
+     * \details Without this api after any change(position, rotation, scale) \n
+     * you should calculate Transform by yourself.
      */
     class ROBOT2D_EXPORT_API Transformable {
     public:
         Transformable();
         virtual ~Transformable() = 0;
 
-
+        /// Set internal position.
         virtual void setPosition(const vec2f& pos);
         vec2f& getPosition();
 
         virtual void setOrigin(const vec2f& origin);
         vec2f& getOrigin();
 
+        /// Set size for Entity. Scale will be automaticly calculated.
         virtual void setSize(const vec2f& size);
         virtual void setSize(const float& x, const float& y);
+
         vec2f& getSize();
 
+        /// Set internal scale.
         virtual void setScale(const vec2f& factor);
         vec2f& getScale();
 
+        /// Set internal rotation angle.
         virtual void setRotate(const float& angle);
         float& getRotate();
 
+        /// Change position by value.
         void move(const vec2f& offset);
+
+        /// Scale by value.
         void scale(const vec2f& factor);
+
+        /// Rotate by value.
         void rotate(float angle);
 
-
+        /// Calculate actual Transform after manipulations.
         const Transform& getTransform() const;
-
     protected:
          mutable vec2f m_pos;
          vec2f m_origin;

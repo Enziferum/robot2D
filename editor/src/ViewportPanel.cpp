@@ -21,13 +21,43 @@ source distribution.
 
 #include <imgui/imgui.h>
 #include <editor/ViewportPanel.hpp>
-#include <editor/Gui/Api.hpp>
+#include <robot2D/Extra/Api.hpp>
+
+#include <filesystem>
 
 namespace editor {
 
-    ViewportPanel::ViewportPanel(Scene::Ptr&& scene): IPanel(UniqueType(typeid(ViewportPanel))),
-    m_scene(std::move(scene)),
-    m_frameBuffer(nullptr) {}
+    ViewportPanel::ViewportPanel(Scene::Ptr&& scene):
+        IPanel(UniqueType(typeid(ViewportPanel))),
+        m_scene(std::move(scene)),
+        m_frameBuffer(nullptr) {
+        m_windowOptions = ImGui::WindowOptions {
+                {
+                        {ImGuiStyleVar_WindowPadding, {0, 0}}
+                },
+                {}
+        };
+        m_windowOptions.flagsMask = ImGuiWindowFlags_NoTitleBar;
+        m_windowOptions.name = "##Viewport";
+    }
 
-    void ViewportPanel::render() {}
+    void ViewportPanel::render() {
+        ImGui::createWindow(m_windowOptions, [this]() {
+            auto ViewPanelSize = ImGui::GetContentRegionAvail();
+
+            if(m_ViewportSize != robot2D::vec2u { ViewPanelSize.x, ViewPanelSize.y}) {
+                m_ViewportSize = {ViewPanelSize.x, ViewPanelSize.y};
+                m_frameBuffer -> Resize(m_ViewportSize);
+            }
+
+            ImGui::RenderFrameBuffer(m_frameBuffer, m_ViewportSize.as<float>());
+
+            ImGui::dummyDragDrop("CONTENT_BROWSER_ITEM", [](std::string path){
+                // todo validate input path
+                const wchar_t* rawPath = (const wchar_t*)path.c_str();
+                std::filesystem::path scenePath = std::filesystem::path("assets") / rawPath;
+                RB_EDITOR_INFO("PATH Got {0}", scenePath.string());
+            });
+        });
+    }
 }

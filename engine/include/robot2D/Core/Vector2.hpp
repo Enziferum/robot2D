@@ -23,28 +23,29 @@ source distribution.
 
 #include <robot2D/Config.hpp>
 
-namespace robot2D{
-    template<typename T>
-    struct ROBOT2D_EXPORT_API Vector2{
-        Vector2();
-        Vector2(const T& x, const T& y);
+namespace robot2D {
 
-        Vector2(const Vector2& other);
-        Vector2& operator=(const Vector2& other);
+    /**
+     * \brief 2-dimensional format of storing Data. Usefull for Coordinate system.
+     * @tparam T internal x, y format. Using prebased formats for float, int, unsigned int
+     */
+    template<typename T>
+    struct ROBOT2D_EXPORT_API Vector2 {
+        constexpr Vector2();
+        constexpr Vector2(const T& x, const T& y);
+
+        template<typename U>
+        constexpr explicit Vector2(const Vector2<U>& other);
+
+       // Vector2& operator=(const Vector2& other);
         ~Vector2() = default;
 
-        Vector2& operator+= (const Vector2& other);
-        Vector2& operator-= (const Vector2& other);
-        Vector2 operator* (const T& value);
-
-        friend Vector2 operator+ (Vector2 l, const Vector2& r){
-            l += r;
-            return l;
-        }
-
-        friend Vector2 operator- (Vector2 l, const Vector2& r){
-            l -= r;
-            return l;
+        template<typename U>
+        constexpr Vector2<U> as() {
+            return Vector2<U> {
+                static_cast<U>(x),
+                static_cast<U>(y)
+            };
         }
 
         T x;
@@ -56,50 +57,78 @@ namespace robot2D{
     using vec2u = Vector2<unsigned int>;
 
     template<typename T>
-    Vector2<T>::Vector2(): x(0), y(0) {
+    constexpr Vector2<T>::Vector2():
+    x(0), y(0) {}
 
+    template<typename T>
+    constexpr Vector2<T>::Vector2(const T& _x, const T& _y):
+    x(_x), y(_y)  {}
+
+    template<typename T>
+    template<typename U>
+    constexpr Vector2<T>::Vector2(const Vector2<U>& other):
+            x(static_cast<T>(other.x)),
+            y(static_cast<T>(other.y)){}
+
+    template<typename T>
+    constexpr Vector2<T> operator+ (Vector2<T> left, const Vector2<T>& right){
+        return Vector2<T>(left.x + right.x, left.y + right.y);
+    }
+
+    template <typename T>
+    constexpr Vector2<T> operator -(const Vector2<T>& left, const Vector2<T>& right)
+    {
+        return Vector2<T>(left.x - right.x, left.y - right.y);
+    }
+
+
+    template<typename T>
+    constexpr Vector2<T> operator- (const Vector2<T>& right){
+       return Vector2<T>(-right.x, -right.y);
+    }
+
+
+    template<typename T>
+    constexpr Vector2<T>& operator +=(Vector2<T>& left, const Vector2<T>& right) {
+        left.x += right.x;
+        left.y += right.y;
+        return left;
     }
 
     template<typename T>
-    Vector2<T>::Vector2(const T& _x, const T& _y):x(_x), y(_y)  {
-
+    constexpr Vector2<T>& operator -=(Vector2<T>& left, const Vector2<T>& right) {
+        left.x -= right.x;
+        left.x -= right.y;
+        return left;
     }
 
     template<typename T>
-    Vector2<T>::Vector2(const Vector2& other):x(other.x), y(other.y) {
-
+    constexpr Vector2<T> operator*(const Vector2<T>& left, T right) {
+       return Vector2<T>(left.x * right, left.y * right);
     }
 
-    template<typename T>
-    Vector2<T> &Vector2<T>::operator=(const Vector2& other) {
-        if( *this == other)
-            return *this;
+    template <typename T>
+    constexpr Vector2<T>& operator *=(Vector2<T>& left, T right)
+    {
+        left.x *= right;
+        left.y *= right;
 
-        x = other.x;
-        y = other.y;
-
-        return *this;
+        return left;
     }
 
-    template<typename T>
-    Vector2<T> &Vector2<T>::operator+=(const Vector2 &other) {
-        x += other.x;
-        y += other.y;
-        return *this;
+    template <typename T>
+    constexpr Vector2<T> operator /(const Vector2<T>& left, T right)
+    {
+        return Vector2<T>(left.x / right, left.y / right);
     }
 
-    template<typename T>
-    Vector2<T> &Vector2<T>::operator-=(const Vector2 &other) {
-        x -= other.x;
-        y -= other.y;
-        return *this;
-    }
+    template <typename T>
+    constexpr Vector2<T>& operator /=(Vector2<T>& left, T right)
+    {
+        left.x /= right;
+        left.y /= right;
 
-    template<typename T>
-    Vector2<T> Vector2<T>::operator*(const T& value) {
-        x *= value;
-        y *= value;
-        return *this;
+        return left;
     }
 
     template<typename T>

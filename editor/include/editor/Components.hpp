@@ -70,14 +70,31 @@ namespace editor {
         CameraComponent();
         ~CameraComponent() = default;
 
+        /// 2D Space Camera ///
         void setViewport(const robot2D::FloatRect& viewport);
-
         robot2D::View& getView() { return m_view; }
         const robot2D::View& getView() const { return m_view; }
-
         float getZoom() const;
+
+        /// Todo Add 3D Space Camera ///
     private:
         robot2D::View m_view;
         robot2D::FloatRect m_actualViewport;
+    };
+
+
+    class Collider2DComponent final {
+    public:
+        Collider2DComponent(){}
+    };
+
+    class Physics2DComponent final {
+    public:
+        Physics2DComponent(){}
+    };
+
+    class NativeScriptComponent final {
+    public:
+        NativeScriptComponent(){}
     };
 }
