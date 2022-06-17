@@ -31,7 +31,10 @@ source distribution.
 namespace robot2D {
 
     enum class ElementType {
-        Mat3, Mat4, Float1, Float2, Float3, Float4, Int1, Int2, Int3, Int4, Bool
+        Mat3, Mat4,
+        Float1, Float2, Float3, Float4,
+        Int1, Int2, Int3, Int4,
+        Bool
     };
 
     static uint32_t ElementTypeSize(const ElementType& elementType) {
@@ -62,6 +65,9 @@ namespace robot2D {
         return 0;
     }
 
+    /**
+     *
+     */
     struct ROBOT2D_EXPORT_API Element {
         Element(const ElementType& elementType, const std::string& name, bool normalized = false):
         name(name),
@@ -106,6 +112,9 @@ namespace robot2D {
         bool normalized;
     };
 
+    /**
+     *
+     */
     struct ROBOT2D_EXPORT_API AttributeLayout {
     public:
         AttributeLayout() = default;
@@ -137,30 +146,52 @@ namespace robot2D {
         uint32_t m_stride = 0;
     };
 
-    // Public Interface of VertexBuffer //
+    /**
+     * \brief Public Interface for Graphics API specific VertexBuffer.
+     * \details To render Vertices you need set special info how to process input blob data.
+     * Vertexbuffer specifies RenderInformation (Position, Color, TextureCoords) for shapes (Triangle, Quad, etc... ).
+     */
     class ROBOT2D_EXPORT_API VertexBuffer {
     public:
         using Ptr = std::shared_ptr<VertexBuffer>;
     public:
         virtual ~VertexBuffer() = 0;
 
+        /// GPU can't fill buffer's information without directly call to use current buffer.
         virtual void Bind() = 0;
+        /// When filling process finished. It's good manner not to use it.
         virtual void unBind() = 0;
 
+        /// Size of buffer = sizeof(YOUR_VERTEX_OBJECT) * value.
         const uint32_t& getSize() const;
         uint32_t& getSize();
 
+        /// Set data to GPU
         virtual void setData(const void* data, const uint32_t& size) = 0;
+
+        /// GPU must understand how to process raw data which set / will set into buffer
         virtual void setAttributeLayout(const AttributeLayout& layout) = 0;
+
         virtual const AttributeLayout& getAttributeLayout() const = 0;
 
+        /// \brief Create GraphicsAPI Specific.
+        /// \details Creating buffer only with size means you know only how may vertices to draw \n
+        /// but just now don't have values which you must set.
         static Ptr Create(const uint32_t& size);
+
+        /// \brief Create GraphicsAPI Specific.
+        /// \details Creating buffer raw data with size means you know how may vertices to draw \n
+        /// and can provide information already.
         static Ptr Create(float* data, const uint32_t& size);
     protected:
         uint32_t m_size;
     };
 
-    // Public Interface of IndexBuffer //
+    /**
+     * \brief Public Interface for Graphics API specific IndexBuffer.
+     * \details To render Vertices you need set special info how to process input blob data.
+     * Indexbuffer specifies indices for shapes (Triangle, Quad, etc... ).
+     */
     class ROBOT2D_EXPORT_API IndexBuffer {
     public:
         using Ptr = std::shared_ptr<IndexBuffer>;

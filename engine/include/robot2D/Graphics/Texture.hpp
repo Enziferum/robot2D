@@ -24,12 +24,21 @@ source distribution.
 #include "Image.hpp"
 
 namespace robot2D {
+    /**
+     * \brief Graphics API format which have all information about pixel buffer.
+     * \details Graphics API should know how to work with in pixel buffer \n
+     * and how to optimize rendering with options.
+     */
     class ROBOT2D_EXPORT_API Texture {
     public:
+        /// \brief Only initialize class object.
         Texture();
         ~Texture();
 
+        /// Load Pixel buffer.
         bool loadFromFile(const std::string& path);
+
+        /// Returns Pixel buffer.
         const unsigned char* getPixels() const;
         unsigned char* getPixels();
 
@@ -38,6 +47,7 @@ namespace robot2D {
 
         void create(const vec2u& size, const void* data, int texParam = 0,
                     const ImageColorFormat& colorFormat = ImageColorFormat::RGBA);
+
         const unsigned int& getID()const;
         unsigned int& getID();
 

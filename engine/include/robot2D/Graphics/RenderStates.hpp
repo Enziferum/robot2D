@@ -29,6 +29,7 @@ source distribution.
 namespace robot2D {
     class Texture;
 
+    /// Render Shape Format
     enum class PrimitiveRenderType {
         Point,
         Lines,
@@ -36,21 +37,43 @@ namespace robot2D {
         Quads
     };
 
+    enum class BlendMode {
+        None,
+        AlphaOne,
+        MinusAlphaOne
+    };
+
+    /// \brief Graphics API must know how to render your Entity / Buffer.
     struct ROBOT2D_EXPORT_API RenderInfo {
+        /// How to render vertices
         PrimitiveRenderType renderType = PrimitiveRenderType::Triangles;
+
+        /// Value of specified indices for each Vertex.
         uint32_t indexCount = 0;
     };
 
+    /**
+     * \brief Contains specific options / values how to render Entity.
+     */
     struct ROBOT2D_EXPORT_API RenderStates {
         RenderStates();
         ~RenderStates() = default;
 
+        /// Entity Texture
         const Texture* texture;
+        /// Allow to render with special Shader
         ShaderHandler* shader;
+        /// Custom color
         Color color;
+        /// Transformations. Check Transform.
         Transform transform;
-        RenderInfo* renderInfo;
 
+        /// Graphics API render information. Check RenderInfo.
+        RenderInfo renderInfo;
+
+        unsigned int layerID;
+
+        BlendMode blendMode;
 
         static const RenderStates Default;
     };

@@ -26,7 +26,7 @@ else()
     enable_cxx_compiler_flag_if_supported("-Wall")
     enable_cxx_compiler_flag_if_supported("-Wextra")
     enable_cxx_compiler_flag_if_supported("-Wpedantic")
-    enable_cxx_compiler_flag_if_supported("-Werror")
+    #enable_cxx_compiler_flag_if_supported("-Werror")
 endif()
 
 set(LIBS)
@@ -45,7 +45,7 @@ set(SRC
         src/Scene.cpp
         src/Components.cpp
         src/Systems.cpp
-        )
+        src/LayerScene.cpp)
 
 
 add_executable(${PROJECT_NAME} ${SRC})

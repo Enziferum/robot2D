@@ -21,6 +21,8 @@ void RenderSystem::draw(robot2D::RenderTarget& target, robot2D::RenderStates sta
         states.transform = t;
         states.texture = &sprite.getTexture();
         states.color = sprite.getColor();
+        states.layerID = sprite.layerIndex;
+
         target.draw(states);
     }
 }

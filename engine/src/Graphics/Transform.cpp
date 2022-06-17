@@ -124,7 +124,7 @@ namespace robot2D{
         return combine(translation);
     }
 
-    Transform& Transform::translate(const vec2f &offset) {
+    Transform& Transform::translate(const vec2f& offset) {
         return translate(offset.x, offset.y);
     }
 

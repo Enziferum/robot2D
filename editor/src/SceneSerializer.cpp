@@ -89,7 +89,7 @@ namespace editor {
         return out;
     }
 
-    void SerializeEntity(YAML::Emitter& out, robot2D::ecs::Entity entity) {
+    void SerializeEntity(YAML::Emitter& out, robot2D::ecs::Entity entity) { 
         out << YAML::BeginMap;
         out << YAML::Key << "Entity" << YAML::Value << fakeUUID;
 

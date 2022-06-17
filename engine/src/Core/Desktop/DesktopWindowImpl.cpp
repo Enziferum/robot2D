@@ -36,7 +36,8 @@ namespace robot2D {
             setup();
         }
 
-        DesktopWindowImpl::DesktopWindowImpl(const vec2u& size, const std::string &name,
+        DesktopWindowImpl::DesktopWindowImpl(const vec2u& size,
+                                             const std::string& name,
                                              WindowContext& context):
                 m_window(nullptr),
                 m_size(size),
@@ -178,12 +179,13 @@ namespace robot2D {
             DesktopWindowImpl* window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
 
             Event event;
-            if(action == GLFW_REPEAT || action == GLFW_PRESS)
+            //action == GLFW_REPEAT ||
+            if(action == GLFW_PRESS)
                 event.type = Event::KeyPressed;
             if(action == GLFW_RELEASE)
                 event.type = Event::KeyReleased;
             event.key.code = Int2Key(key);
-            window->m_event_queue.push(event);
+            window -> m_event_queue.push(event);
         }
 
         void DesktopWindowImpl::cursor_callback(GLFWwindow* wnd, double xpos, double ypos) {
@@ -205,7 +207,7 @@ namespace robot2D {
             Event event;
             event.type = Event::MouseWheel;
             event.wheel.scroll_x = 0;
-            event.wheel.scroll_y += float(ypos);
+            event.wheel.scroll_y = float(ypos);
             window->m_event_queue.push(event);
         }
 

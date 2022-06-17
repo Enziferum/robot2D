@@ -27,7 +27,8 @@ source distribution.
 namespace robot2D {
 
     /**
-     * \brief 2D Transform matrix, allows to get different transformations
+     * \brief Provides 2D Transform matrix.
+     * \details Make possible to manipulate / calculate Entities vertices information.
      */
     class ROBOT2D_EXPORT_API Transform {
     public:

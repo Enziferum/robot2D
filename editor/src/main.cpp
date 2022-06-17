@@ -18,20 +18,13 @@ and must not be misrepresented as being the original software.
 3. This notice may not be removed or altered from any
 source distribution.
 *********************************************************************/
-#include <exception>
 
-#include <robot2D/Util/Logger.hpp>
+#include <robot2D/Engine.hpp>
 #include <editor/Application.hpp>
 
 int main() {
-    logger::Log::Init();
-    editor::Application application;
-
-    try {
-        application.setup();
-        application.run();
-    }
-    catch(const std::exception& exception) {
-        RB_EDITOR_CRITICAL(exception.what());
-    }
+    robot2D::EngineConfiguration engineConfiguration;
+    engineConfiguration.windowTitle = "Robot2DEngine";
+    engineConfiguration.windowSize = {800, 600};
+    ROBOT2D_RUN_ENGINE(editor::Application, engineConfiguration);
 }

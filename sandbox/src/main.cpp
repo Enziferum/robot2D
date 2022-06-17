@@ -19,26 +19,7 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include <memory>
-#include <robot2D/Graphics/RenderWindow.hpp>
-#include <robot2D/Util/Logger.hpp>
-#include "sandbox/Sandbox.hpp"
-#include "sandbox/Render2DScene.hpp"
+#include <robot2D/Engine.hpp>
+#include <sandbox/Sandbox.hpp>
 
-
-int main() {
-    logger::Log::Init();
-    robot2D::RenderWindow window{{800, 600}, {"Sandbox"}};
-
-    Sandbox sandbox(window);
-
-    //// Put own scenes here /////
-    Render2DScene::Ptr render2DScene = std::make_unique<Render2DScene>(window);
-    render2DScene -> setup();
-    //// Put own scenes here /////
-
-    sandbox.setScene(std::move(render2DScene));
-    sandbox.run();
-
-    return 0;
-}
+ROBOT2D_MAIN(Sandbox)

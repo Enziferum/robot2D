@@ -26,16 +26,33 @@ source distribution.
 #include <robot2D/Core/Vector2.hpp>
 
 namespace robot2D {
+    /**
+     * \brief Rectangle in 2D Space.
+     * \details
+     * @tparam T
+     */
     template<typename T>
     struct ROBOT2D_EXPORT_API Rect {
+        /// All values are zero
         Rect();
+
+        /// \brief Specifies TopLeft Coordinate with width and height.
+        /// \details These information allows to calculate all 4 coordinates.
         Rect(const T& leftx, const T& lefty, const T& width, const T& height);
         Rect& operator=(const Rect& other);
         Rect(const Rect& other);
         ~Rect() = default;
 
+        /// \brief Check if current rect intersects with other rect.
         bool intersects(const Rect<T>& rect);
+
+        /// \brief Check if current rect intersects with other rect.
+        /// \details These methods not only checks intersection.
+        /// Also it providers intersection rectangle in other words overlapping \n
+        /// Between 2 rectangles.
         bool intersects(const Rect<T>& other, Rect<T>& overlap);
+
+        /// Check if point in rect bounds
         bool contains(const Vector2<T>& point);
 
         T lx;

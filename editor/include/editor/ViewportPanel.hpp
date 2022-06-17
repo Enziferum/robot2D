@@ -21,34 +21,29 @@ source distribution.
 
 #pragma once
 
-#include <robot2D/Graphics/View.hpp>
-#include <robot2D/Core/Event.hpp>
+#include <utility>
+#include <robot2D/Graphics/FrameBuffer.hpp>
+#include <robot2D/Extra/Api.hpp>
+
+#include "Scene.hpp"
+#include "IPanel.hpp"
 
 namespace editor {
-
-    struct SceneCameraConfiguration {
-        float zoomOffset = 1.F;
-        float zoomMultiplier = 0.1F;
-    };
-
-    class SceneCamera {
+    class ViewportPanel final: public IPanel {
     public:
-        SceneCamera();
-        ~SceneCamera() = default;
+        ViewportPanel(Scene::Ptr&& scene);
+        ~ViewportPanel() override = default;
 
-        void onEvent(const robot2D::Event& event);
-        void resize(const robot2D::FloatRect& viewPort);
-
-        float& getCameraSpeed() { return m_cameraSpeed; }
-        const float getZoom() const;
-
-        robot2D::View& getView();
-        const robot2D::View& getView() const;
+        void set(Scene::Ptr ptr,
+                 robot2D::FrameBuffer::Ptr frameBuffer) {
+            m_scene = std::move(ptr);
+            m_frameBuffer = std::move(frameBuffer);
+        }
+        void render() override;
     private:
-        robot2D::View m_view;
-        robot2D::FloatRect m_sizeRect;
-        SceneCameraConfiguration m_configuration;
-        float m_zoom;
-        float m_cameraSpeed = 10.F;
+        Scene::Ptr m_scene;
+        robot2D::FrameBuffer::Ptr m_frameBuffer;
+        robot2D::vec2u  m_ViewportSize{};
+        ImGui::WindowOptions m_windowOptions;
     };
 }

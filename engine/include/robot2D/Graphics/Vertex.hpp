@@ -25,10 +25,19 @@ source distribution.
 #include "Color.hpp"
 
 namespace robot2D {
-    // in version 0.2 - 0.3 using only textureCoords for Quads
+    /**
+     * \brief Describe input blob buffer.
+     * \details Input buffer contains information what to render onto screen. \n
+     * Vertex provides information for each part of shape. \n
+     * Quad has 4 vertices. \n
+     * Triangle has 3 vertices.
+     */
     struct ROBOT2D_EXPORT_API Vertex {
+        /// Position of vertex without any transformation by default.
         mutable vec2f position;
+        /// Texture coordinates. Values from 0.0 to 1.0.
         mutable vec2f texCoords;
+        /// Color
         mutable Color color = Color::White;
     };
 
