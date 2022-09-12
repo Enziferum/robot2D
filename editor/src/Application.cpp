@@ -23,24 +23,26 @@ source distribution.
 #include <filesystem>
 #include <yaml-cpp/yaml.h>
 
-#include <robot2D/Core/Clock.hpp>
 #include <editor/Application.hpp>
 #include <editor/EditorStyles.hpp>
 #include <editor/ProjectSerializer.hpp>
 #include <editor/Utils.hpp>
 #include <editor/EventBinder.hpp>
+#include "ImGuizmo.h"
 
 namespace editor {
     //make autotranslator son of bitches from middle east
     Application::Application():
             robot2D::Application(),
             m_appConfiguration{},
-            m_editor{m_messageBus},
+            m_taskQueue{},
+            m_guiWrapper{},
+            m_editor{m_messageBus, m_taskQueue, m_guiWrapper},
             m_state{State::ProjectInspector},
             m_configuration{},
             m_editorCache{m_configuration},
             m_projectManager{m_configuration},
-            m_projectInspector{m_editorCache}
+            m_projectInspector{m_editorCache, m_messageBus}
              {}
 
     void Application::setup() {
@@ -82,18 +84,12 @@ namespace editor {
             applyStyle(EditorStyle::GoldBlack);
 
 
-            m_projectInspector.addCallback(ProjectInspector::CallbackType::Create,
-                                           [this](ProjectDescription project) {
-                                               createProject(std::move(project));
-                                           });
-            m_projectInspector.addCallback(ProjectInspector::CallbackType::Load,
-                                           [this](ProjectDescription project) {
-                                               loadProject(std::move(project));
-                                           });
-            m_projectInspector.addCallback(ProjectInspector::CallbackType::Delete,
-                                           [this](ProjectDescription project) {
-                                               deleteProject(std::move(project));
-                                           });
+            m_messageDispatcher.onMessage<ProjectMessage>(MessageID::CreateProject,
+                                                          BIND_FUNCTION_FN(createProject));
+            m_messageDispatcher.onMessage<ProjectMessage>(MessageID::LoadProject,
+                                                          BIND_FUNCTION_FN(loadProject));
+            m_messageDispatcher.onMessage<ProjectMessage>(MessageID::DeleteProject,
+                                                          BIND_FUNCTION_FN(deleteProject));
 
             m_projectInspector.setup(m_window);
         } else {
@@ -138,16 +134,20 @@ namespace editor {
         while (m_messageBus.pollMessages(message)) {
             if(m_state == State::Editor)
                 m_editor.handleMessages(message);
+
+            m_messageDispatcher.process(message);
         }
     }
 
     void Application::update(float dt) {
+        m_taskQueue.process();
         if(m_state == State::Editor)
             m_editor.update(dt);
     }
 
     void Application::guiUpdate(float dt) {
         m_guiWrapper.update(dt);
+        ImGuizmo::BeginFrame();
     }
 
     void Application::render() {
@@ -161,14 +161,14 @@ namespace editor {
     }
 
 
-    void Application::createProject(ProjectDescription&& projectDescription) {
-        if(!m_editorCache.addProject(projectDescription)) {
+    void Application::createProject(const ProjectMessage& projectDescription) {
+        if(!m_editorCache.addProject(projectDescription.description)) {
             RB_EDITOR_ERROR("Can't add Project to Cache := {0}",
                             errorToString(m_editorCache.getError()));
             return;
         }
 
-        if(!m_projectManager.add(projectDescription)) {
+        if(!m_projectManager.add(projectDescription.description)) {
             RB_EDITOR_ERROR("Can't create Project := {0}",
                             errorToString(m_projectManager.getError()));
             return;
@@ -181,29 +181,31 @@ namespace editor {
         m_state = State::Editor;
     }
 
-    void Application::deleteProject(ProjectDescription&& projectDescription) {
+    void Application::deleteProject(const ProjectMessage& projectDescription) {
 
-        if(!m_editorCache.removeProject(projectDescription)) {
+        if(!m_editorCache.removeProject(projectDescription.description)) {
             RB_EDITOR_ERROR("EditorCache can't delete Project := {0}",
                             errorToString(m_editorCache.getError()));
             return;
         }
 
-        if(!m_projectManager.remove(projectDescription)) {
+        if(!m_projectManager.remove(projectDescription.description)) {
             RB_EDITOR_ERROR("ProjectManager can't delete Project := {0}",
                             errorToString(m_projectManager.getError()));
             return;
         }
     }
 
-    void Application::loadProject(ProjectDescription&& projectDescription) {
-        if(!m_editorCache.loadProject(projectDescription)) {
-            RB_EDITOR_ERROR("Cache can't load Project := {0}", errorToString(m_editorCache.getError()));
+    void Application::loadProject(const ProjectMessage& projectDescription) {
+        if(!m_editorCache.loadProject(projectDescription.description)) {
+            RB_EDITOR_ERROR("Cache can't load Project := {0}",
+                            errorToString(m_editorCache.getError()));
             return;
         }
 
-        if(!m_projectManager.load(projectDescription)) {
-            RB_EDITOR_ERROR("ProjectManager can't load Project := {0}", errorToString(m_projectManager.getError()));
+        if(!m_projectManager.load(projectDescription.description)) {
+            RB_EDITOR_ERROR("ProjectManager can't load Project := {0}",
+                            errorToString(m_projectManager.getError()));
             return;
         }
 

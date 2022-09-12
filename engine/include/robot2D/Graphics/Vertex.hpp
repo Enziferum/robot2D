@@ -22,6 +22,7 @@ source distribution.
 #pragma once
 #include <vector>
 #include <robot2D/Core/Vector2.hpp>
+#include <robot2D/Core/Vector3.hpp>
 #include "Color.hpp"
 
 namespace robot2D {

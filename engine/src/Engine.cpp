@@ -81,7 +81,7 @@ namespace robot2D {
                        std::move(engineConfiguration));
         }
         catch(const std::exception& exception) {
-            RB_EDITOR_CRITICAL(exception.what());
+            RB_EDITOR_CRITICAL("Exception raised, reason: {0}", exception.what());
             return 1;
         }
 

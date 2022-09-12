@@ -25,12 +25,16 @@ source distribution.
 #include <robot2D/Core/MessageBus.hpp>
 #include <robot2D/Graphics/FrameBuffer.hpp>
 #include <robot2D/Util/ResourceHandler.hpp>
+#include <robot2D/Extra/Gui.hpp>
 
-#include "PanelManager.hpp"
+#include "UIManager.hpp"
 #include "Scene.hpp"
 #include "SceneCamera.hpp"
 #include "SceneManager.hpp"
 #include "Project.hpp"
+#include "MessageDispather.hpp"
+#include "TaskQueue.hpp"
+#include "EditorCamera.hpp"
 
 namespace editor {
 
@@ -54,7 +58,7 @@ namespace editor {
 
     class Editor {
     public:
-        Editor(robot2D::MessageBus& messageBus);
+        Editor(robot2D::MessageBus& messageBus, TaskQueue& taskQueue, ImGui::Gui& gui);
         Editor(const Editor&)=delete;
         Editor(const Editor&&)=delete;
         Editor& operator=(const Editor&)=delete;
@@ -73,7 +77,6 @@ namespace editor {
         void prepare();
 
         void guiRender();
-        void mainMenubar();
 
         bool createScene();
         void openScene();
@@ -83,6 +86,7 @@ namespace editor {
         void ui_toolbar();
     private:
         enum class State {
+            Load,
             Edit,
             Run
         };
@@ -91,18 +95,22 @@ namespace editor {
 
         robot2D::RenderWindow* m_window;
         robot2D::MessageBus& m_messageBus;
-        PanelManager m_panelManager;
+        TaskQueue& m_taskQueue;
+        ImGui::Gui& m_gui;
+        UIManager m_panelManager;
+        SceneManager m_sceneManager;
+        MessageDispatcher m_messageDispather;
+
+        EditorConfiguration m_configuration;
 
         Project::Ptr m_currentProject;
         Scene::Ptr m_activeScene;
         SceneCamera m_camera;
 
         robot2D::FrameBuffer::Ptr m_frameBuffer;
-        robot2D::ResourceHandler<robot2D::Texture, EditorConfiguration::TextureID> m_textures;
-        robot2D::vec2u m_ViewportSize;
+        robot2D::ResourceHandler<robot2D::Texture,
+                        EditorConfiguration::TextureID> m_textures;
         robot2D::Color m_sceneClearColor;
-
-        EditorConfiguration m_configuration;
-        SceneManager m_sceneManager;
+        EditorCamera m_editorCamera;
     };
 }

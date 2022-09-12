@@ -23,7 +23,7 @@ source distribution.
 
 #include <robot2D/Graphics/RenderStats.hpp>
 #include <robot2D/Graphics/Color.hpp>
-#include "SceneCamera.hpp"
+#include "EditorCamera.hpp"
 #include "IPanel.hpp"
 
 namespace editor {
@@ -34,7 +34,7 @@ namespace editor {
 
     class InspectorPanel: public IPanel {
     public:
-        InspectorPanel(SceneCamera& sceneCamera);
+        InspectorPanel(EditorCamera& sceneCamera);
         ~InspectorPanel() override = default;
 
         const robot2D::Color& getColor() const;
@@ -42,7 +42,7 @@ namespace editor {
         void setRenderStats(robot2D::RenderStats&& renderStats);
         void render() override;
     private:
-        SceneCamera& m_camera;
+        EditorCamera& m_camera;
         robot2D::Color m_clearColor;
         robot2D::RenderStats m_renderStats;
         InspectorPanelConfiguration m_configuration;

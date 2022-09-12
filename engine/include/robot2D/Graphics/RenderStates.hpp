@@ -73,6 +73,8 @@ namespace robot2D {
 
         unsigned int layerID;
 
+        int entityID;
+
         BlendMode blendMode;
 
         static const RenderStates Default;

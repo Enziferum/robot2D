@@ -30,7 +30,9 @@ source distribution.
 #include "ProjectManager.hpp"
 #include "EditorCache.hpp"
 #include "Configuration.hpp"
-#include "MessageQueue.hpp"
+#include "MessageDispather.hpp"
+#include "Messages.hpp"
+#include "TaskQueue.hpp"
 
 namespace editor {
 
@@ -46,16 +48,15 @@ namespace editor {
 
         void setup() override;
         void handleEvents(const robot2D::Event& event) override;
-        void handleMessages();
+        void handleMessages() override;
         void update(float dt) override;
         void guiUpdate(float dt)override;
         void render() override;
     private:
-        /// Subsription Api callbacks ///
-        void createProject(ProjectDescription&& project);
-        void loadProject(ProjectDescription&& project);
-        void deleteProject(ProjectDescription&& projectDescription);
-        /// Subsription Api callbacks ///
+        /// Project managing api ///
+        void createProject(const ProjectMessage& project);
+        void loadProject(const ProjectMessage& project);
+        void deleteProject(const ProjectMessage& projectDescription);
     private:
         enum class State {
             ProjectInspector,
@@ -65,6 +66,7 @@ namespace editor {
         ApplicationConfiguration m_appConfiguration;
 
         robot2D::MessageBus m_messageBus;
+        TaskQueue m_taskQueue;
         ImGui::Gui m_guiWrapper;
         Editor m_editor;
         State m_state;
@@ -73,6 +75,7 @@ namespace editor {
         EditorCache m_editorCache;
         ProjectManager m_projectManager;
         ProjectInspector m_projectInspector;
+        MessageDispatcher m_messageDispatcher;
     };
 }
 

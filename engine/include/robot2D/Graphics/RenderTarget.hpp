@@ -33,6 +33,7 @@ source distribution.
 #include "RenderContext.hpp"
 #include "VertexArray.hpp"
 #include "robot2D/Core/WindowContext.hpp"
+#include "Matrix3D.hpp"
 
 namespace robot2D {
     namespace priv {
@@ -48,14 +49,17 @@ namespace robot2D {
     class ROBOT2D_EXPORT_API RenderTarget {
     public:
         RenderTarget(const vec2u& size,
-                     const WindowContext::RenderApi openGLVersion);
+                     const WindowContext::RenderApi openGLVersion,
+                     const WindowContext::RenderDimensionType renderDimensionType);
         virtual ~RenderTarget() = 0;
 
         /// Set new Viewport.
         virtual void setView(const View& view, unsigned int layerID = 1);
 
+        virtual void setView3D(const Matrix3D& projection, const Matrix3D& view);
+
         /// get current Viewport.
-        virtual const View& getView(unsigned int layerID = 1);
+        virtual const View& getView(unsigned int layerID = 1) const;
 
         /// get default viewport for Window.
         virtual const View& getDefaultView();
@@ -98,6 +102,9 @@ namespace robot2D {
         /// Check RenderStates to get more information.
         virtual void draw(const VertexArray::Ptr& vertexArray, RenderStates states) const;
 
+
+        virtual void draw3D(const VertexArray::Ptr& vertexArray, RenderStates states) const;
+
         /// \brief Prepare render to current frame render
         virtual void beforeRender() const;
 
@@ -116,6 +123,11 @@ namespace robot2D {
 
         /// Get BatchRender's Stats
         const RenderStats& getStats() const;
+
+
+        vec2f mapPixelToCoords(const vec2i& point, const View& view, unsigned int layerID = 1) const;
+
+        vec2f mapPixelToCoords(const vec2i& point, unsigned int layerID = 1) const;
     private:
         void setup();
     protected:

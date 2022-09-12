@@ -19,11 +19,126 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
+#include <imgui/imgui.h>
+#include <tfd/tinyfiledialogs.h>
+
 #include <editor/MenuPanel.hpp>
+#include <editor/Messages.hpp>
 
 namespace editor {
 
-    MenuPanel::MenuPanel(): IPanel(UniqueType(typeid(MenuPanel))) {}
+    MenuPanel::MenuPanel(robot2D::MessageBus& messageBus):
+        IPanel(UniqueType(typeid(MenuPanel))),
+        m_messageBus{messageBus} {}
 
-    void MenuPanel::render() {}
+    void MenuPanel::render() {
+        if (ImGui::BeginMenuBar())
+        {
+            if (ImGui::BeginMenu("File"))
+              fileMenu();
+            if (ImGui::BeginMenu("Edit"))
+                editMenu();
+            if (ImGui::BeginMenu("Settings"))
+                settingsMenu();
+            if (ImGui::BeginMenu("Help"))
+                helpMenu();
+            ImGui::EndMenuBar();
+        }
+    }
+
+    void MenuPanel::fileMenu() {
+        if(ImGui::MenuItem("New", "Ctrl+N")) {
+            const char* path = tinyfd_selectFolderDialog("Create Robot2D Project", nullptr);
+            // close, either
+            if(path == nullptr) {
+                return;
+            }
+            std::string creationPath(path);
+            ProjectDescription description;
+            description.name = "Project";
+            description.path = creationPath;
+
+            auto msg = m_messageBus.postMessage<ProjectMessage>(MessageID::CreateProject);
+            msg -> description = std::move(description);
+        }
+        ImGui::Separator();
+
+        if(ImGui::MenuItem("Open", "Ctrl+O")) {
+            std::string openPath = "assets/scenes/demoScene.robot2D";
+            const char* patterns[1] = {"*.robot2D"};
+            const char* path = tinyfd_openFileDialog("Load Project", nullptr,
+                                                     1,
+                                                     patterns,
+                                                     "Project",
+                                                     0);
+            if (path != nullptr) {
+                openPath = std::string(path);
+                auto msg =
+                        m_messageBus.postMessage<MenuProjectMessage>(MessageID::OpenProject);
+                msg -> path = std::move(openPath);
+            }
+        }
+
+        if(ImGui::MenuItem("Open", "Ctrl+Shift+O")) {
+            std::string openPath = "assets/scenes/demoScene.robot2D";
+            const char* patterns[1] = {"*.scene"};
+            const char* path = tinyfd_openFileDialog("Load Scene", nullptr,
+                                                     1,
+                                                     patterns,
+                                                     "Scene",
+                                                     0);
+            if (path != nullptr) {
+                openPath = std::string(path);
+                auto msg =
+                        m_messageBus.postMessage<MenuProjectMessage>(MessageID::OpenScene);
+                msg -> path = std::move(openPath);
+            }
+        }
+
+        if(ImGui::MenuItem("Save", "Ctrl+S")) {
+            std::string savePath = "assets/scenes/demoScene.robot2D";
+            const char* patterns[1] = {"*.robot2D"};
+            const char* path = tinyfd_saveFileDialog("Save Scene", nullptr,
+                                                     1, patterns,
+                                                     "Scene");
+            if(path != nullptr) {
+                savePath = std::string(path);
+                auto msg =
+                        m_messageBus.postMessage<MenuProjectMessage>(MessageID::SaveProject);
+                msg -> path = std::move(savePath);
+            }
+        }
+
+        if(ImGui::MenuItem("Save", "Ctrl+Shift+S")) {
+            std::string savePath = "assets/scenes/demoScene.robot2D";
+            const char* patterns[1] = {"*.scene"};
+            const char* path = tinyfd_saveFileDialog("Save Scene", nullptr,
+                                                     1, patterns,
+                                                     "Scene");
+            if(path != nullptr) {
+                savePath = std::string(path);
+                auto msg =
+                        m_messageBus.postMessage<MenuProjectMessage>(MessageID::SaveScene);
+                msg -> path = std::move(savePath);
+            }
+        }
+
+        ImGui::EndMenu();
+    }
+
+    void MenuPanel::editMenu() {
+        if(ImGui::MenuItem("Undo", "Ctrl+Z")) {
+        }
+        if(ImGui::MenuItem("Redo", "Ctrl+Shift+Z", false, false)) {
+        }
+        ImGui::EndMenu();
+    }
+
+    void MenuPanel::settingsMenu() {
+        ImGui::EndMenu();
+    }
+
+    void MenuPanel::helpMenu() {
+        ImGui::EndMenu();
+    }
 }

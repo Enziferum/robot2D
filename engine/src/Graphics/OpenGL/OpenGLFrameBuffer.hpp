@@ -32,16 +32,24 @@ namespace robot2D::priv {
         void Bind() override;
         void unBind() override;
         void Invalidate() override;
+
+        int readPixel(RenderID attachmentIndex, vec2i mousePos) override;
+
         void Resize(const robot2D::vec2u& newSize) override;
-        const RenderID& getFrameBufferRenderID() const override;
-        const FrameBufferSpecification &getSpecification() const override;
+        const RenderID& getFrameBufferRenderID(uint32_t index = 0) const override;
+        const FrameBufferSpecification& getSpecification() const override;
 
         FrameBufferSpecification &getSpecification() override;
-
+    private:
+        void deleteGLStuff();
     private:
         FrameBufferSpecification m_specification;
         RenderID m_renderID;
-        RenderID m_colorAttachment;
+
+        std::vector<FrameBufferTextureSpecification> m_colorAttachementSpecs;
+        FrameBufferTextureSpecification m_depthAttachmentSpec = FrameBufferTextureFormat::None;
+
+        std::vector<RenderID> m_colorAttachments;
         RenderID m_depthAttachment;
     };
 }
