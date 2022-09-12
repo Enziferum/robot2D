@@ -161,6 +161,36 @@ namespace robot2D{
         return scale(factor.x, factor.y);
     }
 
+    Transform Transform::getInverse() const {
+        // clang-format off
+        // Compute the determinant
+        float det = m_mat[0] * (m_mat[15] * m_mat[5] - m_mat[7] * m_mat[13]) -
+                    m_mat[1] * (m_mat[15] * m_mat[4] - m_mat[7] * m_mat[12]) +
+                    m_mat[3] * (m_mat[13] * m_mat[4] - m_mat[5] * m_mat[12]);
+        // clang-format on
+
+        // Compute the inverse if the determinant is not zero
+        // (don't use an epsilon because the determinant may *really* be tiny)
+        if (det != 0.f)
+        {
+            // clang-format off
+            return { (m_mat[15] * m_mat[5] - m_mat[7] * m_mat[13]) / det,
+                              -(m_mat[15] * m_mat[4] - m_mat[7] * m_mat[12]) / det,
+                              (m_mat[13] * m_mat[4] - m_mat[5] * m_mat[12]) / det,
+                              -(m_mat[15] * m_mat[1] - m_mat[3] * m_mat[13]) / det,
+                              (m_mat[15] * m_mat[0] - m_mat[3] * m_mat[12]) / det,
+                              -(m_mat[13] * m_mat[0] - m_mat[1] * m_mat[12]) / det,
+                              (m_mat[7]  * m_mat[1] - m_mat[3] * m_mat[5])  / det,
+                              -(m_mat[7]  * m_mat[0] - m_mat[3] * m_mat[4])  / det,
+                              (m_mat[5]  * m_mat[0] - m_mat[1] * m_mat[4])  / det};
+            // clang-format on
+        }
+        else
+        {
+            return {};
+        }
+    }
+
 
     Transform operator *(const Transform& left, const Transform& right)
     {

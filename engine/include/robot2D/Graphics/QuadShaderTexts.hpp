@@ -5,30 +5,48 @@ namespace robot2D {
         /// Default OpenGL Vertex Shader using in BatchRender
         /// Check OpenGLRender.cpp
         const char* vertexSource = R"(
-            layout (location = 0) in vec2 position;
+            layout (location = 0) in vec3 position;
             layout (location = 1) in vec4 color;
             layout (location = 2) in vec2 textureCoords;
             layout (location = 3) in float textureIndex;
+            layout (location = 4) in int a_entityID;
+
             out vec2 TexCoords;
             out vec4 Color;
-            out float TexIndex;
+            out flat float TexIndex;
+            out flat int v_entityID;
+
             uniform mat4 projection;
+            uniform mat4 view;
+            uniform bool is3DRender;
+
             void main()
             {
                 TexCoords = textureCoords;
                 Color = color;
                 TexIndex = textureIndex;
-                gl_Position = projection * vec4(position, 0.0, 1.0);
+                v_entityID = a_entityID;
+                if(!is3DRender) {
+                    gl_Position = projection * vec4(position, 1.0);
+                }
+                else {
+                    gl_Position = projection * view * vec4(position, 1.0);
+                }
             }
         )";
 
         /// Default OpenGL Fragment Shader using in BatchRender
         /// Check OpenGLRender.cpp
+
         const char* fragmentSource = R"(
             layout (location = 0) out vec4 fragColor;
+            layout (location = 1) out int o_entityID;
+
             in vec2 TexCoords;
             in vec4 Color;
-            in float TexIndex;
+            in flat float TexIndex;
+            in flat int v_entityID;
+
             uniform sampler2D textureSamplers[16];
 
             void main()
@@ -37,7 +55,7 @@ namespace robot2D {
 
                 switch(int(TexIndex))
                 {
-                    case  0: texColor *= texture(textureSamplers[ 0], TexCoords); break;
+                    case  0: texColor = Color; break;
                     case  1: texColor *= texture(textureSamplers[ 1], TexCoords); break;
                     case  2: texColor *= texture(textureSamplers[ 2], TexCoords); break;
                     case  3: texColor *= texture(textureSamplers[ 3], TexCoords); break;
@@ -56,6 +74,7 @@ namespace robot2D {
                 }
 
                 fragColor = texColor;
+                o_entityID = v_entityID;
             }
         )";
     }

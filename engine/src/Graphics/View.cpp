@@ -29,7 +29,8 @@ namespace robot2D {
             m_size               (),
             m_rotation           (0),
             m_viewport           (0, 0, 1, 1),
-            needTransformUpdate   (false) {
+            needTransformUpdate   (false),
+            needInvTransformUpdate{false} {
         reset(FloatRect(0, 0 , 1000, 1000));
     }
 
@@ -38,7 +39,8 @@ namespace robot2D {
             m_size               (),
             m_rotation           (0),
             m_viewport           (0, 0, 1, 1),
-            needTransformUpdate   (false) {
+            needTransformUpdate   (false),
+            needInvTransformUpdate{false} {
         reset(viewport);
     }
 
@@ -47,7 +49,8 @@ namespace robot2D {
             m_size               (size),
             m_rotation           (0),
             m_viewport           (0, 0, 1, 1),
-            needTransformUpdate   (false) {
+            needTransformUpdate   (false),
+            needInvTransformUpdate{false} {
 
     }
 
@@ -63,12 +66,14 @@ namespace robot2D {
     void View::setCenter(const vec2f& center) {
         m_center = center;
         needTransformUpdate = true;
+        needInvTransformUpdate = true;
     }
 
     void View::setCenter(float x, float y) {
         m_center.x = x;
         m_center.y = y;
         needTransformUpdate = true;
+        needInvTransformUpdate = true;
     }
 
     const vec2f& View::getCenter() const {
@@ -78,12 +83,14 @@ namespace robot2D {
     void View::setSize(const vec2f &size) {
         m_size = size;
         needTransformUpdate = true;
+        needInvTransformUpdate = true;
     }
 
     void View::setSize(float x, float y) {
         m_size.x = x;
         m_size.y = y;
         needTransformUpdate = true;
+        needInvTransformUpdate = true;
     }
 
     const vec2f& View::getSize() const {
@@ -95,6 +102,7 @@ namespace robot2D {
         if (m_rotation < 0)
             m_rotation += 360.f;
         needTransformUpdate = true;
+        needInvTransformUpdate = true;
     }
 
     const float& View::getRotation() const {
@@ -124,6 +132,7 @@ namespace robot2D {
         m_size.y   = rectangle.height;
         m_rotation = 0;
         needTransformUpdate = true;
+        needInvTransformUpdate = true;
     }
 
     const Transform& View::getTransform() const {
@@ -148,5 +157,15 @@ namespace robot2D {
             needTransformUpdate = false;
         }
         return m_transform;
+    }
+
+    const Transform& View::getInverseTransform() const {
+        if (needInvTransformUpdate)
+        {
+            m_invTransform = getTransform().getInverse();
+            needInvTransformUpdate = false;
+        }
+
+        return m_invTransform;
     }
 }

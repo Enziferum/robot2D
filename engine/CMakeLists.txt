@@ -51,6 +51,7 @@ set(ENGINE_SRC
         ${INCLROOT}/Graphics/FrameBuffer.hpp
         ${INCLROOT}/Graphics/Image.hpp
         ${INCLROOT}/Graphics/RenderAPI.hpp
+        ${INCLROOT}/Graphics/Matrix3D.hpp
 
 
         #Util
@@ -101,6 +102,7 @@ set(ENGINE_SRC ${ENGINE_SRC}
         ${SRCROOT}/Graphics/FrameBuffer.cpp
         ${SRCROOT}/Graphics/Image.cpp
         ${SRCROOT}/Graphics/RenderAPI.cpp
+        ${SRCROOT}/Graphics/Matrix3D.cpp
 
         #Ecs
         ${SRCROOT}/Ecs/Bitmask.cpp

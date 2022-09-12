@@ -25,6 +25,7 @@ source distribution.
 #include <editor/SceneSerializer.hpp>
 #include <editor/Scene.hpp>
 #include <editor/Components.hpp>
+#include <robot2D/Util/Logger.hpp>
 
 namespace YAML {
     template<>
@@ -148,17 +149,57 @@ namespace editor {
         return true;
     }
 
+    std::string code = R"(
+    Scene: Unnamed Scene
+    Entities:
+      - Entity: 9012510123
+        TagComponent:
+          Tag: Mara
+        TransformComponent:
+          Position: [100, 100]
+          Size: [100, 100]
+          Rotation: 0
+        SpriteComponent:
+          Color: [154.12088, 68.5922623, 68.5922623, 255]
+      - Entity: 9012510123
+        TagComponent:
+          Tag: kl
+        TransformComponent:
+          Position: [0, 0]
+          Size: [100, 100]
+          Rotation: 0
+        SpriteComponent:
+          Color: [255, 255, 255, 255]
+      - Entity: 9012510123
+        TagComponent:
+          Tag: Red
+        TransformComponent:
+          Position: [200, 200]
+          Size: [100, 100]
+          Rotation: 0
+        SpriteComponent:
+          Color: [205.961533, 32.8180542, 32.8180542, 255]
+)";
+
     bool SceneSerializer::deserialize(const std::string& path) {
-        std::ifstream ifstream(path);
-        if(!ifstream.is_open()) {
-            m_error = SceneSerializerError::NoFileOpen;
-            return false;
+        YAML::Node data;
+        try {
+            std::ifstream ifstream(path);
+            if(!ifstream.is_open()) {
+                m_error = SceneSerializerError::NoFileOpen;
+                return false;
+            }
+
+            std::stringstream sstr;
+            sstr << ifstream.rdbuf();
+            ifstream.close();
+            data = YAML::Load(sstr.str());
+        }
+        catch (...) {
+            RB_EDITOR_CRITICAL("YAML Exception");
+            exit(2);
         }
 
-        std::stringstream sstr;
-        sstr << ifstream.rdbuf();
-
-        YAML::Node data = YAML::Load(sstr.str());
         if(!data["Scene"]) {
             m_error = SceneSerializerError::NotSceneTag;
             return false;
@@ -166,6 +207,7 @@ namespace editor {
 
         std::string sceneName = data["Scene"].as<std::string>();
         auto entites = data["Entities"];
+
         if(entites) {
             for(auto entity: entites) {
 
@@ -176,7 +218,7 @@ namespace editor {
                 if(tagComponent)
                     name = tagComponent["Tag"].as<std::string>();
 
-                auto deserializedEntity = m_scene->createEntity();
+                auto deserializedEntity = m_scene -> createEntity();
                 auto& tagData = deserializedEntity.addComponent<TagComponent>();
                 tagData.setTag(name);
 

@@ -9,12 +9,13 @@
 
 namespace robot2D {
     namespace priv {
+
         struct VertexArrayCache {
             VertexArray::Ptr m_vertexArray;
             RenderStates m_states;
         };
 
-        // Maybe move out layer creation from Render
+        // TODO: @a.raag Maybe move out layer creation from Render?
         struct RenderLayer {
             RenderLayer() = default;
             ~RenderLayer();

@@ -24,6 +24,7 @@ source distribution.
 #include <string>
 
 namespace editor {
+    // TODO: @a.raag
     enum class EditorCacheError {
         None,
         NoCacheFile,

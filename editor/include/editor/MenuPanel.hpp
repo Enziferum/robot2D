@@ -20,17 +20,23 @@ source distribution.
 *********************************************************************/
 
 #pragma once
-
+#include <robot2D/Core/MessageBus.hpp>
 #include "IPanel.hpp"
 
 namespace editor {
     class MenuPanel: public IPanel {
     public:
-        MenuPanel();
+        MenuPanel(robot2D::MessageBus& messageBus);
         ~MenuPanel() override = default;
 
 
         void render() override;
     private:
+        void fileMenu();
+        void editMenu();
+        void settingsMenu();
+        void helpMenu();
+    private:
+        robot2D::MessageBus& m_messageBus;
     };
 }

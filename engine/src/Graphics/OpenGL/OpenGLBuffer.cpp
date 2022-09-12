@@ -64,6 +64,7 @@ namespace robot2D {
         glGenBuffers(1, &m_bufferID);
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_bufferID);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, data, GL_STATIC_DRAW);
+        m_size = size;
     }
 
     OpenGLIndexBuffer::~OpenGLIndexBuffer() {

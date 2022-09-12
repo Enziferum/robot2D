@@ -19,18 +19,34 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include <editor/PanelManager.hpp>
+#include <editor/UIManager.hpp>
+#include <editor/ScenePanel.hpp>
 
 namespace editor {
-    PanelManager::PanelManager(): m_panels() {}
+    IUIManager::~IUIManager() noexcept {}
 
-    void PanelManager::update(float dt) {
+    UIManager::UIManager(ImGui::Gui& gui):
+        m_gui{gui}, m_panels() {}
+
+    void UIManager::update(float dt) {
         for(auto& it: m_panels)
             it -> update(dt);
     }
 
-    void PanelManager::render() {
+    void UIManager::render() {
         for(auto& it: m_panels)
             it -> render();
+    }
+
+    void UIManager::dockingCanvas() {
+
+    }
+
+    void UIManager::blockEvents(bool flag) {
+        m_gui.blockEvents(flag);
+    }
+
+    robot2D::ecs::Entity UIManager::getSelectedEntity() {
+        return getPanel<ScenePanel>().getSelectedEntity();
     }
 }

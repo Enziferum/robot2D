@@ -25,6 +25,7 @@ source distribution.
 #include <imgui/imgui_internal.h>
 #include <editor/ScenePanel.hpp>
 #include <editor/Components.hpp>
+#include <editor/Messages.hpp>
 
 namespace editor {
     static void DrawVec2Control(const std::string& label, robot2D::vec2f& values,
@@ -124,11 +125,16 @@ namespace editor {
         }
     }
 
-    ScenePanel::ScenePanel():
+    ScenePanel::ScenePanel(MessageDispatcher& messageDispatcher):
     IPanel(UniqueType(typeid(ScenePanel))),
+    m_messageDispatcher{messageDispatcher},
     m_scene(nullptr),
     m_selectedEntity{},
     m_configuration{} {
+
+        m_messageDispatcher.onMessage<EntitySelection>(EntitySelected,
+                                                       BIND_FUNCTION_FN(onEntitySelection)
+                                                       );
     }
 
     void ScenePanel::render() {
@@ -154,7 +160,7 @@ namespace editor {
         {
             if (ImGui::MenuItem("Create Empty Entity")) {
                 m_scene -> addEmptyEntity();
-                m_selectedEntity = m_scene->getEntities().back();
+                m_selectedEntity = m_scene -> getEntities().back();
             }
 
             ImGui::EndPopup();
@@ -328,6 +334,15 @@ namespace editor {
         drawComponent<NativeScriptComponent>("Scripting", entity, [](auto& component) {
 
         });
+    }
+
+    void ScenePanel::onEntitySelection(const EntitySelection& entitySelection) {
+        for(const auto& it: m_scene -> getEntities()) {
+            if(it.getIndex() == entitySelection.entityID) {
+                m_selectedEntity = it;
+                break;
+            }
+        }
     }
 
 }
