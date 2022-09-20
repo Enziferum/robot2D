@@ -207,10 +207,10 @@ class DepsInstaller:
     def __setup(self):
         currentPlatform = get_platform()
         printColored(bcolors.WARNING, f'Current platform is: {currentPlatform.value}')
-        configuration = input("Choose Configuration: \n"
-                             "1 - Debug \n"
-                             "2 - Release \n")
-        configuration = ConfigurationType(int(configuration))
+        # configuration = input("Choose Configuration: \n"
+        #                      "1 - Debug \n"
+        #                      "2 - Release \n")
+        configuration = ConfigurationType(int("2"))
         if get_platform() == PlatformType.Windows:
             compiler = input("Choose Compiler: \n"
                              "1 - MinGW \n"
