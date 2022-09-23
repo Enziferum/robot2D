@@ -33,7 +33,8 @@ source distribution.
     #include <spdlog/fmt/ostr.h>
     #include <spdlog/fmt/bundled/format.h>
 #elif defined(ROBOT2D_LINUX)
-    #include <fmt/format.h>
+    #include <spdlog/fmt/ostr.h>
+    #include <spdlog/fmt/bundled/format.h>
 #endif
 #ifdef _MSVC
     #pragma warning(pop)
