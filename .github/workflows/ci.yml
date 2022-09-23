@@ -4,7 +4,7 @@ on:
   pull_request:
     types: [opened, edited]
 
-permissions: read-all|write-all
+permissions: write-all
 
 env:
   BUILD_TYPE: Release
@@ -12,31 +12,31 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: [ '3.7' ]
 
     steps:
       - uses: actions/checkout@v3
 
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v4
-        with:
-            python-version: ${{ matrix.python-version }}
-            architecture: x64
-            cache: 'pip'
-
       - name: install cpplint
-        run: pip install cpplint
+        run: python3 -m pip install cpplint
+
+      - name: Create linter folder
+        run: mkdir ${{github.workspace}}/linter
 
       - name: Lint
-        run: cpplint --recursive --output=junit ${{github.workspace}}/engine 2> ${{github.workspace}}/output.xml
+        run: python3 -m cpplint --recursive --output=junit ${{github.workspace}}/engine 2> ${{github.workspace}}/linter/output.xml
+        continue-on-error: true
 
       - name: Download dependencies
-        run: python ${{github.workspace}}/scripts/install_deps.py
+        run: python3 ${{github.workspace}}/scripts/install_deps.py
 
       - name: Configure CMake
         run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
 
       - name: Engine Build
         run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+            name: assets-for-download
+            path: ${{github.workspace}}/linter

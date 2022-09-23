@@ -139,7 +139,7 @@ class Lib:
     def __build_library(self, generator, os_make='', cmake_options=''):
         cmake_cmd = Cmd(f'cd {self.name} && mkdir build '
                            f'&& cd build && cmake .. -G "{generator}" {cmake_options} && {os_make}make '
-                           f'&& {os_make}make install')
+                           f'&& sudo {os_make}make install')
         self.cmds.append(cmake_cmd)
 
     def __build_library_vs(self, generator, cmake_options=''):
@@ -162,7 +162,7 @@ class Lib:
                 libname = self.macOSname
             if currentPlatform is PlatformType.Linux:
                 # todo support not only ubuntu
-                packman_cmd = 'apt install'
+                packman_cmd = 'sudo apt install'
                 libname = self.linuxName
 
             self.cmds.append(Cmd(f'{packman_cmd} {libname}'))
