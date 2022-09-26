@@ -95,11 +95,11 @@ namespace robot2D {
         void OpenGLRender::setupOpenGL() {
 #if defined(ROBOT2D_WINDOWS) or defined(ROBOT2D_LINUX)
             RB_CORE_INFO("{0}", __FUNCTION__ );
-#endif
             RB_CORE_INFO("OpenGL Info:");
             RB_CORE_INFO("Vendor: {0} ", glGetString(GL_VENDOR));
             RB_CORE_INFO("Renderer: {0}", glGetString(GL_RENDERER));
             RB_CORE_INFO("Version: {0}", glGetString(GL_VERSION));
+#endif
 
             m_renderApi = RenderAPI::getOpenGLVersion();
             m_dimensionType = RenderAPI::getDimensionType();
