@@ -11,20 +11,51 @@ env:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [ ubuntu-latest ]
 
     steps:
       - uses: actions/checkout@v3
 
       - name: install cpplint
-        run: python3 -m pip install cpplint
+        run: |
+          if [ "$RUNNER_OS" == "Windows" ]; then
+               python -m pip install cpplint
+          else
+               python3 -m pip install cpplint
+          fi
+        shell: bash
 
       - name: Create linter folder
-        run: mkdir ${{github.workspace}}/linter
+        run: |
+          if [ "$RUNNER_OS" == "Windows" ]; then
+               mkdir ${{github.workspace}}\linter
+          else
+               mkdir ${{github.workspace}}/linter
+          fi
+        shell: bash
 
       - name: Lint
-        run: python3 -m cpplint --recursive --output=junit ${{github.workspace}}/engine 2> ${{github.workspace}}/linter/output.xml
+        run: |
+          if [ "$RUNNER_OS" == "Windows" ]; then
+               python -m cpplint --recursive --output=junit ${{github.workspace}}\engine 2> ${{github.workspace}}\linter\output.xml
+          else
+               python3 -m cpplint --recursive --output=junit ${{github.workspace}}/engine 2> ${{github.workspace}}/linter/output.xml
+          fi
+        shell: bash
         continue-on-error: true
+
+      - name: Download dependencies
+        run: |
+          if [ "$RUNNER_OS" == "Windows" ]; then
+               python scripts/install_deps.py
+          else
+               python3 ${{github.workspace}}/scripts/install_deps.py
+          fi
+        shell: bash
 
       - name: Download dependencies
         run: python3 ${{github.workspace}}/scripts/install_deps.py

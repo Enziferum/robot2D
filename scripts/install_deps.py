@@ -91,7 +91,7 @@ class WinVSVersion(enum.IntEnum):
         if self.value == self.VS_19:
             return "Visual Studio 16 2019"
         if self.value == self.VS_22:
-            return "Visual Studio 16 2022"
+            return "Visual Studio 17 2022"
 
 
 class Cmd:
@@ -212,17 +212,17 @@ class DepsInstaller:
         #                      "2 - Release \n")
         configuration = ConfigurationType(int("2"))
         if get_platform() == PlatformType.Windows:
-            compiler = input("Choose Compiler: \n"
-                             "1 - MinGW \n"
-                             "2 - VS \n")
-            self.__wincompiler = WinCompiler(int(compiler))
+            # compiler = input("Choose Compiler: \n"
+            #                  "1 - MinGW \n"
+            #                  "2 - VS \n")
+            self.__wincompiler = WinCompiler(int("2"))
             if self.__wincompiler == WinCompiler.VS:
-                version = input("Choose Version: \n"
-                                "1 - Visual Studio 2017 \n"
-                                "2 - Visual Studio 2019 \n"
-                                "3 - Visual Studio 2022 \n"
-                                )
-                self.__winvsversion = WinVSVersion(int(version))
+                # version = input("Choose Version: \n"
+                #                 "1 - Visual Studio 2017 \n"
+                #                 "2 - Visual Studio 2019 \n"
+                #                 "3 - Visual Studio 2022 \n"
+                #                 )
+                self.__winvsversion = WinVSVersion(int("3"))
         nixLibNames = {
             'glfw': NixLibName('glfw3', 'libglfw3 libglfw3-dev'),
             'spdlog': NixLibName('spdlog', 'libspdlog-dev'),
