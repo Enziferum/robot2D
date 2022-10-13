@@ -29,9 +29,6 @@ jobs:
       - name: Download dependencies
         run: python3 ${{github.workspace}}/scripts/install_deps.py
 
-      - name: Download dependencies
-        run: python3 ${{github.workspace}}/scripts/install_deps.py
-
       - name: Configure CMake
         run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
 
@@ -58,9 +55,6 @@ jobs:
       - name: Lint
         run: python3 -m cpplint --recursive --output=junit ${{github.workspace}}/engine 2> ${{github.workspace}}/linter/output.xml
         continue-on-error: true
-
-      - name: Download dependencies
-        run: python3 ${{github.workspace}}/scripts/install_deps.py
 
       - name: Download dependencies
         run: python3 ${{github.workspace}}/scripts/install_deps.py
