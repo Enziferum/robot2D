@@ -274,7 +274,7 @@ class DepsInstaller:
             print('-----------------------------------------------------------')
         printColored(bcolors.OKGREEN, "All libs installed")
 
-
+#TODO: @a.raag add ArgsParser
 if __name__ == '__main__':
     installer = DepsInstaller()
     installer.run()

@@ -29,7 +29,6 @@ source distribution.
 
 #include "UIManager.hpp"
 #include "Scene.hpp"
-#include "SceneCamera.hpp"
 #include "SceneManager.hpp"
 #include "Project.hpp"
 #include "MessageDispather.hpp"
@@ -105,7 +104,6 @@ namespace editor {
 
         Project::Ptr m_currentProject;
         Scene::Ptr m_activeScene;
-        SceneCamera m_camera;
 
         robot2D::FrameBuffer::Ptr m_frameBuffer;
         robot2D::ResourceHandler<robot2D::Texture,

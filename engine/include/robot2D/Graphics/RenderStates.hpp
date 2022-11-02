@@ -25,6 +25,7 @@ source distribution.
 #include "Transform.hpp"
 #include "Color.hpp"
 #include "Shader.hpp"
+#include "Matrix3D.hpp"
 
 namespace robot2D {
     class Texture;
@@ -65,17 +66,21 @@ namespace robot2D {
         ShaderHandler* shader;
         /// Custom color
         Color color;
-        /// Transformations. Check Transform.
+        /// 2D Transformations. Check Transform.
         Transform transform;
+
+        /// 2D Transformations. Check Matrix3D.
+        Matrix3D transform3D;
 
         /// Graphics API render information. Check RenderInfo.
         RenderInfo renderInfo;
 
+        /// Possible Blending options
+        BlendMode blendMode;
+
         unsigned int layerID;
 
         int entityID;
-
-        BlendMode blendMode;
 
         static const RenderStates Default;
     };

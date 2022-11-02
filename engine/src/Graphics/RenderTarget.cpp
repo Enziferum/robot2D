@@ -74,7 +74,7 @@ namespace robot2D {
         m_render -> render(states);
     }
 
-    void RenderTarget::draw(const VertexData& data, const RenderStates& states) {
+    void RenderTarget::draw(const Vertex3DData& data, const RenderStates& states) {
         if(!m_render)
             return;
 

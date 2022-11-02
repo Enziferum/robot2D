@@ -47,6 +47,26 @@ namespace YAML {
     };
 
     template<>
+    struct convert<robot2D::vec3f> {
+        static Node encode(const robot2D::vec3f& rhs) {
+            Node node;
+            node.push_back(rhs.x);
+            node.push_back(rhs.y);
+            node.push_back(rhs.z);
+            return node;
+        }
+
+        static bool decode(const Node& node, robot2D::vec3f& rhs) {
+            if(!node.IsSequence() || node.size() != 3)
+                return false;
+            rhs.x = node[0].as<float>();
+            rhs.y = node[1].as<float>();
+            rhs.z = node[2].as<float>();
+            return true;
+        }
+    };
+
+    template<>
     struct convert<robot2D::Color> {
         static Node encode(const robot2D::Color& rhs) {
             Node node;
@@ -83,6 +103,12 @@ namespace editor {
         return out;
     }
 
+    YAML::Emitter& operator<<(YAML::Emitter& out, const robot2D::vec3f& value) {
+        out << YAML::Flow;
+        out << YAML::BeginSeq << value.x << value.y << value.z << YAML::EndSeq;
+        return out;
+    }
+
     YAML::Emitter& operator<<(YAML::Emitter& out, const robot2D::Color& value) {
         out << YAML::Flow;
         out << YAML::BeginSeq << value.red << value.green
@@ -102,13 +128,14 @@ namespace editor {
             out << YAML::EndMap;
         }
 
-        if(entity.hasComponent<TransformComponent>()) {
+        if(entity.hasComponent<Transform3DComponent>()) {
             out << YAML::Key << "TransformComponent";
             out << YAML::BeginMap;
-            auto& ts = entity.getComponent<TransformComponent>();
+            auto& ts = entity.getComponent<Transform3DComponent>();
             out << YAML::Key << "Position" << YAML::Value << ts.getPosition();
             out << YAML::Key << "Size" << YAML::Value << ts.getScale();
-            out << YAML::Key << "Rotation" << YAML::Value << ts.getRotate();
+            // TODO: @a.raag add rotation
+            out << YAML::Key << "Rotation" << YAML::Value << 0.F;
             out << YAML::EndMap;
         }
 
@@ -148,38 +175,6 @@ namespace editor {
 
         return true;
     }
-
-    std::string code = R"(
-    Scene: Unnamed Scene
-    Entities:
-      - Entity: 9012510123
-        TagComponent:
-          Tag: Mara
-        TransformComponent:
-          Position: [100, 100]
-          Size: [100, 100]
-          Rotation: 0
-        SpriteComponent:
-          Color: [154.12088, 68.5922623, 68.5922623, 255]
-      - Entity: 9012510123
-        TagComponent:
-          Tag: kl
-        TransformComponent:
-          Position: [0, 0]
-          Size: [100, 100]
-          Rotation: 0
-        SpriteComponent:
-          Color: [255, 255, 255, 255]
-      - Entity: 9012510123
-        TagComponent:
-          Tag: Red
-        TransformComponent:
-          Position: [200, 200]
-          Size: [100, 100]
-          Rotation: 0
-        SpriteComponent:
-          Color: [205.961533, 32.8180542, 32.8180542, 255]
-)";
 
     bool SceneSerializer::deserialize(const std::string& path) {
         YAML::Node data;
@@ -224,10 +219,11 @@ namespace editor {
 
                 auto transformComponent = entity["TransformComponent"];
                 if(transformComponent) {
-                    auto& transform = deserializedEntity.addComponent<TransformComponent>();
-                    transform.setPosition(transformComponent["Position"].as<robot2D::vec2f>());
-                    transform.setScale(transformComponent["Size"].as<robot2D::vec2f>());
-                    transform.setRotate(transformComponent["Rotation"].as<float>());
+                    auto& transform = deserializedEntity.addComponent<Transform3DComponent>();
+                    transform.setPosition(transformComponent["Position"].as<robot2D::vec3f>());
+                    transform.setScale(transformComponent["Size"].as<robot2D::vec3f>());
+                    // TODO: @a.raag add rotation
+                    //transform.setRotate(transformComponent["Rotation"].as<float>());
                 }
 
                 auto spriteComponent = entity["SpriteComponent"];

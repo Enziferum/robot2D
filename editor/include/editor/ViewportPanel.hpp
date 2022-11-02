@@ -29,16 +29,18 @@ source distribution.
 #include "Scene.hpp"
 #include "IPanel.hpp"
 #include "UIManager.hpp"
-#include "SceneCamera.hpp"
 #include "EditorCamera.hpp"
 
 namespace editor {
     class ViewportPanel final: public IPanel {
     public:
-        ViewportPanel(IUIManager& uiManager, SceneCamera& sceneCamera, EditorCamera& editorCamera, robot2D::MessageBus& messageBus, Scene::Ptr&& scene);
+        ViewportPanel(IUIManager& uiManager,
+                      EditorCamera& editorCamera,
+                      robot2D::MessageBus& messageBus,
+                      Scene::Ptr&& scene);
         ~ViewportPanel() override = default;
 
-        void update();
+        void update(float deltaTime) override;
 
         void set(Scene::Ptr ptr,
                  robot2D::FrameBuffer::Ptr frameBuffer) {
@@ -48,7 +50,6 @@ namespace editor {
         void render() override;
     private:
         IUIManager& m_uiManager;
-        SceneCamera& m_sceneCamera;
         EditorCamera& m_editorCamera;
         robot2D::MessageBus& m_messageBus;
 

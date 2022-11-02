@@ -49,18 +49,14 @@ namespace editor {
         ImGui::Text("Quads Count: %d", m_renderStats.drawQuads);
         ImGui::Text("Draw Calls Count: %d", m_renderStats.drawCalls);
         // todo zoom precision
-        ImGui::Text("Camera Zoom: %.2f", m_camera.getZoom());
+       //ImGui::Text("Camera Zoom: %.2f", m_camera.getZoom());
         //ImGui::Text("Camera Speed: ");
         //ImGui::SameLine();
         //ImGui::DragFloat("##Y", &m_camera.getCameraSpeed(), 0.1f, 10.0f, 100.0f, "%.2f");
 
         auto cameraView = m_camera.getViewMatrix();
         auto& position = m_camera.getPosition();
-        auto& front = m_camera.getFront();
-        auto& up = m_camera.getUp();
         ImGui::Text("Viewport Position := %.2f, %.2f, %.2f", position.x, position.y, position.z);
-        ImGui::Text("Viewport Front := %.2f, %.2f, %.2f", front.x, front.y, front.z);
-        ImGui::Text("Viewport Up := %.2f, %.2f, %.2f", up.x, up.y, up.z);
 
         auto color = m_clearColor.toGL();
         float colors[4];

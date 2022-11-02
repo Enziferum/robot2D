@@ -1,68 +1,57 @@
 #pragma once
+#include <cmath>
+
 #include <robot2D/Core/Event.hpp>
 
 #include <robot2D/Core/Vector3.hpp>
 #include <robot2D/Core/Vector2.hpp>
 #include <robot2D/Graphics/Matrix3D.hpp>
+#include <robot2D/Graphics/Math3D.hpp>
 
 namespace editor {
-
-    using namespace robot2D;
-
-    mat4 translate(mat4 const& matrix, robot2D::vec3f const& to);
-
-    mat4 rotate(mat4 const& matrix, float const& angle, const robot2D::vec3f& axis);
-
-    mat4 scale(mat4 const& matrix, const robot2D::vec3f& scaleFactor);
-
-    mat4 projectionPerspective(float zoom, float aspectRatio, float zNear, float zFar);
-
-    mat4 ortographPerspective();
-
-    mat4 lookAt(const robot2D::vec3f pos, const robot2D::vec3f target, const robot2D::vec3f up);
-
-    mat4 crossMatrix(const mat4& mat, const robot2D::vec3f& vec);
 
     class EditorCamera {
     public:
         EditorCamera();
         ~EditorCamera() = default;
 
+        void setViewportSize(robot2D::vec2f newSize);
+
         void handleEvents(const robot2D::Event& event);
-        void update(float deltaTime);
+        void update(robot2D::vec2f mousePos, float deltaTime);
 
-        Matrix3D& getProjectionMatrix() { return m_projectionMatrix; }
-        Matrix3D& getCameraView() { return m_cameraViewMatrix; }
+        robot2D::mat4& getProjectionMatrix() { return m_projectionMatrix; }
+        const robot2D::mat4& getProjectionMatrix() const  { return m_projectionMatrix; }
 
-        const Matrix3D& getProjectionMatrix() const  { return m_projectionMatrix; }
-        const Matrix3D& getViewMatrix() const;
-
-        float& getZoom();
-        const float& getZoom() const;
+        robot2D::mat4 getViewMatrix() const;
 
         const robot2D::vec3f& getPosition() const { return m_position; }
-        const robot2D::vec3f& getFront() const {return m_front; }
-        const robot2D::vec3f& getUp() const {return m_up; }
     private:
-        void processMouse(robot2D::vec2f position,
-                          bool constraintPitch = true);
-        void processMouseScroll(float offset);
-    private:
-        Matrix3D m_projectionMatrix;
-        mutable Matrix3D m_cameraViewMatrix;
+        void updateView();
 
+        void mousePan(robot2D::vec2f delta);
+        void mouseRotate(robot2D::vec2f delta);
+        void mouseZoom(float delta);
+
+        std::pair<float, float> PanSpeed() const;
+        float ZoomSpeed() const;
+
+        robot2D::vec3f calculatePosition();
+        robot2D::quat getOrientation() const;
+        robot2D::vec3f getForwardOrientation() const;
+        robot2D::vec3f getUpOrientation() const;
+        robot2D::vec3f getRightOrientation() const;
+    private:
+        robot2D::mat4 m_projectionMatrix;
+        robot2D::mat4 m_viewMatrix;
+        robot2D::vec3f m_focalPoint;
         robot2D::vec3f m_position;
-        robot2D::vec3f m_worldUp;
-        robot2D::vec3f m_front;
-        robot2D::vec3f m_up;
-        robot2D::vec3f m_right;
 
-        float cameraSensitive;
-        float cameraMove;
+        robot2D::vec2f m_mousePos;
+        robot2D::vec2f m_viewportSize;
+        float m_distance = 10.f;
 
-        //Eulers angles
         float m_yaw;
         float m_pitch;
-        float m_zoom;
     };
 }

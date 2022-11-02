@@ -28,7 +28,7 @@ source distribution.
 #include <editor/Messages.hpp>
 
 namespace editor {
-    static void DrawVec2Control(const std::string& label, robot2D::vec2f& values,
+    static void DrawVec3Control(const std::string& label, robot2D::vec3f& values,
                                 float resetValue = 0.0f, float columnWidth = 100.0f)
     {
         ImGuiIO& io = ImGui::GetIO();
@@ -74,6 +74,20 @@ namespace editor {
         ImGui::DragFloat("##Y", &values.y, 0.1f, 0.0f, 0.0f, "%.2f");
         ImGui::PopItemWidth();
         ImGui::SameLine();
+
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.1f, 0.25f, 0.8f, 1.0f });
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 0.2f, 0.35f, 0.9f, 1.0f });
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.1f, 0.25f, 0.8f, 1.0f });
+        ImGui::PushFont(boldFont);
+        if (ImGui::Button("Z", buttonSize))
+            values.z = resetValue;
+        ImGui::PopFont();
+        ImGui::PopStyleColor(3);
+
+        ImGui::SameLine();
+        ImGui::DragFloat("##Z", &values.z, 0.1f, 0.0f, 0.0f, "%.2f");
+        ImGui::PopItemWidth();
+
 
         ImGui::PopStyleVar();
         ImGui::Columns(1);
@@ -131,7 +145,6 @@ namespace editor {
     m_scene(nullptr),
     m_selectedEntity{},
     m_configuration{} {
-
         m_messageDispatcher.onMessage<EntitySelection>(EntitySelected,
                                                        BIND_FUNCTION_FN(onEntitySelection)
                                                        );
@@ -287,13 +300,11 @@ namespace editor {
 
         ImGui::PopItemWidth();
 
-        drawComponent<TransformComponent>("Transform", entity, [](auto& component)
+        drawComponent<Transform3DComponent>("Transform", entity, [](auto& component)
         {
-            DrawVec2Control("Translation", component.getPosition());
-            DrawVec2Control("Scale", component.getScale(), 1.0f);
-            robot2D::vec2f rotation = {component.getRotate(), 0.F};
-            DrawVec2Control("Rotation", rotation, 0.F);
-            component.setRotate(rotation.x);
+            DrawVec3Control("Translation", component.getPosition());
+            DrawVec3Control("Scale", component.getScale(), 1.0f);
+            DrawVec3Control("Rotation", component.getRotation(), 0.f);
         });
 
         drawComponent<SpriteComponent>("Sprite Renderer", entity, [](auto& component)
@@ -327,8 +338,7 @@ namespace editor {
         });
 
         drawComponent<Collider2DComponent>("Collider2D", entity, [](auto& component) {
-            robot2D::vec2f box{};
-            DrawVec2Control("Box", box);
+
         });
 
         drawComponent<NativeScriptComponent>("Scripting", entity, [](auto& component) {

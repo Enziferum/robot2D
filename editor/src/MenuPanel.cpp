@@ -22,6 +22,7 @@ source distribution.
 #include <imgui/imgui.h>
 #include <tfd/tinyfiledialogs.h>
 
+#include <robot2D/Extra/Api.hpp>
 #include <editor/MenuPanel.hpp>
 #include <editor/Messages.hpp>
 
@@ -38,8 +39,8 @@ namespace editor {
               fileMenu();
             if (ImGui::BeginMenu("Edit"))
                 editMenu();
-            if (ImGui::BeginMenu("Settings"))
-                settingsMenu();
+            if (ImGui::BeginMenu("Project"))
+                projectMenu();
             if (ImGui::BeginMenu("Help"))
                 helpMenu();
             ImGui::EndMenuBar();
@@ -134,7 +135,9 @@ namespace editor {
         ImGui::EndMenu();
     }
 
-    void MenuPanel::settingsMenu() {
+    void MenuPanel::projectMenu() {
+        if(ImGui::MenuItem("Generate Project", "Ctrl+G")) {
+        }
         ImGui::EndMenu();
     }
 
