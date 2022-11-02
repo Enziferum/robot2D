@@ -56,9 +56,9 @@ namespace editor {
     void Scene::addEmptyEntity() {
         auto entity = m_scene.createEntity();
         entity.addComponent<TagComponent>();
-        auto& transform = entity.addComponent<TransformComponent>();
-        transform.setPosition({100.F, 100.F});
-        transform.setScale({100.F, 100.F});
+        auto& transform = entity.addComponent<Transform3DComponent>();
+        transform.setPosition({0.F, 0.F, 0.F});
+        transform.setScale({1.F, 1.F, 0.F});
         m_sceneEntities.emplace_back(entity);
     }
 

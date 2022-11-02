@@ -25,25 +25,16 @@ source distribution.
 #include <tfd/tinyfiledialogs.h>
 
 #include <editor/ProjectInspector.hpp>
+#include <editor/Messages.hpp>
 
 namespace editor {
 
-    ProjectInspector::ProjectInspector(EditorCache& editorCache):
+    ProjectInspector::ProjectInspector(EditorCache& editorCache, robot2D::MessageBus& messageBus):
     m_window{nullptr},
     m_editorCache{editorCache},
+    m_messageBus{messageBus},
     m_descriptions(),
     m_configuration{}{}
-
-    void ProjectInspector::addCallback(const ProjectInspector::CallbackType& callbackType,
-                                       ProcessFunction &&function) {
-
-        auto found = m_functions.find(callbackType);
-        if(found != m_functions.end())
-            return;
-
-        m_functions.insert(std::pair<CallbackType, ProcessFunction>(callbackType,
-                                                                    std::move(function)));
-    }
 
     void ProjectInspector::setup(robot2D::RenderWindow* window) {
         if(m_window == nullptr)
@@ -141,19 +132,22 @@ namespace editor {
         ProjectDescription description;
         description.name = "Project";
         description.path = creationPath;
-        m_functions[CallbackType::Create](description);
+
+        auto msg = m_messageBus.postMessage<ProjectMessage>(MessageID::CreateProject);
+        msg -> description = std::move(description);
     }
 
     void ProjectInspector::loadProject(const unsigned int& index) {
-        auto project = m_descriptions[index];
-        m_functions[CallbackType::Load](project);
+        auto msg = m_messageBus.postMessage<ProjectMessage>(MessageID::LoadProject);
+        msg -> description = m_descriptions[index];
     }
 
     void ProjectInspector::deleteProject(const unsigned int& index) {
         assert(index < m_descriptions.size() && "Index out of Range");
         auto project = m_descriptions[index];
         m_descriptions.erase(m_descriptions.begin() + index);
-        m_functions[CallbackType::Delete](project);
+        auto msg = m_messageBus.postMessage<ProjectMessage>(MessageID::DeleteProject);
+        msg -> description = project;
     }
 
 }

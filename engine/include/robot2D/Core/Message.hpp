@@ -56,7 +56,7 @@ namespace robot2D {
 
     template<typename T>
     const T& Message::getData() const {
-        assert(sizeof(T) == buffer_sz && "T size must be == buffer_sz");
+        //assert(sizeof(T) == buffer_sz && "T size must be == buffer_sz");
         return *static_cast<T*>(buffer);
     }
 }

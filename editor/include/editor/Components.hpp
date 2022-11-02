@@ -25,6 +25,8 @@ source distribution.
 #include <robot2D/Graphics/Texture.hpp>
 #include <robot2D/Graphics/Color.hpp>
 #include <robot2D/Graphics/View.hpp>
+#include <robot2D/Graphics/Matrix3D.hpp>
+#include <robot2D/Graphics/Math3D.hpp>
 
 namespace editor {
     class TransformComponent: public robot2D::Transformable {
@@ -32,6 +34,39 @@ namespace editor {
         TransformComponent(){}
         ~TransformComponent() override {}
 
+    };
+
+    // TODO: @a.raag add Rotation
+    class Transform3DComponent {
+    public:
+        robot2D::vec3f& getPosition() { return m_position; }
+        const robot2D::vec3f& getPosition() const { return m_position; }
+        robot2D::vec3f& getScale() { return m_scale; }
+        const robot2D::vec3f& getScale() const { return m_scale; }
+        robot2D::vec3f& getRotation() { return m_rotation; }
+        const robot2D::vec3f& getRotation() const { return m_rotation; }
+
+        void setPosition(const robot2D::vec3f& vec) {
+            m_position = vec;
+        }
+
+        void setRotation(const robot2D::vec3f& vec) {
+            m_rotation = vec;
+        }
+
+        void setScale(const robot2D::vec3f& vec) {
+            m_scale = vec;
+        }
+
+        robot2D::Matrix3D getTransform() const {
+           return robot2D::translate(robot2D::mat4{}, m_position) *
+                  robot2D::toMat4(robot2D::quat(m_rotation)) *
+                  robot2D::scale(robot2D::mat4{}, m_scale);
+        }
+    private:
+        robot2D::vec3f m_position;
+        robot2D::vec3f m_scale;
+        robot2D::vec3f m_rotation;
     };
 
     class TagComponent {

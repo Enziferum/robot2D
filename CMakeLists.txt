@@ -20,6 +20,7 @@ option(BUILD_SHARED_LIBS "Whether to build shared libraries" OFF)
 option(BUILD_SANDBOX "Build Sandbox Submodule?" OFF)
 option(BUILD_EDITOR "Build Editor Submodule?" OFF)
 
+
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 cmake_policy(SET CMP0074 NEW)
 

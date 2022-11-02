@@ -55,6 +55,8 @@ namespace robot2D {
 
         Transform& scale(float x, float y);
         Transform& scale(const vec2f& factor);
+
+        Transform getInverse() const;
     private:
         float m_mat[16];
     };

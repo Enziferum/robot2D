@@ -27,6 +27,7 @@ source distribution.
 #include <robot2D/Graphics/Vertex.hpp>
 #include <robot2D/Graphics/RenderStats.hpp>
 #include "robot2D/Graphics/VertexArray.hpp"
+#include "robot2D/Graphics/Matrix3D.hpp"
 #include <robot2D/Graphics/Drawable.hpp>
 
 namespace robot2D {
@@ -44,8 +45,9 @@ namespace robot2D {
             virtual unsigned int getLayerCount() const = 0;
 
             virtual void render(const RenderStates& states) = 0;
-            virtual void render(const VertexData& data, const RenderStates& states) const = 0;
+            virtual void render(const Vertex3DData& data, const RenderStates& states) const = 0;
             virtual void render(const VertexArray::Ptr& vertexArray, RenderStates states) const = 0;
+            virtual void render3D(const VertexArray::Ptr& vertexArray, RenderStates states) const = 0;
 
             virtual void setView(const View& view, unsigned int layerID) = 0;
             virtual const View& getView(unsigned int layerID) = 0;
@@ -57,6 +59,9 @@ namespace robot2D {
             virtual void flushRender(unsigned int layerID) const = 0;
             virtual const RenderStats& getStats() const = 0;
             virtual void clear(const Color& color = Color::Black) = 0;
+
+            virtual IntRect getViewport(const View& view) = 0;
+            virtual void setView3D(const Matrix3D& projection, const Matrix3D& view) = 0;
         protected:
             vec2u m_size;
         };

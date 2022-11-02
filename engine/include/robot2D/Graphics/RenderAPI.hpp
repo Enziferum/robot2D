@@ -6,14 +6,22 @@ namespace robot2D {
         OpenGL4_5
     };
 
+    enum class RenderDimensionType {
+        TwoD,
+        ThreeD,
+        Both
+    };
+
     /**
      * \brief Contains information about RenderAPI
      */
     class RenderAPI {
     public:
         static RenderApi& getOpenGLVersion();
+        static RenderDimensionType& getDimensionType();
     private:
         friend class RenderTarget;
         static RenderApi m_api;
+        static RenderDimensionType m_dimensionType;
     };
 }

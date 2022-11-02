@@ -34,7 +34,8 @@ namespace robot2D {
         if(!m_texture && (textureRect == IntRect())){
             auto size = texture.getSize();
             m_texture_rect = IntRect(0, 0, size.x, size.y);
-            setSize(size.x, size.y);
+            if(m_size == robot2D::vec2f{})
+                setSize(size.x, size.y);
         }
 
         m_texture = &texture;
@@ -117,6 +118,10 @@ namespace robot2D {
                                  convertToGL(top, static_cast<float>(tx_s.y))};
         vertices[3].texCoords = {convertToGL(left, static_cast<float>(tx_s.x)),
                                  convertToGL(top, static_cast<float>(tx_s.y))};
+    }
+
+    const IntRect& Sprite::getTextureRect() const {
+        return m_texture_rect;
     }
 
 }

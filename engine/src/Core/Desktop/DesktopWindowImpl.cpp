@@ -51,7 +51,7 @@ namespace robot2D {
         DesktopWindowImpl::~DesktopWindowImpl() {}
 
         bool DesktopWindowImpl::pollEvents(Event& event) {
-            //what todo ??
+            //TODO: @a.raag sleep/wait some time ?
             if(m_event_queue.empty()){}
 
             if(!m_event_queue.empty()) {

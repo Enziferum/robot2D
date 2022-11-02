@@ -37,12 +37,21 @@ namespace robot2D {
             OpenGL4_5
         };
 
+        enum class RenderDimensionType {
+            TwoD,
+            ThreeD,
+            Both
+        };
+
         /// Display framerate synchronization
         bool vsync;
         /// is Window in Fullscreen mode
         bool fullscreen;
         /// Graphics API
         RenderApi renderApi;
+
+        RenderDimensionType renderDimensionType;
+
         /// Window min size
         robot2D::vec2f minimumSize;
         /// Window max size
@@ -51,7 +60,8 @@ namespace robot2D {
         /// According to documentation input parameters set options.
         WindowContext(const bool& vsync = false,
                       const bool& fullscreen = false,
-                      const RenderApi& renderApi = WindowContext::RenderApi::OpenGL4_5);
+                      const RenderApi& renderApi = WindowContext::RenderApi::OpenGL4_5,
+                      const RenderDimensionType& = WindowContext::RenderDimensionType::TwoD);
         /// Stores default values
         static const WindowContext Default;
     };

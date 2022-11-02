@@ -23,8 +23,13 @@ source distribution.
 #include <editor/Application.hpp>
 
 int main() {
+    robot2D::WindowContext windowContext{true, false,
+                                           robot2D::WindowContext::RenderApi::OpenGL4_5,
+                                           robot2D::WindowContext::RenderDimensionType::ThreeD
+    };
     robot2D::EngineConfiguration engineConfiguration;
     engineConfiguration.windowTitle = "Robot2DEngine";
     engineConfiguration.windowSize = {800, 600};
+    engineConfiguration.windowContext = std::move(windowContext);
     ROBOT2D_RUN_ENGINE(editor::Application, engineConfiguration);
 }

@@ -51,7 +51,7 @@ namespace editor {
         const std::string& getPath() const {return m_path;}
         std::string& getPath()  {return m_path;}
     protected:
-        void draw(robot2D::RenderTarget &target, robot2D::RenderStates states) const override;
+        void draw(robot2D::RenderTarget& target, robot2D::RenderStates states) const override;
 
     private:
         void initScene();
