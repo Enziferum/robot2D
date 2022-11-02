@@ -22,14 +22,30 @@ source distribution.
 #pragma once
 #include <vector>
 #include <algorithm>
+#include <cassert>
 
+#include <robot2D/Ecs/Entity.hpp>
+#include "robot2D/Extra/Gui.hpp"
 #include "IPanel.hpp"
 
+
 namespace editor {
-    class PanelManager {
+
+    class IUIManager {
     public:
-        PanelManager();
-        ~PanelManager() = default;
+        virtual ~IUIManager() = 0;
+        virtual void blockEvents(bool flag) = 0;
+        virtual robot2D::ecs::Entity getSelectedEntity()= 0;
+    };
+
+    class UIManager final: public IUIManager {
+    public:
+        UIManager(ImGui::Gui& gui);
+        UIManager(const UIManager&) = delete;
+        UIManager& operator=(const UIManager&) = delete;
+        UIManager(UIManager&&) = delete;
+        UIManager& operator=(UIManager&&) = delete;
+        ~UIManager() override = default;
 
         template<typename T, typename ...Args>
         T& addPanel(Args&& ...args);
@@ -39,25 +55,35 @@ namespace editor {
 
         void update(float dt);
         void render();
+
+        void blockEvents(bool flag) override;
+        robot2D::ecs::Entity getSelectedEntity() override;
     private:
+        void dockingCanvas();
+    private:
+        ImGui::Gui& m_gui;
         std::vector<IPanel::Ptr> m_panels;
     };
 
     template<typename T, typename ...Args>
-    T& PanelManager::addPanel(Args&& ...args) {
+    T& UIManager::addPanel(Args&& ...args) {
         static_assert(std::is_base_of<IPanel, T>::value && "Adding T, must be IPanel child");
         m_panels.emplace_back(std::make_shared<T>(std::forward<Args>(args)...));
         return *(dynamic_cast<T*>(m_panels.back().get()));
     }
 
-
     template<typename T>
-    T& PanelManager::getPanel() {
+    T& UIManager::getPanel() {
         UniqueType uniqueType(typeid(T));
         auto found = std::find_if(m_panels.begin(), m_panels.end(), [uniqueType](const IPanel::Ptr& ptr) {
-            return ptr->getID() == uniqueType;
+            return ptr -> getID() == uniqueType;
         });
 
-        return *(dynamic_cast<T*>(found->get()));
+        assert(found != m_panels.end() && "Panel must be added before using");
+
+        return *(static_cast<T*>(found -> get()));
     }
+
+
+
 }

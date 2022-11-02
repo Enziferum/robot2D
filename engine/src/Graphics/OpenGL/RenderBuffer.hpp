@@ -25,15 +25,17 @@ source distribution.
 #include <robot2D/Graphics/Color.hpp>
 #include <robot2D/Graphics/Buffer.hpp>
 #include <robot2D/Graphics/VertexArray.hpp>
+#include <robot2D/Core/Vector3.hpp>
 
 namespace robot2D {
 
 #pragma pack(push, 1)
     struct ROBOT2D_EXPORT_API RenderVertex {
-        robot2D::vec2f Position;
+        robot2D::vec3f Position;
         Color color;
         robot2D::vec2f TextureCoords;
         float textureIndex;
+        int entityID;
     };
 #pragma pack(pop)
 
@@ -55,6 +57,6 @@ namespace robot2D {
         uint32_t indexCount = 0;
         uint32_t textureSlotIndex = 0;
 
-        robot2D::vec2f quadVertexPositions[4];
+        robot2D::vec3f quadVertexPositions[4];
     };
 }

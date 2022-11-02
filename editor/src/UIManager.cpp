@@ -19,36 +19,34 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#pragma once
-
-#include <robot2D/Graphics/View.hpp>
-#include <robot2D/Core/Event.hpp>
+#include <editor/UIManager.hpp>
+#include <editor/ScenePanel.hpp>
 
 namespace editor {
+    IUIManager::~IUIManager() noexcept {}
 
-    struct SceneCameraConfiguration {
-        float zoomOffset = 1.F;
-        float zoomMultiplier = 0.1F;
-    };
+    UIManager::UIManager(ImGui::Gui& gui):
+        m_gui{gui}, m_panels() {}
 
-    class SceneCamera {
-    public:
-        SceneCamera();
-        ~SceneCamera() = default;
+    void UIManager::update(float dt) {
+        for(auto& it: m_panels)
+            it -> update(dt);
+    }
 
-        void onEvent(const robot2D::Event& event);
-        void resize(const robot2D::FloatRect& viewPort);
+    void UIManager::render() {
+        for(auto& it: m_panels)
+            it -> render();
+    }
 
-        float& getCameraSpeed() { return m_cameraSpeed; }
-        float getZoom() const;
+    void UIManager::dockingCanvas() {
 
-        robot2D::View& getView();
-        const robot2D::View& getView() const;
-    private:
-        robot2D::View m_view;
-        robot2D::FloatRect m_sizeRect;
-        SceneCameraConfiguration m_configuration;
-        float m_zoom;
-        float m_cameraSpeed = 10.F;
-    };
+    }
+
+    void UIManager::blockEvents(bool flag) {
+        m_gui.blockEvents(flag);
+    }
+
+    robot2D::ecs::Entity UIManager::getSelectedEntity() {
+        return getPanel<ScenePanel>().getSelectedEntity();
+    }
 }

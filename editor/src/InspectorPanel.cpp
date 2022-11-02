@@ -24,7 +24,7 @@ source distribution.
 
 namespace editor {
 
-    InspectorPanel::InspectorPanel(SceneCamera& sceneCamera):
+    InspectorPanel::InspectorPanel(EditorCamera& sceneCamera):
     IPanel(UniqueType(typeid(InspectorPanel))),
     m_camera{sceneCamera},
     m_configuration{} {
@@ -49,15 +49,14 @@ namespace editor {
         ImGui::Text("Quads Count: %d", m_renderStats.drawQuads);
         ImGui::Text("Draw Calls Count: %d", m_renderStats.drawCalls);
         // todo zoom precision
-        ImGui::Text("Camera Zoom: %.2f", m_camera.getZoom());
-        ImGui::Text("Camera Speed: ");
-        ImGui::SameLine();
-        ImGui::DragFloat("##Y", &m_camera.getCameraSpeed(), 0.1f, 10.0f, 100.0f, "%.2f");
+       //ImGui::Text("Camera Zoom: %.2f", m_camera.getZoom());
+        //ImGui::Text("Camera Speed: ");
+        //ImGui::SameLine();
+        //ImGui::DragFloat("##Y", &m_camera.getCameraSpeed(), 0.1f, 10.0f, 100.0f, "%.2f");
 
-        auto cameraCenter = m_camera.getView().getCenter();
-        auto cameraSize = m_camera.getView().getSize();
-        ImGui::Text("Viewport Center := %.2f, %.2f", cameraCenter.x, cameraCenter.y);
-        ImGui::Text("Viewport Size := %.2f, %.2f", cameraSize.x, cameraSize.y);
+        auto cameraView = m_camera.getViewMatrix();
+        auto& position = m_camera.getPosition();
+        ImGui::Text("Viewport Position := %.2f, %.2f, %.2f", position.x, position.y, position.z);
 
         auto color = m_clearColor.toGL();
         float colors[4];

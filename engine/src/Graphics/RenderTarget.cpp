@@ -22,6 +22,7 @@ source distribution.
 
 #include <robot2D/Graphics/GL.hpp>
 #include <robot2D/Graphics/RenderTarget.hpp>
+#include <robot2D/Graphics/Rect.hpp>
 
 #include "RenderImpl.hpp"
 #include "robot2D/Graphics/RenderAPI.hpp"
@@ -29,13 +30,24 @@ source distribution.
 namespace robot2D {
 
     RenderTarget::RenderTarget(const vec2u& size,
-                               const WindowContext::RenderApi openGLVersion):
+                               const WindowContext::RenderApi openGLVersion,
+                               const WindowContext::RenderDimensionType renderDimensionType):
     m_render(nullptr),
     m_size(size) {
         if(openGLVersion == WindowContext::RenderApi::OpenGL3_3)
             RenderAPI::m_api = RenderApi::OpenGL3_3;
         else if(openGLVersion == WindowContext::RenderApi::OpenGL4_5)
             RenderAPI::m_api = RenderApi::OpenGL4_5;
+
+        switch (renderDimensionType) {
+            case WindowContext::RenderDimensionType::TwoD:
+                RenderAPI::m_dimensionType = RenderDimensionType::TwoD;
+            case WindowContext::RenderDimensionType::ThreeD:
+                RenderAPI::m_dimensionType = RenderDimensionType::ThreeD;
+            case WindowContext::RenderDimensionType::Both:
+                RenderAPI::m_dimensionType = RenderDimensionType::Both;
+        }
+
         setup();
     }
 
@@ -62,7 +74,7 @@ namespace robot2D {
         m_render -> render(states);
     }
 
-    void RenderTarget::draw(const VertexData& data, const RenderStates& states) {
+    void RenderTarget::draw(const Vertex3DData& data, const RenderStates& states) {
         if(!m_render)
             return;
 
@@ -73,7 +85,7 @@ namespace robot2D {
         m_render -> setView(view, layerID);
     }
 
-    const View& RenderTarget::getView(unsigned int layerID) {
+    const View& RenderTarget::getView(unsigned int layerID) const {
         return m_render -> getView(layerID);
     }
 
@@ -118,4 +130,29 @@ namespace robot2D {
     unsigned int RenderTarget::getLayerCount() const {
         return m_render -> getLayerCount();
     }
+
+    vec2f RenderTarget::mapPixelToCoords(const vec2i& point, const View &view, unsigned int layerID) const {
+        // First, convert from viewport coordinates to homogeneous coordinates
+        vec2f normalized;
+        auto port = m_render -> getViewport(view);
+        FloatRect viewport = {port.lx, port.ly, port.width, port.height};
+        normalized.x       = -1.f + 2.f * (static_cast<float>(point.x) - viewport.lx) / viewport.width;
+        normalized.y       = 1.f - 2.f * (static_cast<float>(point.y) - viewport.ly) / viewport.height;
+
+        // Then transform by the inverse of the view matrix
+        return view.getInverseTransform().transformPoint(normalized);
+    }
+
+    vec2f RenderTarget::mapPixelToCoords(const vec2i& point, unsigned int layerID) const {
+        return mapPixelToCoords(point, getView(layerID), layerID);
+    }
+
+    void RenderTarget::setView3D(const Matrix3D& projection, const Matrix3D& view) {
+        m_render -> setView3D(projection, view);
+    }
+
+    void RenderTarget::draw3D(const VertexArray::Ptr& vertexArray, RenderStates states) const {
+        m_render -> render3D(vertexArray, states);
+    }
+
 }

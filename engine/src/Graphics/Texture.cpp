@@ -104,6 +104,13 @@ namespace robot2D{
         bindBufferData(m_image.getBuffer());
     }
 
+
+    void Texture::create(const Image& image) {
+        m_image = image;
+        setupGL();
+        bindBufferData(m_image.getBuffer());
+    }
+
     const unsigned int& Texture::getID() const {
         return m_texture;
     }
@@ -143,5 +150,6 @@ namespace robot2D{
     bool Texture::save(const std::string& path) {
         return m_image.save(path);
     }
+
 
 }

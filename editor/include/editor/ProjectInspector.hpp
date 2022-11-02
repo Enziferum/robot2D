@@ -20,18 +20,15 @@ source distribution.
 *********************************************************************/
 
 #pragma once
-#include <functional>
+
 #include <vector>
-#include <unordered_map>
 #include <robot2D/Graphics/RenderWindow.hpp>
+#include <robot2D/Core/MessageBus.hpp>
 
 #include "ProjectDescription.hpp"
 #include "EditorCache.hpp"
 
 namespace editor {
-
-    using ProcessFunction = std::function<void(ProjectDescription)>;
-
     struct ProjectInspectorConfiguration {
         const ImVec2 createButtonSize = ImVec2(200.F, 50.F);
         const float textOffset = 10.F;
@@ -51,10 +48,9 @@ namespace editor {
             Create, Load, Delete
         };
     public:
-        ProjectInspector(EditorCache& editorCache);
+        ProjectInspector(EditorCache& editorCache, robot2D::MessageBus& messageBus);
         ~ProjectInspector() = default;
 
-        void addCallback(const CallbackType& callbackType, ProcessFunction&& function);
         void setup(robot2D::RenderWindow* window);
         void render();
     private:
@@ -64,9 +60,8 @@ namespace editor {
     private:
         robot2D::RenderWindow* m_window;
         EditorCache& m_editorCache;
+        robot2D::MessageBus& m_messageBus;
         std::vector<ProjectDescription> m_descriptions;
-
-        std::unordered_map<CallbackType, ProcessFunction> m_functions;
         ProjectInspectorConfiguration m_configuration;
     };
 }

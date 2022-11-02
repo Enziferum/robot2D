@@ -31,6 +31,7 @@ namespace robot2D{
     transform(),
     renderInfo(),
     layerID(1),
+    entityID(-1),
     blendMode{BlendMode::None}
     {}
 

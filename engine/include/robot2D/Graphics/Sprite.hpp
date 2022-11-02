@@ -52,6 +52,9 @@ namespace robot2D {
         void setTexture(const Texture&, const IntRect& textureRect = IntRect());
         const Texture* getTexture();
 
+        /// \brief get Current Texture Rect, Default = texture size and topleft = {0, 0}.
+        const IntRect& getTextureRect() const;
+
         /// \brief specify which part of texture to use.
         void setTextureRect(const IntRect& textureRect);
 

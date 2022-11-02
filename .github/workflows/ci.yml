@@ -2,7 +2,7 @@ name: CMake
 
 on:
   pull_request:
-    types: [opened, edited]
+    types: [opened, edited, reopened]
 
 permissions: write-all
 

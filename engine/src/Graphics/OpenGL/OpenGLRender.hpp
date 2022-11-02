@@ -51,9 +51,12 @@ namespace robot2D {
             void clear(const Color &color = Color::Black) override;
 
             void render(const RenderStates& states) override;
-            void render(const VertexData& data, const RenderStates& states) const override;
+            void render(const Vertex3DData& data, const RenderStates& states) const override;
             void render(const VertexArray::Ptr& vertexArray, RenderStates states) const override;
+            void render3D(const VertexArray::Ptr& vertexArray, RenderStates states) const override;
+
             void setView(const View& view, unsigned int layerID) override;
+            void setView3D(const Matrix3D& projection, const Matrix3D& view) override;
 
             /// 2D Render View ///
             const View& getView(unsigned int layerID) override;
@@ -69,7 +72,7 @@ namespace robot2D {
             virtual void afterRender()const override;
             virtual void flushRender(unsigned int layerID) const override;
 
-            IntRect getViewport(const View& view);
+            IntRect getViewport(const View& view) override;
 
             void applyCurrentView(unsigned int layerID);
 
@@ -80,10 +83,13 @@ namespace robot2D {
             View m_default;
             mutable RenderStats m_stats;
             RenderApi m_renderApi;
+            RenderDimensionType m_dimensionType;
 
             enum class ShaderKey {
                 TextureSamples,
-                Projection
+                Projection,
+                is3DRender,
+                View
             };
 
             /// Instead using raw text in shader better have correct setup map

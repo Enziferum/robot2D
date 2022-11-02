@@ -98,7 +98,7 @@ namespace robot2D {
     template<typename T>
     constexpr Vector2<T>& operator -=(Vector2<T>& left, const Vector2<T>& right) {
         left.x -= right.x;
-        left.x -= right.y;
+        left.y -= right.y;
         return left;
     }
 

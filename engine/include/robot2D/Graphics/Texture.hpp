@@ -48,6 +48,8 @@ namespace robot2D {
         void create(const vec2u& size, const void* data, int texParam = 0,
                     const ImageColorFormat& colorFormat = ImageColorFormat::RGBA);
 
+        void create(const Image& image);
+
         const unsigned int& getID()const;
         unsigned int& getID();
 

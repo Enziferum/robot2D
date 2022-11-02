@@ -27,7 +27,8 @@ namespace robot2D{
 
     RenderWindow::RenderWindow():
             Window{}, RenderTarget{m_win_size,
-                                   m_context.renderApi} {
+                                   m_context.renderApi ,
+                                   m_context.renderDimensionType} {
     }
 
     RenderWindow::RenderWindow(const vec2u& size,
@@ -35,7 +36,8 @@ namespace robot2D{
                                const WindowContext& context):
                                Window(size, name, context),
                                RenderTarget(m_win_size,
-                                            context.renderApi) {
+                                            context.renderApi,
+                                            m_context.renderDimensionType) {
     }
 
 

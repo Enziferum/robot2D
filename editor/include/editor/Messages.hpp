@@ -22,15 +22,30 @@ source distribution.
 #pragma once
 #include <string>
 #include <robot2D/Core/Message.hpp>
+#include "ProjectDescription.hpp"
 
 namespace editor {
 
-    enum MessageIDs {
-        CreateProject = robot2D::Message::Count
+    enum MessageID {
+        CreateProject = robot2D::Message::Count,
+        DeleteProject,
+        LoadProject,
+        SaveProject,
+        OpenProject,
+        OpenScene,
+        SaveScene,
+        EntitySelected
     };
 
-    struct CreateProjectMessage {
+    struct ProjectMessage {
+        ProjectDescription description;
+    };
+
+    struct MenuProjectMessage {
         std::string path;
     };
 
+    struct EntitySelection {
+        uint32_t entityID;
+    };
 }

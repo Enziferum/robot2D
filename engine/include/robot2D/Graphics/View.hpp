@@ -59,6 +59,7 @@ namespace robot2D {
         void reset(const FloatRect& rect);
 
         const Transform& getTransform() const;
+        const Transform& getInverseTransform() const;
     private:
         vec2f m_center;
         vec2f m_size;
@@ -66,6 +67,8 @@ namespace robot2D {
 
         FloatRect m_viewport;
         mutable Transform m_transform;
+        mutable Transform m_invTransform;
         mutable bool needTransformUpdate;
+        mutable bool needInvTransformUpdate;
     };
 }

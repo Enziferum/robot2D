@@ -22,6 +22,7 @@ source distribution.
 #include <editor/SceneManager.hpp>
 #include <editor/FileApi.hpp>
 #include <editor/SceneSerializer.hpp>
+#include <robot2D/Util/Logger.hpp>
 
 namespace editor {
     namespace {
@@ -65,14 +66,15 @@ namespace editor {
         }
         m_activeScene = scene;
         auto path = project -> getPath();
-        auto appendPath = combinePath(scenePath, project->getStartScene());
-        auto scenePath = combinePath(path, appendPath);
-        m_activeScene -> setPath(scenePath);
+//        auto appendPath = combinePath(scenePath, project->getStartScene());
+//        auto scenePath = combinePath(path, appendPath);
+        m_activeScene -> setPath("C:\\Users\\Necromant\\Documents\\robot2DProjects\\Sample2\\assets\\scenes\\Scene.scene");
         SceneSerializer serializer(m_activeScene);
-        if(!serializer.deserialize(m_activeScene->getPath())) {
+        if(!serializer.deserialize(m_activeScene -> getPath())) {
             m_error = SceneManagerError::SceneDeserialize;
             return false;
         }
+        RB_EDITOR_INFO("SceneSerializer finished");
         m_associatedProject = std::move(project);
         return true;
     }

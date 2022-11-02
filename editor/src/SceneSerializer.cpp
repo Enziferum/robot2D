@@ -25,6 +25,7 @@ source distribution.
 #include <editor/SceneSerializer.hpp>
 #include <editor/Scene.hpp>
 #include <editor/Components.hpp>
+#include <robot2D/Util/Logger.hpp>
 
 namespace YAML {
     template<>
@@ -41,6 +42,26 @@ namespace YAML {
                 return false;
             rhs.x = node[0].as<float>();
             rhs.y = node[1].as<float>();
+            return true;
+        }
+    };
+
+    template<>
+    struct convert<robot2D::vec3f> {
+        static Node encode(const robot2D::vec3f& rhs) {
+            Node node;
+            node.push_back(rhs.x);
+            node.push_back(rhs.y);
+            node.push_back(rhs.z);
+            return node;
+        }
+
+        static bool decode(const Node& node, robot2D::vec3f& rhs) {
+            if(!node.IsSequence() || node.size() != 3)
+                return false;
+            rhs.x = node[0].as<float>();
+            rhs.y = node[1].as<float>();
+            rhs.z = node[2].as<float>();
             return true;
         }
     };
@@ -82,6 +103,12 @@ namespace editor {
         return out;
     }
 
+    YAML::Emitter& operator<<(YAML::Emitter& out, const robot2D::vec3f& value) {
+        out << YAML::Flow;
+        out << YAML::BeginSeq << value.x << value.y << value.z << YAML::EndSeq;
+        return out;
+    }
+
     YAML::Emitter& operator<<(YAML::Emitter& out, const robot2D::Color& value) {
         out << YAML::Flow;
         out << YAML::BeginSeq << value.red << value.green
@@ -101,13 +128,14 @@ namespace editor {
             out << YAML::EndMap;
         }
 
-        if(entity.hasComponent<TransformComponent>()) {
+        if(entity.hasComponent<Transform3DComponent>()) {
             out << YAML::Key << "TransformComponent";
             out << YAML::BeginMap;
-            auto& ts = entity.getComponent<TransformComponent>();
+            auto& ts = entity.getComponent<Transform3DComponent>();
             out << YAML::Key << "Position" << YAML::Value << ts.getPosition();
             out << YAML::Key << "Size" << YAML::Value << ts.getScale();
-            out << YAML::Key << "Rotation" << YAML::Value << ts.getRotate();
+            // TODO: @a.raag add rotation
+            out << YAML::Key << "Rotation" << YAML::Value << 0.F;
             out << YAML::EndMap;
         }
 
@@ -149,16 +177,24 @@ namespace editor {
     }
 
     bool SceneSerializer::deserialize(const std::string& path) {
-        std::ifstream ifstream(path);
-        if(!ifstream.is_open()) {
-            m_error = SceneSerializerError::NoFileOpen;
-            return false;
+        YAML::Node data;
+        try {
+            std::ifstream ifstream(path);
+            if(!ifstream.is_open()) {
+                m_error = SceneSerializerError::NoFileOpen;
+                return false;
+            }
+
+            std::stringstream sstr;
+            sstr << ifstream.rdbuf();
+            ifstream.close();
+            data = YAML::Load(sstr.str());
+        }
+        catch (...) {
+            RB_EDITOR_CRITICAL("YAML Exception");
+            exit(2);
         }
 
-        std::stringstream sstr;
-        sstr << ifstream.rdbuf();
-
-        YAML::Node data = YAML::Load(sstr.str());
         if(!data["Scene"]) {
             m_error = SceneSerializerError::NotSceneTag;
             return false;
@@ -166,6 +202,7 @@ namespace editor {
 
         std::string sceneName = data["Scene"].as<std::string>();
         auto entites = data["Entities"];
+
         if(entites) {
             for(auto entity: entites) {
 
@@ -176,16 +213,17 @@ namespace editor {
                 if(tagComponent)
                     name = tagComponent["Tag"].as<std::string>();
 
-                auto deserializedEntity = m_scene->createEntity();
+                auto deserializedEntity = m_scene -> createEntity();
                 auto& tagData = deserializedEntity.addComponent<TagComponent>();
                 tagData.setTag(name);
 
                 auto transformComponent = entity["TransformComponent"];
                 if(transformComponent) {
-                    auto& transform = deserializedEntity.addComponent<TransformComponent>();
-                    transform.setPosition(transformComponent["Position"].as<robot2D::vec2f>());
-                    transform.setScale(transformComponent["Size"].as<robot2D::vec2f>());
-                    transform.setRotate(transformComponent["Rotation"].as<float>());
+                    auto& transform = deserializedEntity.addComponent<Transform3DComponent>();
+                    transform.setPosition(transformComponent["Position"].as<robot2D::vec3f>());
+                    transform.setScale(transformComponent["Size"].as<robot2D::vec3f>());
+                    // TODO: @a.raag add rotation
+                    //transform.setRotate(transformComponent["Rotation"].as<float>());
                 }
 
                 auto spriteComponent = entity["SpriteComponent"];
