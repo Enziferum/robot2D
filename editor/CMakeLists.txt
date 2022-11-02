@@ -35,10 +35,15 @@ file(GLOB SRC src/*.cpp)
 # must be preinstall
 add_subdirectory(ext/robot2D-imgui)
 add_subdirectory(ext/yaml-cpp)
-
 add_subdirectory(ext/tinyfiledialog)
 
-set(LIBS robot2D robot2D_imgui yaml-cpp tinyfiledialogs)
+option(USE_GLM "Use GLM?" OFF)
+if(USE_GLM)
+    add_subdirectory(ext/glm)
+    set(LIBS glm)
+endif()
+
+set(LIBS robot2D robot2D_imgui yaml-cpp tinyfiledialogs ${LIBS})
 
 add_executable(${PROJECT_NAME} ${SRC})
 if(UNIX)

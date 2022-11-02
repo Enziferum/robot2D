@@ -52,6 +52,7 @@ set(ENGINE_SRC
         ${INCLROOT}/Graphics/Image.hpp
         ${INCLROOT}/Graphics/RenderAPI.hpp
         ${INCLROOT}/Graphics/Matrix3D.hpp
+        ${INCLROOT}/Graphics/Math3D.hpp
 
 
         #Util
@@ -103,6 +104,7 @@ set(ENGINE_SRC ${ENGINE_SRC}
         ${SRCROOT}/Graphics/Image.cpp
         ${SRCROOT}/Graphics/RenderAPI.cpp
         ${SRCROOT}/Graphics/Matrix3D.cpp
+        ${SRCROOT}/Graphics/Math3D.cpp
 
         #Ecs
         ${SRCROOT}/Ecs/Bitmask.cpp

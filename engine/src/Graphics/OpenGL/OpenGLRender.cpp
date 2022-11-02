@@ -294,48 +294,6 @@ namespace robot2D {
                 glClear(GL_COLOR_BUFFER_BIT);
         }
 
-        mat4 translate(mat4 const& matrix, robot2D::vec3f const& to) {
-            mat4 mat{matrix};
-
-            float vec4[4][1] = {
-                    {to.x},
-                    {to.y},
-                    {to.z},
-                    {1.f}
-            };
-
-            float res[4][1];
-            for(short it=0; it < 4; ++it){
-                for(short ij=0; ij < 1; ++ij){
-                    res[it][ij] = 0;
-                    for(short ik = 0; ik < 4; ++ik)
-                        res[it][ij] += mat(it, ik) * vec4[ik][ij];
-                }
-            }
-
-            mat(0, 3) = res[0][0];
-            mat(1, 3) = res[1][0];
-            mat(2, 3) = res[2][0];
-            mat[15] = res[3][0];
-
-            mat = mat.transpose();
-            return mat;
-        }
-
-        mat4 rotate(mat4 const& matrix, float const& angle, const robot2D::vec3f& axis) {
-            return {};
-        }
-
-        mat4 scale(mat4 const& matrix, const robot2D::vec3f& scaleFactor) {
-            mat4 scaleMatrix{};
-            scaleMatrix[0] = matrix[0] * scaleFactor.x;
-            scaleMatrix[5] = matrix[5] * scaleFactor.x;
-            scaleMatrix[10] = matrix[10] * scaleFactor.x;
-            auto old = matrix;
-            return scaleMatrix * old;
-        }
-
-
         const RenderStats& OpenGLRender::getStats() const {
             return m_stats;
         }
@@ -415,33 +373,30 @@ namespace robot2D {
                 layerID = m_renderLayers.size() - 1;
 
             auto& m_renderBuffer = m_renderLayers[layerID].m_renderBuffer;
+            const auto transform = states.transform3D;
 
-            Matrix3D transform;
-            transform = translate(transform, {0.F, 0.F, 0.F});
-            transform = scale(transform, {100.F, 100.F, 0.F});
-
-            VertexData quadVertexData = {
+            Vertex3DData quadVertexData = {
                     {
-                            (transform * m_renderBuffer.quadVertexPositions[0]).asVec2<float>(),
+                            (transform * m_renderBuffer.quadVertexPositions[0]),
                             textureCoords[0]
                     },
                     {
-                            (transform * m_renderBuffer.quadVertexPositions[1]).asVec2<float>(),
+                            (transform * m_renderBuffer.quadVertexPositions[1]),
                             textureCoords[1]
                     },
                     {
-                            (transform * m_renderBuffer.quadVertexPositions[2]).asVec2<float>(),
+                            (transform * m_renderBuffer.quadVertexPositions[2]),
                             textureCoords[2]
                     },
                     {
-                            (transform * m_renderBuffer.quadVertexPositions[3]).asVec2<float>(),
+                            (transform * m_renderBuffer.quadVertexPositions[3]),
                             textureCoords[3]
                     }
             };
             render(quadVertexData, states);
         }
 
-        void OpenGLRender::render(const VertexData& data, const RenderStates& states) const {
+        void OpenGLRender::render(const Vertex3DData& data, const RenderStates& states) const {
             // Rendering quads only not supported
             assert(data.size() == quadVertexSize && "Supports only Quad Vertex Data.");
 
@@ -482,7 +437,7 @@ namespace robot2D {
             }
 
             for (auto it = 0; it < quadVertexSize; ++it) {
-                m_renderBuffer.quadBufferPtr -> Position = { data[it].position.x, data[it].position.y, 0.F };
+                m_renderBuffer.quadBufferPtr -> Position = { data[it].position.x, data[it].position.y, data[it].position.z };
                 m_renderBuffer.quadBufferPtr -> color = states.color.toGL();
                 m_renderBuffer.quadBufferPtr -> textureIndex = textureIndex;
                 m_renderBuffer.quadBufferPtr -> TextureCoords = data[it].texCoords;

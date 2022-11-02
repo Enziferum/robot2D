@@ -6,3 +6,4 @@ cmake/generated/
 docs/html
 docs/latex
 venv/
+editor/ext/glm

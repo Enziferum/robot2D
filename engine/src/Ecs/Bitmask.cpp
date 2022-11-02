@@ -69,7 +69,6 @@ namespace robot2D::ecs {
         m_bits = 0;
     }
 
-
     Bitmask configureMask(std::vector<Bitset> bits) {
         // sort because todo
         std::sort(bits.begin(), bits.end(), [](const Bitset& left, const Bitset& right) -> bool {

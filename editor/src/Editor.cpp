@@ -137,12 +137,7 @@ namespace editor {
         m_panelManager.addPanel<AssetsPanel>();
         m_panelManager.addPanel<InspectorPanel>(m_editorCamera);
         m_panelManager.addPanel<MenuPanel>(m_messageBus);
-        m_panelManager.addPanel<ViewportPanel>(m_panelManager, m_camera, m_editorCamera, m_messageBus, nullptr);
-
-
-//        m_messageDispather.onMessage<>();
-//        m_messageDispather.onMessage<>();
-//        m_messageDispather.onMessage<>();
+        m_panelManager.addPanel<ViewportPanel>(m_panelManager, m_editorCamera, m_messageBus, nullptr);
     }
 
     void Editor::handleEvents(const robot2D::Event& event) {
@@ -169,12 +164,9 @@ namespace editor {
         eventBinder.Dispatch(robot2D::Event::Resized,
                              [this](const robot2D::Event& evt) {
             RB_EDITOR_INFO("New Size = {0} and {1}", evt.size.widht, evt.size.heigth);
-            m_camera.resize({0, 0, evt.size.widht,evt.size.heigth});
             m_frameBuffer -> Resize({evt.size.widht,evt.size.heigth});
         });
 
-
-       // m_camera.onEvent(event);
         m_editorCamera.handleEvents(event);
     }
 
@@ -188,7 +180,7 @@ namespace editor {
                 break;
             case State::Edit: {
                 m_activeScene -> update(dt);
-                m_panelManager.getPanel<ViewportPanel>().update();
+                m_panelManager.getPanel<ViewportPanel>().update(dt);
                 break;
             }
             case State::Run: {
@@ -197,7 +189,6 @@ namespace editor {
             }
         }
         m_panelManager.update(dt);
-        m_editorCamera.update(dt);
     }
 
     void Editor::render() {
@@ -206,8 +197,6 @@ namespace editor {
                 m_frameBuffer -> Bind();
             const auto& clearColor = m_panelManager.getPanel<InspectorPanel>().getColor();
             // TODO: @a.raag reset stats
-            // m_window -> resetStats();
-
             m_window -> clear(clearColor);
         }
 
@@ -220,17 +209,23 @@ namespace editor {
                     continue;
 
                 auto& sprite = it.getComponent<SpriteComponent>();
-                auto transform = it.getComponent<TransformComponent>();
-
                 robot2D::RenderStates renderStates;
                 renderStates.texture = &sprite.getTexture();
-                renderStates.transform *= transform.getTransform();
+
+                if(it.hasComponent<TransformComponent>()) {
+                    auto transform = it.getComponent<TransformComponent>();
+                    renderStates.transform *= transform.getTransform();
+                }
+                else if(it.hasComponent<Transform3DComponent>()) {
+                    auto transform = it.getComponent<Transform3DComponent>();
+                    renderStates.transform3D = transform.getTransform();
+                }
+
                 renderStates.color = sprite.getColor();
                 renderStates.entityID = it.getIndex();
                 m_window -> draw(renderStates);
             }
         }
-
 
         m_window -> afterRender();
 
@@ -439,8 +434,7 @@ namespace editor {
 
         m_frameBuffer = robot2D::FrameBuffer::Create(frameBufferSpecification);
         m_window -> setView({{0, 0}, windowSize.as<float>()});
-        m_camera.resize({0, 0, windowSize.as<float>().x,
-                         windowSize.as<float>().y});
+        m_editorCamera.setViewportSize(windowSize.as<float>());
 
         applyStyle(EditorStyle::GoldBlack);
     }

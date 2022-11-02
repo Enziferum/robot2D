@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2022
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -21,34 +21,43 @@ source distribution.
 
 #pragma once
 
-#include <robot2D/Graphics/View.hpp>
-#include <robot2D/Core/Event.hpp>
+#include "Matrix3D.hpp"
 
-namespace editor {
+namespace robot2D {
 
-    struct SceneCameraConfiguration {
-        float zoomOffset = 1.F;
-        float zoomMultiplier = 0.1F;
+    struct Quaternion {
+        Quaternion();
+        Quaternion(float x, float y, float z, float w);
+        Quaternion(robot2D::vec3f eulerAngle);
+        ~Quaternion() = default;
+
+        Quaternion Conjugate() const;
+        friend robot2D::vec3f operator *(const Quaternion& quat, const vec3f& vec);
+
+        float x;
+        float y;
+        float z;
+        float w;
     };
 
-    class SceneCamera {
-    public:
-        SceneCamera();
-        ~SceneCamera() = default;
+    using quat = Quaternion;
 
-        void onEvent(const robot2D::Event& event);
-        void resize(const robot2D::FloatRect& viewPort);
+    mat4 matrixInverse(const robot2D::mat4& matrix);
 
-        float& getCameraSpeed() { return m_cameraSpeed; }
-        float getZoom() const;
+    mat4 toMat4(const quat& quat);
 
-        robot2D::View& getView();
-        const robot2D::View& getView() const;
-    private:
-        robot2D::View m_view;
-        robot2D::FloatRect m_sizeRect;
-        SceneCameraConfiguration m_configuration;
-        float m_zoom;
-        float m_cameraSpeed = 10.F;
-    };
+    /// Projection Perspective Camera
+    mat4 projectionPerspective(float fov, float aspectRatio, float zNear, float zFar);
+
+    /// Cross 2 3D-Vectors
+    vec3f cross(const vec3f& left, const vec3f& right);
+
+    /// Rotate Using Quatersion
+    vec3f rotate(quat const& quat, const vec3f& axis);
+
+    /// apply cos function to all 3 axis
+    vec3f cosVec3F(const vec3f& in);
+
+    /// apply sin function to all 3 axis
+    vec3f sinVec3F(const vec3f& in);
 }

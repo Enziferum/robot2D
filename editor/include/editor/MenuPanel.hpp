@@ -34,7 +34,7 @@ namespace editor {
     private:
         void fileMenu();
         void editMenu();
-        void settingsMenu();
+        void projectMenu();
         void helpMenu();
     private:
         robot2D::MessageBus& m_messageBus;

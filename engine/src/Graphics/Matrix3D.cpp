@@ -65,9 +65,30 @@ namespace robot2D {
 
     Matrix3D Matrix3D::transpose() const {
         mat4 matrix{};
-        for(int it=0; it < 4; ++it)
-            for (int ij = 0; ij < 4; ++ij)
-                matrix(ij, it) = this -> operator()(it, ij);
+        for(int i=0; i < 4; ++i)
+            for (int j = 0; j < 4; ++j)
+                matrix(j, i) = this -> operator()(i, j);
         return matrix;
+    }
+
+    mat4 translate(mat4 const& matrix, robot2D::vec3f const& to) {
+        mat4 translateMatrix{matrix};
+        float wTo[4] = {to.x, to.y, to.z, 1.0f};
+        for(int r = 0; r < 4; ++r) {
+            float curr = 0;
+            for(int c = 0; c < 4; ++c)
+                curr += matrix[r * 4 + c] * wTo[c];
+            translateMatrix[r * 4 + 3] = curr;
+        }
+        translateMatrix = translateMatrix.transpose();
+        return translateMatrix;
+    }
+
+    mat4 scale(mat4 const& matrix, const robot2D::vec3f& scaleFactor) {
+        mat4 scaleMatrix{};
+        scaleMatrix[0] = matrix[0] * scaleFactor.x;
+        scaleMatrix[5] = matrix[5] * scaleFactor.y;
+        scaleMatrix[10] = matrix[10] * scaleFactor.z;
+        return scaleMatrix * matrix;
     }
 }
