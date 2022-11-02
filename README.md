@@ -1,19 +1,23 @@
-# robot2D
+# Robot2D
 
 <img align="right" src="https://github.com/Enziferum/robot2D/blob/master/logo/logo.png" alt="logo" width="256"/>
 
 \
 Windows: [![Build status](https://ci.appveyor.com/api/projects/status/ilga4qquggcsfy65?svg=true)](https://ci.appveyor.com/project/Enziferum/robot2d) \
-Mac/Linux: [![Build Status](https://app.travis-ci.com/Enziferum/robot2D.svg?branch=master)](https://app.travis-ci.com/Enziferum/robot2D) 
+Mac/Linux: [![Build Status](https://github.com/Enziferum/robot2D/actions/workflows/ci.yml/badge.svg)]
 \
-Robot2D - simple 2D Engine.   
+Robot2D - C++ 2D Engine. Graphics Api is OpenGL 3.3/4.5.
 \
-Idea of project - learning, have fun and sometimes make games on it :) 
-\
-Before Version 0.3 it was like small framework. 
-Just now make course is make Editor and started to be real Engine!
+In current version 0.4 support platforms are: Windows / MacOS / Linux.
 
-Many Api's will be make private and using only in Engine Ecosystem and you will work with it like Unity, Godot and other big projects.
+\
+Project's idea - learning, have fun and sometimes make games on it :) 
+
+
+## Structure
+ - Engine - robot2D's core, developing as framework. Can be using standalone like [SFML](https://github.com/SFML/SFML).
+ - Editor - robot2D's editor, developing around engine framework. UI is simular to popular projects to be intuitive.
+ - Sandbox - robot2D's experiment lab to work on new features or some extra stuff.
 
 Code Guards
 -------
@@ -24,8 +28,17 @@ Code Guards
 
 ## Requirements
    * C++17 compiler
-   * Cmake
-   * glfw3.3
-   * robot2D_ext
-   * spdlog
+   * CMake
+   * Python 3.6 (for automatic build / install deps)
 
+## How-to
+ - Install C++17 compiler
+ - Install CMake
+ - Install Python 3.6+
+ - Run as admin:
+```shell
+  git clone 
+  cd robot2D
+  python scripts/build_engine.py
+```
+ - Your output will be 'output' folder
