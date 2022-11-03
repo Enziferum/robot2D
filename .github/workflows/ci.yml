@@ -50,7 +50,7 @@ jobs:
         config:
           - {
             build_type: "Release", cc: "cl", cxx: "cl",
-            environment_script: "C:\%Program Files (x86)%\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
+            environment_script: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
           }
     env:
       glfw3_DIR: C:\Program Files (x86)\GLFW\lib\cmake\glfw3
@@ -70,7 +70,7 @@ jobs:
 #        continue-on-error: true
 
       - name: Visual Studio Setup
-        run: call ${{ matrix.config.environment_script }} x86_amd64
+        run: call "${{ matrix.config.environment_script }}" x86_amd64
 
       - name: Download dependencies
         run: python ${{github.workspace}}/scripts/install_deps.py --configuration 2 --compiler=3
