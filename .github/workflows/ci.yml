@@ -42,14 +42,13 @@ jobs:
 #            path: ${{github.workspace}}/linter
 
   build-windows:
-    name: $ {{ matrix.config.name }}
+    name: "build-windows"
     runs-on: windows-2019
     strategy:
       fail-fast: false
       matrix:
         config:
           - {
-            name: "build-windows"
             build_type: "Release", cc: "cl", cxx: "cl",
             environment_script: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
           }
