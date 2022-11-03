@@ -3,6 +3,7 @@ import sys
 import functools
 import enum
 import subprocess
+import argparse
 
 GITHUB_URL = 'https://github.com/'
 GIT_END = '.git'
@@ -14,6 +15,7 @@ GIT_END = '.git'
     3. nixLibName add library. If Empty will be downloaded by git url. Need for packet manager
     4. Add lib cmake options libCmakeOptions if no make empty string
 """
+
 
 class bcolors:
     HEADER = '\033[95m'
@@ -49,6 +51,9 @@ def get_platform():
         return sys.platform
 
     return PlatformType(platforms[sys.platform])
+
+def checkCmd(cmdName) -> bool:
+        return True
 
 
 # new libs add here
@@ -125,7 +130,7 @@ class CMakeOptions:
 class Lib:
     def __init__(self, name: str, giturl: str,
                  macOSname: str, linuxName: str,
-                 cmakeOptions: CMakeOptions, 
+                 cmakeOptions: CMakeOptions,
                  configuration: str = "Debug"
                  ):
         self.name = name
@@ -138,32 +143,48 @@ class Lib:
 
     def __build_library(self, generator, os_make='', cmake_options=''):
         cmake_cmd = Cmd(f'cd {self.name} && mkdir build '
-                           f'&& cd build && cmake .. -G "{generator}" {cmake_options} && {os_make}make '
-                           f'&& sudo {os_make}make install')
+                        f'&& cd build && cmake .. -G "{generator}" {cmake_options} && {os_make}make '
+                        f'&& sudo {os_make}make install')
         self.cmds.append(cmake_cmd)
 
     def __build_library_vs(self, generator, cmake_options=''):
         cmake_cmd = Cmd(f'cd {self.name} && mkdir build '
-                           f'&& cd build && cmake .. -G "{generator}" -DCMAKE_CONFIGURATION_TYPES:STRING="{self.configuration}" '
-                           f' -DCMAKE_VS_INCLUDE_INSTALL_TO_DEFAULT_BUILD=ON '
-                           f'{cmake_options} && cmake --build .'
-                           f' && cmake --install .')
+                        f'&& cd build && cmake .. -G "{generator}" '
+                        f'-DCMAKE_CONFIGURATION_TYPES:STRING="{self.configuration}" '
+                        f' -DCMAKE_VS_INCLUDE_INSTALL_TO_DEFAULT_BUILD=ON '
+                        f'{cmake_options} && cmake --build .'
+                        f' && cmake --install .')
         self.cmds.append(cmake_cmd)
 
     def __pack_cmds(self):
         currentPlatform = get_platform()
 
-        if currentPlatform != PlatformType.Windows \
-                and (self.macOSname != '' and self.linuxName != ''):
+        if currentPlatform is not PlatformType.Windows \
+                and (self.macOSname is not '' and self.linuxName is not ''):
             packman_cmd = ''
             libname = ''
             if currentPlatform is PlatformType.MacOS:
-                packman_cmd = 'brew install'
-                libname = self.macOSname
+                if checkCmd(cmdName='brew'):
+                    packman_cmd = 'brew install'
+                    libname = self.macOSname
+                else:
+                    printColored(bcolors.WARNING, "Can't find brew packet manager. Switch to manual install")
+                    git_cmd = f'git clone {self.giturl}'
+                    self.cmds.append(Cmd(git_cmd))
+                    self.__build_library(self.cmakeOptions.generator,
+                                         "",
+                                         self.cmakeOptions.options)
             if currentPlatform is PlatformType.Linux:
-                # todo support not only ubuntu
-                packman_cmd = 'sudo apt install'
-                libname = self.linuxName
+                if checkCmd(cmdName='apt'):
+                    packman_cmd = 'sudo apt install'
+                    libname = self.linuxName
+                else:
+                    printColored(bcolors.WARNING, "Can't find apt packet manager. Switch to manual install")
+                    git_cmd = f'git clone {self.giturl}'
+                    self.cmds.append(Cmd(git_cmd))
+                    self.__build_library(self.cmakeOptions.generator,
+                                         "",
+                                         self.cmakeOptions.options)
 
             self.cmds.append(Cmd(f'{packman_cmd} {libname}'))
         else:
@@ -171,7 +192,7 @@ class Lib:
             self.cmds.append(Cmd(git_cmd))
             if currentPlatform is PlatformType.Windows:
                 self.__build_library_vs(self.cmakeOptions.generator,
-                                     self.cmakeOptions.options)
+                                        self.cmakeOptions.options)
                 return
             self.__build_library(self.cmakeOptions.generator,
                                  self.cmakeOptions.os_make,
@@ -182,21 +203,27 @@ class Lib:
 
         for cmd in self.cmds:
             printColored(bcolors.WARNING, f'Execute command {cmd.getCmd()}')
-            proc = subprocess.Popen(cmd.getCmd(), shell=True)
-            proc.wait()
+            proc = subprocess.run(cmd.getCmd(), shell=True)
+            try:
+                proc.check_returncode()
+            except subprocess.CalledProcessError:
+                printColored(bcolors.FAIL, f'Failed to process command {cmd.getCmd()}')
+                exit(4)
 
     def __str__(self):
         return str(self.__dict__)
 
+
 class ConfigurationType(enum.IntEnum):
     Debug = 1
     Release = 2
-    
+
     def __str__(self):
         if self.value == self.Debug:
             return "Debug"
         if self.value == self.Release:
             return "Release"
+
 
 class DepsInstaller:
     def __init__(self):
@@ -204,29 +231,45 @@ class DepsInstaller:
         self.__wincompiler = WinCompiler.No
         self.__winvsversion = WinVSVersion.No
 
-    def __setup(self):
+    def __setup(self, configuration: int = 0, compiler: int = 0):
+        # TODO @a.raag exit program with error
+        if not checkCmd("cmake"):
+            printColored(bcolors.FAIL, "Don't found CMake. Please install it before running")
+            exit(2)
+
         currentPlatform = get_platform()
+        print("Your platform is", currentPlatform)
+
         printColored(bcolors.WARNING, f'Current platform is: {currentPlatform.value}')
-        # configuration = input("Choose Configuration: \n"
-        #                      "1 - Debug \n"
-        #                      "2 - Release \n")
-        configuration = ConfigurationType(int("2"))
-        if get_platform() == PlatformType.Windows:
-            # compiler = input("Choose Compiler: \n"
-            #                  "1 - MinGW \n"
-            #                  "2 - VS \n")
-            self.__wincompiler = WinCompiler(int("2"))
+        if configuration == 0:
+            configuration = input("Choose Configuration: \n"
+                                  "1 - Debug \n"
+                                  "2 - Release \n")
+        if compiler > 1:
+            self.__wincompiler = WinCompiler.VS
+            self.__winvsversion = WinVSVersion(compiler - 1)
+        elif compiler == 1:
+            self.__wincompiler = WinCompiler.MinGW
+
+        configuration = ConfigurationType(configuration)
+        if get_platform() == PlatformType.Windows and self.__wincompiler is WinCompiler.No:
+            compiler = input("Choose Compiler: \n"
+                             "1 - MinGW \n"
+                             "2 - VS \n")
+            self.__wincompiler = WinCompiler(compiler)
             if self.__wincompiler == WinCompiler.VS:
-                # version = input("Choose Version: \n"
-                #                 "1 - Visual Studio 2017 \n"
-                #                 "2 - Visual Studio 2019 \n"
-                #                 "3 - Visual Studio 2022 \n"
-                #                 )
-                self.__winvsversion = WinVSVersion(int("3"))
+                version = input("Choose Version: \n"
+                                "1 - Visual Studio 2017 \n"
+                                "2 - Visual Studio 2019 \n"
+                                "3 - Visual Studio 2022 \n"
+                                )
+                self.__winvsversion = WinVSVersion(version)
+
         nixLibNames = {
-            'glfw': NixLibName('glfw3', 'libglfw3 libglfw3-dev'),
-            'spdlog': NixLibName('spdlog', 'libspdlog-dev'),
-            'robot2D_ext': NixLibName('', ''),
+            'glfw': NixLibName(mac='glfw3', linux='libglfw3 libglfw3-dev'),
+            'spdlog': NixLibName(mac='spdlog', linux='libspdlog-dev'),
+            'robot2D_ext': NixLibName(mac='', linux=''),
+            'freetype': NixLibName(mac='freetype2', linux='libfreetype6 libfreetype6-dev')
         }
 
         libCmakeOptions = {
@@ -236,7 +279,7 @@ class DepsInstaller:
         }
 
         generator = ''
-        if currentPlatform != PlatformType.Windows:
+        if currentPlatform is not PlatformType.Windows:
             generator = 'Unix Makefiles'
         else:
             if self.__wincompiler is WinCompiler.MinGW:
@@ -246,17 +289,18 @@ class DepsInstaller:
 
         for it in LibType.libs():
             key = it.value
-            cmakeOptions = CMakeOptions(generator,
-                                        libCmakeOptions[key],
-                                        'mingw32-' if self.__wincompiler is WinCompiler.MinGW else '')
-            lib = Lib(key, Consts.getURL(LibType(it)),
-                      nixLibNames[key].MacOSName, nixLibNames[key].LinuxName,
-                      cmakeOptions,
-                      str(configuration))
+            cmakeOptions = CMakeOptions(generator=generator,
+                                        options=libCmakeOptions[key],
+                                        os_make='mingw32-' if self.__wincompiler is WinCompiler.MinGW else '')
+            lib = Lib(name=key, giturl=Consts.getURL(LibType(it)),
+                      macOSname=nixLibNames[key].MacOSName, linuxName=nixLibNames[key].LinuxName,
+                      cmakeOptions=cmakeOptions,
+                      configuration=str(configuration)
+                      )
             self.libs.append(lib)
 
-    def run(self):
-        self.__setup()
+    def run(self, configuration: int = 0, compiler: int = 0):
+        self.__setup(configuration, compiler)
 
         deps = functools.reduce(lambda l, r: l + ', ' + r, [lib.name for lib in self.libs])
         print(f"Install dependencies: \n {deps}")
@@ -274,7 +318,13 @@ class DepsInstaller:
             print('-----------------------------------------------------------')
         printColored(bcolors.OKGREEN, "All libs installed")
 
-#TODO: @a.raag add ArgsParser
+
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description="Robot2D's deps installer. Can without args.")
+
+    parser.add_argument('-c', '--configuration', help="Debug=1 Release=2", type=int, required=False, default=0)
+    parser.add_argument('--compiler', help="1=MinGW 2=VS_17 3=VS_17 4=VS_22", type=int, required=False, default=0)
+    args = parser.parse_args()
+
     installer = DepsInstaller()
-    installer.run()
+    installer.run(args.configuration, args.compiler)

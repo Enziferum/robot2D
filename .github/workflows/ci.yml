@@ -41,6 +41,44 @@ jobs:
             name: linux-assets
             path: ${{github.workspace}}/linter
 
+  build-windows:
+    runs-on: windows-latest
+    env:
+      glfw3_DIR: C:\Program Files (x86)\GLFW\lib\cmake\glfw3
+      robot2D_ext_DIR: C:\Program Files (x86)\robot2D_ext\lib\cmake\robot2D_ext
+      spdlog_DIR: C:\Program Files (x86)\spdlog\lib\cmake\spdlog
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: install cpplint
+        run: python -m pip install cpplint
+
+      - name: Create linter folder
+        run: mkdir ${{github.workspace}}/linter
+
+      - name: Lint
+        run: python -m cpplint --recursive --output=junit ${{github.workspace}}/engine 2> ${{github.workspace}}/linter/output.xml
+        continue-on-error: true
+
+      - name: Download dependencies
+        run: python ${{github.workspace}}/scripts/install_deps.py --configuration 2 --compiler=3
+
+      - name: Set ENV Variables
+        run:
+
+      - name: Configure CMake
+        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+
+      - name: Engine Build
+        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v2
+        with:
+          name: windows-assets
+          path: ${{github.workspace}}/linter
+
   build-macos:
     runs-on: macos-latest
     steps:
