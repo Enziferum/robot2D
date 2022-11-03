@@ -10,36 +10,36 @@ env:
   BUILD_TYPE: Release
 
 jobs:
-  build-ubuntu:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: install cpplint
-        run: python3 -m pip install cpplint
-
-      - name: Create linter folder
-        run: mkdir ${{github.workspace}}/linter
-
-      - name: Lint
-        run: python3 -m cpplint --recursive --output=junit ${{github.workspace}}/engine 2> ${{github.workspace}}/linter/output.xml
-        continue-on-error: true
-
-      - name: Download dependencies
-        run: python3 ${{github.workspace}}/scripts/install_deps.py
-
-      - name: Configure CMake
-        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
-
-      - name: Engine Build
-        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v2
-        with:
-            name: linux-assets
-            path: ${{github.workspace}}/linter
+#  build-ubuntu:
+#    runs-on: ubuntu-latest
+#
+#    steps:
+#      - uses: actions/checkout@v3
+#
+#      - name: install cpplint
+#        run: python3 -m pip install cpplint
+#
+#      - name: Create linter folder
+#        run: mkdir ${{github.workspace}}/linter
+#
+#      - name: Lint
+#        run: python3 -m cpplint --recursive --output=junit ${{github.workspace}}/engine 2> ${{github.workspace}}/linter/output.xml
+#        continue-on-error: true
+#
+#      - name: Download dependencies
+#        run: python3 ${{github.workspace}}/scripts/install_deps.py
+#
+#      - name: Configure CMake
+#        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+#
+#      - name: Engine Build
+#        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+#
+#      - name: Upload artifacts
+#        uses: actions/upload-artifact@v2
+#        with:
+#            name: linux-assets
+#            path: ${{github.workspace}}/linter
 
   build-windows:
     runs-on: windows-latest
@@ -64,9 +64,6 @@ jobs:
       - name: Download dependencies
         run: python ${{github.workspace}}/scripts/install_deps.py --configuration 2 --compiler=3
 
-      - name: Set ENV Variables
-        run:
-
       - name: Configure CMake
         run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
 
@@ -79,32 +76,32 @@ jobs:
           name: windows-assets
           path: ${{github.workspace}}/linter
 
-  build-macos:
-    runs-on: macos-latest
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: install cpplint
-        run: python3 -m pip install cpplint
-
-      - name: Create linter folder
-        run: mkdir ${{github.workspace}}/linter
-
-      - name: Lint
-        run: python3 -m cpplint --recursive --output=junit ${{github.workspace}}/engine 2> ${{github.workspace}}/linter/output.xml
-        continue-on-error: true
-
-      - name: Download dependencies
-        run: python3 ${{github.workspace}}/scripts/install_deps.py
-
-      - name: Configure CMake
-        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
-
-      - name: Engine Build
-        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v2
-        with:
-          name: macos-assets
-          path: ${{github.workspace}}/linter
+#  build-macos:
+#    runs-on: macos-latest
+#    steps:
+#      - uses: actions/checkout@v3
+#
+#      - name: install cpplint
+#        run: python3 -m pip install cpplint
+#
+#      - name: Create linter folder
+#        run: mkdir ${{github.workspace}}/linter
+#
+#      - name: Lint
+#        run: python3 -m cpplint --recursive --output=junit ${{github.workspace}}/engine 2> ${{github.workspace}}/linter/output.xml
+#        continue-on-error: true
+#
+#      - name: Download dependencies
+#        run: python3 ${{github.workspace}}/scripts/install_deps.py
+#
+#      - name: Configure CMake
+#        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+#
+#      - name: Engine Build
+#        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+#
+#      - name: Upload artifacts
+#        uses: actions/upload-artifact@v2
+#        with:
+#          name: macos-assets
+#          path: ${{github.workspace}}/linter
