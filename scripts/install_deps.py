@@ -149,7 +149,7 @@ class Lib:
 
     def __build_library_vs(self, generator, cmake_options=''):
         cmake_cmd = Cmd(f'cd {self.name} && mkdir build '
-                        f'&& cd build && cmake .. -G "{generator}" '
+                        f'&& cd build && cmake .. -G "{generator}" -A x64'
                         f'-DCMAKE_CONFIGURATION_TYPES:STRING="{self.configuration}" '
                         f' -DCMAKE_VS_INCLUDE_INSTALL_TO_DEFAULT_BUILD=ON '
                         f'{cmake_options} && cmake --build .'
