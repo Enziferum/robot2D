@@ -43,23 +43,24 @@ jobs:
 
   build-windows:
     runs-on: windows-2019
+    build_type: "Release", cc: "cl", cxx: "cl",
+    environment_script: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
     env:
       glfw3_DIR: C:\Program Files (x86)\GLFW\lib\cmake\glfw3
       robot2D_ext_DIR: C:\Program Files (x86)\robot2D_ext\lib\cmake\robot2D_ext
       spdlog_DIR: C:\Program Files (x86)\spdlog\lib\cmake\spdlog
-
     steps:
       - uses: actions/checkout@v3
 
-      - name: install cpplint
-        run: python -m pip install cpplint
-
-      - name: Create linter folder
-        run: mkdir ${{github.workspace}}/linter
-
-      - name: Lint
-        run: python -m cpplint --recursive --output=junit ${{github.workspace}}/engine 2> ${{github.workspace}}/linter/output.xml
-        continue-on-error: true
+#      - name: install cpplint
+#        run: python -m pip install cpplint
+#
+#      - name: Create linter folder
+#        run: mkdir ${{github.workspace}}/linter
+#
+#      - name: Lint
+#        run: python -m cpplint --recursive --output=junit ${{github.workspace}}/engine 2> ${{github.workspace}}/linter/output.xml
+#        continue-on-error: true
 
       - name: Download dependencies
         run: python ${{github.workspace}}/scripts/install_deps.py --configuration 2 --compiler=3
