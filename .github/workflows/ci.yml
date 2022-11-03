@@ -50,7 +50,7 @@ jobs:
         config:
           - {
             build_type: "Release", cc: "cl", cxx: "cl",
-            environment_script: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
+            environment_script: "C:\%Program Files (x86)%\Microsoft Visual Studio\2019\Enterprise\VC\Auxiliary\Build\vcvars64.bat"
           }
     env:
       glfw3_DIR: C:\Program Files (x86)\GLFW\lib\cmake\glfw3
