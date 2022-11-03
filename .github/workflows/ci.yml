@@ -72,10 +72,11 @@ jobs:
       - name: Download dependencies
         run: python ${{github.workspace}}/scripts/install_deps.py --configuration 2 --compiler=3
 
+      - name: Visual Studio Setup
+        run: call ${{ matrix.config.environment_script }} x86_amd64
+
       - name: Configure CMake
-        run: |
-        call ${{ matrix.config.environment_script }} x86_amd64
-        cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
 
       - name: Engine Build
         run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
