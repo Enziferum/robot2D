@@ -62,7 +62,7 @@ jobs:
         continue-on-error: true
 
       - name: Download dependencies
-        run: python ${{github.workspace}}/scripts/install_deps.py --configuration 2 --compiler=3
+        run: python ${{github.workspace}}/scripts/install_deps.py --configuration 2 --compiler=4
 
       - name: Configure CMake
         run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
