@@ -43,8 +43,14 @@ jobs:
 
   build-windows:
     runs-on: windows-2019
-    build_type: "Release", cc: "cl", cxx: "cl",
-    environment_script: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - {
+            build_type: "Release", cc: "cl", cxx: "cl",
+            environment_script: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
+          }
     env:
       glfw3_DIR: C:\Program Files (x86)\GLFW\lib\cmake\glfw3
       robot2D_ext_DIR: C:\Program Files (x86)\robot2D_ext\lib\cmake\robot2D_ext
