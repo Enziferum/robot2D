@@ -42,13 +42,14 @@ jobs:
 #            path: ${{github.workspace}}/linter
 
   build-windows:
-    name: build-windows
+    name: $ {{ matrix.config.name }}
     runs-on: windows-2019
     strategy:
       fail-fast: false
       matrix:
         config:
           - {
+            name: build-windows
             build_type: "Release", cc: "cl", cxx: "cl",
             environment_script: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Enterprise/VC/Auxiliary/Build/vcvars64.bat"
           }
@@ -69,11 +70,11 @@ jobs:
 #        run: python -m cpplint --recursive --output=junit ${{github.workspace}}/engine 2> ${{github.workspace}}/linter/output.xml
 #        continue-on-error: true
 
-      - name: Download dependencies
-        run: python ${{github.workspace}}/scripts/install_deps.py --configuration 2 --compiler=3
-
       - name: Visual Studio Setup
         run: call ${{ matrix.config.environment_script }} x86_amd64
+
+      - name: Download dependencies
+        run: python ${{github.workspace}}/scripts/install_deps.py --configuration 2 --compiler=3
 
       - name: Configure CMake
         run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
