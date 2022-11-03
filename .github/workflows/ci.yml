@@ -42,7 +42,7 @@ jobs:
 #            path: ${{github.workspace}}/linter
 
   build-windows:
-    runs-on: windows-latest
+    runs-on: windows-2019
     env:
       glfw3_DIR: C:\Program Files (x86)\GLFW\lib\cmake\glfw3
       robot2D_ext_DIR: C:\Program Files (x86)\robot2D_ext\lib\cmake\robot2D_ext
@@ -62,7 +62,7 @@ jobs:
         continue-on-error: true
 
       - name: Download dependencies
-        run: python ${{github.workspace}}/scripts/install_deps.py --configuration 2 --compiler=4
+        run: python ${{github.workspace}}/scripts/install_deps.py --configuration 2 --compiler=3
 
       - name: Configure CMake
         run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
