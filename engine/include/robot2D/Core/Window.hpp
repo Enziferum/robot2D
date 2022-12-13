@@ -117,6 +117,10 @@ namespace robot2D {
 
         static bool isMousePressed(const Mouse& button);
         static bool isKeyboardPressed(const Key& key);
+        static bool isJoystickAvailable(const JoystickType& joystickType);
+        static bool JoystickIsGamepad(const JoystickType& joystickType);
+
+        static bool getJoystickGamepadInput(const JoystickType& joystickType, JoystickGamepadInput& gamepadInput);
     protected:
         virtual void onResize(const int& w, const int& h);
     private:

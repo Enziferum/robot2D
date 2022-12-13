@@ -39,7 +39,7 @@ namespace robot2D {
     }
 
     void Cursor::create(const CursorType& cursorType) {
-        m_cursorImpl ->create(cursorType);
+        m_cursorImpl -> create(cursorType);
     }
 
     CursorHandle Cursor::getRaw() const {

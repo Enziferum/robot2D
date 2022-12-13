@@ -27,6 +27,7 @@ source distribution.
 #include <robot2D/Graphics/Shader.hpp>
 #include <robot2D/Util/Logger.hpp>
 #include <robot2D/Graphics/Color.hpp>
+#include <robot2D/Graphics/Transform.hpp>
 
 namespace robot2D {
     ShaderHandler::ShaderHandler():
@@ -99,12 +100,7 @@ namespace robot2D {
     void ShaderHandler::set<const float>(const char* name, const float value) const {
         glUniform1f(glGetUniformLocation(shaderProgram, name), value);
     }
-
-    void ShaderHandler::setMatrix(const char* name, float* value) const  {
-        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, name),
-                           1, GL_FALSE, value);
-    }
-
+    
     template<>
     void ShaderHandler::set<int>(const char* name, const int value) const  {
         glUniform1i(glGetUniformLocation(shaderProgram, name), value);
@@ -148,6 +144,11 @@ namespace robot2D {
 
     int ShaderHandler::getProgram() const{
         return shaderProgram;
+    }
+
+    void ShaderHandler::setMatrix(const char* name, const float* value) const {
+        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, name),
+                           1, GL_FALSE, value);
     }
 
 

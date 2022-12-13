@@ -104,7 +104,15 @@ namespace robot2D {
     }
 
     bool Window::isKeyboardPressed(const Key& key) {
-        return m_windowImpl ->isKeyboardPressed(key);
+        return m_windowImpl -> isKeyboardPressed(key);
+    }
+
+    bool Window::isJoystickAvailable(const JoystickType& joystickType) {
+        return m_windowImpl -> isJoystickAvailable(joystickType);
+    }
+
+    bool Window::JoystickIsGamepad(const JoystickType& joystickType) {
+        return m_windowImpl -> JoystickIsGamepad(joystickType);
     }
 
     void Window::setMouseCursorVisible(const bool& flag) {
@@ -155,4 +163,9 @@ namespace robot2D {
     vec2f Window::getMousePos() const {
         return m_windowImpl->getMousePos();
     }
+
+    bool Window::getJoystickGamepadInput(const JoystickType& joystickType, JoystickGamepadInput& gamepadInput) {
+        return m_windowImpl -> getJoystickGamepadInput(joystickType, gamepadInput);
+    }
+
 }

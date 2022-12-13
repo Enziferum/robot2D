@@ -83,7 +83,4 @@ namespace editor {
 
         return *(static_cast<T*>(found -> get()));
     }
-
-
-
 }

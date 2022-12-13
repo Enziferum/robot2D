@@ -139,6 +139,9 @@ namespace editor {
         auto[mx, my] = ImGui::GetMousePos();
         mx -= m_ViewportBounds[0].x;
         my -= m_ViewportBounds[0].y;
+
+
+
         robot2D::vec2f viewportSize = m_ViewportBounds[1] - m_ViewportBounds[0];
         my = viewportSize.y - my;
         int mouseX = (int)mx;

@@ -24,8 +24,10 @@ source distribution.
 #include <vector>
 #include <string>
 #include <robot2D/Config.hpp>
+
 #include "Mouse.hpp"
 #include "Keyboard.hpp"
+#include "Joystick.hpp"
 
 namespace robot2D {
     /**
@@ -46,6 +48,8 @@ namespace robot2D {
             KeyReleased,
             TextEntered,
             DragDrop,
+            JoystickConnected,
+            JoystickDisconnected,
             Count
         };
 
@@ -91,6 +95,11 @@ namespace robot2D {
             unsigned int symbol;
         };
 
+        struct JoystickEvent {
+            int joytickId;
+            bool isGamepad{false};
+        };
+
         union {
             SizeEvent size;
             MouseMoveEvent move;
@@ -98,6 +107,7 @@ namespace robot2D {
             KeyboardEvent key;
             MouseWheelEvent wheel;
             TextEnterEvent text;
+            JoystickEvent joystick;
         };
 
     };

@@ -8,7 +8,7 @@ namespace robot2D {
         return m_api;
     }
 
-    RenderDimensionType &RenderAPI::getDimensionType() {
+    RenderDimensionType& RenderAPI::getDimensionType() {
         return m_dimensionType;
     }
 }

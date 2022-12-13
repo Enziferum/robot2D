@@ -53,10 +53,9 @@ namespace robot2D::ecs {
         }
         m_deletePending.clear();
 
-        for(auto& entity: m_addPending) {
+        for(auto& entity: m_addPending)
             m_systemManager.addEntity(entity);
-        }
-        m_deletePending.clear();
+        m_addPending.clear();
         if(m_useSystems)
             m_systemManager.update(dt);
     }

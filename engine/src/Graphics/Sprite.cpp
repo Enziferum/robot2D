@@ -35,7 +35,7 @@ namespace robot2D {
             auto size = texture.getSize();
             m_texture_rect = IntRect(0, 0, size.x, size.y);
             if(m_size == robot2D::vec2f{})
-                setSize(size.x, size.y);
+                setSize(size.as<float>());
         }
 
         m_texture = &texture;
@@ -88,10 +88,10 @@ namespace robot2D {
         states.texture = m_texture;
         states.color = m_color;
 
-        vertices[0].position = states.transform * robot2D::vec2f {-0.5F, -0.5F};
-        vertices[1].position = states.transform * robot2D::vec2f {0.5F, -0.5F};
-        vertices[2].position = states.transform * robot2D::vec2f {0.5F, 0.5F};
-        vertices[3].position = states.transform * robot2D::vec2f {-0.5F, 0.5F};
+        vertices[0].position = states.transform * robot2D::vec2f {0.F, 0.F};
+        vertices[1].position = states.transform * robot2D::vec2f {1.F, 0.F};
+        vertices[2].position = states.transform * robot2D::vec2f {1.F, 1.F};
+        vertices[3].position = states.transform * robot2D::vec2f {0.F, 1.F};
 
         target.draw({vertices[0], vertices[1], vertices[2], vertices[3]}, states);
     }

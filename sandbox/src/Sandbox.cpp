@@ -55,7 +55,7 @@ void Sandbox::update(float dt) {
 }
 
 void Sandbox::render() {
-    m_window -> clear(robot2D::Color::White);
+    m_window -> clear();
     m_scene -> render();
     m_window -> display();
 }

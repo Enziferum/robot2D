@@ -210,12 +210,12 @@ class DepsInstaller:
         # configuration = input("Choose Configuration: \n"
         #                      "1 - Debug \n"
         #                      "2 - Release \n")
-        configuration = ConfigurationType(int("2"))
+        configuration = ConfigurationType(int("1"))
         if get_platform() == PlatformType.Windows:
             # compiler = input("Choose Compiler: \n"
             #                  "1 - MinGW \n"
             #                  "2 - VS \n")
-            self.__wincompiler = WinCompiler(int("2"))
+            self.__wincompiler = WinCompiler(int("1"))
             if self.__wincompiler == WinCompiler.VS:
                 # version = input("Choose Version: \n"
                 #                 "1 - Visual Studio 2017 \n"
