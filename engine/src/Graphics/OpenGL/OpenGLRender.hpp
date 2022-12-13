@@ -51,6 +51,7 @@ namespace robot2D {
             void clear(const Color &color = Color::Black) override;
 
             void render(const RenderStates& states) override;
+            void render(const VertexData& data, const RenderStates& states) const override;
             void render(const Vertex3DData& data, const RenderStates& states) const override;
             void render(const VertexArray::Ptr& vertexArray, RenderStates states) const override;
             void render3D(const VertexArray::Ptr& vertexArray, RenderStates states) const override;

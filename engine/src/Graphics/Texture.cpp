@@ -36,7 +36,7 @@ namespace robot2D{
         return GL_RGB;
     }
 
-    Texture::Texture(){}
+    Texture::Texture() {}
 
     Texture::~Texture() {
         glDeleteTextures(1, &m_texture);

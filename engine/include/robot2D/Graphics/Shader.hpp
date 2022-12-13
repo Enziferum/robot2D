@@ -49,7 +49,7 @@ namespace robot2D {
         template<typename T>
         void set(const char* name, const T value) const;
 
-        void setMatrix(const char* name, float* value) const;
+        void setMatrix(const char* name, const float* value) const;
 
         /// \brief Set to shader program variable by name and data as array
         template<typename T>

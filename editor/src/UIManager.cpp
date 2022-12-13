@@ -43,7 +43,7 @@ namespace editor {
     }
 
     void UIManager::blockEvents(bool flag) {
-        m_gui.blockEvents(flag);
+       // m_gui.blockEvents(flag);
     }
 
     robot2D::ecs::Entity UIManager::getSelectedEntity() {
