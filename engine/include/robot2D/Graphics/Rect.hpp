@@ -66,9 +66,7 @@ namespace robot2D {
     lx(0),
     ly(0),
     width(0),
-    height(0){
-
-    }
+    height(0){}
 
     template<typename T>
     Rect<T>::Rect(const T& leftx, const T &lefty, const T& w, const T& h)

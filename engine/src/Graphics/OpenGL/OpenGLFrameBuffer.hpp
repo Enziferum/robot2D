@@ -39,7 +39,7 @@ namespace robot2D::priv {
         const RenderID& getFrameBufferRenderID(uint32_t index = 0) const override;
         const FrameBufferSpecification& getSpecification() const override;
 
-        FrameBufferSpecification &getSpecification() override;
+        FrameBufferSpecification& getSpecification() override;
     private:
         void deleteGLStuff();
     private:

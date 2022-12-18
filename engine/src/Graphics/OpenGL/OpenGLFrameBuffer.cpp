@@ -146,6 +146,8 @@ namespace robot2D::priv {
                                                   GL_R32I, GL_RED_INTEGER,
                                                   m_specification.size, it);
                         break;
+                    default:
+                        break;
                 }
             }
         }
@@ -158,6 +160,8 @@ namespace robot2D::priv {
                     Utils::AttachDepthTexture(m_depthAttachment, m_specification.Samples,
                                               GL_DEPTH24_STENCIL8, GL_DEPTH_STENCIL_ATTACHMENT,
                                               m_specification.size);
+                    break;
+                default:
                     break;
             }
         }
