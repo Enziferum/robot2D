@@ -29,17 +29,16 @@ namespace robot2D {
     m_color(Color::White) {}
 
     void Sprite::setTexture(const Texture& texture, const IntRect& textureRect) {
-        m_texture_rect = textureRect;
+        m_textureRect = textureRect;
+        m_texture = &texture;
+        auto size = texture.getSize();
+        setSize(size.as<float>());
 
         if(!m_texture && (textureRect == IntRect())){
-            auto size = texture.getSize();
-            m_texture_rect = IntRect(0, 0, size.x, size.y);
-            if(m_size == robot2D::vec2f{})
-                setSize(size.as<float>());
+            m_textureRect = IntRect(0, 0, size.x, size.y);
         }
 
-        m_texture = &texture;
-        setTextureRect(m_texture_rect);
+        setTextureRect(m_textureRect);
     }
 
     const Texture* Sprite::getTexture() {
@@ -49,8 +48,7 @@ namespace robot2D {
     FloatRect Sprite::getLocalBounds() const {
         float w = std::abs(m_size.x);
         float h = std::abs(m_size.y);
-
-        return FloatRect(0.f, 0.f, w, h);
+        return {0.f, 0.f, w, h};
     }
 
     FloatRect Sprite::getGlobalBounds() const {;
@@ -58,7 +56,7 @@ namespace robot2D {
     }
 
     void Sprite::setScale(const vec2f& factor) {
-        m_texture_rect = IntRect (0, 0, factor.x, factor.y);
+        m_textureRect = IntRect (0, 0, factor.x, factor.y);
         if (factor.x < m_size.x && factor.y < m_size.y)
             Transformable::setScale(robot2D::vec2f(factor.x / m_size.x,
                                                    factor.y / m_size.y));
@@ -97,13 +95,13 @@ namespace robot2D {
     }
 
     void Sprite::setTextureRect(const IntRect& textureRect) {
-        m_texture_rect = textureRect;
+        m_textureRect = textureRect;
 
-        float left   = static_cast<float>(m_texture_rect.lx);
-        float right  = left + m_texture_rect.width;
+        float left   = static_cast<float>(m_textureRect.lx);
+        float right  = left + m_textureRect.width;
 
-        float bottom = m_texture_rect.ly;
-        float top = m_texture_rect.ly + m_texture_rect.height;
+        float bottom = m_textureRect.ly;
+        float top = m_textureRect.ly + m_textureRect.height;
 
         auto convertToGL = [](float value, float textureSize) {
             return static_cast<float>(value / textureSize);
@@ -121,7 +119,7 @@ namespace robot2D {
     }
 
     const IntRect& Sprite::getTextureRect() const {
-        return m_texture_rect;
+        return m_textureRect;
     }
 
 }
