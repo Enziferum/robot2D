@@ -70,6 +70,8 @@ namespace robot2D {
 
             void setMousePos(const vec2f& pos) override;
             vec2f getMousePos() const override;
+
+            void setVsync(bool flag) override;
         private:
             void setup();
             void setup_callbacks();

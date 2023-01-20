@@ -437,6 +437,8 @@ namespace robot2D {
             return true;
         }
 
-
+        void DesktopWindowImpl::setVsync(bool flag) {
+            glfwSwapInterval(flag ? 1 : 0);
+        }
     }
 }

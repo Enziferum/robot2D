@@ -43,9 +43,11 @@ namespace robot2D::ecs {
 
     void Scene::removeEntity(Entity entity) {
         m_deletePending.emplace_back(entity);
+        m_entityManager.markDestroyed(entity);
     }
 
     void Scene::update(float dt) {
+      //  m_deletePending.swap(m_deletePendingBuffer);
         for(auto& entity: m_deletePending) {
             if(m_useSystems)
                 m_systemManager.removeEntity(entity);

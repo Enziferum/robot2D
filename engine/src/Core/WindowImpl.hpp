@@ -73,6 +73,7 @@ namespace robot2D {
 
             virtual void setMousePos(const vec2f& pos) = 0;
             virtual vec2f getMousePos() const = 0;
+            virtual void setVsync(bool flag) = 0;
         };
     }
 }

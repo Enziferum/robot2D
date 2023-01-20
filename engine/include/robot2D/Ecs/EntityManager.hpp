@@ -125,13 +125,20 @@ namespace robot2D::ecs {
 
         bool removeEntity(Entity entity);
 
+        bool entityDestroyed(Entity entity);
+
         Bitmask getComponentBitmask(Entity entity);
+
+    private:
+        void markDestroyed(Entity entity);
     private:
         EntityID m_entityCounter;
-
+        friend class Scene;
         ComponentManager& m_componentManager;
         std::vector<IContainer::Ptr> m_componentContainers;
         std::unordered_map<EntityID, Bitmask> m_componentMasks;
+
+        std::vector<bool> m_destroyFlags;
 
         // allows to get Container of special type
         template<typename T>

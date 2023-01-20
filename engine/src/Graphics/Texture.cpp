@@ -59,6 +59,8 @@ namespace robot2D{
     }
 
     void Texture::setupGL() {
+        if(m_texture != 20000)
+            glDeleteTextures(1, &m_texture);
 #ifdef ROBOT2D_MACOS
         glGenTextures(1, &m_texture);
         glBindTexture(GL_TEXTURE_2D, m_texture);

@@ -61,7 +61,7 @@ namespace robot2D {
         void bindBufferData(void* bufferData);
         void setupGL();
     private:
-        unsigned int m_texture;
+        unsigned int m_texture = 20000;
         std::vector<unsigned char> m_data;
         Image m_image;
         int m_texParam = 0;

@@ -65,6 +65,7 @@ namespace robot2D::ecs {
 
         std::vector<Entity> m_addPending;
         std::vector<Entity> m_deletePending;
+        std::vector<Entity> m_deletePendingBuffer;
         std::vector<robot2D::Drawable*> m_drawables;
 
         bool m_useSystems;
