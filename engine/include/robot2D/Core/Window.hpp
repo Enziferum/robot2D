@@ -109,6 +109,7 @@ namespace robot2D {
 
         void setResizable(const bool& flag);
         void setMaximazed(const bool& flag);
+        void setVsync(bool flag);
         // Window manipulate options //
 
 

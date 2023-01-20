@@ -57,6 +57,7 @@ namespace robot2D::ecs {
 
         friend class SystemManager;
         virtual void onEntityAdded(Entity entity);
+        virtual void onEntityRemoved(Entity entity);
 
         void setScene(Scene*);
         Scene* getScene();

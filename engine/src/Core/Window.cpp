@@ -168,4 +168,8 @@ namespace robot2D {
         return m_windowImpl -> getJoystickGamepadInput(joystickType, gamepadInput);
     }
 
+    void Window::setVsync(bool flag) {
+        m_windowImpl -> setVsync(flag);
+    }
+
 }

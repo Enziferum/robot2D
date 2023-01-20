@@ -38,6 +38,8 @@ namespace robot2D::ecs {
 
     Entity EntityManager::createEntity() {
         Entity entity{this, m_entityCounter};
+        if(m_entityCounter >= m_destroyFlags.size())
+            m_destroyFlags.resize(m_destroyFlags.size() + 1000);
         m_entityCounter++;
         return entity;
     }
@@ -57,6 +59,14 @@ namespace robot2D::ecs {
 
         bool maskDeleted = static_cast<bool>(m_componentMasks.erase(entity.getIndex()));
         return maskDeleted;
+    }
+
+    bool EntityManager::entityDestroyed(Entity entity) {
+        return m_destroyFlags[entity.m_id];
+    }
+
+    void EntityManager::markDestroyed(Entity entity) {
+        m_destroyFlags[entity.m_id] = true;
     }
 
 }

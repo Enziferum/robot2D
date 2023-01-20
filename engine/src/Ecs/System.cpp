@@ -69,6 +69,7 @@ namespace robot2D::ecs {
 
         if(it == m_entities.end())
             return false;
+        onEntityRemoved(*it);
         m_entities.erase(it);
         return true;
     }
@@ -92,6 +93,10 @@ namespace robot2D::ecs {
             m_mask.turnOnBit(index);
         }
         m_pendingTypes.clear();
+    }
+
+    void System::onEntityRemoved(Entity entity) {
+        (void)entity;
     }
 
 
