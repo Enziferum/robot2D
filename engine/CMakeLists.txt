@@ -45,7 +45,7 @@ set(ENGINE_SRC
         ${INCLROOT}/Graphics/Shader.hpp
         ${INCLROOT}/Graphics/Sprite.hpp
         ${INCLROOT}/Graphics/Texture.hpp
-        ${INCLROOT}/Graphics/TextureAtlas.hpp
+        ${INCLROOT}/Graphics/ImageAtlas.hpp
         ${INCLROOT}/Graphics/Transform.hpp
         ${INCLROOT}/Graphics/Transformable.hpp
         ${INCLROOT}/Graphics/View.hpp
@@ -101,7 +101,7 @@ set(ENGINE_SRC ${ENGINE_SRC}
         ${SRCROOT}/Graphics/Transformable.cpp
         ${SRCROOT}/Graphics/RenderImpl.cpp
         ${SRCROOT}/Graphics/View.cpp
-        ${SRCROOT}/Graphics/TextureAtlas.cpp
+        ${SRCROOT}/Graphics/ImageAtlas.cpp
         ${SRCROOT}/Graphics/Buffer.cpp
         ${SRCROOT}/Graphics/VertexArray.cpp
         ${SRCROOT}/Graphics/FrameBuffer.cpp

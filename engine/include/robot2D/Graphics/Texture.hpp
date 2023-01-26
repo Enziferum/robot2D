@@ -57,6 +57,9 @@ namespace robot2D {
         void bind(uint32_t slot);
 
         bool save(const std::string& path);
+
+        const Image& getImage() const { return m_image; }
+        Image& getImage() { return m_image; }
     private:
         void bindBufferData(void* bufferData);
         void setupGL();

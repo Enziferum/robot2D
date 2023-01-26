@@ -185,13 +185,13 @@ namespace robot2D {
             auto openGLVertexSource = openGLVersion + OpenGL::vertexSource;
             auto openGLFragmentSource = openGLVersion + OpenGL::fragmentSource;
 
-            if(!m_quadShader.createShader(shaderType::vertex,
+            if(!m_quadShader.createShader(ShaderType::Vertex,
                                           openGLVertexSource, false)) {
                 std::string reason = "Can't load Quad Vertex Shader";
                 throw std::runtime_error(reason);
             }
 
-            if(!m_quadShader.createShader(shaderType::fragment,
+            if(!m_quadShader.createShader(ShaderType::Fragment,
                                           openGLFragmentSource, false)) {
                 std::string reason = "Can't load Quad Fragment Shader";
                 throw std::runtime_error(reason);
@@ -207,20 +207,20 @@ namespace robot2D {
                 samples[it] = it;
 
             m_quadShader.use();
-            m_quadShader.setArray(m_shaderKeys[ShaderKey::TextureSamples].c_str(),
+            m_quadShader.setArray(m_shaderKeys[ShaderKey::TextureSamples],
                                   samples, maxTextureSlots);
 
             for(int it = 1; it < maxTextureSlots; ++it)
                 m_renderBuffer.textureSlots[it] = 0;
 
             renderLayer.m_view = m_default;
-            m_quadShader.setMatrix(m_shaderKeys[ShaderKey::Projection].c_str(),
+            m_quadShader.setMatrix(m_shaderKeys[ShaderKey::Projection],
                     renderLayer.m_view.getTransform().get_matrix());
             if(m_dimensionType == RenderDimensionType::TwoD)
-                m_quadShader.set(m_shaderKeys[ShaderKey::is3DRender].c_str(), false);
+                m_quadShader.set(m_shaderKeys[ShaderKey::is3DRender], false);
             else
-                m_quadShader.set(m_shaderKeys[ShaderKey::is3DRender].c_str(), true);
-            m_quadShader.setMatrix(m_shaderKeys[ShaderKey::View].c_str(), Matrix3D{}.getRaw());
+                m_quadShader.set(m_shaderKeys[ShaderKey::is3DRender], true);
+            m_quadShader.setMatrix(m_shaderKeys[ShaderKey::View], Matrix3D{}.getRaw());
             m_quadShader.unUse();
 
             m_renderLayers.emplace_back(std::move(renderLayer));
@@ -268,7 +268,7 @@ namespace robot2D {
             auto& m_quadShader = m_renderLayers[layerID].m_quadShader;
 
             m_quadShader.use();
-            m_quadShader.setMatrix(m_shaderKeys[ShaderKey::Projection].c_str(), m_view.getTransform().get_matrix());
+            m_quadShader.setMatrix(m_shaderKeys[ShaderKey::Projection], m_view.getTransform().get_matrix());
             m_quadShader.unUse();
         }
 
@@ -277,9 +277,9 @@ namespace robot2D {
                                                                    "Mode to 3D / Both Mode");
             auto& m_quadShader = m_renderLayers[defaultLayerID].m_quadShader;
             m_quadShader.use();
-            m_quadShader.setMatrix(m_shaderKeys[ShaderKey::Projection].c_str(), projection.getRaw());
-            m_quadShader.setMatrix(m_shaderKeys[ShaderKey::View].c_str(), view.getRaw());
-            m_quadShader.set(m_shaderKeys[ShaderKey::is3DRender].c_str(), true);
+            m_quadShader.setMatrix(m_shaderKeys[ShaderKey::Projection], projection.getRaw());
+            m_quadShader.setMatrix(m_shaderKeys[ShaderKey::View], view.getRaw());
+            m_quadShader.set(m_shaderKeys[ShaderKey::is3DRender], true);
             m_quadShader.unUse();
         }
 
@@ -335,14 +335,14 @@ namespace robot2D {
             auto& m_renderBuffer = m_renderLayers[layerID].m_renderBuffer;
             auto& m_quadShader = m_renderLayers[layerID].m_quadShader;
 
-            for(auto it = 1; it < static_cast<int>(m_renderBuffer.textureSlotIndex); ++it) {
+            for(auto i = 1; i < static_cast<int>(m_renderBuffer.textureSlotIndex); ++i) {
                 if(m_renderApi == RenderApi::OpenGL3_3) {
-                    glActiveTexture(GL_TEXTURE0 + it);
-                    glBindTexture(GL_TEXTURE_2D, m_renderBuffer.textureSlots[it]);
+                    glActiveTexture(GL_TEXTURE0 + i);
+                    glBindTexture(GL_TEXTURE_2D, m_renderBuffer.textureSlots[i]);
                 }
                 else if(m_renderApi == RenderApi::OpenGL4_5) {
                 #if !defined(ROBOT2D_MACOS)
-                    glBindTextureUnit(it, m_renderBuffer.textureSlots[it]);
+                    glBindTextureUnit(i, m_renderBuffer.textureSlots[i]);
                 #endif
                 }
             }
@@ -378,43 +378,43 @@ namespace robot2D {
                 const auto& transform = states.transform3D;
 
                 quadVertexData = {
-                        {
-                                (transform * m_renderBuffer.quadVertexPositions[0]),
-                                textureCoords[0]
-                        },
-                        {
-                                (transform * m_renderBuffer.quadVertexPositions[1]),
-                                textureCoords[1]
-                        },
-                        {
-                                (transform * m_renderBuffer.quadVertexPositions[2]),
-                                textureCoords[2]
-                        },
-                        {
-                                (transform * m_renderBuffer.quadVertexPositions[3]),
-                                textureCoords[3]
-                        }
+                    {
+                        (transform * m_renderBuffer.quadVertexPositions[0]),
+                        textureCoords[0]
+                    },
+                    {
+                        (transform * m_renderBuffer.quadVertexPositions[1]),
+                        textureCoords[1]
+                    },
+                    {
+                        (transform * m_renderBuffer.quadVertexPositions[2]),
+                        textureCoords[2]
+                    },
+                    {
+                        (transform * m_renderBuffer.quadVertexPositions[3]),
+                        textureCoords[3]
+                    }
                 };
             }
             else {
                 const auto& transform = states.transform;
                 quadVertexData = {
-                        {
-                                (transform * m_renderBuffer.quadVertexPositions[0].asVec2<float>()),
-                                textureCoords[0]
-                        },
-                        {
-                                (transform * m_renderBuffer.quadVertexPositions[1].asVec2<float>()),
-                                textureCoords[1]
-                        },
-                        {
-                                (transform * m_renderBuffer.quadVertexPositions[2].asVec2<float>()),
-                                textureCoords[2]
-                        },
-                        {
-                                (transform * m_renderBuffer.quadVertexPositions[3].asVec2<float>()),
-                                textureCoords[3]
-                        }
+                    {
+                        (transform * m_renderBuffer.quadVertexPositions[0].asVec2<float>()),
+                        textureCoords[0]
+                    },
+                    {
+                        (transform * m_renderBuffer.quadVertexPositions[1].asVec2<float>()),
+                        textureCoords[1]
+                    },
+                    {
+                        (transform * m_renderBuffer.quadVertexPositions[2].asVec2<float>()),
+                        textureCoords[2]
+                    },
+                    {
+                        (transform * m_renderBuffer.quadVertexPositions[3].asVec2<float>()),
+                        textureCoords[3]
+                    }
                 };
             }
 
@@ -446,11 +446,11 @@ namespace robot2D {
 
             float textureIndex = 0.F;
             if(states.texture) {
-                for (uint32_t it = 1; it < m_renderBuffer.textureSlotIndex; it++)
+                for (uint32_t i = 1; i < m_renderBuffer.textureSlotIndex; i++)
                 {
-                    if (m_renderBuffer.textureSlots[it] == states.texture -> getID())
+                    if (m_renderBuffer.textureSlots[i] == states.texture -> getID())
                     {
-                        textureIndex = (float)it;
+                        textureIndex = static_cast<float>(i);
                         break;
                     }
                 }
@@ -608,8 +608,9 @@ namespace robot2D {
                     break;
             }
 
-            GLsizei drawIndexCount = states.renderInfo.indexCount ? static_cast<GLsizei>(states.renderInfo.indexCount)
-                                                                  : static_cast<GLsizei>(vertexArray -> getIndexBuffer() -> getSize() / 4);
+            GLsizei drawIndexCount = states.renderInfo.indexCount ?
+                    static_cast<GLsizei>(states.renderInfo.indexCount):
+                    static_cast<GLsizei>(vertexArray -> getIndexBuffer() -> getSize() / 4);
 
             glDrawElements(drawMode,
                            drawIndexCount,
