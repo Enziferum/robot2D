@@ -17,8 +17,8 @@ set(CMAKE_CXX_STANDARD 17)
 # Some default variables which the user may change
 option(CMAKE_BUILD_TYPE "Choose the type of build (Debug or Release)" Debug)
 option(BUILD_SHARED_LIBS "Whether to build shared libraries" OFF)
-option(BUILD_SANDBOX "Build Sandbox Submodule?" ON)
-option(BUILD_EDITOR "Build Editor Submodule?" ON)
+option(BUILD_SANDBOX "Build Sandbox Submodule?" OFF)
+option(BUILD_EDITOR "Build Editor Submodule?" OFF)
 
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
