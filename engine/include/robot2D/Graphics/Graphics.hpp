@@ -30,7 +30,7 @@ source distribution.
 #include "RenderWindow.hpp"
 #include "Shader.hpp"
 #include "Texture.hpp"
-#include "TextureAtlas.hpp"
+#include "ImageAtlas.hpp"
 #include "Transform.hpp"
 #include "Transformable.hpp"
 #include "View.hpp"

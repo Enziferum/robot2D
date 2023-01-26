@@ -29,7 +29,6 @@ namespace robot2D {
 
         void run(Application::Ptr application,
                  EngineConfiguration&& engineConfiguration);
-
     private:
         void setup();
     private:

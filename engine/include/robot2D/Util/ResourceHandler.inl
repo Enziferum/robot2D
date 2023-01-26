@@ -22,13 +22,6 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-
-template<typename T, typename ID>
-ResourceHandler<T, ID>::ResourceHandler() {
-
-}
-
-
 template<typename T, typename ID>
 template<typename ... Args>
 bool ResourceHandler<T, ID>::loadFromFile(const ID &idx, Args&& ... args) {

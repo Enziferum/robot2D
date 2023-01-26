@@ -18,39 +18,32 @@ and must not be misrepresented as being the original software.
 3. This notice may not be removed or altered from any
 source distribution.
 *********************************************************************/
-#include <robot2D/Graphics/TextureAtlas.hpp>
 
+#pragma once
+#include <robot2D/Config.hpp>
+#include "Rect.hpp"
+#include "Image.hpp"
 
 namespace robot2D {
+    class ROBOT2D_EXPORT_API ImageAtlas {
+    public:
+        ImageAtlas() = default;
+        ~ImageAtlas() = default;
 
-    TextureAtlas::TextureAtlas(): m_texture(), m_ItemSize(), m_itemsCount(0) {
+        bool loadFromFile(const std::string& path, vec2i itemSize);
+        bool createAtlas(const std::vector<robot2D::Image>& images,
+                         robot2D::vec2i itemSize,
+                         int itemsPerRow = 0);
 
-    }
+        bool saveAtlas(std::string path);
 
-    bool TextureAtlas::loadFromFile(const std::string& file, const vec2u& itemSize, const vec2f& offset) {
-        (void)offset;
-        if(!m_texture.loadFromFile(file))
-            return false;
-        m_ItemSize = itemSize;
-        auto texSize = m_texture.getSize();
+        IntRect getRect(int row, int column) const noexcept;
+        IntRect getRect(vec2i index) const noexcept;
 
-        return true;
-    }
-
-    const Texture& TextureAtlas::getTexture() const {
-        return m_texture;
-    }
-
-    const robot2D::vec2u& TextureAtlas::getItemSize() const {
-        return m_ItemSize;
-    }
-
-    robot2D::FloatRect TextureAtlas::getItemFrame(const vec2u& index) const {
-        (void)index;
-        return robot2D::FloatRect{};
-    }
-
-    const size_t& TextureAtlas::getItemsCount() const {
-        return m_itemsCount;
-    }
+        vec2i rectSize() const noexcept;
+        const Image& getImage() const;
+    private:
+        vec2i m_rectSize;
+        robot2D::Image m_atlasImage;
+    };
 }

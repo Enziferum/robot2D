@@ -23,7 +23,7 @@ source distribution.
 #include <robot2D/Graphics/Texture.hpp>
 #include <robot2D/Util/Logger.hpp>
 
-namespace robot2D{
+namespace robot2D {
     GLenum convertColorType(const ImageColorFormat& format) {
         switch(format) {
             case ImageColorFormat::RED:
@@ -106,7 +106,6 @@ namespace robot2D{
         bindBufferData(m_image.getBuffer());
     }
 
-
     void Texture::create(const Image& image) {
         m_image = image;
         setupGL();
@@ -121,7 +120,7 @@ namespace robot2D{
         return m_image.getBuffer().data();
     }
 
-    unsigned char* Texture::getPixels(){
+    unsigned char* Texture::getPixels() {
         return m_image.getBuffer();
     }
 
