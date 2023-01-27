@@ -20,7 +20,7 @@ source distribution.
 *********************************************************************/
 
 #include <editor/UIManager.hpp>
-#include <editor/ScenePanel.hpp>
+#include <editor/panels/ScenePanel.hpp>
 
 namespace editor {
     IUIManager::~IUIManager() noexcept {}

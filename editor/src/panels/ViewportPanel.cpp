@@ -25,7 +25,7 @@ source distribution.
 #include <imgui/imgui.h>
 #include <robot2D/Extra/Api.hpp>
 
-#include <editor/ViewportPanel.hpp>
+#include <editor/panels/ViewportPanel.hpp>
 #include <editor/Messages.hpp>
 #include <editor/Components.hpp>
 
@@ -130,7 +130,7 @@ namespace editor {
                 },
                 {}
         };
-        m_windowOptions.flagsMask = ImGuiWindowFlags_NoTitleBar  | ImGuiWindowFlags_NoScrollbar;
+        m_windowOptions.flagsMask = ImGuiWindowFlags_NoScrollbar;
         m_windowOptions.name = "##Viewport";
     }
 

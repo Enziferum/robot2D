@@ -25,14 +25,14 @@ source distribution.
 #include <robot2D/Core/MessageBus.hpp>
 #include <robot2D/Extra/Gui.hpp>
 
-#include "Editor.hpp"
+#include "ApplicationLogic.hpp"
 #include "ProjectInspector.hpp"
 #include "ProjectManager.hpp"
-#include "EditorCache.hpp"
-#include "Configuration.hpp"
 #include "MessageDispather.hpp"
-#include "Messages.hpp"
+#include "Editor.hpp"
+#include "EditorLogic.hpp"
 #include "TaskQueue.hpp"
+#include "EventBinder.hpp"
 
 namespace editor {
 
@@ -53,29 +53,17 @@ namespace editor {
         void guiUpdate(float dt)override;
         void render() override;
     private:
-        /// Project managing api ///
-        void createProject(const ProjectMessage& project);
-        void loadProject(const ProjectMessage& project);
-        void deleteProject(const ProjectMessage& projectDescription);
-    private:
-        enum class State {
-            ProjectInspector,
-            Editor
-        };
-    private:
         ApplicationConfiguration m_appConfiguration;
+        MessageDispatcher m_messageDispatcher;
+        ApplicationLogic m_logic;
 
         robot2D::MessageBus m_messageBus;
         TaskQueue m_taskQueue;
         ImGui::Gui m_guiWrapper;
         Editor m_editor;
-        State m_state;
-
-        Configuration m_configuration;
-        EditorCache m_editorCache;
-        ProjectManager m_projectManager;
+        EditorLogic m_editorLogic;
         ProjectInspector m_projectInspector;
-        MessageDispatcher m_messageDispatcher;
+        EventBinder m_eventBinder;
     };
 }
 

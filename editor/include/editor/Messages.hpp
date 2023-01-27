@@ -34,11 +34,16 @@ namespace editor {
         OpenProject,
         OpenScene,
         SaveScene,
-        EntitySelected
+        EntitySelected,
+        ShowInspector
     };
 
     struct ProjectMessage {
         ProjectDescription description;
+    };
+
+    struct ShowInspectorMessage {
+        bool showAlways;
     };
 
     struct MenuProjectMessage {

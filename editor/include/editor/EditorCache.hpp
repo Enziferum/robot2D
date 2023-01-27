@@ -41,7 +41,7 @@ namespace editor {
         bool addProject(const ProjectDescription& description);
         bool removeProject(const ProjectDescription& description);
         bool loadProject(const ProjectDescription& description);
-        std::vector<ProjectDescription>& getProjects();
+        const std::vector<ProjectDescription>& getProjects() const;
 
         const ProjectDescription& getCurrentProject() const;
     private:
