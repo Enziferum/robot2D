@@ -70,6 +70,8 @@ namespace robot2D::ecs {
 
         friend bool operator < (const Entity& l, const Entity& r);
 
+        bool destroyed() const;
+
         operator bool() {
             return m_entityManager != nullptr && m_id != INT_MAX;
         }

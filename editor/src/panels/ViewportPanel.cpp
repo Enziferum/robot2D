@@ -25,7 +25,7 @@ source distribution.
 #include <imgui/imgui.h>
 #include <robot2D/Extra/Api.hpp>
 
-#include <editor/ViewportPanel.hpp>
+#include <editor/panels/ViewportPanel.hpp>
 #include <editor/Messages.hpp>
 #include <editor/Components.hpp>
 
@@ -130,7 +130,7 @@ namespace editor {
                 },
                 {}
         };
-        m_windowOptions.flagsMask = ImGuiWindowFlags_NoTitleBar  | ImGuiWindowFlags_NoScrollbar;
+        m_windowOptions.flagsMask = ImGuiWindowFlags_NoScrollbar;
         m_windowOptions.name = "##Viewport";
     }
 
@@ -139,6 +139,9 @@ namespace editor {
         auto[mx, my] = ImGui::GetMousePos();
         mx -= m_ViewportBounds[0].x;
         my -= m_ViewportBounds[0].y;
+
+
+
         robot2D::vec2f viewportSize = m_ViewportBounds[1] - m_ViewportBounds[0];
         my = viewportSize.y - my;
         int mouseX = (int)mx;

@@ -19,60 +19,38 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include <fstream>
-#include <filesystem>
-#include <yaml-cpp/yaml.h>
-
 #include <editor/Application.hpp>
 #include <editor/EditorStyles.hpp>
-#include <editor/ProjectSerializer.hpp>
 #include <editor/Utils.hpp>
 #include <editor/EventBinder.hpp>
-#include "ImGuizmo.h"
+#include "panels/ImGuizmo.h"
 
 namespace editor {
-    //make autotranslator son of bitches from middle east
     Application::Application():
             robot2D::Application(),
             m_appConfiguration{},
+            m_messageDispatcher{},
+            m_logic{m_messageDispatcher},
             m_taskQueue{},
             m_guiWrapper{},
             m_editor{m_messageBus, m_taskQueue, m_guiWrapper},
-            m_state{State::ProjectInspector},
-            m_configuration{},
-            m_editorCache{m_configuration},
-            m_projectManager{m_configuration},
-            m_projectInspector{m_editorCache, m_messageBus}
-             {}
+            m_editorLogic(m_messageBus),
+            m_projectInspector{m_messageBus}
+            {}
 
     void Application::setup() {
-
         {
             robot2D::Image iconImage;
             iconImage.loadFromFile(m_appConfiguration.logoPath);
             m_window -> setIcon(std::move(iconImage));
         }
 
+        m_editorLogic.setIEditor(&m_editor);
+        m_logic.setup(&m_editorLogic);
         m_guiWrapper.init(*m_window);
-        m_editor.setup(m_window);
+        m_editor.setup(m_window, &m_editorLogic);
 
-        auto [status, result] = m_configuration.getValue(ConfigurationKey::CachePath);
-
-        if(!m_editorCache.parseCache(result)) {
-            if(m_editorCache.getError() == EditorCacheError::NoCacheFile){}
-            else {
-                RB_EDITOR_ERROR("Error to parse Editor Cache, description := {0}",
-                                errorToString(m_editorCache.getError()));
-                return;
-            }
-        }
-
-        if(m_editorCache.isShowInspector())
-            m_state = State::ProjectInspector;
-        else
-            m_state = State::Editor;
-
-        if(m_state == State::ProjectInspector) {
+        if(m_logic.getState() == AppState::ProjectInspector) {
             auto windowSize = m_window -> getSize();
             auto monitorSize = m_window -> getMonitorSize();
             auto centerPoint = getCenterPoint(windowSize, monitorSize);
@@ -82,57 +60,34 @@ namespace editor {
             m_window -> setSize(m_appConfiguration.inspectorSize);
 
             applyStyle(EditorStyle::GoldBlack);
-
-
-            m_messageDispatcher.onMessage<ProjectMessage>(MessageID::CreateProject,
-                                                          BIND_FUNCTION_FN(createProject));
-            m_messageDispatcher.onMessage<ProjectMessage>(MessageID::LoadProject,
-                                                          BIND_FUNCTION_FN(loadProject));
-            m_messageDispatcher.onMessage<ProjectMessage>(MessageID::DeleteProject,
-                                                          BIND_FUNCTION_FN(deleteProject));
-
-            m_projectInspector.setup(m_window);
-        } else {
-            const auto& projectDescription = m_editorCache.getCurrentProject();
-            if(projectDescription.empty())
-                RB_EDITOR_WARN("projectDescription.empty()");
-
-            if(!m_projectManager.load(projectDescription)) {
-                RB_EDITOR_ERROR("ProjectManager can't load Project := {0}",
-                                errorToString(m_projectManager.getError()));
-                return;
-            }
-            auto project = m_projectManager.getCurrentProject();
-            m_editor.loadProject(project);
+            m_projectInspector.setup(m_window, m_logic.getCache().getProjects());
         }
-    }
 
-    void Application::handleEvents(const robot2D::Event& event) {
-        EventBinder eventBinder{event};
-
-        eventBinder.Dispatch(robot2D::Event::Resized,
-                                 [this](const robot2D::Event& evt) {
+        m_eventBinder.bindEvent(robot2D::Event::Resized, [this](const robot2D::Event& evt) {
             RB_EDITOR_INFO("New Size = {0} and {1}", evt.size.widht, evt.size.heigth);
             m_window -> resize({static_cast<int>(evt.size.widht),
                                 static_cast<int>(evt.size.heigth)});
             m_window -> setView({{0, 0}, {evt.size.widht, evt.size.heigth}});
         });
 
-        eventBinder.Dispatch(robot2D::Event::KeyPressed,
-                                 [this](const robot2D::Event& evt) {
+        m_eventBinder.bindEvent(robot2D::Event::KeyPressed, [this](const robot2D::Event& evt) {
             if(evt.key.code == robot2D::Key::ESCAPE)
                 m_running = false;
         });
+    }
+
+    void Application::handleEvents(const robot2D::Event& event) {
+        m_eventBinder.handleEvents(event);
 
         m_guiWrapper.handleEvents(event);
-        if(m_state == State::Editor)
+        if(m_logic.getState() == AppState::Editor)
             m_editor.handleEvents(event);
     }
 
     void Application::handleMessages() {
         robot2D::Message message{};
         while (m_messageBus.pollMessages(message)) {
-            if(m_state == State::Editor)
+            if(m_logic.getState() == AppState::Editor)
                 m_editor.handleMessages(message);
 
             m_messageDispatcher.process(message);
@@ -141,7 +96,7 @@ namespace editor {
 
     void Application::update(float dt) {
         m_taskQueue.process();
-        if(m_state == State::Editor)
+        if(m_logic.getState() == AppState::Editor)
             m_editor.update(dt);
     }
 
@@ -152,67 +107,11 @@ namespace editor {
 
     void Application::render() {
         m_window -> clear();
-        if(m_state == State::Editor)
+        if(m_logic.getState() == AppState::Editor)
             m_editor.render();
-        else if(m_state == State::ProjectInspector)
+        else if(m_logic.getState() == AppState::ProjectInspector)
             m_projectInspector.render();
         m_guiWrapper.render();
         m_window -> display();
     }
-
-
-    void Application::createProject(const ProjectMessage& projectDescription) {
-        if(!m_editorCache.addProject(projectDescription.description)) {
-            RB_EDITOR_ERROR("Can't add Project to Cache := {0}",
-                            errorToString(m_editorCache.getError()));
-            return;
-        }
-
-        if(!m_projectManager.add(projectDescription.description)) {
-            RB_EDITOR_ERROR("Can't create Project := {0}",
-                            errorToString(m_projectManager.getError()));
-            return;
-        }
-
-        auto project = m_projectManager.getCurrentProject();
-
-        m_editor.createProject(project);
-        m_window -> setResizable(true);
-        m_state = State::Editor;
-    }
-
-    void Application::deleteProject(const ProjectMessage& projectDescription) {
-
-        if(!m_editorCache.removeProject(projectDescription.description)) {
-            RB_EDITOR_ERROR("EditorCache can't delete Project := {0}",
-                            errorToString(m_editorCache.getError()));
-            return;
-        }
-
-        if(!m_projectManager.remove(projectDescription.description)) {
-            RB_EDITOR_ERROR("ProjectManager can't delete Project := {0}",
-                            errorToString(m_projectManager.getError()));
-            return;
-        }
-    }
-
-    void Application::loadProject(const ProjectMessage& projectDescription) {
-        if(!m_editorCache.loadProject(projectDescription.description)) {
-            RB_EDITOR_ERROR("Cache can't load Project := {0}",
-                            errorToString(m_editorCache.getError()));
-            return;
-        }
-
-        if(!m_projectManager.load(projectDescription.description)) {
-            RB_EDITOR_ERROR("ProjectManager can't load Project := {0}",
-                            errorToString(m_projectManager.getError()));
-            return;
-        }
-
-        m_state = State::Editor;
-        m_window -> setResizable(true);
-        m_editor.loadProject(m_projectManager.getCurrentProject());
-    }
-
-
 }

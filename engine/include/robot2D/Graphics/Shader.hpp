@@ -26,10 +26,10 @@ source distribution.
 
 namespace robot2D {
     /// Specify Shader Type to Render Pipeline
-    enum class shaderType {
-        vertex,
-        fragment,
-        geometry
+    enum class ShaderType {
+        Vertex,
+        Fragment,
+        Geometry
     };
 
     /// \brief Specify GPU Pipeline process.
@@ -43,17 +43,17 @@ namespace robot2D {
 
         /// \brief Create specific shader.
         /// \details
-        bool createShader(shaderType shader_type, const std::string& source, bool is_path);
+        bool createShader(ShaderType shaderType, const std::string& source, bool is_path);
 
         /// \brief Set to shader program variable by name and data
         template<typename T>
-        void set(const char* name, const T value) const;
+        void set(const std::string& param, const T value) const;
 
-        void setMatrix(const char* name, float* value) const;
+        void setMatrix(const std::string& param, const float* value) const;
 
         /// \brief Set to shader program variable by name and data as array
         template<typename T>
-        void setArray(const char* name, const T* value, const size_t& size) const;
+        void setArray(const std::string& param, const T* value, const size_t& size) const;
 
         /// You must directly to enable
         void use() const;
@@ -66,10 +66,9 @@ namespace robot2D {
     private:
 
         /// Preparing process
-        int setupShader(shaderType shader_type, const char* path, bool is_file = true);
-
+        int setupShader(ShaderType shaderType, const std::string& source, bool is_file = true);
     private:
-        int shaderProgram;
+        int m_shaderProgram;
         int success;
         char infoLog[512];
     };

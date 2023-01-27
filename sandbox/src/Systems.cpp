@@ -1,6 +1,7 @@
 #include <sandbox/Systems.hpp>
 #include <sandbox/Components.hpp>
 #include <robot2D/Ecs/EntityManager.hpp>
+#include <robot2D/Ecs/Scene.hpp>
 
 RenderSystem::RenderSystem(robot2D::MessageBus& messageBus):
         System(messageBus, typeid(RenderSystem)) {
@@ -16,7 +17,10 @@ void RenderSystem::draw(robot2D::RenderTarget& target, robot2D::RenderStates sta
 
         auto size = sprite.getTexture().getSize();
         auto t = transform.getTransform();
-        t.scale(size.x, size.y);
+        auto tSize = transform.getSize();
+        if(tSize == robot2D::vec2f{})
+            tSize = size.as<float>();
+        t.scale(tSize);
 
         states.transform = t;
         states.texture = &sprite.getTexture();
@@ -35,8 +39,12 @@ DemoMoveSystem::DemoMoveSystem(robot2D::MessageBus& messageBus):
 }
 
 void DemoMoveSystem::update(float dt) {
-    for(auto& it: m_entities) {
-        auto& transform = it.getComponent<TransformComponent>();
+    for(auto& ent: m_entities) {
+        auto& transform = ent.getComponent<TransformComponent>();
         transform.move(robot2D::vec2f(m_speed * dt, 0.f));
+
+        if(transform.getPosition().x >= 150.F) {
+            getScene() -> removeEntity(ent);
+        }
     }
 }

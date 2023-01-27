@@ -30,7 +30,7 @@ endif()
 set(CMAKE_CXX_STANDARD 17)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
-file(GLOB SRC src/*.cpp)
+file(GLOB_RECURSE SRC src/*.cpp)
 
 # must be preinstall
 add_subdirectory(ext/robot2D-imgui)

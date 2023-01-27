@@ -22,18 +22,6 @@ source distribution.
 #include <vector>
 #include "Scene.hpp"
 
-class Layer: public robot2D::Drawable {
-public:
-    Layer();
-    ~Layer();
-
-    void draw(const robot2D::Drawable& drawable,
-              const robot2D::RenderStates& states = robot2D::RenderStates::Default);
-    void draw(robot2D::RenderTarget& target, robot2D::RenderStates states) const override;
-private:
-};
-
-
 class LayerScene final: public Scene {
 public:
     LayerScene(robot2D::RenderWindow& window);
@@ -46,5 +34,5 @@ public:
     void render() override;
 
 private:
-    std::vector<Layer> m_layers;
+
 };

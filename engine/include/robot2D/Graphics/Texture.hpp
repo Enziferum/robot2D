@@ -57,11 +57,14 @@ namespace robot2D {
         void bind(uint32_t slot);
 
         bool save(const std::string& path);
+
+        const Image& getImage() const { return m_image; }
+        Image& getImage() { return m_image; }
     private:
         void bindBufferData(void* bufferData);
         void setupGL();
     private:
-        unsigned int m_texture;
+        unsigned int m_texture = 20000;
         std::vector<unsigned char> m_data;
         Image m_image;
         int m_texParam = 0;

@@ -54,6 +54,10 @@ namespace robot2D {
             virtual void display() = 0;
             virtual bool isMousePressed(const Mouse& button) = 0;
             virtual bool isKeyboardPressed(const Key& key) = 0;
+            virtual bool isJoystickAvailable(const JoystickType& joystickType) = 0;
+            virtual bool JoystickIsGamepad(const JoystickType& joystickType) = 0;
+            virtual bool getJoystickGamepadInput(const JoystickType& joystickType,
+                                            JoystickGamepadInput& gamepadInput) = 0;
 
             virtual void setSize(const robot2D::vec2u& size) = 0;
 
@@ -69,6 +73,7 @@ namespace robot2D {
 
             virtual void setMousePos(const vec2f& pos) = 0;
             virtual vec2f getMousePos() const = 0;
+            virtual void setVsync(bool flag) = 0;
         };
     }
 }

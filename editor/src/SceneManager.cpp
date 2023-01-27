@@ -31,11 +31,10 @@ namespace editor {
 
     SceneManager::SceneManager(robot2D::MessageBus& messageBus):
             m_messageBus{messageBus},
-            m_activeScene{nullptr},
             m_associatedProject{nullptr},
-            m_error{SceneManagerError::None} {
-
-    }
+            m_activeScene{nullptr},
+            m_error{SceneManagerError::None}
+            {}
 
     bool SceneManager::add(Project::Ptr&& project) {
         Scene::Ptr scene = std::make_shared<Scene>(m_messageBus);
@@ -66,9 +65,9 @@ namespace editor {
         }
         m_activeScene = scene;
         auto path = project -> getPath();
-//        auto appendPath = combinePath(scenePath, project->getStartScene());
-//        auto scenePath = combinePath(path, appendPath);
-        m_activeScene -> setPath("C:\\Users\\Necromant\\Documents\\robot2DProjects\\Sample2\\assets\\scenes\\Scene.scene");
+        auto appendPath = combinePath(scenePath, project->getStartScene());
+        auto scenePath = combinePath(path, appendPath);
+        m_activeScene -> setPath(scenePath);
         SceneSerializer serializer(m_activeScene);
         if(!serializer.deserialize(m_activeScene -> getPath())) {
             m_error = SceneManagerError::SceneDeserialize;

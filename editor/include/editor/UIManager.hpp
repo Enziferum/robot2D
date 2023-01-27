@@ -26,7 +26,7 @@ source distribution.
 
 #include <robot2D/Ecs/Entity.hpp>
 #include "robot2D/Extra/Gui.hpp"
-#include "IPanel.hpp"
+#include "panels/IPanel.hpp"
 
 
 namespace editor {
@@ -83,7 +83,4 @@ namespace editor {
 
         return *(static_cast<T*>(found -> get()));
     }
-
-
-
 }

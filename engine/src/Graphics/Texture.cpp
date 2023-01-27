@@ -23,7 +23,7 @@ source distribution.
 #include <robot2D/Graphics/Texture.hpp>
 #include <robot2D/Util/Logger.hpp>
 
-namespace robot2D{
+namespace robot2D {
     GLenum convertColorType(const ImageColorFormat& format) {
         switch(format) {
             case ImageColorFormat::RED:
@@ -36,7 +36,7 @@ namespace robot2D{
         return GL_RGB;
     }
 
-    Texture::Texture(){}
+    Texture::Texture() {}
 
     Texture::~Texture() {
         glDeleteTextures(1, &m_texture);
@@ -59,6 +59,8 @@ namespace robot2D{
     }
 
     void Texture::setupGL() {
+        if(m_texture != 20000)
+            glDeleteTextures(1, &m_texture);
 #ifdef ROBOT2D_MACOS
         glGenTextures(1, &m_texture);
         glBindTexture(GL_TEXTURE_2D, m_texture);
@@ -104,7 +106,6 @@ namespace robot2D{
         bindBufferData(m_image.getBuffer());
     }
 
-
     void Texture::create(const Image& image) {
         m_image = image;
         setupGL();
@@ -119,7 +120,7 @@ namespace robot2D{
         return m_image.getBuffer().data();
     }
 
-    unsigned char* Texture::getPixels(){
+    unsigned char* Texture::getPixels() {
         return m_image.getBuffer();
     }
 

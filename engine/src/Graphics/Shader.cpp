@@ -25,130 +25,140 @@ source distribution.
 
 #include <robot2D/Graphics/GL.hpp>
 #include <robot2D/Graphics/Shader.hpp>
-#include <robot2D/Util/Logger.hpp>
 #include <robot2D/Graphics/Color.hpp>
+#include <robot2D/Graphics/Transform.hpp>
+
+#include <robot2D/Util/Logger.hpp>
 
 namespace robot2D {
-    ShaderHandler::ShaderHandler():
-    shaderProgram{-1} {}
+    ShaderHandler::ShaderHandler(): m_shaderProgram{-1} {}
 
     //todo rewrite reading file
-    std::tuple<bool, std::string> loadFromFile(const char* path) {
+    std::pair<bool, std::string> loadFromFile(const std::string& path) {
         std::fstream shaderFile(path);
         std::stringstream shaderStream;
 
         if (shaderFile.is_open())
             shaderStream << shaderFile.rdbuf();
+        shaderFile.close();
         std::string text = shaderStream.str();
-        return std::make_tuple(true, text);
+        return {true, text};
     }
 
-    int ShaderHandler::setupShader(shaderType shader_type, const char* path, bool is_file) {
-        const char* text;
+    int ShaderHandler::setupShader(ShaderType shaderType, const std::string& source, bool is_file) {
+        const char* text{nullptr};
         if(is_file) {
-            bool ok;
-            std::string shaderCode;
-            std::tie(ok, shaderCode) = loadFromFile(path);
-            if (!ok) {
+            auto [result, shaderCode] = loadFromFile(source);
+            if (!result) {
                 RB_CORE_ERROR("ERROR::SHADER::LOAD_FAILED {0} \n", infoLog);
                 return -1;
             }
             text = shaderCode.c_str();
         }
         else
-            text = path;
-        GLenum s_type;
-        if(shader_type == shaderType::vertex)
-            s_type = GL_VERTEX_SHADER;
-        if(shader_type == shaderType::fragment)
-            s_type = GL_FRAGMENT_SHADER;
+            text = source.c_str();
 
+        GLenum s_type;
+        switch(shaderType) {
+            case ShaderType::Vertex:
+                s_type = GL_VERTEX_SHADER;
+                break;
+            case ShaderType::Fragment:
+                s_type = GL_FRAGMENT_SHADER;
+                break;
+            case ShaderType::Geometry:
+                s_type = GL_GEOMETRY_SHADER;
+                break;
+        }
         int shader = glCreateShader(s_type);
 
-        glShaderSource(shader, 1, &text, NULL);
+        glShaderSource(shader, 1, &text, nullptr);
         glCompileShader(shader);
-        // check for shader compile errors
         glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+
         if (!success) {
-            glGetShaderInfoLog(shader, 512, NULL, infoLog);
+            glGetShaderInfoLog(shader, 512, nullptr, infoLog);
             RB_CORE_ERROR("ERROR::SHADER::COMPILATION_FAILED {0}\n", infoLog);
+            return -1;
         }
 
         return shader;
     }
 
-    bool ShaderHandler::createShader(shaderType shader_type, const std::string& source, bool is_path) {
-        if(shaderProgram == -1)
-            shaderProgram = glCreateProgram();
-        int shader = setupShader(shader_type, source.c_str(), is_path);
-        glAttachShader(shaderProgram, shader);
-        glLinkProgram(shaderProgram);
-        // check for linking errors
-        glGetProgramiv(shaderProgram, GL_LINK_STATUS, &success);
+    bool ShaderHandler::createShader(ShaderType shaderType, const std::string& source, bool is_path) {
+        if(m_shaderProgram == -1)
+            m_shaderProgram = glCreateProgram();
+        int shader = setupShader(shaderType, source, is_path);
+        if(shader == -1)
+            return false;
+
+        glAttachShader(m_shaderProgram, shader);
+        glLinkProgram(m_shaderProgram);
+        glGetProgramiv(m_shaderProgram, GL_LINK_STATUS, &success);
         if (!success) {
-            glGetProgramInfoLog(shaderProgram, 512, nullptr, infoLog);
+            glGetProgramInfoLog(m_shaderProgram, 512, nullptr, infoLog);
             RB_CORE_ERROR("ERROR::SHADER::PROGRAM::LINKING_FAILED {0} \n", infoLog);
+            return false;
         }
         glDeleteShader(shader);
 
         return true;
     }
 
-
-    template<>
-    void ShaderHandler::set<const float>(const char* name, const float value) const {
-        glUniform1f(glGetUniformLocation(shaderProgram, name), value);
-    }
-
-    void ShaderHandler::setMatrix(const char* name, float* value) const  {
-        glUniformMatrix4fv(glGetUniformLocation(shaderProgram, name),
-                           1, GL_FALSE, value);
-    }
-
-    template<>
-    void ShaderHandler::set<int>(const char* name, const int value) const  {
-        glUniform1i(glGetUniformLocation(shaderProgram, name), value);
-    }
-
-    template<>
-    void ShaderHandler::set<bool>(const char* name, const bool value) const  {
-        glUniform1i(glGetUniformLocation(shaderProgram, name), value);
-    }
-
-    template<>
-    void ShaderHandler::set<float>(const char* name, const float value) const  {
-        glUniform1f(glGetUniformLocation(shaderProgram, name), value);
-    }
-
-    template<>
-    void ShaderHandler::set<vec2f>(const char* name, const vec2f vec) const  {
-        glUniform2f(glGetUniformLocation(shaderProgram, name), vec.x, vec.y);
-    }
-
-    template<>
-    void ShaderHandler::set<Color>(const char* name, const Color vec) const  {
-        glUniform4f(glGetUniformLocation(shaderProgram, name), vec.red, vec.green,
-                    vec.blue, vec.alpha);
-    }
-
     void ShaderHandler::use() const{
-        glUseProgram(shaderProgram);
+        glUseProgram(m_shaderProgram);
     }
-
 
     void ShaderHandler::unUse() const {
         glUseProgram(0);
     }
 
+    int ShaderHandler::getProgram() const{
+        return m_shaderProgram;
+    }
+
     template<>
-    void ShaderHandler::setArray(const char* name, const int* value, const size_t& size) const {
-        glUniform1iv(glGetUniformLocation(shaderProgram, name),
+    void ShaderHandler::set<const float>(const std::string& param, const float value) const {
+        glUniform1f(glGetUniformLocation(m_shaderProgram, param.c_str()), value);
+    }
+    
+    template<>
+    void ShaderHandler::set<int>(const std::string& param, const int value) const  {
+        glUniform1i(glGetUniformLocation(m_shaderProgram, param.c_str()), value);
+    }
+
+    template<>
+    void ShaderHandler::set<bool>(const std::string& param, const bool value) const  {
+        glUniform1i(glGetUniformLocation(m_shaderProgram, param.c_str()), value);
+    }
+
+    template<>
+    void ShaderHandler::set<float>(const std::string& param, const float value) const  {
+        glUniform1f(glGetUniformLocation(m_shaderProgram, param.c_str()), value);
+    }
+
+    template<>
+    void ShaderHandler::set<vec2f>(const std::string& param, const vec2f vec) const  {
+        glUniform2f(glGetUniformLocation(m_shaderProgram, param.c_str()), vec.x, vec.y);
+    }
+
+    template<>
+    void ShaderHandler::set<Color>(const std::string& param, const Color vec) const  {
+        glUniform4f(glGetUniformLocation(m_shaderProgram, param.c_str()), vec.red, vec.green,
+                    vec.blue, vec.alpha);
+    }
+
+
+    template<>
+    void ShaderHandler::setArray(const std::string& param, const int* value, const size_t& size) const {
+        glUniform1iv(glGetUniformLocation(m_shaderProgram, param.c_str()),
                      static_cast<GLsizei>(size), value);
     }
 
-    int ShaderHandler::getProgram() const{
-        return shaderProgram;
-    }
 
+    void ShaderHandler::setMatrix(const std::string& param, const float* value) const {
+        glUniformMatrix4fv(glGetUniformLocation(m_shaderProgram, param.c_str()),
+                           1, GL_FALSE, value);
+    }
 
 }

@@ -122,4 +122,8 @@ namespace robot2D{
         return m_size;
     }
 
+    const vec2f &Transformable::getSize() const {
+        return m_size;
+    }
+
 }

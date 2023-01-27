@@ -42,6 +42,8 @@ namespace robot2D::ecs {
         virtual ~IContainer() = default;
         virtual size_t getSize() const = 0;
         virtual void resize(const size_t& newSize) = 0;
+
+        virtual bool removeEntity(EntityID&& entityId) = 0;
     };
 
     // Container for component of special type
@@ -58,16 +60,16 @@ namespace robot2D::ecs {
         }
 
         void resize(const size_t& newSize) override {
-            m_components.resize(newSize);
+           // m_components.resize(newSize);
         }
 
         T& operator[](std::size_t index) {
-            assert(index < m_components.size() && "Component Container index > size()");
+         //   assert(index < m_components.size() && "Component Container index > size()");
             return m_components[index];
         }
 
         const T& operator[](std::size_t index) const {
-            assert(index < m_components.size() && "Component Container index > size()");
+           // assert(index < m_components.size() && "Component Container index > size()");
             return m_components[index];
         }
 
@@ -82,10 +84,14 @@ namespace robot2D::ecs {
         void remove(std::size_t index) {
             if(index >= m_components.size())
                 return;
-            m_components.erase(m_components.begin() + index);
+         //   m_components.erase(m_components.begin() + index);
+        }
+
+        bool removeEntity(robot2D::ecs::EntityID&& entityId) override {
+            return static_cast<bool>(m_components.erase(entityId));
         }
     private:
-        std::vector<T> m_components;
+        std::unordered_map<EntityID, T> m_components;
     };
 
     class SystemManager;
@@ -119,13 +125,20 @@ namespace robot2D::ecs {
 
         bool removeEntity(Entity entity);
 
+        bool entityDestroyed(Entity entity);
+
         Bitmask getComponentBitmask(Entity entity);
+
+    private:
+        void markDestroyed(Entity entity);
     private:
         EntityID m_entityCounter;
-
+        friend class Scene;
         ComponentManager& m_componentManager;
         std::vector<IContainer::Ptr> m_componentContainers;
-        std::vector<Bitmask> m_componentMasks;
+        std::unordered_map<EntityID, Bitmask> m_componentMasks;
+
+        std::vector<bool> m_destroyFlags;
 
         // allows to get Container of special type
         template<typename T>
@@ -176,23 +189,18 @@ namespace robot2D::ecs {
         m_entityManager -> removeComponent<T>(*this);
     }
 
-
     template<typename T>
     void EntityManager::addComponent(Entity entity, T component) {
         // need for bitmask
-        const auto componentID = m_componentManager.getID<T>();
+        const auto& componentID = m_componentManager.getID<T>();
         // identifier for storage
-        const auto entityID = entity.getIndex();
+        const auto& entityID = entity.getIndex();
         // 1. get ComponentContainer by identifier
         // 2. add component
         // 3. update bitmask
 
-        ComponentContainer<T> container = getContainer<T>();
-        if(container.getSize() < entityID) {
-            //TODO resize container
-        }
-
-        container[entityID] = std::move(component);
+        ComponentContainer<T>& container = getContainer<T>();
+        container[entityID] = component;
         m_componentMasks[entityID].turnOnBit(componentID);
     }
 
@@ -203,33 +211,33 @@ namespace robot2D::ecs {
         return getComponent<T>(entity);
     }
 
-
     template<typename T>
     T& EntityManager::getComponent(Entity entity) {
-        const auto componentID = m_componentManager.getID<T>();
-        const auto index = entity.getIndex();
-        assert(index < m_componentContainers.size());
+        const auto& componentID = m_componentManager.getID<T>();
+        const auto& index = entity.getIndex();
 
         auto* container = dynamic_cast<ComponentContainer<T>*>(m_componentContainers[componentID].get());
+        // TODO: get Valid String of T
+        assert(container != nullptr && "Don't have container of Type");
         return container -> at(index);
     }
 
     template<typename T>
     const T& EntityManager::getComponent(Entity entity) const {
-        const auto componentID = m_componentManager.getID<T>();
-        const auto index = entity.getIndex();
-        assert(index < m_componentContainers.size());
+        const auto& componentID = m_componentManager.getID<T>();
+        const auto& index = entity.getIndex();
 
         auto* container = dynamic_cast<ComponentContainer<T>*>(m_componentContainers[componentID].get());
+        // TODO: get Valid String of T
+        assert(container != nullptr && "Don't have container of Type");
         return container -> at(index);
     }
 
 
     template<typename T>
     bool EntityManager::hasComponent(Entity entity) {
-        const auto componentID = m_componentManager.getID<T>();
-        const auto index = entity.getIndex();
-        assert(index < m_componentMasks.size());
+        const auto& componentID = m_componentManager.getID<T>();
+        const auto& index = entity.getIndex();
 
         return m_componentMasks[index].getBit(componentID);
     }
@@ -237,10 +245,9 @@ namespace robot2D::ecs {
 
     template<typename T>
     bool EntityManager::hasComponent(Entity entity) const {
-        const auto componentID = m_componentManager.getID<T>();
-        const auto index = entity.getIndex();
-        assert(index < m_componentMasks.size());
-        return m_componentMasks[index].getBit(componentID);
+        const auto& componentID = m_componentManager.getID<T>();
+        const auto& index = entity.getIndex();
+        return m_componentMasks.at(index).getBit(componentID);
     }
 
     template<typename T>

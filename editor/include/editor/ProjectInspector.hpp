@@ -48,10 +48,11 @@ namespace editor {
             Create, Load, Delete
         };
     public:
-        ProjectInspector(EditorCache& editorCache, robot2D::MessageBus& messageBus);
+        ProjectInspector(robot2D::MessageBus& messageBus);
         ~ProjectInspector() = default;
 
-        void setup(robot2D::RenderWindow* window);
+        void setup(robot2D::RenderWindow* window,
+                   const std::vector<ProjectDescription>& descriptions);
         void render();
     private:
         void createProject();
@@ -59,7 +60,6 @@ namespace editor {
         void deleteProject(const unsigned& index);
     private:
         robot2D::RenderWindow* m_window;
-        EditorCache& m_editorCache;
         robot2D::MessageBus& m_messageBus;
         std::vector<ProjectDescription> m_descriptions;
         ProjectInspectorConfiguration m_configuration;

@@ -20,7 +20,7 @@ source distribution.
 *********************************************************************/
 
 #include <imgui/imgui.h>
-#include <editor/AssetsPanel.hpp>
+#include <editor/panels/AssetsPanel.hpp>
 #include <robot2D/Util/Logger.hpp>
 
 #include <filesystem>

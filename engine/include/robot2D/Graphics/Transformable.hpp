@@ -47,6 +47,7 @@ namespace robot2D {
         virtual void setSize(const float& x, const float& y);
 
         vec2f& getSize();
+        const vec2f& getSize() const;
 
         /// Set internal scale.
         virtual void setScale(const vec2f& factor);

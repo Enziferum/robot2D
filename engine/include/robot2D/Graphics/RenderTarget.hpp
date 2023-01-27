@@ -92,7 +92,7 @@ namespace robot2D {
         /// In this method you don't set your data because your drawable is quad \n
         /// In other case prefer other methods.
         /// Check RenderStates to get more information.
-        virtual void draw(const VertexData& data, const RenderStates& states) {}
+        virtual void draw(const VertexData& data, const RenderStates& states);
 
         virtual void draw(const Vertex3DData& data, const RenderStates& states);
 

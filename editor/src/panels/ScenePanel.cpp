@@ -23,7 +23,7 @@ source distribution.
 #include <filesystem>
 #include <imgui/imgui.h>
 #include <imgui/imgui_internal.h>
-#include <editor/ScenePanel.hpp>
+#include <editor/panels/ScenePanel.hpp>
 #include <editor/Components.hpp>
 #include <editor/Messages.hpp>
 
@@ -145,9 +145,10 @@ namespace editor {
     m_scene(nullptr),
     m_selectedEntity{},
     m_configuration{} {
-        m_messageDispatcher.onMessage<EntitySelection>(EntitySelected,
-                                                       BIND_FUNCTION_FN(onEntitySelection)
-                                                       );
+        m_messageDispatcher.onMessage<EntitySelection>(
+                EntitySelected,
+                BIND_CLASS_FN(onEntitySelection)
+        );
     }
 
     void ScenePanel::render() {
@@ -334,16 +335,16 @@ namespace editor {
         });
 
 
-        drawComponent<Physics2DComponent>("Physics2D", entity, [](auto& component) {
-        });
-
-        drawComponent<Collider2DComponent>("Collider2D", entity, [](auto& component) {
-
-        });
-
-        drawComponent<NativeScriptComponent>("Scripting", entity, [](auto& component) {
-
-        });
+//        drawComponent<Physics2DComponent>("Physics2D", entity, [](auto& component) {
+//        });
+//
+//        drawComponent<Collider2DComponent>("Collider2D", entity, [](auto& component) {
+//
+//        });
+//
+//        drawComponent<NativeScriptComponent>("Scripting", entity, [](auto& component) {
+//
+//        });
     }
 
     void ScenePanel::onEntitySelection(const EntitySelection& entitySelection) {

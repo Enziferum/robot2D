@@ -42,7 +42,7 @@ public:
     virtual void render() override;
 
 private:
-    robot2D::ecs::Entity createEntity(const robot2D::vec2f& position, unsigned int layerIndex = 1);
+    robot2D::ecs::Entity createEntity(const robot2D::vec2f& position);
 private:
     robot2D::ecs::Scene m_scene;
     robot2D::MessageBus messageBus;

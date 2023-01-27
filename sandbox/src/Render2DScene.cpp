@@ -23,61 +23,13 @@ source distribution.
 #include <sandbox/Render2DScene.hpp>
 #include <sandbox/Systems.hpp>
 #include <sandbox/Components.hpp>
+#include <iomanip>
+#include <GLFW/glfw3.h>
 
 namespace {
     constexpr robot2D::vec2f position = robot2D::vec2f {100.F, 100.F};
     constexpr robot2D::vec2f size = robot2D::vec2f {100.F, 100.F};
     constexpr const char* texturePath = "res/textures/old_logo.png";
-    constexpr const char* texturePath1 = "res/textures/old_logo.png";
-    constexpr const char* texturePath2 = "res/textures/old_logo.png";
-    constexpr unsigned startEntitiesCount = 5;
-}
-
-Render2DScene::Render2DScene(robot2D::RenderWindow& window) : Scene(window),
-                                                              m_scene(messageBus) {
-
-}
-robot2D::ecs::Entity ent;
-
-void Render2DScene::setup() {
-    ///// setup Ecs /////
-    m_scene.addSystem<RenderSystem>(messageBus);
-    m_scene.addSystem<DemoMoveSystem>(messageBus);
-
-    ///// setup Ecs /////
-
-    m_textures.loadFromFile(ResourceID::Logo, texturePath);
-    m_textures.loadFromFile(ResourceID::Paddle, texturePath1);
-    m_textures.loadFromFile(ResourceID::Face, texturePath2);
-
-    createEntity({100.F, 100.F}, 2);
-    createEntity({100.F, 140.F}, 1);
-    ent = createEntity({100.F, 180.F}, 0);
-
-
-//    for(unsigned int it = 0; it < startEntitiesCount; ++it)
-//        createEntity({position.x, position.y + size.x * static_cast<float>(it)}, 2);
-}
-
-void Render2DScene::handleEvents(const robot2D::Event& event) {
-    if(event.type == robot2D::Event::Resized) {
-        RB_INFO("New Size = {0} and {1}", event.size.widht, event.size.heigth);
-        m_window.resize({static_cast<int>(event.size.widht),
-                         static_cast<int>(event.size.heigth)});
-        m_window.setView(robot2D::View(robot2D::FloatRect{0, 0,
-                                                          static_cast<float>(event.size.widht),
-                                                          static_cast<float>(event.size.heigth)
-        }));
-    }
-}
-
-void Render2DScene::update(float dt) {
-    m_scene.update(dt);
-    m_scene.removeEntity(ent);
-}
-
-void Render2DScene::imGuiRender() {
-
 }
 
 struct Quad: robot2D::Drawable, robot2D::Transformable {
@@ -92,6 +44,71 @@ struct Quad: robot2D::Drawable, robot2D::Transformable {
     }
 };
 
+Quad q;
+
+Render2DScene::Render2DScene(robot2D::RenderWindow& window) : Scene(window),
+                                                              m_scene(messageBus) {
+
+}
+
+void Render2DScene::setup() {
+    ///// setup Ecs /////
+    m_scene.addSystem<RenderSystem>(messageBus);
+    m_scene.addSystem<DemoMoveSystem>(messageBus);
+
+    ///// setup Ecs /////
+
+    m_textures.loadFromFile(ResourceID::Logo, texturePath);
+    q.setPosition({100, 100});
+    q.scale({100, 100});
+    q.color = robot2D::Color::Cyan;
+}
+
+void Render2DScene::handleEvents(const robot2D::Event& event) {
+    if(event.type == robot2D::Event::Resized) {
+        RB_INFO("New Size = {0} and {1}", event.size.widht, event.size.heigth);
+        m_window.resize({static_cast<int>(event.size.widht),
+                         static_cast<int>(event.size.heigth)});
+        m_window.setView(robot2D::View(robot2D::FloatRect{0, 0,
+                                                          static_cast<float>(event.size.widht),
+                                                          static_cast<float>(event.size.heigth)
+        }));
+    }
+
+    if(event.type == robot2D::Event::JoystickConnected) {
+        RB_INFO("Joysick Connected ID = {0}", event.joystick.joytickId);
+    }
+
+    if(event.type == robot2D::Event::JoystickDisconnected) {
+        RB_INFO("Joysick Disconnected ID = {0}", event.joystick.joytickId);
+    }
+
+}
+
+void Render2DScene::update(float dt) {
+    constexpr float speed = 100.F;
+
+    if(robot2D::isJoystickAvailable(robot2D::JoystickType::One)
+        && robot2D::joystickIsGamepad(robot2D::JoystickType::One)) {
+
+        robot2D::JoystickGamepadInput gamepadInput{};
+        if(robot2D::getJoystickGamepadInput(robot2D::JoystickType::One, gamepadInput)) {
+            auto leftManipulator = gamepadInput.leftManipulatorOffset;
+
+            if((-1.F <= leftManipulator.x && leftManipulator.x <= 1.F)
+                    && (-1.F <= leftManipulator.y && leftManipulator.y <= 1.F) ) {
+                q.move(leftManipulator * speed * dt);
+            }
+        }
+    }
+
+    m_scene.update(dt);
+}
+
+void Render2DScene::imGuiRender() {
+
+}
+
 robot2D::vec2f getScale(robot2D::vec2f targetSize, robot2D::vec2u originSize) {
     assert(originSize != robot2D::vec2u{});
     if(targetSize.x == originSize.x && targetSize.y == originSize.y)
@@ -100,26 +117,28 @@ robot2D::vec2f getScale(robot2D::vec2f targetSize, robot2D::vec2u originSize) {
 }
 
 void Render2DScene::render() {
-    m_window.render(m_scene);
+    m_window.beforeRender();
+    m_window.draw(m_scene);
+    robot2D::Sprite sp;
+    sp.setSize({200, 200});
+    sp.setTexture(m_textures.get(ResourceID::Logo));
+    sp.setPosition({300, 300});
+   // sp.setTextureRect({0, 0, 100, 100});
+    m_window.draw(sp);
+
+    //m_window.draw(q);
+    m_window.afterRender();
 }
 
-robot2D::ecs::Entity Render2DScene::createEntity(const robot2D::vec2f& position, unsigned int layerIndex) {
+robot2D::ecs::Entity Render2DScene::createEntity(const robot2D::vec2f& position) {
     robot2D::ecs::Entity entity = m_scene.createEntity();
 
     auto& transform = entity.addComponent<TransformComponent>();
-
     transform.setPosition({position.x, position.y} );
 
     auto& sprite = entity.addComponent<SpriteComponent>();
-    ResourceID textureID;
-    if(layerIndex == 0)
-        textureID = ResourceID::Logo;
-    if(layerIndex == 1)
-        textureID = ResourceID::Paddle;
-    if(layerIndex == 2)
-        textureID = ResourceID::Face;
-    sprite.setTexture(m_textures.get(textureID));
-    sprite.layerIndex = layerIndex;
+    sprite.setTexture(m_textures.get(ResourceID::Logo));
+    sprite.layerIndex = 1;
 
     transform.setSize({100.F, 100.F});
 

@@ -20,9 +20,14 @@ source distribution.
 *********************************************************************/
 
 #pragma once
+
+#include <cstdint>
+#include <utility>
+
 #include <robot2D/Config.hpp>
 #if defined(ROBOT2D_WINDOWS)
-    #include <ext/glad.h>
+    #include <robot2D/internal/glad.h>
+
 #elif defined(ROBOT2D_MACOS)
     #define GL_SILENCE_DEPRECATION
     #include <OpenGL/gl3.h>
@@ -30,3 +35,34 @@ source distribution.
     #include <ext/glad.h>
 #endif
 
+namespace robot2D {
+    #define glCall(function, ...) glCallImpl(__FILE__, __LINE__, function, __VA_ARGS__)
+
+    bool check_gl_errors(const char* file, std::uint_fast32_t line);
+
+    template<typename glFunction, typename ... Args>
+    auto glCallImpl(const char* file,
+                    std::uint_fast32_t line,
+                    glFunction function,
+                    Args&& ...args) ->
+    typename std::enable_if_t<
+            !std::is_same_v<void, decltype(function(args...))>,
+            decltype(function(args...))>
+    {
+        auto ret = function(std::forward<Args>(args)...);
+        check_gl_errors(file, line);
+        return ret;
+    }
+
+    template<typename glFunction, typename ... Args>
+    auto glCallImpl(const char* file,
+                    std::uint_fast32_t line,
+                    glFunction function,
+                    Args&& ...args) ->
+    typename std::enable_if_t<
+            std::is_same_v<void, decltype(function(args...))>, bool>
+    {
+        function(std::forward<Args>(args)...);
+        return check_gl_errors(file, line);
+    }
+}

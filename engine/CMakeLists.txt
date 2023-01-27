@@ -7,9 +7,11 @@ set(ENGINE_SRC
         ${INCLROOT}/Application.hpp
 
         #Core
+        ${INCLROOT}/Core/FileInputStream.hpp
         ${INCLROOT}/Core/Event.hpp
         ${INCLROOT}/Core/Window.hpp
         ${INCLROOT}/Core/Keyboard.hpp
+        ${INCLROOT}/Core/Joystick.hpp
         ${INCLROOT}/Core/Vector2.hpp
         ${INCLROOT}/Core/MessageBus.hpp
         ${INCLROOT}/Core/Message.hpp
@@ -43,7 +45,7 @@ set(ENGINE_SRC
         ${INCLROOT}/Graphics/Shader.hpp
         ${INCLROOT}/Graphics/Sprite.hpp
         ${INCLROOT}/Graphics/Texture.hpp
-        ${INCLROOT}/Graphics/TextureAtlas.hpp
+        ${INCLROOT}/Graphics/ImageAtlas.hpp
         ${INCLROOT}/Graphics/Transform.hpp
         ${INCLROOT}/Graphics/Transformable.hpp
         ${INCLROOT}/Graphics/View.hpp
@@ -68,6 +70,7 @@ set(ENGINE_SRC ${ENGINE_SRC}
         ${SRCROOT}/Application.cpp
 
         #Core
+        ${SRCROOT}/Core/FileInputStream.cpp
         ${SRCROOT}/Core/Window.cpp
         ${SRCROOT}/Core/Event.cpp
         ${SRCROOT}/Core/WindowImpl.cpp
@@ -75,6 +78,7 @@ set(ENGINE_SRC ${ENGINE_SRC}
         ${SRCROOT}/Core/WindowContext.cpp
         ${SRCROOT}/Core/Keyboard.cpp
         ${SRCROOT}/Core/Mouse.cpp
+        ${SRCROOT}/Core/Joystick.cpp
         ${SRCROOT}/Core/MessageBus.cpp
         ${SRCROOT}/Core/Clock.cpp
         ${SRCROOT}/Core/Time.cpp
@@ -97,7 +101,7 @@ set(ENGINE_SRC ${ENGINE_SRC}
         ${SRCROOT}/Graphics/Transformable.cpp
         ${SRCROOT}/Graphics/RenderImpl.cpp
         ${SRCROOT}/Graphics/View.cpp
-        ${SRCROOT}/Graphics/TextureAtlas.cpp
+        ${SRCROOT}/Graphics/ImageAtlas.cpp
         ${SRCROOT}/Graphics/Buffer.cpp
         ${SRCROOT}/Graphics/VertexArray.cpp
         ${SRCROOT}/Graphics/FrameBuffer.cpp
@@ -126,6 +130,7 @@ set(ENGINE_SRC ${ENGINE_SRC}
         ${SRCROOT}/Graphics/OpenGL/OpenGLBuffer.cpp
         ${SRCROOT}/Graphics/OpenGL/OpenGLVertexArray.cpp
         ${SRCROOT}/Graphics/OpenGL/OpenGLFrameBuffer.cpp
+        ${SRCROOT}/Graphics/OpenGL/GL.cpp
 
         PARENT_SCOPE
         )
