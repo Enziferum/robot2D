@@ -19,28 +19,23 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include <robot2D/Config.hpp>
+#include <robot2D/internal/stb_image.h>
+#include <robot2D/internal/stb_image_write.h>
 
-#ifdef WIN32
-    #include <robot2D/internal/stb_image.h>
-#elif defined(ROBOT2D_MACOS) || defined(ROBOT2D_LINUX)
-    #include <ext/stb_image.h>
-#endif
 #include <robot2D/Graphics/Image.hpp>
 #include <robot2D/Util/Logger.hpp>
 
 namespace robot2D {
+    #define STB_IMAGE_WRITE_IMPLEMENTATION
 
     Image::Image(): m_pixels() {}
 
     bool Image::loadFromFile(const std::string& path) {
         m_pixels.clear();
 
-        // Load the image and get a pointer to the pixels in memory
         int width = 0;
         int height = 0;
         int channels = 0;
-        //STBI_rgb_alpha)
         unsigned char* ptr = stbi_load(path.c_str(), &width, &height, &channels, 0);
 
         if (ptr)
@@ -67,10 +62,13 @@ namespace robot2D {
             RB_CORE_ERROR("Failed to load image {0}. Reason: {1}", path, std::string{stbi_failure_reason()});
             return false;
         }
-        return true;
     }
 
     const robot2D::vec2u& Image::getSize() const {
+        return m_size;
+    }
+
+    robot2D::vec2u& Image::getSize() {
         return m_size;
     }
 
@@ -82,11 +80,7 @@ namespace robot2D {
         return m_pixels;
     }
 
-    robot2D::vec2u &Image::getSize() {
-        return m_size;
-    }
-
-    unsigned char* Image::getBuffer() {
+    std::uint8_t* Image::getBuffer() {
         if(m_pixels.empty())
             return nullptr;
         return m_pixels.data();
@@ -116,11 +110,23 @@ namespace robot2D {
         return true;
     }
 
-    // TODO: update stbi to able save to file
     bool Image::save(const std::string& path) {
-        (void)path;
-        return false;
-    }
+        int channelsNum;
+        switch(m_colorFormat) {
+            case RED:
+                channelsNum = 1;
+                break;
+            case RGB:
+                channelsNum = 3;
+                break;
+            case RGBA:
+                channelsNum = 4;
+                break;
+        }
 
+        return false;
+//        return stbi_write_png(path.c_str(), static_cast<int>(m_size.x), static_cast<int>(m_size.y),
+//                              channelsNum, m_pixels.data(), channelsNum * m_size.x);
+    }
 }
 

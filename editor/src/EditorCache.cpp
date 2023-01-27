@@ -207,7 +207,7 @@ namespace editor {
         return m_cacheError;
     }
 
-    std::vector<ProjectDescription>& EditorCache::getProjects() {
+    const std::vector<ProjectDescription>& EditorCache::getProjects() const {
         return m_cacheDescriptions;
     }
 

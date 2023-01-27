@@ -19,34 +19,22 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include <editor/UIManager.hpp>
-#include <editor/panels/ScenePanel.hpp>
+#pragma once
+#include <memory>
+#include <editor/Defines.hpp>
 
 namespace editor {
-    IUIManager::~IUIManager() noexcept {}
+    class IPanel {
+    public:
+        using Ptr = std::shared_ptr<IPanel>;
+    public:
+        IPanel(UniqueType uniqueType);
+        virtual ~IPanel() = 0;
 
-    UIManager::UIManager(ImGui::Gui& gui):
-        m_gui{gui}, m_panels() {}
-
-    void UIManager::update(float dt) {
-        for(auto& it: m_panels)
-            it -> update(dt);
-    }
-
-    void UIManager::render() {
-        for(auto& it: m_panels)
-            it -> render();
-    }
-
-    void UIManager::dockingCanvas() {
-
-    }
-
-    void UIManager::blockEvents(bool flag) {
-       // m_gui.blockEvents(flag);
-    }
-
-    robot2D::ecs::Entity UIManager::getSelectedEntity() {
-        return getPanel<ScenePanel>().getSelectedEntity();
-    }
+        virtual void update(float dt);
+        virtual void render() = 0;
+        UniqueType getID() const { return m_id; }
+    protected:
+        UniqueType m_id;
+    };
 }

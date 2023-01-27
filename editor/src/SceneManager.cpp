@@ -31,11 +31,10 @@ namespace editor {
 
     SceneManager::SceneManager(robot2D::MessageBus& messageBus):
             m_messageBus{messageBus},
-            m_activeScene{nullptr},
             m_associatedProject{nullptr},
-            m_error{SceneManagerError::None} {
-
-    }
+            m_activeScene{nullptr},
+            m_error{SceneManagerError::None}
+            {}
 
     bool SceneManager::add(Project::Ptr&& project) {
         Scene::Ptr scene = std::make_shared<Scene>(m_messageBus);

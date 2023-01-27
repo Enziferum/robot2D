@@ -21,8 +21,8 @@ source distribution.
 
 #pragma once
 
-#include <robot2D/Graphics/RenderWindow.hpp>
 #include <robot2D/Core/MessageBus.hpp>
+#include <robot2D/Graphics/RenderWindow.hpp>
 #include <robot2D/Graphics/FrameBuffer.hpp>
 #include <robot2D/Util/ResourceHandler.hpp>
 #include <robot2D/Extra/Gui.hpp>
@@ -34,6 +34,8 @@ source distribution.
 #include "MessageDispather.hpp"
 #include "TaskQueue.hpp"
 #include "EditorCamera.hpp"
+#include "EditorLogic.hpp"
+#include "EventBinder.hpp"
 
 namespace editor {
 
@@ -55,7 +57,13 @@ namespace editor {
         };
     };
 
-    class Editor {
+    class IEditor {
+    public:
+        virtual ~IEditor() = 0;
+        virtual void openScene(Scene::Ptr scene, std::string path) = 0;
+    };
+
+    class Editor: public IEditor {
     public:
         Editor(robot2D::MessageBus& messageBus, TaskQueue& taskQueue, ImGui::Gui& gui);
         Editor(const Editor&)=delete;
@@ -64,25 +72,22 @@ namespace editor {
         Editor& operator=(const Editor&&)=delete;
         ~Editor() = default;
 
-        void setup(robot2D::RenderWindow* window);
+        void setup(robot2D::RenderWindow* window, EditorLogic* editorLogic);
         void handleEvents(const robot2D::Event& event);
         void handleMessages(const robot2D::Message& message);
         void update(float dt);
         void render();
 
-        void createProject(Project::Ptr project);
-        void loadProject(Project::Ptr project);
+        void openScene(Scene::Ptr scene, std::string path) override;
     private:
         void prepare();
-
         void guiRender();
-
+        void windowFunction();
         bool createScene();
-        void openScene();
 
+        void setupBindings();
         void onSceneRun();
         void onSceneEdit();
-        void ui_toolbar();
     private:
         enum class State {
             Load,
@@ -94,21 +99,21 @@ namespace editor {
 
         robot2D::RenderWindow* m_window;
         robot2D::MessageBus& m_messageBus;
+        MessageDispatcher m_messageDispather;
         TaskQueue& m_taskQueue;
         ImGui::Gui& m_gui;
         UIManager m_panelManager;
-        SceneManager m_sceneManager;
-        MessageDispatcher m_messageDispather;
+        Scene::Ptr m_activeScene{nullptr};
+        EditorLogic* m_logic{nullptr};
+        EventBinder m_eventBinder;
 
         EditorConfiguration m_configuration;
-
-        Project::Ptr m_currentProject;
-        Scene::Ptr m_activeScene;
 
         robot2D::FrameBuffer::Ptr m_frameBuffer;
         robot2D::ResourceHandler<robot2D::Texture,
                         EditorConfiguration::TextureID> m_textures;
         robot2D::Color m_sceneClearColor;
         EditorCamera m_editorCamera;
+        bool m_needPrepare{true};
     };
 }

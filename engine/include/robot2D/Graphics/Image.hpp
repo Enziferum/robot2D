@@ -63,10 +63,10 @@ namespace robot2D {
         const ImageColorFormat& getColorFormat() const;
 
         /// Returns pixelBuffer which not possible to modificate.
-        const std::vector<unsigned char>& getBuffer() const;
+        const std::vector<std::uint8_t>& getBuffer() const;
 
         /// Returns pixelBuffer which possible to modificate.
-        unsigned char* getBuffer();
+        std::uint8_t* getBuffer();
 
         /// Creating image from PixelBuffer and specify Color channels directly.
         bool create(const vec2u& size, const void* data, const ImageColorFormat&);
@@ -75,7 +75,7 @@ namespace robot2D {
         bool save(const std::string& path);
     private:
         vec2u m_size;
-        std::vector<uint8_t> m_pixels;
+        std::vector<std::uint8_t> m_pixels;
         ImageColorFormat m_colorFormat = ImageColorFormat::RED;
     };
 

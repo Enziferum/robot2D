@@ -29,17 +29,17 @@ source distribution.
 
 namespace editor {
 
-    ProjectInspector::ProjectInspector(EditorCache& editorCache, robot2D::MessageBus& messageBus):
+    ProjectInspector::ProjectInspector(robot2D::MessageBus& messageBus):
     m_window{nullptr},
-    m_editorCache{editorCache},
     m_messageBus{messageBus},
     m_descriptions(),
     m_configuration{}{}
 
-    void ProjectInspector::setup(robot2D::RenderWindow* window) {
+    void ProjectInspector::setup(robot2D::RenderWindow* window,
+                                 const std::vector<ProjectDescription>& descriptions) {
         if(m_window == nullptr)
             m_window = window;
-        m_descriptions = m_editorCache.getProjects();
+        m_descriptions = descriptions;
     }
 
     void ProjectInspector::render() {
@@ -114,13 +114,15 @@ namespace editor {
         if(ImGui::Button("Create Project", m_configuration.createButtonSize))
             createProject();
         if(ImGui::Checkbox("Open always", &m_configuration.openAlways)) {
-            m_editorCache.setShowInspector(m_configuration.openAlways);
+            auto* msg = m_messageBus.postMessage<ShowInspectorMessage>(MessageID::ShowInspector);
+            msg -> showAlways = m_configuration.openAlways;
         }
 
         ImGui::EndGroup();
 
         ImGui::End();
     }
+
 
     void ProjectInspector::createProject() {
         char* path = tinyfd_selectFolderDialog("Create Robot2D Project", nullptr);
@@ -133,12 +135,12 @@ namespace editor {
         description.name = "Project";
         description.path = creationPath;
 
-        auto msg = m_messageBus.postMessage<ProjectMessage>(MessageID::CreateProject);
+        auto* msg = m_messageBus.postMessage<ProjectMessage>(MessageID::CreateProject);
         msg -> description = std::move(description);
     }
 
     void ProjectInspector::loadProject(const unsigned int& index) {
-        auto msg = m_messageBus.postMessage<ProjectMessage>(MessageID::LoadProject);
+        auto* msg = m_messageBus.postMessage<ProjectMessage>(MessageID::LoadProject);
         msg -> description = m_descriptions[index];
     }
 
@@ -146,7 +148,7 @@ namespace editor {
         assert(index < m_descriptions.size() && "Index out of Range");
         auto project = m_descriptions[index];
         m_descriptions.erase(m_descriptions.begin() + index);
-        auto msg = m_messageBus.postMessage<ProjectMessage>(MessageID::DeleteProject);
+        auto* msg = m_messageBus.postMessage<ProjectMessage>(MessageID::DeleteProject);
         msg -> description = project;
     }
 
