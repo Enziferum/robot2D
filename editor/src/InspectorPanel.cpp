@@ -20,7 +20,7 @@ source distribution.
 *********************************************************************/
 
 #include <imgui/imgui.h>
-#include <editor/InspectorPanel.hpp>
+#include <editor/panels/InspectorPanel.hpp>
 
 namespace editor {
 
@@ -42,17 +42,12 @@ namespace editor {
     void InspectorPanel::render() {
         ImGui::Begin("Statistics ");
 
-        // todo Apply some styles
+        // TODO(a.raag) need apply graphics styles
 
         ImGui::Text("Rendering 2D Stats ...");
 
         ImGui::Text("Quads Count: %d", m_renderStats.drawQuads);
         ImGui::Text("Draw Calls Count: %d", m_renderStats.drawCalls);
-        // todo zoom precision
-       //ImGui::Text("Camera Zoom: %.2f", m_camera.getZoom());
-        //ImGui::Text("Camera Speed: ");
-        //ImGui::SameLine();
-        //ImGui::DragFloat("##Y", &m_camera.getCameraSpeed(), 0.1f, 10.0f, 100.0f, "%.2f");
 
         auto cameraView = m_camera.getViewMatrix();
         auto& position = m_camera.getPosition();

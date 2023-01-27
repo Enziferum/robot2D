@@ -20,21 +20,31 @@ source distribution.
 *********************************************************************/
 
 #pragma once
-#include <memory>
-#include "Defines.hpp"
+
+#include <robot2D/Graphics/RenderStats.hpp>
+#include <robot2D/Graphics/Color.hpp>
+#include <editor/EditorCamera.hpp>
+#include "IPanel.hpp"
 
 namespace editor {
-    class IPanel {
-    public:
-        using Ptr = std::shared_ptr<IPanel>;
-    public:
-        IPanel(UniqueType uniqueType);
-        virtual ~IPanel() = 0;
 
-        virtual void update(float dt);
-        virtual void render() = 0;
-        UniqueType getID() const { return m_id; }
-    protected:
-        UniqueType m_id;
+    struct InspectorPanelConfiguration {
+        const robot2D::Color defaultBackGround = robot2D::Color::fromGL(0.1, 0.1, 0.1, 1);
+    };
+
+    class InspectorPanel: public IPanel {
+    public:
+        explicit InspectorPanel(EditorCamera& sceneCamera);
+        ~InspectorPanel() override = default;
+
+        const robot2D::Color& getColor() const;
+
+        void setRenderStats(robot2D::RenderStats&& renderStats);
+        void render() override;
+    private:
+        EditorCamera& m_camera;
+        robot2D::Color m_clearColor;
+        robot2D::RenderStats m_renderStats;
+        InspectorPanelConfiguration m_configuration;
     };
 }

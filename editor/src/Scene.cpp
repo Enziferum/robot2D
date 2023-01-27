@@ -46,7 +46,7 @@ namespace editor {
     }
 
     void Scene::update(float dt) {
-        m_scene.update(dt);
+       // m_scene.update(dt);
     }
 
     void Scene::updateRuntime(float dt) {

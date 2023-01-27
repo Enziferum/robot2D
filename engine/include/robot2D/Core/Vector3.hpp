@@ -34,6 +34,10 @@ namespace robot2D {
     struct ROBOT2D_EXPORT_API Vector3 {
         constexpr Vector3();
         constexpr Vector3(const T& x, const T& y, const T& z);
+        constexpr Vector3(const Vector2<T>& vec2);
+
+        template<typename U>
+        constexpr Vector3(const Vector2<U>& vec2);
 
         template<typename U>
         constexpr explicit Vector3(const Vector3<U>& other);
@@ -74,6 +78,18 @@ namespace robot2D {
     template<typename T>
     constexpr Vector3<T>::Vector3(const T& _x, const T& _y, const T& _z):
             x(_x), y(_y), z{_z}  {}
+
+    template<typename T>
+    constexpr Vector3<T>::Vector3(const Vector2<T>& other):
+            x(other.x), y(other.y), z(0)  {}
+
+
+    template<typename T>
+    template<typename U>
+    constexpr Vector3<T>::Vector3(const Vector2<U>& other):
+            x(static_cast<T>(other.x)),
+            y(static_cast<T>(other.y)),
+            z(0)  {}
 
     template<typename T>
     template<typename U>

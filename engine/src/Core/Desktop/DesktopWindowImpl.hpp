@@ -49,6 +49,10 @@ namespace robot2D {
 
             bool isMousePressed(const Mouse& button)override;
             bool isKeyboardPressed(const Key& key)override;
+            bool isJoystickAvailable(const JoystickType& joystickType) override;
+            bool JoystickIsGamepad(const JoystickType& joystickType) override;
+            bool getJoystickGamepadInput(const JoystickType& joystickType,
+                                         JoystickGamepadInput& gamepadInput) override;
 
             void setSize(const robot2D::vec2u& size) override;
 
@@ -66,6 +70,8 @@ namespace robot2D {
 
             void setMousePos(const vec2f& pos) override;
             vec2f getMousePos() const override;
+
+            void setVsync(bool flag) override;
         private:
             void setup();
             void setup_callbacks();
@@ -81,6 +87,7 @@ namespace robot2D {
             static void dragdrop_callback(GLFWwindow* wnd, int count, const char** paths);
             static void focus_callback(GLFWwindow* wnd, int focus);
             static void text_callback(GLFWwindow* wnd, unsigned int);
+            static void joystick_callback(int jid, int event);
         private:
             GLFWwindow* m_window;
             std::queue<Event> m_event_queue;

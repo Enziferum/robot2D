@@ -21,30 +21,46 @@ source distribution.
 
 #pragma once
 
-#include <robot2D/Graphics/RenderStats.hpp>
-#include <robot2D/Graphics/Color.hpp>
-#include "EditorCamera.hpp"
+#include <utility>
+#include <robot2D/Graphics/FrameBuffer.hpp>
+#include <robot2D/Extra/Api.hpp>
+#include <robot2D/Core/MessageBus.hpp>
+
+#include <editor/Scene.hpp>
+#include <editor/UIManager.hpp>
+#include <editor/EditorCamera.hpp>
 #include "IPanel.hpp"
 
 namespace editor {
-
-    struct InspectorPanelConfiguration {
-        const robot2D::Color defaultBackGround = robot2D::Color::fromGL(0.1, 0.1, 0.1, 1);
-    };
-
-    class InspectorPanel: public IPanel {
+    class ViewportPanel final: public IPanel {
     public:
-        InspectorPanel(EditorCamera& sceneCamera);
-        ~InspectorPanel() override = default;
+        ViewportPanel(IUIManager& uiManager,
+                      EditorCamera& editorCamera,
+                      robot2D::MessageBus& messageBus,
+                      Scene::Ptr&& scene);
+        ~ViewportPanel() override = default;
 
-        const robot2D::Color& getColor() const;
+        void update(float deltaTime) override;
 
-        void setRenderStats(robot2D::RenderStats&& renderStats);
+        void set(Scene::Ptr ptr,
+                 robot2D::FrameBuffer::Ptr frameBuffer) {
+            m_scene = std::move(ptr);
+            m_frameBuffer = std::move(frameBuffer);
+        }
         void render() override;
     private:
-        EditorCamera& m_camera;
-        robot2D::Color m_clearColor;
-        robot2D::RenderStats m_renderStats;
-        InspectorPanelConfiguration m_configuration;
+        IUIManager& m_uiManager;
+        EditorCamera& m_editorCamera;
+        robot2D::MessageBus& m_messageBus;
+
+        Scene::Ptr m_scene;
+        robot2D::FrameBuffer::Ptr m_frameBuffer;
+        robot2D::vec2u  m_ViewportSize{};
+        ImGui::WindowOptions m_windowOptions;
+
+        robot2D::vec2f m_ViewportBounds[2];
+
+        bool m_panelHovered;
+        bool m_panelFocused;
     };
 }

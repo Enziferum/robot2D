@@ -19,25 +19,27 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
+#include <algorithm>
 #include <robot2D/Ecs/EntityManager.hpp>
 #include <robot2D/Ecs/SystemManager.hpp>
 
 namespace robot2D::ecs {
 
     namespace {
-        constexpr unsigned maxComponentsValue = 1024;
-        constexpr unsigned maxComponentsMasks = 64;
+        constexpr unsigned maxComponentsContainerValue = 64;
     }
 
     EntityManager::EntityManager(ComponentManager& componentManager): m_entityCounter(0),
     m_componentManager(componentManager),
-    m_componentContainers(maxComponentsValue),
+    m_componentContainers(64),
     m_componentMasks() {
-        m_componentMasks.resize(maxComponentsMasks);
+
     }
 
     Entity EntityManager::createEntity() {
         Entity entity{this, m_entityCounter};
+        if(m_entityCounter >= m_destroyFlags.size())
+            m_destroyFlags.resize(m_destroyFlags.size() + 1000);
         m_entityCounter++;
         return entity;
     }
@@ -45,14 +47,26 @@ namespace robot2D::ecs {
 
     Bitmask EntityManager::getComponentBitmask(Entity entity) {
         const auto index = entity.getIndex();
-        assert(index < m_componentMasks.size());
+     //   assert(index < m_componentMasks.size());
         return m_componentMasks[index];
     }
 
-    // don't remove :)
     bool EntityManager::removeEntity(Entity entity) {
-        (void)entity;
-        return true;
+        for(auto& container: m_componentContainers) {
+            if(container)
+                container -> removeEntity(entity.getIndex());
+        }
+
+        bool maskDeleted = static_cast<bool>(m_componentMasks.erase(entity.getIndex()));
+        return maskDeleted;
+    }
+
+    bool EntityManager::entityDestroyed(Entity entity) {
+        return m_destroyFlags[entity.m_id];
+    }
+
+    void EntityManager::markDestroyed(Entity entity) {
+        m_destroyFlags[entity.m_id] = true;
     }
 
 }

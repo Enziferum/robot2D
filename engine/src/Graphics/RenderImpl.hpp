@@ -45,6 +45,7 @@ namespace robot2D {
             virtual unsigned int getLayerCount() const = 0;
 
             virtual void render(const RenderStates& states) = 0;
+            virtual void render(const VertexData& data, const RenderStates& states) const = 0;
             virtual void render(const Vertex3DData& data, const RenderStates& states) const = 0;
             virtual void render(const VertexArray::Ptr& vertexArray, RenderStates states) const = 0;
             virtual void render3D(const VertexArray::Ptr& vertexArray, RenderStates states) const = 0;

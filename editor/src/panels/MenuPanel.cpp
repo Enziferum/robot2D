@@ -23,7 +23,7 @@ source distribution.
 #include <tfd/tinyfiledialogs.h>
 
 #include <robot2D/Extra/Api.hpp>
-#include <editor/MenuPanel.hpp>
+#include <editor/panels/MenuPanel.hpp>
 #include <editor/Messages.hpp>
 
 namespace editor {

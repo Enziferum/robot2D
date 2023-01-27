@@ -6,7 +6,7 @@
 #include <robot2D/Core/Message.hpp>
 
 namespace editor {
-    #define BIND_FUNCTION_FN(fn)[this](auto&&... args) -> decltype(auto) { \
+    #define BIND_CLASS_FN(fn)[this](auto&&... args) -> decltype(auto) { \
             return this -> fn(std::forward<decltype(args)>(args)...);      \
     }
 

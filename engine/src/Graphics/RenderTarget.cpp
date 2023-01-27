@@ -42,10 +42,13 @@ namespace robot2D {
         switch (renderDimensionType) {
             case WindowContext::RenderDimensionType::TwoD:
                 RenderAPI::m_dimensionType = RenderDimensionType::TwoD;
+                break;
             case WindowContext::RenderDimensionType::ThreeD:
                 RenderAPI::m_dimensionType = RenderDimensionType::ThreeD;
+                break;
             case WindowContext::RenderDimensionType::Both:
                 RenderAPI::m_dimensionType = RenderDimensionType::Both;
+                break;
         }
 
         setup();
@@ -72,6 +75,13 @@ namespace robot2D {
 
     void RenderTarget::draw(const RenderStates &states) {
         m_render -> render(states);
+    }
+
+    void RenderTarget::draw(const VertexData& data, const RenderStates& states) {
+        if(!m_render)
+            return;
+
+        m_render -> render(data, states);
     }
 
     void RenderTarget::draw(const Vertex3DData& data, const RenderStates& states) {

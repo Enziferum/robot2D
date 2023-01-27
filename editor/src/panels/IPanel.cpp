@@ -19,38 +19,12 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#pragma once
-
-#include "IPanel.hpp"
-#include "Scene.hpp"
-#include "MessageDispather.hpp"
-#include "Messages.hpp"
+#include <editor/panels/IPanel.hpp>
 
 namespace editor {
+    IPanel::IPanel(UniqueType uniqueType): m_id(uniqueType) {}
 
-    struct ScenePanelConfiguration {
-        const int rightMouseButton = 1;
-    };
+    IPanel::~IPanel() {}
 
-    class ScenePanel: public IPanel {
-    public:
-        ScenePanel(MessageDispatcher& messageDispatcher);
-        ~ScenePanel()override = default;
-
-        void setActiveScene(Scene::Ptr ptr) { m_scene = ptr; m_selectedEntity = {};}
-        void render() override;
-
-        robot2D::ecs::Entity getSelectedEntity() const { return m_selectedEntity; }
-    private:
-        void drawEntity(robot2D::ecs::Entity entity);
-        void drawComponents(robot2D::ecs::Entity& entity);
-        void onEntitySelection(const EntitySelection& entitySelection);
-
-    private:
-        MessageDispatcher& m_messageDispatcher;
-
-        Scene::Ptr m_scene;
-        robot2D::ecs::Entity m_selectedEntity;
-        ScenePanelConfiguration m_configuration;
-    };
+    void IPanel::update(float dt) {}
 }

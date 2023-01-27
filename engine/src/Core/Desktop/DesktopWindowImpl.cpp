@@ -161,11 +161,13 @@ namespace robot2D {
             glfwSetDropCallback(m_window, dragdrop_callback);
             glfwSetWindowFocusCallback(m_window, focus_callback);
             glfwSetCharCallback(m_window, text_callback);
+            glfwSetJoystickUserPointer(GLFW_JOYSTICK_1, this);
+            glfwSetJoystickCallback(joystick_callback);
         }
 
         void DesktopWindowImpl::close_callback(GLFWwindow* wnd) {
             DesktopWindowImpl* window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
-            Event event;
+            Event event{};
             event.type = Event::Closed;
             window->m_event_queue.push(event);
         }
@@ -178,9 +180,9 @@ namespace robot2D {
 
             DesktopWindowImpl* window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
 
-            Event event;
-            //action == GLFW_REPEAT ||
-            if(action == GLFW_PRESS)
+            Event event{};
+
+            if(action == GLFW_REPEAT || action == GLFW_PRESS)
                 event.type = Event::KeyPressed;
             if(action == GLFW_RELEASE)
                 event.type = Event::KeyReleased;
@@ -191,7 +193,7 @@ namespace robot2D {
         void DesktopWindowImpl::cursor_callback(GLFWwindow* wnd, double xpos, double ypos) {
             DesktopWindowImpl* window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
 
-            Event event;
+            Event event{};
             event.move.x = float(xpos);
             event.move.y = float(ypos);
             event.type = Event::MouseMoved;
@@ -204,7 +206,7 @@ namespace robot2D {
             (void)(xpos);
 
             DesktopWindowImpl* window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
-            Event event;
+            Event event{};
             event.type = Event::MouseWheel;
             event.wheel.scroll_x = 0;
             event.wheel.scroll_y = float(ypos);
@@ -217,7 +219,7 @@ namespace robot2D {
 
             DesktopWindowImpl* window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
 
-            Event event;
+            Event event{};
             event.mouse.btn = button;
             double xpos, ypos;
             glfwGetCursorPos(wnd, &xpos, &ypos);
@@ -235,7 +237,7 @@ namespace robot2D {
 
         void DesktopWindowImpl::size_callback(GLFWwindow* wnd, int w, int h) {
             DesktopWindowImpl* window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
-            Event event;
+            Event event{};
             event.type = Event::Resized;
             event.size.widht = w;
             event.size.heigth = h;
@@ -288,6 +290,32 @@ namespace robot2D {
             }
         }
 
+        void DesktopWindowImpl::joystick_callback(int jid, int evt) {
+            if(evt == GLFW_CONNECTED) {
+                DesktopWindowImpl* window = static_cast<DesktopWindowImpl*>(glfwGetJoystickUserPointer(jid));
+                if(!window || jid != GLFW_JOYSTICK_1)
+                    return;
+
+
+                Event event{};
+                event.type = Event::JoystickConnected;
+                event.joystick.joytickId = jid;
+                event.joystick.isGamepad = glfwJoystickIsGamepad(jid);
+                window -> m_event_queue.push(event);
+            }
+
+            if(evt == GLFW_DISCONNECTED) {
+                DesktopWindowImpl* window = static_cast<DesktopWindowImpl*>(glfwGetJoystickUserPointer(jid));
+                if(!window || jid != GLFW_JOYSTICK_1)
+                    return;
+                Event event{};
+                event.type = Event::JoystickDisconnected;
+                event.joystick.joytickId = jid;
+                window -> m_event_queue.push(event);
+            }
+
+        }
+
         void DesktopWindowImpl::setIcon(Image&& icon) {
             GLFWimage img;
             auto size = icon.getSize();
@@ -303,6 +331,14 @@ namespace robot2D {
 
         bool DesktopWindowImpl::isKeyboardPressed(const Key &key) {
             return glfwGetKey(m_window, key2Int(key));
+        }
+
+        bool DesktopWindowImpl::isJoystickAvailable(const JoystickType& joystickType) {
+            return (glfwJoystickPresent(static_cast<int>(joystickType)) == GLFW_TRUE);
+        }
+
+        bool DesktopWindowImpl::JoystickIsGamepad(const JoystickType& joystickType) {
+            return (glfwJoystickIsGamepad(static_cast<int>(joystickType)) == GLFW_TRUE);
         }
 
         void DesktopWindowImpl::setMouseCursorVisible(const bool& flag) {
@@ -359,5 +395,50 @@ namespace robot2D {
                     static_cast<float>(pos_y)};
         }
 
+        bool DesktopWindowImpl::getJoystickGamepadInput(const JoystickType& joystickType,
+                                                        JoystickGamepadInput& gamepadInput) {
+            GLFWgamepadstate wgamepadstate;
+            auto status = glfwGetGamepadState(static_cast<int>(joystickType), &wgamepadstate);
+            if(status != GLFW_TRUE)
+                return false;
+
+            gamepadInput.leftManipulatorOffset = {
+                wgamepadstate.axes[GLFW_GAMEPAD_AXIS_LEFT_X],
+                wgamepadstate.axes[GLFW_GAMEPAD_AXIS_LEFT_Y]
+            };
+
+            if(gamepadInput.leftManipulatorOffset.x == 1.5259022e-05f) {
+                gamepadInput.leftManipulatorOffset.x = 0;
+            }
+
+            if(gamepadInput.leftManipulatorOffset.y == -1.5259022e-05f) {
+                gamepadInput.leftManipulatorOffset.y = 0;
+            }
+
+            gamepadInput.rightManipulatorOffset = {
+                wgamepadstate.axes[GLFW_GAMEPAD_AXIS_RIGHT_X],
+                wgamepadstate.axes[GLFW_GAMEPAD_AXIS_RIGHT_Y]
+            };
+
+            if(gamepadInput.rightManipulatorOffset.x == 1.5259022e-05f) {
+                gamepadInput.rightManipulatorOffset.x = 0;
+            }
+
+            if(gamepadInput.rightManipulatorOffset.y == -1.5259022e-05f) {
+                gamepadInput.rightManipulatorOffset.y = 0;
+            }
+
+            gamepadInput.leftTrigger = wgamepadstate.axes[GLFW_GAMEPAD_AXIS_LEFT_TRIGGER];
+            gamepadInput.rightTrigger = wgamepadstate.axes[GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER];
+
+            for(int i = 0; i < GLFW_GAMEPAD_BUTTON_LAST + 1; ++i)
+                gamepadInput.buttons[i] = static_cast<bool>(wgamepadstate.buttons[i]);
+
+            return true;
+        }
+
+        void DesktopWindowImpl::setVsync(bool flag) {
+            glfwSwapInterval(flag ? 1 : 0);
+        }
     }
 }

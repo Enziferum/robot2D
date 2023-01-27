@@ -68,7 +68,7 @@ namespace robot2D {
 
     protected:
         const Texture* m_texture;
-        IntRect m_texture_rect;
+        IntRect m_textureRect;
         Color m_color;
         Vertex vertices[4];
     };
