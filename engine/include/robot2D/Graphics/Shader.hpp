@@ -39,7 +39,7 @@ namespace robot2D {
     public:
         /// Only initialize class. To create use specific method.
         ShaderHandler();
-        ~ShaderHandler() = default;
+        ~ShaderHandler();
 
         /// \brief Create specific shader.
         /// \details

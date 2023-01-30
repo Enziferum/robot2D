@@ -161,4 +161,8 @@ namespace robot2D {
                            1, GL_FALSE, value);
     }
 
+    ShaderHandler::~ShaderHandler() {
+        glDeleteProgram(m_shaderProgram);
+    }
+
 }

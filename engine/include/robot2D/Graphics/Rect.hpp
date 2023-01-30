@@ -22,6 +22,8 @@ source distribution.
 #pragma once
 
 #include <algorithm>
+#include <array>
+
 #include <robot2D/Config.hpp>
 #include <robot2D/Core/Vector2.hpp>
 
@@ -39,21 +41,67 @@ namespace robot2D {
         /// \brief Specifies TopLeft Coordinate with width and height.
         /// \details These information allows to calculate all 4 coordinates.
         Rect(const T& leftx, const T& lefty, const T& width, const T& height);
-        Rect& operator=(const Rect& other);
+        Rect(const Vector2<T>& topLeft, const Vector2<T>& size);
+
+
         Rect(const Rect& other);
+        Rect& operator=(const Rect& other);
+
+        template<typename U>
+        Rect(const Rect<U>& other);
+
+        template<typename U>
+        Rect<T>& operator=(const Rect<U>& other);
+
+
         ~Rect() = default;
 
+
         /// \brief Check if current rect intersects with other rect.
-        bool intersects(const Rect<T>& rect);
+        bool intersects(const Rect<T>& rect) const;
 
         /// \brief Check if current rect intersects with other rect.
         /// \details These methods not only checks intersection.
         /// Also it providers intersection rectangle in other words overlapping \n
         /// Between 2 rectangles.
-        bool intersects(const Rect<T>& other, Rect<T>& overlap);
+        bool intersects(const Rect<T>& other, Rect<T>& overlap) const;
 
         /// Check if point in rect bounds
-        bool contains(const Vector2<T>& point);
+        bool contains(const Vector2<T>& point) const;
+
+        /// Check if current rect whole contains other rect
+        bool contains(const Rect<T>& other) const;
+
+        template<typename U>
+        Rect<U> as() const;
+
+        /// Create Rect from 2 Points, topLeft{lx, ly} and bottomRight {lx + width, ly + height}
+        static Rect<T> create(const Vector2<T>& topPoint, const Vector2<T>& botPoint);
+        /// Create Rect from 4 Points, using them like anchors
+        static Rect<T> create(const Vector2<T>& point1,
+                              const Vector2<T>& point2,
+                              const Vector2<T>& point3,
+                              const Vector2<T>& point4);
+
+        /// {lx, ly}
+        Vector2<T> topPoint() const {
+            return {lx, ly};
+        }
+
+        /// {lx + width, ly}
+        Vector2<T> widthPoint() const {
+            return {lx + width, ly};
+        }
+
+        /// {lx, ly + height}
+        Vector2<T> heightPoint() const {
+            return {lx, ly + height};
+        }
+
+        /// {lx + witdh, ly + height}
+        Vector2<T> botPoint() const {
+            return {lx + width, ly + height};
+        }
 
         T lx;
         T ly;
@@ -70,17 +118,18 @@ namespace robot2D {
 
     template<typename T>
     Rect<T>::Rect(const T& leftx, const T &lefty, const T& w, const T& h)
-    : lx(leftx), ly(lefty), width(w), height(h) {
-    }
+    : lx(leftx), ly(lefty), width(w), height(h) {}
 
     template<typename T>
     Rect<T>::Rect(const Rect& other):
-    lx(other.lx), ly(other.ly), width(other.width), height(other.height) {
-
-    }
+    lx(other.lx), ly(other.ly), width(other.width), height(other.height) {}
 
     template<typename T>
-    bool Rect<T>::contains(const Vector2<T>& point) {
+    template<typename U>
+    Rect<T>::Rect(const Rect<U>& other): lx{other.lx}, ly{other.ly}, width{other.width}, height{other.height} {}
+
+    template<typename T>
+    bool Rect<T>::contains(const Vector2<T>& point) const  {
         T minX = std::min(lx, static_cast<T>(lx + width));
         T maxX = std::max(lx, static_cast<T>(lx + width));
         T minY = std::min(ly, static_cast<T>(ly + height));
@@ -91,14 +140,13 @@ namespace robot2D {
     }
 
     template<typename T>
-    bool Rect<T>::intersects(const Rect<T>& other) {
+    bool Rect<T>::intersects(const Rect<T>& other) const {
         Rect<T> overlap;
         return intersects(other, overlap);
     }
 
-
     template<typename T>
-    bool Rect<T>::intersects(const Rect<T>& other, Rect<T>& overlap) {
+    bool Rect<T>::intersects(const Rect<T>& other, Rect<T>& overlap) const {
         T minX = std::min(lx, static_cast<T>(lx + width));
         T maxX = std::max(lx, static_cast<T>(lx + width));
         T minY = std::min(ly, static_cast<T>(ly + height));
@@ -115,7 +163,7 @@ namespace robot2D {
         T innerBottom = std::min(maxY, maxY2);
 
         bool result = false;
-        if(((innerLeft < innerRight) && (innerTop < innerBottom))) {
+        if(((innerLeft <= innerRight) && (innerTop <= innerBottom))) {
             overlap = {innerLeft, innerTop, innerRight - innerLeft, innerBottom - innerTop};
             result = true;
         } else {
@@ -128,7 +176,7 @@ namespace robot2D {
 
 
     template<typename T>
-    Rect<T> &Rect<T>::operator=(const Rect &other) {
+    Rect<T>& Rect<T>::operator=(const Rect& other) {
         if(*this == other)
             return *this;
 
@@ -137,6 +185,16 @@ namespace robot2D {
         width = other.width;
         height = other.height;
 
+        return *this;
+    }
+
+    template<typename T>
+    template<typename U>
+    Rect<T>& Rect<T>::operator=(const Rect<U>& other) {
+        lx = static_cast<T>(other.lx);
+        ly = static_cast<T>(other.ly);
+        width = static_cast<T>(other.width);
+        height = static_cast<T>(other.height);
         return *this;
     }
 
@@ -152,6 +210,69 @@ namespace robot2D {
         return !(lhs==rhs);
     }
 
+    template<typename T>
+    Rect<T> Rect<T>::create(const Vector2<T>& topPoint, const Vector2<T>& botPoint) {
+        return {topPoint.x, topPoint.y, botPoint.x - topPoint.x, botPoint.y - topPoint.y};
+    }
+
+    template<typename T>
+    Rect<T> Rect<T>::create(const Vector2<T>& point1, const Vector2<T>& point2,
+                            const Vector2<T>& point3, const Vector2<T>& point4)  {
+        Vector2<T> topPoint = point1;
+        Vector2<T> botPoint = point1;
+
+        std::array<robot2D::Vector2<T>, 4> points = {point1, point2, point3, point4};
+
+        for(int i = 0; i < 3; ++i) {
+            if(points[i].x > points[i + 1])
+                topPoint.x = points[i + 1].x;
+            if(points[i].y > points[i + 1])
+                topPoint.y = points[i + 1].y;
+        }
+
+        for(int i = 0; i < 3; ++i) {
+            if(points[i].x < points[i + 1])
+                botPoint.x = points[i + 1].x;
+            if(points[i].y < points[i + 1])
+                botPoint.y = points[i + 1].y;
+        }
+
+        return create(topPoint, botPoint);
+    }
+
+    template<typename T>
+    bool Rect<T>::contains(const Rect<T>& other) const {
+        if (lx <= other.lx && ly <= other.ly
+            && (lx + width) >= (other.lx + other.width)
+            && (ly + height) >= (other.ly + other.height))
+            return true;
+        else
+            return false;
+    }
+
+    template<typename T>
+    template<typename U>
+    Rect<U> Rect<T>::as() const {
+        return {
+                static_cast<U>(lx),
+                static_cast<U>(ly),
+                static_cast<U>(width),
+                static_cast<U>(height)
+        };
+    }
+
+    template<typename T>
+    Rect<T>::Rect(const Vector2<T>& topLeft, const Vector2<T>& size):
+    lx{topLeft.x}, ly{topLeft.y}, width{size.x}, height{size.y} {}
+
+    template<typename T>
+    bool operator<(const Rect<T>& left, const Rect<T>& right) {
+        return (left.lx < right.lx) && (left.ly < right.ly)
+            && (left.width < right.width) && (left.height < right.height);
+    }
+
+
     using FloatRect = Rect<float>;
     using IntRect = Rect<int>;
+    using UIntRect = Rect<unsigned int>;
 }
