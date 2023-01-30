@@ -37,7 +37,6 @@ namespace robot2D {
         template<typename U>
         constexpr explicit Vector2(const Vector2<U>& other);
 
-       // Vector2& operator=(const Vector2& other);
         ~Vector2() = default;
 
         template<typename U>
@@ -132,12 +131,22 @@ namespace robot2D {
     }
 
     template<typename T>
-    bool operator == (const Vector2<T>& lhs, const Vector2<T>& rhs){
+    constexpr bool operator<(const Vector2<T>& left, const Vector2<T>& right) {
+        return (left.x < right.x) && (left.y < right.y);
+    }
+
+    template<typename T>
+    constexpr bool operator>(const Vector2<T>& left, const Vector2<T>& right) {
+        return (left.x > right.x) && (left.y > right.y);
+    }
+
+    template<typename T>
+    constexpr bool operator == (const Vector2<T>& lhs, const Vector2<T>& rhs) {
         return (lhs.x == rhs.x ) && (lhs.y == rhs.y);
     }
 
     template<typename T>
-    bool operator != (const Vector2<T>& lhs, const Vector2<T>& rhs){
+    constexpr bool operator != (const Vector2<T>& lhs, const Vector2<T>& rhs) {
         return !(lhs == rhs );
     }
 }
