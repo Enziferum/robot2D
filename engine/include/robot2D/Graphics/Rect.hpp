@@ -103,10 +103,18 @@ namespace robot2D {
             return {lx + width, ly + height};
         }
 
+        T area() const {
+            if(m_area == 0)
+                m_area = width * height;
+            return m_area;
+        }
+
         T lx;
         T ly;
         T width;
         T height;
+    private:
+        mutable T m_area{0};
     };
 
     template<typename T>
@@ -122,11 +130,12 @@ namespace robot2D {
 
     template<typename T>
     Rect<T>::Rect(const Rect& other):
-    lx(other.lx), ly(other.ly), width(other.width), height(other.height) {}
+    lx(other.lx), ly(other.ly), width(other.width), height(other.height), m_area{other.m_area} {}
 
     template<typename T>
     template<typename U>
-    Rect<T>::Rect(const Rect<U>& other): lx{other.lx}, ly{other.ly}, width{other.width}, height{other.height} {}
+    Rect<T>::Rect(const Rect<U>& other): lx{other.lx}, ly{other.ly}, width{other.width},
+    height{other.height}, m_area{other.m_area} {}
 
     template<typename T>
     bool Rect<T>::contains(const Vector2<T>& point) const  {
@@ -184,6 +193,7 @@ namespace robot2D {
         ly = other.ly;
         width = other.width;
         height = other.height;
+        m_area = other.m_area;
 
         return *this;
     }
@@ -195,6 +205,7 @@ namespace robot2D {
         ly = static_cast<T>(other.ly);
         width = static_cast<T>(other.width);
         height = static_cast<T>(other.height);
+        m_area = static_cast<T>(other.m_area);
         return *this;
     }
 
