@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2023
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -22,25 +22,26 @@ source distribution.
 #pragma once
 #include <string>
 #include <limits.h>
+
+#include <robot2D/Config.hpp>
+
 #include "Defines.hpp"
 #include "Bitmask.hpp"
 
 namespace robot2D::ecs {
     class EntityManager;
 
-    class Entity {
+    class ROBOT2D_EXPORT_API Entity {
     public:
         Entity();
         Entity(const Entity& other);
         Entity& operator=(const Entity& other);
         Entity(Entity&& other);
+        Entity& operator=(Entity&& other) = default;
         ~Entity() = default;
 
         template<typename T, typename ...Args>
         T& addComponent(Args&& ... args);
-
-        template<typename T>
-        bool hasComponent();
 
         template<typename T>
         bool hasComponent() const;
@@ -65,14 +66,12 @@ namespace robot2D::ecs {
         std::string& getTag() { return m_tag; }
 
         friend bool operator == (const Entity& l, const Entity& r);
-
         friend bool operator != (const Entity& l, const Entity& r);
-
         friend bool operator < (const Entity& l, const Entity& r);
 
         bool destroyed() const;
 
-        operator bool() {
+        explicit operator bool() const {
             return m_entityManager != nullptr && m_id != INT_MAX;
         }
     private:

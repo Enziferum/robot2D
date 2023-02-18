@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2023
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -25,29 +25,45 @@ source distribution.
 #include <vector>
 #include <cstdlib>
 
+#include <robot2D/Config.hpp>
+
 namespace robot2D::ecs {
     using Bitset = uint32_t;
 
-    // todo hash code
-    class Bitmask {
+    ///
+    class ROBOT2D_EXPORT_API Bitmask {
     public:
         Bitmask();
         Bitmask(const Bitset& bits);
+        Bitmask(const Bitmask& bitmask) = default;
+        Bitmask& operator=(const Bitmask& bitmask) = default;
+        Bitmask(Bitmask&& bitmask) = default;
+        Bitmask& operator=(Bitmask&& bitmask) = default;
         ~Bitmask() = default;
 
         Bitset getBitset() const;
         void setBitset(const Bitset& bitset);
 
+        /// \brief
         bool matches(const Bitmask& other,
-                     const Bitset& relevant = 0);
+                     const Bitset& relevant = 0) const;
 
+        /// \brief
         bool getBit(const unsigned int& pos) const;
 
+        /// \brief
         void turnOnBit(const unsigned int& pos);
+
+        /// \brief
         void turnOnBits(const Bitset& bitset);
+
+        /// \brief
         void toggleBit(const unsigned int& pos);
+
+        /// \brief
         void clear(const unsigned int& pos);
 
+        /// \brief
         void Clear();
     private:
         Bitset m_bits;

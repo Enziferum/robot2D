@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2023
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -101,7 +101,7 @@ namespace robot2D {
 
         void setMouseCursorVisible(const bool& flag);
 
-        // Window manipulate options //
+        ////// Window manipulate options //////
 
         robot2D::vec2u getMonitorSize() const;
         void setPosition(const robot2D::vec2u& position);
@@ -110,7 +110,8 @@ namespace robot2D {
         void setResizable(const bool& flag);
         void setMaximazed(const bool& flag);
         void setVsync(bool flag);
-        // Window manipulate options //
+
+        ////// Window manipulate options //////
 
 
         void setMousePos(const vec2f& pos);
@@ -129,75 +130,9 @@ namespace robot2D {
     protected:
         static std::unique_ptr<priv::WindowImpl> m_windowImpl;
 
-        //window settings
+        /// window settings
         vec2u m_win_size;
         std::string m_name;
         WindowContext m_context;
     };
 }
-
-////////////////////////////////////////////////////////////
-/// \class robot2D::Window
-/// \ingroup window
-///
-/// robot2D::Window is the main class of the Core module. It defines
-/// an OS window that is able to receive an Graphics API rendering.
-///
-/// A robot2D::Window can create its own new window, or be embedded into
-/// an already existing control using the create(handle) function.
-/// This can be useful for embedding an OpenGL rendering area into
-/// a view which is part of a bigger GUI with existing windows,
-/// controls, etc. It can also serve as embedding an OpenGL rendering
-/// area into a window created by another (probably richer) GUI library
-/// like Qt or wxWidgets.
-///
-/// The robot2D::Window class provides a simple interface for manipulating
-/// the window: move, resize, show/hide, control mouse cursor, etc.
-/// It also provides event handling through its pollEvent() and waitEvent()
-/// functions.
-///
-/// Note that OpenGL experts can pass their own parameters (antialiasing
-/// level, bits for the depth and stencil buffers, etc.) to the
-/// OpenGL context attached to the window, with the sf::ContextSettings
-/// structure which is passed as an optional argument when creating the
-/// window.
-///
-/// On dual-graphics systems consisting of a low-power integrated GPU
-/// and a powerful discrete GPU, the driver picks which GPU will run an
-/// SFML application. In order to inform the driver that an SFML application
-/// can benefit from being run on the more powerful discrete GPU,
-/// #SFML_DEFINE_DISCRETE_GPU_PREFERENCE can be placed in a source file
-/// that is compiled and linked into the final application. The macro
-/// should be placed outside of any scopes in the global namespace.
-///
-/// Usage example:
-/// \code
-/// // Declare and create a new window
-/// robot2D::Window window({800, 600}, "Robot2D window");
-///
-/// // Limit the framerate to 60 frames per second (this step is optional)
-/// window.setFramerateLimit(60);
-///
-/// // The main loop - ends as soon as the window is closed
-/// while (window.isOpen())
-/// {
-///    // Event processing
-///    robot2D::Event event;
-///    while (window.pollEvent(event))
-///    {
-///        // Request for closing the window
-///        if (event.type == sf::Event::Closed)
-///            window.close();
-///    }
-///
-///    // Activate the window for OpenGL rendering
-///    window.setActive();
-///
-///    // OpenGL drawing commands go here...
-///
-///    // End the current frame and display its contents on screen
-///    window.display();
-/// }
-/// \endcode
-///
-////////////////////////////////////////////////////////////

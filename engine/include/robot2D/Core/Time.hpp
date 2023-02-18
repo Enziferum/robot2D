@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2023
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -34,10 +34,16 @@ namespace robot2D {
     class ROBOT2D_EXPORT_API Time {
     public:
         Time(int64_t time = 0LL);
+        Time(const Time& other) = default;
+        Time& operator=(const Time& other) = default;
+        Time(Time&& other) = default;
+        Time& operator=(Time&& other) = default;
         ~Time() = default;
 
-        float asSeconds() const { return m_time / 1000000.F; }
-        float asMilliSeconds() const { return m_time / 1000.F; }
+        float asSeconds() const { return static_cast<float>(m_time) / 1000000.F; }
+
+        float asMilliSeconds() const { return static_cast<float>(m_time) / 1000.F; }
+
         int64_t asMicroSeconds() const { return m_time; }
     private:
         int64_t m_time;

@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2023
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -25,18 +25,16 @@ source distribution.
 #include <robot2D/Core/Vector2.hpp>
 #include <robot2D/Core/Cursor.hpp>
 
-namespace robot2D {
-    namespace priv {
-        class CursorImpl {
-        public:
-            CursorImpl() = default;
-            virtual ~CursorImpl() = 0;
+namespace robot2D::priv {
+    class CursorImpl {
+    public:
+        CursorImpl() = default;
+        virtual ~CursorImpl() = 0;
 
-            virtual bool createFromPixels(unsigned char* pixels, const vec2u& size) = 0;
-            virtual void createDefault() = 0;
-            virtual void create(const CursorType& cursorType) = 0;
-            virtual void* getRaw() const = 0;
-            static std::unique_ptr<CursorImpl> createImpl();
-        };
-    }
+        virtual bool createFromPixels(unsigned char* pixels, const vec2u& size) = 0;
+        virtual void createDefault() = 0;
+        virtual void create(const CursorType& cursorType) = 0;
+        virtual void* getRaw() const = 0;
+        static std::unique_ptr<CursorImpl> createImpl();
+    };
 }

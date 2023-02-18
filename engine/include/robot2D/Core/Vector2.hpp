@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2023
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -33,10 +33,13 @@ namespace robot2D {
     struct ROBOT2D_EXPORT_API Vector2 {
         constexpr Vector2();
         constexpr Vector2(const T& x, const T& y);
-
         template<typename U>
         constexpr explicit Vector2(const Vector2<U>& other);
 
+        constexpr Vector2(const Vector2& other) = default;
+        constexpr Vector2& operator=(const Vector2& other) = default;
+        constexpr Vector2(Vector2&& other)noexcept = default;
+        constexpr Vector2& operator=(Vector2&& other)noexcept = default;
         ~Vector2() = default;
 
         template<typename U>
