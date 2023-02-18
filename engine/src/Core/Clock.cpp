@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2023
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -22,13 +22,24 @@ source distribution.
 #include <robot2D/Core/Clock.hpp>
 
 namespace robot2D {
-    Clock::Clock(): m_start(std::chrono::high_resolution_clock::now()) {}
+    Clock::Clock():
+            m_start(std::chrono::high_resolution_clock::now()),
+            m_restart(std::chrono::high_resolution_clock::now()),
+            m_restartCount{0}
+    {}
+
+    Time Clock::duration() const {
+        auto now = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(now - m_start).count();
+        return { duration };
+    }
 
     Time Clock::restart() {
+        ++m_restartCount;
         auto now = std::chrono::high_resolution_clock::now();
-        auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(now - m_start).count();
-        m_start = now;
-        return Time(elapsed);
+        auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(now - m_restart).count();
+        m_restart = now;
+        return { elapsed };
     }
 
 }

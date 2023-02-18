@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2023
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -20,23 +20,25 @@ source distribution.
 *********************************************************************/
 
 #pragma once
+
 #include <cassert>
 #include <robot2D/Graphics/Drawable.hpp>
 #include <robot2D/Core/MessageBus.hpp>
+#include <robot2D/Config.hpp>
 
 #include "EntityManager.hpp"
 #include "SystemManager.hpp"
 
 namespace robot2D::ecs {
 
-    // Ecs Manager as well, entites adding to Scene
-    class Scene: public robot2D::Drawable {
+    /// \brief Ecs Manager as well, entities adding to Scene
+    class ROBOT2D_EXPORT_API Scene: public robot2D::Drawable {
     public:
         Scene(robot2D::MessageBus& messageBus, const bool& useSystems = true);
-        Scene(const Scene&)=delete;
-        Scene(const Scene&&)=delete;
-        Scene& operator=(const Scene&)=delete;
-        Scene& operator=(const Scene&&)=delete;
+        Scene(const Scene&) = delete;
+        Scene(Scene&&) = delete;
+        Scene& operator=(const Scene&) = delete;
+        Scene& operator=(Scene&&) = delete;
         ~Scene() = default;
 
         Entity createEntity();
@@ -54,9 +56,11 @@ namespace robot2D::ecs {
         template<typename T>
         const T* getSystem() const;
 
-        void update(float dt);
-        void draw(robot2D::RenderTarget& target, robot2D::RenderStates) const override;
+        void handleMessages(const Message& message);
 
+        void update(float dt);
+
+        void draw(robot2D::RenderTarget& target, robot2D::RenderStates states) const override;
     private:
         robot2D::MessageBus& m_messageBus;
         ComponentManager m_componentManager;
@@ -73,14 +77,13 @@ namespace robot2D::ecs {
 
     template<typename T, typename ...Args>
     void Scene::addSystem(Args&& ...args) {
-        static_assert(std::is_base_of<System, T>::value, "Adding T must be subclass of ecs::System");
+        static_assert(std::is_base_of_v<System, T>, "T must be subclass of ecs::System");
 
         auto& system = m_systemManager.addSystem<T>(std::forward<Args>(args)...);
-        if(std::is_base_of<robot2D::Drawable, T>::value) {
+        if(std::is_base_of_v<robot2D::Drawable, T>) {
             auto* drawable = dynamic_cast<robot2D::Drawable*>(&system);
             m_drawables.emplace_back(drawable);
         }
-
     }
 
     template<typename T>

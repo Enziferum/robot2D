@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2023
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -24,21 +24,19 @@ source distribution.
 #include <GLFW/glfw3.h>
 #include "../CursorImpl.hpp"
 
-namespace robot2D {
-    namespace priv {
-        class DesktopCursorImpl: public CursorImpl {
-        public:
-            DesktopCursorImpl();
-            ~DesktopCursorImpl() override;
+namespace robot2D::priv {
+    class DesktopCursorImpl: public CursorImpl {
+    public:
+        DesktopCursorImpl();
+        ~DesktopCursorImpl() override;
 
-            bool createFromPixels(unsigned char* pixels, const vec2u &size) override;
-            void createDefault() override;
-            void create(const CursorType& cursorType) override;
+        bool createFromPixels(unsigned char* pixels, const vec2u &size) override;
+        void createDefault() override;
+        void create(const CursorType& cursorType) override;
 
-            void* getRaw() const override;
+        void* getRaw() const override;
 
-        private:
-            GLFWcursor* m_cursor;
-        };
-    }
+    private:
+        GLFWcursor* m_cursor;
+    };
 }

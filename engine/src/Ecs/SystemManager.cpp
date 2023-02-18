@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2023
 https://github.com/Enziferum
 ZombieArena - Zlib license.
 This software is provided 'as-is', without any express or
@@ -24,32 +24,35 @@ source distribution.
 #include <robot2D/Ecs/Scene.hpp>
 
 namespace robot2D::ecs {
-    SystemManager::SystemManager(robot2D::MessageBus& messageBus, ComponentManager& componentManager,
-                                 Scene* scene):
+    SystemManager::SystemManager(
+            robot2D::MessageBus& messageBus,
+            ComponentManager& componentManager,
+            Scene* scene
+    ):
         m_messageBus(messageBus), m_componentManager(componentManager),
         m_scene{scene} {}
 
     void SystemManager::removeEntity(Entity entity) {
-        for(auto& it: m_systems) {
-            it -> removeEntity(entity);
+        for(auto& system: m_systems) {
+            system -> removeEntity(entity);
         }
     }
 
     void SystemManager::handleMessage(const robot2D::Message& message) {
-        for(auto& it: m_systems)
-            it -> onMessage(message);
+        for(auto& system: m_systems)
+            system -> onMessage(message);
     }
 
     void SystemManager::update(float dt) {
-        for(auto& it: m_systems)
-            it -> update(dt);
+        for(auto& system: m_systems)
+            system -> update(dt);
     }
 
     void SystemManager::addEntity(Entity entity) {
         const auto mask = entity.getComponentMask();
-        for(auto& it: m_systems) {
-            if(it -> fitsRequirements(mask)) {
-                it -> addEntity(entity);
+        for(auto& system: m_systems) {
+            if(system -> fitsRequirements(mask)) {
+                system -> addEntity(entity);
             }
         }
     }

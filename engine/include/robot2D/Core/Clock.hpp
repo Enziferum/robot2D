@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2023
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -32,11 +32,21 @@ namespace robot2D {
     class ROBOT2D_EXPORT_API Clock {
     public:
         Clock();
+        Clock(const Clock& other) = default;
+        Clock& operator=(const Clock& other) = default;
+        Clock(Clock&& other) = default;
+        Clock& operator=(Clock&& other) = default;
         ~Clock() = default;
 
         /// Returns process delta in Time format.
         Time restart();
+        /// Duration time from creation of clock.
+        Time duration() const;
+
+        std::size_t getRestartsCount() const { return m_restartCount; }
     private:
         std::chrono::time_point<std::chrono::high_resolution_clock> m_start;
+        std::chrono::time_point<std::chrono::high_resolution_clock> m_restart;
+        std::size_t m_restartCount;
     };
 }

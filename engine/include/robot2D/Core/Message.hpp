@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2023
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -45,18 +45,17 @@ namespace robot2D {
         /// Allow to cast Message as your own Format returning from MessageBus
         template<typename T>
         const T& getData() const;
-
-        /// Data of Message
-        MessageBuffer buffer;
     private:
-        friend class MessageBus;
-
-        size_t buffer_sz;
+        template<typename Allocator, std::size_t size>
+        friend class TMessageBus;
+        /// Data of Message
+        MessageBuffer m_buffer;
+        std::size_t m_buffersz;
     };
 
     template<typename T>
     const T& Message::getData() const {
         //assert(sizeof(T) == buffer_sz && "T size must be == buffer_sz");
-        return *static_cast<T*>(buffer);
+        return *static_cast<T*>(m_buffer);
     }
 }

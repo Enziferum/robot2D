@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2023
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -27,6 +27,8 @@ source distribution.
 #include <algorithm>
 #include <memory>
 
+#include <robot2D/Config.hpp>
+
 #include "Bitmask.hpp"
 #include "Component.hpp"
 #include "Defines.hpp"
@@ -41,26 +43,24 @@ namespace robot2D::ecs {
     public:
         virtual ~IContainer() = default;
         virtual size_t getSize() const = 0;
-        virtual void resize(const size_t& newSize) = 0;
-
         virtual bool removeEntity(EntityID&& entityId) = 0;
     };
 
-    // Container for component of special type
+    /// \brief Container for component of special type
     template<typename T>
-    class ComponentContainer: public IContainer {
+    class ROBOT2D_EXPORT_API ComponentContainer: public IContainer {
     public:
         using Ptr = std::shared_ptr<ComponentContainer<T>>;
     public:
         ComponentContainer(): m_components(256) {}
+        ComponentContainer(const ComponentContainer& other);
+        ComponentContainer& operator=(const ComponentContainer& other);
+        ComponentContainer(ComponentContainer&& other);
+        ComponentContainer& operator=(ComponentContainer&& other);
         ~ComponentContainer() = default;
 
         size_t getSize() const override {
             return m_components.size();
-        }
-
-        void resize(const size_t& newSize) override {
-           // m_components.resize(newSize);
         }
 
         T& operator[](std::size_t index) {
@@ -131,18 +131,18 @@ namespace robot2D::ecs {
 
     private:
         void markDestroyed(Entity entity);
-    private:
-        EntityID m_entityCounter;
-        friend class Scene;
-        ComponentManager& m_componentManager;
-        std::vector<IContainer::Ptr> m_componentContainers;
-        std::unordered_map<EntityID, Bitmask> m_componentMasks;
 
-        std::vector<bool> m_destroyFlags;
-
-        // allows to get Container of special type
+        /// \brief allows to get Container of special type
         template<typename T>
         ComponentContainer<T>& getContainer();
+    private:
+        friend class Scene;
+
+        EntityID m_entityCounter;
+        ComponentManager& m_componentManager;
+        std::unordered_map<EntityID, Bitmask> m_componentMasks;
+        std::vector<IContainer::Ptr> m_componentContainers;
+        std::vector<bool> m_destroyFlags;
     };
 
     template<typename T>
@@ -158,13 +158,6 @@ namespace robot2D::ecs {
     template<typename T, typename... Args>
     T& Entity::addComponent(Args &&... args) {
        return m_entityManager -> addComponent<T>(*this, std::forward<Args>(args)...);
-    }
-
-    template<typename T>
-    bool Entity::hasComponent() {
-        if(!m_entityManager)
-            return false;
-        return m_entityManager -> hasComponent<T>(*this);
     }
 
     template<typename T>
@@ -191,13 +184,8 @@ namespace robot2D::ecs {
 
     template<typename T>
     void EntityManager::addComponent(Entity entity, T component) {
-        // need for bitmask
         const auto& componentID = m_componentManager.getID<T>();
-        // identifier for storage
         const auto& entityID = entity.getIndex();
-        // 1. get ComponentContainer by identifier
-        // 2. add component
-        // 3. update bitmask
 
         ComponentContainer<T>& container = getContainer<T>();
         container[entityID] = component;
@@ -256,10 +244,6 @@ namespace robot2D::ecs {
             return;
 
         const auto entityID = entity.getIndex();
-        // 1. get ComponentContainer by identifier
-        // 2. add component
-        // 3. update bitmask
-
         ComponentContainer<T> container = getContainer<T>();
 
         const auto componentID = m_componentManager.getID<T>();

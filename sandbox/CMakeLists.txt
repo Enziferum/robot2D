@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.11)
+cmake_minimum_required(VERSION 3.16)
 project(robot2D-Sandbox)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -36,19 +36,20 @@ if(UNIX)
 endif()
 set(LIBS robot2D robot2D_ext ${LIBS})
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/incl)
-
 set(SRC
-        src/main.cpp
-        src/Render2DScene.cpp
-        src/Sandbox.cpp
-        src/Scene.cpp
-        src/Components.cpp
-        src/Systems.cpp
-        src/LayerScene.cpp)
+        source/main.cpp
+        source/Render2DScene.cpp
+        source/Sandbox.cpp
+        source/Scene.cpp
+        source/Components.cpp
+        source/Systems.cpp
+        source/LayerScene.cpp)
 
 
 add_executable(${PROJECT_NAME} ${SRC})
+target_include_directories(${PROJECT_NAME} PUBLIC
+        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+        "$<INSTALL_INTERFACE:include>")
 
 if(UNIX)
     SET(GCC_COVERAGE_LINK_FLAGS "-ldl -Wl --start-group")

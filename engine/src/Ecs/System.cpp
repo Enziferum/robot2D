@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2023
 https://github.com/Enziferum
 ZombieArena - Zlib license.
 This software is provided 'as-is', without any express or
@@ -35,7 +35,6 @@ namespace robot2D::ecs {
         return false;
     }
 
-
     bool System::addEntity(Entity entity) {
         if(hasEntity(entity))
             return false;
@@ -45,59 +44,47 @@ namespace robot2D::ecs {
     }
 
     bool System::hasEntity(Entity entity) {
-        auto it = std::find_if(m_entities.begin(), m_entities.end(),
+        auto found = std::find_if(m_entities.begin(), m_entities.end(),
                                [&entity](const Entity& id) {
                                    return entity == id;
                                });
-        return it != m_entities.end();
+        return found != m_entities.end();
     }
 
     void System::setScene(Scene* scene) {
         m_scene = scene;
     }
 
-
     Scene* System::getScene() {
         return m_scene;
     }
 
     bool System::removeEntity(Entity entity) {
-        auto it = std::find_if(m_entities.begin(), m_entities.end(),
+        auto found = std::find_if(m_entities.begin(), m_entities.end(),
                                [&entity](const Entity& id) {
             return entity == id;
         });
 
-        if(it == m_entities.end())
+        if(found == m_entities.end())
             return false;
-        onEntityRemoved(*it);
-        m_entities.erase(it);
+        onEntityRemoved(*found);
+        m_entities.erase(found);
         return true;
     }
 
-    void System::onMessage(const robot2D::Message& message) {
-        (void)message;
-    }
+    void System::onMessage([[maybe_unused]] const robot2D::Message& message) {}
 
+    void System::update([[maybe_unused]] float dt) {}
 
-    void System::update(float dt) {
-        (void)dt;
-    }
+    void System::onEntityAdded([[maybe_unused]] Entity entity) {}
 
-    void System::onEntityAdded(Entity entity) {
-        (void)entity;
-    }
+    void System::onEntityRemoved([[maybe_unused]] Entity entity) {}
 
     void System::processRequirements(ComponentManager& componentManager) {
-        for(auto& it: m_pendingTypes) {
-            auto index = componentManager.getIDFromIndex(it);
+        for(auto& type: m_pendingTypes) {
+            auto index = componentManager.getIDFromIndex(type);
             m_mask.turnOnBit(index);
         }
         m_pendingTypes.clear();
     }
-
-    void System::onEntityRemoved(Entity entity) {
-        (void)entity;
-    }
-
-
 }

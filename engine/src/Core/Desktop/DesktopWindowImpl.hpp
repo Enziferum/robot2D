@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2023
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -24,77 +24,75 @@ source distribution.
 #include <queue>
 
 #include <GLFW/glfw3.h>
-#include "../WindowImpl.hpp"
-
 #include <robot2D/Core/WindowContext.hpp>
 
-namespace robot2D {
-    namespace priv {
+#include "../WindowImpl.hpp"
 
-        /// \brief our desktop backend is GLFW
-        class DesktopWindowImpl: public WindowImpl {
-        public:
-            DesktopWindowImpl();
-            DesktopWindowImpl(const vec2u& size, const std::string& name, WindowContext& context);
-            ~DesktopWindowImpl();
+namespace robot2D::priv {
 
-            bool pollEvents(Event& event) override;
-            void* getRaw() override;
+    /// \brief our desktop backend is GLFW
+    class DesktopWindowImpl: public WindowImpl {
+    public:
+        DesktopWindowImpl();
+        DesktopWindowImpl(const vec2u& size, const std::string& name, WindowContext& context);
+        ~DesktopWindowImpl();
 
-            bool isOpen() const override;
-            void setTitle(const std::string& title) const override;
+        bool pollEvents(Event& event) override;
+        void* getRaw() override;
 
-            void close() override;
-            void display() override;
+        bool isOpen() const override;
+        void setTitle(const std::string& title) const override;
 
-            bool isMousePressed(const Mouse& button)override;
-            bool isKeyboardPressed(const Key& key)override;
-            bool isJoystickAvailable(const JoystickType& joystickType) override;
-            bool JoystickIsGamepad(const JoystickType& joystickType) override;
-            bool getJoystickGamepadInput(const JoystickType& joystickType,
-                                         JoystickGamepadInput& gamepadInput) override;
+        void close() override;
+        void display() override;
 
-            void setSize(const robot2D::vec2u& size) override;
+        bool isMousePressed(const Mouse& button)override;
+        bool isKeyboardPressed(const Key& key)override;
+        bool isJoystickAvailable(const JoystickType& joystickType) override;
+        bool JoystickIsGamepad(const JoystickType& joystickType) override;
+        bool getJoystickGamepadInput(const JoystickType& joystickType,
+                                     JoystickGamepadInput& gamepadInput) override;
 
-            void setIcon(robot2D::Image&& icon)override;
+        void setSize(const robot2D::vec2u& size) override;
 
-            void setMouseCursorVisible(const bool& flag) override;
-            void setCursor(const Cursor& cursor)override;
+        void setIcon(robot2D::Image&& icon)override;
 
-            robot2D::vec2u getMonitorSize() const override;
-            void setPosition(const robot2D::vec2u& position) override;
-            robot2D::vec2u getPosition() const override;
+        void setMouseCursorVisible(const bool& flag) override;
+        void setCursor(const Cursor& cursor)override;
 
-            void setResizable(const bool &flag) override;
-            void setMaximazed(const bool& flag) override;
+        robot2D::vec2u getMonitorSize() const override;
+        void setPosition(const robot2D::vec2u& position) override;
+        robot2D::vec2u getPosition() const override;
 
-            void setMousePos(const vec2f& pos) override;
-            vec2f getMousePos() const override;
+        void setResizable(const bool &flag) override;
+        void setMaximazed(const bool& flag) override;
 
-            void setVsync(bool flag) override;
-        private:
-            void setup();
-            void setup_callbacks();
-        private:
-            static void close_callback(GLFWwindow* wnd);
-            static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
-            static void cursor_callback(GLFWwindow* window, double xpos, double ypos);
-            static void mouseWhell_callback(GLFWwindow* window, double xpos, double ypos);
-            static void mouse_callback(GLFWwindow* window, int key, int action, int mods);
-            static void size_callback(GLFWwindow* window, int w, int h);
-            static void framebuffer_callback(GLFWwindow* window, int width, int height);
-            static void maximized_callback(GLFWwindow* window, int state);
-            static void dragdrop_callback(GLFWwindow* wnd, int count, const char** paths);
-            static void focus_callback(GLFWwindow* wnd, int focus);
-            static void text_callback(GLFWwindow* wnd, unsigned int);
-            static void joystick_callback(int jid, int event);
-        private:
-            GLFWwindow* m_window;
-            std::queue<Event> m_event_queue;
-            vec2u m_size;
-            std::string m_name;
-            WindowContext m_context;
-            bool m_cursorVisible;
-        };
-    }
+        void setMousePos(const vec2f& pos) override;
+        vec2f getMousePos() const override;
+
+        void setVsync(bool flag) override;
+    private:
+        void setup();
+        void setup_callbacks();
+    private:
+        static void close_callback(GLFWwindow* wnd);
+        static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
+        static void cursor_callback(GLFWwindow* window, double xpos, double ypos);
+        static void mouseWhell_callback(GLFWwindow* window, double xpos, double ypos);
+        static void mouse_callback(GLFWwindow* window, int key, int action, int mods);
+        static void size_callback(GLFWwindow* window, int w, int h);
+        static void framebuffer_callback(GLFWwindow* window, int width, int height);
+        static void maximized_callback(GLFWwindow* window, int state);
+        static void dragdrop_callback(GLFWwindow* wnd, int count, const char** paths);
+        static void focus_callback(GLFWwindow* wnd, int focus);
+        static void text_callback(GLFWwindow* wnd, unsigned int);
+        static void joystick_callback(int jid, int event);
+    private:
+        GLFWwindow* m_window;
+        std::queue<Event> m_event_queue;
+        vec2u m_size;
+        std::string m_name;
+        WindowContext m_context;
+        bool m_cursorVisible;
+    };
 }

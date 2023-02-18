@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.11)
+cmake_minimum_required(VERSION 3.16)
 project(robot2D)
 
 if(MSVC)
@@ -18,7 +18,7 @@ set(CMAKE_CXX_STANDARD 17)
 option(CMAKE_BUILD_TYPE "Choose the type of build (Debug or Release)" Debug)
 option(BUILD_SHARED_LIBS "Whether to build shared libraries" OFF)
 option(BUILD_SANDBOX "Build Sandbox Submodule?" OFF)
-option(BUILD_EDITOR "Build Editor Submodule?" ON)
+option(BUILD_TESTS "Build Tests?" OFF)
 
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
@@ -49,7 +49,7 @@ else()
     enable_cxx_compiler_flag_if_supported("-Wall")
     enable_cxx_compiler_flag_if_supported("-Wextra")
     enable_cxx_compiler_flag_if_supported("-Wpedantic")
-    #enable_cxx_compiler_flag_if_supported("-Werror")
+    enable_cxx_compiler_flag_if_supported("-Wreorder")
 endif()
 
 find_package(glfw3 REQUIRED)
@@ -108,6 +108,6 @@ if(BUILD_SANDBOX)
     add_subdirectory(sandbox)
 endif()
 
-if(BUILD_EDITOR)
-    add_subdirectory(editor)
+if(BUILD_TESTS)
+    add_subdirectory(tests)
 endif()

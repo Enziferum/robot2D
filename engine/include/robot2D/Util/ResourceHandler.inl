@@ -24,7 +24,7 @@ source distribution.
 
 template<typename T, typename ID>
 template<typename ... Args>
-bool ResourceHandler<T, ID>::loadFromFile(const ID &idx, Args&& ... args) {
+bool ResourceHandler<T, ID>::loadFromFile(const ID& idx, Args&& ... args) {
     Ptr resource = std::make_unique<T>();
     if(!resource->loadFromFile(std::forward<Args>(args)...))
         return false;
@@ -39,12 +39,9 @@ bool ResourceHandler<T, ID>::loadFromFile(const ID &idx, Args&& ... args) {
     return true;
 }
 
+
 template<typename T, typename ID>
 const T& ResourceHandler<T, ID>::get(const ID &idx) const {
     return *m_resources.at(idx);
 }
 
-template<typename T, typename ID>
-T& ResourceHandler<T, ID>::get(const ID &idx){
-    return *m_resources.at(idx);
-}
