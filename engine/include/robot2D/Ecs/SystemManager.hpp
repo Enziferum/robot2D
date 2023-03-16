@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2023
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -24,21 +24,25 @@ source distribution.
 #include <algorithm>
 #include <unordered_map>
 
+#include <robot2D/Config.hpp>
 #include <robot2D/Core/MessageBus.hpp>
 #include "System.hpp"
-#include "EventQueue.hpp"
 
 namespace robot2D::ecs {
 
     class Scene;
-    class SystemManager {
+    class ROBOT2D_EXPORT_API SystemManager {
     public:
         SystemManager(robot2D::MessageBus& messageBus,
                       ComponentManager& m_componentManager,
                       Scene* scene);
+        SystemManager(const SystemManager& other) = delete;
+        SystemManager& operator=(const SystemManager& other) = delete;
+        SystemManager(SystemManager&& other) = delete;
+        SystemManager& operator=(SystemManager&& other) = delete;
         ~SystemManager() = default;
 
-        template<class T, typename ...Args>
+        template<typename T, typename ...Args>
         T& addSystem(Args&& ...args);
 
         template<typename T>
@@ -66,47 +70,60 @@ namespace robot2D::ecs {
 
     template<class T, typename... Args>
     T& SystemManager::addSystem(Args&& ... args) {
+        static_assert(std::is_base_of_v<System, T> && "Possible add only systems");
+
         UniqueType systemId(typeid(T));
-        auto it = std::find_if(m_systems.begin(), m_systems.end(), [&systemId](const System::Ptr& ptr ) {
-            return ptr->m_systemId == systemId;
+        auto found = std::find_if(m_systems.begin(), m_systems.end(), [&systemId](const System::Ptr& ptr ) {
+            return ptr -> m_systemId == systemId;
         });
 
-        if(it != m_systems.end()) {
-            return *(dynamic_cast<T*>(it->get()));
+        if(found != m_systems.end()) {
+            return *(dynamic_cast<T*>(found -> get()));
         }
 
         auto& system = m_systems.emplace_back(std::make_shared<T>(std::forward<Args>(args)...));
         system -> setScene(m_scene);
         system -> processRequirements(m_componentManager);
+
         return *(dynamic_cast<T*>(m_systems.back().get()));
     }
 
     template<typename T>
     T* SystemManager::getSystem() {
         UniqueType systemId(typeid(T));
-        auto it = std::find_if(m_systems.begin(), m_systems.end(), [&systemId](const System::Ptr& ptr ) {
+
+        auto found = std::find_if(m_systems.begin(), m_systems.end(), [&systemId](const System::Ptr& ptr ) {
             return ptr->m_systemId == systemId;
         });
-        return dynamic_cast<T*>(it->get());
+
+        if(found == m_systems.end())
+            return nullptr;
+
+        return dynamic_cast<T*>(found -> get());
     }
 
     template<typename T>
     const T* SystemManager::getSystem() const {
         UniqueType systemId(typeid(T));
-        auto it = std::find_if(m_systems.begin(), m_systems.end(), [&systemId](const System::Ptr& ptr ) {
-            return ptr->m_systemId == systemId;
+
+        auto found = std::find_if(m_systems.begin(), m_systems.end(), [&systemId](const System::Ptr& ptr ) {
+            return ptr -> m_systemId == systemId;
         });
-        return dynamic_cast<T*>(it->get());
+
+        if(found == m_systems.end())
+            return nullptr;
+
+        return dynamic_cast<T*>(found -> get());
     }
 
     template<typename T>
     bool SystemManager::hasSystem() const {
         UniqueType systemId(typeid(T));
-        auto it = std::find_if(m_systems.begin(), m_systems.end(), [&systemId](const System::Ptr& ptr ) {
-            return ptr->m_systemId == systemId;
+        auto found = std::find_if(m_systems.begin(), m_systems.end(), [&systemId](const System::Ptr& ptr ) {
+            return ptr -> m_systemId == systemId;
         });
 
-        return it != m_systems.end();
+        return found != m_systems.end();
     }
 
 }

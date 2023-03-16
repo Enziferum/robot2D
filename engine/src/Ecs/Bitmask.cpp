@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2023
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -23,19 +23,15 @@ source distribution.
 #include <robot2D/Ecs/Bitmask.hpp>
 
 namespace robot2D::ecs {
-    Bitmask::Bitmask() : m_bits(0) {
+    Bitmask::Bitmask() : m_bits(0) {}
 
-    }
-
-    Bitmask::Bitmask(const Bitset& bits): m_bits(bits) {
-
-    }
+    Bitmask::Bitmask(const Bitset& bits): m_bits(bits) {}
 
     Bitset Bitmask::getBitset() const {
         return m_bits;
     }
 
-    void Bitmask::setBitset(const ecs::Bitset& bitset) {
+    void Bitmask::setBitset(const Bitset& bitset) {
         m_bits = bitset;
     }
 
@@ -55,7 +51,7 @@ namespace robot2D::ecs {
         m_bits ^= (1 << pos);
     }
 
-    bool Bitmask::matches(const Bitmask &other, const Bitset& relevant) {
+    bool Bitmask::matches(const Bitmask &other, const Bitset& relevant) const {
         return (relevant
                         ? ((other.getBitset() & relevant) == (m_bits & relevant))
                         : (m_bits == other.m_bits));

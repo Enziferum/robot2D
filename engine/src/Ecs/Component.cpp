@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2023
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -27,15 +27,16 @@ namespace robot2D::ecs {
     ComponentManager::ComponentManager(): m_indices() {}
 
     ComponentManager::ID ComponentManager::getIDFromIndex(const UniqueType& uniqueType) {
-        auto iter = std::find_if(m_indices.begin(), m_indices.end(), [&](const UniqueType& type) {
+        auto found = std::find_if(m_indices.begin(), m_indices.end(), [&](const UniqueType& type) {
             return uniqueType == type;
         });
-        if(iter == m_indices.end()) {
+
+        if(found == m_indices.end()) {
             m_indices.emplace_back(uniqueType);
             return m_indices.size() - 1;
         }
 
-        return std::distance(m_indices.begin(), iter);
+        return std::distance(m_indices.begin(), found);
     }
 
 }

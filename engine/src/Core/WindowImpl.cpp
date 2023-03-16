@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2023
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -19,27 +19,25 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
+// TODO:(a.raag) just now not check OS, only main desktop
+#include <robot2D/Config.hpp>
 #include "WindowImpl.hpp"
 
-//just now not check OS, only main desktop
 #include "Desktop/DesktopWindowImpl.hpp"
 
 using WindowImplType = robot2D::priv::DesktopWindowImpl;
 
-namespace robot2D {
-    namespace priv {
+namespace robot2D::priv {
 
-        WindowImpl::WindowImpl() {}
-        WindowImpl::~WindowImpl() {}
+    WindowImpl::WindowImpl()  = default;
+    WindowImpl::~WindowImpl() = default;
 
-        WindowImpl::Ptr WindowImpl::create() {
-            return std::make_unique<WindowImplType>();
-        }
+    WindowImpl::Ptr WindowImpl::create() {
+        return std::make_unique<WindowImplType>();
+    }
 
-        WindowImpl::Ptr WindowImpl::create(const vec2u &size, const std::string &name, WindowContext &context) {
-            return std::make_unique<WindowImplType>(size, name, context);
-        }
-
+    WindowImpl::Ptr WindowImpl::create(const vec2u& size, const std::string& name, WindowContext& context) {
+        return std::make_unique<WindowImplType>(size, name, context);
     }
 }
 

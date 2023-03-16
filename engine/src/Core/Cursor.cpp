@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2023
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -28,7 +28,7 @@ namespace robot2D {
         m_cursorImpl = priv::CursorImpl::createImpl();
     }
 
-    Cursor::~Cursor() {}
+    Cursor::~Cursor() noexcept = default;
 
     bool Cursor::createFromPixels(unsigned char* pixels, const vec2u& size) {
         return m_cursorImpl -> createFromPixels(pixels, size);

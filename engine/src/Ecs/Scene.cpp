@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2023
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -29,9 +29,7 @@ namespace robot2D::ecs {
     m_componentManager(),
     m_entityManager(m_componentManager),
     m_systemManager(messageBus, m_componentManager, this),
-    m_useSystems(useSystems) {
-
-    }
+    m_useSystems(useSystems) {}
 
     Entity Scene::createEntity() {
         Entity entity = m_entityManager.createEntity();
@@ -46,8 +44,12 @@ namespace robot2D::ecs {
         m_entityManager.markDestroyed(entity);
     }
 
+    void Scene::handleMessages(const Message& message) {
+        m_systemManager.handleMessage(message);
+    }
+
     void Scene::update(float dt) {
-      //  m_deletePending.swap(m_deletePendingBuffer);
+        // TODO(a.raag) double buffer fix
         for(auto& entity: m_deletePending) {
             if(m_useSystems)
                 m_systemManager.removeEntity(entity);
@@ -57,15 +59,16 @@ namespace robot2D::ecs {
 
         for(auto& entity: m_addPending)
             m_systemManager.addEntity(entity);
+
         m_addPending.clear();
         if(m_useSystems)
             m_systemManager.update(dt);
     }
 
-    void Scene::draw(robot2D::RenderTarget& target, robot2D::RenderStates states) const {
-        (void)states;
-        for(auto& it: m_drawables)
-            target.draw(*it);
+    void Scene::draw(robot2D::RenderTarget& target, [[maybe_unused]] robot2D::RenderStates states) const {
+        for(auto& drawable: m_drawables)
+            target.draw(*drawable);
     }
+
 }
 

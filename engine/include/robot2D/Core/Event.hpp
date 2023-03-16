@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2023
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -79,6 +79,7 @@ namespace robot2D {
                 right = 1,
                 middle = 2
             };
+
             int btn;
             int x;
             int y;
@@ -95,6 +96,7 @@ namespace robot2D {
             unsigned int symbol;
         };
 
+        /// Joystick
         struct JoystickEvent {
             int joytickId;
             bool isGamepad{false};
@@ -110,5 +112,8 @@ namespace robot2D {
             JoystickEvent joystick;
         };
 
+        /// \brief get event as concrete inside type
+        template<typename T>
+        T as() const;
     };
 }
