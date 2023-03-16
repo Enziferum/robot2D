@@ -19,6 +19,7 @@ option(CMAKE_BUILD_TYPE "Choose the type of build (Debug or Release)" Debug)
 option(BUILD_SHARED_LIBS "Whether to build shared libraries" OFF)
 option(BUILD_SANDBOX "Build Sandbox Submodule?" OFF)
 option(BUILD_TESTS "Build Tests?" OFF)
+option(BUILD_EDITOR "Build Editor?" ON)
 
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
@@ -110,4 +111,8 @@ endif()
 
 if(BUILD_TESTS)
     add_subdirectory(tests)
+endif()
+
+if(BUILD_EDITOR)
+    add_subdirectory(editor)
 endif()
