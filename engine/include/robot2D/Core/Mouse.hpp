@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2023
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -23,10 +23,17 @@ source distribution.
 
 namespace robot2D {
     /// Mouse buttons. Middle = wheel of mouse.
-    enum Mouse {
+    enum class Mouse {
         MouseLeft = 0,
         MouseRight = 1,
         MouseMiddle = 2
     };
+    // TODO(a.raag): add more possible buttons to bind
 
+
+    int mouse2int(Mouse mouse);
+
+    Mouse int2mouse(int rawCode);
+
+    bool isMousePressed(Mouse mouse);
 }

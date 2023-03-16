@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2023
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -24,16 +24,21 @@ source distribution.
 #include <cstdint>
 #include <vector>
 
+#include <robot2D/Config.hpp>
 #include "Defines.hpp"
 
 namespace robot2D::ecs {
-    // allow to work With Components without using ComponentID variable
-    class ComponentManager final {
+    /// Allow to work With Components without using ComponentID variable
+    class ROBOT2D_EXPORT_API ComponentManager final {
     public:
-        ComponentManager();
-        ~ComponentManager() = default;
-
         using ID = uint32_t;
+
+        ComponentManager();
+        ComponentManager(const ComponentManager& other) = delete;
+        ComponentManager& operator=(const ComponentManager& other) = delete;
+        ComponentManager(ComponentManager&& other) = delete;
+        ComponentManager& operator=(ComponentManager&& other) = delete;
+        ~ComponentManager() = default;
 
         template<typename T>
         ID getID() {

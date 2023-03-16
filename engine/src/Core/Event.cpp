@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2023
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -20,4 +20,42 @@ source distribution.
 *********************************************************************/
 
 #include <robot2D/Core/Event.hpp>
-namespace robot2D {}
+
+namespace robot2D {
+
+    template<>
+    Event::SizeEvent Event::as() const {
+        return size;
+    }
+
+    template<>
+    Event::MouseMoveEvent Event::as() const {
+        return move;
+    }
+
+    template<>
+    Event::MouseButtonEvent Event::as() const {
+        return mouse;
+    }
+
+    template<>
+    Event::MouseWheelEvent Event::as() const {
+        return wheel;
+    }
+
+    template<>
+    Event::KeyboardEvent Event::as() const {
+        return key;
+    }
+
+    template<>
+    Event::TextEnterEvent Event::as() const {
+        return text;
+    }
+
+    template<>
+    Event::JoystickEvent Event::as() const {
+        return joystick;
+    }
+
+}

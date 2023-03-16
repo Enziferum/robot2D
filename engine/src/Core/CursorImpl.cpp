@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2023
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -26,12 +26,10 @@ namespace {
     using CursorHandler = robot2D::priv::DesktopCursorImpl;
 }
 
-namespace robot2D {
-    namespace priv {
-        CursorImpl::~CursorImpl() {}
+namespace robot2D::priv {
+    CursorImpl::~CursorImpl() = default;
 
-        std::unique_ptr<CursorImpl> CursorImpl::createImpl() {
-            return std::make_unique<CursorHandler>();
-        }
+    std::unique_ptr<CursorImpl> CursorImpl::createImpl() {
+        return std::make_unique<CursorHandler>();
     }
 }

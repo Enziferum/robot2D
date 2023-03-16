@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2023
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -29,6 +29,23 @@ namespace robot2D::ecs {
     m_entityManager(entityManager),
     m_id(id) {}
 
+    Entity::Entity(const Entity& other):
+        m_entityManager{other.m_entityManager},
+        m_id{other.m_id} {}
+
+    Entity::Entity(Entity&& other):
+        m_entityManager{std::move(other.m_entityManager)},
+        m_id{std::move(other.m_id)}
+    {}
+
+    Entity& Entity::operator=(const Entity& other) {
+        if(this == &other)
+            return *this;
+        m_entityManager = other.m_entityManager;
+        m_id = other.m_id;
+        return *this;
+    }
+
     bool operator==(const Entity& left, const Entity& right) {
         return (left.m_id == right.m_id) && (left.m_tag == right.m_tag);
     }
@@ -43,20 +60,6 @@ namespace robot2D::ecs {
 
     Bitmask Entity::getComponentMask() const {
         return m_entityManager -> getComponentBitmask(*this);
-    }
-
-    Entity::Entity(const Entity& other): m_entityManager{other.m_entityManager},
-    m_id{other.m_id} {}
-
-    Entity::Entity(Entity&& other): m_entityManager{other.m_entityManager},
-                                    m_id{other.m_id} {
-
-    }
-
-    Entity& Entity::operator=(const Entity& other) {
-        m_entityManager = other.m_entityManager;
-        m_id = other.m_id;
-        return *this;
     }
 
     bool Entity::destroyed() const {

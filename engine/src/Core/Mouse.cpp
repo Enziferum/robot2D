@@ -19,7 +19,21 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
+#include <robot2D/Core/Window.hpp>
 #include <robot2D/Core/Mouse.hpp>
 
 namespace robot2D {
+
+    int mouse2int(Mouse mouse) {
+        return static_cast<int>(mouse);
+    }
+
+    Mouse int2mouse(int rawCode) {
+        return static_cast<Mouse>(rawCode);
+    }
+
+    bool isMousePressed(Mouse mouse) {
+        return Window::isMousePressed(mouse);
+    }
+
 }

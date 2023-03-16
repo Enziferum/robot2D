@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2023
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -23,81 +23,146 @@ source distribution.
 
 #include <vector>
 #include <list>
-#include "Allocators.hpp"
+#include <string>
 
-namespace mem {
+#include <robot2D/Config.hpp>
+#include "IAllocator.hpp"
 
-    class MemoryManager
+namespace robot2D::mem {
+
+    using memoryBuffer = void*;
+
+    template<typename Allocator>
+    class ROBOT2D_EXPORT_API MemoryManager
     {
     public:
-        //134217728
-        static constexpr size_t MEMORY_CAPACITY = 1024 * 1024;
-
+        static constexpr std::size_t MEMORY_CAPACITY = 1024 * 1024 * 1024; // 1 MB of memory
     public:
         MemoryManager();
-        ~MemoryManager();
+        MemoryManager(const MemoryManager&) = delete;
+        MemoryManager& operator=(const MemoryManager&) = delete;
+        MemoryManager(MemoryManager&&) = delete;
+        MemoryManager& operator=(MemoryManager&&) = delete;
+        ~MemoryManager() noexcept;
 
-
-        inline void* Allocate(size_t memSize, const char* user = nullptr)
+        inline void* allocate(std::size_t memSize, const char* user = nullptr)
         {
-            // LogDebug("%s allocated %d bytes of global memory.", user != nullptr ? user : "Unknown", memSize);
-            void* pMemory = m_MemoryAllocator->allocate(memSize, alignof(u8));
-
-            this->m_PendingMemory.push_back(std::pair<const char*, void*>(user, pMemory));
-
+            void* pMemory = m_MemoryAllocator -> allocate(memSize, alignof(u8));
+            m_PendingMemory.emplace_back(std::pair<const char*, void*>(user, pMemory));
             return pMemory;
         }
 
-        inline void Free(void* pMem)
+        inline void deallocate(void* pMem)
         {
-            if (pMem == this->m_PendingMemory.back().second)
+            if (pMem == m_PendingMemory.back().second)
             {
-                this->m_MemoryAllocator->free(pMem);
-                this->m_PendingMemory.pop_back();
+                m_MemoryAllocator -> deallocate(pMem);
+                m_PendingMemory.pop_back();
 
                 bool bCheck = true;
-                while(bCheck == true)
+                while(bCheck)
                 {
                     bCheck = false;
 
                     // do not report already freed memory blocks.
-                    for (auto it : this->m_FreedMemory)
+                    for (auto it : m_FreedMemory)
                     {
-                        if (it == this->m_PendingMemory.back().second)
+                        if (it == m_PendingMemory.back().second)
                         {
-                            this->m_MemoryAllocator->free(pMem);
-                            this->m_PendingMemory.pop_back();
-                            this->m_FreedMemory.remove(it);
+                            m_MemoryAllocator -> deallocate(pMem);
+                            m_PendingMemory.pop_back();
+
+                            //m_FreedMemory.remove(it);
 
                             bCheck = true;
                             break;
                         }
                     }
-                };
-
+                }
             }
             else
             {
-                this->m_FreedMemory.push_back(pMem);
+                m_FreedMemory.emplace_back(pMem);
             }
         }
 
-        void CheckMemoryLeaks();
+        void checkMemoryLeaks();
     private:
+        /// \brief memory tag & memory buffer
+        using memory_pair = std::pair<std::string, memoryBuffer>;
 
-        // Pointer to global allocated memory
-        void*										m_GlobalMemory;
-
-        // Allocator used to manager memory allocation from global memory
-        StackAllocator*								m_MemoryAllocator;
-
-        std::vector<std::pair<const char*, void*>>	m_PendingMemory;
-
-        std::list<void*>							m_FreedMemory;
-
-        MemoryManager(const MemoryManager&) = delete;
-        MemoryManager& operator=(MemoryManager&) = delete;
-
+        /// \brief Pointer to global allocated memory
+        void* m_GlobalMemory;
+        /// \brief Allocator used to manager memory allocation from global memory
+        Allocator*	m_MemoryAllocator;
+        std::vector<std::pair<const char*, memoryBuffer>> m_PendingMemory;
+        std::list<memoryBuffer> m_FreedMemory;
     };
 
-}
+
+    template<typename Allocator>
+    MemoryManager<Allocator>::MemoryManager()
+    {
+        //RB_CORE_INFO("Initialize MemoryManager!");
+
+        // allocate global memory
+        m_GlobalMemory = malloc(MemoryManager::MEMORY_CAPACITY);
+        if (m_GlobalMemory != nullptr)
+        {
+          // RB_CORE_INFO("{0} bytes of memory allocated.", MemoryManager::MEMORY_CAPACITY);
+        }
+        else
+        {
+            //RB_CORE_ERROR("Failed to allocate %d bytes of memory!", MemoryManager::MEMORY_CAPACITY);
+            assert(m_GlobalMemory != nullptr && "Failed to allocate global memory.");
+        }
+
+        // create allocator
+        m_MemoryAllocator = new Allocator(MemoryManager::MEMORY_CAPACITY, m_GlobalMemory);
+        assert(m_MemoryAllocator != nullptr && "Failed to create memory allocator!");
+
+        m_PendingMemory.clear();
+        m_FreedMemory.clear();
+    }
+
+    template<typename Allocator>
+    MemoryManager<Allocator>::~MemoryManager() noexcept
+    {
+       // RB_CORE_INFO("Releasing MemoryManager!");
+
+        m_MemoryAllocator -> clear();
+        delete m_MemoryAllocator;
+        m_MemoryAllocator = nullptr;
+
+        free(m_GlobalMemory);
+        m_GlobalMemory = nullptr;
+    }
+
+    template<typename Allocator>
+    void MemoryManager<Allocator>::checkMemoryLeaks()
+    {
+        assert(!(!m_FreedMemory.empty() && m_PendingMemory.empty()) && "Implementation failure!");
+
+        if (!m_PendingMemory.empty())
+        {
+            // RB_CORE_ERROR("!!!  M E M O R Y   L E A K   D E T E C T E D  !!!");
+            bool isFreed = false;
+            for (auto i : m_PendingMemory)
+            {
+                for (auto j : m_FreedMemory)
+                {
+                    if (i.second == j)
+                    {
+                        isFreed = true;
+                        break;
+                    }
+                }
+
+                if (!isFreed)
+                {
+                  //  RB_CORE_ERROR("\'%s\' memory user didn't release allocated memory %p!", i.first, i.second);
+                }
+            }
+        }
+    }
+} // namespace robot2D::mem

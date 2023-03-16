@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2023
 https://github.com/Enziferum
 ZombieArena - Zlib license.
 This software is provided 'as-is', without any express or
@@ -31,10 +31,9 @@ namespace robot2D::ecs {
 
     EntityManager::EntityManager(ComponentManager& componentManager): m_entityCounter(0),
     m_componentManager(componentManager),
-    m_componentContainers(64),
-    m_componentMasks() {
-
-    }
+    m_componentContainers(maxComponentsContainerValue),
+    m_componentMasks()
+    {}
 
     Entity EntityManager::createEntity() {
         Entity entity{this, m_entityCounter};

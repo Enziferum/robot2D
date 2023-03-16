@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2023
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -23,7 +23,9 @@ source distribution.
 #include <vector>
 #include <memory>
 
+#include <robot2D/Config.hpp>
 #include <robot2D/Core/MessageBus.hpp>
+
 #include "Bitmask.hpp"
 #include "Defines.hpp"
 #include "Entity.hpp"
@@ -33,7 +35,7 @@ namespace robot2D::ecs {
     using EntityList = std::vector<Entity>;
 
     class Scene;
-    class System {
+    class ROBOT2D_EXPORT_API System {
     public:
         using Ptr = std::shared_ptr<System>;
     public:
@@ -49,13 +51,13 @@ namespace robot2D::ecs {
         virtual void update(float dt);
         virtual void onMessage(const robot2D::Message& message);
     protected:
+        friend class SystemManager;
 
         template<typename T>
         void addRequirement();
 
         void processRequirements(ComponentManager& componentManager);
 
-        friend class SystemManager;
         virtual void onEntityAdded(Entity entity);
         virtual void onEntityRemoved(Entity entity);
 
@@ -63,7 +65,7 @@ namespace robot2D::ecs {
         Scene* getScene();
 
         const Scene* getScene() const { return m_scene; }
-
+    protected:
         UniqueType m_systemId;
         EntityList m_entities;
         robot2D::MessageBus& m_messageBus;

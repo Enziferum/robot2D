@@ -28,7 +28,7 @@ source distribution.
 
 #include <robot2D/Config.hpp>
 
-namespace robot2D{
+namespace robot2D {
     template<typename T, typename ID = std::string>
     class ROBOT2D_EXPORT_API ResourceHandler {
     public:
@@ -44,6 +44,10 @@ namespace robot2D{
         template<typename ... Args>
         bool loadFromFile(const ID& idx, Args&&... args);
 
+        bool has(ID key) const {
+            return m_resources.find(key) != m_resources.end();
+        }
+
         template<typename = std::enable_if_t<std::is_move_assignable_v<T>>>
         bool add(const ID& idx, T&& resource) {
             auto Resource = std::make_unique<T>(std::move(resource));
@@ -51,8 +55,20 @@ namespace robot2D{
                                                   std::move(Resource))).second;
         }
 
-        T& operator[](ID id) { return m_resources[id]; }
-        T& get(const ID& idx);
+        template<typename = std::enable_if_t<std::is_default_constructible_v<T>, T>>
+        T* add(const ID& id) {
+            auto resource = std::make_unique<T>();
+            auto result = m_resources.insert(std::pair<ID, Ptr>(id, std::move(resource)));
+            if(!result.second)
+                return nullptr;
+
+            return m_resources[id].get();
+        }
+
+        T& operator[](ID id) { return *m_resources[id]; }
+        T& get(const ID& idx) {
+            return *(m_resources.at(idx));
+        }
         const T& get(const ID& idx) const;
     private:
         std::unordered_map<ID, Ptr> m_resources{};

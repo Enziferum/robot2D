@@ -18,7 +18,8 @@ set(ENGINE_SRC
         ${INCLROOT}/Core/Time.hpp
         ${INCLROOT}/Core/Clock.hpp
         ${INCLROOT}/Core/Cursor.hpp
-        ${INCLROOT}/Core/memory/Allocators.hpp
+        ${INCLROOT}/Core/memory/IAllocator.hpp
+        ${INCLROOT}/Core/memory/StackAllocator.hpp
         ${INCLROOT}/Core/memory/MemoryManager.hpp
 
         #Ecs
@@ -27,7 +28,6 @@ set(ENGINE_SRC
         ${INCLROOT}/Ecs/Defines.hpp
         ${INCLROOT}/Ecs/Entity.hpp
         ${INCLROOT}/Ecs/EntityManager.hpp
-        ${INCLROOT}/Ecs/EventQueue.hpp
         ${INCLROOT}/Ecs/Scene.hpp
         ${INCLROOT}/Ecs/System.hpp
         ${INCLROOT}/Ecs/SystemManager.hpp
@@ -79,12 +79,12 @@ set(ENGINE_SRC ${ENGINE_SRC}
         ${SRCROOT}/Core/Keyboard.cpp
         ${SRCROOT}/Core/Mouse.cpp
         ${SRCROOT}/Core/Joystick.cpp
-        ${SRCROOT}/Core/MessageBus.cpp
         ${SRCROOT}/Core/Clock.cpp
         ${SRCROOT}/Core/Time.cpp
         ${SRCROOT}/Core/Cursor.cpp
         ${SRCROOT}/Core/CursorImpl.cpp
-        ${SRCROOT}/Core/memory/Allocators.cpp
+        ${SRCROOT}/Core/memory/IAllocator.cpp
+        ${SRCROOT}/Core/memory/StackAllocator.cpp
         ${SRCROOT}/Core/memory/MemoryManager.cpp
 
         #Graphics
@@ -115,7 +115,6 @@ set(ENGINE_SRC ${ENGINE_SRC}
         ${SRCROOT}/Ecs/Component.cpp
         ${SRCROOT}/Ecs/Entity.cpp
         ${SRCROOT}/Ecs/EntityManager.cpp
-        ${SRCROOT}/Ecs/EventQueue.cpp
         ${SRCROOT}/Ecs/Scene.cpp
         ${SRCROOT}/Ecs/System.cpp
         ${SRCROOT}/Ecs/SystemManager.cpp

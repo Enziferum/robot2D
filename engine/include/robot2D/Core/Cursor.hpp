@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2023
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -41,14 +41,19 @@ namespace robot2D {
         ResizeLeftRight,
         Hand
     };
-/**
- * \brief Allow to use Cursor as object and set custom.
- */
+
+    /**
+     * \brief Allow to use Cursor as object and set custom.
+     */
     class ROBOT2D_EXPORT_API Cursor {
     public:
         /// Only initialize private implementation. To create use one of create methods.
         Cursor();
-        ~Cursor();
+        Cursor(const Cursor& other) = delete;
+        Cursor& operator=(const Cursor& other) = delete;
+        Cursor(Cursor&& other) = default;
+        Cursor& operator=(Cursor&& other) = default;
+        ~Cursor() noexcept;
 
         /**
          * \brief Allow to create own cursor from binary data.
