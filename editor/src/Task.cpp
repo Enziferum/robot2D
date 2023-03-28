@@ -2,7 +2,7 @@
 
 namespace editor {
     ITask::ITask(ITaskFunction::Ptr function):
-            m_function{std::move(function)} {}
+            m_function{function} {}
 
     ITask::~ITask() {}
 

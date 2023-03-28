@@ -34,7 +34,7 @@ namespace editor {
 
     class InspectorPanel: public IPanel {
     public:
-        explicit InspectorPanel(EditorCamera& sceneCamera);
+        explicit InspectorPanel(IEditorCamera::Ptr sceneCamera);
         ~InspectorPanel() override = default;
 
         const robot2D::Color& getColor() const;
@@ -42,7 +42,7 @@ namespace editor {
         void setRenderStats(robot2D::RenderStats&& renderStats);
         void render() override;
     private:
-        EditorCamera& m_camera;
+        IEditorCamera::Ptr m_camera;
         robot2D::Color m_clearColor;
         robot2D::RenderStats m_renderStats;
         InspectorPanelConfiguration m_configuration;

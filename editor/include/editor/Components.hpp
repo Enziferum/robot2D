@@ -132,4 +132,12 @@ namespace editor {
     public:
         NativeScriptComponent(){}
     };
+
+
+    struct ScriptComponent {
+        std::string name;
+
+        ////
+    };
+
 }

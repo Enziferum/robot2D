@@ -244,7 +244,7 @@ namespace robot2D::ecs {
             return;
 
         const auto entityID = entity.getIndex();
-        ComponentContainer<T> container = getContainer<T>();
+        ComponentContainer<T>& container = getContainer<T>();
 
         const auto componentID = m_componentManager.getID<T>();
         container.remove(entityID);

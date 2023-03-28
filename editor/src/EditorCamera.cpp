@@ -30,7 +30,31 @@ namespace editor {
     constexpr float zNear = 0.1f;
     constexpr float zFar = 1000.f;
 
+
+
+    IEditorCamera::~IEditorCamera() = default;
+
+    EditorCamera2D::EditorCamera2D(): IEditorCamera(EditorCameraType::Orthographic) {}
+
+
+    void EditorCamera2D::setViewportSize(robot2D::vec2f newSize) {
+        m_view.reset({0, 0, newSize.x, newSize.y});
+    }
+
+    void EditorCamera2D::handleEvents(const robot2D::Event& event) {
+
+    }
+
+    void EditorCamera2D::update(robot2D::vec2f mousePos, float deltaTime) {
+
+    }
+
+
+
+
+
     EditorCamera::EditorCamera():
+                IEditorCamera(EditorCameraType::Perspective),
                 m_viewportSize{},
                 m_distance{10.f},
                 m_yaw{0.f},
@@ -57,11 +81,11 @@ namespace editor {
             robot2D::vec2f delta = (mousePos - m_mousePos) * 0.003f;
             m_mousePos = mousePos;
 
-            if(robot2D::Window::isMousePressed(robot2D::MouseMiddle))
+            if(robot2D::isMousePressed(robot2D::Mouse::MouseMiddle))
                 mousePan(delta);
-            if(robot2D::Window::isMousePressed(robot2D::MouseLeft))
+            if(robot2D::isMousePressed(robot2D::Mouse::MouseLeft))
                 mouseRotate(delta);
-            if(robot2D::Window::isMousePressed(robot2D::MouseRight))
+            if(robot2D::isMousePressed(robot2D::Mouse::MouseRight))
                 mouseZoom(delta.y);
         }
 
@@ -112,11 +136,6 @@ namespace editor {
     robot2D::vec3f EditorCamera::calculatePosition() {
         return m_focalPoint - getForwardOrientation() * m_distance;
     }
-
-    robot2D::mat4 EditorCamera::getViewMatrix() const {
-        return m_viewMatrix;
-    }
-
 
     robot2D::quat EditorCamera::getOrientation() const {
         return {{-m_pitch, -m_yaw, 0.f}};

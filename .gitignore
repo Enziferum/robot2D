@@ -7,3 +7,6 @@ docs/html
 docs/latex
 venv/
 editor/ext/glm
+# C# stuff
+bin/
+obj/

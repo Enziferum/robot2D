@@ -23,21 +23,23 @@ source distribution.
 
 #include <utility>
 #include <robot2D/Graphics/FrameBuffer.hpp>
-#include <robot2D/Extra/Api.hpp>
+#include <robot2D/imgui/Gui.hpp>
 #include <robot2D/Core/MessageBus.hpp>
 
 #include <editor/Scene.hpp>
 #include <editor/UIManager.hpp>
 #include <editor/EditorCamera.hpp>
+#include <editor/Guizmo2D.hpp>
 #include "IPanel.hpp"
 
 namespace editor {
     class ViewportPanel final: public IPanel {
     public:
         ViewportPanel(IUIManager& uiManager,
-                      EditorCamera& editorCamera,
+                      IEditorCamera::Ptr editorCamera,
                       robot2D::MessageBus& messageBus,
-                      Scene::Ptr&& scene);
+                      Scene::Ptr&& scene,
+                      Guizmo2D& guizmo2D);
         ~ViewportPanel() override = default;
 
         void update(float deltaTime) override;
@@ -50,17 +52,18 @@ namespace editor {
         void render() override;
     private:
         IUIManager& m_uiManager;
-        EditorCamera& m_editorCamera;
+        IEditorCamera::Ptr m_editorCamera;
         robot2D::MessageBus& m_messageBus;
 
         Scene::Ptr m_scene;
         robot2D::FrameBuffer::Ptr m_frameBuffer;
         robot2D::vec2u  m_ViewportSize{};
-        ImGui::WindowOptions m_windowOptions;
+        robot2D::WindowOptions m_windowOptions;
 
         robot2D::vec2f m_ViewportBounds[2];
 
         bool m_panelHovered;
         bool m_panelFocused;
+        Guizmo2D& m_guizmo2D;
     };
 }

@@ -7,19 +7,19 @@ namespace editor {
 
     class ITask {
     public:
-        using Ptr = std::unique_ptr<ITask>;
+        using Ptr = std::shared_ptr<ITask>;
     public:
-        ITask(ITaskFunction::Ptr function);
+        explicit ITask(ITaskFunction::Ptr function);
         virtual ~ITask() = 0;
 
         virtual void execute() = 0;
 
-        void call();
+        virtual void call();
         TaskID getTaskID() const;
     protected:
         friend class TaskQueue;
 
         ITaskFunction::Ptr m_function;
-        TaskID m_taskID;
+        TaskID m_taskID{0};
     };
 }

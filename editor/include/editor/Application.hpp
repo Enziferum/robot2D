@@ -23,7 +23,7 @@ source distribution.
 
 #include <robot2D/Application.hpp>
 #include <robot2D/Core/MessageBus.hpp>
-#include <robot2D/Extra/Gui.hpp>
+#include <robot2D/imgui/Gui.hpp>
 
 #include "ApplicationLogic.hpp"
 #include "ProjectInspector.hpp"
@@ -47,6 +47,8 @@ namespace editor {
         ~Application() override = default;
 
         void setup() override;
+        void destroy() override;
+
         void handleEvents(const robot2D::Event& event) override;
         void handleMessages() override;
         void update(float dt) override;
@@ -59,7 +61,7 @@ namespace editor {
 
         robot2D::MessageBus m_messageBus;
         TaskQueue m_taskQueue;
-        ImGui::Gui m_guiWrapper;
+        robot2D::Gui m_guiWrapper;
         Editor m_editor;
         EditorLogic m_editorLogic;
         ProjectInspector m_projectInspector;

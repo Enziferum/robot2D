@@ -49,7 +49,7 @@ namespace editor {
         m_activeScene -> setPath(scenePath);
 
         SceneSerializer serializer(m_activeScene);
-        if(!serializer.serialize(m_activeScene->getPath())) {
+        if(!serializer.serialize(m_activeScene -> getPath())) {
             m_error = SceneManagerError::SceneSerialize;
             return false;
         }
@@ -63,23 +63,44 @@ namespace editor {
             m_error = SceneManagerError::MemoryAlloc;
             return false;
         }
-        m_activeScene = scene;
-        auto path = project -> getPath();
-        auto appendPath = combinePath(scenePath, project->getStartScene());
-        auto scenePath = combinePath(path, appendPath);
-        m_activeScene -> setPath(scenePath);
-        SceneSerializer serializer(m_activeScene);
-        if(!serializer.deserialize(m_activeScene -> getPath())) {
+
+        //scene -> setPath(path);
+
+        SceneSerializer serializer(scene);
+        if(!serializer.deserialize(scene -> getPath())) {
             m_error = SceneManagerError::SceneDeserialize;
             return false;
         }
         RB_EDITOR_INFO("SceneSerializer finished");
+
+        m_activeScene = scene;
+        m_associatedProject = std::move(project);
+        return true;
+    }
+
+    bool SceneManager::load(const Project::Ptr project, std::string path ) {
+        Scene::Ptr scene = std::make_shared<Scene>(m_messageBus);
+        if(scene == nullptr) {
+            m_error = SceneManagerError::MemoryAlloc;
+            return false;
+        }
+
+        scene -> setPath(path);
+
+        SceneSerializer serializer(scene);
+        if(!serializer.deserialize(scene -> getPath())) {
+            m_error = SceneManagerError::SceneDeserialize;
+            return false;
+        }
+        RB_EDITOR_INFO("SceneSerializer finished");
+
+        m_activeScene = scene;
         m_associatedProject = std::move(project);
         return true;
     }
 
     bool SceneManager::remove() {
-        if(!deleteDirectory(m_activeScene->getPath())) {
+        if(!deleteDirectory(m_activeScene -> getPath())) {
             return false;
         }
         return true;
@@ -109,4 +130,5 @@ namespace editor {
     Project::Ptr SceneManager::getAssociatedProject() const {
         return m_associatedProject;
     }
+
 }

@@ -49,6 +49,27 @@ namespace editor {
     void AssetsPanel::render() {
         ImGui::Begin("Assets");
 
+        if(!wasSet) {
+            ImGui::End();
+            return;
+        }
+
+        if (ImGui::Button("Add Folder"))
+            ImGui::OpenPopup("AddFolder");
+
+
+        if (ImGui::BeginPopup("AddFolder"))
+        {
+            if (ImGui::MenuItem("Prefab"))
+            {
+                // TODO(a.raag) add prefabs
+                ImGui::CloseCurrentPopup();
+            }
+
+
+            ImGui::EndPopup();
+        }
+
         if(m_currentPath != fs::path(m_assetsPath)) {
             if(ImGui::Button("<-")) {
                 m_currentPath = m_currentPath.parent_path();

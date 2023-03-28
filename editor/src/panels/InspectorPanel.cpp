@@ -24,7 +24,7 @@ source distribution.
 
 namespace editor {
 
-    InspectorPanel::InspectorPanel(EditorCamera& sceneCamera):
+    InspectorPanel::InspectorPanel(IEditorCamera::Ptr sceneCamera):
     IPanel(UniqueType(typeid(InspectorPanel))),
     m_camera{sceneCamera},
     m_configuration{} {
@@ -49,9 +49,18 @@ namespace editor {
         ImGui::Text("Quads Count: %d", m_renderStats.drawQuads);
         ImGui::Text("Draw Calls Count: %d", m_renderStats.drawCalls);
 
-        auto cameraView = m_camera.getViewMatrix();
-        auto& position = m_camera.getPosition();
-        ImGui::Text("Viewport Position := %.2f, %.2f, %.2f", position.x, position.y, position.z);
+        if(m_camera -> getType() == EditorCameraType::Orthographic) {
+            auto& position = m_camera -> getPosition();
+            auto view = m_camera -> getView().getSize();
+            // TODO (a.raag): add Size
+            ImGui::Text("Viewport Position := %.2f, %.2f", position.x, position.y);
+        }
+        else if(m_camera -> getType() == EditorCameraType::Perspective) {
+            auto cameraView = m_camera -> getViewMatrix();
+            auto& position = m_camera -> getPosition();
+            ImGui::Text("Viewport Position := %.2f, %.2f, %.2f", position.x, position.y, position.z);
+        }
+
 
         auto color = m_clearColor.toGL();
         float colors[4];

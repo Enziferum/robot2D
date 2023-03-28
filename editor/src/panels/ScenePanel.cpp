@@ -21,13 +21,70 @@ source distribution.
 
 #include <cstring>
 #include <filesystem>
+
 #include <imgui/imgui.h>
 #include <imgui/imgui_internal.h>
+
 #include <editor/panels/ScenePanel.hpp>
 #include <editor/Components.hpp>
 #include <editor/Messages.hpp>
+#include <editor/scripting/ScriptingEngine.hpp>
+
 
 namespace editor {
+
+    static void DrawVec2Control(const std::string& label, robot2D::vec2f& values,
+                                float resetValue = 0.0f, float columnWidth = 100.0f)
+    {
+        ImGuiIO& io = ImGui::GetIO();
+        auto boldFont = io.Fonts->Fonts[0];
+
+        ImGui::PushID(label.c_str());
+
+        ImGui::Columns(2);
+        ImGui::SetColumnWidth(0, columnWidth);
+        ImGui::Text(label.c_str());
+        ImGui::NextColumn();
+
+        ImGui::PushMultiItemsWidths(3, ImGui::CalcItemWidth());
+        ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2{ 0, 0 });
+
+        float lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
+        ImVec2 buttonSize = { lineHeight + 3.0f, lineHeight };
+
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.8f, 0.1f, 0.15f, 1.0f });
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 0.9f, 0.2f, 0.2f, 1.0f });
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.8f, 0.1f, 0.15f, 1.0f });
+        ImGui::PushFont(boldFont);
+        if (ImGui::Button("X", buttonSize))
+            values.x = resetValue;
+        ImGui::PopFont();
+        ImGui::PopStyleColor(3);
+
+        ImGui::SameLine();
+        ImGui::DragFloat("##X", &values.x, 0.1f, 0.0f, 0.0f, "%.2f");
+        ImGui::PopItemWidth();
+        ImGui::SameLine();
+
+        ImGui::PushStyleColor(ImGuiCol_Button, ImVec4{ 0.2f, 0.7f, 0.2f, 1.0f });
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4{ 0.3f, 0.8f, 0.3f, 1.0f });
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4{ 0.2f, 0.7f, 0.2f, 1.0f });
+        ImGui::PushFont(boldFont);
+        if (ImGui::Button("Y", buttonSize))
+            values.y = resetValue;
+        ImGui::PopFont();
+        ImGui::PopStyleColor(3);
+
+        ImGui::SameLine();
+        ImGui::DragFloat("##Y", &values.y, 0.1f, 0.0f, 0.0f, "%.2f");
+        ImGui::PopItemWidth();
+        ImGui::SameLine();
+
+        ImGui::PopStyleVar();
+        ImGui::Columns(1);
+        ImGui::PopID();
+    }
+
     static void DrawVec3Control(const std::string& label, robot2D::vec3f& values,
                                 float resetValue = 0.0f, float columnWidth = 100.0f)
     {
@@ -93,6 +150,9 @@ namespace editor {
         ImGui::Columns(1);
         ImGui::PopID();
     }
+
+
+    static void DrawScriptingControl() {}
 
 
     template<typename T, typename UIFunction>
@@ -194,7 +254,8 @@ namespace editor {
     void ScenePanel::drawEntity(robot2D::ecs::Entity entity) {
         auto& tag = entity.getComponent<TagComponent>().getTag();
 
-        ImGuiTreeNodeFlags flags = ((m_selectedEntity == entity) ? ImGuiTreeNodeFlags_Selected : 0) | ImGuiTreeNodeFlags_OpenOnArrow;
+        ImGuiTreeNodeFlags flags = ((m_selectedEntity == entity) ? ImGuiTreeNodeFlags_Selected : 0)
+                    | ImGuiTreeNodeFlags_OpenOnArrow;
         flags |= ImGuiTreeNodeFlags_SpanAvailWidth;
         bool opened = ImGui::TreeNodeEx((void*)(uint64_t)(uint32_t)entity.getIndex(), flags, tag.c_str());
         if (ImGui::IsItemClicked())
@@ -289,8 +350,8 @@ namespace editor {
 
             if (ImGui::MenuItem("Scripting"))
             {
-                if (!m_selectedEntity.hasComponent<NativeScriptComponent>())
-                    m_selectedEntity.addComponent<NativeScriptComponent>();
+                if (!m_selectedEntity.hasComponent<ScriptComponent>())
+                    m_selectedEntity.addComponent<ScriptComponent>();
                 else
                     RB_EDITOR_WARN("This entity already has the Scripting Component!");
                 ImGui::CloseCurrentPopup();
@@ -301,11 +362,11 @@ namespace editor {
 
         ImGui::PopItemWidth();
 
-        drawComponent<Transform3DComponent>("Transform", entity, [](auto& component)
+        drawComponent<TransformComponent>("Transform", entity, [](auto& component)
         {
-            DrawVec3Control("Translation", component.getPosition());
-            DrawVec3Control("Scale", component.getScale(), 1.0f);
-            DrawVec3Control("Rotation", component.getRotation(), 0.f);
+            DrawVec2Control("Translation", component.getPosition());
+            DrawVec2Control("Scale", component.getScale(), 1.0f);
+            //DrawVec2Control("Rotation", component.getRotation(), 0.f);
         });
 
         drawComponent<SpriteComponent>("Sprite Renderer", entity, [](auto& component)
@@ -333,27 +394,30 @@ namespace editor {
                 ImGui::EndDragDropTarget();
             }
         });
+        drawComponent<ScriptComponent>("Scripting", entity, [](auto& component) {
+            bool hasScriptClass = ScriptEngine::hasEntityClass(component.name);
 
+            static char buffer[64];
+            strcpy(buffer, component.name.c_str());
 
-//        drawComponent<Physics2DComponent>("Physics2D", entity, [](auto& component) {
-//        });
-//
-//        drawComponent<Collider2DComponent>("Collider2D", entity, [](auto& component) {
-//
-//        });
-//
-//        drawComponent<NativeScriptComponent>("Scripting", entity, [](auto& component) {
-//
-//        });
+            if(!hasScriptClass)
+                ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.9f, 0.2f, 0.3f, 1.0f));
+
+            if(ImGui::InputText("Class", buffer, sizeof(buffer)))
+                component.name = buffer;
+
+            if(!hasScriptClass)
+                ImGui::PopStyleColor();
+        });
+
     }
 
     void ScenePanel::onEntitySelection(const EntitySelection& entitySelection) {
-        for(const auto& it: m_scene -> getEntities()) {
-            if(it.getIndex() == entitySelection.entityID) {
-                m_selectedEntity = it;
+        for(const auto& entity: m_scene -> getEntities()) {
+            if(entity.getIndex() == entitySelection.entityID) {
+                m_selectedEntity = entity;
                 break;
             }
         }
     }
-
 }
