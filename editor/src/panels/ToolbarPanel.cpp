@@ -1,5 +1,6 @@
 #include <editor/panels/ToolbarPanel.hpp>
-#include <robot2D/Extra/Api.hpp>
+#include <robot2D/imgui/Gui.hpp>
+#include <robot2D/imgui/Api.hpp>
 
 namespace editor {
 
@@ -13,7 +14,7 @@ namespace editor {
         const auto& buttonHovered = colors[ImGuiCol_ButtonHovered];
         const auto& buttonActive = colors[ImGuiCol_ButtonActive];
 
-        ImGui::WindowOptions windowOptions {
+        robot2D::WindowOptions windowOptions {
                 {
                         {ImGuiStyleVar_WindowPadding, {0, 2}},
                         {ImGuiStyleVar_ItemInnerSpacing, {}}
@@ -27,6 +28,6 @@ namespace editor {
         windowOptions.name = "##toolbar";
         windowOptions.flagsMask = ImGuiWindowFlags_NoScrollbar;
 
-        ImGui::createWindow(windowOptions, [this]() {});
+        robot2D::createWindow(windowOptions, [this]() {});
     }
 } // namespace editor

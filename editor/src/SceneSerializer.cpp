@@ -90,6 +90,29 @@ namespace YAML {
 }
 
 namespace editor {
+
+    class ISceneDeserializer {
+    public:
+        virtual ~ISceneDeserializer() = 0;
+        virtual bool deserialize(const std::string& path) = 0;
+    };
+
+    ISceneDeserializer::~ISceneDeserializer() {}
+
+
+    class YamlSceneDeserializer: public ISceneDeserializer {
+    public:
+        ~YamlSceneDeserializer() override = default;
+        bool deserialize(const std::string& path) override;
+    };
+
+    bool YamlSceneDeserializer::deserialize(const std::string& path) {
+        return true;
+    }
+
+
+
+
     namespace {
         // tmp value before UUID Manager
         const std::string fakeUUID = "9012510123";
@@ -125,6 +148,17 @@ namespace editor {
             out << YAML::BeginMap;
             auto& tag = entity.getComponent<TagComponent>().getTag();
             out << YAML::Key << "Tag" << YAML::Value << tag;
+            out << YAML::EndMap;
+        }
+
+        if(entity.hasComponent<TransformComponent>()) {
+            out << YAML::Key << "TransformComponent";
+            out << YAML::BeginMap;
+            auto& ts = entity.getComponent<TransformComponent>();
+            out << YAML::Key << "Position" << YAML::Value << ts.getPosition();
+            out << YAML::Key << "Size" << YAML::Value << ts.getScale();
+            // TODO: @a.raag add rotation
+            out << YAML::Key << "Rotation" << YAML::Value << 0.F;
             out << YAML::EndMap;
         }
 
@@ -219,9 +253,9 @@ namespace editor {
 
                 auto transformComponent = entity["TransformComponent"];
                 if(transformComponent) {
-                    auto& transform = deserializedEntity.addComponent<Transform3DComponent>();
-                    transform.setPosition(transformComponent["Position"].as<robot2D::vec3f>());
-                    transform.setScale(transformComponent["Size"].as<robot2D::vec3f>());
+                    auto& transform = deserializedEntity.addComponent<TransformComponent>();
+                    transform.setPosition(transformComponent["Position"].as<robot2D::vec2f>());
+                    transform.setScale(transformComponent["Size"].as<robot2D::vec2f>());
                     // TODO: @a.raag add rotation
                     //transform.setRotate(transformComponent["Rotation"].as<float>());
                 }
@@ -231,7 +265,6 @@ namespace editor {
                     auto& sp = deserializedEntity.addComponent<SpriteComponent>();
                     sp.setColor(spriteComponent["Color"].as<robot2D::Color>());
                 }
-
             }
         }
         return true;
@@ -240,4 +273,5 @@ namespace editor {
     SceneSerializerError SceneSerializer::getError() const {
         return SceneSerializerError::None;
     }
+
 }

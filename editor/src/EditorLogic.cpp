@@ -1,5 +1,11 @@
 #include <editor/EditorLogic.hpp>
 #include <editor/Editor.hpp>
+#include <editor/FileApi.hpp>
+#include <editor/Messages.hpp>
+
+namespace {
+    const std::string scenePath = "assets/scenes";
+}
 
 namespace editor {
 
@@ -7,30 +13,44 @@ namespace editor {
     public:
         SceneLoadTask(ITaskFunction::Ptr function,
                       SceneManager& sceneManager,
-                      Project::Ptr project):
-                ITask{std::move(function)},
+                      Project::Ptr project,
+                      std::string path,
+                      EditorLogic* l):
+                ITask{function},
                 m_sceneManager{sceneManager},
-                m_project{std::move(project)}{}
+                m_project{std::move(project)},
+                m_path{path},
+                logic{l}{}
         ~SceneLoadTask() override = default;
 
         void execute() override {
-            if(!m_sceneManager.load(std::move(m_project))) {
+            if(!m_sceneManager.load(m_project, m_path)) {
                 RB_EDITOR_ERROR("Can't Load Scene. Reason: {0}",
                                 errorToString(m_sceneManager.getError()));
                 return;
             }
         }
+
     private:
         SceneManager& m_sceneManager;
         Project::Ptr m_project;
+        std::string m_path;
+    public:
+        EditorLogic* logic;
     };
 
 
-    EditorLogic::EditorLogic(robot2D::MessageBus& messageBus):
+    EditorLogic::EditorLogic(robot2D::MessageBus& messageBus,
+                             MessageDispatcher& messageDispatcher,
+                             TaskQueue& taskQueue):
     m_messageBus{messageBus},
+    m_messageDispatcher{messageDispatcher},
+    m_taskQueue{taskQueue},
     m_sceneManager{messageBus},
     m_activeScene{nullptr}
-    {}
+    {
+        m_messageDispatcher.onMessage<MenuProjectMessage>(MessageID::SaveScene, BIND_CLASS_FN(saveScene));
+    }
 
     void EditorLogic::createProject(Project::Ptr project) {
         m_currentProject = project;
@@ -45,33 +65,32 @@ namespace editor {
 
     void EditorLogic::loadProject(Project::Ptr project) {
         m_currentProject = project;
-        //m_state = State::Load;
-//
-//        auto loadLambda = [this](const SceneLoadTask& task) {
-//            m_activeScene = m_sceneManager.getActiveScene();
-//            m_window -> setMaximazed(true);
-//
-//            prepare();
-//            openScene();
-//            m_state = State::Edit;
-//        };
-//
-//        m_taskQueue.addAsyncTask<SceneLoadTask>(loadLambda,
-//                                              m_sceneManager, project);
+        m_state = State::Load;
 
-        if(!m_sceneManager.load(std::move(project))) {
-            RB_EDITOR_ERROR("Can't Load Scene. Reason: {0}",
-                            errorToString(m_sceneManager.getError()));
-            return;
-        }
+        auto loadLambda = [](const SceneLoadTask& task) {
+            task.logic -> loadCallback();
+        };
 
-        m_activeScene = m_sceneManager.getActiveScene();
-        m_activeScene = m_sceneManager.getActiveScene();
-        m_editor -> openScene(m_activeScene, m_currentProject -> getPath());
+        auto path = project -> getPath();
+        auto appendPath = combinePath(scenePath, project -> getStartScene());
+        auto scenePath1 = combinePath(path, appendPath);
+
+        m_editor -> prepare();
+        m_taskQueue.addAsyncTask<SceneLoadTask>(loadLambda, m_sceneManager, project, scenePath1, this);
     }
 
     bool EditorLogic::saveScene() {
         return m_sceneManager.save(std::move(m_activeScene));
+    }
+
+    void EditorLogic::loadCallback() {
+        m_state = State::Edit;
+        m_activeScene = m_sceneManager.getActiveScene();
+        m_editor -> openScene(m_activeScene, m_currentProject -> getPath());
+    }
+
+    void EditorLogic::saveScene(const MenuProjectMessage& message) {
+        m_sceneManager.save(std::move(m_activeScene));
     }
 
 } // namespace editor

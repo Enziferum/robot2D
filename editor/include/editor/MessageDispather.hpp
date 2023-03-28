@@ -4,11 +4,10 @@
 #include <memory>
 
 #include <robot2D/Core/Message.hpp>
+#include "Macro.hpp"
 
 namespace editor {
-    #define BIND_CLASS_FN(fn)[this](auto&&... args) -> decltype(auto) { \
-            return this -> fn(std::forward<decltype(args)>(args)...);      \
-    }
+
 
     class IFunction {
     public:

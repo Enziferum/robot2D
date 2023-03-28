@@ -25,7 +25,7 @@ source distribution.
 namespace editor {
     IUIManager::~IUIManager() noexcept {}
 
-    UIManager::UIManager(ImGui::Gui& gui):
+    UIManager::UIManager(robot2D::Gui& gui):
         m_gui{gui}, m_panels() {}
 
     void UIManager::update(float dt) {

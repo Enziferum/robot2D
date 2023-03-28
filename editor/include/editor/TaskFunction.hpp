@@ -4,7 +4,7 @@
 namespace editor {
     class ITaskFunction {
     public:
-        using Ptr = std::unique_ptr<ITaskFunction>;
+        using Ptr = std::shared_ptr<ITaskFunction>;
         virtual ~ITaskFunction() = 0;
 
         virtual void execute(void* buffer) = 0;
@@ -13,7 +13,7 @@ namespace editor {
     template<typename T, typename Func>
     class TaskFunction: public ITaskFunction {
     public:
-        TaskFunction(Func&& func): m_func{func} {}
+        TaskFunction(Func&& func): m_func{std::forward<Func>(func)} {}
         ~TaskFunction() override = default;
 
         void execute(void* buffer) override {

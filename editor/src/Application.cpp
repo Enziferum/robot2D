@@ -20,6 +20,8 @@ source distribution.
 *********************************************************************/
 
 #include <editor/Application.hpp>
+#include <editor/scripting/ScriptingEngine.hpp>
+
 #include <editor/EditorStyles.hpp>
 #include <editor/Utils.hpp>
 #include <editor/EventBinder.hpp>
@@ -33,8 +35,8 @@ namespace editor {
             m_logic{m_messageDispatcher},
             m_taskQueue{},
             m_guiWrapper{},
-            m_editor{m_messageBus, m_taskQueue, m_guiWrapper},
-            m_editorLogic(m_messageBus),
+            m_editor{m_messageBus, m_guiWrapper},
+            m_editorLogic(m_messageBus, m_messageDispatcher, m_taskQueue),
             m_projectInspector{m_messageBus}
             {}
 
@@ -47,8 +49,12 @@ namespace editor {
 
         m_editorLogic.setIEditor(&m_editor);
         m_logic.setup(&m_editorLogic);
-        m_guiWrapper.init(*m_window);
+        m_guiWrapper.setup(*m_window);
         m_editor.setup(m_window, &m_editorLogic);
+
+
+        //// Load C# Mono
+        ScriptEngine::Init();
 
         if(m_logic.getState() == AppState::ProjectInspector) {
             auto windowSize = m_window -> getSize();
@@ -113,5 +119,9 @@ namespace editor {
             m_projectInspector.render();
         m_guiWrapper.render();
         m_window -> display();
+    }
+
+    void Application::destroy() {
+        ScriptEngine::Shutdown();
     }
 }

@@ -22,7 +22,7 @@ source distribution.
 #include <imgui/imgui.h>
 #include <tfd/tinyfiledialogs.h>
 
-#include <robot2D/Extra/Api.hpp>
+#include <robot2D/imgui/Gui.hpp>
 #include <editor/panels/MenuPanel.hpp>
 #include <editor/Messages.hpp>
 

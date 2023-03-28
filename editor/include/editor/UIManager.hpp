@@ -25,7 +25,7 @@ source distribution.
 #include <cassert>
 
 #include <robot2D/Ecs/Entity.hpp>
-#include "robot2D/Extra/Gui.hpp"
+#include <robot2D/imgui/Gui.hpp>
 #include "panels/IPanel.hpp"
 
 
@@ -40,7 +40,7 @@ namespace editor {
 
     class UIManager final: public IUIManager {
     public:
-        UIManager(ImGui::Gui& gui);
+        UIManager(robot2D::Gui& gui);
         UIManager(const UIManager&) = delete;
         UIManager& operator=(const UIManager&) = delete;
         UIManager(UIManager&&) = delete;
@@ -61,13 +61,13 @@ namespace editor {
     private:
         void dockingCanvas();
     private:
-        ImGui::Gui& m_gui;
+        robot2D::Gui& m_gui;
         std::vector<IPanel::Ptr> m_panels;
     };
 
     template<typename T, typename ...Args>
     T& UIManager::addPanel(Args&& ...args) {
-        static_assert(std::is_base_of<IPanel, T>::value && "Adding T, must be IPanel child");
+        static_assert(std::is_base_of_v<IPanel, T> && "T must be IPanel inherit");
         m_panels.emplace_back(std::make_shared<T>(std::forward<Args>(args)...));
         return *(dynamic_cast<T*>(m_panels.back().get()));
     }

@@ -23,7 +23,7 @@ source distribution.
 #include <filesystem>
 
 #include <imgui/imgui.h>
-#include <robot2D/Extra/Api.hpp>
+#include <robot2D/imgui/Api.hpp>
 
 #include <editor/panels/ViewportPanel.hpp>
 #include <editor/Messages.hpp>
@@ -112,9 +112,10 @@ namespace editor {
 
     ViewportPanel::ViewportPanel(
             IUIManager& uiManager,
-            EditorCamera& editorCamera,
+            IEditorCamera::Ptr editorCamera,
             robot2D::MessageBus& messageBus,
-            Scene::Ptr&& scene):
+            Scene::Ptr&& scene,
+            Guizmo2D& guizmo2D):
         IPanel(UniqueType(typeid(ViewportPanel))),
         m_uiManager{uiManager},
         m_editorCamera{editorCamera},
@@ -122,9 +123,10 @@ namespace editor {
         m_scene(std::move(scene)),
         m_frameBuffer(nullptr) ,
         m_panelFocused{false},
-        m_panelHovered{false}
+        m_panelHovered{false},
+        m_guizmo2D{guizmo2D}
         {
-        m_windowOptions = ImGui::WindowOptions {
+        m_windowOptions = robot2D::WindowOptions {
                 {
                         {ImGuiStyleVar_WindowPadding, {0, 0}}
                 },
@@ -141,7 +143,6 @@ namespace editor {
         my -= m_ViewportBounds[0].y;
 
 
-
         robot2D::vec2f viewportSize = m_ViewportBounds[1] - m_ViewportBounds[0];
         my = viewportSize.y - my;
         int mouseX = (int)mx;
@@ -152,11 +153,11 @@ namespace editor {
         }
 
         if(m_panelFocused && m_panelHovered)
-            m_editorCamera.update({mx, my}, deltaTime);
+            m_editorCamera -> update({mx, my}, deltaTime);
     }
 
     void ViewportPanel::render() {
-        ImGui::createWindow(m_windowOptions, [this]() {
+        robot2D::createWindow(m_windowOptions, [this]() {
             auto viewportMinRegion = ImGui::GetWindowContentRegionMin();
             auto viewportMaxRegion = ImGui::GetWindowContentRegionMax();
             auto viewportOffset = ImGui::GetWindowPos();
@@ -166,13 +167,17 @@ namespace editor {
             m_panelFocused = ImGui::IsWindowFocused();
             m_panelHovered = ImGui::IsWindowHovered();
 
+
             /// TODO: @a.raag switch mode of camera ///
             auto ViewPanelSize = ImGui::GetContentRegionAvail();
+            m_editorCamera -> setViewportBounds({viewportOffset.x, viewportOffset.y
+                                                                   + (viewportMaxRegion.y - ViewPanelSize.y)});
+
 
             if(m_ViewportSize != robot2D::vec2u { ViewPanelSize.x, ViewPanelSize.y}) {
                 m_ViewportSize = {ViewPanelSize.x, ViewPanelSize.y};
                 m_frameBuffer -> Resize(m_ViewportSize);
-                m_editorCamera.setViewportSize(m_ViewportSize.as<float>());
+                m_editorCamera -> setViewportSize(m_ViewportSize.as<float>());
             }
 
             auto[mx, my] = ImGui::GetMousePos();
@@ -192,10 +197,11 @@ namespace editor {
                 }
             }
 
-            ImGui::RenderFrameBuffer(m_frameBuffer, m_ViewportSize.as<float>());
+            robot2D::RenderFrameBuffer(m_frameBuffer, m_ViewportSize.as<float>());
             robot2D::ecs::Entity selectedEntity = m_uiManager.getSelectedEntity();
 
             int m_GizmoType = 0;
+            m_guizmo2D.setIsShow(false);
             if (selectedEntity && m_GizmoType != -1)
             {
                 ImGuizmo::SetOrthographic(false);
@@ -206,47 +212,54 @@ namespace editor {
                                   m_ViewportBounds[1].y - m_ViewportBounds[0].y);
 
                 // Editor camera
-                const robot2D::mat4& cameraProjection = m_editorCamera.getProjectionMatrix();
-                robot2D::mat4 cameraView = m_editorCamera.getViewMatrix();
+                const robot2D::mat4& cameraProjection = m_editorCamera -> getProjectionMatrix();
+                robot2D::mat4 cameraView = m_editorCamera -> getViewMatrix();
 
-                // Entity transform
-                auto& tc = selectedEntity.getComponent<Transform3DComponent>();
-                auto transform = tc.getTransform();
+                auto& tc = selectedEntity.getComponent<TransformComponent>();
+                m_guizmo2D.setIsShow(true);
+                m_guizmo2D.setManipulated(&tc);
 
-                // Snapping
-                bool snap = robot2D::Keyboard::isKeyPressed(robot2D::Key::LEFT_ALT);
-                float snapValue = 0.5f; // Snap to 0.5m for translation/scale
-                // Snap to 45 degrees for rotation
-                if (m_GizmoType == ImGuizmo::OPERATION::ROTATE)
-                    snapValue = 45.0f;
 
-                float snapValues[3] = { snapValue, snapValue, snapValue };
-                m_GizmoType = ImGuizmo::TRANSLATE;
 
-#ifdef USE_GLM
-                auto glmMatrix = toGLM(transform);
-
-                ImGuizmo::Manipulate(cameraView.getRaw(), cameraProjection.getRaw(),
-                                     (ImGuizmo::OPERATION)m_GizmoType, ImGuizmo::LOCAL,
-                                     glm::value_ptr(glmMatrix),
-                                     nullptr, snap ? snapValues : nullptr);
-#endif
-                if (ImGuizmo::IsUsing())
-                {
-                    robot2D::vec3f translation, rotation, scale;
-                    DecomposeTransform(transform, translation, rotation, scale);
-                    auto delta = rotation - tc.getRotation();
-                    tc.getRotation() += delta;
-                    tc.setPosition(translation);
-                    tc.setScale(scale);
-                }
+//                // Entity transform
+//                auto& tc = selectedEntity.getComponent<Transform3DComponent>();
+//                auto transform = tc.getTransform();
+//
+//                // Snapping
+//                bool snap = robot2D::Keyboard::isKeyPressed(robot2D::Key::LEFT_ALT);
+//                float snapValue = 0.5f; // Snap to 0.5m for translation/scale
+//                // Snap to 45 degrees for rotation
+//                if (m_GizmoType == ImGuizmo::OPERATION::ROTATE)
+//                    snapValue = 45.0f;
+//
+//                float snapValues[3] = { snapValue, snapValue, snapValue };
+//                m_GizmoType = ImGuizmo::TRANSLATE;
+//
+//#ifdef USE_GLM
+//                auto glmMatrix = toGLM(transform);
+//
+//                ImGuizmo::Manipulate(cameraView.getRaw(), cameraProjection.getRaw(),
+//                                     (ImGuizmo::OPERATION)m_GizmoType, ImGuizmo::LOCAL,
+//                                     glm::value_ptr(glmMatrix),
+//                                     nullptr, snap ? snapValues : nullptr);
+//#endif
+//                if (ImGuizmo::IsUsing())
+//                {
+//                    robot2D::vec3f translation, rotation, scale;
+//                    DecomposeTransform(transform, translation, rotation, scale);
+//                    auto delta = rotation - tc.getRotation();
+//                    tc.getRotation() += delta;
+//                    tc.setPosition(translation);
+//                    tc.setScale(scale);
+//                }
             }
 
-            ImGui::dummyDragDrop("CONTENT_BROWSER_ITEM", [](std::string path){
+            robot2D::dummyDragDrop("CONTENT_BROWSER_ITEM", [](std::string path){
                 const wchar_t* rawPath = (const wchar_t*)path.c_str();
                 std::filesystem::path scenePath = std::filesystem::path("assets") / rawPath;
                 /// TODO: @a.raag send MessageQueue to open Scene
             });
         });
     }
+
 }

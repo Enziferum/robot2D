@@ -27,7 +27,7 @@ int main() {
         true,
         false,
         robot2D::WindowContext::RenderApi::OpenGL4_5,
-        robot2D::WindowContext::RenderDimensionType::ThreeD
+        robot2D::WindowContext::RenderDimensionType::TwoD
     };
 
     robot2D::EngineConfiguration engineConfiguration;

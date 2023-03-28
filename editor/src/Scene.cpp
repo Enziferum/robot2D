@@ -19,10 +19,11 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
+#include <robot2D/Graphics/RenderTarget.hpp>
 #include <editor/Scene.hpp>
 #include <editor/Components.hpp>
 #include <editor/Systems.hpp>
-#include <robot2D/Graphics/RenderTarget.hpp>
+#include <editor/scripting/ScriptingEngine.hpp>
 
 namespace editor {
     Scene::Scene(robot2D::MessageBus& messageBus):
@@ -50,15 +51,23 @@ namespace editor {
     }
 
     void Scene::updateRuntime(float dt) {
-
+        for(auto& entity: m_sceneEntities) {
+            if(entity.hasComponent<ScriptComponent>())
+                ScriptEngine::onUpdateEntity(entity, dt);
+        }
     }
 
     void Scene::addEmptyEntity() {
         auto entity = m_scene.createEntity();
         entity.addComponent<TagComponent>();
-        auto& transform = entity.addComponent<Transform3DComponent>();
-        transform.setPosition({0.F, 0.F, 0.F});
-        transform.setScale({1.F, 1.F, 0.F});
+        /*
+            auto& transform = entity.addComponent<Transform3DComponent>();
+            transform.setPosition({0.F, 0.F, 0.F});
+            transform.setScale({1.F, 1.F, 0.F});
+         */
+        auto& transform = entity.addComponent<TransformComponent>();
+        transform.setPosition({0.F, 0.F});
+        transform.setScale({100.F, 100.F});
         m_sceneEntities.emplace_back(entity);
     }
 
@@ -82,6 +91,18 @@ namespace editor {
 
     void Scene::draw(robot2D::RenderTarget& target, robot2D::RenderStates states) const {
         target.draw(m_scene);
+    }
+
+    void Scene::onRuntimeStart() {
+        ScriptEngine::onRuntimeStart(this);
+        for(auto& entity: m_sceneEntities) {
+            if(entity.hasComponent<ScriptComponent>())
+                ScriptEngine::onCreateEntity(entity);
+        }
+    }
+
+    void Scene::onRuntimeStop() {
+        ScriptEngine::onRuntimeStop();
     }
 
 }

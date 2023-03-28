@@ -25,7 +25,7 @@ source distribution.
 #include <robot2D/Graphics/RenderWindow.hpp>
 #include <robot2D/Graphics/FrameBuffer.hpp>
 #include <robot2D/Util/ResourceHandler.hpp>
-#include <robot2D/Extra/Gui.hpp>
+#include <robot2D/imgui/Gui.hpp>
 
 #include "UIManager.hpp"
 #include "Scene.hpp"
@@ -36,6 +36,7 @@ source distribution.
 #include "EditorCamera.hpp"
 #include "EditorLogic.hpp"
 #include "EventBinder.hpp"
+#include "Guizmo2D.hpp"
 
 namespace editor {
 
@@ -61,11 +62,12 @@ namespace editor {
     public:
         virtual ~IEditor() = 0;
         virtual void openScene(Scene::Ptr scene, std::string path) = 0;
+        virtual void prepare() = 0;
     };
 
     class Editor: public IEditor {
     public:
-        Editor(robot2D::MessageBus& messageBus, TaskQueue& taskQueue, ImGui::Gui& gui);
+        Editor(robot2D::MessageBus& messageBus, robot2D::Gui& gui);
         Editor(const Editor&)=delete;
         Editor(const Editor&&)=delete;
         Editor& operator=(const Editor&)=delete;
@@ -79,8 +81,8 @@ namespace editor {
         void render();
 
         void openScene(Scene::Ptr scene, std::string path) override;
+        void prepare() override;
     private:
-        void prepare();
         void guiRender();
         void windowFunction();
         bool createScene();
@@ -100,8 +102,9 @@ namespace editor {
         robot2D::RenderWindow* m_window;
         robot2D::MessageBus& m_messageBus;
         MessageDispatcher m_messageDispather;
-        TaskQueue& m_taskQueue;
-        ImGui::Gui& m_gui;
+
+        robot2D::Gui& m_gui;
+
         UIManager m_panelManager;
         Scene::Ptr m_activeScene{nullptr};
         EditorLogic* m_logic{nullptr};
@@ -113,7 +116,8 @@ namespace editor {
         robot2D::ResourceHandler<robot2D::Texture,
                         EditorConfiguration::TextureID> m_textures;
         robot2D::Color m_sceneClearColor;
-        EditorCamera m_editorCamera;
+        IEditorCamera::Ptr m_editorCamera;
         bool m_needPrepare{true};
+        Guizmo2D m_guizmo2D;
     };
 }

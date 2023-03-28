@@ -55,7 +55,7 @@ namespace editor {
         auto halfWidth = windowSize.x / 2;
         auto height = ImGui::GetContentRegionAvail().y;
 
-        if (ImGui::BeginListBox("##label", ImVec2(halfWidth, height)))
+         if (ImGui::BeginListBox("##label", ImVec2(halfWidth, height)))
         {
             ImVec2 startPos{m_configuration.textOffset, m_configuration.textOffset};
 
@@ -136,7 +136,7 @@ namespace editor {
         description.path = creationPath;
 
         auto* msg = m_messageBus.postMessage<ProjectMessage>(MessageID::CreateProject);
-        msg -> description = std::move(description);
+        msg -> description = description;
     }
 
     void ProjectInspector::loadProject(const unsigned int& index) {

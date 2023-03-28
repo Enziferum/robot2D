@@ -36,6 +36,7 @@ namespace editor {
 
         bool add(Project::Ptr&& project);
         bool load(Project::Ptr&& project);
+        bool load(const Project::Ptr project, std::string path = "");
         bool remove();
         bool save(Scene::Ptr&& scene);
 

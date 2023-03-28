@@ -51,11 +51,12 @@ namespace editor {
 
         void setAssetsPath(const std::string& path);
         void render() override;
-
+        void unlock() { wasSet = true; }
     private:
         std::filesystem::path m_currentPath;
         std::filesystem::path m_assetsPath;
         robot2D::ResourceHandler<robot2D::Texture, AssetsPanelConfiguration::ResourceIconType> m_assetsIcons;
         AssetsPanelConfiguration m_configuration;
+        bool wasSet{false};
     };
 }

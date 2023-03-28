@@ -5,7 +5,6 @@ namespace editor {
                             m_outputTasksQueue{},
                             m_currentId{0} {
         m_thread = std::thread{&TaskQueue::threadWork, this};
-        m_thread.detach();
     }
 
     TaskQueue::~TaskQueue() {
@@ -18,26 +17,36 @@ namespace editor {
         while (m_running) {
             using namespace std::chrono_literals;
 
-            std::unique_lock<std::mutex> lock(m_outputMutex);
+            std::unique_lock<std::mutex> lock(m_inputMutex);
             data_cond.wait(lock, [this]{ return !m_inputTasksQueue.empty(); });
 
-            auto task = std::move(m_inputTasksQueue.front());
+            auto task = m_inputTasksQueue.front();
+            m_inputTasksQueue.pop();
             if(!task)
                 continue;
 
-            m_inputTasksQueue.pop();
             task -> execute();
 
-            std::this_thread::sleep_for(5000ms);
-            m_outputTasksQueue.push(std::move(task));
+
+      //      std::this_thread::sleep_for(5000ms);
+
+            {
+                std::lock_guard<std::mutex> outLock{m_outputMutex};
+                m_outputTasksQueue.push(task);
+            }
         }
     }
 
     void TaskQueue::process() {
-        if(!m_outputTasksQueue.empty()) {
-            auto task = std::move(m_outputTasksQueue.front());
-            m_outputTasksQueue.pop();
-            task -> call();
+        ITask::Ptr task{nullptr};
+        {
+            std::lock_guard<std::mutex> outLock{m_outputMutex};
+            if(!m_outputTasksQueue.empty()) {
+                task = m_outputTasksQueue.front();
+                m_outputTasksQueue.pop();
+            }
         }
+        if(task)
+            task -> call();
     }
 }

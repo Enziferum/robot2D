@@ -18,24 +18,27 @@ namespace editor {
 
         template<typename T, typename ... Args, typename Callback>
         TaskID addAsyncTask(Callback&& callback, Args&& ...args) {
-            {
-                std::lock_guard<std::mutex> lock(m_inputMutex);
-                auto function = std::make_unique<TaskFunction<T, Callback>>(std::forward<Callback>(callback));
+
+                auto function = std::make_shared<TaskFunction<T, Callback>>(std::forward<Callback>(callback));
                 if(!function) {
                     //TODO: add logging
                     return -1;
                 }
-                auto task = std::make_unique<T>(std::move(function), std::forward<Args>(args)...);
+                auto task = std::make_shared<T>(function, std::forward<Args>(args)...);
+
+
                 task -> m_taskID = m_currentId;
                 ++m_currentId;
                 if(!task) {
                     //TODO: add logging
                     return -1;
                 }
-                m_inputTasksQueue.push(std::move(task));
+            {
+                std::lock_guard<std::mutex> lock(m_inputMutex);
+                m_inputTasksQueue.push(task);
                 data_cond.notify_one();
             }
-            return m_currentId - 1;
+            return 0;
         }
 
         void process();
