@@ -47,7 +47,7 @@ namespace robot2D::priv {
         setup();
     }
 
-    DesktopWindowImpl::~DesktopWindowImpl() {}
+    DesktopWindowImpl::~DesktopWindowImpl() = default;
 
     bool DesktopWindowImpl::pollEvents(Event& event) {
         //TODO: @a.raag sleep/wait some time ?

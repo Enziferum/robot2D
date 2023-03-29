@@ -1,6 +1,7 @@
 #pragma once
 #include <cassert>
 #include <unordered_map>
+#include <map>
 #include <memory>
 #include <string>
 
@@ -36,6 +37,26 @@ namespace editor {
 
     }
 
+
+    enum class ScriptFieldType
+    {
+        None = 0,
+        Float, Double,
+        Bool, Char, Byte, Short, Int, Long,
+        UByte, UShort, UInt, ULong,
+        Vector2, Vector3, Vector4,
+        Entity
+    };
+
+
+    struct ScriptField
+    {
+        ScriptFieldType Type;
+        std::string Name;
+
+        MonoClassField* ClassField;
+    };
+
     class ScriptEngineData;
     class MonoClassWrapper {
     public:
@@ -44,6 +65,12 @@ namespace editor {
         MonoClassWrapper(ScriptEngineData* data,
                          std::string namespaceStr, std::string className, bool isCore = false);
         ~MonoClassWrapper() = default;
+
+        bool registerField(std::string&& name, ScriptField scriptField) {
+            return m_registerFields.insert(std::make_pair(name, std::move(scriptField))).second;
+        }
+
+        const std::unordered_map<std::string, ScriptField>& getFields() const { return m_registerFields; }
 
         template<typename ... Args>
         void callMethod(std::string name, Args&& ...args) {
@@ -66,10 +93,14 @@ namespace editor {
         }
     private:
         void registerMethod(std::string name, int argsCount);
+        bool getFieldValue(const std::string& name, void* buffer);
+        bool setFieldValue(const std::string& name, const void* value);
     private:
         MonoClass* m_class{nullptr};
         MonoObject* m_instance{nullptr};
         std::unordered_map<std::string, MonoMethod*> m_registerMethods;
+        std::unordered_map<std::string, ScriptField> m_registerFields;
+        friend class ScriptInstance;
     };
 
 }

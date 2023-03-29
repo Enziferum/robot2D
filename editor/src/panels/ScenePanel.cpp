@@ -29,6 +29,7 @@ source distribution.
 #include <editor/Components.hpp>
 #include <editor/Messages.hpp>
 #include <editor/scripting/ScriptingEngine.hpp>
+#include "editor/scripting/ScriptEngineData.hpp"
 
 
 namespace editor {
@@ -394,17 +395,78 @@ namespace editor {
                 ImGui::EndDragDropTarget();
             }
         });
-        drawComponent<ScriptComponent>("Scripting", entity, [](auto& component) {
+        drawComponent<ScriptComponent>("Scripting", entity, [entity, scene = m_scene](auto& component) {
             bool hasScriptClass = ScriptEngine::hasEntityClass(component.name);
 
             static char buffer[64];
             strcpy(buffer, component.name.c_str());
+
+            ImGui::Text("EntityID = %i", entity.getIndex());
 
             if(!hasScriptClass)
                 ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.9f, 0.2f, 0.3f, 1.0f));
 
             if(ImGui::InputText("Class", buffer, sizeof(buffer)))
                 component.name = buffer;
+
+            bool isSceneRunning = scene -> isRunning();
+
+            if(isSceneRunning) {
+                auto scriptInstance = ScriptEngine::getEntityScriptInstance(entity.getIndex());
+                if (scriptInstance)
+                {
+                    const auto& fields = scriptInstance -> getClassWrapper() -> getFields();
+                    for (const auto& [name, field] : fields)
+                    {
+                        if (field.Type == ScriptFieldType::Float)
+                        {
+                            float data = scriptInstance -> getFieldValue<float>(name);
+                            if (ImGui::DragFloat(name.c_str(), &data))
+                            {
+                                scriptInstance -> setFieldValue(name, data);
+                            }
+                        }
+                    }
+                }
+            }
+            else {
+                if(hasScriptClass) {
+                    auto entityClass = ScriptEngine::getEntityClass(component.name);
+                    const auto& fields = entityClass -> getFields();
+                    auto& entityFields = ScriptEngine::getScriptFieldMap(entity);
+
+                    for(const auto& [name, field]: fields) {
+                        // Field has been set in editor
+                        if (entityFields.find(name) != entityFields.end())
+                        {
+                            ScriptFieldInstance& scriptField = entityFields.at(name);
+
+                            // Display control to set it maybe
+                            if (field.Type == ScriptFieldType::Float)
+                            {
+                                float data = scriptField.getValue<float>();
+                                if (ImGui::DragFloat(name.c_str(), &data))
+                                    scriptField.setValue(data);
+                            }
+                        }
+                        else
+                        {
+                            // Display control to set it maybe
+                            if (field.Type == ScriptFieldType::Float)
+                            {
+                                float data = 0.0f;
+                                if (ImGui::DragFloat(name.c_str(), &data))
+                                {
+                                    ScriptFieldInstance& fieldInstance = entityFields[name];
+                                    fieldInstance.Field = field;
+                                    fieldInstance.setValue(data);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
 
             if(!hasScriptClass)
                 ImGui::PopStyleColor();

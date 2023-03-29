@@ -106,5 +106,6 @@ namespace editor {
 
         Manipulator m_xAxisManipulator;
         Manipulator m_yAxisManipulator;
+        robot2D::vec2f m_manipulatorLastPos;
     };
 }

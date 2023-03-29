@@ -93,6 +93,15 @@ namespace editor {
         m_sceneManager.save(std::move(m_activeScene));
     }
 
+
+    void EditorLogic::copyToBuffer() {
+        /// find selections ///
+    }
+
+    void EditorLogic::pasterFromBuffer() {
+
+    }
+
 } // namespace editor
 
 

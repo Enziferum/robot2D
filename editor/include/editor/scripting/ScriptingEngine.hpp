@@ -4,6 +4,9 @@
 #include <filesystem>
 
 #include <robot2D/Ecs/Entity.hpp>
+#include "MonoClassWrapper.hpp"
+#include "ScriptInstance.hpp"
+#include "ScriptEngineData.hpp"
 
 extern "C" {
     typedef struct _MonoClass MonoClass;
@@ -17,6 +20,11 @@ extern "C" {
 namespace editor {
     namespace fs = std::filesystem;
 
+    namespace util {
+        const char* ScriptFieldTypeToString(ScriptFieldType fieldType);
+        ScriptFieldType ScriptFieldTypeFromString(std::string_view fieldType);
+    }
+
     class Scene;
     class ScriptEngine {
     public:
@@ -28,6 +36,9 @@ namespace editor {
         static void onCreateEntity(robot2D::ecs::Entity);
         static void onUpdateEntity(robot2D::ecs::Entity, float delta);
 
+        static ScriptInstance::Ptr getEntityScriptInstance(robot2D::ecs::EntityID entityID);
+        static MonoClassWrapper::Ptr getEntityClass(const std::string& name);
+        static ScriptFieldMap& getScriptFieldMap(robot2D::ecs::Entity entity);
 
         static void onRuntimeStart(Scene* scene);
         static void onRuntimeStop();

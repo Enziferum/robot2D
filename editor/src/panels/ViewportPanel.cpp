@@ -218,40 +218,6 @@ namespace editor {
                 auto& tc = selectedEntity.getComponent<TransformComponent>();
                 m_guizmo2D.setIsShow(true);
                 m_guizmo2D.setManipulated(&tc);
-
-
-
-//                // Entity transform
-//                auto& tc = selectedEntity.getComponent<Transform3DComponent>();
-//                auto transform = tc.getTransform();
-//
-//                // Snapping
-//                bool snap = robot2D::Keyboard::isKeyPressed(robot2D::Key::LEFT_ALT);
-//                float snapValue = 0.5f; // Snap to 0.5m for translation/scale
-//                // Snap to 45 degrees for rotation
-//                if (m_GizmoType == ImGuizmo::OPERATION::ROTATE)
-//                    snapValue = 45.0f;
-//
-//                float snapValues[3] = { snapValue, snapValue, snapValue };
-//                m_GizmoType = ImGuizmo::TRANSLATE;
-//
-//#ifdef USE_GLM
-//                auto glmMatrix = toGLM(transform);
-//
-//                ImGuizmo::Manipulate(cameraView.getRaw(), cameraProjection.getRaw(),
-//                                     (ImGuizmo::OPERATION)m_GizmoType, ImGuizmo::LOCAL,
-//                                     glm::value_ptr(glmMatrix),
-//                                     nullptr, snap ? snapValues : nullptr);
-//#endif
-//                if (ImGuizmo::IsUsing())
-//                {
-//                    robot2D::vec3f translation, rotation, scale;
-//                    DecomposeTransform(transform, translation, rotation, scale);
-//                    auto delta = rotation - tc.getRotation();
-//                    tc.getRotation() += delta;
-//                    tc.setPosition(translation);
-//                    tc.setScale(scale);
-//                }
             }
 
             robot2D::dummyDragDrop("CONTENT_BROWSER_ITEM", [](std::string path){

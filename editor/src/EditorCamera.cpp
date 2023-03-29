@@ -29,12 +29,20 @@ namespace editor {
     constexpr float Fov = 45.F;
     constexpr float zNear = 0.1f;
     constexpr float zFar = 1000.f;
+    namespace {
+        constexpr const float zoomOffset = 1.F;
+        constexpr const float zoomMultiplier = 0.1F;
+    }
 
 
 
     IEditorCamera::~IEditorCamera() = default;
 
-    EditorCamera2D::EditorCamera2D(): IEditorCamera(EditorCameraType::Orthographic) {}
+    EditorCamera2D::EditorCamera2D(): IEditorCamera(EditorCameraType::Orthographic) {
+
+
+
+    }
 
 
     void EditorCamera2D::setViewportSize(robot2D::vec2f newSize) {
@@ -43,14 +51,33 @@ namespace editor {
 
     void EditorCamera2D::handleEvents(const robot2D::Event& event) {
 
+        if(event.type == robot2D::Event::MouseWheel && m_leftCntrlPressed) {
+            m_zoom = zoomOffset + -event.wheel.scroll_y * zoomMultiplier;
+            m_view.zoom(m_zoom);
+        }
+
+        if(event.type == robot2D::Event::KeyPressed &&
+            event.key.code == robot2D::Key::LEFT_CONTROL)
+            m_leftCntrlPressed = true;
+
+        if(event.type == robot2D::Event::KeyReleased &&
+           event.key.code == robot2D::Key::LEFT_CONTROL)
+            m_leftCntrlPressed = false;
     }
 
-    void EditorCamera2D::update(robot2D::vec2f mousePos, float deltaTime) {
+    void EditorCamera2D::update(robot2D::vec2f mousePos, [[maybe_unused]] float deltaTime) {
+        constexpr float deltaOffset = 0.5F;
 
+        robot2D::vec2f delta = (mousePos - m_mousePos) * deltaOffset;
+        m_mousePos = mousePos;
+
+        if(robot2D::Window::isMousePressed(robot2D::Mouse::MouseMiddle) && m_leftCntrlPressed) {
+            auto center = m_view.getCenter();
+            center.x += delta.x * 2.F;
+            center.y += delta.y * 2.F;
+            m_view.setCenter(center);
+        }
     }
-
-
-
 
 
     EditorCamera::EditorCamera():

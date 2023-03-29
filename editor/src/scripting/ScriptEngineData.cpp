@@ -9,4 +9,8 @@ namespace editor {
     bool ScriptEngineData::hasEntityClass(const std::string& className) const {
         return m_entityClasses.find(className) != m_entityClasses.end();
     }
+
+    bool ScriptEngineData::hasEntityFields(ScriptEngineData::entityUUID uuid) const {
+        return m_entityScriptFields.find(uuid) != m_entityScriptFields.end();
+    }
 } // namespace editor
