@@ -5,14 +5,20 @@ namespace robot2D
 {
     public class Entity
     {
-        protected Entity() { ID = 0; } 
-
-        internal Entity(ulong id)
+        protected Entity()
         {
+            Console.WriteLine("Entity Default Ctor");
+            ID = 0;
+        } 
+
+        internal Entity(int id)
+        {
+            Console.WriteLine($"Entity Ctor ID - {id}");
             ID = id;
+            Console.WriteLine($"Entity Ctor ID - {ID}");
         }
 
-        public readonly ulong ID;
+        public readonly int ID;
 
         public Vector2 Translation
         {
@@ -44,7 +50,7 @@ namespace robot2D
 		
         public Entity FindEntityByName(string name)
         {
-            ulong entityID = InternalCalls.Entity_FindEntityByName(name);
+            int entityID = InternalCalls.Entity_FindEntityByName(name);
             if (entityID == 0)
                 return null;
 

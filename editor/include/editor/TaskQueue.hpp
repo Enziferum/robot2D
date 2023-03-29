@@ -3,6 +3,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <queue>
+#include <atomic>
 
 #include "Task.hpp"
 
@@ -55,5 +56,6 @@ namespace editor {
         std::queue<ITask::Ptr> m_outputTasksQueue;
         std::condition_variable data_cond;
         std::uint32_t m_currentId;
+        std::atomic_bool m_running;
     };
 }

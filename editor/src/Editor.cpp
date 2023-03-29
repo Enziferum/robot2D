@@ -103,7 +103,7 @@ namespace editor {
 
     namespace fs = std::filesystem;
 
-    IEditor::~IEditor() {}
+    IEditor::~IEditor() = default;
 
     Editor::Editor(robot2D::MessageBus& messageBus, robot2D::Gui& gui):
     m_state(State::Edit),
@@ -117,33 +117,8 @@ namespace editor {
 
     void Editor::setupBindings() {
         //TODO: @a.raag add short-cut binder
-        m_eventBinder.bindEvent(robot2D::Event::KeyPressed,
-                               [this](const robot2D::Event& event){
-                                   if(event.key.code == robot2D::Key::LEFT_CONTROL)
-                                       m_configuration.m_leftCtrlPressed = true;
-                                   if(event.key.code == robot2D::Key::S) {
-                                       if(m_configuration.m_leftCtrlPressed) {
-                                           auto result = m_logic -> saveScene();
-                                           if(!result) {
-                                               // TODO(a.raag): show error messagebox;
-                                           }
-                                       }
-                                   }
-                                   if(event.key.code == robot2D::Key::R) {
-                                       if(m_logic -> getState() == EditorLogic::State::Edit) {
-                                            onSceneRun();
-                                       }
-                                       else if(m_logic -> getState() == EditorLogic::State::Run) {
-                                           onSceneEdit();
-                                       }
-                                   }
-                               });
-
-        m_eventBinder.bindEvent(robot2D::Event::KeyReleased,
-                               [this](const robot2D::Event& event){
-                                   if(event.key.code == robot2D::Key::LEFT_CONTROL)
-                                       m_configuration.m_leftCtrlPressed = false;
-                               });
+        m_eventBinder.bindEvent(robot2D::Event::KeyPressed, BIND_CLASS_FN(onKeyPressed));
+        m_eventBinder.bindEvent(robot2D::Event::KeyReleased, BIND_CLASS_FN(onKeyReleased));
 
 
         m_eventBinder.bindEvent(robot2D::Event::Resized,
@@ -385,6 +360,44 @@ namespace editor {
         auto& assetsPanel = m_panelManager.getPanel<AssetsPanel>();
         assetsPanel.setAssetsPath(assetsPath);
         assetsPanel.unlock();
+    }
+
+    void Editor::onKeyPressed(const robot2D::Event& event) {
+        if(event.key.code == robot2D::Key::LEFT_CONTROL)
+            m_configuration.m_leftCtrlPressed = true;
+
+        if(m_configuration.m_leftCtrlPressed && event.key.code == robot2D::Key::C) {
+            /// copy selected ///
+            m_logic -> copyToBuffer();
+        }
+
+        if(m_configuration.m_leftCtrlPressed && event.key.code == robot2D::Key::V) {
+            /// paste selected into buffer ///
+            m_logic -> pasterFromBuffer();
+        }
+
+        if(event.key.code == robot2D::Key::S) {
+            if(m_configuration.m_leftCtrlPressed) {
+                auto result = m_logic -> saveScene();
+                if(!result) {
+                    // TODO(a.raag): show error messagebox;
+                }
+            }
+        }
+        if(event.key.code == robot2D::Key::R) {
+            if(m_logic -> getState() == EditorLogic::State::Edit) {
+                onSceneRun();
+            }
+            else if(m_logic -> getState() == EditorLogic::State::Run) {
+                onSceneEdit();
+            }
+        }
+
+    }
+
+    void Editor::onKeyReleased(const robot2D::Event& event) {
+        if(event.key.code == robot2D::Key::LEFT_CONTROL)
+            m_configuration.m_leftCtrlPressed = false;
     }
 
 }

@@ -27,6 +27,10 @@ namespace editor {
         void setIEditor(IEditor* iEditor) { m_editor = iEditor; }
         bool saveScene();
 
+
+        void copyToBuffer();
+        void pasterFromBuffer();
+
         void createProject(Project::Ptr project);
         void loadProject(Project::Ptr project);
 

@@ -60,8 +60,29 @@ namespace editor {
 
                 break;
             }
-            case Operation::Scale:
+            case Operation::Scale: {
+                auto pos = m_manipulated -> getPosition();
+                auto size = m_manipulated -> getScale();
+                if (m_xAxisManipulator.active()) {
+                    /// move transformAble by x
+                    moveVector.x -= size.x / 2;
+                    float diff = moveVector.x - m_manipulatorLastPos.x;
+                    m_manipulated -> setScale( {size.x + diff, size.y} );
+                    m_xAxisManipulator.moveX(moveVector.x);
+                    m_yAxisManipulator.moveX(moveVector.x);
+                    /// update manipulator's position
+                } else if (m_yAxisManipulator.active()) {
+                    /// move transformAble by y
+                    moveVector.y -= size.y / 2;
+                    float diff = moveVector.y - m_manipulatorLastPos.y;
+                    m_manipulated -> setScale( {size.x , size.y + diff} );
+                    m_xAxisManipulator.moveY(moveVector.y);
+                    m_yAxisManipulator.moveY(moveVector.y);
+                    /// update manipulator's position
+                }
+                m_manipulatorLastPos = moveVector;
                 break;
+            }
             case Operation::Rotate:
                 break;
         }
@@ -72,9 +93,9 @@ namespace editor {
             robot2D::vec2f mousePoint{event.mouse.x, event.mouse.y};
             mousePoint = m_camera -> convertPixelToCoords(mousePoint);
             m_leftMousePressed = true;
-            if(m_xAxisManipulator.isPressed(mousePoint)) {}
-
-            if(m_yAxisManipulator.isPressed(mousePoint)) {}
+            if(m_xAxisManipulator.isPressed(mousePoint) || m_yAxisManipulator.isPressed(mousePoint)) {
+                m_manipulatorLastPos = mousePoint;
+            }
         }
     }
 

@@ -31,9 +31,7 @@ source distribution.
 namespace editor {
     class TransformComponent: public robot2D::Transformable {
     public:
-        TransformComponent(){}
-        ~TransformComponent() override {}
-
+        ~TransformComponent() override = default;
     };
 
     // TODO: @a.raag add Rotation
@@ -128,16 +126,8 @@ namespace editor {
         Physics2DComponent(){}
     };
 
-    class NativeScriptComponent final {
-    public:
-        NativeScriptComponent(){}
-    };
-
-
     struct ScriptComponent {
         std::string name;
-
-        ////
     };
 
 }

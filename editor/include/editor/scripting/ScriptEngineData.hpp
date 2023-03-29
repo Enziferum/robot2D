@@ -19,12 +19,48 @@ extern "C" {
 
 namespace editor {
 
+
+    struct ScriptFieldInstance
+    {
+        ScriptField Field;
+
+        ScriptFieldInstance()
+        {
+            memset(m_Buffer, 0, sizeof(m_Buffer));
+        }
+
+        template<typename T>
+        T getValue()
+        {
+            static_assert(sizeof(T) <= 16, "Type too large!");
+            return *(T*)m_Buffer;
+        }
+
+        template<typename T>
+        void setValue(T value)
+        {
+            static_assert(sizeof(T) <= 16, "Type too large!");
+            memcpy(m_Buffer, &value, sizeof(T));
+        }
+    private:
+        uint8_t m_Buffer[16];
+
+        friend class ScriptEngine;
+        friend class ScriptInstance;
+    };
+
+    using ScriptFieldMap = std::unordered_map<std::string, ScriptFieldInstance>;
+
+
     class ScriptEngineData {
     public:
+        using entityUUID = int;
+
         ScriptEngineData();
         ~ScriptEngineData();
 
         bool hasEntityClass(const std::string& className) const;
+        bool hasEntityFields(entityUUID uuid) const;
     private:
         friend class ScriptEngine;
         friend class MonoClassWrapper;
@@ -38,7 +74,10 @@ namespace editor {
         MonoImage* m_appAssemblyImage{nullptr};
 
         std::unordered_map<std::string, MonoClassWrapper::Ptr> m_entityClasses;
-        std::unordered_map<int, ScriptInstance::Ptr> m_entityInstances;
+
+        std::unordered_map<entityUUID, ScriptInstance::Ptr> m_entityInstances;
+        std::unordered_map<entityUUID, ScriptFieldMap> m_entityScriptFields;
+
         MonoClassWrapper::Ptr m_entityClass;
 
         std::vector<std::string> m_entityClassesNames;

@@ -68,6 +68,8 @@ namespace editor {
         auto& transform = entity.addComponent<TransformComponent>();
         transform.setPosition({0.F, 0.F});
         transform.setScale({100.F, 100.F});
+        entity.addComponent<SpriteComponent>();
+
         m_sceneEntities.emplace_back(entity);
     }
 
@@ -94,6 +96,7 @@ namespace editor {
     }
 
     void Scene::onRuntimeStart() {
+        m_running = true;
         ScriptEngine::onRuntimeStart(this);
         for(auto& entity: m_sceneEntities) {
             if(entity.hasComponent<ScriptComponent>())
@@ -102,6 +105,7 @@ namespace editor {
     }
 
     void Scene::onRuntimeStop() {
+        m_running = false;
         ScriptEngine::onRuntimeStop();
     }
 

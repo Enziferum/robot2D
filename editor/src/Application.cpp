@@ -122,6 +122,6 @@ namespace editor {
     }
 
     void Application::destroy() {
-        ScriptEngine::Shutdown();
+       ScriptEngine::Shutdown();
     }
 }

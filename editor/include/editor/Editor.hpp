@@ -90,6 +90,10 @@ namespace editor {
         void setupBindings();
         void onSceneRun();
         void onSceneEdit();
+
+
+        void onKeyPressed(const robot2D::Event& event);
+        void onKeyReleased(const robot2D::Event& event);
     private:
         enum class State {
             Load,

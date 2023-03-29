@@ -25,6 +25,8 @@ source distribution.
 #include <editor/SceneSerializer.hpp>
 #include <editor/Scene.hpp>
 #include <editor/Components.hpp>
+#include <editor/scripting/ScriptingEngine.hpp>
+
 #include <robot2D/Util/Logger.hpp>
 
 namespace YAML {
@@ -90,6 +92,19 @@ namespace YAML {
 }
 
 namespace editor {
+
+#define WRITE_SCRIPT_FIELD(FieldType, Type)           \
+			case ScriptFieldType::FieldType:          \
+				out << scriptField.getValue<Type>();  \
+				break
+
+#define READ_SCRIPT_FIELD(FieldType, Type)             \
+	case ScriptFieldType::FieldType:                   \
+	{                                                  \
+		Type data = scriptField["Data"].as<Type>();    \
+		fieldInstance.setValue(data);                  \
+		break;                                         \
+	}
 
     class ISceneDeserializer {
     public:
@@ -181,6 +196,55 @@ namespace editor {
             out << YAML::EndMap;
         }
 
+        if(entity.hasComponent<ScriptComponent>()) {
+            auto& scriptComponent = entity.getComponent<ScriptComponent>();
+
+            out << YAML::Key << "ScriptComponent";
+            out << YAML::BeginMap;
+            out << YAML::Key << "ClassName" << YAML::Value << scriptComponent.name;
+
+            auto entityClass = ScriptEngine::getEntityClass(scriptComponent.name);
+            const auto& fields = entityClass -> getFields();
+
+            if(fields.size() > 0) {
+                out << YAML::Key << "ScriptFields" << YAML::Value;
+                auto& entityFields = ScriptEngine::getScriptFieldMap(entity);
+                out << YAML::BeginSeq;
+                for (const auto& [name, field] : fields)
+                {
+                    if (entityFields.find(name) == entityFields.end())
+                        continue;
+
+                    out << YAML::BeginMap; // ScriptField
+                    out << YAML::Key << "Name" << YAML::Value << name;
+                    out << YAML::Key << "Type" << YAML::Value << util::ScriptFieldTypeToString(field.Type);
+                    out << YAML::Key << "Data" << YAML::Value;
+                    ScriptFieldInstance& scriptField = entityFields.at(name);
+
+                    switch (field.Type)
+                    {
+                        WRITE_SCRIPT_FIELD(Float,   float     );
+                        WRITE_SCRIPT_FIELD(Double,  double    );
+                        WRITE_SCRIPT_FIELD(Bool,    bool      );
+                        WRITE_SCRIPT_FIELD(Char,    char      );
+                        WRITE_SCRIPT_FIELD(Byte,    int8_t    );
+                        WRITE_SCRIPT_FIELD(Short,   int16_t   );
+                        WRITE_SCRIPT_FIELD(Int,     int32_t   );
+                        WRITE_SCRIPT_FIELD(Long,    int64_t   );
+                        WRITE_SCRIPT_FIELD(UByte,   uint8_t   );
+                        WRITE_SCRIPT_FIELD(UShort,  uint16_t  );
+                        WRITE_SCRIPT_FIELD(UInt,    uint32_t  );
+                        WRITE_SCRIPT_FIELD(ULong,   uint64_t  );
+                        WRITE_SCRIPT_FIELD(Vector2, robot2D::vec2f );
+                        //WRITE_SCRIPT_FIELD(Entity,  UUID      );
+                    }
+                    out << YAML::EndMap; // ScriptFields
+                }
+                out << YAML::EndSeq;
+            }
+            out << YAML::EndMap; // ScriptComponent
+        }
+
         out << YAML::EndMap;
     }
 
@@ -264,6 +328,60 @@ namespace editor {
                 if(spriteComponent) {
                     auto& sp = deserializedEntity.addComponent<SpriteComponent>();
                     sp.setColor(spriteComponent["Color"].as<robot2D::Color>());
+                }
+
+                auto scriptComponent = entity["ScriptComponent"];
+                if(scriptComponent) {
+                    auto& sc = deserializedEntity.addComponent<ScriptComponent>();
+                    sc.name = scriptComponent["ClassName"].as<std::string>();
+
+                    auto scriptFields = scriptComponent["ScriptFields"];
+                    if (scriptFields)
+                    {
+                        auto entityClass = ScriptEngine::getEntityClass(sc.name);
+                        if (entityClass)
+                        {
+                            const auto& fields = entityClass -> getFields();
+                            auto& entityFields = ScriptEngine::getScriptFieldMap(deserializedEntity);
+
+                            for (auto scriptField : scriptFields)
+                            {
+                                std::string name = scriptField["Name"].as<std::string>();
+                                std::string typeString = scriptField["Type"].as<std::string>();
+                                ScriptFieldType type = util::ScriptFieldTypeFromString(typeString);
+
+                                ScriptFieldInstance& fieldInstance = entityFields[name];
+
+                                // TODO(Yan): turn this assert into Hazelnut log warning
+                                // HZ_CORE_ASSERT(fields.find(name) != fields.end());
+
+                                if (fields.find(name) == fields.end())
+                                    continue;
+
+                                fieldInstance.Field = fields.at(name);
+
+                                switch (type)
+                                {
+                                    READ_SCRIPT_FIELD(Float, float);
+                                    READ_SCRIPT_FIELD(Double, double);
+                                    READ_SCRIPT_FIELD(Bool, bool);
+                                    READ_SCRIPT_FIELD(Char, char);
+                                    READ_SCRIPT_FIELD(Byte, int8_t);
+                                    READ_SCRIPT_FIELD(Short, int16_t);
+                                    READ_SCRIPT_FIELD(Int, int32_t);
+                                    READ_SCRIPT_FIELD(Long, int64_t);
+                                    READ_SCRIPT_FIELD(UByte, uint8_t);
+                                    READ_SCRIPT_FIELD(UShort, uint16_t);
+                                    READ_SCRIPT_FIELD(UInt, uint32_t);
+                                    READ_SCRIPT_FIELD(ULong, uint64_t);
+                                    READ_SCRIPT_FIELD(Vector2, robot2D::vec2f);
+                                    // READ_SCRIPT_FIELD(Vector3, glm::vec3);
+                                    // READ_SCRIPT_FIELD(Vector4, glm::vec4);
+                                    // READ_SCRIPT_FIELD(Entity, UUID);
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }

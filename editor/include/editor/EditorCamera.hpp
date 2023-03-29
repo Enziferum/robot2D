@@ -95,6 +95,11 @@ namespace editor {
                     static_cast<int>(0.5F + height * viewport.height)
             };
         }
+
+    private:
+        bool m_leftCntrlPressed{false};
+        float m_zoom = 0.F;
+        robot2D::vec2f m_mousePos;
     };
 
     class EditorCamera: public IEditorCamera {

@@ -54,6 +54,8 @@ namespace editor {
             return m_sceneEntities[index];
         }
 
+        bool isRunning() const { return m_running; }
+
         void setPath(const std::string& path) {m_path = path;}
         const std::string& getPath() const {return m_path;}
         std::string& getPath()  {return m_path;}
@@ -67,5 +69,6 @@ namespace editor {
         robot2D::ecs::EntityList m_sceneEntities;
         robot2D::MessageBus& m_messageBus;
         std::string m_path;
+        bool m_running = false;
     };
 }

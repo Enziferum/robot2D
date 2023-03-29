@@ -24,7 +24,7 @@ source distribution.
 
 namespace robot2D::ecs {
 
-    Entity::Entity(): m_entityManager(nullptr), m_id(INT_MAX), m_tag("") {}
+    Entity::Entity(EntityID entityId): m_entityManager(nullptr), m_id(entityId), m_tag("") {}
     Entity::Entity(EntityManager* entityManager, const EntityID& id):
     m_entityManager(entityManager),
     m_id(id) {}
