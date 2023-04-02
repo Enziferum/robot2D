@@ -17,7 +17,7 @@ namespace editor {
             Run
         };
     public:
-        EditorLogic(robot2D::MessageBus& messageBus, MessageDispatcher& messageDispatcher, TaskQueue& taskQueue);
+        EditorLogic(robot2D::MessageBus& messageBus, MessageDispatcher& messageDispatcher);
         EditorLogic(const EditorLogic& other) = delete;
         EditorLogic& operator=(const EditorLogic& other) = delete;
         EditorLogic(EditorLogic&& other) = delete;
@@ -27,7 +27,7 @@ namespace editor {
         void setIEditor(IEditor* iEditor) { m_editor = iEditor; }
         bool saveScene();
 
-
+        void createScene();
         void copyToBuffer();
         void pasterFromBuffer();
 
@@ -39,10 +39,10 @@ namespace editor {
     private:
         void loadCallback();
         void saveScene(const MenuProjectMessage& message);
+        void toolbarPressed(const ToolbarMessage& message);
     private:
         robot2D::MessageBus& m_messageBus;
         MessageDispatcher& m_messageDispatcher;
-        TaskQueue& m_taskQueue;
         Project::Ptr m_currentProject;
         SceneManager m_sceneManager;
         Scene::Ptr m_activeScene;

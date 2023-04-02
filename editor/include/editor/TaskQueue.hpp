@@ -10,12 +10,16 @@
 namespace editor {
     class TaskQueue {
     public:
-        TaskQueue();
         TaskQueue(const TaskQueue&) = delete;
         TaskQueue& operator=(const TaskQueue&) = delete;
         TaskQueue(TaskQueue&&) = delete;
         TaskQueue& operator=(TaskQueue&&) = delete;
         ~TaskQueue();
+
+        static TaskQueue* GetQueue() {
+            static TaskQueue taskQueue;
+            return &taskQueue;
+        }
 
         template<typename T, typename ... Args, typename Callback>
         TaskID addAsyncTask(Callback&& callback, Args&& ...args) {
@@ -47,6 +51,7 @@ namespace editor {
         /// remove all ?
         void clear();
     private:
+        TaskQueue();
         void threadWork();
     private:
         std::thread m_thread;

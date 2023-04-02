@@ -25,6 +25,8 @@ source distribution.
 #include <robot2D/Graphics/FrameBuffer.hpp>
 #include <robot2D/imgui/Gui.hpp>
 #include <robot2D/Core/MessageBus.hpp>
+#include <robot2D/Graphics/Texture.hpp>
+#include <robot2D/Util/ResourceHandler.hpp>
 
 #include <editor/Scene.hpp>
 #include <editor/UIManager.hpp>
@@ -33,7 +35,16 @@ source distribution.
 #include "IPanel.hpp"
 
 namespace editor {
+    enum class IconType {
+        Play,
+        Stop,
+        Pause,
+        Step,
+        Simulate
+    };
+
     class ViewportPanel final: public IPanel {
+
     public:
         ViewportPanel(IUIManager& uiManager,
                       IEditorCamera::Ptr editorCamera,
@@ -51,9 +62,12 @@ namespace editor {
         }
         void render() override;
     private:
+        void toolbarOverlay(robot2D::vec2f windowOffset, robot2D::vec2f windowAvailSize);
+    private:
         IUIManager& m_uiManager;
         IEditorCamera::Ptr m_editorCamera;
         robot2D::MessageBus& m_messageBus;
+        robot2D::ResourceHandler<robot2D::Texture, IconType> m_icons;
 
         Scene::Ptr m_scene;
         robot2D::FrameBuffer::Ptr m_frameBuffer;

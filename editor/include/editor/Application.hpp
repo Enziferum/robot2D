@@ -60,7 +60,6 @@ namespace editor {
         ApplicationLogic m_logic;
 
         robot2D::MessageBus m_messageBus;
-        TaskQueue m_taskQueue;
         robot2D::Gui m_guiWrapper;
         Editor m_editor;
         EditorLogic m_editorLogic;

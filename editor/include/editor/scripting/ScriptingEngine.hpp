@@ -29,12 +29,19 @@ namespace editor {
     class ScriptEngine {
     public:
         static void Init();
+        static void InitAppRuntime(const fs::path& filePath);
+
         static void Shutdown();
-        static void reloadEngine();
+        static void ReloadEngine();
 
         static Scene* getSceneContext();
         static void onCreateEntity(robot2D::ecs::Entity);
         static void onUpdateEntity(robot2D::ecs::Entity, float delta);
+
+        static MonoClassWrapper::Ptr getManagedObject(robot2D::ecs::EntityID);
+
+        static void onCollision2DBegin();
+        static void onCollision2DEnd();
 
         static ScriptInstance::Ptr getEntityScriptInstance(robot2D::ecs::EntityID entityID);
         static MonoClassWrapper::Ptr getEntityClass(const std::string& name);
