@@ -1,6 +1,6 @@
 #include <editor/scripting/MonoClassWrapper.hpp>
 #include <editor/scripting/ScriptEngineData.hpp>
-
+#include <robot2D/Util/Logger.hpp>
 namespace editor {
 
     MonoClassWrapper::MonoClassWrapper(ScriptEngineData* data, std::string namespaceStr, std::string className, bool isCore ) {
@@ -12,6 +12,10 @@ namespace editor {
 
     void MonoClassWrapper::registerMethod(std::string name, int argsCount) {
         MonoMethod* function = mono_class_get_method_from_name(m_class, name.c_str(), argsCount);
+        if(!function) {
+            RB_EDITOR_WARN("MonoClassWrapper: Can't register method {0}", name);
+            return;
+        }
         m_registerMethods[name] = function;
     }
 

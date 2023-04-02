@@ -35,7 +35,8 @@ namespace editor {
         OpenScene,
         SaveScene,
         EntitySelected,
-        ShowInspector
+        ShowInspector,
+        ToolbarPressed
     };
 
     struct ProjectMessage {
@@ -52,5 +53,9 @@ namespace editor {
 
     struct EntitySelection {
         uint32_t entityID;
+    };
+
+    struct ToolbarMessage {
+        int pressedType;
     };
 }

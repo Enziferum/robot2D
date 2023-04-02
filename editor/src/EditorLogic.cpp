@@ -41,15 +41,14 @@ namespace editor {
 
 
     EditorLogic::EditorLogic(robot2D::MessageBus& messageBus,
-                             MessageDispatcher& messageDispatcher,
-                             TaskQueue& taskQueue):
+                             MessageDispatcher& messageDispatcher):
     m_messageBus{messageBus},
     m_messageDispatcher{messageDispatcher},
-    m_taskQueue{taskQueue},
     m_sceneManager{messageBus},
     m_activeScene{nullptr}
     {
         m_messageDispatcher.onMessage<MenuProjectMessage>(MessageID::SaveScene, BIND_CLASS_FN(saveScene));
+        m_messageDispatcher.onMessage<ToolbarMessage>(MessageID::ToolbarPressed, BIND_CLASS_FN(toolbarPressed));
     }
 
     void EditorLogic::createProject(Project::Ptr project) {
@@ -76,7 +75,7 @@ namespace editor {
         auto scenePath1 = combinePath(path, appendPath);
 
         m_editor -> prepare();
-        m_taskQueue.addAsyncTask<SceneLoadTask>(loadLambda, m_sceneManager, project, scenePath1, this);
+        TaskQueue::GetQueue() -> addAsyncTask<SceneLoadTask>(loadLambda, m_sceneManager, project, scenePath1, this);
     }
 
     bool EditorLogic::saveScene() {
@@ -86,6 +85,7 @@ namespace editor {
     void EditorLogic::loadCallback() {
         m_state = State::Edit;
         m_activeScene = m_sceneManager.getActiveScene();
+        m_currentProject;
         m_editor -> openScene(m_activeScene, m_currentProject -> getPath());
     }
 
@@ -100,6 +100,27 @@ namespace editor {
 
     void EditorLogic::pasterFromBuffer() {
 
+    }
+
+    void EditorLogic::createScene() {
+//        if(!m_sceneManager.add(std::move(m_currentProject))) {
+//            RB_EDITOR_ERROR("Can't Create Scene. Reason: {0}",
+//                            errorToString(m_sceneManager.getError()));
+//            return false;
+//        }
+//        m_activeScene = m_sceneManager.getActiveScene();
+//        openScene();
+    }
+
+    void EditorLogic::toolbarPressed(const ToolbarMessage& message) {
+        if(message.pressedType == 1) {
+            m_state = State::Run;
+            m_activeScene -> onRuntimeStart();
+        }
+        else if(message.pressedType == 0) {
+            m_activeScene -> onRuntimeStop();
+            m_state = State::Edit;
+        }
     }
 
 } // namespace editor

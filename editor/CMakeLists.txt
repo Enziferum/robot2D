@@ -40,6 +40,8 @@ file(GLOB_RECURSE SRC src/*.cpp)
 add_subdirectory(ext/robot2D-imgui)
 add_subdirectory(ext/yaml-cpp)
 add_subdirectory(ext/tinyfiledialog)
+add_subdirectory(ext/filewatch)
+add_subdirectory(ext/box2d)
 
 
 set(INTERNAL_MONO_ASSEMBLY_DIR "${MONO_ASSEMBLY_PATH}"
@@ -54,7 +56,7 @@ if(USE_GLM)
     set(LIBS glm)
 endif()
 
-set(LIBS robot2D robot2D_imgui yaml-cpp tinyfiledialogs ${MONO_LIBRARIES} ${LIBS})
+set(LIBS robot2D robot2D_imgui yaml-cpp tinyfiledialogs FileWatch box2d ${MONO_LIBRARIES} ${LIBS})
 
 add_executable(${PROJECT_NAME} ${SRC})
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer -fsanitize=thread")

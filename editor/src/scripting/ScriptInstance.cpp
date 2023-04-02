@@ -4,9 +4,11 @@
 
 namespace editor {
 
-    ScriptInstance::ScriptInstance(ScriptEngineData* data, MonoClassWrapper::Ptr classWrapper,
+    ScriptInstance::ScriptInstance(ScriptEngineData* data,
+                                   MonoClassWrapper::Ptr classWrapper,
                                    robot2D::ecs::Entity entity):
-            m_class{std::move(classWrapper)} {
+            m_class{std::move(classWrapper)},
+            m_entity(std::move(entity)) {
         int index = entity.getIndex();
         data -> m_entityClass -> callMethod(".ctor", index);
     }

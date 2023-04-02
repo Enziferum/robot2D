@@ -152,10 +152,6 @@ namespace editor {
         ImGui::PopID();
     }
 
-
-    static void DrawScriptingControl() {}
-
-
     template<typename T, typename UIFunction>
     static void drawComponent(const std::string& name, robot2D::ecs::Entity& entity, UIFunction uiFunction)
     {
@@ -199,6 +195,13 @@ namespace editor {
                 entity.removeComponent<T>();
         }
     }
+
+
+
+
+
+
+
 
     ScenePanel::ScenePanel(MessageDispatcher& messageDispatcher):
     IPanel(UniqueType(typeid(ScenePanel))),
@@ -255,9 +258,17 @@ namespace editor {
     void ScenePanel::drawEntity(robot2D::ecs::Entity entity) {
         auto& tag = entity.getComponent<TagComponent>().getTag();
 
+        /// SceneHieherocy
+        /// 1. Make Replacement onto scene
+        /// 2. Always Add MainCamera As Start
+        /// 3. Don't SubItems while it doesn't need
+        /// 4. Make ScenePanelUI for controls and etc
+
+
         ImGuiTreeNodeFlags flags = ((m_selectedEntity == entity) ? ImGuiTreeNodeFlags_Selected : 0)
                     | ImGuiTreeNodeFlags_OpenOnArrow;
         flags |= ImGuiTreeNodeFlags_SpanAvailWidth;
+
         bool opened = ImGui::TreeNodeEx((void*)(uint64_t)(uint32_t)entity.getIndex(), flags, tag.c_str());
         if (ImGui::IsItemClicked())
         {
@@ -297,6 +308,7 @@ namespace editor {
         char buffer[256];
         memset(buffer, 0, sizeof(buffer));
         std::strncpy(buffer, tag.c_str(), sizeof(buffer));
+
         if (ImGui::InputText("##Tag", buffer, sizeof(buffer)))
         {
             tag = std::string(buffer);
@@ -309,7 +321,6 @@ namespace editor {
 
         if (ImGui::Button("Add Component"))
             ImGui::OpenPopup("AddComponent");
-
 
         if (ImGui::BeginPopup("AddComponent"))
         {
@@ -363,6 +374,7 @@ namespace editor {
 
         ImGui::PopItemWidth();
 
+
         drawComponent<TransformComponent>("Transform", entity, [](auto& component)
         {
             DrawVec2Control("Translation", component.getPosition());
@@ -372,7 +384,7 @@ namespace editor {
 
         drawComponent<SpriteComponent>("Sprite Renderer", entity, [](auto& component)
         {
-            // fix
+            // TODO(a.raag): fix color getting
             auto color = component.getColor().toGL();
             float colors[4];
             colors[0] = color.red; colors[1] = color.green;
@@ -384,7 +396,7 @@ namespace editor {
             ImGui::Button("Texture", ImVec2(100.0f, 0.0f));
             if (ImGui::BeginDragDropTarget())
             {
-                // all string types make as Parametrs some Where
+                // all string types make as Parameters somewhere
 
                 if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
                 {
@@ -395,6 +407,7 @@ namespace editor {
                 ImGui::EndDragDropTarget();
             }
         });
+
         drawComponent<ScriptComponent>("Scripting", entity, [entity, scene = m_scene](auto& component) {
             bool hasScriptClass = ScriptEngine::hasEntityClass(component.name);
 
@@ -472,6 +485,43 @@ namespace editor {
                 ImGui::PopStyleColor();
         });
 
+        drawComponent<Physics2DComponent>("physics2D", entity, [](auto& component) {
+            const char* bodyTypeStrings[] = { "Static", "Dynamic", "Kinematic"};
+            const char* currentBodyTypeString = bodyTypeStrings[(int)component.type];
+            if (ImGui::BeginCombo("Body Type", currentBodyTypeString))
+            {
+                for (int i = 0; i < 3; i++)
+                {
+                    bool isSelected = currentBodyTypeString == bodyTypeStrings[i];
+                    if (ImGui::Selectable(bodyTypeStrings[i], isSelected))
+                    {
+                        currentBodyTypeString = bodyTypeStrings[i];
+                        component.type = (Physics2DComponent::BodyType)i;
+                    }
+
+                    if (isSelected)
+                        ImGui::SetItemDefaultFocus();
+                }
+
+                ImGui::EndCombo();
+            }
+
+            ImGui::Checkbox("Fixed Rotation", &component.fixedRotation);
+        });
+
+        drawComponent<Collider2DComponent>("Collider2D", entity, [](auto& component) {
+            float offset[2] = { component.offset.x, component.offset.y };
+            float size[2] = { component.size.x, component.size.y };
+            ImGui::DragFloat2("Offset", offset);
+            ImGui::DragFloat2("Size", size);
+            ImGui::DragFloat("Density", &component.density, 0.01f, 0.0f, 1.0f);
+            ImGui::DragFloat("Friction", &component.friction, 0.01f, 0.0f, 1.0f);
+            ImGui::DragFloat("Restitution", &component.restitution, 0.01f, 0.0f, 1.0f);
+            ImGui::DragFloat("Restitution Threshold", &component.restitutionThreshold, 0.01f, 0.0f);
+            component.offset = {offset[0], offset[1] };
+            component.size = { size[0], size[1] };
+        });
+
     }
 
     void ScenePanel::onEntitySelection(const EntitySelection& entitySelection) {
@@ -482,4 +532,5 @@ namespace editor {
             }
         }
     }
+
 }

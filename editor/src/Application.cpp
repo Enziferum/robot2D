@@ -33,10 +33,9 @@ namespace editor {
             m_appConfiguration{},
             m_messageDispatcher{},
             m_logic{m_messageDispatcher},
-            m_taskQueue{},
             m_guiWrapper{},
             m_editor{m_messageBus, m_guiWrapper},
-            m_editorLogic(m_messageBus, m_messageDispatcher, m_taskQueue),
+            m_editorLogic(m_messageBus, m_messageDispatcher),
             m_projectInspector{m_messageBus}
             {}
 
@@ -101,7 +100,7 @@ namespace editor {
     }
 
     void Application::update(float dt) {
-        m_taskQueue.process();
+        TaskQueue::GetQueue() -> process();
         if(m_logic.getState() == AppState::Editor)
             m_editor.update(dt);
     }

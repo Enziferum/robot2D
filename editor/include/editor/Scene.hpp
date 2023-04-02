@@ -22,9 +22,12 @@ source distribution.
 #pragma once
 
 #include <memory>
+
 #include <robot2D/Ecs/Scene.hpp>
 #include <robot2D/Ecs/Entity.hpp>
 #include <robot2D/Graphics/Drawable.hpp>
+
+#include "physics/IPhysics2DAdapter.hpp"
 
 namespace editor {
     class Scene: public robot2D::Drawable {
@@ -38,10 +41,11 @@ namespace editor {
         const robot2D::ecs::EntityList& getEntities() const;
 
         void update(float dt);
+        void updateRuntime(float dt);
+
         void onRuntimeStart();
         void onRuntimeStop();
 
-        void updateRuntime(float dt);
 
         // Serializer Api
         robot2D::ecs::Entity createEntity();
@@ -64,11 +68,15 @@ namespace editor {
 
     private:
         void initScene();
+        void onPhysics2DRun();
+        void onPhysics2DStop();
     private:
         robot2D::ecs::Scene m_scene;
         robot2D::ecs::EntityList m_sceneEntities;
         robot2D::MessageBus& m_messageBus;
         std::string m_path;
         bool m_running = false;
+
+        IPhysics2DAdapter::Ptr m_physicsAdapter{nullptr};
     };
 }

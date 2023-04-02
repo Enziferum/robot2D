@@ -1,5 +1,6 @@
 #include <robot2D/Util/Logger.hpp>
 #include <editor/ApplicationLogic.hpp>
+#include <editor/scripting/ScriptingEngine.hpp>
 
 namespace editor {
     ApplicationLogic::ApplicationLogic(MessageDispatcher& messageDispatcher):
@@ -70,6 +71,14 @@ namespace editor {
 
         auto project = m_projectManager.getCurrentProject();
 
+        std::filesystem::path scriptModulePath{ project -> getPath()};
+        scriptModulePath.append("assets\\scripts\\bin");
+        scriptModulePath.append(project -> getName());
+        scriptModulePath += ".dll";
+
+        /// TODO(a.raag) load somewhere else in real
+        ScriptEngine::InitAppRuntime(scriptModulePath);
+
         m_editorLogic -> createProject(project);
         // m_window -> setResizable(true);
         m_state = AppState::Editor;
@@ -105,7 +114,17 @@ namespace editor {
 
         m_state = AppState::Editor;
         // m_window -> setResizable(true);
-        m_editorLogic -> loadProject(m_projectManager.getCurrentProject());
+        auto project = m_projectManager.getCurrentProject();
+
+        std::filesystem::path scriptModulePath{ project -> getPath()};
+        scriptModulePath.append("assets\\scripts\\bin");
+        scriptModulePath.append(project -> getName());
+        scriptModulePath += ".dll";
+
+        if(exists(scriptModulePath))
+            ScriptEngine::InitAppRuntime(scriptModulePath);
+
+        m_editorLogic -> loadProject(project);
     }
 
 } // namespace editor

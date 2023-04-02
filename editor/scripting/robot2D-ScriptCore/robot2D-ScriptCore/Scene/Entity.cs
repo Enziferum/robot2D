@@ -3,6 +3,15 @@ using System.Runtime.CompilerServices;
 
 namespace robot2D
 {
+    
+    public static class Object
+    {
+        public static object FindObjectFromInstanceID(uint ID)
+        {
+            return InternalCalls.GetScriptInstance(ID);
+        }
+    }
+    
     public class Entity
     {
         protected Entity()
@@ -11,14 +20,13 @@ namespace robot2D
             ID = 0;
         } 
 
-        internal Entity(int id)
+        internal Entity(uint id)
         {
             Console.WriteLine($"Entity Ctor ID - {id}");
             ID = id;
-            Console.WriteLine($"Entity Ctor ID - {ID}");
         }
 
-        public readonly int ID;
+        public readonly uint ID;
 
         public Vector2 Translation
         {
@@ -50,7 +58,7 @@ namespace robot2D
 		
         public Entity FindEntityByName(string name)
         {
-            int entityID = InternalCalls.Entity_FindEntityByName(name);
+            uint entityID = InternalCalls.Entity_FindEntityByName(name);
             if (entityID == 0)
                 return null;
 

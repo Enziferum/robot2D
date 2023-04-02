@@ -26,6 +26,7 @@ source distribution.
 #include <editor/scripting/ScriptingEngine.hpp>
 
 namespace editor {
+
     Scene::Scene(robot2D::MessageBus& messageBus):
     m_scene(messageBus, false),
     m_messageBus{messageBus}
@@ -55,6 +56,8 @@ namespace editor {
             if(entity.hasComponent<ScriptComponent>())
                 ScriptEngine::onUpdateEntity(entity, dt);
         }
+
+        m_physicsAdapter -> update(dt);
     }
 
     void Scene::addEmptyEntity() {
@@ -67,7 +70,7 @@ namespace editor {
          */
         auto& transform = entity.addComponent<TransformComponent>();
         transform.setPosition({0.F, 0.F});
-        transform.setScale({100.F, 100.F});
+        transform.setScale({ 100.F, 100.F });
         entity.addComponent<SpriteComponent>();
 
         m_sceneEntities.emplace_back(entity);
@@ -82,8 +85,8 @@ namespace editor {
     void Scene::removeEntity(robot2D::ecs::Entity entity) {
         auto found = std::find_if(m_sceneEntities.begin(),
                                   m_sceneEntities.end(),
-                                  [&entity](robot2D::ecs::Entity it) {
-            return it == entity;
+                                  [&entity](robot2D::ecs::Entity ent) {
+            return ent == entity;
         });
         if(found == m_sceneEntities.end())
             return;
@@ -97,6 +100,8 @@ namespace editor {
 
     void Scene::onRuntimeStart() {
         m_running = true;
+        onPhysics2DRun();
+
         ScriptEngine::onRuntimeStart(this);
         for(auto& entity: m_sceneEntities) {
             if(entity.hasComponent<ScriptComponent>())
@@ -106,7 +111,26 @@ namespace editor {
 
     void Scene::onRuntimeStop() {
         m_running = false;
+        onPhysics2DStop();
         ScriptEngine::onRuntimeStop();
+    }
+
+    void Scene::onPhysics2DRun() {
+        m_physicsAdapter = getPhysics2DAdapter(PhysicsAdapterType::Box2D);
+        m_physicsAdapter -> start(m_sceneEntities);
+
+        m_physicsAdapter -> registerCallback(PhysicsCallbackType::Enter, [](const Physics2DContact&) {
+            ScriptEngine::onCollision2DBegin();
+        });
+
+        m_physicsAdapter -> registerCallback(PhysicsCallbackType::Exit, [](const Physics2DContact&) {
+            ScriptEngine::onCollision2DEnd();
+        });
+    }
+
+    void Scene::onPhysics2DStop() {
+        m_physicsAdapter -> stop();
+        m_physicsAdapter.reset();
     }
 
 }

@@ -12,10 +12,11 @@
 #include <mono/metadata/assembly.h>
 #include <mono/metadata/mono-debug.h>
 #include <mono/metadata/threads.h>
-//#include <mono/>
+
 
 #include <editor/Components.hpp>
 #include <editor/Scene.hpp>
+#include <editor/TaskQueue.hpp>
 
 #include <editor/scripting/ScriptingEngine.hpp>
 #include <editor/scripting/ScriptingGlue.hpp>
@@ -46,6 +47,7 @@ namespace editor {
         { "robot2D.Vector3", ScriptFieldType::Vector3 },
         { "robot2D.Vector4", ScriptFieldType::Vector4 },
         { "robot2D.Entity", ScriptFieldType::Entity },
+        { "robot2D.Collision2D", ScriptFieldType::Collision2D },
     };
 
     namespace util {
@@ -167,6 +169,7 @@ namespace editor {
                 case ScriptFieldType::Vector3: return "Vector3";
                 case ScriptFieldType::Vector4: return "Vector4";
                 case ScriptFieldType::Entity:  return "Entity";
+                case ScriptFieldType::Collision2D:  return "Collision2D";
             }
             //HZ_CORE_ASSERT(false, "Unknown ScriptFieldType");
             return "None";
@@ -191,6 +194,7 @@ namespace editor {
             if (fieldType == "Vector3") return ScriptFieldType::Vector3;
             if (fieldType == "Vector4") return ScriptFieldType::Vector4;
             if (fieldType == "Entity")  return ScriptFieldType::Entity;
+            if (fieldType == "Collision2D")  return ScriptFieldType::Collision2D;
 
             //HZ_CORE_ASSERT(false, "Unknown ScriptFieldType");
             return ScriptFieldType::None;
@@ -199,6 +203,43 @@ namespace editor {
     }
 
     static ScriptEngineData* s_Data;
+
+    struct MethodSignature {
+        MethodSignature() = default;
+        MethodSignature(const std::initializer_list<ScriptFieldType>&  types) {
+            m_types.assign(types.begin(), types.end());
+        }
+        std::vector<ScriptFieldType> m_types;
+    };
+
+    std::unordered_map<std::string, MethodSignature> engineRegisteredMethods = {
+            { "onCollisionEnter2D", { { ScriptFieldType::Collision2D } } },
+            { "onCollisionExit2D", { { ScriptFieldType::Collision2D } } },
+    };
+
+    class ScriptEngineReloadTask: public ITask {
+    public:
+        explicit ScriptEngineReloadTask(ITaskFunction::Ptr func): ITask(func) {}
+        ~ScriptEngineReloadTask() override = default;
+        void execute() override {
+            RB_EDITOR_INFO("Reloading Script Engine");
+        }
+    };
+
+    static void OnAppAssemblyFileSystemEvent(const std::string& path, const filewatch::Event change_type)
+    {
+        if (!s_Data -> isReloadPending() && change_type == filewatch::Event::modified)
+        {
+            s_Data -> setReloadPending(true);
+
+            TaskQueue::GetQueue() -> addAsyncTask<ScriptEngineReloadTask>([](const ScriptEngineReloadTask& task) {
+                s_Data -> resetFilewatcher() ;
+                ScriptEngine::ReloadEngine();
+            });
+        }
+
+
+    }
 
     void ScriptEngine::Init() {
         s_Data = new ScriptEngineData();
@@ -212,9 +253,10 @@ namespace editor {
             return;
         }
 
-        // TODO(a.raag): get from actual project //
-        std::string scriptModulePath = "C:\\Users\\User\\Documents\\dev\\robot2DProjects\\ScriptDemo\\assets\\scripts\\bin\\ScriptDemo.dll";
-        status = loadAppAssembly(scriptModulePath);
+    }
+
+    void ScriptEngine::InitAppRuntime(const fs::path& filePath) {
+        bool status = loadAppAssembly(filePath.string());
         if(!status) {
             RB_EDITOR_ERROR("Can't load Application's Script Library");
             return;
@@ -282,10 +324,39 @@ namespace editor {
                 }
             }
 
+            void* methodIterator = nullptr;
+            while(MonoMethod* method = mono_class_get_methods(monoClass, &methodIterator)) {
+                std::string methodName = mono_method_get_name(method);
+                uint32_t methodsFlags;
+                uint32_t flags = mono_method_get_flags(method, &methodsFlags);
+
+                if(engineRegisteredMethods.find(methodName) != engineRegisteredMethods.end()) {
+                    const auto& signature = engineRegisteredMethods[methodName];
+                    RB_EDITOR_WARN("Found Method: {0}", methodName);
+                    auto methodToken = mono_method_get_token(method);
+                    auto sig = mono_method_get_signature(method, s_Data -> m_appAssemblyImage, methodToken);
+
+                    void* methodSigIter = nullptr;
+                    int index = 0;
+                    bool validSignature = true;
+
+                    int paramCount = mono_signature_get_param_count(sig);
+                    while(MonoType* type = mono_signature_get_params(sig, &methodSigIter)) {
+                        if(signature.m_types[index] != util::MonoTypeToScriptFieldType(type)) {
+                            RB_EDITOR_ERROR("Bad Signature for method {0}", methodName);
+                            validSignature = false;
+                        }
+                        ++index;
+                    }
+                    if(validSignature)
+                        scriptClass -> registerMethod(methodName, paramCount);
+                }
+            }
         }
     }
 
     bool ScriptEngine::loadCoreAssembly(const fs::path& filePath) {
+        s_Data -> m_coreAssemblyFilepath = filePath;
         s_Data -> m_appDomain = mono_domain_create_appdomain("Robot2DScriptRuntime", nullptr);
         s_Data -> m_coreAssebly = util::loadMonoAssembly(filePath.string());
         if(s_Data -> m_coreAssebly == nullptr) {
@@ -298,13 +369,15 @@ namespace editor {
     }
 
     bool ScriptEngine::loadAppAssembly(const fs::path& filePath) {
+        s_Data -> m_appAssemblyFilepath = filePath;
         s_Data -> m_appAssebly = util::loadMonoAssembly(filePath.string());
         if(s_Data -> m_appAssebly == nullptr) {
             return false;
         }
 
         s_Data -> m_appAssemblyImage = mono_assembly_get_image(s_Data -> m_appAssebly);
-
+        s_Data -> m_fileWatcher = std::make_unique<filewatch::FileWatch<std::string>>(filePath.string(),
+                    OnAppAssemblyFileSystemEvent);
         return true;
     }
 
@@ -412,5 +485,44 @@ namespace editor {
             return nullptr;
         return found -> second;
     }
+
+
+
+    void ScriptEngine::ReloadEngine() {
+        mono_domain_set(mono_get_root_domain(), false);
+
+        mono_domain_unload(s_Data -> m_appDomain);
+
+        loadCoreAssembly(s_Data -> m_coreAssemblyFilepath);
+        loadAppAssembly(s_Data -> m_appAssemblyFilepath);
+        LoadAssemblyClasses();
+
+        ScriptGlue::registerComponents();
+
+        // Retrieve and instantiate class
+        s_Data -> m_entityClass.reset();
+        s_Data -> m_entityClass = std::make_shared<MonoClassWrapper>(s_Data, "robot2D", "Entity", true);
+    }
+
+    void ScriptEngine::onCollision2DBegin() {
+        for(auto& [uuid, Class]: s_Data -> m_entityClasses) {
+            if( Class -> hasMethod("onCollisionEnter2D")) {
+                Class -> callMethod("onCollisionEnter2D", 42);
+            }
+        }
+    }
+
+    void ScriptEngine::onCollision2DEnd() {
+        for(auto& [uuid, Class]: s_Data -> m_entityClasses) {
+            if( Class -> hasMethod("onCollisionExit2D")) {
+                Class -> callMethod("onCollisionExit2D", 42);
+            }
+        }
+    }
+
+    MonoClassWrapper::Ptr ScriptEngine::getManagedObject(robot2D::ecs::EntityID entityId) {
+        return s_Data -> m_entityInstances[entityId] -> getClassWrapper();
+    }
+
 
 } // namespace editor

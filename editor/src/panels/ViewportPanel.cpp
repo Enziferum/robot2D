@@ -108,6 +108,18 @@ namespace editor {
         return true;
     }
 
+    namespace {
+        std::string iconPath = "res/icons";
+
+
+        static std::unordered_map<IconType, std::string> iconNames = {
+                { IconType::Play, "PlayButton.png" },
+                { IconType::Stop, "StopButton.png" },
+                { IconType::Pause, "PauseButton.png" },
+                { IconType::Step, "StepButton.png" },
+                { IconType::Simulate, "SimulateButton.png" },
+        };
+    }
 
 
     ViewportPanel::ViewportPanel(
@@ -134,6 +146,15 @@ namespace editor {
         };
         m_windowOptions.flagsMask = ImGuiWindowFlags_NoScrollbar;
         m_windowOptions.name = "##Viewport";
+
+        for(const auto& [type, name]: iconNames) {
+            std::filesystem::path path{iconPath};
+            path.append(name);
+            if(!m_icons.loadFromFile(type, path.string())) {
+                RB_EDITOR_ERROR("Can't load icon");
+            }
+        }
+
     }
 
 
@@ -167,9 +188,10 @@ namespace editor {
             m_panelFocused = ImGui::IsWindowFocused();
             m_panelHovered = ImGui::IsWindowHovered();
 
-
             /// TODO: @a.raag switch mode of camera ///
             auto ViewPanelSize = ImGui::GetContentRegionAvail();
+
+            toolbarOverlay({viewportOffset.x, viewportOffset.y}, {ViewPanelSize.x, ViewPanelSize.y});
             m_editorCamera -> setViewportBounds({viewportOffset.x, viewportOffset.y
                                                                    + (viewportMaxRegion.y - ViewPanelSize.y)});
 
@@ -225,7 +247,54 @@ namespace editor {
                 std::filesystem::path scenePath = std::filesystem::path("assets") / rawPath;
                 /// TODO: @a.raag send MessageQueue to open Scene
             });
+
         });
+    }
+
+    void ViewportPanel::toolbarOverlay(robot2D::vec2f windowOffset, robot2D::vec2f windowAvailSize) {
+
+        /// TODO(a.raag) centerize buttons ///
+
+        static ImGuiWindowFlags window_flags =
+                ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoDocking
+                | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings
+                | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoTitleBar
+                | ImGuiWindowFlags_NoScrollbar;
+        static bool p_open = true;
+
+        {
+            const ImGuiViewport* viewport = ImGui::GetWindowViewport();
+            ImVec2 window_pos;
+
+            window_pos = { ( windowAvailSize.x - 100) / 2, 40};
+            window_pos.x += windowOffset.x;
+            window_pos.y += windowOffset.y;
+
+            ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always);
+            ImGui::SetNextWindowViewport(viewport->ID);
+            window_flags |= ImGuiWindowFlags_NoMove;
+        }
+
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 8.0f);
+
+        if (ImGui::Begin("##Toolbar", &p_open, window_flags))
+        {
+
+            IconType iconType;
+            if(m_scene)
+                iconType = m_scene -> isRunning() ? IconType::Stop : IconType::Play;
+            else
+                iconType = IconType::Play;
+            if(robot2D::ImageButton(m_icons[iconType], {20, 20})) {
+                auto* msg = m_messageBus.postMessage<ToolbarMessage>(MessageID::ToolbarPressed);
+                msg -> pressedType = m_scene -> isRunning() ? 0 : 1;
+            }
+
+        }
+        ImGui::PopStyleVar(2);
+        ImGui::End();
+
     }
 
 }

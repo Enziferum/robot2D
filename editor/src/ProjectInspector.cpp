@@ -123,6 +123,20 @@ namespace editor {
         ImGui::End();
     }
 
+    std::vector<std::string> split(const std::string& str, std::string separator) {
+        std::vector<std::string> res;
+        const auto sepSize = separator.size();
+        std::string::size_type start{0}, end;
+
+        while((end = str.find(separator, start)) != std::string::npos) {
+            res.emplace_back(str.substr(start, end - start));
+            start = end + sepSize;
+        }
+
+        res.emplace_back(str.substr(start));
+
+        return res;
+    }
 
     void ProjectInspector::createProject() {
         char* path = tinyfd_selectFolderDialog("Create Robot2D Project", nullptr);
@@ -130,9 +144,12 @@ namespace editor {
         if(path == nullptr) {
             return;
         }
+
         std::string creationPath(path);
+        auto pathComps = split(creationPath, "\\");
+
         ProjectDescription description;
-        description.name = "Project";
+        description.name = pathComps[pathComps.size() - 1];
         description.path = creationPath;
 
         auto* msg = m_messageBus.postMessage<ProjectMessage>(MessageID::CreateProject);

@@ -45,7 +45,7 @@ namespace editor {
         Bool, Char, Byte, Short, Int, Long,
         UByte, UShort, UInt, ULong,
         Vector2, Vector3, Vector4,
-        Entity
+        Entity, Collision2D
     };
 
 
@@ -91,6 +91,10 @@ namespace editor {
                 mono_runtime_invoke(m_registerMethods[name], m_instance, nullptr, nullptr);
             }
         }
+
+        MonoObject* getInstance() const { return m_instance; }
+
+        bool hasMethod(const std::string& name) const { return m_registerMethods.find(name) != m_registerMethods.end(); }
     private:
         void registerMethod(std::string name, int argsCount);
         bool getFieldValue(const std::string& name, void* buffer);
@@ -101,6 +105,7 @@ namespace editor {
         std::unordered_map<std::string, MonoMethod*> m_registerMethods;
         std::unordered_map<std::string, ScriptField> m_registerFields;
         friend class ScriptInstance;
+        friend class ScriptEngine;
     };
 
 }

@@ -28,7 +28,6 @@ source distribution.
 
 namespace editor {
 
-
     class Uuid {
     public:
         Uuid();
@@ -39,18 +38,8 @@ namespace editor {
     private:
         uint64_t m_uuid;
     };
-
-    class UuidManager {
-    public:
-        UuidManager();
-        ~UuidManager();
-
-
-    private:
-        std::unordered_map<uint64_t, std::string> m_uuids;
-    };
-
 }
+
 namespace std {
     template<>
     struct hash<editor::Uuid> {

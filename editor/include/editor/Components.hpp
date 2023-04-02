@@ -79,7 +79,6 @@ namespace editor {
         std::string m_tag;
     };
 
-
     class SpriteComponent final {
     public:
         SpriteComponent();
@@ -118,12 +117,31 @@ namespace editor {
 
     class Collider2DComponent final {
     public:
-        Collider2DComponent(){}
+        Collider2DComponent() = default;
+        ~Collider2DComponent() = default;
+
+        robot2D::vec2f offset;
+        robot2D::vec2f size = { 0.5f, 0.5f };
+
+        float density = 1.0f;
+        float friction =  0.5f;
+        float restitution = 0.0f;
+        float restitutionThreshold = 0.5f;
+
+        void* runtimeBody{nullptr};
     };
 
     class Physics2DComponent final {
     public:
-        Physics2DComponent(){}
+        Physics2DComponent() = default;
+        ~Physics2DComponent() = default;
+
+
+
+        enum class BodyType { Static = 0, Dynamic, Kinematic};
+        BodyType type = BodyType::Static;
+        bool fixedRotation = false;
+        void* runtimeBody{nullptr};
     };
 
     struct ScriptComponent {
