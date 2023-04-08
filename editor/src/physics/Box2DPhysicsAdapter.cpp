@@ -86,6 +86,8 @@ namespace editor {
         m_physicsWorld -> Step(dt, velocityUpdateIterations, positionUpdateIterations);
 
         for(auto& entity: *m_entityList) {
+            if(!entity.hasComponent<Physics2DComponent>())
+                continue;
             auto& transform = entity.getComponent<TransformComponent>();
             auto& p2c = entity.getComponent<Physics2DComponent>();
 
@@ -109,6 +111,8 @@ namespace editor {
         m_entityList = &entityList;
 
         for(auto& entity: *m_entityList) {
+            if(!entity.hasComponent<Physics2DComponent>())
+                continue;
             auto& transform = entity.getComponent<TransformComponent>();
             auto& rb2d = entity.getComponent<Physics2DComponent>();
 

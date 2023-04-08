@@ -267,6 +267,12 @@ namespace robot2D {
             (void) top;
             auto& m_quadShader = m_renderLayers[layerID].m_quadShader;
 
+            auto rect = m_view.getRectangle();
+            glViewport(rect.lx, rect.ly, rect.width, rect.height);
+
+            if(m_view.isClipping())
+                return;
+
             m_quadShader.use();
             m_quadShader.setMatrix(m_shaderKeys[ShaderKey::Projection], m_view.getTransform().get_matrix());
             m_quadShader.unUse();
@@ -348,6 +354,13 @@ namespace robot2D {
             }
             m_quadShader.use();
 
+            auto& view = m_renderLayers[layerID].m_view;
+            if(view.isClipping()) {
+                glEnable(GL_SCISSOR_TEST);
+                auto rect = view.getRectangle();
+                glScissor(rect.lx, rect.ly, rect.width, rect.height);
+            }
+
             m_renderBuffer.vertexArray -> Bind();
             glDrawElements(GL_TRIANGLES,
                            static_cast<GLsizei>(m_renderBuffer.indexCount),
@@ -362,6 +375,8 @@ namespace robot2D {
             m_renderBuffer.textureSlotIndex = 1;
             m_stats.drawCalls++;
 
+            if(view.isClipping())
+                glDisable(GL_SCISSOR_TEST);
             renderCache(layerID);
         }
 

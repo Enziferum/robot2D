@@ -242,10 +242,13 @@ namespace editor {
                 m_guizmo2D.setManipulated(&tc);
             }
 
-            robot2D::dummyDragDrop("CONTENT_BROWSER_ITEM", [](std::string path){
+            robot2D::dummyDragDrop("CONTENT_BROWSER_ITEM", [this](std::string path){
+
                 const wchar_t* rawPath = (const wchar_t*)path.c_str();
                 std::filesystem::path scenePath = std::filesystem::path("assets") / rawPath;
                 /// TODO: @a.raag send MessageQueue to open Scene
+                auto* msg = m_messageBus.postMessage<OpenSceneMessage>(MessageID::OpenScene);
+                msg -> path = scenePath.string();
             });
 
         });

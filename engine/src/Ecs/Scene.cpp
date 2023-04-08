@@ -27,7 +27,7 @@ namespace robot2D::ecs {
     Scene::Scene(robot2D::MessageBus& messageBus, const bool& useSystems):
     m_messageBus(messageBus),
     m_componentManager(),
-    m_entityManager(m_componentManager),
+    m_entityManager(m_componentManager, this),
     m_systemManager(messageBus, m_componentManager, this),
     m_useSystems(useSystems) {}
 
@@ -40,7 +40,7 @@ namespace robot2D::ecs {
     }
 
     void Scene::removeEntity(Entity entity) {
-        m_deletePending.emplace_back(entity);
+        m_deletePendingBuffer.emplace_back(entity);
         m_entityManager.markDestroyed(entity);
     }
 
@@ -49,7 +49,7 @@ namespace robot2D::ecs {
     }
 
     void Scene::update(float dt) {
-        // TODO(a.raag) double buffer fix
+        m_deletePending.swap(m_deletePendingBuffer);
         for(auto& entity: m_deletePending) {
             if(m_useSystems)
                 m_systemManager.removeEntity(entity);

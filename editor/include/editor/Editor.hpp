@@ -80,6 +80,8 @@ namespace editor {
         void update(float dt);
         void render();
 
+
+
         void openScene(Scene::Ptr scene, std::string path) override;
         void prepare() override;
     private:
@@ -91,6 +93,7 @@ namespace editor {
         void onSceneRun();
         void onSceneEdit();
 
+        void drawScene();
 
         void onKeyPressed(const robot2D::Event& event);
         void onKeyReleased(const robot2D::Event& event);

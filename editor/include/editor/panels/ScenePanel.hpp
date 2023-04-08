@@ -21,10 +21,12 @@ source distribution.
 
 #pragma once
 
-#include "IPanel.hpp"
+#include <robot2D/Util/ResourceHandler.hpp>
 #include <editor/Scene.hpp>
 #include <editor/MessageDispather.hpp>
 #include <editor/Messages.hpp>
+#include "IPanel.hpp"
+#include "TreeHierarchy.hpp"
 
 namespace editor {
 
@@ -35,22 +37,36 @@ namespace editor {
     class ScenePanel: public IPanel {
     public:
         ScenePanel(MessageDispatcher& messageDispatcher);
-        ~ScenePanel()override = default;
+        ScenePanel(const ScenePanel& other) = delete;
+        ScenePanel& operator=(const ScenePanel& other) = delete;
+        ScenePanel(ScenePanel&& other) = delete;
+        ScenePanel& operator=(ScenePanel&& other) = delete;
+        ~ScenePanel() override = default;
 
-        void setActiveScene(Scene::Ptr ptr) { m_scene = ptr; m_selectedEntity = {};}
+        void setActiveScene(Scene::Ptr ptr);
         void render() override;
 
         robot2D::ecs::Entity getSelectedEntity() const { return m_selectedEntity; }
     private:
+        void windowFunction();
+
         void drawEntity(robot2D::ecs::Entity entity);
-        void drawComponents(robot2D::ecs::Entity& entity);
+        void drawComponentsBase(robot2D::ecs::Entity entity);
+        void drawComponents(robot2D::ecs::Entity entity);
         void onEntitySelection(const EntitySelection& entitySelection);
 
+        void onLoadImage(const robot2D::Image& image, robot2D::ecs::Entity entity);
+        void onLoadFont(const robot2D::Image& image, robot2D::ecs::Entity entity);
+
+        void setupTreeHierarchy();
     private:
         MessageDispatcher& m_messageDispatcher;
 
         Scene::Ptr m_scene;
         robot2D::ecs::Entity m_selectedEntity;
         ScenePanelConfiguration m_configuration;
+        TreeHierarchy m_treeHierarchy;
+        robot2D::ResourceHandler<robot2D::Texture, robot2D::ecs::EntityID> m_textures;
+        robot2D::ResourceHandler<robot2D::Texture, robot2D::ecs::EntityID> m_fonts;
     };
 }

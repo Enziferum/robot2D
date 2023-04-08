@@ -31,6 +31,23 @@ source distribution.
 
 namespace YAML {
     template<>
+    struct convert<editor::UUID>
+    {
+        static Node encode(const editor::UUID& uuid)
+        {
+            Node node;
+            node.push_back((uint64_t)uuid);
+            return node;
+        }
+
+        static bool decode(const Node& node, editor::UUID& uuid)
+        {
+            uuid = node.as<uint64_t>();
+            return true;
+        }
+    };
+
+    template<>
     struct convert<robot2D::vec2f> {
         static Node encode(const robot2D::vec2f& rhs) {
             Node node;
@@ -150,13 +167,6 @@ namespace editor {
     }
 
 
-
-
-    namespace {
-        // tmp value before UUID Manager
-        const std::string fakeUUID = "9012510123";
-    }
-
     SceneSerializer::SceneSerializer(Scene::Ptr scene): m_scene(scene) {}
 
     YAML::Emitter& operator<<(YAML::Emitter& out, const robot2D::vec2f& value) {
@@ -180,13 +190,23 @@ namespace editor {
 
     void SerializeEntity(YAML::Emitter& out, robot2D::ecs::Entity entity) { 
         out << YAML::BeginMap;
-        out << YAML::Key << "Entity" << YAML::Value << fakeUUID;
+        out << YAML::Key << "Entity" << YAML::Value << entity.getComponent<IDComponent>().ID;
+
+        bool needSerializeChildren = false;
 
         if(entity.hasComponent<TagComponent>()) {
             out << YAML::Key << "TagComponent";
             out << YAML::BeginMap;
             auto& tag = entity.getComponent<TagComponent>().getTag();
             out << YAML::Key << "Tag" << YAML::Value << tag;
+            out << YAML::EndMap;
+        }
+
+        if(entity.hasComponent<CameraComponent>()) {
+            out << YAML::Key << "CameraComponent";
+            out << YAML::BeginMap;
+            auto isPrimary = entity.getComponent<CameraComponent>().isPrimary;
+            out << YAML::Key << "isPrimary" << YAML::Value << isPrimary;
             out << YAML::EndMap;
         }
 
@@ -198,6 +218,21 @@ namespace editor {
             out << YAML::Key << "Size" << YAML::Value << ts.getScale();
             // TODO: @a.raag add rotation
             out << YAML::Key << "Rotation" << YAML::Value << 0.F;
+
+            if(ts.hasChildren()) {
+                out << YAML::Key << "HasChildren" << YAML::Value << true;
+                std::vector<UUID> childIds;
+                for(auto& child: ts.getChildren()) {
+                    childIds.emplace_back(child.getComponent<IDComponent>().ID);
+                }
+                out << YAML::Key << "ChildIDs" << YAML::Value << childIds;
+                needSerializeChildren = true;
+            }
+
+            if(ts.isChild()) {
+                out << YAML::Key << "isChild" << YAML::Value << true;
+            }
+
             out << YAML::EndMap;
         }
 
@@ -212,11 +247,13 @@ namespace editor {
             out << YAML::EndMap;
         }
 
-        if(entity.hasComponent<SpriteComponent>()) {
+        if(entity.hasComponent<DrawableComponent>()) {
             out << YAML::Key << "SpriteComponent";
             out << YAML::BeginMap;
-            auto& sp = entity.getComponent<SpriteComponent>();
+            auto& sp = entity.getComponent<DrawableComponent>();
             out << YAML::Key << "Color" << YAML::Value << sp.getColor();
+            out << YAML::Key << "TexturePath" << YAML::Value << sp.getTexturePath();
+            out << YAML::Key << "zDepth" << YAML::Value << sp.getDepth();
             out << YAML::EndMap;
         }
 
@@ -298,6 +335,13 @@ namespace editor {
         }
 
         out << YAML::EndMap;
+
+        if(needSerializeChildren) {
+            auto& ts = entity.getComponent<TransformComponent>();
+            for(auto& child: ts.getChildren())
+                SerializeEntity(out, child);
+        }
+
     }
 
     bool SceneSerializer::serialize(const std::string& path) {
@@ -353,8 +397,14 @@ namespace editor {
         std::string sceneName = data["Scene"].as<std::string>();
         auto entites = data["Entities"];
 
+
+
         if(entites) {
+            using ChildPair = std::pair<UUID, std::vector<UUID>>;
+            std::vector<ChildPair> children;
+
             for(auto entity: entites) {
+                bool addToScene = true;
 
                 uint64_t uuid = entity["Entity"].as<uint64_t>();
                 std::string name;
@@ -364,22 +414,54 @@ namespace editor {
                     name = tagComponent["Tag"].as<std::string>();
 
                 auto deserializedEntity = m_scene -> createEntity();
+                deserializedEntity.addComponent<IDComponent>().ID = uuid;
                 auto& tagData = deserializedEntity.addComponent<TagComponent>();
                 tagData.setTag(name);
+
+                auto cameraComponent = entity["CameraComponent"];
+                if(cameraComponent) {
+                    auto& isPrimary = deserializedEntity.addComponent<CameraComponent>().isPrimary;
+                    isPrimary = cameraComponent["isPrimary"].as<bool>();
+                }
 
                 auto transformComponent = entity["TransformComponent"];
                 if(transformComponent) {
                     auto& transform = deserializedEntity.addComponent<TransformComponent>();
                     transform.setPosition(transformComponent["Position"].as<robot2D::vec2f>());
                     transform.setScale(transformComponent["Size"].as<robot2D::vec2f>());
+                    if(transformComponent["HasChildren"]) {
+                        auto childIDS = transformComponent["ChildIDs"].as<std::vector<UUID>>();
+                        ChildPair pair = std::make_pair(UUID(uuid), childIDS);
+                        children.emplace_back(pair);
+                    }
+
+                    if(transformComponent["isChild"]) {
+                        bool isChild = transformComponent["isChild"].as<bool>();
+                        if(isChild) {
+                            for(auto& pair: children) {
+                                for(auto& childIndex: pair.second) {
+                                    if(childIndex == UUID(uuid)) {
+                                        m_scene -> getByUUID(pair.first).getComponent<TransformComponent>()
+                                                .addChild(deserializedEntity);
+                                        addToScene = false;
+                                    }
+                                }
+                            }
+                        }
+                    }
                     // TODO: @a.raag add rotation
                     //transform.setRotate(transformComponent["Rotation"].as<float>());
                 }
 
                 auto spriteComponent = entity["SpriteComponent"];
                 if(spriteComponent) {
-                    auto& sp = deserializedEntity.addComponent<SpriteComponent>();
-                    sp.setColor(spriteComponent["Color"].as<robot2D::Color>());
+                    auto& drawable = deserializedEntity.addComponent<DrawableComponent>();
+                    drawable.setColor(spriteComponent["Color"].as<robot2D::Color>());
+                    if(spriteComponent["TexturePath"])
+                        drawable.setTexturePath(spriteComponent["TexturePath"].as<std::string>());
+                    if(spriteComponent["zDepth"])
+                        drawable.setDepth(spriteComponent["zDepth"].as<int>());
+                    drawable.setReorderZBuffer(true);
                 }
 
                 auto scriptComponent = entity["ScriptComponent"];
@@ -456,7 +538,12 @@ namespace editor {
                     bc2d.restitution = boxCollider2DComponent["Restitution"].as<float>();
                     bc2d.restitutionThreshold = boxCollider2DComponent["RestitutionThreshold"].as<float>();
                 }
+
+                if(addToScene)
+                    m_scene -> addAssociatedEntity(deserializedEntity);
+
             }
+
         }
         return true;
     }

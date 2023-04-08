@@ -20,23 +20,27 @@ source distribution.
 *********************************************************************/
 
 #include <robot2D/Graphics/RenderTarget.hpp>
+
 #include <editor/Scene.hpp>
 #include <editor/Components.hpp>
-#include <editor/Systems.hpp>
+
+#include <editor/RendererSystem.hpp>
+#include <editor/TextSystem.hpp>
+
 #include <editor/scripting/ScriptingEngine.hpp>
 
 namespace editor {
 
     Scene::Scene(robot2D::MessageBus& messageBus):
-    m_scene(messageBus, false),
+    m_scene(messageBus),
     m_messageBus{messageBus}
     {
         initScene();
     }
 
     void Scene::initScene() {
-        //todo addBaseSystems to Work
         m_scene.addSystem<RenderSystem>(m_messageBus);
+        m_scene.addSystem<TextSystem>(m_messageBus);
     }
 
     robot2D::ecs::EntityList& Scene::getEntities() {
@@ -48,13 +52,20 @@ namespace editor {
     }
 
     void Scene::update(float dt) {
-       // m_scene.update(dt);
+        m_scene.update(dt);
     }
 
     void Scene::updateRuntime(float dt) {
         for(auto& entity: m_sceneEntities) {
             if(entity.hasComponent<ScriptComponent>())
                 ScriptEngine::onUpdateEntity(entity, dt);
+            auto& ts = entity.getComponent<TransformComponent>();
+            if(ts.hasChildren()) {
+                for(auto& child: ts.getChildren()) {
+                    if(child.hasComponent<ScriptComponent>())
+                        ScriptEngine::onUpdateEntity(child, dt);;
+                }
+            }
         }
 
         m_physicsAdapter -> update(dt);
@@ -62,6 +73,8 @@ namespace editor {
 
     void Scene::addEmptyEntity() {
         auto entity = m_scene.createEntity();
+        entity.addComponent<IDComponent>(UUID());
+
         entity.addComponent<TagComponent>();
         /*
             auto& transform = entity.addComponent<Transform3DComponent>();
@@ -69,29 +82,33 @@ namespace editor {
             transform.setScale({1.F, 1.F, 0.F});
          */
         auto& transform = entity.addComponent<TransformComponent>();
-        transform.setPosition({0.F, 0.F});
-        transform.setScale({ 100.F, 100.F });
-        entity.addComponent<SpriteComponent>();
+        transform.setPosition({100.F, 100.F});
+        transform.setScale({ 20.F, 20.F });
+        entity.addComponent<DrawableComponent>();
 
         m_sceneEntities.emplace_back(entity);
     }
 
     robot2D::ecs::Entity Scene::createEntity() {
         auto entity = m_scene.createEntity();
-        m_sceneEntities.emplace_back(entity);
-        return m_sceneEntities.back();
+        return entity;
     }
 
     void Scene::removeEntity(robot2D::ecs::Entity entity) {
         auto found = std::find_if(m_sceneEntities.begin(),
                                   m_sceneEntities.end(),
                                   [&entity](robot2D::ecs::Entity ent) {
-            return ent == entity;
+            return ent.getIndex() == entity.getIndex();
         });
         if(found == m_sceneEntities.end())
             return;
-        m_sceneEntities.erase(found);
+
+        auto& ts = found -> getComponent<TransformComponent>();
+        for(auto child: ts.getChildren())
+            child.removeSelf();
+
         m_scene.removeEntity(entity);
+        m_sceneEntities.erase(found, m_sceneEntities.end());
     }
 
     void Scene::draw(robot2D::RenderTarget& target, robot2D::RenderStates states) const {
@@ -102,14 +119,25 @@ namespace editor {
         m_running = true;
         onPhysics2DRun();
 
+        m_scene.getSystem<RenderSystem>() -> setScene(this);
+
         ScriptEngine::onRuntimeStart(this);
         for(auto& entity: m_sceneEntities) {
             if(entity.hasComponent<ScriptComponent>())
                 ScriptEngine::onCreateEntity(entity);
+            auto& ts = entity.getComponent<TransformComponent>();
+            if(ts.hasChildren()) {
+                for(auto& child: ts.getChildren()) {
+                    if(child.hasComponent<ScriptComponent>())
+                        ScriptEngine::onCreateEntity(child);
+                }
+            }
         }
+
     }
 
     void Scene::onRuntimeStop() {
+        m_scene.getSystem<RenderSystem>() -> setScene(nullptr);
         m_running = false;
         onPhysics2DStop();
         ScriptEngine::onRuntimeStop();
@@ -131,6 +159,17 @@ namespace editor {
     void Scene::onPhysics2DStop() {
         m_physicsAdapter -> stop();
         m_physicsAdapter.reset();
+    }
+
+    void Scene::addAssociatedEntity(robot2D::ecs::Entity entity) {
+        m_sceneEntities.emplace_back(entity);
+    }
+
+    void Scene::removeEntityChild(robot2D::ecs::Entity entity) {
+        m_sceneEntities.erase(std::remove_if(m_sceneEntities.begin(), m_sceneEntities.end(),
+                                             [&entity](robot2D::ecs::Entity child) {
+            return entity.getIndex() == child.getIndex();
+        }), m_sceneEntities.end());
     }
 
 }

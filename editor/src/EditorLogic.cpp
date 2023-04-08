@@ -49,6 +49,8 @@ namespace editor {
     {
         m_messageDispatcher.onMessage<MenuProjectMessage>(MessageID::SaveScene, BIND_CLASS_FN(saveScene));
         m_messageDispatcher.onMessage<ToolbarMessage>(MessageID::ToolbarPressed, BIND_CLASS_FN(toolbarPressed));
+        m_messageDispatcher.onMessage<OpenSceneMessage>(MessageID::OpenScene, BIND_CLASS_FN(openScene));
+        m_messageDispatcher.onMessage<CreateSceneMessage>(MessageID::CreateScene, BIND_CLASS_FN(createScene));
     }
 
     void EditorLogic::createProject(Project::Ptr project) {
@@ -72,11 +74,31 @@ namespace editor {
 
         auto path = project -> getPath();
         auto appendPath = combinePath(scenePath, project -> getStartScene());
-        auto scenePath1 = combinePath(path, appendPath);
+        auto scenePath = combinePath(path, appendPath);
 
         m_editor -> prepare();
-        TaskQueue::GetQueue() -> addAsyncTask<SceneLoadTask>(loadLambda, m_sceneManager, project, scenePath1, this);
+        TaskQueue::GetQueue() -> addAsyncTask<SceneLoadTask>(loadLambda, m_sceneManager, project, scenePath, this);
     }
+
+
+    void EditorLogic::openScene(const OpenSceneMessage& message) {
+        m_state = State::Load;
+        auto loadLambda = [](const SceneLoadTask& task) {
+            task.logic -> loadCallback();
+        };
+
+        TaskQueue::GetQueue() -> addAsyncTask<SceneLoadTask>(loadLambda, m_sceneManager,
+                                                             m_currentProject, message.path, this);
+    }
+
+    void EditorLogic::createScene(const CreateSceneMessage& message) {
+        createScene();
+    }
+
+    void EditorLogic::saveScene(const MenuProjectMessage& message) {
+        m_sceneManager.save(std::move(m_activeScene));
+    }
+
 
     bool EditorLogic::saveScene() {
         return m_sceneManager.save(std::move(m_activeScene));
@@ -89,10 +111,6 @@ namespace editor {
         m_editor -> openScene(m_activeScene, m_currentProject -> getPath());
     }
 
-    void EditorLogic::saveScene(const MenuProjectMessage& message) {
-        m_sceneManager.save(std::move(m_activeScene));
-    }
-
 
     void EditorLogic::copyToBuffer() {
         /// find selections ///
@@ -103,13 +121,13 @@ namespace editor {
     }
 
     void EditorLogic::createScene() {
-//        if(!m_sceneManager.add(std::move(m_currentProject))) {
-//            RB_EDITOR_ERROR("Can't Create Scene. Reason: {0}",
-//                            errorToString(m_sceneManager.getError()));
-//            return false;
-//        }
-//        m_activeScene = m_sceneManager.getActiveScene();
-//        openScene();
+        if(!m_sceneManager.add(std::move(m_currentProject))) {
+            RB_EDITOR_ERROR("Can't Create Scene. Reason: {0}",
+                            errorToString(m_sceneManager.getError()));
+            return;
+        }
+        m_activeScene = m_sceneManager.getActiveScene();
+        m_editor -> openScene(m_activeScene, m_currentProject -> getPath());
     }
 
     void EditorLogic::toolbarPressed(const ToolbarMessage& message) {

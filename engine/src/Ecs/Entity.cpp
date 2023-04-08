@@ -65,4 +65,9 @@ namespace robot2D::ecs {
     bool Entity::destroyed() const {
         return m_entityManager -> entityDestroyed(*this);
     }
+
+    void Entity::removeSelf() {
+        m_entityManager -> removeEntityFromScene(*this);
+    }
+
 }

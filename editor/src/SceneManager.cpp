@@ -19,15 +19,20 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
+#include <filesystem>
 #include <editor/SceneManager.hpp>
 #include <editor/FileApi.hpp>
 #include <editor/SceneSerializer.hpp>
+#include <editor/Components.hpp>
+#include <editor/ResouceManager.hpp>
 #include <robot2D/Util/Logger.hpp>
 
 namespace editor {
     namespace {
         const std::string scenePath = "assets/scenes";
     }
+
+    namespace fs = std::filesystem;
 
     SceneManager::SceneManager(robot2D::MessageBus& messageBus):
             m_messageBus{messageBus},
@@ -86,6 +91,7 @@ namespace editor {
         }
 
         scene -> setPath(path);
+        scene -> setAssociatedProjectPath(project -> getPath());
 
         SceneSerializer serializer(scene);
         if(!serializer.deserialize(scene -> getPath())) {
@@ -93,6 +99,27 @@ namespace editor {
             return false;
         }
         RB_EDITOR_INFO("SceneSerializer finished");
+
+        for(auto& entity: scene -> getEntities()) {
+            if(entity.hasComponent<DrawableComponent>()) {
+                auto& drawable = entity.getComponent<DrawableComponent>();
+                auto& localTexturePath = drawable.getTexturePath();
+                if(!localTexturePath.empty()) {
+                    fs::path texturePath{localTexturePath};
+                    if(is_regular_file(texturePath)) {
+                        auto id = texturePath.filename().string();
+                        auto image = ResourceManager::getManager() -> addImage(id);
+                        if(image) {
+                            auto absolutePath = combinePath(scene -> getAssociatedProjectPath(), texturePath.string());
+                            if(!image -> loadFromFile(absolutePath)) {
+                                RB_EDITOR_WARN("Can't load image by path {0}", absolutePath);
+                                // TODO(a.raag): make error
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
         m_activeScene = scene;
         m_associatedProject = std::move(project);
