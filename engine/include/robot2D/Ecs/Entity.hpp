@@ -55,7 +55,8 @@ namespace robot2D::ecs {
         template<typename T>
         void removeComponent();
 
-        EntityID getIndex() const { return m_id; }
+        const EntityID& getIndex() const { return m_id; }
+        EntityID getIndex() { return m_id; }
 
         Bitmask getComponentMask() const;
 
@@ -74,6 +75,8 @@ namespace robot2D::ecs {
         explicit operator bool() const {
             return m_entityManager != nullptr && m_id != INT_MAX;
         }
+
+        void removeSelf();
     private:
         friend class EntityManager;
         Entity(EntityManager* entityManager, const EntityID& id);

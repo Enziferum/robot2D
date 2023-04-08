@@ -28,11 +28,11 @@ source distribution.
 
 namespace editor {
 
-    class Uuid {
+    class UUID {
     public:
-        Uuid();
-        Uuid(uint64_t uuid);
-        Uuid(const Uuid&) = default;
+        UUID();
+        UUID(uint64_t uuid);
+        UUID(const UUID&) = default;
 
         operator uint64_t() const { return m_uuid; }
     private:
@@ -42,8 +42,8 @@ namespace editor {
 
 namespace std {
     template<>
-    struct hash<editor::Uuid> {
-        std::size_t operator()(const editor::Uuid& uuid) const {
+    struct hash<editor::UUID> {
+        std::size_t operator()(const editor::UUID& uuid) const {
             return hash<uint64_t>()((uint64_t)uuid);
         }
     };

@@ -15,15 +15,12 @@ void RenderSystem::draw(robot2D::RenderTarget& target, robot2D::RenderStates sta
         auto& transform = it.getComponent<TransformComponent>();
         auto& sprite = it.getComponent<SpriteComponent>();
 
-        auto size = sprite.getTexture().getSize();
         auto t = transform.getTransform();
         auto tSize = transform.getSize();
-        if(tSize == robot2D::vec2f{})
-            tSize = size.as<float>();
         t.scale(tSize);
 
         states.transform = t;
-        states.texture = &sprite.getTexture();
+        //states.texture = &sprite.getTexture();
         states.color = sprite.getColor();
         states.layerID = sprite.layerIndex;
 

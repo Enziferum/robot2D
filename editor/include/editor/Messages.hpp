@@ -33,6 +33,7 @@ namespace editor {
         SaveProject,
         OpenProject,
         OpenScene,
+        CreateScene,
         SaveScene,
         EntitySelected,
         ShowInspector,
@@ -57,5 +58,13 @@ namespace editor {
 
     struct ToolbarMessage {
         int pressedType;
+    };
+
+    struct OpenSceneMessage {
+        std::string path;
+    };
+
+    struct CreateSceneMessage {
+        std::string path;
     };
 }

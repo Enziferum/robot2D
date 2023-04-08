@@ -1,15 +1,15 @@
-#include <editor/panels/ToolbarPanel.hpp>
+#include <editor/panels/GameViewport.hpp>
 #include <robot2D/imgui/Gui.hpp>
 #include <robot2D/imgui/Api.hpp>
 
 namespace editor {
 
-    ToolbarPanel::ToolbarPanel(robot2D::MessageBus& messageBus):
-    IPanel(UniqueType(typeid(ToolbarPanel))),
+    GameViewport::GameViewport(robot2D::MessageBus& messageBus):
+    IPanel(UniqueType(typeid(GameViewport))),
     m_messageBus{messageBus}
     {}
 
-    void ToolbarPanel::render() {
+    void GameViewport::render() {
         const auto& colors = ::ImGui::GetStyle().Colors;
         const auto& buttonHovered = colors[ImGuiCol_ButtonHovered];
         const auto& buttonActive = colors[ImGuiCol_ButtonActive];

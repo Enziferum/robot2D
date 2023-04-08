@@ -3,10 +3,12 @@
 #include "IPanel.hpp"
 
 namespace editor {
-    class ToolbarPanel final: public IPanel {
+    class GameViewport final: public IPanel {
     public:
-        ToolbarPanel(robot2D::MessageBus& messageBus);
-        ~ToolbarPanel() override = default;
+        GameViewport(robot2D::MessageBus& messageBus);
+        ~GameViewport() override = default;
+
+
         void render() override;
     private:
         robot2D::MessageBus& m_messageBus;

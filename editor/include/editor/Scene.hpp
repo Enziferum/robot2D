@@ -22,11 +22,13 @@ source distribution.
 #pragma once
 
 #include <memory>
+#include <cassert>
 
 #include <robot2D/Ecs/Scene.hpp>
 #include <robot2D/Ecs/Entity.hpp>
 #include <robot2D/Graphics/Drawable.hpp>
 
+#include "Components.hpp"
 #include "physics/IPhysics2DAdapter.hpp"
 
 namespace editor {
@@ -50,17 +52,41 @@ namespace editor {
         // Serializer Api
         robot2D::ecs::Entity createEntity();
         void removeEntity(robot2D::ecs::Entity entity);
+        void removeEntityChild(robot2D::ecs::Entity entity);
 
         // ScenePanel API
         void addEmptyEntity();
 
-        robot2D::ecs::Entity getByIndex(std::size_t index) {
+        void addAssociatedEntity(robot2D::ecs::Entity entity);
+
+        robot2D::ecs::Entity getByIndex(int index) {
             return m_sceneEntities[index];
+        }
+
+        robot2D::ecs::Entity getByUUID(UUID uuid) {
+            auto found = std::find_if(m_sceneEntities.begin(), m_sceneEntities.end(), [&uuid](robot2D::ecs::Entity entity) {
+                auto& ts = entity.getComponent<TransformComponent>();
+                if(ts.hasChildren()) {
+                    for(auto& child: ts.getChildren()) {
+                        if(child.getComponent<IDComponent>().ID == uuid)
+                            return true;
+                    }
+                }
+                return entity.getComponent<IDComponent>().ID == uuid;
+            });
+            assert(found != m_sceneEntities.end() && "Must be validUUID");
+            return *found;
         }
 
         bool isRunning() const { return m_running; }
 
         void setPath(const std::string& path) {m_path = path;}
+        void setAssociatedProjectPath(const std::string& path) { m_associatedProjectPath = path;}
+
+        const std::string& getAssociatedProjectPath() const {
+            return m_associatedProjectPath;
+        }
+
         const std::string& getPath() const {return m_path;}
         std::string& getPath()  {return m_path;}
     protected:
@@ -75,6 +101,7 @@ namespace editor {
         robot2D::ecs::EntityList m_sceneEntities;
         robot2D::MessageBus& m_messageBus;
         std::string m_path;
+        std::string m_associatedProjectPath;
         bool m_running = false;
 
         IPhysics2DAdapter::Ptr m_physicsAdapter{nullptr};

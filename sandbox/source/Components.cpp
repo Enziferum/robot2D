@@ -46,3 +46,30 @@ const robot2D::Color& SpriteComponent::getColor() const {
 }
 
 TransformComponent::TransformComponent() {}
+
+void TransformComponent::setPosition(const robot2D::vec2f& pos) {
+    for(auto child: m_children) {
+        auto& transform = child.getComponent<TransformComponent>();
+        robot2D::vec2f offset = m_pos - child.getComponent<TransformComponent>().getPosition();
+        transform.setPosition(pos - offset);
+    }
+    Transformable::setPosition(pos);
+}
+
+void TransformComponent::addChild(robot2D::ecs::Entity entity) {
+    auto found = std::find_if(m_children.begin(), m_children.end(), [&entity](robot2D::ecs::Entity ent) {
+        return entity == ent;
+    });
+    if(found == m_children.end())
+        m_children.emplace_back(entity);
+}
+
+void TransformComponent::removeChild(robot2D::ecs::Entity entity) {
+    m_children.erase(std::remove_if(m_children.begin(), m_children.end(), [&entity](robot2D::ecs::Entity ent) {
+        return entity == ent;
+    }), m_children.end());
+}
+
+bool TransformComponent::hasChildren() const {
+    return !m_children.empty();
+}

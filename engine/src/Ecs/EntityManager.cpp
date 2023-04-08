@@ -22,6 +22,7 @@ source distribution.
 #include <algorithm>
 #include <robot2D/Ecs/EntityManager.hpp>
 #include <robot2D/Ecs/SystemManager.hpp>
+#include <robot2D/Ecs/Scene.hpp>
 
 namespace robot2D::ecs {
 
@@ -29,10 +30,11 @@ namespace robot2D::ecs {
         constexpr unsigned maxComponentsContainerValue = 64;
     }
 
-    EntityManager::EntityManager(ComponentManager& componentManager): m_entityCounter(0),
+    EntityManager::EntityManager(ComponentManager& componentManager, Scene* scene): m_entityCounter(0),
     m_componentManager(componentManager),
     m_componentContainers(maxComponentsContainerValue),
-    m_componentMasks()
+    m_componentMasks(),
+    m_ownerScene{scene}
     {}
 
     Entity EntityManager::createEntity() {
@@ -66,6 +68,12 @@ namespace robot2D::ecs {
 
     void EntityManager::markDestroyed(Entity entity) {
         m_destroyFlags[entity.m_id] = true;
+    }
+
+    void EntityManager::removeEntityFromScene(Entity entity) {
+        if(!m_ownerScene)
+            return;
+        m_ownerScene -> removeEntity(entity);
     }
 
 }

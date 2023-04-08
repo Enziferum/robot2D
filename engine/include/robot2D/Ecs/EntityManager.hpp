@@ -46,6 +46,11 @@ namespace robot2D::ecs {
         virtual bool removeEntity(EntityID&& entityId) = 0;
     };
 
+    struct CustomDestroyComponent {
+        virtual ~CustomDestroyComponent() = 0;
+        virtual void destroy() = 0;
+    };
+
     /// \brief Container for component of special type
     template<typename T>
     class ROBOT2D_EXPORT_API ComponentContainer: public IContainer {
@@ -88,6 +93,10 @@ namespace robot2D::ecs {
         }
 
         bool removeEntity(robot2D::ecs::EntityID&& entityId) override {
+            // TODO(a.raag) make possible to component make custom destroy without dynamic_cast,
+            //  maybe create removeEntityWithCallback(destroyCallback);
+//            if(CustomDestroyComponent* destroyComponent = dynamic_cast<CustomDestroyComponent*>(&m_components[entityId]))
+//                destroyComponent -> destroy();
             return static_cast<bool>(m_components.erase(entityId));
         }
     private:
@@ -95,9 +104,10 @@ namespace robot2D::ecs {
     };
 
     class SystemManager;
+    class Scene;
     class EntityManager {
     public:
-        EntityManager(ComponentManager& componentManager);
+        EntityManager(ComponentManager& componentManager, Scene* scene);
         ~EntityManager() = default;
 
         Entity createEntity();
@@ -125,6 +135,8 @@ namespace robot2D::ecs {
 
         bool removeEntity(Entity entity);
 
+        void removeEntityFromScene(Entity entity);
+
         bool entityDestroyed(Entity entity);
 
         Bitmask getComponentBitmask(Entity entity);
@@ -135,6 +147,8 @@ namespace robot2D::ecs {
         /// \brief allows to get Container of special type
         template<typename T>
         ComponentContainer<T>& getContainer();
+
+
     private:
         friend class Scene;
 
@@ -143,6 +157,7 @@ namespace robot2D::ecs {
         std::unordered_map<EntityID, Bitmask> m_componentMasks;
         std::vector<IContainer::Ptr> m_componentContainers;
         std::vector<bool> m_destroyFlags;
+        Scene* m_ownerScene{nullptr};
     };
 
     template<typename T>

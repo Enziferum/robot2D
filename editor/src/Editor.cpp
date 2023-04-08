@@ -36,7 +36,7 @@ source distribution.
 #include <editor/panels/MenuPanel.hpp>
 #include <editor/panels/InspectorPanel.hpp>
 #include <editor/panels/ViewportPanel.hpp>
-#include <editor/panels/ToolbarPanel.hpp>
+#include <editor/panels/GameViewport.hpp>
 
 #include <editor/Components.hpp>
 #include <editor/EditorStyles.hpp>
@@ -250,36 +250,13 @@ namespace editor {
         }
 
         m_window -> beforeRender();
-
-        if(m_editorCamera -> getType() == EditorCameraType::Orthographic)
+        if (m_editorCamera->getType() == EditorCameraType::Orthographic)
             m_window -> setView(m_editorCamera -> getView());
-        else if(m_editorCamera -> getType() == EditorCameraType::Perspective)
-            m_window -> setView3D(m_editorCamera -> getProjectionMatrix(), m_editorCamera -> getViewMatrix());
+        else if (m_editorCamera->getType() == EditorCameraType::Perspective)
+            m_window -> setView3D(m_editorCamera -> getProjectionMatrix(), m_editorCamera->getViewMatrix());
 
-        if(m_activeScene) {
-            for(auto& ent: m_activeScene -> getEntities()) {
-                if(!ent.hasComponent<SpriteComponent>())
-                    continue;
-
-                auto& sprite = ent.getComponent<SpriteComponent>();
-                robot2D::RenderStates renderStates;
-                renderStates.texture = &sprite.getTexture();
-
-                if(ent.hasComponent<TransformComponent>()) {
-                    auto transform = ent.getComponent<TransformComponent>();
-                    renderStates.transform *= transform.getTransform();
-                }
-                else if(ent.hasComponent<Transform3DComponent>()) {
-                    auto transform = ent.getComponent<Transform3DComponent>();
-                    renderStates.transform3D = transform.getTransform();
-                }
-
-                renderStates.color = sprite.getColor();
-                renderStates.entityID = ent.getIndex();
-                m_window -> draw(renderStates);
-            }
-        }
-
+        if(m_activeScene)
+            m_window -> draw(*m_activeScene);
         m_window -> draw(m_guizmo2D);
         m_window -> afterRender();
 
@@ -410,6 +387,58 @@ namespace editor {
     void Editor::onKeyReleased(const robot2D::Event& event) {
         if(event.key.code == robot2D::Key::LEFT_CONTROL)
             m_configuration.m_leftCtrlPressed = false;
+    }
+
+    void Editor::drawScene() {
+
+        if(m_activeScene && !m_activeScene -> isRunning()) {
+            if (m_editorCamera -> getType() == EditorCameraType::Orthographic)
+                m_window -> setView(m_editorCamera -> getView());
+            else if (m_editorCamera -> getType() == EditorCameraType::Perspective)
+                m_window -> setView3D(m_editorCamera -> getProjectionMatrix(), m_editorCamera->getViewMatrix());
+        }
+        else if(m_activeScene) {
+            for (auto& ent: m_activeScene -> getEntities()) {
+                if (ent.hasComponent<CameraComponent>() && m_activeScene -> isRunning()) {
+                    auto &camera = ent.getComponent<CameraComponent>();
+                    if (camera.isPrimary) {
+                        auto& transform = ent.getComponent<TransformComponent>();
+                        auto pos = transform.getPosition();
+                        auto size = transform.getScale();
+                        camera.setViewport({pos.x, pos.y, size.x, size.y});
+                        m_window -> setView(camera.getView());
+                    }
+                }
+            }
+        }
+
+        if(m_activeScene) {
+            for(auto& ent: m_activeScene -> getEntities()) {
+                // || (ent.hasComponent<CameraComponent>()
+                //                                    && m_activeScene -> isRunning())
+                if(!ent.hasComponent<DrawableComponent>() )
+                    continue;
+
+                auto& sprite = ent.getComponent<DrawableComponent>();
+                robot2D::RenderStates renderStates;
+                if(sprite.hasTexture())
+                    renderStates.texture = &sprite.getTexture();
+
+                if(ent.hasComponent<TransformComponent>()) {
+                    auto transform = ent.getComponent<TransformComponent>();
+                    renderStates.transform *= transform.getTransform();
+                }
+                else if(ent.hasComponent<Transform3DComponent>()) {
+                    auto transform = ent.getComponent<Transform3DComponent>();
+                    renderStates.transform3D = transform.getTransform();
+                }
+
+                renderStates.color = sprite.getColor();
+                renderStates.entityID = ent.getIndex();
+                m_window -> draw(renderStates);
+            }
+        }
+
     }
 
 }

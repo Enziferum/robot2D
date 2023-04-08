@@ -40,6 +40,8 @@ namespace editor {
         void loadCallback();
         void saveScene(const MenuProjectMessage& message);
         void toolbarPressed(const ToolbarMessage& message);
+        void openScene(const OpenSceneMessage& message);
+        void createScene(const CreateSceneMessage& message);
     private:
         robot2D::MessageBus& m_messageBus;
         MessageDispatcher& m_messageDispatcher;
