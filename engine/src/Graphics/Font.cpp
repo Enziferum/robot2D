@@ -27,8 +27,8 @@ namespace robot2D {
         return m_glyphCharacters;
     }
 
-    const std::vector<std::unique_ptr<robot2D::Texture>>& Font::getTextures() const {
-        return m_textures;
+    const std::vector<std::unique_ptr<robot2D::Image>>& Font::getImages() const {
+        return m_images;
     }
 
     bool Font::loadFromFile(const std::string& path, int charSize) {
@@ -56,6 +56,7 @@ namespace robot2D {
 
         m_library = library;
         m_face = face;
+        m_path = path;
 
         return true;
     }
@@ -67,21 +68,27 @@ namespace robot2D {
         assert(face != nullptr && "Font Face can't be nullptr");
 
         std::vector<unsigned char> textureData(CHARACTERS_TEXTURE_SIZE * CHARACTERS_TEXTURE_SIZE, 0);
-        std::unique_ptr<robot2D::Texture> texture = std::make_unique<robot2D::Texture>();
+        std::unique_ptr<robot2D::Image> image = std::make_unique<robot2D::Image>();
 
         auto currentPixelPositionRow = 0;
         auto currentPixelPositionCol = 0;
         auto rowHeight = 0;
         auto currentRenderIndex = 0;
 
-        auto finalizeTexture = [this,  &texture, &textureData](bool createNext)
+        auto finalizeTexture = [this,  &image, &textureData](bool createNext)
         {
-            texture -> create({TextureAtlasSize, TextureAtlasSize},
-                              textureData.data(), 1, robot2D::ImageColorFormat::RED);
-            m_textures.push_back(std::move(texture));
+            image -> create(
+                {TextureAtlasSize, TextureAtlasSize},
+                textureData.data(),
+                robot2D::ImageColorFormat::RED,
+                robot2D::ImageParameter::ClampToEdge
+            );
+
+
+            m_images.push_back(std::move(image));
             if (createNext)
             {
-                texture = std::make_unique<robot2D::Texture>();
+                image = std::make_unique<robot2D::Image>();
                 memset(textureData.data(), 0, textureData.size());
             }
         };
@@ -153,7 +160,7 @@ namespace robot2D {
 
             charProps.indexPosition = {static_cast<float>(currentPixelPositionCol),
                                        static_cast<float>(currentPixelPositionRow) };
-            charProps.textureIndex = static_cast<float>(m_textures.size());
+            charProps.textureIndex = static_cast<float>(m_images.size());
 
             currentPixelPositionCol += bmpWidth + 1;
             currentRenderIndex += 4;
@@ -234,5 +241,16 @@ namespace robot2D {
         }
 
         return textSize;
+    }
+
+    bool Font::clone(Font& font) {
+        m_face = font.m_face;
+        m_library = font.m_library;
+        m_glyphCharacters = font.m_glyphCharacters;
+        m_images.clear();
+        for(auto& image: font.m_images)
+            m_images.push_back(std::move(image));
+        m_path = font.m_path;
+        return true;
     }
 }

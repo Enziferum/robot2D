@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2023
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -22,6 +22,8 @@ source distribution.
 #pragma once
 #include <string>
 #include <robot2D/Core/Message.hpp>
+#include <robot2D/Ecs/Entity.hpp>
+#include "Uuid.hpp"
 #include "ProjectDescription.hpp"
 
 namespace editor {
@@ -36,8 +38,17 @@ namespace editor {
         CreateScene,
         SaveScene,
         EntitySelected,
+        EntityDuplicate,
+        EntityRemove,
+        PanelEntitySelected,
         ShowInspector,
-        ToolbarPressed
+        ToolbarPressed,
+        InstrumentPressed,
+        Undo,
+        Redo,
+        GenerateProject,
+        ExportProject,
+        PrefabLoad
     };
 
     struct ProjectMessage {
@@ -56,6 +67,14 @@ namespace editor {
         uint32_t entityID;
     };
 
+    struct EntityDuplication {
+        UUID entityID;
+    };
+
+    struct EntityRemovement {
+        UUID entityID;
+    };
+
     struct ToolbarMessage {
         int pressedType;
     };
@@ -66,5 +85,29 @@ namespace editor {
 
     struct CreateSceneMessage {
         std::string path;
+    };
+
+    struct UndoRedoMessage{};
+
+    struct GenerateProjectMessage{};
+
+    struct ExportProjectMessage{
+        std::string startSceneID;
+    };
+
+    struct PanelEntitySelectedMessage {
+        robot2D::ecs::Entity entity;
+    };
+
+    struct PrefabLoadMessage {
+        std::string path;
+    };
+
+    struct InstrumentMessage {
+        enum class Type {
+            Move = 0,
+            Scale,
+            Rotate
+        } type;
     };
 }

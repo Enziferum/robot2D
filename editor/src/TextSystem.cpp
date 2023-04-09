@@ -1,3 +1,24 @@
+/*********************************************************************
+(c) Alex Raag 2023
+https://github.com/Enziferum
+robot2D - Zlib license.
+This software is provided 'as-is', without any express or
+implied warranty. In no event will the authors be held
+liable for any damages arising from the use of this software.
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute
+it freely, subject to the following restrictions:
+1. The origin of this software must not be misrepresented;
+you must not claim that you wrote the original software.
+If you use this software in a product, an acknowledgment
+in the product documentation would be appreciated but
+is not required.
+2. Altered source versions must be plainly marked as such,
+and must not be misrepresented as being the original software.
+3. This notice may not be removed or altered from any
+source distribution.
+*********************************************************************/
+
 #include <robot2D/Ecs/EntityManager.hpp>
 
 #include <editor/TextSystem.hpp>
@@ -49,7 +70,6 @@ namespace editor {
         addRequirement<TextComponent>();
         addRequirement<DrawableComponent>();
         addRequirement<TransformComponent>();
-
     }
 
     void TextSystem::setupGL() {
@@ -73,17 +93,17 @@ namespace editor {
             setupGL();
 
         (void)dt;
-        for(auto& it: m_entities) {
-            auto& text = it.getComponent<TextComponent>();
+        for(auto& entity: m_entities) {
+            auto& text = entity.getComponent<TextComponent>();
 
-            it.getComponent<DrawableComponent>().setTexture(text.getTexture());
+            entity.getComponent<DrawableComponent>().setTexture(text.getTexture());
             if(text.m_needUpdate) {
                 text.m_needUpdate = false;
                 m_needUpdate = true;
             }
         }
 
-        if(m_needUpdate) {
+     //   if(m_needUpdate) {
             m_quadBatchRender.preProcessBatching();
             m_quadBatchRender.refresh();
 
@@ -91,6 +111,9 @@ namespace editor {
                 auto& textComp = ent.getComponent<TextComponent>();
                 auto& drawable = ent.getComponent<DrawableComponent>();
                 auto& tx = ent.getComponent<TransformComponent>();
+
+                if(!textComp.getFont())
+                    continue;
 
                 auto& m_bufferCache = textComp.getGlyphCache();
                 const auto& glyphCharacters = textComp.getFont() -> getGlyphCharacters();
@@ -117,6 +140,6 @@ namespace editor {
 
             m_quadBatchRender.processBatching();
             m_needUpdate = false;
-        }
+    //    }
     }
 }

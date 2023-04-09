@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2023
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -19,7 +19,7 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include <imgui/imgui.h>
+#include <robot2D/imgui/Api.hpp>
 #include <editor/panels/InspectorPanel.hpp>
 
 namespace editor {
@@ -50,16 +50,23 @@ namespace editor {
         ImGui::Text("Draw Calls Count: %d", m_renderStats.drawCalls);
 
         if(m_camera -> getType() == EditorCameraType::Orthographic) {
-            auto& position = m_camera -> getPosition();
-            auto view = m_camera -> getView().getSize();
-            // TODO (a.raag): add Size
-            ImGui::Text("Viewport Position := %.2f, %.2f", position.x, position.y);
+            auto& position = m_camera -> getView().getCenter();
+            auto size = m_camera -> getView().getSize();
+            ImGui::Text("Viewport center := %.2f, %.2f", position.x, position.y);
+            ImGui::Text("Viewport size := %.2f, %.2f", size.x, size.y);
+            int i_size[2] = { (int)size.x, (int)size.y };
+            ImGui::InputInt2("Viewport size", i_size);
+            m_camera -> getView().setSize(i_size[0], i_size[1]);
+            ImGui::Text("Zoom := %.2f", m_camera -> getZoom());
         }
         else if(m_camera -> getType() == EditorCameraType::Perspective) {
             auto cameraView = m_camera -> getViewMatrix();
             auto& position = m_camera -> getPosition();
             ImGui::Text("Viewport Position := %.2f, %.2f, %.2f", position.x, position.y, position.z);
         }
+
+        if(ImGui::Button("Reset"))
+            m_camera -> resetDefaults();
 
 
         auto color = m_clearColor.toGL();

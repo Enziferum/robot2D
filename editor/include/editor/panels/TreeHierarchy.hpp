@@ -1,3 +1,24 @@
+/*********************************************************************
+(c) Alex Raag 2023
+https://github.com/Enziferum
+robot2D - Zlib license.
+This software is provided 'as-is', without any express or
+implied warranty. In no event will the authors be held
+liable for any damages arising from the use of this software.
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute
+it freely, subject to the following restrictions:
+1. The origin of this software must not be misrepresented;
+you must not claim that you wrote the original software.
+If you use this software in a product, an acknowledgment
+in the product documentation would be appreciated but
+is not required.
+2. Altered source versions must be plainly marked as such,
+and must not be misrepresented as being the original software.
+3. This notice may not be removed or altered from any
+source distribution.
+*********************************************************************/
+
 #pragma once
 #include <vector>
 #include <string>
@@ -8,21 +29,22 @@
 
 #include <imgui/imgui.h>
 #include <robot2D/Core/Keyboard.hpp>
+#include <editor/Uuid.hpp>
 
 namespace editor {
-    constexpr int NO_INDEX = -1;
+    constexpr std::uint64_t NO_INDEX = std::numeric_limits<uint64_t>::max();
 
     class ITreeItem {
     public:
         using Ptr = std::shared_ptr<ITreeItem>;
 
-        ITreeItem(): m_id(-1){}
-        ITreeItem(int id): m_id{id}{}
+        ITreeItem(): m_id() {}
+        ITreeItem(UUID id): m_id{id} {}
         virtual ~ITreeItem() = 0;
 
         bool hasChildrens() const { return !m_childrens.empty(); }
 
-        int getID() const { return m_id; }
+        UUID getID() const { return m_id; }
 
         void setName(std::string& name) {
             m_name = &name;
@@ -30,7 +52,7 @@ namespace editor {
 
         /// \brief don't call if user data was set void or you want to call on void type
         template<typename T, typename = std::enable_if_t<!std::is_same_v<std::decay_t<T>, void>>>
-        T* getUserData() {
+        T* getUserData() const {
             return static_cast<T*>(getUserDataInternal());
         }
 
@@ -43,6 +65,8 @@ namespace editor {
 
         void addChild(ITreeItem::Ptr child) {
             child -> m_parent = this;
+            child -> m_id = NO_INDEX;
+            child -> m_child_id = UUID();
             m_childrens.emplace_back(child);
         }
 
@@ -56,14 +80,15 @@ namespace editor {
     protected:
         void removeChild(ITreeItem* child) {
             auto found = std::find_if(m_childrens.begin(), m_childrens.end(), [&child](ITreeItem::Ptr item) {
-                return child == item.get();
+                return child -> m_child_id == item -> m_child_id;
             });
             m_childrens.erase(found, m_childrens.end());
         }
 
-        virtual void* getUserDataInternal() = 0;
-        int m_id{NO_INDEX};
-        int m_child_id{NO_INDEX};
+        virtual void* getUserDataInternal() const = 0;
+        UUID m_id;
+        UUID m_child_id{NO_INDEX};
+
         std::string* m_name{nullptr};
         ITreeItem* m_parent{nullptr};
         std::vector<ITreeItem::Ptr> m_childrens;
@@ -96,7 +121,8 @@ namespace editor {
         TreeItem::Ptr addChild(Args&& ... args) {
             auto child = std::make_shared<TreeItem<UserDataT>>(std::forward<Args>(args)...);
             child -> m_id = m_id;
-            child -> m_child_id = m_childrens.size();
+            child -> m_child_id = UUID();
+            child -> m_parent = this;
             m_childrens.template emplace_back(child);
             return child;
         }
@@ -113,14 +139,13 @@ namespace editor {
         friend bool operator ==(const TreeItem<UserDataT>& left, const TreeItem<UserDataT>& right);
         friend bool operator !=(const TreeItem<UserDataT>& left, const TreeItem<UserDataT>& right);
     protected:
-        void* getUserDataInternal() override {
+        void* getUserDataInternal() const override {
             assert(m_userData != nullptr && "before get data store it, using SetUserData Method");
             return static_cast<void*>(m_userData.get());
         }
     private:
         /// TODO(a.raag): add UserDataStorage
         TreeItemUserData m_userData{nullptr};
-        int m_childIndexOffset = 100;
     };
 
 
@@ -176,14 +201,17 @@ namespace editor {
         using ReorderItemCallback = std::function<void(ITreeItem::Ptr source, ITreeItem::Ptr target)>;
 
         template<typename T, typename ... Args>
-        typename TreeItem<T>::Ptr addItem(Args&& ... args) {
+        typename TreeItem<T>::Ptr addItem(bool needPending = false, Args&& ... args) {
             static_assert(std::is_standard_layout_v<T> && "UserData Type must be pod");
             auto treeItem = std::make_shared<TreeItem<T>>(std::forward<Args>(args)...);
             if(!treeItem) {
                 /// error
             }
-            treeItem -> m_id = m_items.size();
-            m_items.template emplace_back(treeItem);
+            treeItem -> m_id = UUID();
+            if(!needPending)
+                m_items.template emplace_back(treeItem);
+            else
+                m_additemsBuffer.emplace_back(treeItem);
             return treeItem;
         }
 
@@ -230,8 +258,13 @@ namespace editor {
         }
 
         template<typename T>
-        TreeItem<T>* getItem(int index) {
-            return dynamic_cast<TreeItem<T>*>(m_items[index].get());
+        TreeItem<T>* getItem(UUID id) {
+            auto found = std::find_if(m_items.begin(), m_items.end(), [&id](ITreeItem::Ptr ptr) {
+                return ptr -> m_id == id;
+            });
+            if(found == m_items.end())
+                return nullptr;
+            return dynamic_cast<TreeItem<T>*>(*found->get());
         }
 
         void setBefore(ITreeItem::Ptr source, ITreeItem::Ptr target) {
@@ -255,14 +288,29 @@ namespace editor {
             }
         }
 
+        template<typename T>
+        T* getDataByItem(UUID ID) {
+            if(auto item = findByID(ID)) {
+                return item -> template getUserData<T>();
+            }
+            return nullptr;
+        }
+
+        void setSelected(ITreeItem::Ptr item);
+
+        std::vector<ITreeItem::Ptr>& getItems() { return m_items; }
+        const std::vector<ITreeItem::Ptr>& getItems() const { return m_items; }
+
+        void clear();
         void render();
     private:
-        ITreeItem::Ptr findByID(int ID);
+        ITreeItem::Ptr findByID(UUID ID);
 
     private:
         std::string m_name;
         std::vector<ITreeItem::Ptr> m_items{};
         std::vector<ITreeItem::Ptr> m_deletePendingItems{};
+        std::vector<ITreeItem::Ptr> m_additemsBuffer{};
 
         enum class ReorderDeleteType {
             First, Last
@@ -272,8 +320,8 @@ namespace editor {
         using InsertItem = std::tuple<Iterator, ITreeItem::Ptr, ReorderDeleteType>;
 
         int m_tree_base_flags = 0;
-        int m_selectedID = NO_INDEX;
-        int m_childSelectedID = NO_INDEX;
+        UUID m_selectedID = NO_INDEX;
+        UUID m_childSelectedID = NO_INDEX;
 
         ItemCallback m_selectCallback;
         ItemCallback m_callback;

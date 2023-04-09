@@ -3,7 +3,7 @@
 #include <array>
 #include <unordered_map>
 
-#include <robot2D/Graphics/Texture.hpp>
+#include <robot2D/Graphics/Image.hpp>
 #include <robot2D/Graphics/VertexArray.hpp>
 
 namespace robot2D {
@@ -33,12 +33,15 @@ namespace robot2D {
         Font();
         ~Font();
 
+        bool clone(Font& font);
+
         bool loadFromFile(const std::string& path, int charSize = 20);
         vec2f calculateSize(std::string&& text) const;
 
+        const std::string& getPath() const { return m_path; }
         std::unordered_map<int, GlyphQuad> getBufferCache(float scale) const;
         const std::unordered_map<int, GlyphCharacter>& getGlyphCharacters() const;
-        const std::vector<std::unique_ptr<robot2D::Texture>>& getTextures() const;
+        const std::vector<std::unique_ptr<robot2D::Image>>& getImages() const;
     private:
         bool setup(const std::string& path, int charSize);
         void setupAtlas();
@@ -46,8 +49,9 @@ namespace robot2D {
         void* m_library{nullptr};
         void* m_face{nullptr};
 
-        std::vector<std::unique_ptr<robot2D::Texture>> m_textures;
+        std::vector<std::unique_ptr<robot2D::Image>> m_images;
         std::unordered_map<int, GlyphCharacter> m_glyphCharacters;
+        std::string m_path;
     };
 
 }

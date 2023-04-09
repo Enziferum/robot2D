@@ -1,49 +1,52 @@
+/*********************************************************************
+(c) Alex Raag 2023
+https://github.com/Enziferum
+robot2D - Zlib license.
+This software is provided 'as-is', without any express or
+implied warranty. In no event will the authors be held
+liable for any damages arising from the use of this software.
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute
+it freely, subject to the following restrictions:
+1. The origin of this software must not be misrepresented;
+you must not claim that you wrote the original software.
+If you use this software in a product, an acknowledgment
+in the product documentation would be appreciated but
+is not required.
+2. Altered source versions must be plainly marked as such,
+and must not be misrepresented as being the original software.
+3. This notice may not be removed or altered from any
+source distribution.
+*********************************************************************/
+
 #include <editor/EditorLogic.hpp>
 #include <editor/Editor.hpp>
 #include <editor/FileApi.hpp>
 #include <editor/Messages.hpp>
+#include <editor/ResouceManager.hpp>
+#include <editor/LocalResourceManager.hpp>
+#include <editor/Components.hpp>
+
+#include <editor/async/SceneLoadTask.hpp>
+
+#include <editor/commands/DuplicateCommand.hpp>
+#include <editor/commands/DeleteEntitiesCommand.hpp>
 
 namespace {
     const std::string scenePath = "assets/scenes";
 }
 
 namespace editor {
-
-    class SceneLoadTask: public ITask {
-    public:
-        SceneLoadTask(ITaskFunction::Ptr function,
-                      SceneManager& sceneManager,
-                      Project::Ptr project,
-                      std::string path,
-                      EditorLogic* l):
-                ITask{function},
-                m_sceneManager{sceneManager},
-                m_project{std::move(project)},
-                m_path{path},
-                logic{l}{}
-        ~SceneLoadTask() override = default;
-
-        void execute() override {
-            if(!m_sceneManager.load(m_project, m_path)) {
-                RB_EDITOR_ERROR("Can't Load Scene. Reason: {0}",
-                                errorToString(m_sceneManager.getError()));
-                return;
-            }
-        }
-
-    private:
-        SceneManager& m_sceneManager;
-        Project::Ptr m_project;
-        std::string m_path;
-    public:
-        EditorLogic* logic;
-    };
-
+    ScriptInteractor::~ScriptInteractor() = default;
 
     EditorLogic::EditorLogic(robot2D::MessageBus& messageBus,
-                             MessageDispatcher& messageDispatcher):
+                             MessageDispatcher& messageDispatcher,
+                             EditorPresenter& presenter,
+                             EditorRouter& router):
     m_messageBus{messageBus},
     m_messageDispatcher{messageDispatcher},
+    m_presenter{presenter},
+    m_router{router},
     m_sceneManager{messageBus},
     m_activeScene{nullptr}
     {
@@ -51,7 +54,25 @@ namespace editor {
         m_messageDispatcher.onMessage<ToolbarMessage>(MessageID::ToolbarPressed, BIND_CLASS_FN(toolbarPressed));
         m_messageDispatcher.onMessage<OpenSceneMessage>(MessageID::OpenScene, BIND_CLASS_FN(openScene));
         m_messageDispatcher.onMessage<CreateSceneMessage>(MessageID::CreateScene, BIND_CLASS_FN(createScene));
+        m_messageDispatcher.onMessage<PrefabLoadMessage>(MessageID::PrefabLoad, BIND_CLASS_FN(addPrefabEntity));
     }
+
+    void EditorLogic::update(float dt) {
+        auto state = m_presenter.getState();
+        switch(state) {
+            case EditorState::Load:
+                break;
+            case EditorState::Edit:
+                m_activeScene -> update(dt);
+                break;
+            case EditorState::Run:
+                m_activeScene -> updateRuntime(dt);
+                break;
+            default:
+                break;
+        }
+    }
+
 
     void EditorLogic::createProject(Project::Ptr project) {
         m_currentProject = project;
@@ -61,12 +82,12 @@ namespace editor {
             return;
         }
         m_activeScene = m_sceneManager.getActiveScene();
-        m_editor -> openScene(m_activeScene, m_currentProject -> getPath());
+        m_router.openScene(m_activeScene, m_currentProject -> getPath());
     }
 
     void EditorLogic::loadProject(Project::Ptr project) {
         m_currentProject = project;
-        m_state = State::Load;
+        m_presenter.switchState(EditorState::Load);
 
         auto loadLambda = [](const SceneLoadTask& task) {
             task.logic -> loadCallback();
@@ -76,23 +97,65 @@ namespace editor {
         auto appendPath = combinePath(scenePath, project -> getStartScene());
         auto scenePath = combinePath(path, appendPath);
 
-        m_editor -> prepare();
+        m_presenter.prepareView();
         TaskQueue::GetQueue() -> addAsyncTask<SceneLoadTask>(loadLambda, m_sceneManager, project, scenePath, this);
     }
 
 
     void EditorLogic::openScene(const OpenSceneMessage& message) {
-        m_state = State::Load;
-        auto loadLambda = [](const SceneLoadTask& task) {
-            task.logic -> loadCallback();
-        };
+        auto path = m_currentProject -> getPath();
+        auto scenePath = combinePath(path, message.path);
+        auto currentScenePath = combinePath(path, m_activeScene -> getPath());
+        if(std::filesystem::path(scenePath) == std::filesystem::path(currentScenePath))
+            return;
 
-        TaskQueue::GetQueue() -> addAsyncTask<SceneLoadTask>(loadLambda, m_sceneManager,
-                                                             m_currentProject, message.path, this);
+
+        if(m_activeScene -> hasChanges()) {
+            m_presenter.switchState(EditorState::Modal);
+            // m_presenter.showPopup()
+            m_popupConfiguration.title = "Close Scene";
+            m_popupConfiguration.onYes = [this, scenePath]() {
+                if(!saveScene()) {
+                    RB_EDITOR_ERROR("EditorLogic: can't save scene");
+                }
+
+                // m_presenter.switchState();
+                auto loadLambda = [](const SceneLoadTask& task) {
+                    task.logic -> loadCallback();
+                };
+
+                TaskQueue::GetQueue() -> addAsyncTask<SceneLoadTask>(loadLambda, m_sceneManager,
+                                                                     m_currentProject, scenePath, this);
+            };
+
+            m_popupConfiguration.onNo = [this, scenePath]() {
+                // m_presenter.switchState();
+                auto loadLambda = [](const SceneLoadTask& task) {
+                    task.logic -> loadCallback();
+                };
+
+                TaskQueue::GetQueue() -> addAsyncTask<SceneLoadTask>(loadLambda, m_sceneManager,
+                                                                     m_currentProject, scenePath, this);
+            };
+            //m_presenter.showPopup(&m_popupConfiguration);
+        }
+        else {
+            m_presenter.switchState(EditorState::Load);
+            auto loadLambda = [](const SceneLoadTask& task) {
+                task.logic -> loadCallback();
+            };
+
+            TaskQueue::GetQueue() -> addAsyncTask<SceneLoadTask>(loadLambda, m_sceneManager,
+                                                                 m_currentProject, scenePath, this);
+        }
     }
 
     void EditorLogic::createScene(const CreateSceneMessage& message) {
-        createScene();
+        if(!m_sceneManager.add(std::move(m_currentProject), message.path)) {
+            RB_EDITOR_ERROR("Can't Create Scene. Reason: {0}",
+                            errorToString(m_sceneManager.getError()));
+            return;
+        }
     }
 
     void EditorLogic::saveScene(const MenuProjectMessage& message) {
@@ -105,10 +168,22 @@ namespace editor {
     }
 
     void EditorLogic::loadCallback() {
-        m_state = State::Edit;
+        m_presenter.switchState(EditorState::Edit);
         m_activeScene = m_sceneManager.getActiveScene();
-        m_currentProject;
-        m_editor -> openScene(m_activeScene, m_currentProject -> getPath());
+
+        for(auto& entity: m_activeScene -> getEntities()) {
+            loadAssetsByEntity(entity);
+            auto& ts = entity.getComponent<TransformComponent>();
+            for(auto child: ts.getChildren())
+                loadAssetsByEntity(child);
+        }
+
+        auto filename = std::filesystem::path{m_activeScene -> getPath()}.filename().string();
+        m_currentProject -> setStartScene(filename);
+
+        // TODO(a.raag): update project's start scene
+        // m_currentProject -> save();
+        m_router.openScene(m_activeScene, m_currentProject -> getPath());
     }
 
 
@@ -126,20 +201,198 @@ namespace editor {
                             errorToString(m_sceneManager.getError()));
             return;
         }
-        m_activeScene = m_sceneManager.getActiveScene();
-        m_editor -> openScene(m_activeScene, m_currentProject -> getPath());
     }
 
     void EditorLogic::toolbarPressed(const ToolbarMessage& message) {
         if(message.pressedType == 1) {
-            m_state = State::Run;
-            m_activeScene -> onRuntimeStart();
+            m_presenter.switchState(EditorState::Run);
+            m_activeScene -> onRuntimeStart(this);
         }
         else if(message.pressedType == 0) {
             m_activeScene -> onRuntimeStop();
-            m_state = State::Edit;
+            m_presenter.switchState(EditorState::Edit);
         }
     }
+
+    void EditorLogic::loadAssetsByEntity(robot2D::ecs::Entity entity) {
+        if(!entity.hasComponent<DrawableComponent>())
+            return;
+
+        auto* manager = ResourceManager::getManager();
+        auto* localManager = LocalResourceManager::getManager();
+
+        auto& drawable = entity.getComponent<DrawableComponent>();
+        std::filesystem::path texturePath{ drawable.getTexturePath() };
+        auto id = texturePath.filename().string();
+        if(localManager -> hasTexture(id)) {
+            drawable.setTexture(localManager -> getTexture(id));
+        }
+        else {
+            if(!manager -> hasImage(id))
+                return;
+            auto& image = manager -> getImage(id);
+            auto* texture = localManager -> addTexture(texturePath.filename().string());
+            if(texture) {
+                texture -> create(image);
+                drawable.setTexture(*texture);
+            }
+        }
+
+        if(entity.hasComponent<TextComponent>()) {
+            auto& text = entity.getComponent<TextComponent>();
+            std::filesystem::path fontPath{ text.getFontPath() };
+            auto id = fontPath.filename().string();
+            if(localManager -> hasFont(id)) {
+                text.setFont(localManager -> getFont(id));
+            }
+            else {
+                if(!manager -> hasFont(id))
+                    return;
+                auto& font = manager -> getFont(id);
+                auto* localFont = localManager -> addFont(fontPath.filename().string());
+                if(localFont) {
+                    localFont -> clone(font);
+                    text.setFont(*localFont);
+                }
+            }
+        }
+    }
+
+    void EditorLogic::notifyObservers(std::vector<std::string>&& paths) {
+        for(auto& observer: m_observers)
+            observer -> notify(std::move(paths));
+    }
+
+    void EditorLogic::addObserver(Observer::Ptr observer) {
+        m_observers.emplace_back(observer);
+    }
+
+    void EditorLogic::duplicateEntity(robot2D::vec2f mousePos, robot2D::ecs::Entity entity) {
+        auto dupEntity = m_activeScene -> duplicateEntity(mousePos, entity);
+        m_commandStack.addCommand<DuplicateCommand>(m_messageBus, m_activeScene, dupEntity);
+    }
+
+    void EditorLogic::addPrefabEntity(const PrefabLoadMessage& message) {
+        auto path = m_currentProject -> getPath();
+        auto prefabPath = combinePath(path, message.path);
+    }
+
+
+    void EditorLogic::onBeginPopup() {
+         m_presenter.switchState(EditorState::Modal);
+    }
+
+    void EditorLogic::onEndPopup() {
+        m_presenter.switchState(EditorState::Edit);
+    }
+
+    void EditorLogic::undoCommand() {
+        m_commandStack.undo();
+    }
+
+    void EditorLogic::redoCommand() {
+        m_commandStack.redo();
+    }
+
+    void EditorLogic::deleteEntity() {
+
+    }
+
+    void EditorLogic::findSelectEntities(const robot2D::FloatRect& rect) {
+
+        for(auto& entity: m_activeScene -> getEntities()) {
+            auto& transform = entity.getComponent<TransformComponent>();
+            if(rect.contains(transform.getGlobalBounds())) {
+                m_selectedEntities.emplace_back(entity);
+            }
+
+            for(auto& child: transform.getChildren()) {
+                if(rect.contains(transform.getGlobalBounds())) {
+                    m_selectedEntities.emplace_back(entity);
+                }
+            }
+
+        }
+
+        /// TODO(a.raag): 1. Select on TreeHiarchy + add Manipulator for all selected
+
+
+        // m_editor -> findSelectedEntitiesOnUI(m_selectedEntities);
+
+        /// TODO(a.raag): add selection command
+        /// m_commandStack.addCommand();
+        /// fill m_selectedEntities //
+    }
+
+    void EditorLogic::removeSelectedEntities() {
+//        auto command = m_commandStack.addCommand<DeleteEntitiesCommand>(m_messageBus, m_selectedEntities);
+//        if(!command) {
+//            /// error
+//        }
+
+        /// TODO(a.raag): TreeHiarchy delete all
+        m_selectedEntities.clear();
+    }
+
+    robot2D::ecs::Entity EditorLogic::getByUUID(std::uint64_t uuid) {
+        return m_activeScene -> getByUUID(UUID(uuid));
+    }
+
+    EditorState EditorLogic::getState() const {
+        return m_presenter.getState();
+    }
+
+    //////////////////////////////////////// UIInteractor ////////////////////////////////////////
+
+    std::vector<robot2D::ecs::Entity> EditorLogic::getSelectedEntities() const {
+        return m_selectedEntities;
+    }
+
+    std::string EditorLogic::getAssociatedProjectPath() const {
+        return m_activeScene -> getAssociatedProjectPath();
+    }
+
+    std::vector<robot2D::ecs::Entity> EditorLogic::getEntities() const {
+        return m_activeScene -> getEntities();
+    }
+
+    void EditorLogic::removeEntity(robot2D::ecs::Entity entity) {
+        m_activeScene -> removeEntity(entity);
+    }
+
+    void EditorLogic::addEmptyEntity() {
+        m_activeScene -> addEmptyEntity();
+    }
+
+    robot2D::ecs::Entity EditorLogic::createEmptyEntity() {
+        return m_activeScene -> createEmptyEntity();
+    }
+
+    robot2D::ecs::Entity EditorLogic::duplicateEmptyEntity(robot2D::ecs::Entity entity) {
+        return m_activeScene -> duplicateEmptyEntity(entity);
+    }
+
+    void EditorLogic::setBefore(robot2D::ecs::Entity sourceEntity, robot2D::ecs::Entity target) {
+        m_activeScene -> setBefore(sourceEntity, target);
+    }
+
+    void EditorLogic::removeEntityChild(robot2D::ecs::Entity entity) {
+        m_activeScene -> removeEntityChild(entity);
+    }
+
+    bool EditorLogic::isRunning() const {
+        return false;
+    }
+
+    robot2D::ecs::Entity EditorLogic::getByUUID(UUID uuid) {
+        return m_activeScene -> getByUUID(uuid);
+    }
+
+    void EditorLogic::registerOnDeleteFinish(std::function<void()>&& callback) {
+        m_activeScene -> registerOnDeleteFinish(std::move(callback));
+    }
+
+    //////////////////////////////////////// UIInteractor ////////////////////////////////////////
 
 } // namespace editor
 

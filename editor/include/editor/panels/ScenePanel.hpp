@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2023
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -22,11 +22,16 @@ source distribution.
 #pragma once
 
 #include <robot2D/Util/ResourceHandler.hpp>
+#include <robot2D/Core/MessageBus.hpp>
+
 #include <editor/Scene.hpp>
 #include <editor/MessageDispather.hpp>
 #include <editor/Messages.hpp>
+#include <editor/PrefabManager.hpp>
+
 #include "IPanel.hpp"
 #include "TreeHierarchy.hpp"
+#include <editor/UIInteractor.hpp>
 
 namespace editor {
 
@@ -36,37 +41,51 @@ namespace editor {
 
     class ScenePanel: public IPanel {
     public:
-        ScenePanel(MessageDispatcher& messageDispatcher);
+        ScenePanel(robot2D::MessageBus& messageBus,
+                   MessageDispatcher& messageDispatcher,
+                   PrefabManager& prefabManager);
         ScenePanel(const ScenePanel& other) = delete;
         ScenePanel& operator=(const ScenePanel& other) = delete;
         ScenePanel(ScenePanel&& other) = delete;
         ScenePanel& operator=(ScenePanel&& other) = delete;
         ~ScenePanel() override = default;
 
-        void setActiveScene(Scene::Ptr ptr);
+        void setInteractor(UIInteractor::Ptr interactor);
         void render() override;
 
-        robot2D::ecs::Entity getSelectedEntity() const { return m_selectedEntity; }
+        robot2D::ecs::Entity getSelectedEntity(int PixelData);
+        robot2D::ecs::Entity getSelectedEntity() const;
+
+        robot2D::ecs::Entity getTreeItem(UUID uuid);
+
+        void processSelectedEntities(std::vector<robot2D::ecs::Entity>& entities);
     private:
         void windowFunction();
 
-        void drawEntity(robot2D::ecs::Entity entity);
         void drawComponentsBase(robot2D::ecs::Entity entity);
         void drawComponents(robot2D::ecs::Entity entity);
         void onEntitySelection(const EntitySelection& entitySelection);
+        void onEntityDuplicate(const EntityDuplication& duplication);
+        void onEntityRemove(const EntityRemovement& removement);
 
         void onLoadImage(const robot2D::Image& image, robot2D::ecs::Entity entity);
-        void onLoadFont(const robot2D::Image& image, robot2D::ecs::Entity entity);
+        void onLoadFont(const robot2D::Font& font, robot2D::ecs::Entity entity);
 
         void setupTreeHierarchy();
     private:
+        robot2D::MessageBus& m_messageBus;
         MessageDispatcher& m_messageDispatcher;
+        PrefabManager& m_prefabManager;
 
-        Scene::Ptr m_scene;
+        UIInteractor::Ptr m_interactor;
+
+        //Scene::Ptr m_scene;
         robot2D::ecs::Entity m_selectedEntity;
         ScenePanelConfiguration m_configuration;
         TreeHierarchy m_treeHierarchy;
         robot2D::ResourceHandler<robot2D::Texture, robot2D::ecs::EntityID> m_textures;
-        robot2D::ResourceHandler<robot2D::Texture, robot2D::ecs::EntityID> m_fonts;
+        robot2D::ResourceHandler<robot2D::Font, robot2D::ecs::EntityID> m_fonts;
+
+        bool m_selectedEntityNeedCheckForDelete{false};
     };
 }

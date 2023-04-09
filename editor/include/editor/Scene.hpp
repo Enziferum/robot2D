@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2023
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -23,6 +23,7 @@ source distribution.
 
 #include <memory>
 #include <cassert>
+#include <functional>
 
 #include <robot2D/Ecs/Scene.hpp>
 #include <robot2D/Ecs/Entity.hpp>
@@ -30,6 +31,7 @@ source distribution.
 
 #include "Components.hpp"
 #include "physics/IPhysics2DAdapter.hpp"
+#include "ScriptInteractor.hpp"
 
 namespace editor {
     class Scene: public robot2D::Drawable {
@@ -37,27 +39,32 @@ namespace editor {
         using Ptr = std::shared_ptr<Scene>;
     public:
         Scene(robot2D::MessageBus& messageBus);
-        ~Scene() = default;
+        ~Scene() override = default;
 
         robot2D::ecs::EntityList& getEntities();
         const robot2D::ecs::EntityList& getEntities() const;
 
+        void registerOnDeleteFinish(std::function<void()>&& callback);
+
         void update(float dt);
         void updateRuntime(float dt);
 
-        void onRuntimeStart();
+        void onRuntimeStart(ScriptInteractor::Ptr scriptInteractor);
         void onRuntimeStop();
 
+        void setRuntimeCamera(bool flag);
 
         // Serializer Api
         robot2D::ecs::Entity createEntity();
-        void removeEntity(robot2D::ecs::Entity entity);
-        void removeEntityChild(robot2D::ecs::Entity entity);
+        robot2D::ecs::Entity createEmptyEntity();
+        void addAssociatedEntity(robot2D::ecs::Entity entity);
 
         // ScenePanel API
         void addEmptyEntity();
+        void setBefore(robot2D::ecs::Entity source, robot2D::ecs::Entity target);
+        void removeEntity(robot2D::ecs::Entity entity);
+        void removeEntityChild(robot2D::ecs::Entity entity);
 
-        void addAssociatedEntity(robot2D::ecs::Entity entity);
 
         robot2D::ecs::Entity getByIndex(int index) {
             return m_sceneEntities[index];
@@ -87,8 +94,15 @@ namespace editor {
             return m_associatedProjectPath;
         }
 
+        [[maybe_unused]]
+        robot2D::ecs::Entity
+        duplicateEntity(robot2D::vec2f mousePos, robot2D::ecs::Entity entity);
+        robot2D::ecs::Entity duplicateEmptyEntity(robot2D::ecs::Entity entity);
+
         const std::string& getPath() const {return m_path;}
         std::string& getPath()  {return m_path;}
+
+        bool hasChanges() const { return m_hasChanges; }
     protected:
         void draw(robot2D::RenderTarget& target, robot2D::RenderStates states) const override;
 
@@ -96,14 +110,32 @@ namespace editor {
         void initScene();
         void onPhysics2DRun();
         void onPhysics2DStop();
+
+        void removeDuplicate(robot2D::ecs::Entity entity);
     private:
+        friend class DuplicateCommand;
+
         robot2D::ecs::Scene m_scene;
         robot2D::ecs::EntityList m_sceneEntities;
+        robot2D::ecs::EntityList m_deletePendingEntities;
+        robot2D::ecs::EntityList m_deletePendingBuffer;
+
         robot2D::MessageBus& m_messageBus;
         std::string m_path;
         std::string m_associatedProjectPath;
         bool m_running = false;
+        bool m_hasChanges{false};
 
         IPhysics2DAdapter::Ptr m_physicsAdapter{nullptr};
+
+        enum class ReorderDeleteType {
+            First, Last
+        };
+
+        using Iterator = std::vector<robot2D::ecs::Entity>::iterator;
+        using InsertItem = std::tuple<Iterator, robot2D::ecs::Entity, ReorderDeleteType>;
+
+        std::vector<InsertItem> m_insertItems;
+        std::function<void()> m_onDeleteFinishCallback{nullptr};
     };
 }

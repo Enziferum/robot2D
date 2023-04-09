@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2023
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -28,15 +28,27 @@ source distribution.
 #include <robot2D/imgui/Gui.hpp>
 
 #include "UIManager.hpp"
-#include "Scene.hpp"
 #include "SceneManager.hpp"
+#include "ShortCutManager.hpp"
+#include "PrefabManager.hpp"
+#include "PopupManager.hpp"
+
+#include "Scene.hpp"
 #include "Project.hpp"
 #include "MessageDispather.hpp"
 #include "TaskQueue.hpp"
 #include "EditorCamera.hpp"
 #include "EditorLogic.hpp"
+#include "EditorInteractor.hpp"
+
 #include "EventBinder.hpp"
 #include "Guizmo2D.hpp"
+#include "SceneGrid.hpp"
+#include "Collider.hpp"
+#include "PopupConfiguration.hpp"
+#include "SceneRender.hpp"
+
+
 
 namespace editor {
 
@@ -58,11 +70,15 @@ namespace editor {
         };
     };
 
+
     class IEditor {
     public:
         virtual ~IEditor() = 0;
         virtual void openScene(Scene::Ptr scene, std::string path) = 0;
         virtual void prepare() = 0;
+
+        virtual void findSelectedEntitiesOnUI(std::vector<robot2D::ecs::Entity>& entities) = 0;
+        virtual void showPopup(PopupConfiguration* configuration) = 0;
     };
 
     class Editor: public IEditor {
@@ -74,57 +90,77 @@ namespace editor {
         Editor& operator=(const Editor&&)=delete;
         ~Editor() = default;
 
-        void setup(robot2D::RenderWindow* window, EditorLogic* editorLogic);
+        void setup(robot2D::RenderWindow* window, EditorInteractor* editorInteractor);
         void handleEvents(const robot2D::Event& event);
         void handleMessages(const robot2D::Message& message);
         void update(float dt);
         void render();
 
-
-
+        /////////////////////////// IEditor ///////////////////////////
         void openScene(Scene::Ptr scene, std::string path) override;
         void prepare() override;
+        void showPopup(editor::PopupConfiguration* configuration) override;
+        void findSelectedEntitiesOnUI(std::vector<robot2D::ecs::Entity>& entities) override;
+
+        /////////////////////////// IEditor ///////////////////////////
+
     private:
         void guiRender();
         void windowFunction();
-        bool createScene();
-
         void setupBindings();
-        void onSceneRun();
-        void onSceneEdit();
 
-        void drawScene();
+
 
         void onKeyPressed(const robot2D::Event& event);
         void onKeyReleased(const robot2D::Event& event);
+        void onMousePressed (const robot2D::Event& event);
+        void onMouseReleased(const robot2D::Event& event);
     private:
         enum class State {
-            Load,
-            Edit,
-            Run
-        };
+            LostFocus,
+            HasFocus
+        } m_state = State::HasFocus;
     private:
-        State m_state;
+        enum class EditorShortCutType {
+            GizmoMove,
+            GizmoScale,
+            SaveScene,
+            Copy,
+            Duplicate,
+            Paste,
+            Undo
+        };
 
         robot2D::RenderWindow* m_window;
         robot2D::MessageBus& m_messageBus;
         MessageDispatcher m_messageDispather;
 
-        robot2D::Gui& m_gui;
-
         UIManager m_panelManager;
         Scene::Ptr m_activeScene{nullptr};
-        EditorLogic* m_logic{nullptr};
         EventBinder m_eventBinder;
 
         EditorConfiguration m_configuration;
 
         robot2D::FrameBuffer::Ptr m_frameBuffer;
+        robot2D::FrameBuffer::Ptr m_gameFrameBuffer;
+
         robot2D::ResourceHandler<robot2D::Texture,
                         EditorConfiguration::TextureID> m_textures;
         robot2D::Color m_sceneClearColor;
         IEditorCamera::Ptr m_editorCamera;
         bool m_needPrepare{true};
         Guizmo2D m_guizmo2D;
+
+        ShortCutManager<EditorShortCutType> m_shortcutManager;
+        SceneGrid m_sceneGrid;
+        Collider m_selectionBox;
+
+        editor::PopupConfiguration* m_popupConfiguration{nullptr};
+        SceneRender m_sceneRender;
+        /// TODO(a.raag) move to Editor Logic ?
+        PrefabManager m_prefabManager;
+
+
+        EditorInteractor* m_interactor{nullptr};
     };
 }

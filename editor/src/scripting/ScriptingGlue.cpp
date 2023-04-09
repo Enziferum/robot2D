@@ -1,3 +1,24 @@
+/*********************************************************************
+(c) Alex Raag 2023
+https://github.com/Enziferum
+robot2D - Zlib license.
+This software is provided 'as-is', without any express or
+implied warranty. In no event will the authors be held
+liable for any damages arising from the use of this software.
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute
+it freely, subject to the following restrictions:
+1. The origin of this software must not be misrepresented;
+you must not claim that you wrote the original software.
+If you use this software in a product, an acknowledgment
+in the product documentation would be appreciated but
+is not required.
+2. Altered source versions must be plainly marked as such,
+and must not be misrepresented as being the original software.
+3. This notice may not be removed or altered from any
+source distribution.
+*********************************************************************/
+
 #include <functional>
 #include <unordered_map>
 #include <robot2D/Core/Keyboard.hpp>
@@ -12,6 +33,7 @@
 #include <editor/Scene.hpp>
 #include <editor/Components.hpp>
 
+/// TODO(a.raag): include PhysicsAdapter
 #include <box2d/box2d.h>
 
 namespace editor {
@@ -47,6 +69,23 @@ namespace editor {
 
     static std::unordered_map<MonoType*, std::function<bool(robot2D::ecs::Entity)>> s_EntityHasComponentFuncs;
 
+    /// TODO(a.raag): refactor to be more useful
+    template<typename T>
+    std::string combineTypeName(std::string typeName, std::string namespaceName = "robot2D") {
+        std::string dirtyTypeName = typeid(T).name();
+        auto pos = dirtyTypeName.find(namespaceName);
+        if(pos == std::string::npos)
+            return "";
+        auto resultType = dirtyTypeName.substr(pos, namespaceName.length());
+        resultType += '.';
+        pos = dirtyTypeName.find(typeName);
+        if(pos == std::string::npos)
+            return "";
+        resultType += dirtyTypeName.substr(pos, typeName.length());
+        return resultType;
+    }
+
+
     static void NativeLog(MonoString* string, int parameter)
     {
         char* cStr = mono_string_to_utf8(string);
@@ -57,35 +96,44 @@ namespace editor {
 
     static bool Entity_HasComponent(int entityID, MonoReflectionType* componentType)
     {
-        Scene* scene = ScriptEngine::getSceneContext();
-        //HZ_CORE_ASSERT(scene);
-        robot2D::ecs::Entity entity = scene -> getByIndex(entityID);
-        //HZ_CORE_ASSERT(entity);
+        auto interactor = ScriptEngine::getInteractor();
+        //RB_CORE_ASSERT(interactor);
+        robot2D::ecs::Entity entity = interactor -> getByUUID(entityID);
+        //RB_CORE_ASSERT(entity);
 
         MonoType* managedType = mono_reflection_type_get_type(componentType);
-        //HZ_CORE_ASSERT(s_EntityHasComponentFuncs.find(managedType) != s_EntityHasComponentFuncs.end());
+        //RB_CORE_ASSERT(s_EntityHasComponentFuncs.find(managedType) != s_EntityHasComponentFuncs.end());
         bool hasComp = s_EntityHasComponentFuncs.at(managedType)(entity);
         return hasComp;
     }
 
     static void TransformComponent_GetTranslation(int entityID, robot2D::vec2f* outTranslation)
     {
-        Scene* scene = ScriptEngine::getSceneContext();
-        robot2D::ecs::Entity entity = scene -> getByIndex(entityID);
+        auto interactor = ScriptEngine::getInteractor();
+        //RB_CORE_ASSERT(interactor);
+        robot2D::ecs::Entity entity = interactor -> getByUUID(entityID);
+        //RB_CORE_ASSERT(entity);
+
         *outTranslation = entity.getComponent<TransformComponent>().getPosition();
     }
 
     static void TransformComponent_SetTranslation(int entityID, robot2D::vec2f* translation)
     {
-        Scene* scene = ScriptEngine::getSceneContext();
-        robot2D::ecs::Entity entity = scene -> getByIndex(entityID);
+        auto interactor = ScriptEngine::getInteractor();
+        //RB_CORE_ASSERT(interactor);
+        robot2D::ecs::Entity entity = interactor -> getByUUID(entityID);
+        //RB_CORE_ASSERT(entity);
+
         entity.getComponent<TransformComponent>().setPosition(*translation);
     }
 
     static void Rigidbody2DComponent_ApplyLinearImpulse(std::uint32_t entityID, robot2D::vec2f* impulse, robot2D::vec2f* point, bool wake)
     {
-        Scene* scene = ScriptEngine::getSceneContext();
-        auto entity = scene -> getByIndex(entityID);
+        auto interactor = ScriptEngine::getInteractor();
+        //RB_CORE_ASSERT(interactor);
+        robot2D::ecs::Entity entity = interactor -> getByUUID(entityID);
+        //RB_CORE_ASSERT(entity);
+
 
         auto& rb2d = entity.getComponent<Physics2DComponent>();
         b2Body* body = static_cast<b2Body*>(rb2d.runtimeBody);
@@ -94,8 +142,11 @@ namespace editor {
 
     static void Rigidbody2DComponent_ApplyLinearImpulseToCenter(std::uint32_t entityID, robot2D::vec2f* impulse, bool wake)
     {
-        Scene* scene = ScriptEngine::getSceneContext();
-        auto entity = scene -> getByIndex(entityID);
+        auto interactor = ScriptEngine::getInteractor();
+        //RB_CORE_ASSERT(interactor);
+        robot2D::ecs::Entity entity = interactor -> getByUUID(entityID);
+        //RB_CORE_ASSERT(entity);
+
 
         auto& rb2d = entity.getComponent<Physics2DComponent>();
         b2Body* body = static_cast<b2Body*>(rb2d.runtimeBody);
@@ -104,9 +155,11 @@ namespace editor {
 
     static void Rigidbody2DComponent_GetLinearVelocity(std::uint32_t entityID,  robot2D::vec2f* outLinearVelocity)
     {
-        Scene* scene = ScriptEngine::getSceneContext();
-        auto entity = scene -> getByIndex(entityID);
-        //HZ_CORE_ASSERT(entity);
+        auto interactor = ScriptEngine::getInteractor();
+        //RB_CORE_ASSERT(interactor);
+        robot2D::ecs::Entity entity = interactor -> getByUUID(entityID);
+        //RB_CORE_ASSERT(entity);
+
 
         auto& rb2d = entity.getComponent<Physics2DComponent>();
         b2Body* body = static_cast<b2Body*>(rb2d.runtimeBody);
@@ -117,9 +170,10 @@ namespace editor {
 
     static void Rigidbody2DComponent_SetLinearVelocity(std::uint32_t entityID, robot2D::vec2f* velocity)
     {
-        Scene* scene = ScriptEngine::getSceneContext();
-        auto entity = scene -> getByIndex(entityID);
-        //HZ_CORE_ASSERT(entity);
+        auto interactor = ScriptEngine::getInteractor();
+        //RB_CORE_ASSERT(interactor);
+        robot2D::ecs::Entity entity = interactor -> getByUUID(entityID);
+        //RB_CORE_ASSERT(entity);
 
         auto& rb2d = entity.getComponent<Physics2DComponent>();
         b2Body* body = static_cast<b2Body*>(rb2d.runtimeBody);
@@ -128,8 +182,11 @@ namespace editor {
 
     static Physics2DComponent::BodyType Rigidbody2DComponent_GetType(std::uint32_t entityID)
     {
-        Scene* scene = ScriptEngine::getSceneContext();
-        auto entity = scene -> getByIndex(entityID);
+        auto interactor = ScriptEngine::getInteractor();
+        //RB_CORE_ASSERT(interactor);
+        robot2D::ecs::Entity entity = interactor -> getByUUID(entityID);
+        //RB_CORE_ASSERT(entity);
+
 
         auto& rb2d = entity.getComponent<Physics2DComponent>();
         b2Body* body = (b2Body*)rb2d.runtimeBody;
@@ -138,8 +195,11 @@ namespace editor {
 
     static void Rigidbody2DComponent_SetType(std::uint32_t entityID, Physics2DComponent::BodyType bodyType)
     {
-        Scene* scene = ScriptEngine::getSceneContext();
-        auto entity = scene -> getByIndex(entityID);
+        auto interactor = ScriptEngine::getInteractor();
+        //RB_CORE_ASSERT(interactor);
+        robot2D::ecs::Entity entity = interactor -> getByUUID(entityID);
+        //RB_CORE_ASSERT(entity);
+
 
 
         auto& rb2d = entity.getComponent<Physics2DComponent>();
@@ -148,9 +208,10 @@ namespace editor {
     }
 
     static void RigidBody2DComponent_AddForce(std::uint32_t entityID, robot2D::vec2f* force) {
-        Scene* scene = ScriptEngine::getSceneContext();
-        auto entity = scene -> getByIndex(entityID);
-
+        auto interactor = ScriptEngine::getInteractor();
+        //RB_CORE_ASSERT(interactor);
+        robot2D::ecs::Entity entity = interactor -> getByUUID(entityID);
+        //RB_CORE_ASSERT(entity);
 
         auto& rb2d = entity.getComponent<Physics2DComponent>();
         b2Body* body = (b2Body*)rb2d.runtimeBody;
@@ -171,16 +232,13 @@ namespace editor {
     {
         ([]()
         {
-            std::string_view typeName = typeid(Component).name();
-            size_t pos = typeName.find_last_of(':');
-            std::string_view structName = typeName.substr(pos + 1);
-            //std::string managedTypename = fmt::format("robot2D.{}", structName);
-            std::string managedTypename = "robot2D.RigidBody2D";
+            //std::string managedTypename = "robot2D.RigidBody2D";
+            std::string managedTypename = combineTypeName<Component>("");
 
             MonoType* managedType = mono_reflection_type_from_name(managedTypename.data(), ScriptEngine::GetCoreAssemblyImage());
             if (!managedType)
             {
-              //  HZ_CORE_ERROR("Could not find component type {}", managedTypename);
+              //  RB_CORE_ERROR("Could not find component type {}", managedTypename);
                 return;
             }
             s_EntityHasComponentFuncs[managedType] = [](robot2D::ecs::Entity entity) {
@@ -193,7 +251,7 @@ namespace editor {
     void ScriptGlue::registerComponents()
     {
         s_EntityHasComponentFuncs.clear();
-      //  RegisterComponent<TransformComponent>();
+        RegisterComponent<TransformComponent>();
         RegisterComponent<Physics2DComponent>();
     }
 

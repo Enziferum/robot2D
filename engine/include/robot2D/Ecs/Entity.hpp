@@ -84,6 +84,7 @@ namespace robot2D::ecs {
 
         EntityID m_id;
         std::string m_tag;
+        bool m_needAddToScene{true};
     };
 
 }

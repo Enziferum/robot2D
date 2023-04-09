@@ -86,10 +86,13 @@ namespace robot2D {
         return m_pixels.data();
     }
 
-    bool Image::create(const vec2u& size, const void* data, const ImageColorFormat& colorFormat) {
+    bool Image::create(const vec2u& size, const void* data, const ImageColorFormat& colorFormat,
+                       const ImageParameter& parameter) {
         m_pixels.clear();
         m_colorFormat = colorFormat;
         m_size = size;
+        m_imageParameter = parameter;
+
         int channels = 1;
         switch(colorFormat) {
             case RED:
@@ -127,6 +130,10 @@ namespace robot2D {
         return false;
 //        return stbi_write_png(path.c_str(), static_cast<int>(m_size.x), static_cast<int>(m_size.y),
 //                              channelsNum, m_pixels.data(), channelsNum * m_size.x);
+    }
+
+    const ImageParameter& Image::getImageParameter() const {
+        return m_imageParameter;
     }
 }
 

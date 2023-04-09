@@ -128,12 +128,12 @@ namespace robot2D {
         }
 
         unsigned int index = 0;
-        const auto& textures = m_font -> getTextures();
-
-        for (const auto& texture: textures) {
-            texture -> bind(index);
-            ++index;
-        }
+//        const auto& textures = m_font -> getTextures();
+//
+//        for (const auto& texture: textures) {
+//            texture -> bind(index);
+//            ++index;
+//        }
 
         quadBatchRender.Bind();
         glDrawElements(GL_TRIANGLES,
@@ -169,7 +169,7 @@ namespace robot2D {
         updateGeometry();
 
         states.shader = const_cast<ShaderHandler*>(&m_textShader);
-        states.texture = m_font -> getTextures()[0].get();
+        //states.texture = m_font -> getTextures()[0].get();
         states.renderInfo.indexCount = quadBatchRender.getIndexCount();
         target.draw(quadBatchRender.getVertexArray(), states);
 

@@ -1,3 +1,24 @@
+/*********************************************************************
+(c) Alex Raag 2023
+https://github.com/Enziferum
+robot2D - Zlib license.
+This software is provided 'as-is', without any express or
+implied warranty. In no event will the authors be held
+liable for any damages arising from the use of this software.
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute
+it freely, subject to the following restrictions:
+1. The origin of this software must not be misrepresented;
+you must not claim that you wrote the original software.
+If you use this software in a product, an acknowledgment
+in the product documentation would be appreciated but
+is not required.
+2. Altered source versions must be plainly marked as such,
+and must not be misrepresented as being the original software.
+3. This notice may not be removed or altered from any
+source distribution.
+*********************************************************************/
+
 #include <algorithm>
 
 #include <robot2D/Graphics/RenderTarget.hpp>
@@ -6,6 +27,9 @@
 #include <editor/RendererSystem.hpp>
 #include <editor/TextSystem.hpp>
 #include <editor/Scene.hpp>
+
+#include "glm/gtc/type_ptr.hpp"
+#include "editor/panels/TreeHierarchy.hpp"
 
 namespace editor {
 
@@ -18,6 +42,27 @@ namespace editor {
 
     void RenderSystem::update(float dt) {
         (void)dt;
+
+        for(auto item: m_insertItems) {
+            auto source = std::get<1>(item);
+            m_entities.insert(std::get<0>(item), source);
+
+            if(std::get<2>(item) == ReorderDeleteType::Last) {
+                auto found = util::find_last_if(m_entities.begin(), m_entities.end(),
+                                                [&source](robot2D::ecs::Entity item) {
+                    return item.getIndex() == source.getIndex();
+                });
+                m_entities.erase(found);
+            }
+            else if(std::get<2>(item) == ReorderDeleteType::First) {
+                auto found = util::find_first_if(m_entities.begin(), m_entities.end(), [&source](robot2D::ecs::Entity item) {
+                    return item.getIndex() == source.getIndex();
+                });
+                m_entities.erase(found);
+            }
+        }
+        m_insertItems.clear();
+
 
         for(auto& entity: m_entities) {
             auto& drawable = entity.getComponent<DrawableComponent>();
@@ -38,19 +83,22 @@ namespace editor {
         }
     }
 
+    robot2D::View cameraView;
+
     void RenderSystem::draw(robot2D::RenderTarget& target, robot2D::RenderStates states) const {
         for(auto& ent: m_entities) {
             auto& transform = ent.getComponent<TransformComponent>();
             auto& drawable = ent.getComponent<DrawableComponent>();
             auto t = transform.getTransform();
 
-            if (ent.hasComponent<CameraComponent>() && m_activeScene && m_activeScene -> isRunning()) {
+            if (ent.hasComponent<CameraComponent>() && m_runtimeFlag) {
                 auto camera = ent.getComponent<CameraComponent>();
                 if (camera.isPrimary) {
-                    auto pos = transform.getPosition();
-                    auto size = transform.getScale();
-                    camera.setViewport({pos.x, pos.y, size.x, size.y});
-                    target.setView(camera.getView());
+                     auto size = camera.getSize();
+                     auto pos = camera.getPosition();
+
+                     cameraView.reset({pos.x, pos.y, size.x, size.y});
+                     target.setView(cameraView);
                 }
             }
 
@@ -62,6 +110,9 @@ namespace editor {
             renderStates.layerID = drawable.getLayerIndex();
 
             if(getScene() -> hasSystem<TextSystem>() && ent.hasComponent<TextComponent>()) {
+                if(!ent.getComponent<TextComponent>().getFont())
+                    continue;
+
                 auto textSystem = getScene() -> getSystem<TextSystem>();
                 auto vertexArray =  textSystem -> getVertexArray();
                 renderStates.shader = const_cast<robot2D::ShaderHandler*>(&textSystem -> getShader());
@@ -94,4 +145,26 @@ namespace editor {
     void RenderSystem::setScene(Scene* scene) {
         m_activeScene = scene;
     }
+
+    void RenderSystem::setBefore(robot2D::ecs::Entity source, robot2D::ecs::Entity target) {
+        auto sourceIter = std::find_if(m_entities.begin(), m_entities.end(), [&source](robot2D::ecs::Entity item) {
+            return item.getIndex() == source.getIndex();
+        });
+
+        auto targetIter = std::find_if(m_entities.begin(), m_entities.end(), [&target](robot2D::ecs::Entity item) {
+            return item.getIndex() == target.getIndex();
+        });
+
+        auto sourceOldDistance = std::distance(m_entities.begin(), sourceIter);
+        auto targetOldDistance = std::distance(m_entities.begin(), targetIter);
+
+        if(sourceOldDistance > targetOldDistance) {
+            /// insert before remove last
+            m_insertItems.push_back(std::make_tuple(targetIter, source, ReorderDeleteType::Last));
+        }
+        else if (sourceOldDistance < targetOldDistance) {
+            m_insertItems.push_back(std::make_tuple(targetIter, source, ReorderDeleteType::First));
+        }
+    }
+
 }

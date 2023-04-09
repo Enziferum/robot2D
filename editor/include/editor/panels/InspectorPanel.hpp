@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2023
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -29,7 +29,7 @@ source distribution.
 namespace editor {
 
     struct InspectorPanelConfiguration {
-        const robot2D::Color defaultBackGround = robot2D::Color::fromGL(0.1, 0.1, 0.1, 1);
+        const robot2D::Color defaultBackGround = robot2D::Color::fromGL(59.f/255.f, 60.f/255.f, 57.f/255.f, 1);
     };
 
     class InspectorPanel: public IPanel {

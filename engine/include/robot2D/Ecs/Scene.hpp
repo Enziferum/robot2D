@@ -42,6 +42,13 @@ namespace robot2D::ecs {
         ~Scene() = default;
 
         Entity createEntity();
+        /// \brief Allocate Entity, but not add it systems. Useful for buffer
+        Entity createEmptyEntity();
+
+        void addEntity(robot2D::ecs::Entity);
+        Entity duplicateEntity(robot2D::ecs::Entity entity);
+
+
         void removeEntity(Entity entity);
 
         template<class T, typename ...Args>

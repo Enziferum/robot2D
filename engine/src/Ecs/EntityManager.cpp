@@ -37,11 +37,12 @@ namespace robot2D::ecs {
     m_ownerScene{scene}
     {}
 
-    Entity EntityManager::createEntity() {
+    Entity EntityManager::createEntity(bool needAddToScene) {
         Entity entity{this, m_entityCounter};
         if(m_entityCounter >= m_destroyFlags.size())
             m_destroyFlags.resize(m_destroyFlags.size() + 1000);
         m_entityCounter++;
+        entity.m_needAddToScene = needAddToScene;
         return entity;
     }
 
@@ -63,6 +64,8 @@ namespace robot2D::ecs {
     }
 
     bool EntityManager::entityDestroyed(Entity entity) {
+        if(entity.m_id >= m_destroyFlags.size())
+            return true;
         return m_destroyFlags[entity.m_id];
     }
 
@@ -74,6 +77,24 @@ namespace robot2D::ecs {
         if(!m_ownerScene)
             return;
         m_ownerScene -> removeEntity(entity);
+    }
+
+    void EntityManager::addEntityToScene(robot2D::ecs::Entity entity) {
+        if(entity.m_needAddToScene)
+            m_ownerScene -> addEntity(entity);
+    }
+
+    Entity EntityManager::duplicateEntity(robot2D::ecs::Entity entity) {
+        auto duplicated = createEntity();
+        for(auto& componentContainer: m_componentContainers) {
+            if(!componentContainer)
+                continue;
+            if(componentContainer -> hasEntity(entity.getIndex()))
+                componentContainer -> duplicate(entity.getIndex(), duplicated.getIndex());
+        }
+        m_componentMasks[duplicated.getIndex()].turnOnBits(entity.getComponentMask().getBitset());
+
+        return duplicated;
     }
 
 }
