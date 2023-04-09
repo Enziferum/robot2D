@@ -20,7 +20,7 @@ void RenderSystem::draw(robot2D::RenderTarget& target, robot2D::RenderStates sta
         t.scale(tSize);
 
         states.transform = t;
-        //states.texture = &sprite.getTexture();
+        states.texture = &sprite.getTexture();
         states.color = sprite.getColor();
         states.layerID = sprite.layerIndex;
 

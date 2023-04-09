@@ -1,33 +1,11 @@
-/*********************************************************************
-(c) Alex Raag 2021
-https://github.com/Enziferum
-robot2D - Zlib license.
-This software is provided 'as-is', without any express or
-implied warranty. In no event will the authors be held
-liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute
-it freely, subject to the following restrictions:
-1. The origin of this software must not be misrepresented;
-you must not claim that you wrote the original software.
-If you use this software in a product, an acknowledgment
-in the product documentation would be appreciated but
-is not required.
-2. Altered source versions must be plainly marked as such,
-and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any
-source distribution.
-*********************************************************************/
-
-#include <fstream>
 #include <yaml-cpp/yaml.h>
+#include <robot2D/Ecs/EntityManager.hpp>
 
-#include <editor/SceneSerializer.hpp>
-#include <editor/Scene.hpp>
+#include <editor/serializers/EntitySerializer.hpp>
 #include <editor/Components.hpp>
 #include <editor/scripting/ScriptingEngine.hpp>
 
-#include <robot2D/Util/Logger.hpp>
+
 
 namespace YAML {
     template<>
@@ -110,6 +88,7 @@ namespace YAML {
 
 namespace editor {
 
+
 #define WRITE_SCRIPT_FIELD(FieldType, Type)           \
 			case ScriptFieldType::FieldType:          \
 				out << scriptField.getValue<Type>();  \
@@ -133,7 +112,6 @@ namespace editor {
             case Physics2DComponent::BodyType::Kinematic: return "Kinematic";
         }
 
-        //HZ_CORE_ASSERT(false, "Unknown body type");
         return {};
     }
 
@@ -143,31 +121,8 @@ namespace editor {
         if (bodyTypeString == "Dynamic")   return Physics2DComponent::BodyType::Dynamic;
         if (bodyTypeString == "Kinematic") return Physics2DComponent::BodyType::Kinematic;
 
-       // HZ_CORE_ASSERT(false, "Unknown body type");
         return Physics2DComponent::BodyType::Static;
     }
-
-    class ISceneDeserializer {
-    public:
-        virtual ~ISceneDeserializer() = 0;
-        virtual bool deserialize(const std::string& path) = 0;
-    };
-
-    ISceneDeserializer::~ISceneDeserializer() {}
-
-
-    class YamlSceneDeserializer: public ISceneDeserializer {
-    public:
-        ~YamlSceneDeserializer() override = default;
-        bool deserialize(const std::string& path) override;
-    };
-
-    bool YamlSceneDeserializer::deserialize(const std::string& path) {
-        return true;
-    }
-
-
-    SceneSerializer::SceneSerializer(Scene::Ptr scene): m_scene(scene) {}
 
     YAML::Emitter& operator<<(YAML::Emitter& out, const robot2D::vec2f& value) {
         out << YAML::Flow;
@@ -184,11 +139,12 @@ namespace editor {
     YAML::Emitter& operator<<(YAML::Emitter& out, const robot2D::Color& value) {
         out << YAML::Flow;
         out << YAML::BeginSeq << value.red << value.green
-        << value.blue << value.alpha << YAML::EndSeq;
+            << value.blue << value.alpha << YAML::EndSeq;
         return out;
     }
 
-    void SerializeEntity(YAML::Emitter& out, robot2D::ecs::Entity entity) { 
+
+    void SerializeEntity(YAML::Emitter& out, robot2D::ecs::Entity entity) {
         out << YAML::BeginMap;
         out << YAML::Key << "Entity" << YAML::Value << entity.getComponent<IDComponent>().ID;
 
@@ -207,6 +163,9 @@ namespace editor {
             out << YAML::BeginMap;
             auto isPrimary = entity.getComponent<CameraComponent>().isPrimary;
             out << YAML::Key << "isPrimary" << YAML::Value << isPrimary;
+            out << YAML::Key << "OrthoSize" << YAML::Value << entity.getComponent<CameraComponent>().orthoSize;
+            out << YAML::Key << "Size" << YAML::Value << entity.getComponent<CameraComponent>().size;
+            out << YAML::Key << "Position" << YAML::Value << entity.getComponent<CameraComponent>().position;
             out << YAML::EndMap;
         }
 
@@ -334,6 +293,18 @@ namespace editor {
             out << YAML::EndMap; // BoxCollider2DComponent
         }
 
+        if (entity.hasComponent<TextComponent>())
+        {
+            out << YAML::Key << "TextComponent";
+            out << YAML::BeginMap; // TextComponent
+
+            auto& text = entity.getComponent<TextComponent>();
+            out << YAML::Key << "Text" << YAML::Value << text.getText();
+            if(text.getFont())
+                out << YAML::Key << "FontPath" << YAML::Value << text.getFont() -> getPath();
+            out << YAML::EndMap; // TextComponent
+        }
+
         out << YAML::EndMap;
 
         if(needSerializeChildren) {
@@ -344,212 +315,149 @@ namespace editor {
 
     }
 
-    bool SceneSerializer::serialize(const std::string& path) {
-        if(m_scene == nullptr)
-            return false;
-
-        YAML::Emitter out;
-        out << YAML::BeginMap;
-        out << YAML::Key << "Scene" << YAML::Value << "Unnamed Scene";
-        out << YAML::Key << "Entities" << YAML::Value << YAML::BeginSeq;
-        for(auto& it: m_scene -> getEntities()) {
-            SerializeEntity(out, it);
-        }
-        out << YAML::EndSeq;
-        out << YAML::EndMap;
-
-        std::ofstream ofstream(path);
-        if(!ofstream.is_open()) {
-            m_error = SceneSerializerError::NoFileOpen;
-            return false;
-        }
-
-        ofstream << out.c_str();
-        ofstream.close();
-
+    bool EntitySerializer::serialize(YAML::Emitter& out, robot2D::ecs::Entity &entity) {
+        SerializeEntity(out, entity);
         return true;
     }
 
-    bool SceneSerializer::deserialize(const std::string& path) {
-        YAML::Node data;
-        try {
-            std::ifstream ifstream(path);
-            if(!ifstream.is_open()) {
-                m_error = SceneSerializerError::NoFileOpen;
-                return false;
+    bool EntitySerializer::deserialize(void* inputData, robot2D::ecs::Entity& deserializedEntity,
+                                       bool& addToScene, std::vector<ChildPair>& children) {
+        if(!inputData)
+            return false;
+
+        auto entity = *static_cast<YAML::detail::iterator_value*>(inputData);
+
+        uint64_t uuid = entity["Entity"].as<uint64_t>();
+        std::string name;
+
+        auto tagComponent = entity["TagComponent"];
+        if(tagComponent)
+            name = tagComponent["Tag"].as<std::string>();
+
+        deserializedEntity.addComponent<IDComponent>().ID = uuid;
+        auto& tagData = deserializedEntity.addComponent<TagComponent>();
+        tagData.setTag(name);
+
+        auto cameraComponent = entity["CameraComponent"];
+        if(cameraComponent) {
+            auto& isPrimary = deserializedEntity.addComponent<CameraComponent>().isPrimary;
+            isPrimary = cameraComponent["isPrimary"].as<bool>();
+            deserializedEntity.getComponent<CameraComponent>().orthoSize = cameraComponent["OrthoSize"].as<float>();
+            deserializedEntity.getComponent<CameraComponent>().size = cameraComponent["Size"].as<robot2D::vec2f>();
+            deserializedEntity.getComponent<CameraComponent>().position = cameraComponent["Position"].as<robot2D::vec2f>();
+        }
+
+        auto transformComponent = entity["TransformComponent"];
+        if(transformComponent) {
+            auto& transform = deserializedEntity.addComponent<TransformComponent>();
+            transform.setPosition(transformComponent["Position"].as<robot2D::vec2f>());
+            transform.setScale(transformComponent["Size"].as<robot2D::vec2f>());
+            if(transformComponent["HasChildren"]) {
+                auto childIDS = transformComponent["ChildIDs"].as<std::vector<UUID>>();
+                ChildPair pair = std::make_pair(UUID(uuid), childIDS);
+                children.emplace_back(pair);
             }
 
-            std::stringstream sstr;
-            sstr << ifstream.rdbuf();
-            ifstream.close();
-            data = YAML::Load(sstr.str());
-        }
-        catch (...) {
-            RB_EDITOR_CRITICAL("YAML Exception");
-            exit(2);
+            // TODO: @a.raag add rotation
+            //transform.setRotate(transformComponent["Rotation"].as<float>());
         }
 
-        if(!data["Scene"]) {
-            m_error = SceneSerializerError::NotSceneTag;
-            return false;
+        auto spriteComponent = entity["SpriteComponent"];
+        if(spriteComponent) {
+            auto& drawable = deserializedEntity.addComponent<DrawableComponent>();
+            drawable.setColor(spriteComponent["Color"].as<robot2D::Color>());
+            if(spriteComponent["TexturePath"])
+                drawable.setTexturePath(spriteComponent["TexturePath"].as<std::string>());
+            if(spriteComponent["zDepth"])
+                drawable.setDepth(spriteComponent["zDepth"].as<int>());
+            drawable.setReorderZBuffer(true);
         }
 
-        std::string sceneName = data["Scene"].as<std::string>();
-        auto entites = data["Entities"];
+        auto textComponent = entity["TextComponent"];
+        if(textComponent) {
+            auto& text = deserializedEntity.addComponent<TextComponent>();
+            text.setText(textComponent["Text"].as<std::string>());
+            if(textComponent["FontPath"])
+                text.setFontPath(textComponent["FontPath"].as<std::string>());
+        }
 
+        auto scriptComponent = entity["ScriptComponent"];
+        if(scriptComponent) {
+            auto& sc = deserializedEntity.addComponent<ScriptComponent>();
+            sc.name = scriptComponent["ClassName"].as<std::string>();
 
+            auto scriptFields = scriptComponent["ScriptFields"];
+            if (scriptFields)
+            {
+                auto entityClass = ScriptEngine::getEntityClass(sc.name);
+                if (entityClass)
+                {
+                    const auto& fields = entityClass -> getFields();
+                    auto& entityFields = ScriptEngine::getScriptFieldMap(deserializedEntity);
 
-        if(entites) {
-            using ChildPair = std::pair<UUID, std::vector<UUID>>;
-            std::vector<ChildPair> children;
-
-            for(auto entity: entites) {
-                bool addToScene = true;
-
-                uint64_t uuid = entity["Entity"].as<uint64_t>();
-                std::string name;
-
-                auto tagComponent = entity["TagComponent"];
-                if(tagComponent)
-                    name = tagComponent["Tag"].as<std::string>();
-
-                auto deserializedEntity = m_scene -> createEntity();
-                deserializedEntity.addComponent<IDComponent>().ID = uuid;
-                auto& tagData = deserializedEntity.addComponent<TagComponent>();
-                tagData.setTag(name);
-
-                auto cameraComponent = entity["CameraComponent"];
-                if(cameraComponent) {
-                    auto& isPrimary = deserializedEntity.addComponent<CameraComponent>().isPrimary;
-                    isPrimary = cameraComponent["isPrimary"].as<bool>();
-                }
-
-                auto transformComponent = entity["TransformComponent"];
-                if(transformComponent) {
-                    auto& transform = deserializedEntity.addComponent<TransformComponent>();
-                    transform.setPosition(transformComponent["Position"].as<robot2D::vec2f>());
-                    transform.setScale(transformComponent["Size"].as<robot2D::vec2f>());
-                    if(transformComponent["HasChildren"]) {
-                        auto childIDS = transformComponent["ChildIDs"].as<std::vector<UUID>>();
-                        ChildPair pair = std::make_pair(UUID(uuid), childIDS);
-                        children.emplace_back(pair);
-                    }
-
-                    if(transformComponent["isChild"]) {
-                        bool isChild = transformComponent["isChild"].as<bool>();
-                        if(isChild) {
-                            for(auto& pair: children) {
-                                for(auto& childIndex: pair.second) {
-                                    if(childIndex == UUID(uuid)) {
-                                        m_scene -> getByUUID(pair.first).getComponent<TransformComponent>()
-                                                .addChild(deserializedEntity);
-                                        addToScene = false;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    // TODO: @a.raag add rotation
-                    //transform.setRotate(transformComponent["Rotation"].as<float>());
-                }
-
-                auto spriteComponent = entity["SpriteComponent"];
-                if(spriteComponent) {
-                    auto& drawable = deserializedEntity.addComponent<DrawableComponent>();
-                    drawable.setColor(spriteComponent["Color"].as<robot2D::Color>());
-                    if(spriteComponent["TexturePath"])
-                        drawable.setTexturePath(spriteComponent["TexturePath"].as<std::string>());
-                    if(spriteComponent["zDepth"])
-                        drawable.setDepth(spriteComponent["zDepth"].as<int>());
-                    drawable.setReorderZBuffer(true);
-                }
-
-                auto scriptComponent = entity["ScriptComponent"];
-                if(scriptComponent) {
-                    auto& sc = deserializedEntity.addComponent<ScriptComponent>();
-                    sc.name = scriptComponent["ClassName"].as<std::string>();
-
-                    auto scriptFields = scriptComponent["ScriptFields"];
-                    if (scriptFields)
+                    for (auto scriptField : scriptFields)
                     {
-                        auto entityClass = ScriptEngine::getEntityClass(sc.name);
-                        if (entityClass)
+                        std::string name = scriptField["Name"].as<std::string>();
+                        std::string typeString = scriptField["Type"].as<std::string>();
+                        ScriptFieldType type = util::ScriptFieldTypeFromString(typeString);
+
+                        ScriptFieldInstance& fieldInstance = entityFields[name];
+
+                        // TODO(Yan): turn this assert into Hazelnut log warning
+                        // HZ_CORE_ASSERT(fields.find(name) != fields.end());
+
+                        if (fields.find(name) == fields.end())
+                            continue;
+
+                        fieldInstance.Field = fields.at(name);
+
+                        switch (type)
                         {
-                            const auto& fields = entityClass -> getFields();
-                            auto& entityFields = ScriptEngine::getScriptFieldMap(deserializedEntity);
-
-                            for (auto scriptField : scriptFields)
-                            {
-                                std::string name = scriptField["Name"].as<std::string>();
-                                std::string typeString = scriptField["Type"].as<std::string>();
-                                ScriptFieldType type = util::ScriptFieldTypeFromString(typeString);
-
-                                ScriptFieldInstance& fieldInstance = entityFields[name];
-
-                                // TODO(Yan): turn this assert into Hazelnut log warning
-                                // HZ_CORE_ASSERT(fields.find(name) != fields.end());
-
-                                if (fields.find(name) == fields.end())
-                                    continue;
-
-                                fieldInstance.Field = fields.at(name);
-
-                                switch (type)
-                                {
-                                    READ_SCRIPT_FIELD(Float, float);
-                                    READ_SCRIPT_FIELD(Double, double);
-                                    READ_SCRIPT_FIELD(Bool, bool);
-                                    READ_SCRIPT_FIELD(Char, char);
-                                    READ_SCRIPT_FIELD(Byte, int8_t);
-                                    READ_SCRIPT_FIELD(Short, int16_t);
-                                    READ_SCRIPT_FIELD(Int, int32_t);
-                                    READ_SCRIPT_FIELD(Long, int64_t);
-                                    READ_SCRIPT_FIELD(UByte, uint8_t);
-                                    READ_SCRIPT_FIELD(UShort, uint16_t);
-                                    READ_SCRIPT_FIELD(UInt, uint32_t);
-                                    READ_SCRIPT_FIELD(ULong, uint64_t);
-                                    READ_SCRIPT_FIELD(Vector2, robot2D::vec2f);
-                                    // READ_SCRIPT_FIELD(Vector3, glm::vec3);
-                                    // READ_SCRIPT_FIELD(Vector4, glm::vec4);
-                                    // READ_SCRIPT_FIELD(Entity, UUID);
-                                }
-
-                            }
+                            READ_SCRIPT_FIELD(Float, float);
+                            READ_SCRIPT_FIELD(Double, double);
+                            READ_SCRIPT_FIELD(Bool, bool);
+                            READ_SCRIPT_FIELD(Char, char);
+                            READ_SCRIPT_FIELD(Byte, int8_t);
+                            READ_SCRIPT_FIELD(Short, int16_t);
+                            READ_SCRIPT_FIELD(Int, int32_t);
+                            READ_SCRIPT_FIELD(Long, int64_t);
+                            READ_SCRIPT_FIELD(UByte, uint8_t);
+                            READ_SCRIPT_FIELD(UShort, uint16_t);
+                            READ_SCRIPT_FIELD(UInt, uint32_t);
+                            READ_SCRIPT_FIELD(ULong, uint64_t);
+                            READ_SCRIPT_FIELD(Vector2, robot2D::vec2f);
+                            // READ_SCRIPT_FIELD(Vector3, glm::vec3);
+                            // READ_SCRIPT_FIELD(Vector4, glm::vec4);
+                            // READ_SCRIPT_FIELD(Entity, UUID);
                         }
+
                     }
                 }
-
-                auto rigidbody2DComponent = entity["Rigidbody2DComponent"];
-                if (rigidbody2DComponent)
-                {
-                    auto& rb2d = deserializedEntity.addComponent<Physics2DComponent>();
-                    rb2d.type = RigidBody2DBodyTypeFromString(rigidbody2DComponent["BodyType"].as<std::string>());
-                    rb2d.fixedRotation = rigidbody2DComponent["FixedRotation"].as<bool>();
-                }
-
-                auto boxCollider2DComponent = entity["BoxCollider2DComponent"];
-                if (boxCollider2DComponent)
-                {
-                    auto& bc2d = deserializedEntity.addComponent<Collider2DComponent>();
-                    bc2d.offset = boxCollider2DComponent["Offset"].as<robot2D::vec2f>();
-                    bc2d.size = boxCollider2DComponent["Size"].as<robot2D::vec2f>();
-                    bc2d.density = boxCollider2DComponent["Density"].as<float>();
-                    bc2d.friction = boxCollider2DComponent["Friction"].as<float>();
-                    bc2d.restitution = boxCollider2DComponent["Restitution"].as<float>();
-                    bc2d.restitutionThreshold = boxCollider2DComponent["RestitutionThreshold"].as<float>();
-                }
-
-                if(addToScene)
-                    m_scene -> addAssociatedEntity(deserializedEntity);
-
             }
-
         }
+
+        auto rigidbody2DComponent = entity["Rigidbody2DComponent"];
+        if (rigidbody2DComponent)
+        {
+            auto& rb2d = deserializedEntity.addComponent<Physics2DComponent>();
+            rb2d.type = RigidBody2DBodyTypeFromString(rigidbody2DComponent["BodyType"].as<std::string>());
+            rb2d.fixedRotation = rigidbody2DComponent["FixedRotation"].as<bool>();
+        }
+
+        auto boxCollider2DComponent = entity["BoxCollider2DComponent"];
+        if (boxCollider2DComponent)
+        {
+            auto& bc2d = deserializedEntity.addComponent<Collider2DComponent>();
+            bc2d.offset = boxCollider2DComponent["Offset"].as<robot2D::vec2f>();
+            bc2d.size = boxCollider2DComponent["Size"].as<robot2D::vec2f>();
+            bc2d.density = boxCollider2DComponent["Density"].as<float>();
+            bc2d.friction = boxCollider2DComponent["Friction"].as<float>();
+            bc2d.restitution = boxCollider2DComponent["Restitution"].as<float>();
+            bc2d.restitutionThreshold = boxCollider2DComponent["RestitutionThreshold"].as<float>();
+        }
+
         return true;
     }
 
-    SceneSerializerError SceneSerializer::getError() const {
-        return SceneSerializerError::None;
-    }
 
-}
+} // namespace editor

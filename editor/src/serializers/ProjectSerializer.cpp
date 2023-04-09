@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2023
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -20,9 +20,9 @@ source distribution.
 *********************************************************************/
 
 #include <fstream>
-#include <yaml-cpp/yaml.h>
-#include <editor/ProjectSerializer.hpp>
-#include <editor/Project.hpp>
+#include "yaml-cpp/yaml.h"
+#include "editor/serializers/ProjectSerializer.hpp"
+#include "editor/Project.hpp"
 
 namespace editor {
 

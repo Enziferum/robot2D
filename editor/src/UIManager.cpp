@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2023
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -23,19 +23,20 @@ source distribution.
 #include <editor/panels/ScenePanel.hpp>
 
 namespace editor {
-    IUIManager::~IUIManager() noexcept {}
+
+    IUIManager::~IUIManager() = default;
 
     UIManager::UIManager(robot2D::Gui& gui):
         m_gui{gui}, m_panels() {}
 
     void UIManager::update(float dt) {
-        for(auto& it: m_panels)
-            it -> update(dt);
+        for(auto& panel: m_panels)
+            panel -> update(dt);
     }
 
     void UIManager::render() {
-        for(auto& it: m_panels)
-            it -> render();
+        for(auto& panel: m_panels)
+            panel -> render();
     }
 
     void UIManager::dockingCanvas() {
@@ -46,7 +47,16 @@ namespace editor {
        // m_gui.blockEvents(flag);
     }
 
+    robot2D::ecs::Entity UIManager::getSelectedEntity(int PixelData) {
+        return getPanel<ScenePanel>().getSelectedEntity(PixelData);
+    }
+
+
     robot2D::ecs::Entity UIManager::getSelectedEntity() {
         return getPanel<ScenePanel>().getSelectedEntity();
+    }
+
+    robot2D::ecs::Entity UIManager::getTreeItem(editor::UUID uuid) {
+        return getPanel<ScenePanel>().getTreeItem(uuid);
     }
 }

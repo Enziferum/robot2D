@@ -42,12 +42,15 @@ source distribution.
 #include <editor/async/FontLoadTask.hpp>
 #include <editor/FileApi.hpp>
 #include <editor/ResouceManager.hpp>
+#include <editor/DragDropIDS.hpp>
 
 namespace editor {
 
     template<typename T, typename UIFunction>
     static void drawComponent(const std::string& name, robot2D::ecs::Entity& entity, UIFunction uiFunction)
     {
+        if(entity.destroyed())
+            return;
         const ImGuiTreeNodeFlags treeNodeFlags = ImGuiTreeNodeFlags_DefaultOpen
                                                  | ImGuiTreeNodeFlags_Framed
                                                  | ImGuiTreeNodeFlags_SpanAvailWidth
@@ -91,10 +94,14 @@ namespace editor {
 
 
 
-    ScenePanel::ScenePanel(MessageDispatcher& messageDispatcher):
+    ScenePanel::ScenePanel(robot2D::MessageBus& messageBus,
+                           MessageDispatcher& messageDispatcher,
+                           PrefabManager& prefabManager):
     IPanel(UniqueType(typeid(ScenePanel))),
+    m_messageBus{messageBus},
     m_messageDispatcher{messageDispatcher},
-    m_scene(nullptr),
+    m_prefabManager{prefabManager},
+    m_interactor{nullptr},
     m_selectedEntity{},
     m_configuration{},
     m_treeHierarchy("MainScene")
@@ -104,79 +111,39 @@ namespace editor {
                 BIND_CLASS_FN(onEntitySelection)
         );
 
+        m_messageDispatcher.onMessage<EntityDuplication>(
+                EntityDuplicate,
+                BIND_CLASS_FN(onEntityDuplicate)
+        );
+
+        m_messageDispatcher.onMessage<EntityRemovement>(
+                EntityRemove,
+                BIND_CLASS_FN(onEntityRemove)
+        );
 
         setupTreeHierarchy();
     }
 
     void ScenePanel::render() {
-        if(m_scene == nullptr)
+        if(m_interactor == nullptr)
             return;
 
         robot2D::WindowOptions windowOptions{};
         windowOptions.name = "ScenePanel";
+
         robot2D::createWindow(windowOptions, BIND_CLASS_FN(windowFunction));
 
+        robot2D::WindowOptions propertiesWindowOptions{};
+        propertiesWindowOptions.name = "Inspector";
 
-        ImGui::Begin("Properties");
-        if (m_selectedEntity)
-        {
-            drawComponentsBase(m_selectedEntity);
-        }
-
-        ImGui::End();
-    }
-
-    void ScenePanel::drawEntity(robot2D::ecs::Entity entity) {
-        auto& tag = entity.getComponent<TagComponent>().getTag();
-
-        /// SceneHieherocy
-        /// 1. Make Replacement onto scene
-        /// 2. Always Add MainCamera As Start
-        /// 3. Don't SubItems while it doesn't need
-        /// 4. Make ScenePanelUI for controls and etc
-
-
-
-        /*
-        ImGuiTreeNodeFlags flags = ((m_selectedEntity == entity) ? ImGuiTreeNodeFlags_Selected : 0)
-                    | ImGuiTreeNodeFlags_OpenOnArrow;
-        flags |= ImGuiTreeNodeFlags_SpanAvailWidth;
-
-        bool opened = ImGui::TreeNodeEx((void*)(uint64_t)(uint32_t)entity.getIndex(), flags, tag.c_str());
-        if (ImGui::IsItemClicked())
-        {
-            m_selectedEntity = entity;
-        }
-
-        bool entityDeleted = false;
-        if (ImGui::BeginPopupContextItem())
-        {
-            if (ImGui::MenuItem("Delete Entity"))
-                entityDeleted = true;
-
-            ImGui::EndPopup();
-        }
-
-        if (opened)
-        {
-            ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
-            bool opened = ImGui::TreeNodeEx((void*)9817239, flags, tag.c_str());
-            if (opened)
-                ImGui::TreePop();
-            ImGui::TreePop();
-        }
-
-        if (entityDeleted)
-        {
-            m_scene -> removeEntity(entity);
-            if (m_selectedEntity == entity)
-                m_selectedEntity = {};
-        }
-         */
+        robot2D::createWindow(propertiesWindowOptions, [this]{
+           if(m_selectedEntity && !m_selectedEntity.destroyed())
+               drawComponentsBase(m_selectedEntity);
+        });
     }
 
     void ScenePanel::drawComponentsBase(robot2D::ecs::Entity entity) {
-        if(!entity.hasComponent<TagComponent>())
+        if(!entity.hasComponent<TagComponent>() && entity.destroyed())
             return;
 
         auto& tag = entity.getComponent<TagComponent>().getTag();
@@ -246,6 +213,18 @@ namespace editor {
                 ImGui::CloseCurrentPopup();
             }
 
+            if (ImGui::MenuItem("Text"))
+            {
+                if (!m_selectedEntity.hasComponent<TextComponent>()) {
+                    m_selectedEntity.addComponent<TextComponent>();
+                    m_selectedEntity.getComponent<TransformComponent>().setScale({1.f, 1.f});
+                }
+                else
+                    RB_EDITOR_WARN("This entity already has the Scripting Component!");
+                ImGui::CloseCurrentPopup();
+            }
+
+
             ImGui::EndPopup();
         }
 
@@ -259,12 +238,38 @@ namespace editor {
         {
             ui::drawVec2Control("Translation", component.getPosition());
             ui::drawVec2Control("Scale", component.getScale(), 1.0f);
-            //DrawVec2Control("Rotation", component.getRotation(), 0.f);
+            ui::drawVec1Control("Rotation", component.getRotate(), 0.f);
+            component.setRotate(component.getRotate());
         });
 
         drawComponent<CameraComponent>("Camera", entity, [](auto& component)
         {
+            auto& camera = component.camera;
             ImGui::Checkbox("Primary", &component.isPrimary);
+            float orthoSize = component.orthoSize;
+            if (ImGui::DragFloat("Size", &orthoSize, 0.1))
+                component.orthoSize = orthoSize;
+
+            const char* aspectRatioTypeStrings[] = { "16:9", "9:16" };
+            const char* aspectRatioProjectionTypeString = aspectRatioTypeStrings[(int)component.aspectRatio];
+            if (ImGui::BeginCombo("AspectRatio", aspectRatioProjectionTypeString))
+            {
+                for (int i = 0; i < 2; i++)
+                {
+                    bool isSelected = aspectRatioProjectionTypeString == aspectRatioTypeStrings[i];
+                    if (ImGui::Selectable(aspectRatioTypeStrings[i], isSelected))
+                    {
+                        aspectRatioProjectionTypeString = aspectRatioTypeStrings[i];
+                        component.aspectRatio = static_cast<CameraComponent::AspectRatio>(i);
+                    }
+
+                    if (isSelected)
+                        ImGui::SetItemDefaultFocus();
+                }
+
+                ImGui::EndCombo();
+            }
+
         });
 
         drawComponent<DrawableComponent>("Drawable", entity, [this, &entity](auto& component)
@@ -291,7 +296,7 @@ namespace editor {
                 {
                     const wchar_t* path = (const wchar_t*)payload->Data;
                     std::filesystem::path localPath = std::filesystem::path("assets") / path;
-                    auto texturePath = combinePath(m_scene -> getAssociatedProjectPath(), localPath.string());
+                    auto texturePath = combinePath(m_interactor -> getAssociatedProjectPath(), localPath.string());
 
                     component.setTexturePath(localPath.string());
                     auto manager = ResourceManager::getManager();
@@ -328,21 +333,44 @@ namespace editor {
 
         });
 
-        drawComponent<ScriptComponent>("Scripting", entity, [entity, scene = m_scene](auto& component) {
+        drawComponent<ScriptComponent>("Script", entity, [entity,
+                                                          interactor= m_interactor](auto& component) {
+            std::string currItem = component.name; // Here we store our selection data as an index.
             bool hasScriptClass = ScriptEngine::hasEntityClass(component.name);
-
-            static char buffer[64];
-            strcpy(buffer, component.name.c_str());
-
-            ImGui::Text("EntityID = %i", entity.getIndex());
 
             if(!hasScriptClass)
                 ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.9f, 0.2f, 0.3f, 1.0f));
+            ImGui::Selectable(currItem.empty() ? "FindClass" : currItem.c_str());
+            if(!hasScriptClass)
+                ImGui::PopStyleColor();
 
-            if(ImGui::InputText("Class", buffer, sizeof(buffer)))
-                component.name = buffer;
+            if(ImGui::IsItemClicked())
+                ImGui::OpenPopup("Find Script Class");
 
-            bool isSceneRunning = scene -> isRunning();
+            if(ImGui::BeginPopupContextItem("Find Script Class"))
+            {
+                auto classes = ScriptEngine::getClasses();
+
+                ImGuiTextFilter textFilter;
+                textFilter.Draw("Classes", 180);
+                if (ImGui::BeginListBox("##Listbox"))
+                {
+                    for(const auto& [name, Class]: classes) {
+                        if(!textFilter.PassFilter(name.c_str())) continue;
+                        const bool is_selected = (name == currItem);
+                        ImGui::Selectable(name.c_str(), is_selected);
+                        if(ImGui::IsItemClicked()) {
+                            currItem = name;
+                            component.name = currItem;
+                        }
+                    }
+                    ImGui::EndListBox();
+                }
+
+                ImGui::EndPopup();
+            }
+
+            bool isSceneRunning = interactor -> isRunning();
 
             if(isSceneRunning) {
                 auto scriptInstance = ScriptEngine::getEntityScriptInstance(entity.getIndex());
@@ -401,8 +429,6 @@ namespace editor {
             }
 
 
-            if(!hasScriptClass)
-                ImGui::PopStyleColor();
         });
 
         drawComponent<Physics2DComponent>("physics2D", entity, [](auto& component) {
@@ -442,9 +468,8 @@ namespace editor {
             component.size = { size[0], size[1] };
         });
 
+        drawComponent<TextComponent>("Text", entity, [this, entity, interactor = m_interactor](auto& component) {
 
-        drawComponent<TextComponent>("Text", entity, [this, entity, scene = m_scene](auto& component) {
-            ImGui::Text(component.getText().c_str());
             ImGui::Button("Font", ImVec2(100.0f, 0.0f));
             if (ImGui::BeginDragDropTarget())
             {
@@ -454,43 +479,104 @@ namespace editor {
                 {
                     const wchar_t* path = (const wchar_t*)payload->Data;
                     std::filesystem::path localPath = std::filesystem::path("assets") / path;
-                    auto texturePath = combinePath(scene -> getAssociatedProjectPath(), localPath.string());
+                    auto texturePath = combinePath(m_interactor -> getAssociatedProjectPath(), localPath.string());
 
                     auto queue = TaskQueue::GetQueue();
-//                    queue -> template addAsyncTask<FontLoadTask>([this](const FontLoadTask& task) {
-//                        this -> onLoadFont(task.getFont(), task.getEntity());
-//                    }, texturePath, entity);
+                    queue -> template addAsyncTask<FontLoadTask>([this](const FontLoadTask& task) {
+                        this -> onLoadFont(task.getFont(), task.getEntity());
+                    }, texturePath, entity);
                 }
                 ImGui::EndDragDropTarget();
             }
 
+
+            if(component.getFont()) {
+                robot2D::InputText("##Text", &component.getText(), 0);
+                component.setText(component.getText());
+            }
         });
     }
 
     void ScenePanel::onEntitySelection(const EntitySelection& entitySelection) {
-        for(const auto& entity: m_scene -> getEntities()) {
+        for(const auto& entity: m_interactor -> getEntities()) {
             if(entity.getIndex() == entitySelection.entityID) {
                 m_selectedEntity = entity;
-                break;
+                return;
             }
+        }
+        m_selectedEntity = {};
+    }
+
+    template<typename T>
+    void imguiDragDrop(const std::string& payloadID, std::function<void(T)>&& callback) {
+        if(ImGui::BeginDragDropTarget()) {
+            auto* payload = ImGui::AcceptDragDropPayload(contentPrefabItemID);
+            if(payload) {
+                if(payload -> IsDataType(contentPrefabItemID)) {
+                    T data = static_cast<T*>(payload -> Data);
+                    if(data)
+                        callback(data);
+                }
+            }
+            ImGui::EndDragDropTarget();
         }
     }
 
     void ScenePanel::windowFunction() {
         m_treeHierarchy.render();
 
-        if (ImGui::IsMouseDown(0) && ImGui::IsWindowHovered())
+
+        if(ImGui::BeginDragDropTarget()) {
+            auto* payload = ImGui::AcceptDragDropPayload(contentPrefabItemID);
+            if(payload) {
+                if(payload -> IsDataType(contentPrefabItemID)) {
+                    const char* data = static_cast<const char*>(payload -> Data);
+                    if(data) {
+                        std::string payloadString = std::string(data, payload->DataSize);
+                        const wchar_t* rawPath = (const wchar_t *) payloadString.c_str();
+                        std::filesystem::path prefabPath = std::filesystem::path("assets") / rawPath;
+                        auto realPrefabPath = combinePath(m_interactor -> getAssociatedProjectPath(), prefabPath.string());
+                        if(auto prefab = m_prefabManager.findPrefab(realPrefabPath)) {
+                            auto item = m_treeHierarchy.addItem<robot2D::ecs::Entity>();
+                            robot2D::ecs::Entity duplicateEntity = m_interactor -> duplicateEmptyEntity(prefab -> entity);
+                            item -> setName(duplicateEntity.getComponent<TagComponent>().getTag());
+                            item -> setUserData(duplicateEntity);
+                            m_treeHierarchy.setSelected(item);
+                        }
+                        else {
+
+                            if(auto prefab = m_prefabManager.loadPrefab(m_interactor,
+                                                                        realPrefabPath)) {
+                                auto item = m_treeHierarchy.addItem<robot2D::ecs::Entity>();
+                                robot2D::ecs::Entity duplicateEntity = m_interactor -> duplicateEmptyEntity(prefab -> entity);
+
+                                item -> setName(duplicateEntity.getComponent<TagComponent>().getTag());
+                                item -> setUserData(duplicateEntity);
+                                m_treeHierarchy.setSelected(item);
+                            }
+                        }
+                    }
+                }
+            }
+            ImGui::EndDragDropTarget();
+        }
+
+        if (ImGui::IsMouseDown(0) && ImGui::IsWindowHovered()) {
             m_selectedEntity = {};
+            auto* msg = m_messageBus.postMessage<PanelEntitySelectedMessage>(MessageID::PanelEntitySelected);
+            msg -> entity = m_selectedEntity;
+        }
 
         // Right-click on blank space
-        if (ImGui::BeginPopupContextWindow(0, m_configuration.rightMouseButton, false))
+        if (ImGui::BeginPopupContextWindow(0, m_configuration.rightMouseButton))
         {
             if (ImGui::MenuItem("Create Empty Entity")) {
-                m_scene -> addEmptyEntity();
+                m_interactor -> addEmptyEntity();
                 auto item = m_treeHierarchy.addItem<robot2D::ecs::Entity>();
-                m_selectedEntity = m_scene -> getEntities().back();
-                item -> setName(m_scene -> getEntities().back().getComponent<TagComponent>().getTag());
+                m_selectedEntity = m_interactor -> getEntities().back();
+                item -> setName(m_interactor -> getEntities().back().getComponent<TagComponent>().getTag());
                 item -> setUserData(m_selectedEntity);
+                m_treeHierarchy.setSelected(item);
             }
 
             ImGui::EndPopup();
@@ -504,6 +590,8 @@ namespace editor {
             auto entity = selectedItem -> getUserData<robot2D::ecs::Entity>();
             if(entity) {
                 m_selectedEntity = *entity;
+                auto* msg = m_messageBus.postMessage<PanelEntitySelectedMessage>(MessageID::PanelEntitySelected);
+                msg -> entity = m_selectedEntity;
             }
             else {
                 RB_EDITOR_ERROR("Selected item in Hierarchy don't have userData");
@@ -528,6 +616,7 @@ namespace editor {
                         auto& transform = entity -> getComponent<TransformComponent>();
                         if(transform.isChild())
                             transform.removeSelf();
+                        /// delete child command ///
                     }
                     item -> removeSelf();
                 }
@@ -535,11 +624,12 @@ namespace editor {
                     if(item -> hasChildrens()) {
                         for(auto child: item -> getChildrens()) {
                             auto entity = child -> getUserData<robot2D::ecs::Entity>();
-                            m_scene -> removeEntity(std::move(*entity));
+                            m_interactor -> removeEntity(std::move(*entity));
+                            /// delete child command ///
                             item -> deleteChild(child);
                         }
                         auto entity = item -> getUserData<robot2D::ecs::Entity>();
-                        m_scene -> removeEntity(std::move(*entity));
+                        m_interactor -> removeEntity(std::move(*entity));
                         m_treeHierarchy.deleteItem(item);
                     }
                     else {
@@ -548,11 +638,13 @@ namespace editor {
                             RB_EDITOR_ERROR("Cant in Hierarchy don't have userData");
                             return;
                         }
-                        m_scene -> removeEntity(*entity);
+                        /// delete command ///
+                        m_interactor -> removeEntity(*entity);
                         m_treeHierarchy.deleteItem(item);
                     }
                 }
                 m_selectedEntity = {};
+                m_selectedEntityNeedCheckForDelete = true;
             }
         });
 
@@ -568,6 +660,7 @@ namespace editor {
                 drawable.setReorderZBuffer(true);
             }
 
+            m_interactor -> setBefore(*sourceEntity, *target -> getUserData<robot2D::ecs::Entity>());
             m_treeHierarchy.setBefore(source, target);
         });
 
@@ -590,10 +683,56 @@ namespace editor {
            }
 
            transform.addChild(*sourceEntity);
-           m_scene -> removeEntityChild(*sourceEntity);
+            m_interactor -> removeEntityChild(*sourceEntity);
            m_treeHierarchy.deleteItem(source);
            intoTarget -> addChild(source);
         });
+
+        m_treeHierarchy.addOnStopBeChildCallback([this](ITreeItem::Ptr source, ITreeItem::Ptr intoTarget) {
+            auto entity = source -> getUserData<robot2D::ecs::Entity>();
+            if(!entity) { return; }
+            auto& ts = entity -> getComponent<TransformComponent>();
+            bool needRemoveFromScene = false;
+            ts.removeSelf(needRemoveFromScene);
+            source -> removeSelf();
+
+            bool needPendingAppend = true;
+            auto item = m_treeHierarchy.addItem<robot2D::ecs::Entity>(needPendingAppend);
+            item -> setName(entity -> getComponent<TagComponent>().getTag());
+            item -> setUserData(*entity);
+            ///TODO(@a.raag) set before ??
+            //m_treeHierarchy.setBefore()
+        });
+
+    }
+
+    void ScenePanel::setInteractor(UIInteractor::Ptr interactor) {
+        if(interactor == nullptr)
+            return;
+        m_interactor = interactor;
+
+        m_interactor -> registerOnDeleteFinish([this]() {
+           m_selectedEntityNeedCheckForDelete = false;
+        });
+
+        m_selectedEntity = {};
+        m_treeHierarchy.clear();
+
+
+        for(auto& entity: m_interactor -> getEntities()) {
+            auto item = m_treeHierarchy.addItem<robot2D::ecs::Entity>();
+            item -> setName(entity.getComponent<TagComponent>().getTag());
+            item -> setUserData(entity);
+
+            auto& transform = entity.getComponent<TransformComponent>();
+            if(transform.hasChildren()) {
+                for(auto& child: transform.getChildren()) {
+                    auto childItem = item -> addChild();
+                    childItem -> setName(child.getComponent<TagComponent>().getTag());
+                    childItem -> setUserData(child);
+                }
+            }
+        }
 
     }
 
@@ -612,38 +751,99 @@ namespace editor {
         }
     }
 
-    void ScenePanel::setActiveScene(Scene::Ptr ptr) {
-        m_scene = ptr;
-        m_selectedEntity = {};
-        for(auto& entity: m_scene -> getEntities()) {
-            auto item = m_treeHierarchy.addItem<robot2D::ecs::Entity>();
-            item -> setName(entity.getComponent<TagComponent>().getTag());
-            item -> setUserData(entity);
-
-            auto& transform = entity.getComponent<TransformComponent>();
-            if(transform.hasChildren()) {
-                for(auto& child: transform.getChildren()) {
-                    auto childItem = item -> addChild();
-                    childItem -> setName(child.getComponent<TagComponent>().getTag());
-                    childItem -> setUserData(child);
-                }
-            }
-        }
-
-    }
-
-    void ScenePanel::onLoadFont(const robot2D::Image& image, robot2D::ecs::Entity entity) {
+    void ScenePanel::onLoadFont(const robot2D::Font& font, robot2D::ecs::Entity entity) {
         if(entity.destroyed()) {
             RB_EDITOR_WARN("Can't attach texture to Entity, because it's already destroyed");
             return;
         }
 
-        auto t = m_fonts.add(entity.getIndex());
-        if(t)
-            t -> create(image);
+        auto f = m_fonts.add(entity.getIndex());
+        if(!f)
+            return;
+        f -> clone(const_cast<robot2D::Font &>(font));
 
         if(entity.hasComponent<TextComponent>()) {
-           // entity.getComponent<TextComponent>().setFont();
+           entity.getComponent<TextComponent>().setFont(m_fonts[entity.getIndex()]);
+        }
+    }
+
+    robot2D::ecs::Entity ScenePanel::getSelectedEntity(int PixelData) {
+
+        for(auto& item: m_treeHierarchy.getItems()) {
+            auto entityPtr = item -> getUserData<robot2D::ecs::Entity>();
+            if(!entityPtr)
+                return {};
+            robot2D::ecs::Entity entity = *entityPtr;
+
+            if(entity.getIndex() == PixelData) {
+                m_selectedEntity = entity;
+                m_treeHierarchy.setSelected(item);
+                return m_selectedEntity;
+            }
+
+            if(item -> hasChildrens()) {
+                for(auto child: item -> getChildrens()) {
+                    entityPtr = child -> getUserData<robot2D::ecs::Entity>();
+                    if(!entityPtr)
+                        return {};
+                    entity = *entityPtr;
+                    if(entity.getIndex() == PixelData) {
+                        m_selectedEntity = entity;
+                        m_treeHierarchy.setSelected(child);
+                        return m_selectedEntity;
+                    }
+                }
+            }
+        }
+        return {};
+    }
+
+    robot2D::ecs::Entity ScenePanel::getSelectedEntity() const {
+        return m_selectedEntity;
+    }
+
+    robot2D::ecs::Entity ScenePanel::getTreeItem(UUID uuid) {
+        return *m_treeHierarchy.getDataByItem<robot2D::ecs::Entity>(uuid);
+    }
+
+    void ScenePanel::onEntityDuplicate(const EntityDuplication& duplication) {
+        auto entity = m_interactor -> getByUUID(duplication.entityID);
+        auto item = m_treeHierarchy.addItem<robot2D::ecs::Entity>();
+        item -> setName(entity.getComponent<TagComponent>().getTag());
+        item -> setUserData(entity);
+
+        auto& transform = entity.getComponent<TransformComponent>();
+        if(transform.hasChildren()) {
+            for(auto& child: transform.getChildren()) {
+                auto childItem = item -> addChild();
+                childItem -> setName(child.getComponent<TagComponent>().getTag());
+                childItem -> setUserData(child);
+            }
+        }
+    }
+
+    void ScenePanel::onEntityRemove(const EntityRemovement& removement) {
+        for(auto& item: m_treeHierarchy.getItems()) {
+            if(item -> getUserData<robot2D::ecs::Entity>() -> getComponent<IDComponent>().ID == removement.entityID) {
+                m_treeHierarchy.deleteItem(item);
+                return;
+            }
+        }
+    }
+
+    void ScenePanel::processSelectedEntities(std::vector<robot2D::ecs::Entity>& entities) {
+        auto& treeItems = m_treeHierarchy.getItems();
+        for(auto& entity: entities) {
+            for(auto& treeItem: treeItems) {
+                auto treeEntity = treeItem -> getUserData<robot2D::ecs::Entity>();
+                if(!treeEntity) {
+                    /// TODO(a.raag): error to get entity from treeItem
+                }
+
+                if(entity == *treeEntity) {
+                    // m_treeHierarchy.setSelected(treeItem);
+                }
+            }
         }
     }
 

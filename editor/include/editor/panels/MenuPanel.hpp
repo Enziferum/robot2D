@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2023
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -22,11 +22,16 @@ source distribution.
 #pragma once
 #include <robot2D/Core/MessageBus.hpp>
 #include "IPanel.hpp"
+#include <editor/PopupManager.hpp>
 
 namespace editor {
-    class MenuPanel: public IPanel {
+    class MenuPanel: public IPanel, public PopupDelegate {
     public:
         MenuPanel(robot2D::MessageBus& messageBus);
+        MenuPanel(const MenuPanel& other) = delete;
+        MenuPanel& operator=(const MenuPanel& other) = delete;
+        MenuPanel(MenuPanel&& other) = delete;
+        MenuPanel& operator=(MenuPanel&& other) = delete;
         ~MenuPanel() override = default;
 
 
@@ -35,8 +40,17 @@ namespace editor {
         void fileMenu();
         void editMenu();
         void projectMenu();
+        void showExportProjectModal();
         void helpMenu();
+
+        void onRender() override;
     private:
         robot2D::MessageBus& m_messageBus;
+        enum class PopupType {
+            None,
+            OpenProject,
+            NewProject,
+            Export
+        } m_popupType = PopupType::None;
     };
 }

@@ -3,6 +3,8 @@
 #include "Scene.hpp"
 #include <robot2D/Ecs/Scene.hpp>
 #include <robot2D/Graphics/View.hpp>
+#include <robot2D/Graphics/Shader.hpp>
+#include <robot2D/Graphics/Texture.hpp>
 
 namespace sandbox {
     class EditorUIScene: public Scene {
@@ -24,5 +26,7 @@ namespace sandbox {
         robot2D::ecs::Scene m_scene;
         std::vector<robot2D::ecs::Entity> m_attachedEntities{};
         robot2D::View m_view;
+        robot2D::ShaderHandler m_shader;
+        robot2D::Texture m_texture;
     };
 }

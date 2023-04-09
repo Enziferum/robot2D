@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2023
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -32,6 +32,7 @@ source distribution.
 #include <robot2D/Ecs/Entity.hpp>
 
 #include "Uuid.hpp"
+#include <glm/gtc/matrix_transform.hpp>
 
 namespace editor {
     struct IDComponent
@@ -48,8 +49,18 @@ namespace editor {
         void setPosition(const robot2D::vec2f& pos) override;
 
         void addChild(robot2D::ecs::Entity);
-        void removeChild(robot2D::ecs::Entity);
+        void removeChild(robot2D::ecs::Entity, bool removeFromScene = true);
         bool hasChildren() const;
+
+        robot2D::FloatRect getLocalBounds() const {
+            float w = std::abs(m_size.x);
+            float h = std::abs(m_size.y);
+            return {0.f, 0.f, w, h};
+        }
+
+        robot2D::FloatRect getGlobalBounds() const {
+            return getTransform().transformRect(getLocalBounds());
+        }
 
         std::vector<robot2D::ecs::Entity>& getChildren() {
             return m_children;
@@ -61,9 +72,23 @@ namespace editor {
 
         bool isChild() const { return (m_parent != nullptr && m_childID != -1); }
 
-        void removeSelf();
+        void removeSelf(bool removeFromScene = true);
+
+
+        glm::mat4 GetTransform() const
+        {
+
+            robot2D::vec2f centerPos = {
+                    m_pos.x + m_scale_factor.x / 2.F,
+                    m_pos.y + m_scale_factor.y / 2.F,
+            };
+
+            glm::mat4 res = glm::translate(glm::mat4(1.0f), glm::vec3(centerPos.x, centerPos.y, 0))
+                            * glm::scale(glm::mat4(1.0f), glm::vec3(1, 1, 1.f));
+            return res;
+        }
     private:
-        void removeChild(int childID);
+        void removeChild(int childID, bool removeFromScene);
     private:
         int m_childID = -1;
         std::vector<robot2D::ecs::Entity> m_children;
@@ -149,6 +174,7 @@ namespace editor {
         void setReorderZBuffer(bool flag) { m_needUpdateZbuffer = flag; }
     private:
         friend class RenderSystem;
+        friend class SceneRender;
 
         quadVertexArray m_vertices;
 
@@ -162,21 +188,61 @@ namespace editor {
     };
 
 
-    class CameraComponent final {
+    class SceneCamera
+    {
     public:
-        CameraComponent();
+        enum class ProjectionType { Perspective = 0, Orthographic = 1 };
+    public:
+        SceneCamera();
+        virtual ~SceneCamera() = default;
+
+        void SetPerspective(float verticalFOV, float nearClip, float farClip);
+        void SetOrthographic(float size, float nearClip, float farClip);
+        void SetViewportSize(uint32_t width, uint32_t height);
+
+        float GetOrthographicSize() const { return m_OrthographicSize; }
+        void SetOrthographicSize(float size) { m_OrthographicSize = size; RecalculateProjection(); }
+        float GetOrthographicNearClip() const { return m_OrthographicNear; }
+        void SetOrthographicNearClip(float nearClip) { m_OrthographicNear = nearClip; RecalculateProjection(); }
+        float GetOrthographicFarClip() const { return m_OrthographicFar; }
+        void SetOrthographicFarClip(float farClip) { m_OrthographicFar = farClip; RecalculateProjection(); }
+
+        ProjectionType GetProjectionType() const { return m_ProjectionType; }
+        void SetProjectionType(ProjectionType type) { m_ProjectionType = type; RecalculateProjection(); }
+
+
+        const glm::mat4& GetProjection() const { return m_Projection; }
+    private:
+        void RecalculateProjection();
+    private:
+        ProjectionType m_ProjectionType = ProjectionType::Orthographic;
+
+        float m_OrthographicSize = 10.0f;
+        float m_OrthographicNear = -1.0f, m_OrthographicFar = 1.0f;
+        float m_AspectRatio = 0.0f;
+        glm::mat4 m_Projection = glm::mat4(1.0f);
+    };
+
+
+    struct CameraComponent final {
+    public:
+        CameraComponent() = default;
         ~CameraComponent() = default;
 
-        /// 2D Space Camera ///
-        void setViewport(const robot2D::FloatRect& viewport);
-        robot2D::View& getView() { return m_view; }
-        const robot2D::View& getView() const { return m_view; }
-        float getZoom() const;
+        float orthoSize;
+        robot2D::vec2f size;
+        robot2D::vec2f position;
+        robot2D::vec2f getSize() const { return size; }
+        robot2D::vec2f getPosition() const { return position; }
 
+        enum class AspectRatio {
+            Desktop = 0, Mobile
+        };
+
+        AspectRatio aspectRatio;
+
+        SceneCamera camera;
         bool isPrimary{false};
-    private:
-        robot2D::View m_view;
-        robot2D::FloatRect m_actualViewport;
     };
 
 
@@ -231,19 +297,26 @@ namespace editor {
         void setFont(const robot2D::Font& font);
         const robot2D::Font* getFont() const;
 
+        void setFontPath(const std::string& path) { m_fontPath = path;}
+        const std::string& getFontPath() const { return m_fontPath; }
+
         const robot2D::Texture& getTexture() const;
         std::unordered_map<int, robot2D::GlyphQuad>& getGlyphCache();
     private:
         friend class TextSystem;
+        friend class SceneRender;
 
-        std::string m_text;
+        std::string m_text{"Hello"};
         unsigned int m_characterSize;
         const robot2D::Font* m_font;
+        robot2D::Texture m_texture;
+
         bool m_needUpdate;
         std::unordered_map<int, robot2D::GlyphQuad> m_bufferCache;
         friend class TextSystem;
 
         bool m_scaled = false;
+        std::string m_fontPath;
     };
 
 }

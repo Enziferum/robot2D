@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2023
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -25,7 +25,7 @@ source distribution.
 #include <editor/EditorStyles.hpp>
 #include <editor/Utils.hpp>
 #include <editor/EventBinder.hpp>
-#include "panels/ImGuizmo.h"
+#include <editor/PopupManager.hpp>
 
 namespace editor {
     Application::Application():
@@ -34,8 +34,6 @@ namespace editor {
             m_messageDispatcher{},
             m_logic{m_messageDispatcher},
             m_guiWrapper{},
-            m_editor{m_messageBus, m_guiWrapper},
-            m_editorLogic(m_messageBus, m_messageDispatcher),
             m_projectInspector{m_messageBus}
             {}
 
@@ -46,11 +44,19 @@ namespace editor {
             m_window -> setIcon(std::move(iconImage));
         }
 
-        m_editorLogic.setIEditor(&m_editor);
-        m_logic.setup(&m_editorLogic);
         m_guiWrapper.setup(*m_window);
-        m_editor.setup(m_window, &m_editorLogic);
+        m_editorModule = EditorAssembly::createEditorModule(m_window,
+                                                            m_messageBus,
+                                                            m_messageDispatcher,
+                                                            m_guiWrapper);
 
+        if(!m_editorModule) {
+            /// TODO(a.raag): ERROR
+            /// EXCEPTION
+        }
+
+        m_logic.setup( m_editorModule.get());
+        m_editorModule -> setup(m_window);
 
         //// Load C# Mono
         ScriptEngine::Init();
@@ -64,7 +70,7 @@ namespace editor {
             m_window -> setResizable(false);
             m_window -> setSize(m_appConfiguration.inspectorSize);
 
-            applyStyle(EditorStyle::GoldBlack);
+            applyStyle(EditorStyle::UE4);
             m_projectInspector.setup(m_window, m_logic.getCache().getProjects());
         }
 
@@ -86,14 +92,14 @@ namespace editor {
 
         m_guiWrapper.handleEvents(event);
         if(m_logic.getState() == AppState::Editor)
-            m_editor.handleEvents(event);
+            m_editorModule -> handleEvents(event);
     }
 
     void Application::handleMessages() {
         robot2D::Message message{};
         while (m_messageBus.pollMessages(message)) {
             if(m_logic.getState() == AppState::Editor)
-                m_editor.handleMessages(message);
+                m_editorModule -> handleMessages(message);
 
             m_messageDispatcher.process(message);
         }
@@ -102,20 +108,20 @@ namespace editor {
     void Application::update(float dt) {
         TaskQueue::GetQueue() -> process();
         if(m_logic.getState() == AppState::Editor)
-            m_editor.update(dt);
+            m_editorModule -> update(dt);
     }
 
     void Application::guiUpdate(float dt) {
         m_guiWrapper.update(dt);
-        ImGuizmo::BeginFrame();
     }
 
     void Application::render() {
         m_window -> clear();
         if(m_logic.getState() == AppState::Editor)
-            m_editor.render();
+            m_editorModule -> render();
         else if(m_logic.getState() == AppState::ProjectInspector)
             m_projectInspector.render();
+        PopupManager::getManager() -> onRender();
         m_guiWrapper.render();
         m_window -> display();
     }
@@ -123,4 +129,5 @@ namespace editor {
     void Application::destroy() {
        ScriptEngine::Shutdown();
     }
-}
+
+} // namespace editor

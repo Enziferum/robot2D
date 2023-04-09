@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2023
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -21,24 +21,23 @@ source distribution.
 
 #pragma once
 
-#include <string>
 #include <memory>
-#include "Errors.hpp"
+#include "editor/Errors.hpp"
 
 namespace editor {
 
-    class Project;
-    class ProjectSerializer {
+    class Scene;
+    class SceneSerializer {
     public:
-        ProjectSerializer(std::shared_ptr<Project> project);
-        ~ProjectSerializer() = default;
+        SceneSerializer(std::shared_ptr<Scene>);
+        ~SceneSerializer() = default;
 
         bool serialize(const std::string& path);
         bool deserialize(const std::string& path);
+        SceneSerializerError getError() const;
 
-        ProjectSerializerError getError() const;
     private:
-        std::shared_ptr<Project> m_project;
-        ProjectSerializerError m_error;
+        std::shared_ptr<Scene> m_scene;
+        SceneSerializerError m_error;
     };
 }

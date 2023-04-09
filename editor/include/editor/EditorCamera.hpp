@@ -1,3 +1,24 @@
+/*********************************************************************
+(c) Alex Raag 2023
+https://github.com/Enziferum
+robot2D - Zlib license.
+This software is provided 'as-is', without any express or
+implied warranty. In no event will the authors be held
+liable for any damages arising from the use of this software.
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute
+it freely, subject to the following restrictions:
+1. The origin of this software must not be misrepresented;
+you must not claim that you wrote the original software.
+If you use this software in a product, an acknowledgment
+in the product documentation would be appreciated but
+is not required.
+2. Altered source versions must be plainly marked as such,
+and must not be misrepresented as being the original software.
+3. This notice may not be removed or altered from any
+source distribution.
+*********************************************************************/
+
 #pragma once
 #include <cmath>
 #include <memory>
@@ -36,11 +57,15 @@ namespace editor {
 
         EditorCameraType getType() const { return m_type; }
 
+        virtual void resetDefaults() {}
+        virtual float getZoom() const { return 0.f; }
+
         robot2D::mat4& getProjectionMatrix() { return m_projectionMatrix; }
         const robot2D::mat4& getProjectionMatrix() const  { return m_projectionMatrix; }
         const robot2D::vec3f& getPosition() const { return m_position; }
         robot2D::mat4 getViewMatrix() const { return m_viewMatrix; }
         const robot2D::View& getView() const { return m_view; }
+        robot2D::View& getView() { return m_view; }
     protected:
         /// Overhead ///
         robot2D::mat4 m_projectionMatrix;
@@ -66,6 +91,9 @@ namespace editor {
             mousePos -= m_bounds;
             return mapPixelToCoords(mousePos);
         }
+
+        void resetDefaults() override;
+        float getZoom() const override { return m_zoom; }
     private:
         robot2D::vec2f mapPixelToCoords(const robot2D::vec2f& point) const {
             robot2D::vec2f normalized;

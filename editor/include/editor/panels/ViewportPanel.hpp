@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2023
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -32,6 +32,9 @@ source distribution.
 #include <editor/UIManager.hpp>
 #include <editor/EditorCamera.hpp>
 #include <editor/Guizmo2D.hpp>
+#include <editor/Collider.hpp>
+#include <editor/MessageDispather.hpp>
+
 #include "IPanel.hpp"
 
 namespace editor {
@@ -40,7 +43,10 @@ namespace editor {
         Stop,
         Pause,
         Step,
-        Simulate
+        Simulate,
+        Move,
+        Scale,
+        Rotate
     };
 
     class ViewportPanel final: public IPanel {
@@ -49,27 +55,28 @@ namespace editor {
         ViewportPanel(IUIManager& uiManager,
                       IEditorCamera::Ptr editorCamera,
                       robot2D::MessageBus& messageBus,
-                      Scene::Ptr&& scene,
-                      Guizmo2D& guizmo2D);
+                      MessageDispatcher& messageDispatcher,
+                      Guizmo2D& guizmo2D,
+                      Collider& collider);
         ~ViewportPanel() override = default;
 
-        void update(float deltaTime) override;
+        void handleEvents(const robot2D::Event& event);
+        void set(robot2D::FrameBuffer::Ptr frameBuffer);
 
-        void set(Scene::Ptr ptr,
-                 robot2D::FrameBuffer::Ptr frameBuffer) {
-            m_scene = std::move(ptr);
-            m_frameBuffer = std::move(frameBuffer);
-        }
+        void update(float deltaTime) override;
         void render() override;
     private:
+        void instrumentBar(robot2D::vec2f windowOffset, robot2D::vec2f windowAvailSize);
         void toolbarOverlay(robot2D::vec2f windowOffset, robot2D::vec2f windowAvailSize);
     private:
         IUIManager& m_uiManager;
         IEditorCamera::Ptr m_editorCamera;
         robot2D::MessageBus& m_messageBus;
+        MessageDispatcher& m_messageDispatcher;
+        Collider& m_CameraCollider;
+
         robot2D::ResourceHandler<robot2D::Texture, IconType> m_icons;
 
-        Scene::Ptr m_scene;
         robot2D::FrameBuffer::Ptr m_frameBuffer;
         robot2D::vec2u  m_ViewportSize{};
         robot2D::WindowOptions m_windowOptions;
@@ -78,6 +85,9 @@ namespace editor {
 
         bool m_panelHovered;
         bool m_panelFocused;
+        bool needResetViewport{false};
+
         Guizmo2D& m_guizmo2D;
+        robot2D::ecs::Entity m_selectedEntity;
     };
 }

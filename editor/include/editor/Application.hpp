@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2023
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -34,6 +34,8 @@ source distribution.
 #include "TaskQueue.hpp"
 #include "EventBinder.hpp"
 
+#include "EditorAssembly.hpp"
+
 namespace editor {
 
     struct ApplicationConfiguration {
@@ -61,8 +63,9 @@ namespace editor {
 
         robot2D::MessageBus m_messageBus;
         robot2D::Gui m_guiWrapper;
-        Editor m_editor;
-        EditorLogic m_editorLogic;
+
+        IEditorModule::Ptr m_editorModule;
+
         ProjectInspector m_projectInspector;
         EventBinder m_eventBinder;
     };

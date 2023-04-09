@@ -10,7 +10,7 @@ namespace robot2D
     
     public class Collision2D
     {
-        internal uint m_collider;
+        internal uint m_CameraCollider;
         
         internal uint m_otherCollider;
 
@@ -20,7 +20,7 @@ namespace robot2D
             {
                 try
                 {
-                    var ent = Object.FindObjectFromInstanceID(m_collider) as Entity;
+                    var ent = Object.FindObjectFromInstanceID(m_CameraCollider) as Entity;
                     return ent.GetComponent<Collider2D>();
                 }
                 catch (NullReferenceException e)
@@ -37,7 +37,7 @@ namespace robot2D
             {
                 try
                 {
-                    var ent = Object.FindObjectFromInstanceID(m_collider) as Entity;
+                    var ent = Object.FindObjectFromInstanceID(m_CameraCollider) as Entity;
                     return ent.GetComponent<Collider2D>();
                 }
                 catch (NullReferenceException e)
@@ -54,7 +54,7 @@ namespace robot2D
             {
                 try
                 {
-                    var ent = Object.FindObjectFromInstanceID(m_collider) as Entity;
+                    var ent = Object.FindObjectFromInstanceID(m_CameraCollider) as Entity;
                     return ent.GetComponent<RigidBody2D>();
                 }
                 catch (NullReferenceException e)
@@ -71,7 +71,7 @@ namespace robot2D
             {
                 try
                 {
-                    var ent = Object.FindObjectFromInstanceID(m_collider) as Entity;
+                    var ent = Object.FindObjectFromInstanceID(m_CameraCollider) as Entity;
                     return ent.GetComponent<RigidBody2D>();
                 }
                 catch (NullReferenceException e)

@@ -43,6 +43,8 @@ namespace robot2D::ecs {
     public:
         virtual ~IContainer() = default;
         virtual size_t getSize() const = 0;
+        virtual bool hasEntity(EntityID entityId) const = 0;
+        virtual bool duplicate(EntityID from, EntityID to) = 0;
         virtual bool removeEntity(EntityID&& entityId) = 0;
     };
 
@@ -86,6 +88,14 @@ namespace robot2D::ecs {
            return m_components.at(index);
         }
 
+        bool hasEntity(robot2D::ecs::EntityID entityId) const override {
+            return m_components.find(entityId) != m_components.end();
+        }
+
+        bool duplicate(robot2D::ecs::EntityID from, robot2D::ecs::EntityID to) override {
+            m_components[to] = m_components[from];
+        }
+
         void remove(std::size_t index) {
             if(index >= m_components.size())
                 return;
@@ -110,7 +120,7 @@ namespace robot2D::ecs {
         EntityManager(ComponentManager& componentManager, Scene* scene);
         ~EntityManager() = default;
 
-        Entity createEntity();
+        Entity createEntity(bool needAddToScene = true);
 
         template<typename T>
         void addComponent(Entity entity, T component);
@@ -141,6 +151,7 @@ namespace robot2D::ecs {
 
         Bitmask getComponentBitmask(Entity entity);
 
+        Entity duplicateEntity(robot2D::ecs::Entity entity);
     private:
         void markDestroyed(Entity entity);
 
@@ -148,7 +159,7 @@ namespace robot2D::ecs {
         template<typename T>
         ComponentContainer<T>& getContainer();
 
-
+        void addEntityToScene(robot2D::ecs::Entity);
     private:
         friend class Scene;
 
@@ -205,6 +216,7 @@ namespace robot2D::ecs {
         ComponentContainer<T>& container = getContainer<T>();
         container[entityID] = component;
         m_componentMasks[entityID].turnOnBit(componentID);
+        addEntityToScene(entity);
     }
 
     template<typename T, typename... Args>

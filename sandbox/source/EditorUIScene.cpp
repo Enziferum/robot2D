@@ -31,17 +31,52 @@ source distribution.
 namespace sandbox {
 
 
-    struct Hotkey {
+    constexpr const char* gridVertexShader = R"(
+        #version 330 core
+        layout (location = 0) in vec2 Position;
+        layout (location = 1) in vec2 TexCoord;
 
-        std::function<void()> callback;
-    };
+        out vec2 fragCoord;
+        uniform mat4 projectionMatrix;
 
-    std::unordered_map<std::string, Hotkey> g_hotkeys;
+        void main() {
+            fragCoord = TexCoord;
+            gl_Position = vec4(Position, 0, 1.0);
+            gl_Position = sign(gl_Position);
 
-    void addHotkey(std::string name) {
-        Hotkey hotkey{};
-        g_hotkeys[name] = hotkey;
-    }
+            fragCoord = (vec2(gl_Position.x, gl_Position.y)
+                         + vec2(1.0)) / vec2(2.0);
+        }
+
+    )";
+
+    constexpr const char* gridFragmentShader = R"(
+        #version 450 core
+
+        layout (location = 0) out vec4 fragColor;
+        in vec2 fragCoord;
+
+        const float cellSize = 128.0;
+
+        // colors
+        const vec4 col0 = vec4(0.5, 0.5, 0.5, 1.0);
+        const vec4 col1 = vec4(0.7, 0.7, 0.7, 1.0);
+
+        bool checkboard(vec2 textureCoords, vec2 scale) {
+            float s = textureCoords.x;
+            float t = textureCoords.y;
+
+            float sum = floor(s * scale.x) + floor(t * scale.y);
+            bool isEven = mod(sum, 2.0) == 0.0;
+            return isEven;
+        }
+
+        void main() {
+            vec2 scale = vec2(gl_FragCoord.x / cellSize, gl_FragCoord.y / cellSize);
+            bool isEven = checkboard(fragCoord, vec2(cellSize, cellSize * 0.6));
+            fragColor = isEven ? col0 : col1;
+        }
+    )";
 
 
     robot2D::TreeHierarchy treeHierarchy{"MainScene"};
@@ -80,8 +115,11 @@ namespace sandbox {
         m_scene.addSystem<RenderSystem>(m_messageBus);
         m_attachedEntities.clear();
 
-        m_view.reset({200, 200, 400, 400});
+        m_view.reset({0, 0, 1920, 1080});
+        //m_view.setViewport({0, 0, 0.5, 1});
        // m_view.setIsClipping(true);
+
+       m_texture.loadFromFile("res/textures/Doodler.png");
 
         treeHierarchy.addOnSelectCallback([this](robot2D::ITreeItem::Ptr item){
             RB_INFO("Select TreeItem {0}", item -> getID());
@@ -139,14 +177,15 @@ namespace sandbox {
         });
 
 
-        constexpr int startEntityValue = 4;
+        constexpr int startEntityValue = 1;
 
         for(int i = 0; i < startEntityValue; ++i) {
 
             std::string tagName = "Entity:" + std::to_string(i);
-            auto entity = addEntity(m_scene, { 121 + 100 * i, 121 }, { 80, 80 }, tagName);
+            auto entity = addEntity(m_scene, { 100 + 200 * i, 100 }, { 54, 25 }, tagName);
             if(i == 0) {
                 entity.getComponent<SpriteComponent>().setColor(robot2D::Color::Yellow);
+                entity.getComponent<SpriteComponent>().setTexture(m_texture);
             }
 
             m_attachedEntities.push_back(entity);
@@ -181,9 +220,15 @@ namespace sandbox {
     void EditorUIScene::render() {
         //m_window.clear(robot2D::Color::White);
         m_window.beforeRender();
-        //m_window.setView(m_view);
+        m_window.setView(m_view);
+
         m_window.draw(m_scene);
+        //m_shader.use();
         m_window.afterRender();
+
+
+
+       // m_shader.unUse();
     }
 
     void EditorUIScene::imGuiRender() {

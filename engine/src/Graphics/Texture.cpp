@@ -108,6 +108,7 @@ namespace robot2D {
 
     void Texture::create(const Image& image) {
         m_image = image;
+        m_texParam = static_cast<int>(m_image.getImageParameter());
         setupGL();
         bindBufferData(m_image.getBuffer());
     }

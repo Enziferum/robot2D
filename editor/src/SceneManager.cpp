@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2023
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -22,7 +22,7 @@ source distribution.
 #include <filesystem>
 #include <editor/SceneManager.hpp>
 #include <editor/FileApi.hpp>
-#include <editor/SceneSerializer.hpp>
+#include "editor/serializers/SceneSerializer.hpp"
 #include <editor/Components.hpp>
 #include <editor/ResouceManager.hpp>
 #include <robot2D/Util/Logger.hpp>
@@ -47,8 +47,9 @@ namespace editor {
             m_error = SceneManagerError::MemoryAlloc;
             return false;
         }
+
         m_activeScene = scene;
-        auto path = project -> getPath();
+        auto path = project->getPath();
         auto appendPath = combinePath(scenePath, project -> getStartScene());
         auto scenePath = combinePath(path, appendPath);
         m_activeScene -> setPath(scenePath);
@@ -61,6 +62,23 @@ namespace editor {
 
         return true;
     }
+
+
+    bool SceneManager::add(Project::Ptr&& project, const std::string& path) {
+        Scene::Ptr scene = std::make_shared<Scene>(m_messageBus);
+        if(scene == nullptr) {
+            m_error = SceneManagerError::MemoryAlloc;
+            return false;
+        }
+        SceneSerializer serializer(scene);
+        if(!serializer.serialize(path)) {
+            m_error = SceneManagerError::SceneSerialize;
+            return false;
+        }
+        return true;
+    }
+
+
 
     bool SceneManager::load(Project::Ptr&& project) {
         Scene::Ptr scene = std::make_shared<Scene>(m_messageBus);
@@ -99,30 +117,16 @@ namespace editor {
             return false;
         }
         RB_EDITOR_INFO("SceneSerializer finished");
-
-        for(auto& entity: scene -> getEntities()) {
-            if(entity.hasComponent<DrawableComponent>()) {
-                auto& drawable = entity.getComponent<DrawableComponent>();
-                auto& localTexturePath = drawable.getTexturePath();
-                if(!localTexturePath.empty()) {
-                    fs::path texturePath{localTexturePath};
-                    if(is_regular_file(texturePath)) {
-                        auto id = texturePath.filename().string();
-                        auto image = ResourceManager::getManager() -> addImage(id);
-                        if(image) {
-                            auto absolutePath = combinePath(scene -> getAssociatedProjectPath(), texturePath.string());
-                            if(!image -> loadFromFile(absolutePath)) {
-                                RB_EDITOR_WARN("Can't load image by path {0}", absolutePath);
-                                // TODO(a.raag): make error
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
         m_activeScene = scene;
         m_associatedProject = std::move(project);
+
+        for(auto& entity: m_activeScene -> getEntities()) {
+            loadAssetByEntity(entity);
+            auto& ts = entity.getComponent<TransformComponent>();
+            for(auto child: ts.getChildren())
+                loadAssetByEntity(child);
+        }
+        
         return true;
     }
 
@@ -146,7 +150,7 @@ namespace editor {
             return false;
 
         SceneSerializer serializer{scene};
-        if(!serializer.serialize(scene->getPath())) {
+        if(!serializer.serialize(scene-> getPath())) {
             m_error = SceneManagerError::SceneSerialize;
             return false;
         }
@@ -158,4 +162,38 @@ namespace editor {
         return m_associatedProject;
     }
 
+    void SceneManager::loadAssetByEntity(robot2D::ecs::Entity entity) {
+        if(entity.hasComponent<DrawableComponent>()) {
+            auto& drawable = entity.getComponent<DrawableComponent>();
+            auto& localTexturePath = drawable.getTexturePath();
+            if(!localTexturePath.empty()) {
+                fs::path texturePath{localTexturePath};
+                auto id = texturePath.filename().string();
+                auto image = ResourceManager::getManager() -> addImage(id);
+                if(image) {
+                    auto absolutePath = combinePath(m_activeScene -> getAssociatedProjectPath(), texturePath.string());
+                    if(!image -> loadFromFile(absolutePath)) {
+                        RB_EDITOR_WARN("Can't load image by path {0}", absolutePath);
+                        // TODO(a.raag): make error
+                    }
+                }
+            }
+        }
+        if(entity.hasComponent<TextComponent>()) {
+            auto& text = entity.getComponent<TextComponent>();
+            auto& localFontPath = text.getFontPath();
+            if(!localFontPath.empty()) {
+                fs::path fontPath{localFontPath};
+                auto id = fontPath.filename().string();
+                auto font = ResourceManager::getManager() -> addFont(id);
+                if(font) {
+                    auto absolutePath = combinePath(m_activeScene -> getAssociatedProjectPath(), fontPath.string());
+                    if(!font -> loadFromFile(absolutePath)) {
+                        RB_EDITOR_WARN("Can't load image by path {0}", absolutePath);
+                        // TODO(a.raag): make error
+                    }
+                }
+            }
+        }
+    }
 }

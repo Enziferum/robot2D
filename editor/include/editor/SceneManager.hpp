@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2023
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -35,6 +35,9 @@ namespace editor {
         ~SceneManager() = default;
 
         bool add(Project::Ptr&& project);
+        bool add(Project::Ptr&& project, const std::string& path);
+
+
         bool load(Project::Ptr&& project);
         bool load(const Project::Ptr project, std::string path = "");
         bool remove();
@@ -43,6 +46,8 @@ namespace editor {
         Project::Ptr getAssociatedProject() const;
         Scene::Ptr getActiveScene() const;
         const SceneManagerError& getError() const;
+    private:
+        void loadAssetByEntity(robot2D::ecs::Entity entity);
     private:
         robot2D::MessageBus& m_messageBus;
         Project::Ptr m_associatedProject;

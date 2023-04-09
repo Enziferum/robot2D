@@ -39,6 +39,21 @@ namespace robot2D::ecs {
         return m_addPending.back();
     }
 
+
+    Entity Scene::createEmptyEntity() {
+        constexpr bool needAddToScene = false;
+        Entity entity = m_entityManager.createEntity(needAddToScene);
+        return entity;
+    }
+
+    Entity Scene::duplicateEntity(robot2D::ecs::Entity entity) {
+        auto duplicated = m_entityManager.duplicateEntity(entity);
+        if(!m_useSystems)
+            return entity;
+        m_addPending.emplace_back(duplicated);
+        return m_addPending.back();
+    }
+
     void Scene::removeEntity(Entity entity) {
         m_deletePendingBuffer.emplace_back(entity);
         m_entityManager.markDestroyed(entity);
@@ -69,6 +84,11 @@ namespace robot2D::ecs {
         for(auto& drawable: m_drawables)
             target.draw(*drawable);
     }
+
+    void Scene::addEntity(robot2D::ecs::Entity entity) {
+        m_addPending.emplace_back(entity);
+    }
+
 
 }
 

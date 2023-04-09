@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2023
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -58,6 +58,14 @@ namespace editor {
         auto fullPath = fs::path(basePath);
         fullPath /= fs::path(appendPath);
         return fullPath.string();
+    }
+
+    bool hasFile(const std::string& path) {
+        fs::path filePath{path};
+        if(exists(filePath))
+            return true;
+
+        return false;
     }
 }
 

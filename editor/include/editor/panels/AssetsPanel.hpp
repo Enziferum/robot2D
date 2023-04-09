@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2023
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -23,6 +23,10 @@ source distribution.
 
 #include <robot2D/Graphics/Texture.hpp>
 #include <robot2D/Util/ResourceHandler.hpp>
+#include <robot2D/Core/MessageBus.hpp>
+#include <editor/Observer.hpp>
+#include <editor/UIManager.hpp>
+#include <editor/PrefabManager.hpp>
 
 #include "IPanel.hpp"
 
@@ -32,31 +36,65 @@ namespace editor {
         enum class ResourceIconType {
             File,
             Scene,
-            Directory
+            Image,
+            Script,
+            Directory,
+            Font,
+            Prefab
         };
 
         const std::string iconsPath = "res/icons/";
         const float m_padding = 16.F;
         const float m_thumbnaleSize = 128.F;
         const std::unordered_map<ResourceIconType, std::string> iconPaths = {
-                {ResourceIconType::File, "FileIcon.png"},
-                {ResourceIconType::Directory, "DirectoryIcon.png"}
+                { ResourceIconType::File, "FileIcon.png"},
+                { ResourceIconType::Directory, "DirectoryIcon.png"},
+                { ResourceIconType::Scene, "studio.png"},
+                { ResourceIconType::Image, "image.png"},
+                { ResourceIconType::Script, "script.png"},
+                { ResourceIconType::Font, "text.png"},
+                { ResourceIconType::Prefab, "content.png"}
         };
     };
 
-    class AssetsPanel: public IPanel {
+
+
+    class AssetsPanel: public IPanel, public Observer {
     public:
-        AssetsPanel();
+        AssetsPanel(robot2D::MessageBus& messageBus,
+                    IUIManager& iuiManager,
+                    PrefabManager& prefabManager);
         ~AssetsPanel() override = default;
 
         void setAssetsPath(const std::string& path);
         void render() override;
-        void unlock() { wasSet = true; }
+        void unlock() { m_unlock = true; }
     private:
+        void dropFiles(std::vector<std::string>&& path);
+    private:
+        enum class AssetType {
+            Scene,
+            Folder
+        };
+        struct AssetItem {
+            AssetType assetType;
+            std::string name;
+            std::filesystem::path absolutePath;
+            std::filesystem::path relativePath;
+        };
+    private:
+        robot2D::MessageBus& m_messageBus;
+        IUIManager& m_uiManager;
+        PrefabManager& m_prefabManager;
+
         std::filesystem::path m_currentPath;
         std::filesystem::path m_assetsPath;
-        robot2D::ResourceHandler<robot2D::Texture, AssetsPanelConfiguration::ResourceIconType> m_assetsIcons;
+        robot2D::ResourceHandler<robot2D::Texture,
+                AssetsPanelConfiguration::ResourceIconType> m_assetsIcons;
+
         AssetsPanelConfiguration m_configuration;
-        bool wasSet{false};
+        std::vector<AssetItem> m_assetItems;
+        std::pair<std::filesystem::path, bool> m_itemEditName;
+        bool m_unlock{false};
     };
 }

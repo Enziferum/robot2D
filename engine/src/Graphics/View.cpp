@@ -59,7 +59,7 @@ namespace robot2D {
         needTransformUpdate = true;
     }
 
-    const FloatRect &View::getViewport() const {
+    const FloatRect& View::getViewport() const {
         return m_viewport;
     }
 

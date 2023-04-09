@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2023
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -21,6 +21,8 @@ source distribution.
 
 #include <algorithm>
 #include <editor/Components.hpp>
+
+
 
 namespace editor {
     DrawableComponent::DrawableComponent():
@@ -77,20 +79,39 @@ namespace editor {
         return m_vertices;
     }
 
-
-    CameraComponent::CameraComponent(): m_view(), m_actualViewport() {}
-
-    void CameraComponent::setViewport(const robot2D::FloatRect& viewport) {
-        m_actualViewport = viewport;
-        m_view.reset(m_actualViewport);
+    SceneCamera::SceneCamera()
+    {
+        RecalculateProjection();
     }
 
-    float CameraComponent::getZoom() const {
-        auto actualSize = m_view.getSize();
-        robot2D::vec2f defaultSize = { m_actualViewport.width, m_actualViewport.height};
-        robot2D::vec2f zoom = {defaultSize.x / actualSize.x, defaultSize.y / actualSize.y};
-        return zoom.x;
+    void SceneCamera::SetOrthographic(float size, float nearClip, float farClip)
+    {
+        m_ProjectionType = ProjectionType::Orthographic;
+        m_OrthographicSize = size;
+        m_OrthographicNear = nearClip;
+        m_OrthographicFar = farClip;
+        RecalculateProjection();
     }
+
+    void SceneCamera::SetViewportSize(uint32_t width, uint32_t height)
+    {
+       // HZ_CORE_ASSERT(width > 0 && height > 0);
+        m_AspectRatio = (float)width / (float)height;
+        RecalculateProjection();
+    }
+
+    void SceneCamera::RecalculateProjection()
+    {
+        m_AspectRatio = 16 / 9;
+        float orthoLeft = -m_OrthographicSize * m_AspectRatio * 0.5f;
+        float orthoRight = m_OrthographicSize * m_AspectRatio * 0.5f;
+        float orthoBottom = -m_OrthographicSize * 0.5f;
+        float orthoTop = m_OrthographicSize * 0.5f;
+
+        m_Projection = glm::ortho(orthoLeft, orthoRight, orthoBottom, orthoTop, m_OrthographicNear, m_OrthographicFar);
+
+    }
+
 
     void TransformComponent::setPosition(const robot2D::vec2f& pos) {
         for(auto child: m_children) {
@@ -112,7 +133,7 @@ namespace editor {
         }
     }
 
-    void TransformComponent::removeChild(robot2D::ecs::Entity entity) {
+    void TransformComponent::removeChild(robot2D::ecs::Entity entity, bool removeFromScene ) {
         auto found = std::remove_if(m_children.begin(), m_children.end(), [&entity](robot2D::ecs::Entity ent) {
             return entity == ent;
         });
@@ -120,7 +141,8 @@ namespace editor {
         if(found == m_children.end())
             return;
 
-        found -> removeSelf();
+        if(removeFromScene)
+            found -> removeSelf();
         m_children.erase(found, m_children.end());
     }
 
@@ -128,20 +150,20 @@ namespace editor {
         return !m_children.empty();
     }
 
-    void TransformComponent::removeSelf() {
+    void TransformComponent::removeSelf(bool removeFromScene) {
         if(!isChild())
             return;
 
-        m_parent -> removeChild(m_childID);
+        m_parent -> removeChild(m_childID, removeFromScene);
     }
 
-    void TransformComponent::removeChild(int childID) {
+    void TransformComponent::removeChild(int childID, bool removeFromScene) {
         auto found = std::find_if(m_children.begin(), m_children.end(), [&childID](robot2D::ecs::Entity entity) {
             return entity.getIndex() == childID;
         });
         if(found == m_children.end())
             return;
-        removeChild(*found);
+        removeChild(*found, removeFromScene);
     }
 
 
@@ -180,6 +202,7 @@ namespace editor {
 
     void TextComponent::setFont(const robot2D::Font& font) {
         m_font = &font;
+        m_texture.create(*(m_font -> getImages()[0]));
     }
 
     const robot2D::Font* TextComponent::getFont() const {
@@ -187,7 +210,7 @@ namespace editor {
     }
 
     const robot2D::Texture& TextComponent::getTexture() const {
-        return *(std::move(m_font -> getTextures()[0]));
+        return m_texture;
     }
 
     std::unordered_map<int, robot2D::GlyphQuad>& TextComponent::getGlyphCache() {

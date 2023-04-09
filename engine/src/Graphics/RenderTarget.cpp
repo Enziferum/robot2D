@@ -165,4 +165,8 @@ namespace robot2D {
         m_render -> render3D(vertexArray, states);
     }
 
+    void RenderTarget::setRawView(float *rawMatrix) {
+        m_render -> setRawView(rawMatrix);
+    }
+
 }
