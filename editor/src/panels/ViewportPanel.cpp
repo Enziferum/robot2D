@@ -125,17 +125,19 @@ namespace editor {
 
 
     ViewportPanel::ViewportPanel(
-            IUIManager& uiManager,
+            UIInteractor* uiInteractor,
             IEditorCamera::Ptr editorCamera,
             robot2D::MessageBus& messageBus,
             MessageDispatcher& messageDispatcher,
             Guizmo2D& guizmo2D,
-            Collider& collider):
+            Collider& collider,
+            SelectionCollider& selectionCollider):
             IPanel(UniqueType(typeid(ViewportPanel))),
-            m_uiManager{uiManager},
+            m_uiInteractor{uiInteractor},
             m_editorCamera{editorCamera},
             m_messageBus{messageBus},
             m_messageDispatcher{messageDispatcher},
+            m_selectionCollider{selectionCollider},
             m_frameBuffer(nullptr) ,
             m_panelFocused{false},
             m_panelHovered{false},
@@ -160,10 +162,6 @@ namespace editor {
             }
         }
 
-        m_messageDispatcher.onMessage<PanelEntitySelectedMessage>(MessageID::PanelEntitySelected,
-                                                                  [this](const PanelEntitySelectedMessage& message) {
-            m_selectedEntity = message.entity;
-        });
     }
 
     void ViewportPanel::handleEvents(const robot2D::Event& event) {
@@ -178,9 +176,9 @@ namespace editor {
 
             if( !m_guizmo2D.isActive() && !m_CameraCollider.isActive() ) {
                 m_frameBuffer -> Bind();
-                int pixelData = m_frameBuffer -> readPixel(1, { mouseX, mouseY });
+                int graphicsEntityID = m_frameBuffer -> readPixel(1, { mouseX, mouseY });
                 m_frameBuffer -> unBind();
-                m_selectedEntity = m_uiManager.getSelectedEntity(pixelData);
+                m_uiInteractor -> getSelectedEntity(graphicsEntityID);
             }
         }
     }
@@ -233,37 +231,51 @@ namespace editor {
             m_guizmo2D.setIsShow(false);
             m_CameraCollider.setIsShown(false);
 
-            if (m_selectedEntity && !m_selectedEntity.destroyed())
-            {
-                // Editor camera
-                const robot2D::mat4& cameraProjection = m_editorCamera -> getProjectionMatrix();
-                robot2D::mat4 cameraView = m_editorCamera -> getViewMatrix();
+            auto& selectedEntities = m_uiInteractor-> getSelectedEntities();
+            if(selectedEntities.size() == 1) {
+                auto& selectedEntity = selectedEntities[0];
+                if(!selectedEntity.destroyed()) {
+                    // Editor camera
+                    const robot2D::mat4& cameraProjection = m_editorCamera -> getProjectionMatrix();
+                    robot2D::mat4 cameraView = m_editorCamera -> getViewMatrix();
 
-                auto& tc = m_selectedEntity.getComponent<TransformComponent>();
-                m_guizmo2D.setIsShow(true);
-                m_guizmo2D.setManipulated(&tc);
+                    auto& tc = selectedEntity.getComponent<TransformComponent>();
+                    m_guizmo2D.setIsShow(true);
+                    m_guizmo2D.setManipulated(&tc);
 
-                if(m_selectedEntity.hasComponent<CameraComponent>()) {
-                    m_CameraCollider.setIsShown(true);
-                    auto& transform = m_selectedEntity.getComponent<TransformComponent>();
-                    auto position = transform.getPosition();
-                    auto frame = m_CameraCollider.getRect();
+                    if(selectedEntity.hasComponent<CameraComponent>()) {
+                        m_CameraCollider.setIsShown(true);
+                        auto& transform = selectedEntity.getComponent<TransformComponent>();
+                        auto position = transform.getPosition();
+                        auto frame = m_CameraCollider.getRect();
 
-                    robot2D::vec2f colliderPosition = {
-                            position.x - frame.width / 2.f,
-                            position.y - frame.height / 2.f,
-                    };
+                        robot2D::vec2f colliderPosition = {
+                                position.x - frame.width / 2.f,
+                                position.y - frame.height / 2.f,
+                        };
 
-                    m_CameraCollider.setPosition(colliderPosition);
-                   // m_CameraCollider.setSize(m_selectedEntity.getComponent<CameraComponent>().orthoSize);
-                    m_selectedEntity.getComponent<CameraComponent>().size = {frame.width, frame.height};
-                    m_selectedEntity.getComponent<CameraComponent>().position = frame.topPoint();
-                    m_selectedEntity.getComponent<CameraComponent>().orthoSize = m_CameraCollider.getSize();
+                        m_CameraCollider.setPosition(colliderPosition);
+                        // m_CameraCollider.setSize(m_selectedEntity.getComponent<CameraComponent>().orthoSize);
+                        selectedEntity.getComponent<CameraComponent>().size = {frame.width, frame.height};
+                        selectedEntity.getComponent<CameraComponent>().position = frame.topPoint();
+                        selectedEntity.getComponent<CameraComponent>().orthoSize = m_CameraCollider.getSize();
+                    }
                 }
-
             }
-            else
+            else if(selectedEntities.size() > 1) {
+                std::vector<robot2D::Transformable*> moveTfs;
+                for(auto& entity: selectedEntities) {
+                   if(!entity.destroyed()) {
+                       auto &tc = entity.getComponent<TransformComponent>();
+                       moveTfs.emplace_back(&tc);
+                   }
+                }
+                m_guizmo2D.setIsShow(true);
+                //m_guizmo2D.setManipulated(&tc);
+            }
+            else {
                 m_guizmo2D.setManipulated(nullptr);
+            }
 
             if (ImGui::BeginDragDropTarget())
             {
@@ -325,14 +337,14 @@ namespace editor {
 
             /// TODO(a.raag): Ask From Interactor
 
-//            if(m_scene)
-//                iconType = m_scene -> isRunning() ? IconType::Stop : IconType::Play;
-//            else
-//                iconType = IconType::Play;
-//            if(robot2D::ImageButton(m_icons[iconType], { buttonSize.x, buttonSize.y })) {
-//                auto* msg = m_messageBus.postMessage<ToolbarMessage>(MessageID::ToolbarPressed);
-//                msg -> pressedType = m_scene -> isRunning() ? 0 : 1;
-//            }
+            if(m_uiInteractor)
+                iconType = m_uiInteractor -> isRunning() ? IconType::Stop : IconType::Play;
+            else
+                iconType = IconType::Play;
+            if(robot2D::ImageButton(m_icons[iconType], { buttonSize.x, buttonSize.y })) {
+                auto* msg = m_messageBus.postMessage<ToolbarMessage>(MessageID::ToolbarPressed);
+                msg -> pressedType = m_uiInteractor -> isRunning() ? 0 : 1;
+            }
 
         }
         ImGui::PopStyleVar(2);

@@ -55,6 +55,11 @@ namespace editor {
         m_messageDispatcher.onMessage<OpenSceneMessage>(MessageID::OpenScene, BIND_CLASS_FN(openScene));
         m_messageDispatcher.onMessage<CreateSceneMessage>(MessageID::CreateScene, BIND_CLASS_FN(createScene));
         m_messageDispatcher.onMessage<PrefabLoadMessage>(MessageID::PrefabLoad, BIND_CLASS_FN(addPrefabEntity));
+        m_messageDispatcher.onMessage<PanelEntitySelectedMessage>(MessageID::PanelEntitySelected,
+            [this](const PanelEntitySelectedMessage& message) {
+            m_selectedEntities.clear();
+            m_selectedEntities.emplace_back(message.entity);
+        });
     }
 
     void EditorLogic::update(float dt) {
@@ -344,7 +349,7 @@ namespace editor {
 
     //////////////////////////////////////// UIInteractor ////////////////////////////////////////
 
-    std::vector<robot2D::ecs::Entity> EditorLogic::getSelectedEntities() const {
+    std::vector<robot2D::ecs::Entity>& EditorLogic::getSelectedEntities()  {
         return m_selectedEntities;
     }
 
@@ -390,6 +395,31 @@ namespace editor {
 
     void EditorLogic::registerOnDeleteFinish(std::function<void()>&& callback) {
         m_activeScene -> registerOnDeleteFinish(std::move(callback));
+    }
+
+    robot2D::ecs::Entity EditorLogic::getSelectedEntity(int graphicsEntityID) {
+        m_selectedEntities.clear();
+        auto entities = m_activeScene -> getEntities();
+        for(auto& entity: entities) {
+            if(entity.getIndex() == graphicsEntityID) {
+                m_selectedEntities.emplace_back(entity);
+                auto* msg =
+                        m_messageBus.postMessage<PanelEntitySelectedMessage>(MessageID::PanelEntityNeedSelect);
+                msg -> entity = entity;
+                return entity;
+            }
+            auto& tx = entity.getComponent<TransformComponent>();
+            for(auto& child: tx.getChildren()) {
+                if(child.getIndex() == graphicsEntityID) {
+                    m_selectedEntities.emplace_back(child);
+                    auto* msg =
+                            m_messageBus.postMessage<PanelEntitySelectedMessage>(MessageID::PanelEntityNeedSelect);
+                    msg -> entity = child;
+                    return child;
+                }
+            }
+        }
+        return robot2D::ecs::Entity{};
     }
 
     //////////////////////////////////////// UIInteractor ////////////////////////////////////////

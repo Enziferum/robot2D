@@ -41,6 +41,7 @@ namespace editor {
         EntityDuplicate,
         EntityRemove,
         PanelEntitySelected,
+        PanelEntityNeedSelect,
         ShowInspector,
         ToolbarPressed,
         InstrumentPressed,

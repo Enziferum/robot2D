@@ -29,11 +29,12 @@ source distribution.
 #include <robot2D/Util/ResourceHandler.hpp>
 
 #include <editor/Scene.hpp>
-#include <editor/UIManager.hpp>
+#include <editor/UIInteractor.hpp>
 #include <editor/EditorCamera.hpp>
 #include <editor/Guizmo2D.hpp>
 #include <editor/Collider.hpp>
 #include <editor/MessageDispather.hpp>
+#include <editor/SelectionCollider.hpp>
 
 #include "IPanel.hpp"
 
@@ -52,12 +53,13 @@ namespace editor {
     class ViewportPanel final: public IPanel {
 
     public:
-        ViewportPanel(IUIManager& uiManager,
+        ViewportPanel(UIInteractor* uiInteractor,
                       IEditorCamera::Ptr editorCamera,
                       robot2D::MessageBus& messageBus,
                       MessageDispatcher& messageDispatcher,
                       Guizmo2D& guizmo2D,
-                      Collider& collider);
+                      Collider& collider,
+                      SelectionCollider& selectionCollider);
         ~ViewportPanel() override = default;
 
         void handleEvents(const robot2D::Event& event);
@@ -69,11 +71,13 @@ namespace editor {
         void instrumentBar(robot2D::vec2f windowOffset, robot2D::vec2f windowAvailSize);
         void toolbarOverlay(robot2D::vec2f windowOffset, robot2D::vec2f windowAvailSize);
     private:
-        IUIManager& m_uiManager;
+        UIInteractor* m_uiInteractor;
+
         IEditorCamera::Ptr m_editorCamera;
         robot2D::MessageBus& m_messageBus;
         MessageDispatcher& m_messageDispatcher;
         Collider& m_CameraCollider;
+        SelectionCollider& m_selectionCollider;
 
         robot2D::ResourceHandler<robot2D::Texture, IconType> m_icons;
 
@@ -88,6 +92,6 @@ namespace editor {
         bool needResetViewport{false};
 
         Guizmo2D& m_guizmo2D;
-        robot2D::ecs::Entity m_selectedEntity;
+        std::vector<robot2D::ecs::Entity> m_selectedEntities;
     };
 }
