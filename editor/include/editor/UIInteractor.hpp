@@ -12,12 +12,12 @@ namespace editor {
         using Ptr = UIInteractor*;
 
         virtual ~UIInteractor() = 0;
-        virtual std::vector<robot2D::ecs::Entity> getSelectedEntities() const = 0;
+        virtual std::vector<robot2D::ecs::Entity>& getSelectedEntities()  = 0;
+        virtual robot2D::ecs::Entity getSelectedEntity(int graphicsEntityID) = 0;
 
         virtual std::string getAssociatedProjectPath() const = 0;
         virtual std::vector<robot2D::ecs::Entity> getEntities() const = 0;
         virtual void removeEntity(robot2D::ecs::Entity entity) = 0;
-
         virtual void addEmptyEntity() = 0;
         virtual robot2D::ecs::Entity createEmptyEntity() = 0;
         virtual robot2D::ecs::Entity duplicateEmptyEntity(robot2D::ecs::Entity entity) = 0;

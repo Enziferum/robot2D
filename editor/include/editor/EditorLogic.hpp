@@ -83,8 +83,8 @@ namespace editor {
         void loadProject(Project::Ptr project);
 
         //////////////////////////////////////// UIInteractor ////////////////////////////////////////
-
-        std::vector<robot2D::ecs::Entity> getSelectedEntities() const override;
+        robot2D::ecs::Entity getSelectedEntity(int graphicsEntityID)  override;
+        std::vector<robot2D::ecs::Entity>& getSelectedEntities()  override;
         std::string getAssociatedProjectPath() const override;
         std::vector<robot2D::ecs::Entity> getEntities() const override;
         void removeEntity(robot2D::ecs::Entity entity) override;

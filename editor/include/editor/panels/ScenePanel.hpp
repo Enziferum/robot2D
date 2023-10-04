@@ -64,7 +64,7 @@ namespace editor {
 
         void drawComponentsBase(robot2D::ecs::Entity entity);
         void drawComponents(robot2D::ecs::Entity entity);
-        void onEntitySelection(const EntitySelection& entitySelection);
+        void onEntitySelection(const PanelEntitySelectedMessage& entitySelection);
         void onEntityDuplicate(const EntityDuplication& duplication);
         void onEntityRemove(const EntityRemovement& removement);
 

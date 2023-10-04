@@ -58,7 +58,6 @@ namespace editor {
     };
 
 
-
     class AssetsPanel: public IPanel, public Observer {
     public:
         AssetsPanel(robot2D::MessageBus& messageBus,
@@ -71,6 +70,11 @@ namespace editor {
         void unlock() { m_unlock = true; }
     private:
         void dropFiles(std::vector<std::string>&& path);
+        void uiAssetsCreation();
+        void processAssets();
+        /// \brief in panel drag and out of panel
+        void processDragDrop(const std::filesystem::directory_entry& directoryEntry,
+                             std::filesystem::path& path);
     private:
         enum class AssetType {
             Scene,
@@ -95,6 +99,8 @@ namespace editor {
         AssetsPanelConfiguration m_configuration;
         std::vector<AssetItem> m_assetItems;
         std::pair<std::filesystem::path, bool> m_itemEditName;
+
         bool m_unlock{false};
+        bool m_itemClicked{false};
     };
 }

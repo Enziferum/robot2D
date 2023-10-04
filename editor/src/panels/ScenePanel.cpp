@@ -106,8 +106,8 @@ namespace editor {
     m_configuration{},
     m_treeHierarchy("MainScene")
     {
-        m_messageDispatcher.onMessage<EntitySelection>(
-                EntitySelected,
+        m_messageDispatcher.onMessage<PanelEntitySelectedMessage>(
+                MessageID::PanelEntityNeedSelect,
                 BIND_CLASS_FN(onEntitySelection)
         );
 
@@ -497,14 +497,31 @@ namespace editor {
         });
     }
 
-    void ScenePanel::onEntitySelection(const EntitySelection& entitySelection) {
-        for(const auto& entity: m_interactor -> getEntities()) {
-            if(entity.getIndex() == entitySelection.entityID) {
-                m_selectedEntity = entity;
+    void ScenePanel::onEntitySelection(const PanelEntitySelectedMessage& entitySelection) {
+        for(auto& item: m_treeHierarchy.getItems()) {
+            auto entityPtr = item -> getUserData<robot2D::ecs::Entity>();
+            if(!entityPtr)
                 return;
+            robot2D::ecs::Entity entity = *entityPtr;
+
+            if(entity == entitySelection.entity) {
+                m_selectedEntity = entity;
+                m_treeHierarchy.setSelected(item);
+            }
+
+            if(item -> hasChildrens()) {
+                for(auto child: item -> getChildrens()) {
+                    entityPtr = child -> getUserData<robot2D::ecs::Entity>();
+                    if(!entityPtr)
+                        return;
+                    entity = *entityPtr;
+                    if(entity == entitySelection.entity) {
+                        m_selectedEntity = entity;
+                        m_treeHierarchy.setSelected(child);
+                    }
+                }
             }
         }
-        m_selectedEntity = {};
     }
 
     template<typename T>

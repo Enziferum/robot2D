@@ -47,7 +47,7 @@ source distribution.
 #include "Collider.hpp"
 #include "PopupConfiguration.hpp"
 #include "SceneRender.hpp"
-
+#include "SelectionCollider.hpp"
 
 
 namespace editor {
@@ -115,6 +115,7 @@ namespace editor {
         void onKeyReleased(const robot2D::Event& event);
         void onMousePressed (const robot2D::Event& event);
         void onMouseReleased(const robot2D::Event& event);
+        void onMouseMoved(const robot2D::Event& event);
     private:
         enum class State {
             LostFocus,
@@ -153,7 +154,10 @@ namespace editor {
 
         ShortCutManager<EditorShortCutType> m_shortcutManager;
         SceneGrid m_sceneGrid;
-        Collider m_selectionBox;
+        Collider m_cameraBox;
+        SelectionCollider m_selectionCollider;
+
+        bool m_leftMousePressed{false};
 
         editor::PopupConfiguration* m_popupConfiguration{nullptr};
         SceneRender m_sceneRender;
