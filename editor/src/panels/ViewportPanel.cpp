@@ -231,10 +231,10 @@ namespace editor {
             m_guizmo2D.setIsShow(false);
             m_CameraCollider.setIsShown(false);
 
-            auto& selectedEntities = m_uiInteractor-> getSelectedEntities();
+            auto& selectedEntities = m_uiInteractor -> getSelectedEntities();
             if(selectedEntities.size() == 1) {
                 auto& selectedEntity = selectedEntities[0];
-                if(!selectedEntity.destroyed()) {
+                if(selectedEntity && !selectedEntity.destroyed()) {
                     // Editor camera
                     const robot2D::mat4& cameraProjection = m_editorCamera -> getProjectionMatrix();
                     robot2D::mat4 cameraView = m_editorCamera -> getViewMatrix();
@@ -265,13 +265,13 @@ namespace editor {
             else if(selectedEntities.size() > 1) {
                 std::vector<robot2D::Transformable*> moveTfs;
                 for(auto& entity: selectedEntities) {
-                   if(!entity.destroyed()) {
+                   if(entity && !entity.destroyed()) {
                        auto &tc = entity.getComponent<TransformComponent>();
                        moveTfs.emplace_back(&tc);
                    }
                 }
-                m_guizmo2D.setIsShow(true);
-                //m_guizmo2D.setManipulated(&tc);
+                // m_guizmo2D.setIsShow(true);
+                // m_guizmo2D.setManipulated(&tc);
             }
             else {
                 m_guizmo2D.setManipulated(nullptr);

@@ -108,7 +108,7 @@ namespace editor {
         void guiRender();
         void windowFunction();
         void setupBindings();
-
+        void setupShortCuts();
 
 
         void onKeyPressed(const robot2D::Event& event);

@@ -15,6 +15,7 @@ namespace editor {
 
         virtual void update(float dt) = 0;
         virtual void findSelectEntities(const robot2D::FloatRect& rect) = 0;
+        virtual bool hasSelectedEntities() const = 0;
         virtual void createScene() = 0;
         virtual void copyToBuffer() = 0;
         virtual void pasterFromBuffer() = 0;
