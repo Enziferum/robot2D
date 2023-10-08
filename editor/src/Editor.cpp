@@ -84,6 +84,11 @@ namespace editor {
         m_eventBinder.bindEvent(robot2D::Event::MouseReleased, BIND_CLASS_FN(onMouseReleased));
         m_eventBinder.bindEvent(robot2D::Event::MouseMoved, BIND_CLASS_FN(onMouseMoved));
 
+
+    }
+
+
+    void Editor::setupShortCuts() {
         ShortCut guizmoMove{robot2D::Key::LEFT_SHIFT, robot2D::Key::W};
         guizmoMove.setCallback([this]() {
             m_guizmo2D.setOperationType(Guizmo2D::Operation::Move);
@@ -117,9 +122,9 @@ namespace editor {
 
         ShortCut duplicateEntity{robot2D::Key::LEFT_CONTROL, robot2D::Key::D};
         duplicateEntity.setCallback([this]() {
-           auto mousePos = m_window -> getMousePos();
-           mousePos = m_editorCamera -> convertPixelToCoords(mousePos);
-           m_interactor -> duplicateEntity(mousePos, m_panelManager.getSelectedEntity());
+            auto mousePos = m_window -> getMousePos();
+            mousePos = m_editorCamera -> convertPixelToCoords(mousePos);
+            m_interactor -> duplicateEntity(mousePos, m_panelManager.getSelectedEntity());
         });
         // TODO(a.raag): clone Entity possibility
         m_shortcutManager.bind(std::make_pair(EditorShortCutType::Duplicate, duplicateEntity));
@@ -132,6 +137,7 @@ namespace editor {
         // TODO(a.raag): clone Entity possibility
         m_shortcutManager.bind(std::make_pair(EditorShortCutType::Undo, undoCommand));
     }
+
 
     void Editor::prepare() {
         auto windowSize = m_window -> getSize();
@@ -192,6 +198,8 @@ namespace editor {
         m_panelManager.addPanel<GameViewport>(m_messageBus);
 
         setupBindings();
+        setupShortCuts();
+
         m_sceneGrid.setup();
 
         g_spinner.setRadius(16.f);
@@ -444,7 +452,8 @@ namespace editor {
     }
 
     void Editor::onMousePressed(const robot2D::Event& event) {
-        if(event.mouse.btn == robot2D::mouse2int(robot2D::Mouse::MouseLeft)) {
+        if(event.mouse.btn == robot2D::mouse2int(robot2D::Mouse::MouseLeft)
+                        && !m_interactor -> hasSelectedEntities() && !m_guizmo2D.isActive()) {
             m_leftMousePressed = true;
             auto mousePos = m_editorCamera -> convertPixelToCoords({event.mouse.x, event.mouse.y});
             m_selectionCollider.setPosition(mousePos);
@@ -456,8 +465,8 @@ namespace editor {
         if(event.mouse.btn == robot2D::mouse2int(robot2D::Mouse::MouseLeft)) {
             m_leftMousePressed = false;
             m_selectionCollider.setIsShown(false);
-            m_selectionCollider.reset();
             m_interactor -> findSelectEntities(m_selectionCollider.getRect());
+            m_selectionCollider.reset();
         }
     }
 

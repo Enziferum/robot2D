@@ -193,12 +193,20 @@ namespace editor {
 
 
     void EditorLogic::copyToBuffer() {
-        /// find selections ///
+        m_copyEntities.clear();
+        m_copyEntities = m_selectedEntities;
     }
 
     void EditorLogic::pasterFromBuffer() {
+        for(auto& copy: m_copyEntities) {
+
+        }
+    }
+
+    void EditorLogic::deleteEntity() {
 
     }
+
 
     void EditorLogic::createScene() {
         if(!m_sceneManager.add(std::move(m_currentProject))) {
@@ -299,10 +307,6 @@ namespace editor {
         m_commandStack.redo();
     }
 
-    void EditorLogic::deleteEntity() {
-
-    }
-
     void EditorLogic::findSelectEntities(const robot2D::FloatRect& rect) {
 
         for(auto& entity: m_activeScene -> getEntities()) {
@@ -335,7 +339,7 @@ namespace editor {
 //            /// error
 //        }
 
-        /// TODO(a.raag): TreeHiarchy delete all
+        /// TODO(a.raag): TreeHiearchy delete all
         m_selectedEntities.clear();
     }
 
@@ -420,6 +424,10 @@ namespace editor {
             }
         }
         return robot2D::ecs::Entity{};
+    }
+
+    bool EditorLogic::hasSelectedEntities() const {
+        return !m_selectedEntities.empty();
     }
 
     //////////////////////////////////////// UIInteractor ////////////////////////////////////////
