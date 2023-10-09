@@ -28,7 +28,7 @@ else()
 endif()
 
 set(CMAKE_CXX_STANDARD 17)
-option(USE_GLM "Use GLM?" ON)
+option(USE_GLM "Use GLM?" OFF)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
 include(Mono)

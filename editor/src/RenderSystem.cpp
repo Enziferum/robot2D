@@ -28,7 +28,7 @@ source distribution.
 #include <editor/TextSystem.hpp>
 #include <editor/Scene.hpp>
 
-#include "glm/gtc/type_ptr.hpp"
+//#include "glm/gtc/type_ptr.hpp"
 #include "editor/panels/TreeHierarchy.hpp"
 
 namespace editor {

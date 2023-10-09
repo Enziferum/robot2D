@@ -104,7 +104,11 @@ namespace editor {
                             if(payload) {
                                 if(payload -> IsDataType(m_playloadIdentifier.c_str())) {
                                     UUID id = *static_cast<UUID*>(payload -> Data);
+#ifdef _WIN32
                                     RB_EDITOR_INFO("Treehierachy: got item with ID = {0}", id);
+#else
+                                    // TODO(a.raag) fmt don't support UUID Correctly
+#endif
                                     m_reorderCallback(findByID(id), item);
                                 }
                             }
@@ -141,7 +145,11 @@ namespace editor {
                                 if(payload) {
                                     if(payload -> IsDataType(m_playloadIdentifier.c_str())) {
                                         UUID id = *static_cast<UUID*>(payload -> Data);
+#ifdef _WIN32
                                         RB_EDITOR_INFO("TreeHierachy: Want make as child item with ID = {0}", id);
+#else
+                                        // TODO(a.raag) fmt don't support UUID Correctly
+#endif
                                         m_makeAsChildCallback(findByID(id), item);
                                     }
                                 }
@@ -183,7 +191,11 @@ namespace editor {
                             if(payload) {
                                 if(payload -> IsDataType(m_playloadIdentifier.c_str())) {
                                     UUID id = *static_cast<UUID*>(payload -> Data);
+#ifdef _WIN32
                                     RB_EDITOR_INFO("Not Child: Got item with ID = {0}", id);
+#else
+                                    // TODO(a.raag) fmt don't support UUID Correctly
+#endif
                                     auto found = findByID(id);
                                     if(!found -> isChild() )
                                         m_reorderCallback( found, item);
@@ -200,7 +212,11 @@ namespace editor {
                             if(payload) {
                                 if(payload -> IsDataType(m_playloadIdentifier.c_str())) {
                                     UUID id = *static_cast<UUID*>(payload -> Data);
+#ifdef _WIN32
                                     RB_EDITOR_INFO("Not Child: want as make as child item with ID = {0}", id);
+#else
+                                    // TODO(a.raag) fmt don't support UUID Correctly
+#endif
                                     m_makeAsChildCallback(findByID(id), item);
                                 }
                             }

@@ -92,8 +92,10 @@ namespace filewatch {
         FileWatch(T path, UnderpinningRegex pattern, std::function<void(const T& file, const Event event_type)> callback) :
                 _path(path),
                 _pattern(pattern),
-                _callback(callback),
-                _directory(get_directory(path))
+                _callback(callback)
+#ifdef _WIN32
+                ,_directory(get_directory(path))
+#endif
         {
             init();
         }
@@ -114,7 +116,9 @@ namespace filewatch {
             destroy();
             _path = other._path;
             _callback = other._callback;
+#ifdef _WIN32
             _directory = get_directory(other._path);
+#endif
             init();
             return *this;
         }
@@ -210,7 +214,7 @@ namespace filewatch {
             }));
             _watch_thread = std::move(std::thread([this]() {
                 try {
-                    monitor_directory();
+                   // monitor_directory();
                 } catch (...) {
                     try {
                         _running.set_exception(std::current_exception());

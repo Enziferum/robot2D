@@ -34,8 +34,8 @@ namespace robot2D {
 
             out vec2 TexCoords;
             out vec4 Color;
-            out flat float TexIndex;
-            out flat int v_entityID;
+            out float TexIndex;
+            out float v_entityID;
 
             uniform mat4 projection;
             uniform mat4 view;
@@ -65,8 +65,8 @@ namespace robot2D {
 
             in vec2 TexCoords;
             in vec4 Color;
-            in flat float TexIndex;
-            in flat int v_entityID;
+            in float TexIndex;
+            in float v_entityID;
 
             uniform sampler2D textureSamplers[16];
 
@@ -95,7 +95,7 @@ namespace robot2D {
                 }
 
                 fragColor = texColor;
-                o_entityID = v_entityID;
+                o_entityID = int(v_entityID);
             }
         )";
     }
