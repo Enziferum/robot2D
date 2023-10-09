@@ -29,11 +29,16 @@ namespace editor {
 
     class class_id {
     public:
-        class_id(const char *name);
+        class_id(const char* name);
+
+        int getIndex() const { return m_index; }
+    private:
+        const char* const m_name;
+        int m_index;
     };
 
-#define DECLARE_CLASS_ID(name) static class_id who() const { \
-    static class_id id(name);                                \
+#define DECLARE_CLASS_ID(name) static class_id id()  { \
+    static class_id id(#name);                                \
     return id;                                               \
 }
 

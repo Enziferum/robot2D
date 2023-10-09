@@ -227,14 +227,20 @@ namespace editor {
         if(ImGui::BeginDragDropSource()) {
             if(!directoryEntry.is_directory()) {
                 auto extension = relativePath.extension();
+#ifdef _WIN32
                 const wchar_t* itemPath = relativePath.c_str();
+                auto len  = wcslen(itemPath) + 1) * sizeof(wchar_t );
+#else
+                const char* itemPath = relativePath.c_str();
+                auto len = (strlen(itemPath) + 1) * sizeof(char);
+#endif
 
                 if(extension == ".scene" || extension == ".png" || extension == ".ttf") {
-                    ImGui::SetDragDropPayload("CONTENT_BROWSER_ITEM", itemPath, (wcslen(itemPath) + 1) * sizeof(wchar_t ));
+                    ImGui::SetDragDropPayload("CONTENT_BROWSER_ITEM", itemPath, len);
                     ImGui::Text(relativePath.filename().string().c_str());
                 }
                 if(extension == ".prefab") {
-                    ImGui::SetDragDropPayload(contentPrefabItemID, itemPath, (wcslen(itemPath) + 1) * sizeof(wchar_t ));
+                    ImGui::SetDragDropPayload(contentPrefabItemID, itemPath, len);
                     ImGui::Text(relativePath.filename().string().c_str());
                 }
 

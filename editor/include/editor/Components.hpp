@@ -32,7 +32,7 @@ source distribution.
 #include <robot2D/Ecs/Entity.hpp>
 
 #include "Uuid.hpp"
-#include <glm/gtc/matrix_transform.hpp>
+//#include <glm/gtc/matrix_transform.hpp>
 
 namespace editor {
     struct IDComponent
@@ -75,18 +75,18 @@ namespace editor {
         void removeSelf(bool removeFromScene = true);
 
 
-        glm::mat4 GetTransform() const
-        {
-
-            robot2D::vec2f centerPos = {
-                    m_pos.x + m_scale_factor.x / 2.F,
-                    m_pos.y + m_scale_factor.y / 2.F,
-            };
-
-            glm::mat4 res = glm::translate(glm::mat4(1.0f), glm::vec3(centerPos.x, centerPos.y, 0))
-                            * glm::scale(glm::mat4(1.0f), glm::vec3(1, 1, 1.f));
-            return res;
-        }
+//        glm::mat4 GetTransform() const
+//        {
+//
+//            robot2D::vec2f centerPos = {
+//                    m_pos.x + m_scale_factor.x / 2.F,
+//                    m_pos.y + m_scale_factor.y / 2.F,
+//            };
+//
+//            glm::mat4 res = glm::translate(glm::mat4(1.0f), glm::vec3(centerPos.x, centerPos.y, 0))
+//                            * glm::scale(glm::mat4(1.0f), glm::vec3(1, 1, 1.f));
+//            return res;
+//        }
     private:
         void removeChild(int childID, bool removeFromScene);
     private:
@@ -211,7 +211,7 @@ namespace editor {
         void SetProjectionType(ProjectionType type) { m_ProjectionType = type; RecalculateProjection(); }
 
 
-        const glm::mat4& GetProjection() const { return m_Projection; }
+       // const glm::mat4& GetProjection() const { return m_Projection; }
     private:
         void RecalculateProjection();
     private:
@@ -220,7 +220,7 @@ namespace editor {
         float m_OrthographicSize = 10.0f;
         float m_OrthographicNear = -1.0f, m_OrthographicFar = 1.0f;
         float m_AspectRatio = 0.0f;
-        glm::mat4 m_Projection = glm::mat4(1.0f);
+    //    glm::mat4 m_Projection = glm::mat4(1.0f);
     };
 
 

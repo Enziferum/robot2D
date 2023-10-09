@@ -40,6 +40,7 @@ namespace editor {
         EntitySelected,
         EntityDuplicate,
         EntityRemove,
+        EntityRestore,
         PanelEntitySelected,
         PanelEntityNeedSelect,
         ShowInspector,
@@ -73,6 +74,10 @@ namespace editor {
     };
 
     struct EntityRemovement {
+        UUID entityID;
+    };
+
+    struct EntityRestorement {
         UUID entityID;
     };
 

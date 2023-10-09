@@ -334,12 +334,19 @@ namespace editor {
     }
 
     void EditorLogic::removeSelectedEntities() {
-//        auto command = m_commandStack.addCommand<DeleteEntitiesCommand>(m_messageBus, m_selectedEntities);
-//        if(!command) {
-//            /// error
-//        }
+        auto command = m_commandStack.addCommand<DeleteEntitiesCommand>(m_messageBus, m_selectedEntities);
+        if(!command) {
+            RB_EDITOR_ERROR("EditorLogic: Can't Create DeleteCommand");
 
-        /// TODO(a.raag): TreeHiearchy delete all
+        }
+
+        for(auto ent: m_selectedEntities) {
+            m_activeScene -> removeEntity(ent);
+            /// \brief send message to ScenePanel to remove from hiearchy
+            auto* msg = m_messageBus.postMessage<EntityRemovement>(EntityRemove);
+            msg -> entityID = ent.getComponent<IDComponent>().ID;
+        }
+
         m_selectedEntities.clear();
     }
 
