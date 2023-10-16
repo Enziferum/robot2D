@@ -18,9 +18,30 @@ and must not be misrepresented as being the original software.
 3. This notice may not be removed or altered from any
 source distribution.
 *********************************************************************/
-
+#include <editor/Components.hpp>
+#include <editor/Messages.hpp>
 #include <editor/commands/PasteCommand.hpp>
 
 namespace editor {
 
+    PasteCommand::PasteCommand(robot2D::MessageBus& messageBus,
+                               std::vector<robot2D::ecs::Entity> entities,
+                               UIInteractor::Ptr interactor):
+                               m_messageBus{messageBus},
+                               m_entities(entities),
+                               m_interactor{interactor}
+                               {
+
+    }
+
+    void PasteCommand::undo() {
+        for(auto ent: m_entities) {
+            if(!ent && ent.destroyed())
+                continue;
+            if(m_interactor)
+                m_interactor -> removeEntity(ent);
+            auto* msg = m_messageBus.postMessage<EntityRemovement>(MessageID::EntityRemove);
+            msg -> entityID = ent.getComponent<IDComponent>().ID;
+        }
+    }
 } // namespace editor

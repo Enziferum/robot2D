@@ -94,7 +94,9 @@ namespace editor {
         void removeEntity(robot2D::ecs::Entity entity) override;
         void addEmptyEntity() override;
         robot2D::ecs::Entity createEmptyEntity() override;
+        /// \brief using when need create entity on scene, but don't want to notify someone
         robot2D::ecs::Entity duplicateEmptyEntity(robot2D::ecs::Entity entity) override;
+
         void setBefore(robot2D::ecs::Entity sourceEntity, robot2D::ecs::Entity target) override;
         void removeEntityChild(robot2D::ecs::Entity entity) override;
         bool isRunning() const override;
