@@ -32,7 +32,7 @@ namespace robot2D::priv {
 
         static void createTextures(bool multiSampled, RenderID* outID, uint32_t count) {
             // TODO: @a.raag support OpenGL 3.3 stuff and MACOS
-            //glCreateTextures(TextureTarget(multiSampled), count, outID);
+            glCreateTextures(TextureTarget(multiSampled), count, outID);
         }
 
         static void bindTexture(bool multiSampled, RenderID id) {
@@ -63,7 +63,7 @@ namespace robot2D::priv {
             if(multiSampled) {
                 glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, format, size.x, size.y, GL_FALSE);
             } else {
-                //glTexStorage2D(GL_TEXTURE_2D, 1, format, size.x, size.y);
+                glTexStorage2D(GL_TEXTURE_2D, 1, format, size.x, size.y);
 
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);

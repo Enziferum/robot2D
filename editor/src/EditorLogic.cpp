@@ -28,9 +28,10 @@ source distribution.
 #include <editor/Components.hpp>
 
 #include <editor/async/SceneLoadTask.hpp>
-
+#include <editor/Components.hpp>
 #include <editor/commands/DuplicateCommand.hpp>
 #include <editor/commands/DeleteEntitiesCommand.hpp>
+#include "editor/commands/PasteCommand.hpp"
 
 namespace {
     const std::string scenePath = "assets/scenes";
@@ -198,8 +199,29 @@ namespace editor {
     }
 
     void EditorLogic::pasterFromBuffer() {
-        for(auto& copy: m_copyEntities) {
+        std::vector<robot2D::ecs::Entity> copiedEntites{int(m_copyEntities.size())};
+        int counter = 0;
 
+        for(auto& copy: m_copyEntities) {
+            const auto& copyPosition = copy.getComponent<TransformComponent>().getPosition();
+            auto copiedEntity = m_activeScene -> duplicateEntity(copyPosition, copy);
+            copiedEntites[counter] = copiedEntity;
+            ++counter;
+        }
+
+        auto command = m_commandStack.addCommand<PasteCommand>(m_messageBus, copiedEntites, this);
+        if(!command) {
+            RB_EDITOR_ERROR("EditorLogic: Can't Create PasteCommand");
+        }
+
+        m_selectedEntities = copiedEntites;
+        if(m_selectedEntities.size() == 1) {
+            auto* msg =
+                    m_messageBus.postMessage<PanelEntitySelectedMessage>(MessageID::PanelEntityNeedSelect);
+            msg -> entity = m_selectedEntities[0];
+        }
+        else {
+            // TODO(a.raag): multiply selection
         }
     }
 
@@ -337,6 +359,13 @@ namespace editor {
                 m_commandStack.addCommand<DeleteEntitiesCommand>(this, restoreInformation, uiDeletedInformation);
         if(!command) {
             RB_EDITOR_ERROR("EditorLogic: Can't Create DeleteCommand");
+        }
+
+        for(auto ent: m_selectedEntities) {
+            m_activeScene -> removeEntity(ent);
+            /// \brief send message to ScenePanel to remove from hiearchy
+            auto* msg = m_messageBus.postMessage<EntityRemovement>(EntityRemove);
+            msg -> entityID = ent.getComponent<IDComponent>().ID;
         }
 
         m_selectedEntities.clear();

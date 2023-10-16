@@ -199,6 +199,8 @@ namespace editor {
 
         using ItemCallback = std::function<void(ITreeItem::Ptr selected)>;
         using ReorderItemCallback = std::function<void(ITreeItem::Ptr source, ITreeItem::Ptr target)>;
+        using MultiItemCallback = std::function<void(std::vector<ITreeItem::Ptr>)>;
+
 
         template<typename T, typename ... Args>
         typename TreeItem<T>::Ptr addItem(bool needPending = false, Args&& ... args) {
@@ -252,6 +254,14 @@ namespace editor {
         bool addOnStopBeChildCallback(ReorderItemCallback&& callback) {
             if(callback)
                 m_removeAsChildCallback = std::move(callback);
+            else
+                return false;
+            return true;
+        }
+
+        bool addMultiSelectCallback(MultiItemCallback&& callback) {
+            if(callback)
+                m_multiItemCallback = std::move(callback);
             else
                 return false;
             return true;
@@ -328,6 +338,8 @@ namespace editor {
         ReorderItemCallback m_reorderCallback;
         ReorderItemCallback m_makeAsChildCallback;
         ReorderItemCallback m_removeAsChildCallback;
+        MultiItemCallback m_multiItemCallback;
+
 
         std::vector<InsertItem> m_insertItems;
 

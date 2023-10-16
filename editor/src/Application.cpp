@@ -82,8 +82,8 @@ namespace editor {
         });
 
         m_eventBinder.bindEvent(robot2D::Event::KeyPressed, [this](const robot2D::Event& evt) {
-            if(evt.key.code == robot2D::Key::ESCAPE)
-                m_running = false;
+//            if(evt.key.code == robot2D::Key::ESCAPE)
+//                m_running = false;
         });
     }
 

@@ -721,6 +721,9 @@ namespace editor {
             //m_treeHierarchy.setBefore()
         });
 
+        m_treeHierarchy.addMultiSelectCallback([this](std::vector<ITreeItem::Ptr> items) {
+            RB_EDITOR_INFO("TreeHierarchy: MultiSelect All");
+        });
     }
 
     void ScenePanel::setInteractor(UIInteractor::Ptr interactor) {

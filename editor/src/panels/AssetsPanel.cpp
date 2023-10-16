@@ -216,7 +216,7 @@ namespace editor {
                         auto path = fs::relative(m_assetsPath);
                         bool ok = m_prefabManager.addPrefab(entity, path.string());
                         if(!ok) {
-                            /// TODO(a.raag): can't create prefab
+                            RB_EDITOR_ERROR("AssetPanel: Can't add prefab by path: {0}", path.string());
                         }
                     }
                 }
@@ -229,7 +229,7 @@ namespace editor {
                 auto extension = relativePath.extension();
 #ifdef _WIN32
                 const wchar_t* itemPath = relativePath.c_str();
-                auto len  = wcslen(itemPath) + 1) * sizeof(wchar_t );
+                auto len  = (wcslen(itemPath) + 1) * sizeof(wchar_t );
 #else
                 const char* itemPath = relativePath.c_str();
                 auto len = (strlen(itemPath) + 1) * sizeof(char);

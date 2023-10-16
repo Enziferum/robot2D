@@ -20,16 +20,23 @@ source distribution.
 *********************************************************************/
 
 #pragma once
-
+#include <vector>
+#include <robot2D/Core/MessageBus.hpp>
+#include <robot2D/Ecs/Entity.hpp>
+#include <editor/UIInteractor.hpp>
 #include "ICommand.hpp"
 
 namespace editor {
     class PasteCommand final: public ICommand {
-    private:
-        PasteCommand();
+    public:
+        PasteCommand(robot2D::MessageBus& messageBus, std::vector<robot2D::ecs::Entity> entities, UIInteractor::Ptr);
         ~PasteCommand() override = default;
 
-
+        DECLARE_CLASS_ID(PasteCommand);
         void undo() override;
+    private:
+        robot2D::MessageBus& m_messageBus;
+        std::vector<robot2D::ecs::Entity> m_entities;
+        UIInteractor::Ptr m_interactor;
     };
 } // namespace editor

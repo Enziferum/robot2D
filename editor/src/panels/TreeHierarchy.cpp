@@ -22,10 +22,118 @@ source distribution.
 #include <algorithm>
 
 #include <robot2D/Util/Logger.hpp>
-#include <robot2D/imgui/Api.hpp>
 #include <editor/panels/TreeHierarchy.hpp>
 
 namespace editor {
+
+    class MultiSelection {
+    public:
+        using MultiItemCallback = std::function<void(std::vector<ITreeItem::Ptr>)>;
+        using MultiItemRangeCallback = std::function<void(std::vector<ITreeItem::Ptr>, bool del)>;
+
+        MultiSelection();
+        bool hasItem(int n) const;
+
+        void applyRequests(ImGuiMultiSelectIO* multiSelectIo, std::vector<ITreeItem::Ptr>& items, int items_count);
+        void processDeletionPreLoop(ImGuiMultiSelectIO*, int itemToFocus);
+        void processDeletionPostLoop(ImGuiMultiSelectIO*, std::vector<ITreeItem::Ptr>& items, int itemToFocus);
+        bool hasObjectsToDelete() const;
+
+        void setMultiItemCallback(MultiItemCallback&& multiItemCallback) {
+            m_multiItemCallback = multiItemCallback;
+        }
+    private:
+        void addItem(ImGuiID key);
+        void updateItem(ImGuiID key, bool v);
+        void removeItem(ImGuiID key);
+        void clear();
+    private:
+        ImGuiStorage m_storage;
+        bool m_queryDeletion{false};
+        int m_size{0};
+
+        ImGuiID (*AdapterIndexToStorageId)(MultiSelection* self, int idx);
+
+        MultiItemCallback m_multiItemCallback;
+        MultiItemRangeCallback m_multiRangeItemCallback;
+    };
+
+    MultiSelection::MultiSelection() {
+        AdapterIndexToStorageId = [](MultiSelection*, int idx) { return (ImGuiID)idx; };
+    }
+
+    void MultiSelection::addItem(ImGuiID key) {
+        int* p_int = m_storage.GetIntRef(key, 0);
+        if (*p_int != 0)
+            return;
+        *p_int = 1;
+        m_size++;
+    }
+
+    void MultiSelection::updateItem(ImGuiID key, bool v) {
+        if (v)
+            addItem(key);
+        else
+            removeItem(key);
+    }
+
+    void MultiSelection::removeItem(ImGuiID key) {
+        int* p_int = m_storage.GetIntRef(key, 0);
+        if (*p_int == 0) return;
+        *p_int = 0;
+        m_size--;
+    }
+
+    bool MultiSelection::hasItem(int key) const {
+        return m_storage.GetInt(key, 0) != 0;
+    }
+
+    void MultiSelection::clear() {
+        m_queryDeletion = false;
+        m_storage.Data.resize(0);
+        m_size = 0;
+    }
+
+    void MultiSelection::applyRequests(ImGuiMultiSelectIO* multiSelectIo, std::vector<ITreeItem::Ptr>& items, int items_count) {
+
+        for(auto& request: multiSelectIo -> Requests) {
+            if (request.Type == ImGuiSelectionRequestType_Clear)
+                clear();
+            if (request.Type == ImGuiSelectionRequestType_SelectAll)
+            {
+                m_storage.Data.resize(0);
+                m_storage.Data.reserve(items_count);
+                for (int idx = 0; idx < items_count; idx++)
+                    addItem(AdapterIndexToStorageId(this, idx));
+
+                m_multiItemCallback(items);
+            }
+            if (request.Type == ImGuiSelectionRequestType_SetRange) {
+                std::vector<ITreeItem::Ptr> rangeItems{(unsigned long)((int)request.RangeLastItem - (int)request.RangeFirstItem + 1)};
+
+                for (int idx = (int) request.RangeFirstItem; idx <= (int) request.RangeLastItem; idx++) {
+                    updateItem(AdapterIndexToStorageId(this, idx), request.RangeSelected);
+
+                }
+
+                m_multiRangeItemCallback(rangeItems, request.RangeSelected);
+            }
+        }
+
+    }
+
+    void MultiSelection::processDeletionPreLoop(ImGuiMultiSelectIO* ms_io, int itemToFocus) {
+
+    }
+
+    void MultiSelection::processDeletionPostLoop(ImGuiMultiSelectIO* ms_io, std::vector<ITreeItem::Ptr>& items, int itemToFocus) {
+
+    }
+
+    bool MultiSelection::hasObjectsToDelete() const {
+        return !m_queryDeletion && !m_storage.Data.empty();
+    }
+
 
     ITreeItem::~ITreeItem() = default;
 
@@ -69,8 +177,26 @@ namespace editor {
             m_items.emplace_back(item);
         m_additemsBuffer.clear();
 
+
+        static MultiSelection multiSelection;
+        multiSelection.setMultiItemCallback(std::move(m_multiItemCallback));
+
+        static ImGuiMultiSelectFlags flags = ImGuiMultiSelectFlags_None | ImGuiMultiSelectFlags_ClearOnEscape;
+
         if(ImGui::TreeNodeEx(m_name.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
 
+            ImGuiMultiSelectIO* ms_io = ImGui::BeginMultiSelect(flags);
+            multiSelection.applyRequests(ms_io, m_items.size());
+
+            const bool wantDelete = multiSelection.hasObjectsToDelete()
+                    && ImGui::IsWindowFocused() && ImGui::IsKeyPressed(ImGuiKey_Delete);
+            int item_curr_idx_to_focus = -1;
+
+            if(wantDelete) {
+                multiSelection.processDeletionPreLoop(ms_io, -1);
+            }
+
+            int n = 0;
             for(auto item: m_items) {
                 ImGuiTreeNodeFlags node_flags = m_tree_base_flags;
 
@@ -166,7 +292,11 @@ namespace editor {
                 }
                 else {
                     node_flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
-                    node_flags |= ((m_selectedID == item -> getID()) ? ImGuiTreeNodeFlags_Selected : 0);
+
+                    //node_flags |= ((m_selectedID == item -> getID()) ? ImGuiTreeNodeFlags_Selected : 0);
+                    node_flags |= ((multiSelection.hasItem(n)) ? ImGuiTreeNodeFlags_Selected : 0);
+                    ImGui::SetNextItemSelectionUserData(n);
+
                     auto ida = item -> m_id;
                     bool node_open = ImGui::TreeNodeEx((void*)(intptr_t)ida, node_flags,
                                                        item -> m_name -> c_str());
@@ -223,8 +353,18 @@ namespace editor {
                             ImGui::EndDragDropTarget();
                         }
                     }
+
+                    ++n;
                 }
             }
+
+            ms_io = ImGui::EndMultiSelect();
+            multiSelection.applyRequests(ms_io, m_items.size());
+
+            if(wantDelete) {
+                multiSelection.processDeletionPostLoop(ms_io, m_items, item_curr_idx_to_focus);
+            }
+
             ImGui::TreePop();
         }
 
