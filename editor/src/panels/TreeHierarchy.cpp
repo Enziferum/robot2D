@@ -33,6 +33,7 @@ namespace editor {
 
         MultiSelection();
         bool hasItem(int n) const;
+        void updateItem(ImGuiID key, bool v);
 
         void applyRequests(ImGuiMultiSelectIO* multiSelectIo, std::vector<ITreeItem::Ptr>& items, int items_count);
         void processDeletionPreLoop(ImGuiMultiSelectIO*, int itemToFocus);
@@ -44,7 +45,6 @@ namespace editor {
         }
     private:
         void addItem(ImGuiID key);
-        void updateItem(ImGuiID key, bool v);
         void removeItem(ImGuiID key);
         void clear();
     private:
@@ -134,6 +134,7 @@ namespace editor {
         return !m_queryDeletion && !m_storage.Data.empty();
     }
 
+    MultiSelection m_multiSelection;
 
     ITreeItem::~ITreeItem() = default;
 
@@ -178,22 +179,22 @@ namespace editor {
         m_additemsBuffer.clear();
 
 
-        static MultiSelection multiSelection;
-        multiSelection.setMultiItemCallback(std::move(m_multiItemCallback));
+
+        m_multiSelection.setMultiItemCallback(std::move(m_multiItemCallback));
 
         static ImGuiMultiSelectFlags flags = ImGuiMultiSelectFlags_None | ImGuiMultiSelectFlags_ClearOnEscape;
 
         if(ImGui::TreeNodeEx(m_name.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
 
             ImGuiMultiSelectIO* ms_io = ImGui::BeginMultiSelect(flags);
-            multiSelection.applyRequests(ms_io, m_items.size());
+            m_multiSelection.applyRequests(ms_io, m_items, m_items.size());
 
-            const bool wantDelete = multiSelection.hasObjectsToDelete()
+            const bool wantDelete = m_multiSelection.hasObjectsToDelete()
                     && ImGui::IsWindowFocused() && ImGui::IsKeyPressed(ImGuiKey_Delete);
             int item_curr_idx_to_focus = -1;
 
             if(wantDelete) {
-                multiSelection.processDeletionPreLoop(ms_io, -1);
+                m_multiSelection.processDeletionPreLoop(ms_io, -1);
             }
 
             int n = 0;
@@ -294,7 +295,7 @@ namespace editor {
                     node_flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 
                     //node_flags |= ((m_selectedID == item -> getID()) ? ImGuiTreeNodeFlags_Selected : 0);
-                    node_flags |= ((multiSelection.hasItem(n)) ? ImGuiTreeNodeFlags_Selected : 0);
+                    node_flags |= ((m_multiSelection.hasItem(n)) ? ImGuiTreeNodeFlags_Selected : 0);
                     ImGui::SetNextItemSelectionUserData(n);
 
                     auto ida = item -> m_id;
@@ -359,10 +360,10 @@ namespace editor {
             }
 
             ms_io = ImGui::EndMultiSelect();
-            multiSelection.applyRequests(ms_io, m_items.size());
+            m_multiSelection.applyRequests(ms_io, m_items, m_items.size());
 
             if(wantDelete) {
-                multiSelection.processDeletionPostLoop(ms_io, m_items, item_curr_idx_to_focus);
+                m_multiSelection.processDeletionPostLoop(ms_io, m_items, item_curr_idx_to_focus);
             }
 
             ImGui::TreePop();
@@ -372,7 +373,8 @@ namespace editor {
 
     ITreeItem::Ptr TreeHierarchy::findByID(UUID ID) {
         ITreeItem::Ptr parent = nullptr;
-        auto found = std::find_if(m_items.begin(), m_items.end(), [ID, &parent](ITreeItem::Ptr item) {
+        auto found = std::find_if(m_items.begin(), m_items.end(),
+                                  [ID, &parent](ITreeItem::Ptr item) {
             for(auto child: item -> getChildrens()) {
                 if(child -> m_child_id == ID) {
                     parent = item;
@@ -408,8 +410,9 @@ namespace editor {
             m_selectedID = item -> getID();
             m_childSelectedID = NO_INDEX;
         }
-
-        /// TODO(a.raag): Add MultiSelection updation
+        
+        /// TODO: make key from Item
+        m_multiSelection.updateItem(0, true);
     }
 
 }
