@@ -3,9 +3,15 @@
 #include <string>
 #include <functional>
 #include <robot2D/Ecs/Entity.hpp>
+
 #include "Uuid.hpp"
+#include "DeletedEntitesRestoreInformation.hpp"
 
 namespace editor {
+
+    struct DeleteEntitiesInfo {
+
+    };
 
     class UIInteractor {
     public:
@@ -14,6 +20,9 @@ namespace editor {
         virtual ~UIInteractor() = 0;
         virtual std::vector<robot2D::ecs::Entity>& getSelectedEntities()  = 0;
         virtual robot2D::ecs::Entity getSelectedEntity(int graphicsEntityID) = 0;
+        virtual void restoreDeletedEntities(DeletedEntitiesRestoreInformation& restoreInformation,
+                                            DeletedEntitiesRestoreUIInformation& restoreUiInformation) = 0;
+
 
         virtual std::string getAssociatedProjectPath() const = 0;
         virtual std::vector<robot2D::ecs::Entity> getEntities() const = 0;

@@ -301,5 +301,64 @@ namespace editor {
         m_scene.removeEntity(entity);
     }
 
+    DeletedEntitiesRestoreInformation Scene::removeEntities(std::vector<robot2D::ecs::Entity>& removingEntities) {
+        DeletedEntitiesRestoreInformation restoreInformation;
+        restoreInformation.anchorEntitiesUuids.reserve(removingEntities.size());
+
+        for(auto iter = m_sceneEntities.begin(); iter < m_sceneEntities.end(); ++iter) {
+            auto entity = *iter;
+            auto entityUuid = entity.getComponent<IDComponent>().ID;
+
+            /// TODO(a.raag): check removing and all entities
+            if(entityUuid) {
+                if(iter != m_sceneEntities.begin()) {
+                    auto prevIter = iter - 1;
+                    auto prevUuid = (*prevIter).getComponent<IDComponent>().ID;
+                    restoreInformation.push(prevUuid, false, false);
+                }
+                else
+                    restoreInformation.push(entityUuid, true, false);
+            }
+
+            if(entity.getComponent<TransformComponent>().hasChildren()) {
+                if(iter != m_sceneEntities.begin()) {
+                    auto prevIter = iter - 1;
+                    auto prevUuid = (*prevIter).getComponent<IDComponent>().ID;
+                    restoreInformation.push(prevUuid, false, true);
+                }
+                else
+                    restoreInformation.push(entityUuid, true, true);
+            }
+
+        }
+
+        return restoreInformation;
+    }
+
+    void Scene::restoreEntities(DeletedEntitiesRestoreInformation& restoreInformation) {
+
+        for(auto& obj: restoreInformation.anchorEntitiesUuids) {
+            if(obj.child) {
+                auto found = std::find_if(m_sceneEntities.begin(), m_sceneEntities.end(), [this, obj](robot2D::ecs::Entity ent) {
+                   return ent.getComponent<IDComponent>().ID == obj.uuid;
+                });
+                if(found != m_sceneEntities.end()) {
+                    auto& transform = (*found).getComponent<TransformComponent>();
+                }
+            }
+            else {
+
+                if(obj.first) {
+
+               }
+               else {
+
+               }
+
+            }
+        }
+
+    }
+
 }
 

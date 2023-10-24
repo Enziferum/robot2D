@@ -32,6 +32,7 @@ source distribution.
 #include "IPanel.hpp"
 #include "TreeHierarchy.hpp"
 #include <editor/UIInteractor.hpp>
+#include <editor/DeletedEntitesRestoreInformation.hpp>
 
 namespace editor {
 
@@ -59,6 +60,10 @@ namespace editor {
         robot2D::ecs::Entity getTreeItem(UUID uuid);
 
         void processSelectedEntities(std::vector<robot2D::ecs::Entity>& entities);
+
+        DeletedEntitiesRestoreUIInformation
+        removeEntitiesOnUI(std::vector<robot2D::ecs::Entity>& selectedEntities);
+        void restoreEntitiesOnUI(DeletedEntitiesRestoreUIInformation& restoreUiInformation);
     private:
         void windowFunction();
 

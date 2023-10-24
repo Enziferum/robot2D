@@ -476,5 +476,16 @@ namespace editor {
         scenePanel.processSelectedEntities(entities);
     }
 
+    DeletedEntitiesRestoreUIInformation
+    Editor::removeEntitiesOnUI(std::vector<robot2D::ecs::Entity>& selectedEntities) {
+        auto& panel = m_panelManager.getPanel<ScenePanel>();
+        return panel.removeEntitiesOnUI(selectedEntities);
+    }
+
+    void Editor::restoreEntitiesOnUI(DeletedEntitiesRestoreUIInformation& restoreUiInformation) {
+        auto& panel = m_panelManager.getPanel<ScenePanel>();
+        panel.restoreEntitiesOnUI(restoreUiInformation);
+    }
+
 
 }
