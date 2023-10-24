@@ -48,7 +48,7 @@ source distribution.
 #include "PopupConfiguration.hpp"
 #include "SceneRender.hpp"
 #include "SelectionCollider.hpp"
-
+#include "DeletedEntitesRestoreInformation.hpp"
 
 namespace editor {
 
@@ -77,6 +77,9 @@ namespace editor {
         virtual void openScene(Scene::Ptr scene, std::string path) = 0;
         virtual void prepare() = 0;
 
+        virtual DeletedEntitiesRestoreUIInformation removeEntitiesOnUI(std::vector<robot2D::ecs::Entity>& selectedEntities) = 0;
+        virtual void restoreEntitiesOnUI(DeletedEntitiesRestoreUIInformation& restoreUiInformation) = 0;
+
         virtual void findSelectedEntitiesOnUI(std::vector<robot2D::ecs::Entity>& entities) = 0;
         virtual void showPopup(PopupConfiguration* configuration) = 0;
     };
@@ -101,7 +104,8 @@ namespace editor {
         void prepare() override;
         void showPopup(editor::PopupConfiguration* configuration) override;
         void findSelectedEntitiesOnUI(std::vector<robot2D::ecs::Entity>& entities) override;
-
+        DeletedEntitiesRestoreUIInformation removeEntitiesOnUI(std::vector<robot2D::ecs::Entity>& selectedEntities) override;
+        void restoreEntitiesOnUI(DeletedEntitiesRestoreUIInformation& restoreUiInformation) override;
         /////////////////////////// IEditor ///////////////////////////
 
     private:

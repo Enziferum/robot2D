@@ -100,7 +100,8 @@ namespace editor {
         bool isRunning() const override;
         robot2D::ecs::Entity getByUUID(UUID uuid) override;
         void registerOnDeleteFinish(std::function<void()>&& callback) override;
-
+        void restoreDeletedEntities(DeletedEntitiesRestoreInformation& restoreInformation,
+                                    DeletedEntitiesRestoreUIInformation& restoreUiInformation) override;
         //////////////////////////////////////// UIInteractor ////////////////////////////////////////
 
         //////////////////// ScriptInteractor ////////////////////
@@ -130,6 +131,7 @@ namespace editor {
 
         std::vector<Observer::Ptr> m_observers;
         PopupConfiguration m_popupConfiguration;
+
         std::vector<robot2D::ecs::Entity> m_selectedEntities;
         std::vector<robot2D::ecs::Entity> m_copyEntities;
     };

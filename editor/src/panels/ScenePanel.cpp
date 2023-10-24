@@ -854,14 +854,25 @@ namespace editor {
             for(auto& treeItem: treeItems) {
                 auto treeEntity = treeItem -> getUserData<robot2D::ecs::Entity>();
                 if(!treeEntity) {
-                    /// TODO(a.raag): error to get entity from treeItem
+                    RB_EDITOR_ERROR("ScenePanel: TreeItem By UUID = {0} don't have Entity");
+                    continue;
                 }
 
                 if(entity == *treeEntity) {
-                    // m_treeHierarchy.setSelected(treeItem);
+                    m_treeHierarchy.setSelected(treeItem);
                 }
             }
         }
+    }
+
+    DeletedEntitiesRestoreUIInformation
+    ScenePanel::removeEntitiesOnUI(std::vector<robot2D::ecs::Entity>& selectedEntities) {
+        DeletedEntitiesRestoreUIInformation restoreUiInformation;
+        return restoreUiInformation;
+    }
+
+    void ScenePanel::restoreEntitiesOnUI(DeletedEntitiesRestoreUIInformation& restoreUiInformation) {
+
     }
 
 }

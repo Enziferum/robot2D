@@ -320,13 +320,9 @@ namespace editor {
                     m_selectedEntities.emplace_back(entity);
                 }
             }
-
         }
 
-        /// TODO(a.raag): 1. Select on TreeHiarchy + add Manipulator for all selected
-
-
-        // m_editor -> findSelectedEntitiesOnUI(m_selectedEntities);
+        m_presenter.findSelectedEntitiesOnUI(m_selectedEntities);
 
         /// TODO(a.raag): add selection command
         /// m_commandStack.addCommand();
@@ -334,17 +330,13 @@ namespace editor {
     }
 
     void EditorLogic::removeSelectedEntities() {
-        auto command = m_commandStack.addCommand<DeleteEntitiesCommand>(m_messageBus, m_selectedEntities);
+        auto restoreInformation = m_activeScene -> removeEntities(m_selectedEntities);
+        auto uiDeletedInformation = m_presenter.removeEntitiesFromUI(m_selectedEntities);
+
+        auto command =
+                m_commandStack.addCommand<DeleteEntitiesCommand>(this, restoreInformation, uiDeletedInformation);
         if(!command) {
             RB_EDITOR_ERROR("EditorLogic: Can't Create DeleteCommand");
-
-        }
-
-        for(auto ent: m_selectedEntities) {
-            m_activeScene -> removeEntity(ent);
-            /// \brief send message to ScenePanel to remove from hiearchy
-            auto* msg = m_messageBus.postMessage<EntityRemovement>(EntityRemove);
-            msg -> entityID = ent.getComponent<IDComponent>().ID;
         }
 
         m_selectedEntities.clear();
@@ -435,6 +427,12 @@ namespace editor {
 
     bool EditorLogic::hasSelectedEntities() const {
         return !m_selectedEntities.empty();
+    }
+
+    void EditorLogic::restoreDeletedEntities(DeletedEntitiesRestoreInformation& restoreInformation,
+                                             DeletedEntitiesRestoreUIInformation& restoreUiInformation) {
+        m_activeScene -> restoreEntities(restoreInformation);
+        m_presenter.restoreEntitiesOnUI(restoreUiInformation);
     }
 
     //////////////////////////////////////// UIInteractor ////////////////////////////////////////

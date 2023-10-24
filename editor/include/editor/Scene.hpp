@@ -32,6 +32,8 @@ source distribution.
 #include "Components.hpp"
 #include "physics/IPhysics2DAdapter.hpp"
 #include "ScriptInteractor.hpp"
+#include <editor/UIInteractor.hpp>
+#include "DeletedEntitesRestoreInformation.hpp"
 
 namespace editor {
     class Scene: public robot2D::Drawable {
@@ -64,6 +66,8 @@ namespace editor {
         void setBefore(robot2D::ecs::Entity source, robot2D::ecs::Entity target);
         void removeEntity(robot2D::ecs::Entity entity);
         void removeEntityChild(robot2D::ecs::Entity entity);
+        DeletedEntitiesRestoreInformation removeEntities(std::vector<robot2D::ecs::Entity>& removingEntities);
+        void restoreEntities(DeletedEntitiesRestoreInformation& restoreInformation);
 
 
         robot2D::ecs::Entity getByIndex(int index) {

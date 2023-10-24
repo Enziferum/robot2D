@@ -268,6 +268,8 @@ namespace editor {
             m_selectedID = item -> getID();
             m_childSelectedID = NO_INDEX;
         }
+
+        /// TODO(a.raag): Add MultiSelection updation
     }
 
 }
