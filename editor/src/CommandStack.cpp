@@ -29,6 +29,7 @@ namespace editor {
 
         auto ptr = m_stack.top();
         m_stack.pop();
+        m_commandIDs.pop_back();
 
         ptr -> undo();
         m_redoQueue.push(ptr);
@@ -66,6 +67,8 @@ namespace editor {
             m_stack.pop();
         while(!m_redoQueue.empty())
             m_redoQueue.pop();
+
+        m_commandIDs.clear();
     }
 
 } // namespace viewer

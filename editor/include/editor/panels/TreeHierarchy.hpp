@@ -30,6 +30,7 @@ source distribution.
 
 #include <imgui/imgui.h>
 #include <robot2D/Core/Keyboard.hpp>
+#include <robot2D/Graphics/Texture.hpp>
 #include <editor/Uuid.hpp>
 
 namespace editor {
@@ -49,6 +50,11 @@ namespace editor {
 
         void setName(std::string& name) {
             m_name = &name;
+        }
+
+        void setTexture(robot2D::Texture& texture, const robot2D::Color& tintColor) {
+            m_iconTexture = &texture;
+            m_tintColor = tintColor;
         }
 
         /// \brief don't call if user data was set void or you want to call on void type
@@ -96,6 +102,8 @@ namespace editor {
         std::vector<ITreeItem::Ptr> m_deletePendingItems{};
 
         friend class TreeHierarchy;
+        robot2D::Texture* m_iconTexture{nullptr};
+        robot2D::Color m_tintColor = robot2D::Color::White;
     };
 
 

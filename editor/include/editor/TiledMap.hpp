@@ -21,16 +21,10 @@ source distribution.
 
 #pragma once
 
-#include "ICommand.hpp"
-
 namespace editor {
-    class CopyCommand final: public ICommand {
+    class TiledMap {
+    public:
+
     private:
-        CopyCommand();
-        ~CopyCommand() override = default;
-
-        void undo() override;
-
-        DECLARE_CLASS_ID(CopyCommand)
     };
-} // namespace editor
+}

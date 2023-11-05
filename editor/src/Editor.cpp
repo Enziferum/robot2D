@@ -35,6 +35,7 @@ source distribution.
 #include <editor/panels/AssetsPanel.hpp>
 #include <editor/panels/MenuPanel.hpp>
 #include <editor/panels/InspectorPanel.hpp>
+#include <editor/panels/UtilPanel.hpp>
 #include <editor/panels/ViewportPanel.hpp>
 #include <editor/panels/GameViewport.hpp>
 ///////////////////////////// PANELS /////////////////////////////
@@ -83,8 +84,6 @@ namespace editor {
         m_eventBinder.bindEvent(robot2D::Event::MousePressed, BIND_CLASS_FN(onMousePressed));
         m_eventBinder.bindEvent(robot2D::Event::MouseReleased, BIND_CLASS_FN(onMouseReleased));
         m_eventBinder.bindEvent(robot2D::Event::MouseMoved, BIND_CLASS_FN(onMouseMoved));
-
-
     }
 
 
@@ -168,6 +167,16 @@ namespace editor {
         m_panelManager.getPanel<GameViewport>().setFrameBuffer(m_gameFrameBuffer);
     }
 
+    void Editor::setupSpinner() {
+        g_spinner.setRadius(16.f);
+        g_spinner.setThickness(6.f);
+        g_spinner.setSpeed(6.f);
+        g_spinner.setAngle(270.f / 360.f * 2 * IM_PI);
+        g_spinner.setColor(robot2D::Color::White);
+        g_spinner.setBackgroundColor(robot2D::Color(255.f, 255.f, 255.f, 0.f));
+        g_spinner.setLabel("Spinner");
+    }
+
     void Editor::setup(robot2D::RenderWindow* window, EditorInteractor* editorInteractor) {
         if(m_window == nullptr)
             m_window = window;
@@ -185,8 +194,9 @@ namespace editor {
 
         m_panelManager.addPanel<ScenePanel>(m_messageBus, m_messageDispather, m_prefabManager);
         m_panelManager.addPanel<AssetsPanel>(m_messageBus, m_panelManager, m_prefabManager);
-        m_panelManager.addPanel<InspectorPanel>(m_editorCamera);
-        m_panelManager.addPanel<MenuPanel>(m_messageBus);
+        m_panelManager.addPanel<InspectorPanel>(m_messageDispather, m_prefabManager);
+        m_panelManager.addPanel<UtilPanel>(m_editorCamera);
+        m_panelManager.addPanel<MenuPanel>(m_messageBus, m_interactor);
         m_panelManager.addPanel<ViewportPanel>(m_interactor,
                                                m_editorCamera,
                                                m_messageBus,
@@ -199,17 +209,9 @@ namespace editor {
 
         setupBindings();
         setupShortCuts();
+        setupSpinner();
 
         m_sceneGrid.setup();
-
-        g_spinner.setRadius(16.f);
-        g_spinner.setThickness(6.f);
-        g_spinner.setSpeed(6.f);
-        g_spinner.setAngle(270.f / 360.f * 2 * IM_PI);
-        g_spinner.setColor(robot2D::Color::White);
-        g_spinner.setBackgroundColor(robot2D::Color(255.f, 255.f, 255.f, 0.f));
-        g_spinner.setLabel("Spinner");
-
         m_sceneRender.setup();
     }
 
@@ -224,11 +226,11 @@ namespace editor {
         if(m_state == State::LostFocus)
             return;
 
-        m_eventBinder.handleEvents(event);
         if(m_interactor -> getState() != EditorState::Edit) {
             return;
         }
 
+        m_eventBinder.handleEvents(event);
         m_editorCamera -> handleEvents(event);
         m_guizmo2D.handleEvents(event);
         m_cameraBox.handleEvents(event);
@@ -270,7 +272,7 @@ namespace editor {
         if(m_configuration.useGUI) {
             if(m_frameBuffer)
                 m_frameBuffer -> Bind();
-            const auto& clearColor = m_panelManager.getPanel<InspectorPanel>().getColor();
+            const auto& clearColor = m_panelManager.getPanel<UtilPanel>().getColor();
             // TODO: @a.raag reset stats
             m_window -> clear(clearColor);
         }
@@ -291,6 +293,10 @@ namespace editor {
         if(m_selectionCollider.isShown())
             m_window -> draw(m_selectionCollider);
 
+        if(m_mode == Mode::TiledMap) {
+            m_window -> draw(m_tileSpritePreview);
+        }
+
         m_window -> afterRender();
 
         if(m_configuration.useGUI) {
@@ -299,7 +305,7 @@ namespace editor {
             }
 
             m_gameFrameBuffer -> Bind();
-            const auto& clearColor = m_panelManager.getPanel<InspectorPanel>().getColor();
+            const auto& clearColor = m_panelManager.getPanel<UtilPanel>().getColor();
             m_window -> clear(clearColor);
             if(m_activeScene) {
                 m_window -> beforeRender();
@@ -349,7 +355,7 @@ namespace editor {
         }
 
         auto stats = m_window -> getStats();
-        m_panelManager.getPanel<InspectorPanel>().setRenderStats(std::move(stats));
+        m_panelManager.getPanel<UtilPanel>().setRenderStats(std::move(stats));
         m_panelManager.render();
 
         if(m_interactor -> getState() == EditorState::Load) {
@@ -372,37 +378,6 @@ namespace editor {
             }
         }
 
-        if(m_interactor -> getState() == EditorState::Modal && m_popupConfiguration) {
-            ImVec2 center = ImGui::GetMainViewport() -> GetCenter();
-            ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-            ImGui::OpenPopup(m_popupConfiguration -> title.c_str());
-
-            if (ImGui::BeginPopupModal(m_popupConfiguration -> title.c_str(), nullptr,
-                                       ImGuiWindowFlags_AlwaysAutoResize))
-            {
-                ImGui::Text("Scene has changed. Want to save?");
-                ImGui::Separator();
-
-                if (ImGui::Button("Yes", ImVec2(120, 0))) {
-                    // setMouseHoverDirectly(false);
-                    m_popupConfiguration -> onYes();
-                    m_popupConfiguration = nullptr;
-                    ImGui::CloseCurrentPopup();
-                }
-
-                ImGui::SetItemDefaultFocus();
-                ImGui::SameLine();
-                if (ImGui::Button("No", ImVec2(120, 0))) {
-                    // setMouseHoverDirectly(false);
-                    m_popupConfiguration -> onNo();
-                    m_popupConfiguration = nullptr;
-                    ImGui::CloseCurrentPopup();
-                }
-
-                ImGui::EndPopup();
-            }
-        }
-
     }
 
     void Editor::openScene(Scene::Ptr scene, std::string path) {
@@ -412,6 +387,9 @@ namespace editor {
         m_activeScene = std::move(scene);
         auto& scenePanel = m_panelManager.getPanel<ScenePanel>();
         scenePanel.setInteractor(m_interactor);
+
+        auto& inspectorPanel = m_panelManager.getPanel<InspectorPanel>();
+        inspectorPanel.setInteractor(m_interactor);
 
         auto& viewportPanel = m_panelManager.getPanel<ViewportPanel>();
         viewportPanel.set(m_frameBuffer);
@@ -438,6 +416,8 @@ namespace editor {
 
     void Editor::showPopup(PopupConfiguration* configuration) {
         m_popupConfiguration = configuration;
+        auto* manager = PopupManager::getManager();
+        manager -> beginPopup(this);
     }
 
 
@@ -488,9 +468,48 @@ namespace editor {
     }
 
     void Editor::clearSelectionOnUI() {
-        auto& panel = m_panelManager.getPanel<ScenePanel>();
-        panel.clearSelection();
+        auto& scenePanel = m_panelManager.getPanel<ScenePanel>();
+        scenePanel.clearSelection();
+
+        auto& inspectorPanel = m_panelManager.getPanel<InspectorPanel>();
+        inspectorPanel.clearSelection();
     }
 
+    void Editor::onPopupRender() {
+        if(!m_popupConfiguration)
+            return;
+
+        ImVec2 center = ImGui::GetMainViewport() -> GetCenter();
+        ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+        ImGui::OpenPopup(m_popupConfiguration -> title.c_str());
+        auto* manager = PopupManager::getManager();
+
+        if (ImGui::BeginPopupModal(m_popupConfiguration -> title.c_str(), nullptr,
+                                   ImGuiWindowFlags_AlwaysAutoResize))
+        {
+            ImGui::Text("Scene has changed. Want to save?");
+            ImGui::Separator();
+
+            if (ImGui::Button("Yes", ImVec2(120, 0))) {
+                // setMouseHoverDirectly(false);
+                m_popupConfiguration -> onYes();
+                m_popupConfiguration = nullptr;
+                manager -> endPopup();
+                ImGui::CloseCurrentPopup();
+            }
+
+            ImGui::SetItemDefaultFocus();
+            ImGui::SameLine();
+            if (ImGui::Button("No", ImVec2(120, 0))) {
+                // setMouseHoverDirectly(false);
+                m_popupConfiguration -> onNo();
+                m_popupConfiguration = nullptr;
+                manager -> endPopup();
+                ImGui::CloseCurrentPopup();
+            }
+
+            ImGui::EndPopup();
+        }
+    }
 
 }

@@ -21,36 +21,57 @@ source distribution.
 
 #include <imgui/imgui.h>
 #include <tfd/tinyfiledialogs.h>
+
 #include <filesystem>
 
-#include <robot2D/imgui/Gui.hpp>
+#include <robot2D/imgui/Api.hpp>
+#include <robot2D/Util/Logger.hpp>
+
 #include <editor/panels/MenuPanel.hpp>
 #include <editor/Messages.hpp>
 #include <editor/PopupManager.hpp>
+#include <editor/FiledialogAdapter.hpp>
 
 namespace editor {
 
     namespace fs = std::filesystem;
+    namespace  {
+        static bool openDeveloperMenu = false;
+    }
 
-    MenuPanel::MenuPanel(robot2D::MessageBus& messageBus):
+    MenuPanel::MenuPanel(robot2D::MessageBus& messageBus, UIInteractor::Ptr interactor):
         IPanel(UniqueType(typeid(MenuPanel))),
-        m_messageBus{messageBus} {}
+        m_messageBus{messageBus},
+        m_interactor{interactor}{}
 
     void MenuPanel::render() {
         ImGui::ShowDemoWindow();
+
+        if(openDeveloperMenu)
+            developerMenu();
+
         if (ImGui::BeginMenuBar())
         {
             if (ImGui::BeginMenu("File"))
                 fileMenu();
+
             if (ImGui::BeginMenu("Edit"))
                 editMenu();
+
             if (ImGui::BeginMenu("Project"))
                 projectMenu();
 
-            /* TODO(a.raag) other task for help
+            if (ImGui::BeginMenu("Plugins"))
+                pluginsMenu();
+
+            if (ImGui::BeginMenu("Developer")) {
+                ImGui::MenuItem("Show Info", nullptr, &openDeveloperMenu);
+                ImGui::EndMenu();
+            }
+
             if (ImGui::BeginMenu("Help"))
                 helpMenu();
-            */
+
             ImGui::EndMenuBar();
         }
     }
@@ -58,8 +79,10 @@ namespace editor {
     void MenuPanel::fileMenu() {
         if(ImGui::MenuItem("New", "Ctrl+N")) {
             const char* path = tinyfd_selectFolderDialog("Create Robot2D Project", nullptr);
+
             // close, either
             if(path == nullptr) {
+                ImGui::EndMenu();
                 return;
             }
             std::string creationPath(path);
@@ -69,6 +92,9 @@ namespace editor {
 
             auto msg = m_messageBus.postMessage<ProjectMessage>(MessageID::CreateProject);
             msg -> description = std::move(description);
+
+            ImGui::EndMenu();
+            return;
         }
         ImGui::Separator();
 
@@ -91,6 +117,12 @@ namespace editor {
                 auto msg = m_messageBus.postMessage<ProjectMessage>(MessageID::LoadProject);
                 msg -> description.path = openPath.string();
                 msg -> description.name = name;
+                ImGui::EndMenu();
+                return;
+            }
+            else {
+                ImGui::EndMenu();
+                return;
             }
         }
 
@@ -126,7 +158,9 @@ namespace editor {
     }
 
     void MenuPanel::editMenu() {
-        if(ImGui::MenuItem("Undo", "Ctrl+Z")) {
+        bool emptyStack = m_interactor -> getCommandStack().empty();
+
+        if(ImGui::MenuItem("Undo", "Ctrl+Z", false, !emptyStack)) {
             m_messageBus.postMessage<UndoRedoMessage>(MessageID::Undo);
         }
 
@@ -149,15 +183,51 @@ namespace editor {
         ImGui::EndMenu();
     }
 
-    void MenuPanel::helpMenu() {
+    void MenuPanel::pluginsMenu() {
+
+        if(ImGui::MenuItem("LoadPlugin")) {
+            auto filedialog = FiledialogAdapter::get();
+            std::string openFilePath{};
+            if(!filedialog -> openFile(openFilePath, "Plugin")) {
+                RB_EDITOR_ERROR("Can't open file by path {0}", openFilePath);
+                /// TODO(a.raag): use Defer to close EndMenu()
+                return;
+            }
+        }
+
         ImGui::EndMenu();
     }
 
+    void MenuPanel::developerMenu() {
+        if (!ImGui::Begin("Debug Info"))
+        {
+            ImGui::End();
+            return;
+        }
+        const auto& commandStack = m_interactor -> getCommandStack();
+
+        if (ImGui::BeginListBox("CommandsPool"))
+        {
+            int cntr = 1;
+            for (int n = commandStack.size() - 1; n >= 0; --n)
+            {
+                ImGui::Text("%i. %s", cntr, commandStack[n].getName());
+                ++cntr;
+            }
+            ImGui::EndListBox();
+        }
+        ImGui::End();
+    }
+
+    void MenuPanel::helpMenu() {
+        ImGui::EndMenu();
+    }
 
     void MenuPanel::showExportProjectModal() {
         ImVec2 center = ImGui::GetMainViewport() -> GetCenter();
         ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
         ImGui::OpenPopup("Export Project!");
+
         if(ImGui::BeginPopupModal("Export Project!", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
             ImGui::Text("Modal Text!");
 
@@ -168,7 +238,7 @@ namespace editor {
             }
 
 
-
+            // TODO(a.raag): following steps
             // 1. Choose StartScene
             // 2. Choose TargetResolution
             // 3. Choose Folder
@@ -181,7 +251,7 @@ namespace editor {
         }
     }
 
-    void MenuPanel::onRender() {
+    void MenuPanel::onPopupRender() {
         switch(m_popupType) {
             case PopupType::None:
                 break;
@@ -194,5 +264,6 @@ namespace editor {
                 break;
         }
     }
+
 
 }

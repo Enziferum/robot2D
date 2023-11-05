@@ -50,7 +50,9 @@ namespace editor {
         Redo,
         GenerateProject,
         ExportProject,
-        PrefabLoad
+        PrefabLoad,
+        PrefabAssetPressed,
+        TileElementSelected
     };
 
     struct ProjectMessage {
@@ -107,6 +109,15 @@ namespace editor {
 
     struct PrefabLoadMessage {
         std::string path;
+    };
+
+    struct PrefabAssetPressedMessage {
+        std::string localPath;
+    };
+
+
+    struct TileElementSelectedMessage {
+        robot2D::vec2i tileIndex;
     };
 
     struct InstrumentMessage {

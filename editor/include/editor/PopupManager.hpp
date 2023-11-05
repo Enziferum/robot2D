@@ -9,7 +9,7 @@ namespace editor {
     public:
         using Ptr = PopupDelegate*;
         virtual ~PopupDelegate() = 0;
-        virtual void onRender() = 0;
+        virtual void onPopupRender() = 0;
     };
 
     class PopupObserver {
@@ -44,7 +44,7 @@ namespace editor {
 
         void onRender() {
             if(m_activeDelegate)
-                m_activeDelegate -> onRender();
+                m_activeDelegate -> onPopupRender();
         }
 
         void addObserver(PopupObserver::Ptr ptr) {

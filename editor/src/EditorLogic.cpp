@@ -79,7 +79,6 @@ namespace editor {
         }
     }
 
-
     void EditorLogic::createProject(Project::Ptr project) {
         m_currentProject = project;
         if(!m_sceneManager.add(std::move(project))) {
@@ -96,7 +95,7 @@ namespace editor {
         m_presenter.switchState(EditorState::Load);
 
         auto loadLambda = [](const SceneLoadTask& task) {
-            task.logic -> loadCallback();
+            task.logic -> loadSceneCallback();
         };
 
         auto path = project -> getPath();
@@ -107,7 +106,6 @@ namespace editor {
         TaskQueue::GetQueue() -> addAsyncTask<SceneLoadTask>(loadLambda, m_sceneManager, project, scenePath, this);
     }
 
-
     void EditorLogic::openScene(const OpenSceneMessage& message) {
         auto path = m_currentProject -> getPath();
         auto scenePath = combinePath(path, message.path);
@@ -115,40 +113,38 @@ namespace editor {
         if(std::filesystem::path(scenePath) == std::filesystem::path(currentScenePath))
             return;
 
-
-        if(m_activeScene -> hasChanges()) {
-            m_presenter.switchState(EditorState::Modal);
-            // m_presenter.showPopup()
+        auto taskQueue =  TaskQueue::GetQueue();
+        if(m_activeScene -> hasChanges() || taskQueue -> hasPendingTasks()) {
             m_popupConfiguration.title = "Close Scene";
-            m_popupConfiguration.onYes = [this, scenePath]() {
+            m_popupConfiguration.onYes = [this, taskQueue, scenePath]() {
+                m_presenter.switchState(EditorState::Load);
                 if(!saveScene()) {
                     RB_EDITOR_ERROR("EditorLogic: can't save scene");
                 }
 
-                // m_presenter.switchState();
                 auto loadLambda = [](const SceneLoadTask& task) {
-                    task.logic -> loadCallback();
+                    task.logic -> loadSceneCallback();
                 };
 
-                TaskQueue::GetQueue() -> addAsyncTask<SceneLoadTask>(loadLambda, m_sceneManager,
+                taskQueue -> addAsyncTask<SceneLoadTask>(loadLambda, m_sceneManager,
                                                                      m_currentProject, scenePath, this);
             };
 
-            m_popupConfiguration.onNo = [this, scenePath]() {
-                // m_presenter.switchState();
+            m_popupConfiguration.onNo = [this, taskQueue, scenePath]() {
+                m_presenter.switchState(EditorState::Load);
                 auto loadLambda = [](const SceneLoadTask& task) {
-                    task.logic -> loadCallback();
+                    task.logic -> loadSceneCallback();
                 };
 
-                TaskQueue::GetQueue() -> addAsyncTask<SceneLoadTask>(loadLambda, m_sceneManager,
-                                                                     m_currentProject, scenePath, this);
+                taskQueue -> addAsyncTask<SceneLoadTask>(loadLambda, m_sceneManager,
+                                                         m_currentProject, scenePath, this);
             };
-            //m_presenter.showPopup(&m_popupConfiguration);
+            m_presenter.showPopup(&m_popupConfiguration);
         }
         else {
             m_presenter.switchState(EditorState::Load);
             auto loadLambda = [](const SceneLoadTask& task) {
-                task.logic -> loadCallback();
+                task.logic -> loadSceneCallback();
             };
 
             TaskQueue::GetQueue() -> addAsyncTask<SceneLoadTask>(loadLambda, m_sceneManager,
@@ -168,12 +164,11 @@ namespace editor {
         m_sceneManager.save(std::move(m_activeScene));
     }
 
-
     bool EditorLogic::saveScene() {
         return m_sceneManager.save(std::move(m_activeScene));
     }
 
-    void EditorLogic::loadCallback() {
+    void EditorLogic::loadSceneCallback() {
         m_presenter.switchState(EditorState::Edit);
         m_activeScene = m_sceneManager.getActiveScene();
 
@@ -225,18 +220,6 @@ namespace editor {
         }
     }
 
-    void EditorLogic::deleteEntity() {
-
-    }
-
-
-    void EditorLogic::createScene() {
-        if(!m_sceneManager.add(std::move(m_currentProject))) {
-            RB_EDITOR_ERROR("Can't Create Scene. Reason: {0}",
-                            errorToString(m_sceneManager.getError()));
-            return;
-        }
-    }
 
     void EditorLogic::toolbarPressed(const ToolbarMessage& message) {
         if(message.pressedType == 1) {
@@ -466,6 +449,35 @@ namespace editor {
                                              DeletedEntitiesRestoreUIInformation& restoreUiInformation) {
         m_activeScene -> restoreEntities(restoreInformation);
         m_presenter.restoreEntitiesOnUI(restoreUiInformation);
+    }
+
+    void EditorLogic::destroy() {
+        TaskQueue::GetQueue() -> stop();
+    }
+
+    const std::vector<class_id>& EditorLogic::getCommandStack() const {
+        return m_commandStack.getCommandStack();
+    }
+
+    void EditorLogic::closeCurrentProject(std::function<void()>&& resultCallback) {
+        auto taskQueue = TaskQueue::GetQueue();
+        m_closeResultProjectCallback = std::move(resultCallback);
+        if(m_activeScene -> hasChanges() || taskQueue -> hasPendingTasks()) {
+            m_popupConfiguration.title = "Close Project";
+            m_popupConfiguration.onYes = [this]() {
+                m_presenter.switchState(EditorState::Load);
+                if(!saveScene()) {
+                    RB_EDITOR_ERROR("EditorLogic: can't save scene");
+                }
+                m_closeResultProjectCallback();
+            };
+            m_popupConfiguration.onNo = [this]() {
+                m_closeResultProjectCallback();
+            };
+            m_presenter.showPopup(&m_popupConfiguration);
+        }
+        else
+            m_closeResultProjectCallback();
     }
 
     //////////////////////////////////////// UIInteractor ////////////////////////////////////////

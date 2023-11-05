@@ -19,6 +19,8 @@ namespace editor {
         bool hasPrefab(UUID prefabID) const;
         bool hasPrefab(std::string localPath) const;
 
+        bool savePrefab(Prefab::Ptr prefab);
+
         Prefab::Ptr findPrefab(UUID prefabID);
         Prefab::Ptr findPrefab(std::string localPath);
         bool deletePrefab(UUID prefabID);

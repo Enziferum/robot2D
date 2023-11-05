@@ -32,6 +32,8 @@ namespace editor {
         ProjectManager(const Configuration& configuration);
         ~ProjectManager() = default;
 
+        bool hasActivateProject() const;
+
 
         bool add(const ProjectDescription&);
         bool load(const ProjectDescription&);

@@ -175,8 +175,7 @@ namespace editor {
             auto& ts = entity.getComponent<TransformComponent>();
             out << YAML::Key << "Position" << YAML::Value << ts.getPosition();
             out << YAML::Key << "Size" << YAML::Value << ts.getScale();
-            // TODO: @a.raag add rotation
-            out << YAML::Key << "Rotation" << YAML::Value << 0.F;
+            out << YAML::Key << "Rotation" << YAML::Value << ts.getRotate();
 
             if(ts.hasChildren()) {
                 out << YAML::Key << "HasChildren" << YAML::Value << true;
@@ -352,14 +351,12 @@ namespace editor {
             auto& transform = deserializedEntity.addComponent<TransformComponent>();
             transform.setPosition(transformComponent["Position"].as<robot2D::vec2f>());
             transform.setScale(transformComponent["Size"].as<robot2D::vec2f>());
+            transform.setRotate(transformComponent["Rotation"].as<float>());
             if(transformComponent["HasChildren"]) {
                 auto childIDS = transformComponent["ChildIDs"].as<std::vector<UUID>>();
                 ChildPair pair = std::make_pair(UUID(uuid), childIDS);
                 children.emplace_back(pair);
             }
-
-            // TODO: @a.raag add rotation
-            //transform.setRotate(transformComponent["Rotation"].as<float>());
         }
 
         auto spriteComponent = entity["SpriteComponent"];

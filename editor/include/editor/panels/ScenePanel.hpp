@@ -21,10 +21,10 @@ source distribution.
 
 #pragma once
 
-#include <robot2D/Util/ResourceHandler.hpp>
 #include <robot2D/Core/MessageBus.hpp>
+#include <robot2D/Util/ResourceHandler.hpp>
+#include <robot2D/Graphics/Texture.hpp>
 
-#include <editor/Scene.hpp>
 #include <editor/MessageDispather.hpp>
 #include <editor/Messages.hpp>
 #include <editor/PrefabManager.hpp>
@@ -56,7 +56,6 @@ namespace editor {
 
         robot2D::ecs::Entity getSelectedEntity(int PixelData);
         robot2D::ecs::Entity getSelectedEntity() const;
-
         robot2D::ecs::Entity getTreeItem(UUID uuid);
 
         void clearSelection();
@@ -69,14 +68,9 @@ namespace editor {
     private:
         void windowFunction();
 
-        void drawComponentsBase(robot2D::ecs::Entity entity);
-        void drawComponents(robot2D::ecs::Entity entity);
         void onEntitySelection(const PanelEntitySelectedMessage& entitySelection);
         void onEntityDuplicate(const EntityDuplication& duplication);
         void onEntityRemove(const EntityRemovement& removement);
-
-        void onLoadImage(const robot2D::Image& image, robot2D::ecs::Entity entity);
-        void onLoadFont(const robot2D::Font& font, robot2D::ecs::Entity entity);
 
         void setupTreeHierarchy();
     private:
@@ -86,13 +80,16 @@ namespace editor {
 
         UIInteractor::Ptr m_interactor;
 
-        //Scene::Ptr m_scene;
         robot2D::ecs::Entity m_selectedEntity;
         ScenePanelConfiguration m_configuration;
         TreeHierarchy m_treeHierarchy;
-        robot2D::ResourceHandler<robot2D::Texture, robot2D::ecs::EntityID> m_textures;
-        robot2D::ResourceHandler<robot2D::Font, robot2D::ecs::EntityID> m_fonts;
 
         bool m_selectedEntityNeedCheckForDelete{false};
+
+        enum class TreeItemIcon {
+            Default,
+            Prefab
+        };
+        robot2D::ResourceHandler<robot2D::Texture, TreeItemIcon> m_iconTextures;
     };
 }

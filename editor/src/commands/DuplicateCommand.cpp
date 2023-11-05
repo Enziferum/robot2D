@@ -11,6 +11,11 @@ namespace editor {
     {
     }
 
+    const class_id& DuplicateCommand::id() noexcept {
+        static const class_id id{"DuplicateCommand"};
+        return id;
+    }
+
     void DuplicateCommand::undo() {
         if(!m_activeScene)
             return;

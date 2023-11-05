@@ -21,10 +21,37 @@ source distribution.
 
 #include <algorithm>
 
+#include <robot2D/imgui/Api.hpp>
 #include <robot2D/Util/Logger.hpp>
 #include <editor/panels/TreeHierarchy.hpp>
+#include "robot2D/imgui/Util.hpp"
+#include "imgui/ImGui.hpp"
 
 namespace editor {
+
+
+    void drawImage(robot2D::Texture& texture, robot2D::vec2f size, robot2D::Color backgroundColor) {
+
+//        ImGuiWindow* window = ImGui::GetCurrentWindow();
+//        const ImVec2 padding = g.Style.FramePadding;
+//        const ImRect bb(window -> DC.CursorPos, window -> DC.CursorPos + image_size + padding * 2.0f);
+//        ItemSize(bb);
+//        if (!ItemAdd(bb, id))
+//            return false;
+//
+//        bool hovered, held;
+//        bool pressed = ButtonBehavior(bb, id, &hovered, &held, flags);
+//
+//        // Render
+//        const ImU32 col = GetColorU32((held && hovered) ? ImGuiCol_ButtonActive : hovered ? ImGuiCol_ButtonHovered : ImGuiCol_Button);
+//        RenderNavHighlight(bb, id);
+//        RenderFrame(bb.Min, bb.Max, col, true, ImClamp((float)ImMin(padding.x, padding.y), 0.0f, g.Style.FrameRounding));
+//        if (bg_col.w > 0.0f)
+//            window->DrawList->AddRectFilled(bb.Min + padding, bb.Max - padding, GetColorU32(bg_col));
+//        window->DrawList->AddImage(texture_id, bb.Min + padding, bb.Max - padding, uv0, uv1, GetColorU32(tint_col));
+    }
+
+
 
     class MultiSelection {
     public:
@@ -334,16 +361,28 @@ namespace editor {
                     ImGui::SetNextItemSelectionUserData(item -> getID());
 
                     auto uuid = item -> m_id;
+
+                    constexpr auto drawTexture = [](robot2D::vec2f size, robot2D::Texture* texture,
+                                robot2D::Color tintColor) {
+                        auto imID = ImGui::convertTextureHandle(texture -> getID());
+                        ImGui::ImageButton(imID, size, {0,1}, {1, 0}, -1, {0, 0, 0, 0}, tintColor);
+                    };
+
+                    if(item -> m_iconTexture) {
+                        drawTexture({20, 20}, item -> m_iconTexture, item -> m_tintColor);
+                        ImGui::SameLine();
+                    }
+
                     bool node_open = ImGui::TreeNodeEx(static_cast<void*>(&uuid), node_flags,
                                                        item -> m_name -> c_str());
 
-                    if(ImGui::IsItemClicked()) {
+                    if(ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
                         m_selectedID = item -> m_id;
                         m_childSelectedID = NO_INDEX;
                         m_selectCallback(item);
                     }
-
-                    m_callback(item);
+                    else if(ImGui::IsItemClicked(ImGuiMouseButton_Right))
+                        m_callback(item);
 
                     if(ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID )) {
                         ImGui::SetDragDropPayload(m_playloadIdentifier.c_str(), &item -> m_id, sizeof(item -> m_id));

@@ -84,6 +84,16 @@ namespace editor {
     }
 
     void ApplicationLogic::createProject(const ProjectMessage& projectDescription) {
+        if(m_projectManager.hasActivateProject()) {
+            m_editorOpener -> closeCurrentProject([this, &projectDescription]() {
+                createProjectInternal(projectDescription);
+            });
+        }
+        else
+            createProjectInternal(projectDescription);
+    }
+
+    void ApplicationLogic::createProjectInternal(const ProjectMessage& projectDescription) {
         if(!m_editorCache.addProject(projectDescription.description)) {
             RB_EDITOR_ERROR("Can't add Project to Cache := {0}",
                             errorToString(m_editorCache.getError()));
@@ -101,8 +111,9 @@ namespace editor {
         std::filesystem::path scriptModulePath{ project -> getPath()};
         scriptModulePath.append("assets\\scripts\\bin");
         scriptModulePath.append(project -> getName());
+#ifdef ROBOT2D_WINDOWS
         scriptModulePath += ".dll";
-
+#endif
         /// TODO(a.raag) load somewhere else in real
         ScriptEngine::InitAppRuntime(scriptModulePath);
 
@@ -111,22 +122,17 @@ namespace editor {
         m_state = AppState::Editor;
     }
 
-    void ApplicationLogic::deleteProject(const ProjectMessage& projectDescription) {
-
-        if(!m_editorCache.removeProject(projectDescription.description)) {
-            RB_EDITOR_ERROR("EditorCache can't delete Project := {0}",
-                            errorToString(m_editorCache.getError()));
-            return;
+    void ApplicationLogic::loadProject(const ProjectMessage& projectDescription) {
+        if(m_projectManager.hasActivateProject()) {
+            m_editorOpener -> closeCurrentProject([this, &projectDescription]() {
+                loadProjectInternal(projectDescription);
+            });
         }
-
-        if(!m_projectManager.remove(projectDescription.description)) {
-            RB_EDITOR_ERROR("ProjectManager can't delete Project := {0}",
-                            errorToString(m_projectManager.getError()));
-            return;
-        }
+        else
+            loadProjectInternal(projectDescription);
     }
 
-    void ApplicationLogic::loadProject(const ProjectMessage& projectDescription) {
+    void ApplicationLogic::loadProjectInternal(const ProjectMessage& projectDescription) {
         if(!m_editorCache.loadProject(projectDescription.description)) {
             RB_EDITOR_ERROR("Cache can't load Project := {0}",
                             errorToString(m_editorCache.getError()));
@@ -146,13 +152,32 @@ namespace editor {
         std::filesystem::path scriptModulePath{ project -> getPath()};
         scriptModulePath.append("assets\\scripts\\bin");
         scriptModulePath.append(project -> getName());
+#ifdef ROBOT2D_WINDOWS
         scriptModulePath += ".dll";
-
+#endif
         if(exists(scriptModulePath))
             ScriptEngine::InitAppRuntime(scriptModulePath);
 
         m_editorOpener -> loadProject(project);
     }
+
+
+    void ApplicationLogic::deleteProject(const ProjectMessage& projectDescription) {
+
+        if(!m_editorCache.removeProject(projectDescription.description)) {
+            RB_EDITOR_ERROR("EditorCache can't delete Project := {0}",
+                            errorToString(m_editorCache.getError()));
+            return;
+        }
+
+        if(!m_projectManager.remove(projectDescription.description)) {
+            RB_EDITOR_ERROR("ProjectManager can't delete Project := {0}",
+                            errorToString(m_projectManager.getError()));
+            return;
+        }
+    }
+
+
 
 } // namespace editor
 

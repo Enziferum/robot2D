@@ -163,25 +163,54 @@ namespace editor {
 
     void Guizmo2D::update() {}
 
+
+
     void Guizmo2D::setManipulated(robot2D::Transformable* transformable) {
         m_manipulated = transformable;
         if(!m_manipulated)
             return;
         const auto& position = m_manipulated -> getPosition();
         auto size = transformable -> getScale();
+        const auto& rotation = m_manipulated -> getRotate();
 
-        auto middle = robot2D::vec2f { position.x + size.x / 2,
-                                       position.y + size.y / 2};
+        if(rotation == 0) {
 
-        auto xSize = m_xAxisManipulator.getSize();
-        auto ySize = m_yAxisManipulator.getSize();
-        auto xySize = m_XYAxisManipulator.getSize();
+            auto middle = robot2D::vec2f { position.x + size.x / 2,
+                                           position.y + size.y / 2};
 
-        constexpr float xyOffset = 3.f;
+            auto xSize = m_xAxisManipulator.getSize();
+            auto ySize = m_yAxisManipulator.getSize();
+            auto xySize = m_XYAxisManipulator.getSize();
 
-        m_xAxisManipulator.setPosition({middle.x, middle.y + xSize.y / 2.f});
-        m_yAxisManipulator.setPosition({middle.x + ySize.x / 2.F, middle.y});
-        m_XYAxisManipulator.setPosition({middle.x + xyOffset, middle.y - xySize.y - xyOffset});
+            constexpr float xyOffset = 3.f;
+
+            m_xAxisManipulator.setPosition({middle.x, middle.y + xSize.y / 2.f});
+            m_yAxisManipulator.setPosition({middle.x + ySize.x / 2.F, middle.y});
+            m_XYAxisManipulator.setPosition({middle.x + xyOffset, middle.y - xySize.y - xyOffset});
+        }
+        else {
+            constexpr auto degreesToRadians = [](float degrees) {
+                return degrees * (M_PI / 180);
+            };
+
+            const auto radianAngle = degreesToRadians(rotation);
+
+            /// TODO(a.raag): more correct math calculation
+
+            auto middle = robot2D::vec2f { position.x + (size.x / 2) * std::cos(radianAngle),
+                                           position.y + (size.x / 2 ) * std::sin(radianAngle) - (size.y / 2) };
+
+            auto xSize = m_xAxisManipulator.getSize();
+            auto ySize = m_yAxisManipulator.getSize();
+            auto xySize = m_XYAxisManipulator.getSize();
+
+            constexpr float xyOffset = 3.f;
+
+            m_xAxisManipulator.setPosition( {middle.x, middle.y + xSize.y / 2.f} );
+            m_yAxisManipulator.setPosition( {middle.x + ySize.x / 2.F, middle.y} );
+            m_XYAxisManipulator.setPosition( {middle.x + xyOffset, middle.y - xySize.y - xyOffset} );
+        }
+
     }
 
     void Guizmo2D::setOperationType(Guizmo2D::Operation type) {

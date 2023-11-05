@@ -25,8 +25,7 @@ namespace editor {
         m_prefabs[uuid] -> localPath = fullPath;
 
         PrefabSerializer serializer;
-        serializer.serialize(m_prefabs[uuid], fullPath);
-        return true;
+        return  serializer.serialize(m_prefabs[uuid], fullPath);;
     }
 
     Prefab::Ptr PrefabManager::loadPrefab(UIInteractor::Ptr interactor, const std::string& path) {
@@ -61,6 +60,15 @@ namespace editor {
 
     bool PrefabManager::deletePrefab(UUID prefabID) {
         return true;
+    }
+
+    bool PrefabManager::savePrefab(Prefab::Ptr prefab) {
+        if(!prefab)
+            return false;
+        const auto& uuid = prefab -> entity.getComponent<IDComponent>().ID;
+
+        PrefabSerializer serializer;
+        return serializer.serialize(m_prefabs[uuid], prefab -> localPath);;
     }
 
 

@@ -21,13 +21,14 @@ source distribution.
 
 #pragma once
 #include <robot2D/Core/MessageBus.hpp>
-#include "IPanel.hpp"
 #include <editor/PopupManager.hpp>
+#include <editor/UIInteractor.hpp>
+#include "IPanel.hpp"
 
 namespace editor {
     class MenuPanel: public IPanel, public PopupDelegate {
     public:
-        MenuPanel(robot2D::MessageBus& messageBus);
+        MenuPanel(robot2D::MessageBus& messageBus, UIInteractor::Ptr interactor);
         MenuPanel(const MenuPanel& other) = delete;
         MenuPanel& operator=(const MenuPanel& other) = delete;
         MenuPanel(MenuPanel&& other) = delete;
@@ -40,12 +41,16 @@ namespace editor {
         void fileMenu();
         void editMenu();
         void projectMenu();
-        void showExportProjectModal();
+        void pluginsMenu();
+        void developerMenu();
         void helpMenu();
 
-        void onRender() override;
+        void showExportProjectModal();
+
+        void onPopupRender() override;
     private:
         robot2D::MessageBus& m_messageBus;
+        UIInteractor::Ptr m_interactor;
         enum class PopupType {
             None,
             OpenProject,

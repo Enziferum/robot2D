@@ -12,6 +12,8 @@ namespace editor {
         ~DeleteEntityCommand() override = default;
 
         void undo() override;
+
+        DECLARE_CLASS_ID(DeleteEntityCommand)
     private:
         robot2D::MessageBus& m_messageBus;
         robot2D::ecs::Entity m_entity;

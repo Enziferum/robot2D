@@ -43,4 +43,13 @@ namespace editor {
         m_interactor.loadProject(project);
     }
 
+    void EditorModule::destroy() {
+        m_interactor.destroy();
+    }
+
+    void EditorModule::closeCurrentProject(std::function<void()>&& resultCallback) {
+        m_interactor.closeCurrentProject(std::move(resultCallback));
+    }
+
 } // namespace editor
+

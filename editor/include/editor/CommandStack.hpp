@@ -41,6 +41,11 @@ namespace editor {
         [[maybe_unused]]
         void addCommand(ICommand::Ptr&& ptr);
 
+
+        const std::vector<class_id>& getCommandStack() const {
+            return m_commandIDs;
+        }
+
         void undo();
         void redo();
 
@@ -53,6 +58,7 @@ namespace editor {
         bool empty() const noexcept;
     private:
         std::stack<ICommand::Ptr> m_stack {};
+        std::vector<class_id> m_commandIDs {};
         std::queue<ICommand::Ptr> m_redoQueue {};
     };
 
@@ -61,8 +67,9 @@ namespace editor {
         static_assert(std::is_base_of_v<ICommand, T>);
         auto ptr = std::make_shared<T>(std::forward<Args>(args)...);
         assert(ptr != nullptr && "Command of Type T is nullptr");
+        auto who = ptr -> who();
+        m_commandIDs.push_back(who);
         m_stack.push(ptr);
-
         return static_cast<T*>(ptr.get());
     }
 

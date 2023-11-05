@@ -23,6 +23,7 @@ source distribution.
 
 #include <robot2D/Core/MessageBus.hpp>
 #include <robot2D/Graphics/RenderWindow.hpp>
+#include <robot2D/Graphics/Sprite.hpp>
 #include <robot2D/Graphics/FrameBuffer.hpp>
 #include <robot2D/Util/ResourceHandler.hpp>
 #include <robot2D/imgui/Gui.hpp>
@@ -85,7 +86,7 @@ namespace editor {
         virtual void showPopup(PopupConfiguration* configuration) = 0;
     };
 
-    class Editor: public IEditor {
+    class Editor: public IEditor, public PopupDelegate {
     public:
         Editor(robot2D::MessageBus& messageBus, robot2D::Gui& gui);
         Editor(const Editor&)=delete;
@@ -115,13 +116,15 @@ namespace editor {
         void windowFunction();
         void setupBindings();
         void setupShortCuts();
-
+        void setupSpinner();
 
         void onKeyPressed(const robot2D::Event& event);
         void onKeyReleased(const robot2D::Event& event);
         void onMousePressed (const robot2D::Event& event);
         void onMouseReleased(const robot2D::Event& event);
         void onMouseMoved(const robot2D::Event& event);
+
+        void onPopupRender() override;
     private:
         enum class State {
             LostFocus,
@@ -172,5 +175,12 @@ namespace editor {
 
 
         EditorInteractor* m_interactor{nullptr};
+
+        enum class Mode {
+            Default,
+            TiledMap
+        } m_mode = Mode::Default;
+
+        robot2D::Sprite m_tileSpritePreview;
     };
 }

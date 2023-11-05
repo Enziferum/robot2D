@@ -66,10 +66,8 @@ namespace editor {
         void update(float dt) override;
         void findSelectEntities(const robot2D::FloatRect& rect) override;
         bool hasSelectedEntities() const override;
-        void createScene() override;
         void copyToBuffer() override;
         void pasterFromBuffer() override;
-        void deleteEntity() override;
         void undoCommand() override;
         void redoCommand() override;
         void duplicateEntity(robot2D::vec2f mousePos, robot2D::ecs::Entity entity) override;
@@ -78,8 +76,10 @@ namespace editor {
         void addObserver(Observer::Ptr observer) override;
         void notifyObservers(std::vector<std::string>&& paths) override;
         EditorState getState() const override;
+        /// \brief Save Scene by Shortcut.
         bool saveScene() override;
 
+        void closeCurrentProject(std::function<void()>&& resultCallback);
         //////////////////////////////////////// EditorInteractor ////////////////////////////////////////
 
 
@@ -104,13 +104,17 @@ namespace editor {
         void registerOnDeleteFinish(std::function<void()>&& callback) override;
         void restoreDeletedEntities(DeletedEntitiesRestoreInformation& restoreInformation,
                                     DeletedEntitiesRestoreUIInformation& restoreUiInformation) override;
+
+        const std::vector<class_id>& getCommandStack() const override;
         //////////////////////////////////////// UIInteractor ////////////////////////////////////////
 
         //////////////////// ScriptInteractor ////////////////////
         robot2D::ecs::Entity getByUUID(std::uint64_t uuid) override;
         //////////////////// ScriptInteractor ////////////////////
+
+        void destroy();
     private:
-        void loadCallback();
+        void loadSceneCallback();
         void loadAssetsByEntity(robot2D::ecs::Entity entity);
         void saveScene(const MenuProjectMessage& message);
         void toolbarPressed(const ToolbarMessage& message);
@@ -136,5 +140,7 @@ namespace editor {
 
         std::vector<robot2D::ecs::Entity> m_selectedEntities;
         std::vector<robot2D::ecs::Entity> m_copyEntities;
+
+        std::function<void()> m_closeResultProjectCallback{nullptr};
     };
 }

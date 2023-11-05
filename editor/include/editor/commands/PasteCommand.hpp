@@ -32,7 +32,7 @@ namespace editor {
         PasteCommand(robot2D::MessageBus& messageBus, std::vector<robot2D::ecs::Entity> entities, UIInteractor::Ptr);
         ~PasteCommand() override = default;
 
-        DECLARE_CLASS_ID(PasteCommand);
+        DECLARE_CLASS_ID(PasteCommand)
         void undo() override;
     private:
         robot2D::MessageBus& m_messageBus;
