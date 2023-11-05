@@ -77,6 +77,7 @@ namespace editor {
         virtual void openScene(Scene::Ptr scene, std::string path) = 0;
         virtual void prepare() = 0;
 
+        virtual void clearSelectionOnUI() = 0;
         virtual DeletedEntitiesRestoreUIInformation removeEntitiesOnUI(std::vector<robot2D::ecs::Entity>& selectedEntities) = 0;
         virtual void restoreEntitiesOnUI(DeletedEntitiesRestoreUIInformation& restoreUiInformation) = 0;
 
@@ -104,6 +105,7 @@ namespace editor {
         void prepare() override;
         void showPopup(editor::PopupConfiguration* configuration) override;
         void findSelectedEntitiesOnUI(std::vector<robot2D::ecs::Entity>& entities) override;
+        void clearSelectionOnUI() override;
         DeletedEntitiesRestoreUIInformation removeEntitiesOnUI(std::vector<robot2D::ecs::Entity>& selectedEntities) override;
         void restoreEntitiesOnUI(DeletedEntitiesRestoreUIInformation& restoreUiInformation) override;
         /////////////////////////// IEditor ///////////////////////////

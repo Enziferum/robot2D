@@ -26,6 +26,7 @@ source distribution.
 #include <tuple>
 #include <algorithm>
 #include <functional>
+#include <limits>
 
 #include <imgui/imgui.h>
 #include <robot2D/Core/Keyboard.hpp>
@@ -200,7 +201,7 @@ namespace editor {
         using ItemCallback = std::function<void(ITreeItem::Ptr selected)>;
         using ReorderItemCallback = std::function<void(ITreeItem::Ptr source, ITreeItem::Ptr target)>;
         using MultiItemCallback = std::function<void(std::vector<ITreeItem::Ptr>)>;
-
+        using MultiItemRangeCallback = std::function<void(std::vector<ITreeItem::Ptr>, bool del)>;
 
         template<typename T, typename ... Args>
         typename TreeItem<T>::Ptr addItem(bool needPending = false, Args&& ... args) {
@@ -218,6 +219,7 @@ namespace editor {
         }
 
         bool deleteItem(ITreeItem::Ptr treeItem);
+
 
         bool addOnSelectCallback(ItemCallback&& callback) {
             if(callback)
@@ -267,6 +269,15 @@ namespace editor {
             return true;
         }
 
+        bool addMultiSelectRangeCallback(MultiItemRangeCallback&& callback) {
+            if(callback)
+                m_multiItemRangeCallback = std::move(callback);
+            else
+                return false;
+            return true;
+        }
+
+
         template<typename T>
         TreeItem<T>* getItem(UUID id) {
             auto found = std::find_if(m_items.begin(), m_items.end(), [&id](ITreeItem::Ptr ptr) {
@@ -298,6 +309,21 @@ namespace editor {
             }
         }
 
+        void insertItem(ITreeItem::Ptr source, ITreeItem::Ptr anchor, bool first = false) {
+
+            if(first) {
+                m_setItems.push_back(std::make_tuple(m_items.begin(), source));
+            }
+            else {
+                auto found = std::find_if(m_items.begin(), m_items.end(), [&anchor](ITreeItem::Ptr item) {
+                    return item-> m_id == anchor -> m_id;
+                });
+                m_setItems.push_back(std::make_tuple(found, source));
+            }
+
+        }
+
+
         template<typename T>
         T* getDataByItem(UUID ID) {
             if(auto item = findByID(ID)) {
@@ -307,6 +333,7 @@ namespace editor {
         }
 
         void setSelected(ITreeItem::Ptr item);
+        void clearSelection();
 
         std::vector<ITreeItem::Ptr>& getItems() { return m_items; }
         const std::vector<ITreeItem::Ptr>& getItems() const { return m_items; }
@@ -328,6 +355,7 @@ namespace editor {
 
         using Iterator = std::vector<ITreeItem::Ptr>::iterator;
         using InsertItem = std::tuple<Iterator, ITreeItem::Ptr, ReorderDeleteType>;
+        using SetItem = std::tuple<Iterator, ITreeItem::Ptr>;
 
         int m_tree_base_flags = 0;
         UUID m_selectedID = NO_INDEX;
@@ -339,13 +367,14 @@ namespace editor {
         ReorderItemCallback m_makeAsChildCallback;
         ReorderItemCallback m_removeAsChildCallback;
         MultiItemCallback m_multiItemCallback;
+        MultiItemRangeCallback m_multiItemRangeCallback;
 
 
         std::vector<InsertItem> m_insertItems;
+        std::vector<SetItem> m_setItems;
+
 
         robot2D::Key m_shortCutKey{robot2D::Key::Q};
-
-
         std::string m_playloadIdentifier = "TreeNodeItem";
     };
 

@@ -41,11 +41,20 @@ namespace robot2D::ecs {
     public:
         using Ptr = std::shared_ptr<IContainer>;
     public:
+        IContainer(ComponentManager::ID id): m_containerID{id} {}
         virtual ~IContainer() = default;
         virtual size_t getSize() const = 0;
         virtual bool hasEntity(EntityID entityId) const = 0;
         virtual bool duplicate(EntityID from, EntityID to) = 0;
         virtual bool removeEntity(EntityID&& entityId) = 0;
+        virtual IContainer::Ptr cloneEmpty() = 0;
+        virtual bool cloneTo(IContainer::Ptr target, EntityID fromEntity) = 0;
+
+        ComponentManager::ID getID() const { return m_containerID; }
+
+    protected:
+        /// brief indificate type of Component stored in Container
+        ComponentManager::ID m_containerID;
     };
 
     struct CustomDestroyComponent {
@@ -59,7 +68,7 @@ namespace robot2D::ecs {
     public:
         using Ptr = std::shared_ptr<ComponentContainer<T>>;
     public:
-        ComponentContainer(): m_components(256) {}
+        ComponentContainer(ComponentManager::ID id): IContainer(id), m_components(256) {}
         ComponentContainer(const ComponentContainer& other);
         ComponentContainer& operator=(const ComponentContainer& other);
         ComponentContainer(ComponentContainer&& other);
@@ -109,6 +118,27 @@ namespace robot2D::ecs {
 //                destroyComponent -> destroy();
             return static_cast<bool>(m_components.erase(entityId));
         }
+
+        IContainer::Ptr cloneEmpty() override {
+            return std::make_shared<ComponentContainer<T>>(m_containerID);
+        }
+
+        bool cloneTo(IContainer::Ptr target, EntityID fromEntity) override {
+            if(m_containerID != target -> getID())
+                return false;
+
+            if(ComponentContainer<T>::Ptr targetRealContainer =
+                    std::dynamic_pointer_cast<ComponentContainer<T>>(target)) {
+                targetRealContainer -> cloneComponent(fromEntity, m_components[fromEntity]);
+                return true;
+            }
+            else
+                return false;
+        }
+    private:
+        void cloneComponent(EntityID fromEntity, T component) {
+            m_components[fromEntity] = component;
+        }
     private:
         std::unordered_map<EntityID, T> m_components;
     };
@@ -145,6 +175,8 @@ namespace robot2D::ecs {
 
         bool removeEntity(Entity entity);
 
+        bool restoreEntity(Entity entity);
+
         void removeEntityFromScene(Entity entity);
 
         bool entityDestroyed(Entity entity);
@@ -167,6 +199,10 @@ namespace robot2D::ecs {
         ComponentManager& m_componentManager;
         std::unordered_map<EntityID, Bitmask> m_componentMasks;
         std::vector<IContainer::Ptr> m_componentContainers;
+
+        std::vector<IContainer::Ptr> m_componentContainersDeleteBuffer;
+
+
         std::vector<bool> m_destroyFlags;
         Scene* m_ownerScene{nullptr};
     };
@@ -175,7 +211,7 @@ namespace robot2D::ecs {
     ComponentContainer<T>& EntityManager::getContainer() {
         const auto componentID = m_componentManager.getID<T>();
         if(m_componentContainers[componentID] == nullptr) {
-            m_componentContainers[componentID] = std::make_shared<ComponentContainer<T>>();
+            m_componentContainers[componentID] = std::make_shared<ComponentContainer<T>>(componentID);
         }
         return *(dynamic_cast<ComponentContainer<T>*>(m_componentContainers[componentID].get()));
     }

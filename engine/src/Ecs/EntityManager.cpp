@@ -21,7 +21,6 @@ source distribution.
 
 #include <algorithm>
 #include <robot2D/Ecs/EntityManager.hpp>
-#include <robot2D/Ecs/SystemManager.hpp>
 #include <robot2D/Ecs/Scene.hpp>
 
 namespace robot2D::ecs {
@@ -33,6 +32,7 @@ namespace robot2D::ecs {
     EntityManager::EntityManager(ComponentManager& componentManager, Scene* scene): m_entityCounter(0),
     m_componentManager(componentManager),
     m_componentContainers(maxComponentsContainerValue),
+    m_componentContainersDeleteBuffer(maxComponentsContainerValue),
     m_componentMasks(),
     m_ownerScene{scene}
     {}
@@ -55,8 +55,17 @@ namespace robot2D::ecs {
 
     bool EntityManager::removeEntity(Entity entity) {
         for(auto& container: m_componentContainers) {
-            if(container)
+            if(container) {
+                const auto componentID = container -> getID();
+                if(m_componentContainersDeleteBuffer[componentID] == nullptr) {
+                    m_componentContainersDeleteBuffer[componentID] = container -> cloneEmpty();
+                }
+                if (!container->
+                        cloneTo(m_componentContainersDeleteBuffer[componentID], entity.getIndex())) {
+                    /// TODO(a.raag): error to clone
+                }
                 container -> removeEntity(entity.getIndex());
+            }
         }
 
         bool maskDeleted = static_cast<bool>(m_componentMasks.erase(entity.getIndex()));
@@ -95,6 +104,29 @@ namespace robot2D::ecs {
         m_componentMasks[duplicated.getIndex()].turnOnBits(entity.getComponentMask().getBitset());
 
         return duplicated;
+    }
+
+    bool EntityManager::restoreEntity(Entity entity) {
+
+        for(auto& container: m_componentContainersDeleteBuffer) {
+            if(container) {
+                const auto componentID = container -> getID();
+                if (!container->
+                        cloneTo(m_componentContainers[componentID], entity.getIndex())) {
+                    /// TODO(a.raag): error to clone
+                    return false;
+                }
+                m_componentMasks[entity.getIndex()].turnOnBit(componentID);
+                container -> removeEntity(entity.getIndex());
+            }
+        }
+
+        if(entity.getIndex() < m_destroyFlags.size())
+            m_destroyFlags[entity.getIndex()] = false;
+        else
+            return false;
+        
+        return true;
     }
 
 }

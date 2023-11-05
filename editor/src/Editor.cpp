@@ -487,5 +487,10 @@ namespace editor {
         panel.restoreEntitiesOnUI(restoreUiInformation);
     }
 
+    void Editor::clearSelectionOnUI() {
+        auto& panel = m_panelManager.getPanel<ScenePanel>();
+        panel.clearSelection();
+    }
+
 
 }

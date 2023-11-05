@@ -232,6 +232,7 @@ namespace editor {
             m_CameraCollider.setIsShown(false);
 
             auto& selectedEntities = m_uiInteractor -> getSelectedEntities();
+
             if(selectedEntities.size() == 1) {
                 auto& selectedEntity = selectedEntities[0];
                 if(selectedEntity && !selectedEntity.destroyed()) {

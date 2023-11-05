@@ -57,13 +57,11 @@ namespace robot2D::ecs {
 
         const EntityID& getIndex() const { return m_id; }
         EntityID getIndex() { return m_id; }
-
         Bitmask getComponentMask() const;
 
+
         void setTag(const std::string& tag) { m_tag = tag; }
-
         const std::string& getTag() const { return m_tag; }
-
         std::string& getTag() { return m_tag; }
 
         friend bool operator == (const Entity& l, const Entity& r);
