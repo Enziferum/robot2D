@@ -22,5 +22,8 @@ source distribution.
 #include <editor/commands/CopyCommand.hpp>
 
 namespace editor {
-
+    const class_id& CopyCommand::id() noexcept {
+        static const class_id id{"CopyCommand"};
+        return id;
+    }
 } // namespace editor

@@ -22,6 +22,7 @@ source distribution.
 #pragma once
 #include <thread>
 #include <mutex>
+#include <shared_mutex>
 #include <condition_variable>
 #include <queue>
 #include <atomic>
@@ -68,6 +69,10 @@ namespace editor {
         }
 
         void process();
+        void stop();
+
+        /// TODO(a.raag): create correct method
+        bool hasPendingTasks() const { return false; }
 
         /// remove all ?
         void clear();

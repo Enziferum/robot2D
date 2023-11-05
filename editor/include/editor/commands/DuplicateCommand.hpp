@@ -15,6 +15,8 @@ namespace editor {
 
         void undo() override;
         void redo() override;
+
+        DECLARE_CLASS_ID(DuplicateCommand)
     private:
         robot2D::MessageBus& m_messageBus;
         Scene::Ptr m_activeScene{nullptr};

@@ -8,6 +8,12 @@ namespace editor {
     {
     }
 
+    const class_id& DeleteEntityCommand::id() noexcept {
+        static const class_id id{"DeleteEntityCommand"};
+        return id;
+    }
+
+
     void DeleteEntityCommand::undo() {
 
     }

@@ -18,10 +18,17 @@ and must not be misrepresented as being the original software.
 3. This notice may not be removed or altered from any
 source distribution.
 *********************************************************************/
-
+#include <atomic>
 #include <editor/commands/ICommand.hpp>
 
 namespace editor {
+    namespace
+    {
+        std::atomic<int> g_last_class_index;
+    }
+
+    class_id::class_id(const char* name): m_name{name}, m_index{++g_last_class_index} {}
+
     ICommand::~ICommand() {}
 
     void ICommand::redo() {}

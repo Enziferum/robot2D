@@ -30,6 +30,8 @@ source distribution.
 namespace editor {
 
 
+
+
     class IFunction {
     public:
         using Ptr = std::unique_ptr<IFunction>;
@@ -65,6 +67,8 @@ namespace editor {
         Callback m_callback;
     };
 
+
+
     class MessageDispatcher {
     public:
         MessageDispatcher();
@@ -74,7 +78,8 @@ namespace editor {
         MessageDispatcher& operator=(MessageDispatcher&&)=delete;
         ~MessageDispatcher() = default;
 
-        template<typename CallbackFuncArg, typename Callback>
+        /// TODO(a.raag) check Callback signature CallbackFuncArg
+        template<typename CallbackFuncArg, typename Callback, typename = std::enable_if_t<std::is_invocable_v<Callback, CallbackFuncArg>>>
         void onMessage(robot2D::Message::ID messageId, Callback&& callback) {
             auto ptr = std::make_unique<FunctionWrapper<Callback, CallbackFuncArg>>(std::forward<Callback>(callback));
             if(!ptr)
@@ -85,6 +90,6 @@ namespace editor {
 
         void process(const robot2D::Message& message);
     private:
-        std::unordered_map<robot2D::Message::ID, IFunction::Ptr> m_functions;
+        std::unordered_multimap<robot2D::Message::ID, IFunction::Ptr> m_functions;
     };
 }

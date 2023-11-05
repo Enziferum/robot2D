@@ -90,7 +90,7 @@ namespace editor {
             for(auto entity: prefabEntities) {
                 bool addToScene = true;
 
-                auto &deserializedEntity = prefab->entity;
+                auto &deserializedEntity = prefab -> entity;
                 entitySerializer.deserialize(&entity, deserializedEntity, addToScene, children);
             }
         }

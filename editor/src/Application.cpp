@@ -45,6 +45,9 @@ namespace editor {
         }
 
         m_guiWrapper.setup(*m_window);
+
+
+
         m_editorModule = EditorAssembly::createEditorModule(m_window,
                                                             m_messageBus,
                                                             m_messageDispatcher,
@@ -85,6 +88,7 @@ namespace editor {
 //            if(evt.key.code == robot2D::Key::ESCAPE)
 //                m_running = false;
         });
+
     }
 
     void Application::handleEvents(const robot2D::Event& event) {
@@ -128,6 +132,7 @@ namespace editor {
 
     void Application::destroy() {
        ScriptEngine::Shutdown();
+       m_editorModule -> destroy();
     }
 
 } // namespace editor

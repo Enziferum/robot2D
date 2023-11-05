@@ -4,6 +4,7 @@
 
 #include "EditorState.hpp"
 #include "DeletedEntitesRestoreInformation.hpp"
+#include "PopupConfiguration.hpp"
 
 namespace editor {
 
@@ -19,6 +20,8 @@ namespace editor {
         void prepareView();
         void switchState(EditorState editorState) { m_state = editorState; }
         const EditorState& getState() const;
+
+        void showPopup(PopupConfiguration* popupConfiguration);
 
         DeletedEntitiesRestoreUIInformation removeEntitiesFromUI(std::vector<robot2D::ecs::Entity> removingEntities);
         void restoreEntitiesOnUI(DeletedEntitiesRestoreUIInformation& restoreUiInformation);

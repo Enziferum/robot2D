@@ -29,6 +29,8 @@ namespace robot2D::ecs {
         constexpr unsigned maxComponentsContainerValue = 64;
     }
 
+    CustomDestroyComponent::~CustomDestroyComponent() = default;
+
     EntityManager::EntityManager(ComponentManager& componentManager, Scene* scene): m_entityCounter(0),
     m_componentManager(componentManager),
     m_componentContainers(maxComponentsContainerValue),

@@ -11,6 +11,11 @@ namespace editor {
                                                  m_deletedEntitiesRestoreUIInformation(deletedEntitiesRestoreUIInformation)
                                                  {}
 
+    const class_id& DeleteEntitiesCommand::id() noexcept {
+        static const class_id id{"DeleteEntitiesCommand"};
+        return id;
+    }
+
     void DeleteEntitiesCommand::undo() {
         RB_EDITOR_INFO("DeleteEntitiesCommand: undo command");
 

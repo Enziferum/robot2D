@@ -30,5 +30,7 @@ namespace editor {
         ~CopyCommand() override = default;
 
         void undo() override;
+
+        DECLARE_CLASS_ID(CopyCommand)
     };
 } // namespace editor

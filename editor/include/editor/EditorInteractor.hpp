@@ -16,10 +16,8 @@ namespace editor {
         virtual void update(float dt) = 0;
         virtual void findSelectEntities(const robot2D::FloatRect& rect) = 0;
         virtual bool hasSelectedEntities() const = 0;
-        virtual void createScene() = 0;
         virtual void copyToBuffer() = 0;
         virtual void pasterFromBuffer() = 0;
-        virtual void deleteEntity() = 0;
         virtual void undoCommand() = 0;
         virtual void redoCommand() = 0;
         virtual void duplicateEntity(robot2D::vec2f mousePos, robot2D::ecs::Entity entity) = 0;

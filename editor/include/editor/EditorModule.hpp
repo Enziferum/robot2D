@@ -1,4 +1,5 @@
 #pragma once
+#include <functional>
 #include <robot2D/Core/MessageBus.hpp>
 #include <robot2D/imgui/Gui.hpp>
 #include "MessageDispather.hpp"
@@ -15,6 +16,7 @@ namespace editor {
         virtual ~IEditorOpener() = 0;
         virtual void createProject(Project::Ptr project) = 0;
         virtual void loadProject(Project::Ptr project) = 0;
+        virtual void closeCurrentProject(std::function<void()>&& resultCallback) = 0;
     };
 
     class IEditorModule: public IEditorOpener {
@@ -27,6 +29,7 @@ namespace editor {
         virtual void handleMessages(const robot2D::Message& message) = 0;
         virtual void update(float dt) = 0;
         virtual void render() = 0;
+        virtual void destroy() = 0;
 
         virtual void createProject(Project::Ptr project) = 0;
         virtual void loadProject(Project::Ptr project) = 0;
@@ -42,11 +45,12 @@ namespace editor {
         void handleMessages(const robot2D::Message& message) override;
         void update(float dt) override;
         void render() override;
-
+        void destroy() override;
 
         ////////////////// IEditorOpener //////////////////
         void createProject(Project::Ptr project) override;
         void loadProject(Project::Ptr project) override;
+        virtual void closeCurrentProject(std::function<void()>&& resultCallback) override;
         ////////////////// IEditorOpener //////////////////
     private:
         Editor m_editor;

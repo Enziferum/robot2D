@@ -34,6 +34,12 @@ namespace editor {
 
     }
 
+    const class_id& PasteCommand::id() noexcept {
+        static const class_id id{"PasteCommand"};
+        return id;
+    }
+
+
     void PasteCommand::undo() {
         for(auto ent: m_entities) {
             if(!ent && ent.destroyed())

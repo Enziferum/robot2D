@@ -32,31 +32,38 @@ namespace editor {
         class_id(const char* name);
 
         int getIndex() const { return m_index; }
+        const char* const getName() const { return m_name; }
+        bool operator == (const class_id& another) const noexcept
+        {
+            return m_index == another.m_index;
+        }
     private:
         const char* const m_name;
         int m_index;
     };
 
-#define DECLARE_CLASS_ID(name) static class_id id()  { \
-    static class_id id(#name);                                \
-    return id;                                               \
-}
+#define DECLARE_CLASS_ID(name) \
+    virtual const class_id& who() const noexcept override \
+    { \
+        return id(); \
+    } \
+    static const class_id& id() noexcept;
 
+#define IMPLEMENT_CLASS_ID(name) \
+    const class_id&  ##name::id() noexcept { \
+         static const class_id id{#name};   \
+         return id;\
+    }
 
     class ICommand {
     public:
         using Ptr = std::shared_ptr<ICommand>;
     public:
         virtual ~ICommand() = 0;
-
-        [[nodiscard]]
-        const CommandID& getCommandID() const { return m_commandID; }
-        void setCommandID(CommandID commandId) { m_commandID = commandId;}
+        virtual const class_id& who() const noexcept = 0;
 
         virtual void undo() = 0;
         virtual void redo();
-    protected:
-        CommandID m_commandID{0};
     };
 
 } // namespace viewer

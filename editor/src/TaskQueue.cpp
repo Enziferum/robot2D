@@ -74,4 +74,15 @@ namespace editor {
         if(task)
             task -> call();
     }
+
+    void TaskQueue::stop() {
+        m_running.store(false, std::memory_order::memory_order_relaxed);
+
+        data_cond.notify_all();
+        std::unique_lock<std::mutex> lock(m_inputMutex);
+
+        if(m_thread.joinable())
+            m_thread.join();
+
+    }
 }

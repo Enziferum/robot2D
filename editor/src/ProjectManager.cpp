@@ -105,3 +105,6 @@ namespace editor {
     }
 }
 
+bool editor::ProjectManager::hasActivateProject() const {
+    return m_currentProject != nullptr;
+}

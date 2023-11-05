@@ -44,8 +44,10 @@ namespace editor {
         const EditorCache& getCache() const { return m_editorCache; }
     private:
         void createProject(const ProjectMessage& projectDescription);
+        void createProjectInternal(const ProjectMessage& projectDescription);
         void deleteProject(const ProjectMessage& projectDescription);
         void loadProject(const ProjectMessage& projectDescription);
+        void loadProjectInternal(const ProjectMessage& projectDescription);
     private:
         MessageDispatcher& m_messageDispatcher;
         Configuration m_configuration;

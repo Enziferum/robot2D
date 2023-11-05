@@ -154,6 +154,15 @@ namespace editor {
                                                                   m_configuration.m_thumbnaleSize})) {
                     m_itemEditName.first = relativePath;
                     m_itemEditName.second = true;
+
+                    auto extension = relativePath.extension();
+                    if(extension == ".prefab") {
+                        auto* msg =
+                                m_messageBus.postMessage<PrefabAssetPressedMessage>(MessageID::PrefabAssetPressed);
+                        /// ???
+
+                    }
+
                 }
                 if(ImGui::IsItemClicked(robot2D::mouse2int(robot2D::Mouse::MouseRight))) {
                     ImGui::OpenPopup("##Delete");

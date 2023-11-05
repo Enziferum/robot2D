@@ -29,4 +29,8 @@ namespace editor {
     void EditorPresenter::clearSelectionOnUI() {
         m_editor -> clearSelectionOnUI();
     }
+
+    void EditorPresenter::showPopup(PopupConfiguration* popupConfiguration) {
+        m_editor -> showPopup(popupConfiguration);
+    }
 } // namespace editor

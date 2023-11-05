@@ -21,30 +21,55 @@ source distribution.
 
 #pragma once
 
-#include <robot2D/Graphics/RenderStats.hpp>
-#include <robot2D/Graphics/Color.hpp>
-#include <editor/EditorCamera.hpp>
+#include <robot2D/Graphics/Image.hpp>
+#include <robot2D/Graphics/Font.hpp>
+#include <robot2D/Util/ResourceHandler.hpp>
+
+#include <robot2D/Ecs/Entity.hpp>
+#include <editor/MessageDispather.hpp>
+#include <editor/PrefabManager.hpp>
+#include <editor/UIInteractor.hpp>
+#include <editor/Messages.hpp>
+
 #include "IPanel.hpp"
 
 namespace editor {
 
-    struct InspectorPanelConfiguration {
-        const robot2D::Color defaultBackGround = robot2D::Color::fromGL(59.f/255.f, 60.f/255.f, 57.f/255.f, 1);
-    };
-
     class InspectorPanel: public IPanel {
     public:
-        explicit InspectorPanel(IEditorCamera::Ptr sceneCamera);
+        explicit InspectorPanel(MessageDispatcher& messageDispatcher, PrefabManager& prefabManager);
         ~InspectorPanel() override = default;
 
-        const robot2D::Color& getColor() const;
-
-        void setRenderStats(robot2D::RenderStats&& renderStats);
+        void setInteractor(UIInteractor::Ptr interactor);
         void render() override;
+        void clearSelection();
     private:
-        IEditorCamera::Ptr m_camera;
-        robot2D::Color m_clearColor;
-        robot2D::RenderStats m_renderStats;
-        InspectorPanelConfiguration m_configuration;
+        void drawComponentsBase(robot2D::ecs::Entity entity);
+        void drawComponents(robot2D::ecs::Entity entity);
+
+        void drawAssetBase();
+
+        void onPrefabAssetSelected(const PrefabAssetPressedMessage& message);
+
+        void onLoadImage(const robot2D::Image& image, robot2D::ecs::Entity entity);
+        void onLoadFont(const robot2D::Font& font, robot2D::ecs::Entity entity);
+    private:
+        MessageDispatcher& m_messageDispatcher;
+        PrefabManager& m_prefabManager;
+        robot2D::ecs::Entity m_selectedEntity;
+
+        UIInteractor::Ptr m_interactor{nullptr};
+
+        robot2D::ResourceHandler<robot2D::Texture, robot2D::ecs::EntityID> m_textures;
+        robot2D::ResourceHandler<robot2D::Font, robot2D::ecs::EntityID> m_fonts;
+
+
+        enum class InspectType {
+            EditorEntity,
+            AssetPrefab,
+            AssetScene,
+            AssetImage,
+            AssetFont
+        } m_inspectType = InspectType::EditorEntity;
     };
 }
