@@ -59,6 +59,8 @@ namespace editor {
 
         robot2D::ecs::Entity getTreeItem(UUID uuid);
 
+        void clearSelection();
+
         void processSelectedEntities(std::vector<robot2D::ecs::Entity>& entities);
 
         DeletedEntitiesRestoreUIInformation

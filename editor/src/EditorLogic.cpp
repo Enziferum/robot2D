@@ -451,6 +451,10 @@ namespace editor {
                 }
             }
         }
+
+        if(m_selectedEntities.empty())
+            m_presenter.clearSelectionOnUI();
+
         return robot2D::ecs::Entity{};
     }
 

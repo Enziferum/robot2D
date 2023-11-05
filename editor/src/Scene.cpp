@@ -305,32 +305,43 @@ namespace editor {
         DeletedEntitiesRestoreInformation restoreInformation;
         restoreInformation.anchorEntitiesUuids.reserve(removingEntities.size());
 
+        int offsetIndex = 0;
         for(auto iter = m_sceneEntities.begin(); iter < m_sceneEntities.end(); ++iter) {
             auto entity = *iter;
-            auto entityUuid = entity.getComponent<IDComponent>().ID;
 
             /// TODO(a.raag): check removing and all entities
-            if(entityUuid) {
+            if(entity == removingEntities[offsetIndex]) {
                 if(iter != m_sceneEntities.begin()) {
                     auto prevIter = iter - 1;
-                    auto prevUuid = (*prevIter).getComponent<IDComponent>().ID;
-                    restoreInformation.push(prevUuid, false, false);
+                    auto prevEntity = (*prevIter);
+                    restoreInformation.push(prevEntity, removingEntities[offsetIndex], false, false);
                 }
                 else
-                    restoreInformation.push(entityUuid, true, false);
+                    restoreInformation.push(entity, removingEntities[offsetIndex], true, false);
+
+                //m_scene.removeEntity(removingEntities[offsetIndex]);
+                offsetIndex++;
             }
 
             if(entity.getComponent<TransformComponent>().hasChildren()) {
-                if(iter != m_sceneEntities.begin()) {
-                    auto prevIter = iter - 1;
-                    auto prevUuid = (*prevIter).getComponent<IDComponent>().ID;
-                    restoreInformation.push(prevUuid, false, true);
-                }
-                else
-                    restoreInformation.push(entityUuid, true, true);
+//                if(iter != m_sceneEntities.begin()) {
+//                    auto prevIter = iter - 1;
+//                    auto prevEntity = (*prevIter);
+//                    restoreInformation.push(prevEntity, false, true);
+//                }
+//                else
+//                    restoreInformation.push(entity, true, true);
             }
-
         }
+
+
+        for(auto& ent: removingEntities)
+            m_deletePendingBuffer.push_back(ent);
+
+//        m_sceneEntities.erase(std::remove_if(m_sceneEntities.begin(), m_sceneEntities.end(),
+//                                             [&removingEntities](auto& ent) {
+//            return std::find(removingEntities.begin(), removingEntities.end(), ent) != removingEntities.end();
+//        }), m_sceneEntities.end());
 
         return restoreInformation;
     }
@@ -339,25 +350,30 @@ namespace editor {
 
         for(auto& obj: restoreInformation.anchorEntitiesUuids) {
             if(obj.child) {
-                auto found = std::find_if(m_sceneEntities.begin(), m_sceneEntities.end(), [this, obj](robot2D::ecs::Entity ent) {
-                   return ent.getComponent<IDComponent>().ID == obj.uuid;
+                auto found = std::find_if(m_sceneEntities.begin(),
+                                          m_sceneEntities.end(), [this, obj](robot2D::ecs::Entity ent) {
+                   return ent == obj.entity;
                 });
                 if(found != m_sceneEntities.end()) {
                     auto& transform = (*found).getComponent<TransformComponent>();
                 }
             }
             else {
+                m_scene.restoreEntity(obj.entity);
 
                 if(obj.first) {
+                    m_sceneEntities.insert(m_sceneEntities.begin(), obj.entity);
+                }
+                else {
+                    auto prevFound = std::find_if(m_sceneEntities.begin(), m_sceneEntities.end(),
+                                                  [&obj](robot2D::ecs::Entity entity) {
+                       return obj.anchorEntity == entity;
+                    });
 
-               }
-               else {
-
-               }
-
+                    m_sceneEntities.insert(prevFound + 1, obj.entity);
+                }
             }
         }
-
     }
 
 }

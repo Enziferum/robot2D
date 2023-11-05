@@ -46,6 +46,10 @@ source distribution.
 
 namespace editor {
 
+    #define GET_ENTITY_UUID(item) item -> getUserData<robot2D::ecs::Entity>() -> getComponent<IDComponent>().ID;
+    #define GET_ENTITY(item) item -> getUserData<robot2D::ecs::Entity>()
+
+
     template<typename T, typename UIFunction>
     static void drawComponent(const std::string& name, robot2D::ecs::Entity& entity, UIFunction uiFunction)
     {
@@ -618,7 +622,7 @@ namespace editor {
         m_treeHierarchy.addOnCallback([this](ITreeItem::Ptr item) {
 
             bool deleteSelected = false;
-            if (ImGui::BeginPopupContextItem())
+            if (ImGui::BeginPopupContextItem("TreeHierarchyOnCallbackPopup"))
             {
                 if (ImGui::MenuItem("Delete Entity"))
                     deleteSelected = true;
@@ -721,8 +725,16 @@ namespace editor {
             //m_treeHierarchy.setBefore()
         });
 
+
+
         m_treeHierarchy.addMultiSelectCallback([this](std::vector<ITreeItem::Ptr> items) {
             RB_EDITOR_INFO("TreeHierarchy: MultiSelect All");
+            ITreeItem::Ptr item;
+            auto uuid = GET_ENTITY_UUID(item)
+        });
+
+        m_treeHierarchy.addMultiSelectRangeCallback([this](std::vector<ITreeItem::Ptr> items, bool deleted) {
+
         });
     }
 
@@ -739,7 +751,7 @@ namespace editor {
         m_treeHierarchy.clear();
 
 
-        for(auto& entity: m_interactor -> getEntities()) {
+        for(auto entity: m_interactor -> getEntities()) {
             auto item = m_treeHierarchy.addItem<robot2D::ecs::Entity>();
             item -> setName(entity.getComponent<TagComponent>().getTag());
             item -> setUserData(entity);
@@ -871,11 +883,37 @@ namespace editor {
     DeletedEntitiesRestoreUIInformation
     ScenePanel::removeEntitiesOnUI(std::vector<robot2D::ecs::Entity>& selectedEntities) {
         DeletedEntitiesRestoreUIInformation restoreUiInformation;
+        auto& uiItems = m_treeHierarchy.getItems();
+
+        for(auto entity: selectedEntities) {
+            for(auto uiIter = uiItems.begin(); uiIter < uiItems.end(); ++uiIter) {
+                auto uiEntity = GET_ENTITY((*uiIter));
+                if(!uiEntity -> destroyed() && *uiEntity == entity) {
+                    if(!m_treeHierarchy.deleteItem(*uiIter)) {
+                        RB_EDITOR_ERROR("TreeHierarchy can't delete item.", (*uiIter) -> getID());
+                    }
+
+                    if(uiIter == uiItems.begin())
+                        restoreUiInformation.push(*uiIter, *uiIter, true);
+                    else {
+                        auto prev = uiIter - 1;
+                        restoreUiInformation.push(*uiIter, *prev, false);
+                    }
+                }
+            }
+        }
+
         return restoreUiInformation;
     }
 
     void ScenePanel::restoreEntitiesOnUI(DeletedEntitiesRestoreUIInformation& restoreUiInformation) {
+        for(auto& item: restoreUiInformation.anchorItems) {
+            m_treeHierarchy.insertItem(item.target, item.anchor, item.first);
+        }
+    }
 
+    void ScenePanel::clearSelection() {
+        m_treeHierarchy.clearSelection();
     }
 
 }

@@ -32,8 +32,9 @@ namespace editor {
         using MultiItemRangeCallback = std::function<void(std::vector<ITreeItem::Ptr>, bool del)>;
 
         MultiSelection();
-        bool hasItem(int n) const;
-        void updateItem(ImGuiID key, bool v);
+        bool hasItem(ITreeItem::Ptr node) const;
+        void updateItem(ITreeItem::Ptr node, bool v);
+        void clear();
 
         void applyRequests(ImGuiMultiSelectIO* multiSelectIo, std::vector<ITreeItem::Ptr>& items, int items_count);
         void processDeletionPreLoop(ImGuiMultiSelectIO*, int itemToFocus);
@@ -43,23 +44,26 @@ namespace editor {
         void setMultiItemCallback(MultiItemCallback&& multiItemCallback) {
             m_multiItemCallback = multiItemCallback;
         }
+        void setMultiItemRangeCallback(MultiItemRangeCallback && callback) {
+            m_multiRangeItemCallback = callback;
+        }
     private:
         void addItem(ImGuiID key);
         void removeItem(ImGuiID key);
-        void clear();
+
     private:
         ImGuiStorage m_storage;
         bool m_queryDeletion{false};
         int m_size{0};
 
-        ImGuiID (*AdapterIndexToStorageId)(MultiSelection* self, int idx);
+        ImGuiID (*AdapterIndexToStorageId)(MultiSelection* self, ITreeItem::Ptr node);
 
         MultiItemCallback m_multiItemCallback;
         MultiItemRangeCallback m_multiRangeItemCallback;
     };
 
     MultiSelection::MultiSelection() {
-        AdapterIndexToStorageId = [](MultiSelection*, int idx) { return (ImGuiID)idx; };
+        AdapterIndexToStorageId = [](MultiSelection*, ITreeItem::Ptr node) { return (ImGuiID)node -> getID(); };
     }
 
     void MultiSelection::addItem(ImGuiID key) {
@@ -70,7 +74,9 @@ namespace editor {
         m_size++;
     }
 
-    void MultiSelection::updateItem(ImGuiID key, bool v) {
+    void MultiSelection::updateItem(ITreeItem::Ptr node, bool v) {
+        ImGuiID key = AdapterIndexToStorageId(this, node);
+
         if (v)
             addItem(key);
         else
@@ -84,7 +90,8 @@ namespace editor {
         m_size--;
     }
 
-    bool MultiSelection::hasItem(int key) const {
+    bool MultiSelection::hasItem(ITreeItem::Ptr node) const {
+        ImGuiID key = AdapterIndexToStorageId(const_cast<MultiSelection *>(this), node);
         return m_storage.GetInt(key, 0) != 0;
     }
 
@@ -103,20 +110,36 @@ namespace editor {
             {
                 m_storage.Data.resize(0);
                 m_storage.Data.reserve(items_count);
-                for (int idx = 0; idx < items_count; idx++)
-                    addItem(AdapterIndexToStorageId(this, idx));
+                for(auto& item: items)
+                    addItem(AdapterIndexToStorageId(this, item));
 
                 m_multiItemCallback(items);
             }
             if (request.Type == ImGuiSelectionRequestType_SetRange) {
-                std::vector<ITreeItem::Ptr> rangeItems{(unsigned long)((int)request.RangeLastItem - (int)request.RangeFirstItem + 1)};
+                std::vector<ITreeItem::Ptr> rangeItems{};
 
-                for (int idx = (int) request.RangeFirstItem; idx <= (int) request.RangeLastItem; idx++) {
-                    updateItem(AdapterIndexToStorageId(this, idx), request.RangeSelected);
+                auto firstFound = std::find_if(items.begin(), items.end(),
+                                               [&request](const ITreeItem::Ptr& ptr) {
+                    return ptr -> getID() == static_cast<UUID>(request.RangeFirstItem);
+                });
 
+                auto lastFound = std::find_if(items.begin(), items.end(),
+                                              [&request](const ITreeItem::Ptr& ptr) {
+                    return ptr -> getID() == static_cast<UUID>(request.RangeLastItem);
+                });
+
+                if(lastFound != items.end()) {
+                    for(; firstFound <= lastFound; ++firstFound) {
+                        updateItem(*firstFound, request.RangeSelected);
+                        rangeItems.push_back(*firstFound);
+                    }
                 }
+                else
+                    updateItem(*firstFound, request.RangeSelected);
 
-                m_multiRangeItemCallback(rangeItems, request.RangeSelected);
+
+                if(request.RangeFirstItem != request.RangeLastItem)
+                    m_multiRangeItemCallback(rangeItems, request.RangeSelected);
             }
         }
 
@@ -148,19 +171,28 @@ namespace editor {
     }
 
     void TreeHierarchy::render() {
+        for(auto item: m_setItems) {
+            auto iter = std::get<0>(item);
+            if(iter == m_items.begin())
+                m_items.insert(iter, std::get<1>(item));
+            else
+                m_items.insert(iter - 1, std::get<1>(item));
+        }
+        m_setItems.clear();
+
         for(auto item: m_insertItems) {
             auto source = std::get<1>(item);
             m_items.insert(std::get<0>(item), source);
 
             if(std::get<2>(item) == ReorderDeleteType::Last) {
                 auto found = util::find_last_if(m_items.begin(), m_items.end(), [&source](ITreeItem::Ptr item) {
-                    return item->m_id == source->m_id;
+                    return item -> m_id == source->m_id;
                 });
                 m_items.erase(found);
             }
             else if(std::get<2>(item) == ReorderDeleteType::First) {
                 auto found = util::find_first_if(m_items.begin(), m_items.end(), [&source](ITreeItem::Ptr item) {
-                    return item->m_id == source->m_id;
+                    return item -> m_id == source -> m_id;
                 });
                 m_items.erase(found);
             }
@@ -181,6 +213,7 @@ namespace editor {
 
 
         m_multiSelection.setMultiItemCallback(std::move(m_multiItemCallback));
+        m_multiSelection.setMultiItemRangeCallback(std::move(m_multiItemRangeCallback));
 
         static ImGuiMultiSelectFlags flags = ImGuiMultiSelectFlags_None | ImGuiMultiSelectFlags_ClearOnEscape;
 
@@ -197,7 +230,6 @@ namespace editor {
                 m_multiSelection.processDeletionPreLoop(ms_io, -1);
             }
 
-            int n = 0;
             for(auto item: m_items) {
                 ImGuiTreeNodeFlags node_flags = m_tree_base_flags;
 
@@ -295,11 +327,14 @@ namespace editor {
                     node_flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 
                     //node_flags |= ((m_selectedID == item -> getID()) ? ImGuiTreeNodeFlags_Selected : 0);
-                    node_flags |= ((m_multiSelection.hasItem(n)) ? ImGuiTreeNodeFlags_Selected : 0);
-                    ImGui::SetNextItemSelectionUserData(n);
+                    node_flags |= ((m_multiSelection.hasItem(item)) ? ImGuiTreeNodeFlags_Selected : 0);
 
-                    auto ida = item -> m_id;
-                    bool node_open = ImGui::TreeNodeEx((void*)(intptr_t)ida, node_flags,
+
+                    // TODO(a.raag) node item Ptr
+                    ImGui::SetNextItemSelectionUserData(item -> getID());
+
+                    auto uuid = item -> m_id;
+                    bool node_open = ImGui::TreeNodeEx(static_cast<void*>(&uuid), node_flags,
                                                        item -> m_name -> c_str());
 
                     if(ImGui::IsItemClicked()) {
@@ -354,8 +389,6 @@ namespace editor {
                             ImGui::EndDragDropTarget();
                         }
                     }
-
-                    ++n;
                 }
             }
 
@@ -410,9 +443,13 @@ namespace editor {
             m_selectedID = item -> getID();
             m_childSelectedID = NO_INDEX;
         }
-        
-        /// TODO: make key from Item
-        m_multiSelection.updateItem(0, true);
+
+        /// TODO(a.raag): make key from Item
+        m_multiSelection.updateItem(item, true);
+    }
+
+    void TreeHierarchy::clearSelection() {
+        m_multiSelection.clear();
     }
 
 }

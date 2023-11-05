@@ -25,4 +25,8 @@ namespace editor {
     void EditorPresenter::findSelectedEntitiesOnUI(std::vector<robot2D::ecs::Entity>& selectedEntities) {
         m_editor -> findSelectedEntitiesOnUI(selectedEntities);
     }
+
+    void EditorPresenter::clearSelectionOnUI() {
+        m_editor -> clearSelectionOnUI();
+    }
 } // namespace editor

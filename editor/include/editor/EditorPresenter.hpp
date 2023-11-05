@@ -14,6 +14,8 @@ namespace editor {
         ~EditorPresenter() = default;
 
         void findSelectedEntitiesOnUI(std::vector<robot2D::ecs::Entity>& selectedEntities);
+        void clearSelectionOnUI();
+
         void prepareView();
         void switchState(EditorState editorState) { m_state = editorState; }
         const EditorState& getState() const;

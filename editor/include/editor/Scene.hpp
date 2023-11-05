@@ -124,6 +124,10 @@ namespace editor {
         robot2D::ecs::EntityList m_deletePendingEntities;
         robot2D::ecs::EntityList m_deletePendingBuffer;
 
+        robot2D::ecs::EntityList m_deletePendingPostEntities;
+        robot2D::ecs::EntityList m_deletePendingPostBuffer;
+        bool m_needWaitPostDeletion{false};
+
         robot2D::MessageBus& m_messageBus;
         std::string m_path;
         std::string m_associatedProjectPath;
