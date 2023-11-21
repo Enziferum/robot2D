@@ -194,7 +194,7 @@ namespace editor {
 
         m_panelManager.addPanel<ScenePanel>(m_messageBus, m_messageDispather, m_prefabManager);
         m_panelManager.addPanel<AssetsPanel>(m_messageBus, m_panelManager, m_prefabManager);
-        m_panelManager.addPanel<InspectorPanel>(m_messageDispather, m_prefabManager);
+        m_panelManager.addPanel<InspectorPanel>(m_messageDispather, m_messageBus, m_prefabManager);
         m_panelManager.addPanel<UtilPanel>(m_editorCamera);
         m_panelManager.addPanel<MenuPanel>(m_messageBus, m_interactor);
         m_panelManager.addPanel<ViewportPanel>(m_interactor,

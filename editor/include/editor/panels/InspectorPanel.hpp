@@ -37,15 +37,16 @@ namespace editor {
 
     class InspectorPanel: public IPanel {
     public:
-        explicit InspectorPanel(MessageDispatcher& messageDispatcher, PrefabManager& prefabManager);
+        explicit InspectorPanel(MessageDispatcher& messageDispatcher, robot2D::MessageBus& messageBus,
+                                PrefabManager& prefabManager);
         ~InspectorPanel() override = default;
 
         void setInteractor(UIInteractor::Ptr interactor);
         void render() override;
         void clearSelection();
     private:
-        void drawComponentsBase(robot2D::ecs::Entity entity);
-        void drawComponents(robot2D::ecs::Entity entity);
+        void drawComponentsBase(robot2D::ecs::Entity entity, bool isEntity = true);
+        void drawComponents(robot2D::ecs::Entity entity, bool isEntity = true);
 
         void drawAssetBase();
 
@@ -56,6 +57,8 @@ namespace editor {
     private:
         MessageDispatcher& m_messageDispatcher;
         PrefabManager& m_prefabManager;
+        robot2D::MessageBus& m_messageBus;
+
         robot2D::ecs::Entity m_selectedEntity;
 
         UIInteractor::Ptr m_interactor{nullptr};
@@ -71,5 +74,7 @@ namespace editor {
             AssetImage,
             AssetFont
         } m_inspectType = InspectType::EditorEntity;
+
+        bool m_prefabHasModification{false};
     };
 }

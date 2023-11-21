@@ -23,6 +23,7 @@ namespace editor {
         m_prefabs[uuid] = std::make_shared<Prefab>();
         m_prefabs[uuid] -> entity = entity;
         m_prefabs[uuid] -> localPath = fullPath;
+        m_prefabs[uuid] -> prefabUUID = UUID();
 
         PrefabSerializer serializer;
         return  serializer.serialize(m_prefabs[uuid], fullPath);;
@@ -31,9 +32,12 @@ namespace editor {
     Prefab::Ptr PrefabManager::loadPrefab(UIInteractor::Ptr interactor, const std::string& path) {
 
         UUID uuid;
-        m_prefabs[uuid] = std::make_shared<Prefab>();
+        auto prefab = std::make_shared<Prefab>();
+        m_prefabs[uuid] = prefab;
         m_prefabs[uuid] -> entity = interactor -> createEmptyEntity();
         m_prefabs[uuid] -> localPath = path;
+
+        prefab -> entity.addComponent<PrefabComponent>().prefabUUID = prefab -> prefabUUID;
 
         PrefabSerializer serializer;
         bool ok = serializer.deserialize(m_prefabs[uuid], path);
@@ -69,6 +73,14 @@ namespace editor {
 
         PrefabSerializer serializer;
         return serializer.serialize(m_prefabs[uuid], prefab -> localPath);;
+    }
+
+    bool PrefabManager::savePrefab(UUID uuid) {
+        if(m_prefabs.find(uuid) == m_prefabs.end())
+            return false;
+
+        PrefabSerializer serializer;
+        return serializer.serialize(m_prefabs[uuid], m_prefabs[uuid] -> localPath);
     }
 
 
