@@ -52,7 +52,8 @@ namespace editor {
         ExportProject,
         PrefabLoad,
         PrefabAssetPressed,
-        TileElementSelected
+        TileElementSelected,
+        PrefabAssetModificated
     };
 
     struct ProjectMessage {
@@ -113,6 +114,11 @@ namespace editor {
 
     struct PrefabAssetPressedMessage {
         std::string localPath;
+    };
+
+    struct PrefabAssetModificatedMessage {
+        UUID prefabUUID;
+        robot2D::ecs::Entity prefabEntity;
     };
 
 

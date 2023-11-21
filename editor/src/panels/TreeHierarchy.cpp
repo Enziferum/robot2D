@@ -374,7 +374,7 @@ namespace editor {
                     }
 
                     bool node_open = ImGui::TreeNodeEx(static_cast<void*>(&uuid), node_flags,
-                                                       item -> m_name -> c_str());
+                                                       "%s", item -> m_name -> c_str());
 
                     if(ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
                         m_selectedID = item -> m_id;
@@ -386,7 +386,7 @@ namespace editor {
 
                     if(ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID )) {
                         ImGui::SetDragDropPayload(m_playloadIdentifier.c_str(), &item -> m_id, sizeof(item -> m_id));
-                        ImGui::Text(item -> m_name -> c_str());
+                        ImGui::Text("%s", item -> m_name -> c_str());
                         ImGui::EndDragDropSource();
                     }
 
@@ -483,7 +483,6 @@ namespace editor {
             m_childSelectedID = NO_INDEX;
         }
 
-        /// TODO(a.raag): make key from Item
         m_multiSelection.updateItem(item, true);
     }
 

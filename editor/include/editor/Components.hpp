@@ -319,4 +319,8 @@ namespace editor {
         std::string m_fontPath;
     };
 
+    struct PrefabComponent {
+        UUID prefabUUID;
+    };
+
 }

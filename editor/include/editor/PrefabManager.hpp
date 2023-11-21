@@ -20,6 +20,7 @@ namespace editor {
         bool hasPrefab(std::string localPath) const;
 
         bool savePrefab(Prefab::Ptr prefab);
+        bool savePrefab(UUID uuid);
 
         Prefab::Ptr findPrefab(UUID prefabID);
         Prefab::Ptr findPrefab(std::string localPath);

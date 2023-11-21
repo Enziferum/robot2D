@@ -82,16 +82,31 @@ namespace editor {
     }
 
 
-    InspectorPanel::InspectorPanel(MessageDispatcher& messageDispatcher, PrefabManager& prefabManager):
+    InspectorPanel::InspectorPanel(MessageDispatcher& messageDispatcher, robot2D::MessageBus& messageBus,
+                                   PrefabManager& prefabManager):
         IPanel(typeid(InspectorPanel)),
-    m_messageDispatcher{messageDispatcher}, m_prefabManager{prefabManager}
+    m_messageDispatcher{messageDispatcher},
+    m_messageBus{messageBus},
+    m_prefabManager{prefabManager}
     {
-        m_messageDispatcher.onMessage<PrefabAssetPressedMessage>(MessageID::PrefabAssetPressed
-                                                                 , BIND_CLASS_FN(onPrefabAssetSelected));
+        m_messageDispatcher.onMessage<PrefabAssetPressedMessage>(MessageID::PrefabAssetPressed,
+                                                                 BIND_CLASS_FN(onPrefabAssetSelected));
 
         m_messageDispatcher.onMessage<PanelEntitySelectedMessage>(
                 MessageID::PanelEntityNeedSelect,
                 [this](const auto& message) {
+                    if(m_inspectType == InspectType::AssetPrefab && m_prefabHasModification) {
+                        if(m_selectedEntity.hasComponent<PrefabComponent>()) {
+                            auto& prefabComponent = m_selectedEntity.getComponent<PrefabComponent>();
+                            m_prefabManager.savePrefab(prefabComponent.prefabUUID);
+                            m_prefabHasModification = false;
+                            auto* msg =
+                                    m_messageBus.postMessage<PrefabAssetModificatedMessage>(MessageID::PrefabAssetModificated);
+                            msg -> prefabUUID = prefabComponent.prefabUUID;
+                            msg -> prefabEntity = m_selectedEntity;
+                        }
+                    }
+
                     m_inspectType = InspectType::EditorEntity;
                     m_selectedEntity = message.entity;
                 }
@@ -100,6 +115,17 @@ namespace editor {
         m_messageDispatcher.onMessage<PanelEntitySelectedMessage>(
                 MessageID::PanelEntitySelected,
                 [this](const auto& message) {
+                    if(m_inspectType == InspectType::AssetPrefab && m_prefabHasModification) {
+                        if(m_selectedEntity.hasComponent<PrefabComponent>()) {
+                            auto& prefabComponent = m_selectedEntity.getComponent<PrefabComponent>();
+                            m_prefabManager.savePrefab(prefabComponent.prefabUUID);
+                            m_prefabHasModification = false;
+                            auto* msg =
+                                    m_messageBus.postMessage<PrefabAssetModificatedMessage>(MessageID::PrefabAssetModificated);
+                            msg -> prefabUUID = prefabComponent.prefabUUID;
+                            msg -> prefabEntity = m_selectedEntity;
+                        }
+                    }
                     m_inspectType = InspectType::EditorEntity;
                     m_selectedEntity = message.entity;
                 }
@@ -122,25 +148,32 @@ namespace editor {
         });
     }
 
-    void InspectorPanel::drawComponentsBase(robot2D::ecs::Entity entity) {
-        if(!entity.hasComponent<TagComponent>() && entity.destroyed())
-            return;
+    void InspectorPanel::drawComponentsBase(robot2D::ecs::Entity entity, bool isEntity) {
+        if(isEntity) {
+            if(!entity.hasComponent<TagComponent>() || entity.destroyed())
+                return;
 
-        auto& tag = entity.getComponent<TagComponent>().getTag();
+            auto& tag = entity.getComponent<TagComponent>().getTag();
 
-        /// TODO(a.raag): robot2D-imgui Api's Text using
-        char buffer[256];
-        memset(buffer, 0, sizeof(buffer));
-        std::strncpy(buffer, tag.c_str(), sizeof(buffer));
+            /// TODO(a.raag): robot2D-imgui Api's Text using
+            char buffer[256];
+            memset(buffer, 0, sizeof(buffer));
+            std::strncpy(buffer, tag.c_str(), sizeof(buffer));
 
-        if (ImGui::InputText("##Tag", buffer, sizeof(buffer)))
-        {
-            tag = std::string(buffer);
-            if(tag.empty())
-                tag = "Untitled Entity";
+            if (ImGui::InputText("##Tag", buffer, sizeof(buffer)))
+            {
+                tag = std::string(buffer);
+                if(tag.empty())
+                    tag = "Untitled Entity";
+            }
+
+            ImGui::Text("UUID: %llu", entity.getComponent<IDComponent>().ID);
         }
-
-        ImGui::Text("UUID: %llu", entity.getComponent<IDComponent>().ID);
+        else {
+            if(!entity.hasComponent<PrefabComponent>() || entity.destroyed())
+                return;
+            ImGui::Text("Prefab UUID: %llu", entity.getComponent<PrefabComponent>().prefabUUID);
+        }
 
         ImGui::SameLine();
         ImGui::PushItemWidth(-1);
@@ -212,19 +245,28 @@ namespace editor {
 
         ImGui::PopItemWidth();
 
-        drawComponents(entity);
+        drawComponents(entity, isEntity);
     }
 
-    void InspectorPanel::drawComponents(robot2D::ecs::Entity entity) {
-        drawComponent<TransformComponent>("Transform", entity, [](auto& component)
+    void InspectorPanel::drawComponents(robot2D::ecs::Entity entity, bool isEntity) {
+        drawComponent<TransformComponent>("Transform", entity, [this, isEntity](auto& component)
         {
+            auto lastPosition = component.getPosition();
+            auto lastScale = component.getScale();
+            auto lastRotation = component.getRotate();
+
             ui::drawVec2Control("Translation", component.getPosition());
             ui::drawVec2Control("Scale", component.getScale(), 1.0f);
             ui::drawVec1Control("Rotation", component.getRotate(), 0.f);
             component.setRotate(component.getRotate());
+
+            if(lastPosition != component.getPosition() || lastScale != component.getScale() ||
+                                                                    lastRotation != component.getRotate())
+                m_prefabHasModification = true;
+
         });
 
-        drawComponent<CameraComponent>("Camera", entity, [](auto& component)
+        drawComponent<CameraComponent>("Camera", entity, [isEntity](auto& component)
         {
             auto& camera = component.camera;
             ImGui::Checkbox("Primary", &component.isPrimary);
@@ -254,7 +296,7 @@ namespace editor {
 
         });
 
-        drawComponent<DrawableComponent>("Drawable", entity, [this, &entity](auto& component)
+        drawComponent<DrawableComponent>("Drawable", entity, [this, &entity, isEntity](auto& component)
         {
             // TODO(a.raag): fix color getting
             auto color = component.getColor().toGL();
@@ -316,7 +358,7 @@ namespace editor {
         });
 
         drawComponent<ScriptComponent>("Script", entity, [entity,
-                interactor= m_interactor](auto& component) {
+                interactor= m_interactor, isEntity](auto& component) {
             std::string currItem = component.name; // Here we store our selection data as an index.
             bool hasScriptClass = ScriptEngine::hasEntityClass(component.name);
 
@@ -413,7 +455,7 @@ namespace editor {
 
         });
 
-        drawComponent<Physics2DComponent>("physics2D", entity, [](auto& component) {
+        drawComponent<Physics2DComponent>("physics2D", entity, [isEntity](auto& component) {
             const char* bodyTypeStrings[] = { "Static", "Dynamic", "Kinematic"};
             const char* currentBodyTypeString = bodyTypeStrings[(int)component.type];
             if (ImGui::BeginCombo("Body Type", currentBodyTypeString))
@@ -437,7 +479,7 @@ namespace editor {
             ImGui::Checkbox("Fixed Rotation", &component.fixedRotation);
         });
 
-        drawComponent<Collider2DComponent>("Collider2D", entity, [](auto& component) {
+        drawComponent<Collider2DComponent>("Collider2D", entity, [isEntity](auto& component) {
             float offset[2] = { component.offset.x, component.offset.y };
             float size[2] = { component.size.x, component.size.y };
             ImGui::DragFloat2("Offset", offset);
@@ -450,8 +492,7 @@ namespace editor {
             component.size = { size[0], size[1] };
         });
 
-        drawComponent<TextComponent>("Text", entity, [this, entity, interactor = m_interactor](auto& component) {
-
+        drawComponent<TextComponent>("Text", entity, [this, entity, isEntity](auto& component) {
             ImGui::Button("Font", ImVec2(100.0f, 0.0f));
             if (ImGui::BeginDragDropTarget())
             {
@@ -471,14 +512,12 @@ namespace editor {
                 ImGui::EndDragDropTarget();
             }
 
-
             if(component.getFont()) {
                 robot2D::InputText("##Text", &component.getText(), 0);
                 component.setText(component.getText());
             }
         });
     }
-
 
 
     void InspectorPanel::onLoadImage(const robot2D::Image& image, robot2D::ecs::Entity entity) {
@@ -513,16 +552,12 @@ namespace editor {
     }
 
     void InspectorPanel::onPrefabAssetSelected(const PrefabAssetPressedMessage& message) {
-        /// draw information ??
-
-        /// if has prefab show info ??
-
         m_inspectType = InspectType::AssetPrefab;
 
+        std::filesystem::path localPath = std::filesystem::path("assets") / message.localPath;
+        auto fullPath = combinePath(m_interactor -> getAssociatedProjectPath(), localPath.string());
 
-        auto fullPath = message.localPath;
-
-        auto prefab = m_prefabManager.loadPrefab(m_interactor, {});
+        auto prefab = m_prefabManager.loadPrefab(m_interactor, fullPath);
         if(!prefab) {
             RB_EDITOR_ERROR("InspectorPanel: Can't load prefab by path {0}", fullPath);
         }
@@ -540,10 +575,7 @@ namespace editor {
             default:
                 break;
             case InspectType::AssetPrefab: {
-
-
-
-                drawComponents(m_selectedEntity);
+                drawComponents(m_selectedEntity, false);
                 break;
             }
             case InspectType::AssetScene: {

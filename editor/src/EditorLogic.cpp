@@ -61,6 +61,9 @@ namespace editor {
             m_selectedEntities.clear();
             m_selectedEntities.emplace_back(message.entity);
         });
+
+        m_messageDispatcher.onMessage<PrefabAssetModificatedMessage>(MessageID::PrefabAssetModificated, BIND_CLASS_FN(
+                prefabModificated));
     }
 
     void EditorLogic::update(float dt) {
@@ -478,6 +481,39 @@ namespace editor {
         }
         else
             m_closeResultProjectCallback();
+    }
+
+    void EditorLogic::prefabModificated(const PrefabAssetModificatedMessage& message) {
+        constexpr auto processModification = [](robot2D::ecs::Entity prefabEntity,
+                robot2D::ecs::Entity modificateEntity) {
+            if(prefabEntity.hasComponent<DrawableComponent>()
+                    && modificateEntity.hasComponent<DrawableComponent>()) {
+                auto& modificateDrawable = modificateEntity.getComponent<DrawableComponent>();
+                auto prefabDrawable = prefabEntity.getComponent<DrawableComponent>();
+                modificateDrawable.setColor(prefabDrawable.getColor());
+                modificateDrawable.setTexture(prefabDrawable.getTexture());
+            }
+        };
+
+        auto& entities = m_activeScene -> getEntities();
+        for(auto entity: entities) {
+            if(entity.hasComponent<PrefabComponent>()) {
+                auto& prefabComponent = entity.getComponent<PrefabComponent>();
+                if(prefabComponent.prefabUUID == message.prefabUUID) {
+                    processModification(message.prefabEntity, entity);
+                }
+            }
+            if(entity.getComponent<TransformComponent>().hasChildren()) {
+                for(auto child: entity.getComponent<TransformComponent>().getChildren()) {
+                    if(child.hasComponent<PrefabComponent>()) {
+                        auto& prefabComponent = child.getComponent<PrefabComponent>();
+                        if(prefabComponent.prefabUUID == message.prefabUUID) {
+                            processModification(message.prefabEntity, child);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     //////////////////////////////////////// UIInteractor ////////////////////////////////////////

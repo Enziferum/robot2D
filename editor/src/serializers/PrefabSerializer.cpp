@@ -29,13 +29,30 @@ source distribution.
 #include "editor/scripting/ScriptingEngine.hpp"
 #include "editor/Components.hpp"
 
+namespace YAML {
+    template<>
+    struct convert<editor::UUID> {
+        static Node encode(const editor::UUID &uuid) {
+            Node node;
+            node.push_back((uint64_t) uuid);
+            return node;
+        }
+
+        static bool decode(const Node &node, editor::UUID &uuid) {
+            uuid = node.as<uint64_t>();
+            return true;
+        }
+    };
+}
+
 namespace editor {
     PrefabSerializer::PrefabSerializer() = default;
 
     bool PrefabSerializer::serialize(editor::Prefab::Ptr prefab, const std::string& path) {
         YAML::Emitter out;
         out << YAML::BeginMap;
-        out << YAML::Key << "Prefab" << YAML::Value << prefab->entity.getComponent<TagComponent>().getTag();
+        out << YAML::Key << "Prefab" << YAML::Value << prefab -> entity.getComponent<TagComponent>().getTag();
+        out << YAML::Key << "PrefabUUID" << YAML::Value << prefab -> prefabUUID;
         out << YAML::Key << "Entities" << YAML::Value << YAML::BeginSeq;
 
         EntitySerializer entitySerializer;
@@ -81,6 +98,9 @@ namespace editor {
         }
 
         std::string prefabName = data["Prefab"].as<std::string>();
+        uint64_t uuid = data["PrefabUUID"].as<uint64_t>();
+        prefab -> prefabUUID = uuid;
+
         auto prefabEntities = data["Entities"];
 
         EntitySerializer entitySerializer;
