@@ -132,6 +132,7 @@ namespace editor {
         );
     }
 
+
     void InspectorPanel::setInteractor(UIInteractor::Ptr interactor) {
         m_interactor = interactor;
     }
@@ -251,9 +252,9 @@ namespace editor {
     void InspectorPanel::drawComponents(robot2D::ecs::Entity entity, bool isEntity) {
         drawComponent<TransformComponent>("Transform", entity, [this, isEntity](auto& component)
         {
-            auto lastPosition = component.getPosition();
-            auto lastScale = component.getScale();
-            auto lastRotation = component.getRotate();
+            robot2D::vec2f lastPosition = component.getPosition();
+            robot2D::vec2f lastScale = component.getScale();
+            float lastRotation = component.getRotate();
 
             ui::drawVec2Control("Translation", component.getPosition());
             ui::drawVec2Control("Scale", component.getScale(), 1.0f);
@@ -354,6 +355,7 @@ namespace editor {
                     ImGui::Text("ImageColorFormat = %s", "RGBA");
                 }
             }
+
 
         });
 
@@ -519,7 +521,6 @@ namespace editor {
         });
     }
 
-
     void InspectorPanel::onLoadImage(const robot2D::Image& image, robot2D::ecs::Entity entity) {
         if(entity.destroyed()) {
             RB_EDITOR_WARN("Can't attach texture to Entity, because it's already destroyed");
@@ -567,6 +568,17 @@ namespace editor {
     }
 
     void InspectorPanel::clearSelection() {
+        if(m_inspectType == InspectType::AssetPrefab && m_prefabHasModification) {
+            if(m_selectedEntity.hasComponent<PrefabComponent>()) {
+                auto& prefabComponent = m_selectedEntity.getComponent<PrefabComponent>();
+                m_prefabManager.savePrefab(prefabComponent.prefabUUID);
+                m_prefabHasModification = false;
+                auto* msg =
+                        m_messageBus.postMessage<PrefabAssetModificatedMessage>(MessageID::PrefabAssetModificated);
+                msg -> prefabUUID = prefabComponent.prefabUUID;
+                msg -> prefabEntity = m_selectedEntity;
+            }
+        }
         m_selectedEntity = {};
     }
 
@@ -575,7 +587,7 @@ namespace editor {
             default:
                 break;
             case InspectType::AssetPrefab: {
-                drawComponents(m_selectedEntity, false);
+                drawComponentsBase(m_selectedEntity, false);
                 break;
             }
             case InspectType::AssetScene: {

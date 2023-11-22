@@ -7,9 +7,9 @@
 /*!
  * Path to the Mono assembly dir (mono/lib). May be a relative path.
  */
-#define INTERNAL_MONO_ASSEMBLY_DIR "/opt/homebrew/lib"
+#define INTERNAL_MONO_ASSEMBLY_DIR "C:/Program Files/Mono/lib"
 
 /*!
  * Path to the Mono config dir (mono/etc). May be a relative path.
  */
-#define INTERNAL_MONO_CONFIG_DIR "/opt/homebrew/etc"
+#define INTERNAL_MONO_CONFIG_DIR "C:/Program Files/Mono/etc"

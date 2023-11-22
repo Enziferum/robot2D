@@ -304,6 +304,14 @@ namespace editor {
             out << YAML::EndMap; // TextComponent
         }
 
+        if(entity.hasComponent<PrefabComponent>()) {
+            out << YAML::Key << "PrefabComponent";
+            out << YAML::BeginMap;
+            auto& uuid = entity.getComponent<PrefabComponent>().prefabUUID;
+            out << YAML::Key << "UUID" << YAML::Value << uuid;
+            out << YAML::EndMap;
+        }
+
         out << YAML::EndMap;
 
         if(needSerializeChildren) {
@@ -451,6 +459,11 @@ namespace editor {
             bc2d.friction = boxCollider2DComponent["Friction"].as<float>();
             bc2d.restitution = boxCollider2DComponent["Restitution"].as<float>();
             bc2d.restitutionThreshold = boxCollider2DComponent["RestitutionThreshold"].as<float>();
+        }
+
+        auto prefabComponent = entity["PrefabComponent"];
+        if(prefabComponent) {
+            deserializedEntity.addComponent<PrefabComponent>().prefabUUID = prefabComponent["UUID"].as<uint64_t>();
         }
 
         return true;

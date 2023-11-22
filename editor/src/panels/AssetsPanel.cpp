@@ -159,8 +159,7 @@ namespace editor {
                     if(extension == ".prefab") {
                         auto* msg =
                                 m_messageBus.postMessage<PrefabAssetPressedMessage>(MessageID::PrefabAssetPressed);
-                        /// ???
-
+                        msg -> localPath = relativePath.string();
                     }
 
                 }

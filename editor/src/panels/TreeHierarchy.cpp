@@ -365,7 +365,7 @@ namespace editor {
                     constexpr auto drawTexture = [](robot2D::vec2f size, robot2D::Texture* texture,
                                 robot2D::Color tintColor) {
                         auto imID = ImGui::convertTextureHandle(texture -> getID());
-                        ImGui::ImageButton(imID, size, {0,1}, {1, 0}, -1, {0, 0, 0, 0}, tintColor);
+                        ImGui::ImageButton(imID, size, {0,1}, {1, 0}, -1, tintColor);
                     };
 
                     if(item -> m_iconTexture) {
