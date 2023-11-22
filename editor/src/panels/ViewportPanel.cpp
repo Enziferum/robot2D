@@ -336,7 +336,6 @@ namespace editor {
             ImGui::SetCursorPos({(contentSize.x - buttonSize.x) / 2.F, (contentSize.y - buttonSize.y) / 2.F});
             IconType iconType;
 
-            /// TODO(a.raag): Ask From Interactor
 
             if(m_uiInteractor)
                 iconType = m_uiInteractor -> isRunning() ? IconType::Stop : IconType::Play;

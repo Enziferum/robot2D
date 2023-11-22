@@ -65,6 +65,10 @@ namespace editor {
         void handleEvents(const robot2D::Event& event);
         void set(robot2D::FrameBuffer::Ptr frameBuffer);
 
+        bool isActive() const {
+            return m_panelHovered && m_panelFocused;
+        }
+
         void update(float deltaTime) override;
         void render() override;
     private:

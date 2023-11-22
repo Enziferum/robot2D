@@ -64,7 +64,7 @@ namespace editor {
         void clear();
 
         void applyRequests(ImGuiMultiSelectIO* multiSelectIo, std::vector<ITreeItem::Ptr>& items, int items_count);
-        void processDeletionPreLoop(ImGuiMultiSelectIO*, int itemToFocus);
+        ITreeItem::Ptr processDeletionPreLoop(ImGuiMultiSelectIO*, int itemToFocus);
         void processDeletionPostLoop(ImGuiMultiSelectIO*, std::vector<ITreeItem::Ptr>& items, int itemToFocus);
         bool hasObjectsToDelete() const;
 
@@ -90,7 +90,8 @@ namespace editor {
     };
 
     MultiSelection::MultiSelection() {
-        AdapterIndexToStorageId = [](MultiSelection*, ITreeItem::Ptr node) { return (ImGuiID)node -> getID(); };
+      //  clear();
+        AdapterIndexToStorageId = [](MultiSelection*, ITreeItem::Ptr node) { return static_cast<ImGuiID>(node -> getID()); };
     }
 
     void MultiSelection::addItem(ImGuiID key) {
@@ -118,6 +119,8 @@ namespace editor {
     }
 
     bool MultiSelection::hasItem(ITreeItem::Ptr node) const {
+        if(!node)
+            return false;
         ImGuiID key = AdapterIndexToStorageId(const_cast<MultiSelection *>(this), node);
         return m_storage.GetInt(key, 0) != 0;
     }
@@ -172,8 +175,8 @@ namespace editor {
 
     }
 
-    void MultiSelection::processDeletionPreLoop(ImGuiMultiSelectIO* ms_io, int itemToFocus) {
-
+    ITreeItem::Ptr MultiSelection::processDeletionPreLoop(ImGuiMultiSelectIO* ms_io, int itemToFocus) {
+        return nullptr;
     }
 
     void MultiSelection::processDeletionPostLoop(ImGuiMultiSelectIO* ms_io, std::vector<ITreeItem::Ptr>& items, int itemToFocus) {
@@ -227,8 +230,11 @@ namespace editor {
         m_insertItems.clear();
 
         for(auto delItem: m_deletePendingItems) {
-            m_items.erase(std::remove_if(m_items.begin(), m_items.end(), [&delItem](ITreeItem::Ptr item) {
-                return item == delItem;
+            m_items.erase(std::remove_if(m_items.begin(), m_items.end(), [this, &delItem](ITreeItem::Ptr item) {
+                bool eq = item == delItem;
+                if(eq)
+                    m_multiSelection.updateItem(item, false);
+                return eq;
             }), m_items.end());
         }
         m_deletePendingItems.clear();
@@ -251,10 +257,10 @@ namespace editor {
 
             const bool wantDelete = m_multiSelection.hasObjectsToDelete()
                     && ImGui::IsWindowFocused() && ImGui::IsKeyPressed(ImGuiKey_Delete);
-            int item_curr_idx_to_focus = -1;
+            ITreeItem::Ptr item_curr_idx_to_focus = nullptr;
 
             if(wantDelete) {
-                m_multiSelection.processDeletionPreLoop(ms_io, -1);
+               item_curr_idx_to_focus = m_multiSelection.processDeletionPreLoop(ms_io, -1);
             }
 
             for(auto item: m_items) {
@@ -351,16 +357,12 @@ namespace editor {
                         ImGui::TreePop();
                 }
                 else {
-                    node_flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+                    // | ImGuiTreeNodeFlags_NoTreePushOnOpen
+                    node_flags |= ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_Leaf ;
 
-                    //node_flags |= ((m_selectedID == item -> getID()) ? ImGuiTreeNodeFlags_Selected : 0);
-                    node_flags |= ((m_multiSelection.hasItem(item)) ? ImGuiTreeNodeFlags_Selected : 0);
-
-
-                    // TODO(a.raag) node item Ptr
-                    ImGui::SetNextItemSelectionUserData(item -> getID());
-
-                    auto uuid = item -> m_id;
+                    auto hasItem = m_multiSelection.hasItem(item);
+                    if(hasItem)
+                        node_flags |= ImGuiTreeNodeFlags_Selected;
 
                     constexpr auto drawTexture = [](robot2D::vec2f size, robot2D::Texture* texture,
                                 robot2D::Color tintColor) {
@@ -373,16 +375,22 @@ namespace editor {
                         ImGui::SameLine();
                     }
 
-                    bool node_open = ImGui::TreeNodeEx(static_cast<void*>(&uuid), node_flags,
-                                                       "%s", item -> m_name -> c_str());
+                    auto uuid = item -> m_id;
+                    ImGui::PushID(static_cast<void*>(&uuid));
+
+                    ImGui::SetNextItemSelectionUserData(static_cast<ImGuiSelectionUserData>(uuid));
+                    bool node_open = false;
+                    node_open = ImGui::TreeNodeEx(item -> m_name -> c_str(), node_flags);
 
                     if(ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
                         m_selectedID = item -> m_id;
                         m_childSelectedID = NO_INDEX;
                         m_selectCallback(item);
                     }
-                    else if(ImGui::IsItemClicked(ImGuiMouseButton_Right))
-                        m_callback(item);
+
+                    if (item_curr_idx_to_focus == item)
+                        ImGui::SetKeyboardFocusHere(-1);
+
 
                     if(ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID )) {
                         ImGui::SetDragDropPayload(m_playloadIdentifier.c_str(), &item -> m_id, sizeof(item -> m_id));
@@ -428,6 +436,14 @@ namespace editor {
                             ImGui::EndDragDropTarget();
                         }
                     }
+
+
+                    if(node_open)
+                        ImGui::TreePop();
+
+                    m_callback(item);
+
+                    ImGui::PopID();
                 }
             }
 
@@ -435,7 +451,7 @@ namespace editor {
             m_multiSelection.applyRequests(ms_io, m_items, m_items.size());
 
             if(wantDelete) {
-                m_multiSelection.processDeletionPostLoop(ms_io, m_items, item_curr_idx_to_focus);
+                m_multiSelection.processDeletionPostLoop(ms_io, m_items, -1);
             }
 
             ImGui::TreePop();
@@ -483,6 +499,7 @@ namespace editor {
             m_childSelectedID = NO_INDEX;
         }
 
+       // m_multiSelection.clear();
         m_multiSelection.updateItem(item, true);
     }
 

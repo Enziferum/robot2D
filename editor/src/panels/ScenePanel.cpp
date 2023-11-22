@@ -158,6 +158,7 @@ namespace editor {
             m_selectedEntity = {};
             auto* msg = m_messageBus.postMessage<PanelEntitySelectedMessage>(MessageID::PanelEntitySelected);
             msg -> entity = m_selectedEntity;
+            m_treeHierarchy.clearSelection();
         }
     }
 
@@ -178,7 +179,7 @@ namespace editor {
         m_treeHierarchy.addOnCallback([this](ITreeItem::Ptr item) {
 
             bool deleteSelected = false;
-            if (ImGui::BeginPopupContextItem("TreeHierarchyOnCallbackPopup"))
+            if (ImGui::BeginPopupContextItem())
             {
                 if (ImGui::MenuItem("Delete Entity"))
                     deleteSelected = true;
@@ -260,7 +261,7 @@ namespace editor {
            }
 
            transform.addChild(*sourceEntity);
-            m_interactor -> removeEntityChild(*sourceEntity);
+           m_interactor -> removeEntityChild(*sourceEntity);
            m_treeHierarchy.deleteItem(source);
            intoTarget -> addChild(source);
         });
@@ -283,11 +284,10 @@ namespace editor {
 
         m_treeHierarchy.addMultiSelectCallback([this](std::vector<ITreeItem::Ptr> items) {
             RB_EDITOR_INFO("TreeHierarchy: MultiSelect All");
-            ITreeItem::Ptr item;
-            auto uuid = GET_ENTITY_UUID(item)
         });
 
         m_treeHierarchy.addMultiSelectRangeCallback([this](std::vector<ITreeItem::Ptr> items, bool deleted) {
+            RB_EDITOR_INFO("TreeHierarchy: MultiSelect RangeSelect");
             /// TODO(a.raag): Filter by items
         });
     }
