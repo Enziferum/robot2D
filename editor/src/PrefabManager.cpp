@@ -31,20 +31,22 @@ namespace editor {
 
     Prefab::Ptr PrefabManager::loadPrefab(UIInteractor::Ptr interactor, const std::string& path) {
 
-        UUID uuid;
         auto prefab = std::make_shared<Prefab>();
-        m_prefabs[uuid] = prefab;
-        m_prefabs[uuid] -> entity = interactor -> createEmptyEntity();
-        m_prefabs[uuid] -> localPath = path;
-
-        prefab -> entity.addComponent<PrefabComponent>().prefabUUID = prefab -> prefabUUID;
+        prefab -> entity = interactor -> createEmptyEntity();
+        prefab -> localPath = path;
 
         PrefabSerializer serializer;
-        bool ok = serializer.deserialize(m_prefabs[uuid], path);
+        bool ok = serializer.deserialize(prefab, path);
         if(!ok) {
             RB_EDITOR_ERROR("Can't load Prefab File");
             return nullptr;
         }
+
+        prefab -> entity.addComponent<PrefabComponent>().prefabUUID = prefab -> prefabUUID;
+
+        auto uuid = prefab -> prefabUUID;
+        m_prefabs[uuid] = prefab;
+
 
         return m_prefabs[uuid];
     }

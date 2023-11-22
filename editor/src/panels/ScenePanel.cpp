@@ -309,14 +309,22 @@ namespace editor {
             auto item = m_treeHierarchy.addItem<robot2D::ecs::Entity>();
             item -> setName(entity.getComponent<TagComponent>().getTag());
             item -> setUserData(entity);
-            item -> setTexture(m_iconTextures[TreeItemIcon::Default], robot2D::Color::White);
+            if(entity.hasComponent<PrefabComponent>())
+                item -> setTexture(m_iconTextures[TreeItemIcon::Prefab], robot2D::Color::Blue);
+            else
+                item -> setTexture(m_iconTextures[TreeItemIcon::Default], robot2D::Color::White);
+
+
             auto& transform = entity.getComponent<TransformComponent>();
             if(transform.hasChildren()) {
                 for(auto& child: transform.getChildren()) {
                     auto childItem = item -> addChild();
                     childItem -> setName(child.getComponent<TagComponent>().getTag());
                     childItem -> setUserData(child);
-                    childItem -> setTexture(m_iconTextures[TreeItemIcon::Default], robot2D::Color::White);
+                    if(child.hasComponent<PrefabComponent>())
+                        childItem -> setTexture(m_iconTextures[TreeItemIcon::Prefab], robot2D::Color::Blue);
+                    else
+                        childItem -> setTexture(m_iconTextures[TreeItemIcon::Default], robot2D::Color::White);
                 }
             }
         }
