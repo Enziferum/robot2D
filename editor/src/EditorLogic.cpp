@@ -316,6 +316,7 @@ namespace editor {
     }
 
     void EditorLogic::findSelectEntities(const robot2D::FloatRect& rect) {
+        m_selectedEntities.clear();
 
         for(auto& entity: m_activeScene -> getEntities()) {
             auto& transform = entity.getComponent<TransformComponent>();
@@ -330,7 +331,8 @@ namespace editor {
             }
         }
 
-        m_presenter.findSelectedEntitiesOnUI(m_selectedEntities);
+        if(!m_selectedEntities.empty())
+            m_presenter.findSelectedEntitiesOnUI(m_selectedEntities);
 
         /// TODO(a.raag): add selection command
         /// m_commandStack.addCommand();
@@ -404,7 +406,9 @@ namespace editor {
     }
 
     bool EditorLogic::isRunning() const {
-        return false;
+        if(!m_activeScene)
+            return false;
+        return m_activeScene -> isRunning();
     }
 
     robot2D::ecs::Entity EditorLogic::getByUUID(UUID uuid) {

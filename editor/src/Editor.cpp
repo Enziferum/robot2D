@@ -432,8 +432,9 @@ namespace editor {
     }
 
     void Editor::onMousePressed(const robot2D::Event& event) {
+        auto& viewportPanel = m_panelManager.getPanel<ViewportPanel>();
         if(event.mouse.btn == robot2D::mouse2int(robot2D::Mouse::MouseLeft)
-                        && !m_interactor -> hasSelectedEntities() && !m_guizmo2D.isActive()) {
+                        && !m_interactor -> hasSelectedEntities() && !m_guizmo2D.isActive() && viewportPanel.isActive()) {
             m_leftMousePressed = true;
             auto mousePos = m_editorCamera -> convertPixelToCoords({event.mouse.x, event.mouse.y});
             m_selectionCollider.setPosition(mousePos);
@@ -442,7 +443,8 @@ namespace editor {
     }
 
     void Editor::onMouseReleased(const robot2D::Event& event) {
-        if(event.mouse.btn == robot2D::mouse2int(robot2D::Mouse::MouseLeft)) {
+        auto& viewportPanel = m_panelManager.getPanel<ViewportPanel>();
+        if(event.mouse.btn == robot2D::mouse2int(robot2D::Mouse::MouseLeft) && viewportPanel.isActive()) {
             m_leftMousePressed = false;
             m_selectionCollider.setIsShown(false);
             m_interactor -> findSelectEntities(m_selectionCollider.getRect());
