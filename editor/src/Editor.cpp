@@ -64,7 +64,8 @@ namespace editor {
     m_messageBus{messageBus},
     m_panelManager{gui},
     m_configuration{},
-    m_frameBuffer{nullptr}
+    m_frameBuffer{nullptr},
+    m_cameraManipulator{messageBus}
     {}
 
     void Editor::setupBindings() {
@@ -84,6 +85,12 @@ namespace editor {
         m_eventBinder.bindEvent(robot2D::Event::MousePressed, BIND_CLASS_FN(onMousePressed));
         m_eventBinder.bindEvent(robot2D::Event::MouseReleased, BIND_CLASS_FN(onMouseReleased));
         m_eventBinder.bindEvent(robot2D::Event::MouseMoved, BIND_CLASS_FN(onMouseMoved));
+
+        m_cameraManipulator.setButtonCallback([this](robot2D::ecs::Entity entity) {
+            m_interactor -> setMainCamera(entity);
+            auto* msg = m_messageBus.postMessage<PanelEntitySelectedMessage>(MessageID::PanelEntitySelected);
+            msg -> entity = entity;
+        });
     }
 
 
@@ -155,7 +162,7 @@ namespace editor {
 
         m_editorCamera -> setFrameBuffer(m_frameBuffer);
         m_guizmo2D.setCamera(m_editorCamera);
-        m_cameraBox.setCamera(m_editorCamera);
+        m_cameraManipulator.setCamera(m_editorCamera);
         m_editorCamera -> setViewportSize(windowSize.as<float>());
 
         applyStyle(EditorStyle::UE4);
@@ -202,7 +209,7 @@ namespace editor {
                                                m_messageBus,
                                                m_messageDispather,
                                                m_guizmo2D,
-                                               m_cameraBox,
+                                               m_cameraManipulator,
                                                m_selectionCollider);
 
         m_panelManager.addPanel<GameViewport>(m_messageBus);
@@ -230,12 +237,12 @@ namespace editor {
             return;
         }
 
-        m_eventBinder.handleEvents(event);
         m_editorCamera -> handleEvents(event);
-        m_guizmo2D.handleEvents(event);
-        m_cameraBox.handleEvents(event);
         m_shortcutManager.handleEvents(event);
+        m_guizmo2D.handleEvents(event);
+        m_cameraManipulator.handleEvents(event);
         m_panelManager.getPanel<ViewportPanel>().handleEvents(event);
+        m_eventBinder.handleEvents(event);
     }
 
     void Editor::handleMessages(const robot2D::Message& message) {
@@ -254,7 +261,7 @@ namespace editor {
             case EditorState::Edit: {
                 m_interactor -> update(dt);
                 m_panelManager.getPanel<ViewportPanel>().update(dt);
-                m_cameraBox.update(m_window -> getMousePos(), dt);
+                m_cameraManipulator.update(m_window -> getMousePos(), dt);
                 m_shortcutManager.update();
                 break;
             }
@@ -289,7 +296,7 @@ namespace editor {
             m_window -> draw(*m_activeScene);
         }
         m_window -> draw(m_guizmo2D);
-        m_window -> draw(m_cameraBox);
+        m_window -> draw(m_cameraManipulator);
         if(m_selectionCollider.isShown())
             m_window -> draw(m_selectionCollider);
 
@@ -422,7 +429,8 @@ namespace editor {
 
 
     void Editor::onMouseMoved(const robot2D::Event& event) {
-        if(m_leftMousePressed) {
+        auto& viewportPanel = m_panelManager.getPanel<ViewportPanel>();
+        if(m_leftMousePressed && viewportPanel.isActive()) {
             robot2D::vec2f movePos{event.move.x, event.move.y};
             movePos = m_editorCamera -> convertPixelToCoords(movePos);
             auto pos = m_selectionCollider.getPosition();
@@ -444,7 +452,9 @@ namespace editor {
 
     void Editor::onMouseReleased(const robot2D::Event& event) {
         auto& viewportPanel = m_panelManager.getPanel<ViewportPanel>();
-        if(event.mouse.btn == robot2D::mouse2int(robot2D::Mouse::MouseLeft) && viewportPanel.isActive()) {
+        if(m_leftMousePressed &&
+            event.mouse.btn == robot2D::mouse2int(robot2D::Mouse::MouseLeft) && viewportPanel.isActive()
+                                                                                && !m_guizmo2D.isActive()) {
             m_leftMousePressed = false;
             m_selectionCollider.setIsShown(false);
             m_interactor -> findSelectEntities(m_selectionCollider.getRect());
@@ -456,6 +466,9 @@ namespace editor {
     void Editor::findSelectedEntitiesOnUI(std::vector<robot2D::ecs::Entity>& entities) {
         auto& scenePanel = m_panelManager.getPanel<ScenePanel>();
         scenePanel.processSelectedEntities(entities);
+
+        auto& inspectorPanel = m_panelManager.getPanel<InspectorPanel>();
+        inspectorPanel.setSelected(entities.back());
     }
 
     DeletedEntitiesRestoreUIInformation
@@ -512,6 +525,10 @@ namespace editor {
 
             ImGui::EndPopup();
         }
+    }
+
+    void Editor::setMainCameraEntity(robot2D::ecs::Entity entity) {
+        m_cameraManipulator.setManipulatedEntity(entity);
     }
 
 }

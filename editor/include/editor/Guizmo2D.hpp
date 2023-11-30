@@ -98,61 +98,20 @@ namespace editor {
             }
             ~Manipulator() override = default;
 
-            robot2D::vec2f getSize() const {
-                if(m_axis == Axis::BOTH)
-                    return {m_rect.width, m_rect.height};
-                else
-                    return {m_sprite.getGlobalBounds().width, m_sprite.getGlobalBounds().height};
-            }
+            robot2D::vec2f getSize() const;
 
-            bool isPressed(robot2D::vec2f point) {
-                robot2D::FloatRect rect;
-                if(m_axis != Axis::BOTH)
-                    rect = m_sprite.getGlobalBounds();
-                else
-                    rect = m_rect;
-                m_active = rect.contains(point);
-                if(m_active)
-                    m_offset = point - rect.topPoint();
-                return m_active;
-            }
+            bool isPressed(robot2D::vec2f point);
 
-            bool active() const { return m_active; }
+            bool active() const;
 
-            void setPosition(const robot2D::vec2f& position) {
-                m_rect.lx = position.x;
-                m_rect.ly = position.y;
-                m_sprite.setPosition({position.x, position.y});
-            }
+            void setPosition(const robot2D::vec2f& position);
+            void setColor(robot2D::Color color);
 
-            void setColor(robot2D::Color color) { m_color = color; }
-
-            void moveX(float offset) {
-                auto pos = m_sprite.getPosition();
-                m_sprite.setPosition({pos.x + offset, pos.y});
-                m_rect.lx += offset;
-            }
-
-            void moveY(float offset) {
-                auto pos = m_sprite.getPosition();
-                m_sprite.setPosition({pos.x, pos.y  + offset});
-                m_rect.ly += offset;
-            }
+            void moveX(float offset);
+            void moveY(float offset);
 
             void draw(robot2D::RenderTarget& target,
-                      [[maybe_unused]] robot2D::RenderStates states) const override {
-                if(m_axis != Axis::BOTH) {
-                    target.draw(m_sprite);
-                }
-                else {
-                    robot2D::Transform transform;
-                    transform.translate({m_rect.lx, m_rect.ly});
-                    transform.scale(m_rect.width, m_rect.height);
-                    states.color = m_color;
-                    states.transform *= transform;
-                    target.draw(states);
-                }
-            }
+                      [[maybe_unused]] robot2D::RenderStates states) const override;
             robot2D::Sprite m_sprite;
         private:
             robot2D::FloatRect m_rect;
@@ -170,6 +129,8 @@ namespace editor {
         void update();
 
         void setManipulated(robot2D::Transformable* transformable);
+        void setManipulated(std::vector<robot2D::Transformable*> transformables);
+
         void setOperationType(Operation type);
         void setCamera(IEditorCamera::Ptr camera);
         void setIsShow(bool flag);
@@ -190,6 +151,9 @@ namespace editor {
         bool m_leftMousePressed{false};
 
         robot2D::Transformable* m_manipulated{nullptr};
+
+        std::vector<robot2D::Transformable*> m_manipulateds;
+
         EventBinder m_eventBinder;
         Operation m_operation{Operation::Move};
         IEditorCamera::Ptr m_camera{nullptr};
@@ -199,8 +163,8 @@ namespace editor {
         Manipulator m_XYAxisManipulator;
 
         robot2D::vec2f m_manipulatorLastPos;
-
         robot2D::Texture m_manipulatorTexture;
+
         enum class TextureType {
             FreeMove, Move, Scale
         };

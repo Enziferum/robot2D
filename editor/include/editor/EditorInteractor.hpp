@@ -26,6 +26,8 @@ namespace editor {
         virtual void notifyObservers(std::vector<std::string>&& paths) = 0;
         virtual EditorState getState() const = 0;
         virtual bool saveScene() = 0;
+        virtual robot2D::vec2f getMainCameraPosition() const = 0;
+        virtual void setMainCamera(robot2D::ecs::Entity cameraEntity) = 0;
     protected:
     };
 

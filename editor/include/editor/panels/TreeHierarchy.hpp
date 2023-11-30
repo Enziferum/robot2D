@@ -27,86 +27,17 @@ source distribution.
 #include <algorithm>
 #include <functional>
 #include <limits>
+#include <list>
 
 #include <imgui/imgui.h>
 #include <robot2D/Core/Keyboard.hpp>
 #include <robot2D/Graphics/Texture.hpp>
 #include <editor/Uuid.hpp>
 
+#include "ITreeItem.hpp"
+#include "MultiSelection.hpp"
+
 namespace editor {
-    constexpr std::uint64_t NO_INDEX = std::numeric_limits<uint64_t>::max();
-
-    class ITreeItem {
-    public:
-        using Ptr = std::shared_ptr<ITreeItem>;
-
-        ITreeItem(): m_id() {}
-        ITreeItem(UUID id): m_id{id} {}
-        virtual ~ITreeItem() = 0;
-
-        bool hasChildrens() const { return !m_childrens.empty(); }
-
-        UUID getID() const { return m_id; }
-
-        void setName(std::string& name) {
-            m_name = &name;
-        }
-
-        void setTexture(robot2D::Texture& texture, const robot2D::Color& tintColor) {
-            m_iconTexture = &texture;
-            m_tintColor = tintColor;
-        }
-
-        /// \brief don't call if user data was set void or you want to call on void type
-        template<typename T, typename = std::enable_if_t<!std::is_same_v<std::decay_t<T>, void>>>
-        T* getUserData() const {
-            return static_cast<T*>(getUserDataInternal());
-        }
-
-        bool isChild() const { return m_child_id != NO_INDEX; }
-
-        bool deleteChild(ITreeItem::Ptr item) {
-            m_deletePendingItems.emplace_back(item);
-            return true;
-        }
-
-        void addChild(ITreeItem::Ptr child) {
-            child -> m_parent = this;
-            child -> m_id = NO_INDEX;
-            child -> m_child_id = UUID();
-            m_childrens.emplace_back(child);
-        }
-
-        void removeSelf() {
-            if(!isChild() || !m_parent)
-                return;
-            m_parent -> removeChild(this);
-        }
-
-        std::vector<ITreeItem::Ptr>& getChildrens() { return m_childrens; }
-    protected:
-        void removeChild(ITreeItem* child) {
-            auto found = std::find_if(m_childrens.begin(), m_childrens.end(), [&child](ITreeItem::Ptr item) {
-                return child -> m_child_id == item -> m_child_id;
-            });
-            m_childrens.erase(found, m_childrens.end());
-        }
-
-        virtual void* getUserDataInternal() const = 0;
-        UUID m_id;
-        UUID m_child_id{NO_INDEX};
-
-        std::string* m_name{nullptr};
-        ITreeItem* m_parent{nullptr};
-        std::vector<ITreeItem::Ptr> m_childrens;
-        std::vector<ITreeItem::Ptr> m_deletePendingItems{};
-
-        friend class TreeHierarchy;
-        robot2D::Texture* m_iconTexture{nullptr};
-        robot2D::Color m_tintColor = robot2D::Color::White;
-    };
-
-
 
     template<typename T>
     class UserDataStorage {
@@ -136,14 +67,12 @@ namespace editor {
             return child;
         }
 
-
         void setUserData(UserDataT value) {
             m_userData = std::make_shared<UserDataT>(std::move(value));
             if(!m_userData) {
                 /// Error
             }
         }
-
 
         friend bool operator ==(const TreeItem<UserDataT>& left, const TreeItem<UserDataT>& right);
         friend bool operator !=(const TreeItem<UserDataT>& left, const TreeItem<UserDataT>& right);
@@ -229,61 +158,19 @@ namespace editor {
         bool deleteItem(ITreeItem::Ptr treeItem);
 
 
-        bool addOnSelectCallback(ItemCallback&& callback) {
-            if(callback)
-                m_selectCallback = std::move(callback);
-            else
-                return false;
-            return true;
-        }
+        bool addOnSelectCallback(ItemCallback&& callback);
 
-        bool addOnCallback(ItemCallback&& callback) {
-            if(callback)
-                m_callback = std::move(callback);
-            else
-                return false;
-            return true;
-        }
+        bool addOnCallback(ItemCallback&& callback);
 
-        bool addOnReorderCallback(ReorderItemCallback&& callback) {
-            if(callback)
-                m_reorderCallback = std::move(callback);
-            else
-                return false;
-            return true;
-        }
+        bool addOnReorderCallback(ReorderItemCallback&& callback);
 
-        bool addOnMakeChildCallback(ReorderItemCallback&& callback) {
-            if(callback)
-                m_makeAsChildCallback = std::move(callback);
-            else
-                return false;
-            return true;
-        }
+        bool addOnMakeChildCallback(ReorderItemCallback&& callback);
 
-        bool addOnStopBeChildCallback(ReorderItemCallback&& callback) {
-            if(callback)
-                m_removeAsChildCallback = std::move(callback);
-            else
-                return false;
-            return true;
-        }
+        bool addOnStopBeChildCallback(ReorderItemCallback&& callback);
 
-        bool addMultiSelectCallback(MultiItemCallback&& callback) {
-            if(callback)
-                m_multiItemCallback = std::move(callback);
-            else
-                return false;
-            return true;
-        }
+        bool addMultiSelectCallback(MultiItemCallback&& callback);
 
-        bool addMultiSelectRangeCallback(MultiItemRangeCallback&& callback) {
-            if(callback)
-                m_multiItemRangeCallback = std::move(callback);
-            else
-                return false;
-            return true;
-        }
+        bool addMultiSelectRangeCallback(MultiItemRangeCallback&& callback);
 
 
         template<typename T>
@@ -296,40 +183,9 @@ namespace editor {
             return dynamic_cast<TreeItem<T>*>(*found->get());
         }
 
-        void setBefore(ITreeItem::Ptr source, ITreeItem::Ptr target) {
-            auto sourceIter = std::find_if(m_items.begin(), m_items.end(), [&source](ITreeItem::Ptr item) {
-                return item -> m_id == source -> m_id;
-            });
+        void setBefore(ITreeItem::Ptr source, ITreeItem::Ptr target);
 
-            auto targetIter = std::find_if(m_items.begin(), m_items.end(), [&target](ITreeItem::Ptr item) {
-                return item -> m_id == target -> m_id;
-            });
-
-            auto sourceOldDistance = std::distance(m_items.begin(), sourceIter);
-            auto targetOldDistance = std::distance(m_items.begin(), targetIter);
-
-            if(sourceOldDistance > targetOldDistance) {
-                /// insert before remove last
-                m_insertItems.push_back(std::make_tuple(targetIter, source, ReorderDeleteType::Last));
-            }
-            else if (sourceOldDistance < targetOldDistance) {
-                m_insertItems.push_back(std::make_tuple(targetIter, source, ReorderDeleteType::First));
-            }
-        }
-
-        void insertItem(ITreeItem::Ptr source, ITreeItem::Ptr anchor, bool first = false) {
-
-            if(first) {
-                m_setItems.push_back(std::make_tuple(m_items.begin(), source));
-            }
-            else {
-                auto found = std::find_if(m_items.begin(), m_items.end(), [&anchor](ITreeItem::Ptr item) {
-                    return item-> m_id == anchor -> m_id;
-                });
-                m_setItems.push_back(std::make_tuple(found, source));
-            }
-
-        }
+        void insertItem(ITreeItem::Ptr source, ITreeItem::Ptr anchor, bool first = false, bool isChained = false);
 
 
         template<typename T>
@@ -343,8 +199,8 @@ namespace editor {
         void setSelected(ITreeItem::Ptr item);
         void clearSelection();
 
-        std::vector<ITreeItem::Ptr>& getItems() { return m_items; }
-        const std::vector<ITreeItem::Ptr>& getItems() const { return m_items; }
+        std::list<ITreeItem::Ptr>& getItems() { return m_items; }
+        const std::list<ITreeItem::Ptr>& getItems() const { return m_items; }
 
         void clear();
         void render();
@@ -353,17 +209,17 @@ namespace editor {
 
     private:
         std::string m_name;
-        std::vector<ITreeItem::Ptr> m_items{};
-        std::vector<ITreeItem::Ptr> m_deletePendingItems{};
-        std::vector<ITreeItem::Ptr> m_additemsBuffer{};
+        std::list<ITreeItem::Ptr> m_items{};
+        std::list<ITreeItem::Ptr> m_deletePendingItems{};
+        std::list<ITreeItem::Ptr> m_additemsBuffer{};
 
         enum class ReorderDeleteType {
             First, Last
         };
 
-        using Iterator = std::vector<ITreeItem::Ptr>::iterator;
+        using Iterator = std::list<ITreeItem::Ptr>::iterator;
         using InsertItem = std::tuple<Iterator, ITreeItem::Ptr, ReorderDeleteType>;
-        using SetItem = std::tuple<Iterator, ITreeItem::Ptr>;
+        using SetItem = std::tuple<Iterator, ITreeItem::Ptr, bool, ITreeItem::Ptr>;
 
         int m_tree_base_flags = 0;
         UUID m_selectedID = NO_INDEX;
@@ -384,6 +240,7 @@ namespace editor {
 
         robot2D::Key m_shortCutKey{robot2D::Key::Q};
         std::string m_playloadIdentifier = "TreeNodeItem";
+        MultiSelection m_multiSelection;
     };
 
 

@@ -62,7 +62,6 @@ namespace editor {
         }
 
         //////////////////////////////////////// EditorInteractor ////////////////////////////////////////
-
         void update(float dt) override;
         void findSelectEntities(const robot2D::FloatRect& rect) override;
         bool hasSelectedEntities() const override;
@@ -80,6 +79,8 @@ namespace editor {
         bool saveScene() override;
 
         void closeCurrentProject(std::function<void()>&& resultCallback);
+        robot2D::vec2f getMainCameraPosition() const override;
+        void setMainCamera(robot2D::ecs::Entity cameraEntity) override;
         //////////////////////////////////////// EditorInteractor ////////////////////////////////////////
 
 
@@ -106,6 +107,7 @@ namespace editor {
                                     DeletedEntitiesRestoreUIInformation& restoreUiInformation) override;
 
         const std::vector<class_id>& getCommandStack() const override;
+        void exportProject(const ExportOptions& exportOptions) override;
         //////////////////////////////////////// UIInteractor ////////////////////////////////////////
 
         //////////////////// ScriptInteractor ////////////////////
@@ -141,6 +143,8 @@ namespace editor {
 
         std::vector<robot2D::ecs::Entity> m_selectedEntities;
         std::vector<robot2D::ecs::Entity> m_copyEntities;
+
+        robot2D::ecs::Entity m_mainCameraEntity;
 
         std::function<void()> m_closeResultProjectCallback{nullptr};
     };

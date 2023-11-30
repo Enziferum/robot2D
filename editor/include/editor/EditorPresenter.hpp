@@ -25,6 +25,7 @@ namespace editor {
 
         DeletedEntitiesRestoreUIInformation removeEntitiesFromUI(std::vector<robot2D::ecs::Entity> removingEntities);
         void restoreEntitiesOnUI(DeletedEntitiesRestoreUIInformation& restoreUiInformation);
+        void setMainCameraEntity(robot2D::ecs::Entity entity);
     private:
         IEditor* m_editor;
         EditorState m_state{EditorState::Edit};

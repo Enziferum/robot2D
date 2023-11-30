@@ -22,17 +22,27 @@ source distribution.
 #pragma once
 
 #include <array>
+#include <functional>
+
+#include <robot2D/Core/MessageBus.hpp>
+#include <robot2D/Ecs/Entity.hpp>
 #include <robot2D/Graphics/Drawable.hpp>
 #include <robot2D/Graphics/RenderTarget.hpp>
+#include <robot2D/Graphics/Sprite.hpp>
 
 #include "Quad.hpp"
 #include "EventBinder.hpp"
 #include "EditorCamera.hpp"
+#include "Components.hpp"
 
 namespace editor {
-    struct Collider: public robot2D::Drawable {
-        Collider();
-        ~Collider() override = default;
+
+    class CameraManipulator: public robot2D::Drawable {
+    public:
+        using ButtonCallback = std::function<void(robot2D::ecs::Entity)>;
+
+        CameraManipulator(robot2D::MessageBus& messageBus);
+        ~CameraManipulator() override = default;
 
         enum class State {
             Default,
@@ -42,11 +52,35 @@ namespace editor {
 
         void handleEvents(const robot2D::Event& event);
 
+        void update(robot2D::vec2f mousePos, float dt) {
+            //  if(m_needRecalculate)
+            if(m_manipulatedEntity)
+                setPosition(m_manipulatedEntity.getComponent<TransformComponent>().getPosition());
+            recalculateRect(mousePos, dt);
+        }
+
+        void setButtonCallback(ButtonCallback&& buttonCallback) {
+            m_buttonCallback = std::move(buttonCallback);
+        }
+
+        void setManipulatedEntity(robot2D::ecs::Entity entity) {
+            m_manipulatedEntity = entity;
+        }
         void setCamera(IEditorCamera::Ptr camera) { m_camera = camera; }
 
         void setPosition(const robot2D::vec2f& position) {
-            m_aabb.lx = position.x;
-            m_aabb.ly = position.y;
+            auto frame = getRect();
+
+            robot2D::vec2f colliderPosition = {
+                    position.x - frame.width / 2.f,
+                    position.y - frame.height / 2.f,
+            };
+
+            m_aabb.lx = colliderPosition.x;
+            m_aabb.ly = colliderPosition.y;
+
+            robot2D::vec2f midPoint = { m_aabb.lx + m_aabb.width / 2.f, m_aabb.ly + m_aabb.height / 2.f};
+            m_movieSprite.setPosition({midPoint.x - 10, midPoint.y - 10});
         }
 
         robot2D::vec2f getPosition() const {
@@ -85,53 +119,16 @@ namespace editor {
             return m_aabb.intersects(rect);
         }
 
-        void setIsShown(bool flag) { m_show = flag; }
-
-        void update(robot2D::vec2f mousePos, float dt) {
-          //  if(m_needRecalculate)
-                recalculateRect(mousePos, dt);
-        }
-
-
-        void draw(robot2D::RenderTarget& target, robot2D::RenderStates states) const override {
-            if(!m_show)
-                return;
-
-            std::array<robot2D::Transform, 4> quads;
-            quads[0].translate(m_aabb.lx, m_aabb.ly);
-            quads[0].scale(m_aabb.width, borderSize);
-
-            quads[1].translate(m_aabb.lx, m_aabb.ly);
-            quads[1].scale(borderSize, m_aabb.height);
-
-            quads[2].translate(m_aabb.lx, m_aabb.ly + m_aabb.height);
-            quads[2].scale(m_aabb.width, borderSize);
-
-            quads[3].translate(m_aabb.lx + m_aabb.width, m_aabb.ly);
-            quads[3].scale(borderSize, m_aabb.height);
-
-            for(const auto& wall: moveWalls) {
-//                states.transform = transform;
-//                states.color = borderColor;
-//                target.draw(states);
-                target.draw(wall);
-            }
-
-            constexpr robot2D::vec2f qSize = {6, 6};
-
-            moveQ[0].color = (m_selectedQuad == static_cast<int>(SelectQuad::Top) ? robot2D::Color::Yellow: robot2D::Color::White);
-            moveQ[1].color = (m_selectedQuad == static_cast<int>(SelectQuad::Left) ? robot2D::Color::Yellow: robot2D::Color::White);
-            moveQ[2].color = (m_selectedQuad == static_cast<int>(SelectQuad::Right) ? robot2D::Color::Yellow: robot2D::Color::White);
-            moveQ[3].color = (m_selectedQuad == static_cast<int>(SelectQuad::Bottom) ? robot2D::Color::Yellow: robot2D::Color::White);
-
-            for(const auto& q: moveQ)
-                target.draw(q);
-        }
+        void setIsShownDots(bool flag) { m_showDots = flag; }
 
         const float& getSize() const { return m_size; }
         void setSize(float size);
 
-        bool isActive() const { return m_leftMousePressed && m_selectedQuad != -1 && m_pressedPoint != robot2D::vec2f{}; }
+        bool isActive() const { return m_leftMousePressed &&
+                    (m_buttonPressed || (m_selectedQuad != -1 && m_pressedPoint != robot2D::vec2f{})); }
+
+
+        void draw(robot2D::RenderTarget& target, robot2D::RenderStates states) const override;
     public:
         robot2D::Color borderColor = robot2D::Color::White;
         float borderSize = 1.F;
@@ -142,15 +139,24 @@ namespace editor {
         void onMouseMoved(const robot2D::Event& event);
         void recalculateRect(robot2D::vec2f mousePos, float newSize);
     private:
+        robot2D::MessageBus& m_messageBus;
+        robot2D::Sprite m_movieSprite;
+        robot2D::ecs::Entity m_manipulatedEntity;
+
         robot2D::FloatRect m_aabb{};
         EventBinder m_eventBinder;
         mutable std::array<Quad, 4> moveQ;
         mutable std::array<Quad, 4> moveWalls;
+
         bool m_leftMousePressed{false};
-        bool m_show{false};
+        bool m_buttonPressed{false};
+
+        bool m_showDots{false};
+
         float m_size = 1.f;
         float m_lastSize = 1.f;
         robot2D::vec2f m_pressedPoint{};
+
         enum class SelectQuad: int {
             None = -1,
             Top,
@@ -162,6 +168,7 @@ namespace editor {
         int m_selectedQuad = static_cast<int>(SelectQuad::None);
         IEditorCamera::Ptr m_camera{nullptr};
         bool m_needRecalculate{false};
+        ButtonCallback m_buttonCallback;
     };
 
 }

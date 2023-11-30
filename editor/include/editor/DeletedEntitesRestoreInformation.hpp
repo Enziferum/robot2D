@@ -25,20 +25,27 @@ namespace editor {
         std::vector<RestoreInfo> anchorEntitiesUuids;
     };
 
-    struct DeletedEntitiesRestoreUIInformation {
+    class DeletedEntitiesRestoreUIInformation {
+    public:
         struct RestoreInfo {
             bool first;
+            bool isChained;
             ITreeItem::Ptr target;
             ITreeItem::Ptr anchor;
         };
-
         /// TODO(a.raag): correct valid statement
         bool valid() const { return true; }
 
-        void push(ITreeItem::Ptr target, ITreeItem::Ptr anchor, bool first) {
-            auto info = RestoreInfo{first, target, anchor};
+        bool hasItems() const { return !anchorItems.empty(); }
+
+        RestoreInfo& getLast() { return anchorItems.back(); }
+
+        void push(ITreeItem::Ptr target, ITreeItem::Ptr anchor, bool first = false, bool isChained = false) {
+            auto info = RestoreInfo{first, isChained, target, anchor};
             anchorItems.push_back(info);
         }
+    //private:
+
 
         std::vector<RestoreInfo> anchorItems;
     };

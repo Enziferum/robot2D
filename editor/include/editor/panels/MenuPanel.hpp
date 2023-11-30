@@ -23,6 +23,8 @@ source distribution.
 #include <robot2D/Core/MessageBus.hpp>
 #include <editor/PopupManager.hpp>
 #include <editor/UIInteractor.hpp>
+#include <editor/ExportOptions.hpp>
+
 #include "IPanel.hpp"
 
 namespace editor {
@@ -57,5 +59,7 @@ namespace editor {
             NewProject,
             Export
         } m_popupType = PopupType::None;
+
+        ExportOptions m_exportOptions;
     };
 }

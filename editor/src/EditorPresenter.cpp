@@ -33,4 +33,8 @@ namespace editor {
     void EditorPresenter::showPopup(PopupConfiguration* popupConfiguration) {
         m_editor -> showPopup(popupConfiguration);
     }
+
+    void EditorPresenter::setMainCameraEntity(robot2D::ecs::Entity entity) {
+        m_editor -> setMainCameraEntity(entity);
+    }
 } // namespace editor

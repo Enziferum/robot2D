@@ -226,27 +226,56 @@ namespace editor {
     void MenuPanel::showExportProjectModal() {
         ImVec2 center = ImGui::GetMainViewport() -> GetCenter();
         ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-        ImGui::OpenPopup("Export Project!");
+        ImGui::OpenPopup("ExportProject");
 
-        if(ImGui::BeginPopupModal("Export Project!", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-            ImGui::Text("Modal Text!");
+        if(ImGui::BeginPopupModal("ExportProject", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+            ImGui::Text("Export Project");
 
-            if(ImGui::Button("Ok")) {
+            ImGui::RadioButton("Fullscreen", m_exportOptions.isFullscreen);
+
+            std::vector<std::string> scenesNames = {"Main.scene", "Menu.scene"};
+            const char* currentSceneName = scenesNames[0].c_str();
+            if (ImGui::BeginCombo("Start Scene", currentSceneName))
+            {
+                for (int i = 0; i < scenesNames.size(); i++)
+                {
+                    bool isSelected = currentSceneName == scenesNames[i];
+                    if (ImGui::Selectable(scenesNames[i].c_str(), isSelected))
+                    {
+                        currentSceneName = scenesNames[i].c_str();
+                        m_exportOptions.startScene = currentSceneName;
+                    }
+
+                    if (isSelected)
+                        ImGui::SetItemDefaultFocus();
+                }
+
+                ImGui::EndCombo();
+            }
+
+            if(ImGui::Button("Close")) {
                 m_popupType = PopupType::None;
+                PopupManager::getManager() -> endPopup();
+                m_exportOptions = {};
+                ImGui::CloseCurrentPopup();
+            }
+
+            ImGui::SameLine();
+
+            if(ImGui::Button("Export")) {
+                m_popupType = PopupType::None;
+                const char* path = tinyfd_selectFolderDialog("Export Robot2D Project", nullptr);
+                if(path) {
+                    m_exportOptions.outputFolder = path;
+                    m_interactor -> exportProject(m_exportOptions);
+                }
+
+                m_exportOptions = {};
                 PopupManager::getManager() -> endPopup();
                 ImGui::CloseCurrentPopup();
             }
 
 
-            // TODO(a.raag): following steps
-            // 1. Choose StartScene
-            // 2. Choose TargetResolution
-            // 3. Choose Folder
-
-
-            // 1. Main Scene
-            //
-            //auto* msg = m_messageBus.postMessage<ExportProjectMessage>(MessageID::ExportProject);
             ImGui::EndPopup();
         }
     }

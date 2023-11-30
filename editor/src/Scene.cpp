@@ -44,19 +44,7 @@ namespace editor {
         m_scene.addSystem<RenderSystem>(m_messageBus);
         m_scene.addSystem<TextSystem>(m_messageBus);
 
-//        auto entity = m_scene.createEntity();
-//        entity.addComponent<IDComponent>(UUID());
-//        entity.addComponent<TagComponent>().setTag("MainCamera");
-//
-//        auto& transform = entity.addComponent<TransformComponent>();
-//        transform.setPosition({100.F, 100.F});
-//        transform.setScale({ 20.F, 20.F });
-//        entity.addComponent<DrawableComponent>();
-//
-//        auto& cameraComponent = entity.addComponent<CameraComponent>();
-//        /// todo create camera component
-//
-//        m_sceneEntities.emplace_back(entity);
+
     }
 
     robot2D::ecs::EntityList& Scene::getEntities() {
@@ -106,7 +94,6 @@ namespace editor {
             }
         }
         m_insertItems.clear();
-
         m_scene.update(dt);
     }
 
@@ -129,13 +116,8 @@ namespace editor {
     void Scene::addEmptyEntity() {
         auto entity = m_scene.createEntity();
         entity.addComponent<IDComponent>(UUID());
-
         entity.addComponent<TagComponent>();
-        /*
-            auto& transform = entity.addComponent<Transform3DComponent>();
-            transform.setPosition({0.F, 0.F, 0.F});
-            transform.setScale({1.F, 1.F, 0.F});
-         */
+
         auto& transform = entity.addComponent<TransformComponent>();
         transform.setPosition({100.F, 100.F});
         transform.setScale({ 20.F, 20.F });
@@ -374,6 +356,21 @@ namespace editor {
                 }
             }
         }
+    }
+
+    void Scene::createMainCamera() {
+        auto entity = m_scene.createEntity();
+        entity.addComponent<IDComponent>(UUID());
+        entity.addComponent<TagComponent>().setTag("MainCamera");
+
+        auto& transform = entity.addComponent<TransformComponent>();
+        transform.setPosition({100.F, 100.F});
+        transform.setScale({ 20.F, 20.F });
+        entity.addComponent<DrawableComponent>();
+
+        auto& cameraComponent = entity.addComponent<CameraComponent>();
+
+        m_sceneEntities.emplace_back(entity);
     }
 
 }

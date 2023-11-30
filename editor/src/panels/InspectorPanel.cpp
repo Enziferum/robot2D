@@ -602,5 +602,9 @@ namespace editor {
         }
     }
 
+    void InspectorPanel::setSelected(robot2D::ecs::Entity entity) {
+        m_selectedEntity = entity;
+    }
+
 
 }

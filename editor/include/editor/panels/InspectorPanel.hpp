@@ -42,6 +42,8 @@ namespace editor {
         ~InspectorPanel() override = default;
 
         void setInteractor(UIInteractor::Ptr interactor);
+        void setSelected(robot2D::ecs::Entity entity);
+
         void render() override;
         void clearSelection();
     private:

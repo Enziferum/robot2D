@@ -7,6 +7,7 @@
 #include "Uuid.hpp"
 #include "DeletedEntitesRestoreInformation.hpp"
 #include "CommandStack.hpp"
+#include "ExportOptions.hpp"
 
 namespace editor {
 
@@ -37,6 +38,7 @@ namespace editor {
         virtual robot2D::ecs::Entity getByUUID(UUID uuid) = 0;
         virtual void registerOnDeleteFinish(std::function<void()>&& callback) = 0;
 
+        virtual void exportProject(const ExportOptions& exportOptions) = 0;
         virtual const std::vector<class_id>& getCommandStack() const = 0;
     };
 
