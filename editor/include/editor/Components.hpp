@@ -32,7 +32,7 @@ source distribution.
 #include <robot2D/Ecs/Entity.hpp>
 
 #include "Uuid.hpp"
-//#include <glm/gtc/matrix_transform.hpp>
+#include "Property.hpp"
 
 namespace editor {
     struct IDComponent
@@ -73,20 +73,6 @@ namespace editor {
         bool isChild() const { return (m_parent != nullptr && m_childID != -1); }
 
         void removeSelf(bool removeFromScene = true);
-
-
-//        glm::mat4 GetTransform() const
-//        {
-//
-//            robot2D::vec2f centerPos = {
-//                    m_pos.x + m_scale_factor.x / 2.F,
-//                    m_pos.y + m_scale_factor.y / 2.F,
-//            };
-//
-//            glm::mat4 res = glm::translate(glm::mat4(1.0f), glm::vec3(centerPos.x, centerPos.y, 0))
-//                            * glm::scale(glm::mat4(1.0f), glm::vec3(1, 1, 1.f));
-//            return res;
-//        }
     private:
         void removeChild(int childID, bool removeFromScene);
     private:
@@ -210,8 +196,6 @@ namespace editor {
         ProjectionType GetProjectionType() const { return m_ProjectionType; }
         void SetProjectionType(ProjectionType type) { m_ProjectionType = type; RecalculateProjection(); }
 
-
-       // const glm::mat4& GetProjection() const { return m_Projection; }
     private:
         void RecalculateProjection();
     private:
@@ -220,26 +204,41 @@ namespace editor {
         float m_OrthographicSize = 10.0f;
         float m_OrthographicNear = -1.0f, m_OrthographicFar = 1.0f;
         float m_AspectRatio = 0.0f;
-    //    glm::mat4 m_Projection = glm::mat4(1.0f);
     };
 
 
     struct CameraComponent final {
     public:
-        CameraComponent() = default;
-        ~CameraComponent() = default;
-
-        float orthoSize;
-        robot2D::vec2f size;
-        robot2D::vec2f position;
-        robot2D::vec2f getSize() const { return size; }
-        robot2D::vec2f getPosition() const { return position; }
-
         enum class AspectRatio {
             Desktop = 0, Mobile
         };
 
+
+        CameraComponent() = default;
+        ~CameraComponent() = default;
+
+
+        robot2D::vec2f getSize() const { return size; }
+        robot2D::vec2f getPosition() const { return position; }
+
+       // Property<float> Size;
+
+       // PROPERTY_GET(Size) {
+       //     return Size;
+      //  }
+
+      //  PROPERTY_SET(Size) {
+      //      if(oldValue != newValue) {
+                ///
+      //      }
+      //  }
+
+
+
         AspectRatio aspectRatio;
+        float orthoSize;
+        robot2D::vec2f size;
+        robot2D::vec2f position;
 
         SceneCamera camera;
         bool isPrimary{false};
@@ -267,18 +266,12 @@ namespace editor {
         Physics2DComponent() = default;
         ~Physics2DComponent() = default;
 
-
-
         enum class BodyType { Static = 0, Dynamic, Kinematic};
         BodyType type = BodyType::Static;
+
         bool fixedRotation = false;
         void* runtimeBody{nullptr};
     };
-
-    struct ScriptComponent {
-        std::string name;
-    };
-
 
     class TextComponent: public robot2D::Transformable {
     public:
@@ -317,6 +310,10 @@ namespace editor {
 
         bool m_scaled = false;
         std::string m_fontPath;
+    };
+
+    struct ScriptComponent {
+        std::string name;
     };
 
     struct PrefabComponent {

@@ -43,6 +43,8 @@ namespace editor {
         Scene(robot2D::MessageBus& messageBus);
         ~Scene() override = default;
 
+        void createMainCamera();
+
         robot2D::ecs::EntityList& getEntities();
         const robot2D::ecs::EntityList& getEntities() const;
 
@@ -56,12 +58,12 @@ namespace editor {
 
         void setRuntimeCamera(bool flag);
 
-        // Serializer Api
+        /// Serializer Api
         robot2D::ecs::Entity createEntity();
         robot2D::ecs::Entity createEmptyEntity();
         void addAssociatedEntity(robot2D::ecs::Entity entity);
 
-        // ScenePanel API
+        /// ScenePanel API
         void addEmptyEntity();
         void setBefore(robot2D::ecs::Entity source, robot2D::ecs::Entity target);
         void removeEntity(robot2D::ecs::Entity entity);
@@ -69,10 +71,6 @@ namespace editor {
         DeletedEntitiesRestoreInformation removeEntities(std::vector<robot2D::ecs::Entity>& removingEntities);
         void restoreEntities(DeletedEntitiesRestoreInformation& restoreInformation);
 
-
-        robot2D::ecs::Entity getByIndex(int index) {
-            return m_sceneEntities[index];
-        }
 
         robot2D::ecs::Entity getByUUID(UUID uuid) {
             auto found = std::find_if(m_sceneEntities.begin(), m_sceneEntities.end(), [&uuid](robot2D::ecs::Entity entity) {

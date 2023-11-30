@@ -130,7 +130,7 @@ namespace editor {
             robot2D::MessageBus& messageBus,
             MessageDispatcher& messageDispatcher,
             Guizmo2D& guizmo2D,
-            Collider& collider,
+            CameraManipulator& collider,
             SelectionCollider& selectionCollider):
             IPanel(UniqueType(typeid(ViewportPanel))),
             m_uiInteractor{uiInteractor},
@@ -229,7 +229,7 @@ namespace editor {
             robot2D::RenderFrameBuffer(m_frameBuffer, m_ViewportSize.as<float>());
 
             m_guizmo2D.setIsShow(false);
-            m_CameraCollider.setIsShown(false);
+            m_CameraCollider.setIsShownDots(false);
 
             auto& selectedEntities = m_uiInteractor -> getSelectedEntities();
 
@@ -245,7 +245,7 @@ namespace editor {
                     m_guizmo2D.setManipulated(&tc);
 
                     if(selectedEntity.hasComponent<CameraComponent>()) {
-                        m_CameraCollider.setIsShown(true);
+                        m_CameraCollider.setIsShownDots(true);
                         auto& transform = selectedEntity.getComponent<TransformComponent>();
                         auto position = transform.getPosition();
                         auto frame = m_CameraCollider.getRect();
@@ -255,7 +255,6 @@ namespace editor {
                                 position.y - frame.height / 2.f,
                         };
 
-                        m_CameraCollider.setPosition(colliderPosition);
                         // m_CameraCollider.setSize(m_selectedEntity.getComponent<CameraComponent>().orthoSize);
                         selectedEntity.getComponent<CameraComponent>().size = {frame.width, frame.height};
                         selectedEntity.getComponent<CameraComponent>().position = frame.topPoint();

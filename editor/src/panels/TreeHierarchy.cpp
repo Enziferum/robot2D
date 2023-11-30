@@ -53,143 +53,6 @@ namespace editor {
 
 
 
-    class MultiSelection {
-    public:
-        using MultiItemCallback = std::function<void(std::vector<ITreeItem::Ptr>)>;
-        using MultiItemRangeCallback = std::function<void(std::vector<ITreeItem::Ptr>, bool del)>;
-
-        MultiSelection();
-        bool hasItem(ITreeItem::Ptr node) const;
-        void updateItem(ITreeItem::Ptr node, bool v);
-        void clear();
-
-        void applyRequests(ImGuiMultiSelectIO* multiSelectIo, std::vector<ITreeItem::Ptr>& items, int items_count);
-        ITreeItem::Ptr processDeletionPreLoop(ImGuiMultiSelectIO*, int itemToFocus);
-        void processDeletionPostLoop(ImGuiMultiSelectIO*, std::vector<ITreeItem::Ptr>& items, int itemToFocus);
-        bool hasObjectsToDelete() const;
-
-        void setMultiItemCallback(MultiItemCallback&& multiItemCallback) {
-            m_multiItemCallback = multiItemCallback;
-        }
-        void setMultiItemRangeCallback(MultiItemRangeCallback && callback) {
-            m_multiRangeItemCallback = callback;
-        }
-    private:
-        void addItem(ImGuiID key);
-        void removeItem(ImGuiID key);
-
-    private:
-        ImGuiStorage m_storage;
-        bool m_queryDeletion{false};
-        int m_size{0};
-
-        ImGuiID (*AdapterIndexToStorageId)(MultiSelection* self, ITreeItem::Ptr node);
-
-        MultiItemCallback m_multiItemCallback;
-        MultiItemRangeCallback m_multiRangeItemCallback;
-    };
-
-    MultiSelection::MultiSelection() {
-      //  clear();
-        AdapterIndexToStorageId = [](MultiSelection*, ITreeItem::Ptr node) { return static_cast<ImGuiID>(node -> getID()); };
-    }
-
-    void MultiSelection::addItem(ImGuiID key) {
-        int* p_int = m_storage.GetIntRef(key, 0);
-        if (*p_int != 0)
-            return;
-        *p_int = 1;
-        m_size++;
-    }
-
-    void MultiSelection::updateItem(ITreeItem::Ptr node, bool v) {
-        ImGuiID key = AdapterIndexToStorageId(this, node);
-
-        if (v)
-            addItem(key);
-        else
-            removeItem(key);
-    }
-
-    void MultiSelection::removeItem(ImGuiID key) {
-        int* p_int = m_storage.GetIntRef(key, 0);
-        if (*p_int == 0) return;
-        *p_int = 0;
-        m_size--;
-    }
-
-    bool MultiSelection::hasItem(ITreeItem::Ptr node) const {
-        if(!node)
-            return false;
-        ImGuiID key = AdapterIndexToStorageId(const_cast<MultiSelection *>(this), node);
-        return m_storage.GetInt(key, 0) != 0;
-    }
-
-    void MultiSelection::clear() {
-        m_queryDeletion = false;
-        m_storage.Data.resize(0);
-        m_size = 0;
-    }
-
-    void MultiSelection::applyRequests(ImGuiMultiSelectIO* multiSelectIo, std::vector<ITreeItem::Ptr>& items, int items_count) {
-
-        for(auto& request: multiSelectIo -> Requests) {
-            if (request.Type == ImGuiSelectionRequestType_Clear)
-                clear();
-            if (request.Type == ImGuiSelectionRequestType_SelectAll)
-            {
-                m_storage.Data.resize(0);
-                m_storage.Data.reserve(items_count);
-                for(auto& item: items)
-                    addItem(AdapterIndexToStorageId(this, item));
-
-                m_multiItemCallback(items);
-            }
-            if (request.Type == ImGuiSelectionRequestType_SetRange) {
-                std::vector<ITreeItem::Ptr> rangeItems{};
-
-                auto firstFound = std::find_if(items.begin(), items.end(),
-                                               [&request](const ITreeItem::Ptr& ptr) {
-                    return ptr -> getID() == static_cast<UUID>(request.RangeFirstItem);
-                });
-
-                auto lastFound = std::find_if(items.begin(), items.end(),
-                                              [&request](const ITreeItem::Ptr& ptr) {
-                    return ptr -> getID() == static_cast<UUID>(request.RangeLastItem);
-                });
-
-                if(lastFound != items.end()) {
-                    for(; firstFound <= lastFound; ++firstFound) {
-                        updateItem(*firstFound, request.RangeSelected);
-                        rangeItems.push_back(*firstFound);
-                    }
-                }
-                else
-                    updateItem(*firstFound, request.RangeSelected);
-
-
-                if(request.RangeFirstItem != request.RangeLastItem)
-                    m_multiRangeItemCallback(rangeItems, request.RangeSelected);
-            }
-        }
-
-    }
-
-    ITreeItem::Ptr MultiSelection::processDeletionPreLoop(ImGuiMultiSelectIO* ms_io, int itemToFocus) {
-        return nullptr;
-    }
-
-    void MultiSelection::processDeletionPostLoop(ImGuiMultiSelectIO* ms_io, std::vector<ITreeItem::Ptr>& items, int itemToFocus) {
-
-    }
-
-    bool MultiSelection::hasObjectsToDelete() const {
-        return !m_queryDeletion && !m_storage.Data.empty();
-    }
-
-    MultiSelection m_multiSelection;
-
-    ITreeItem::~ITreeItem() = default;
 
     bool TreeHierarchy::deleteItem(ITreeItem::Ptr treeItem) {
         auto found = std::find_if(m_items.begin(), m_items.end(),
@@ -197,7 +60,110 @@ namespace editor {
                                       return item == treeItem;
                                   });
         m_deletePendingItems.emplace_back(*found);
+        m_multiSelection.setQueueDeletion();
         return true;
+    }
+
+
+    bool TreeHierarchy::addOnSelectCallback(ItemCallback&& callback) {
+        if(callback)
+            m_selectCallback = std::move(callback);
+        else
+            return false;
+        return true;
+    }
+
+    bool TreeHierarchy::addOnCallback(ItemCallback&& callback) {
+        if(callback)
+            m_callback = std::move(callback);
+        else
+            return false;
+        return true;
+    }
+
+    bool TreeHierarchy::addOnReorderCallback(ReorderItemCallback&& callback) {
+        if(callback)
+            m_reorderCallback = std::move(callback);
+        else
+            return false;
+        return true;
+    }
+
+    bool TreeHierarchy::addOnMakeChildCallback(ReorderItemCallback&& callback) {
+        if(callback)
+            m_makeAsChildCallback = std::move(callback);
+        else
+            return false;
+        return true;
+    }
+
+    bool TreeHierarchy::addOnStopBeChildCallback(ReorderItemCallback&& callback) {
+        if(callback)
+            m_removeAsChildCallback = std::move(callback);
+        else
+            return false;
+        return true;
+    }
+
+    bool TreeHierarchy::addMultiSelectCallback(MultiItemCallback&& callback) {
+        if(callback)
+            m_multiItemCallback = std::move(callback);
+        else
+            return false;
+        m_multiSelection.setMultiItemCallback(std::move(m_multiItemCallback));
+        return true;
+    }
+
+    bool TreeHierarchy::addMultiSelectRangeCallback(MultiItemRangeCallback&& callback) {
+        if(callback)
+            m_multiItemRangeCallback = std::move(callback);
+        else
+            return false;
+        m_multiSelection.setMultiItemRangeCallback(std::move(m_multiItemRangeCallback));
+        return true;
+    }
+
+
+    void TreeHierarchy::setBefore(ITreeItem::Ptr source, ITreeItem::Ptr target) {
+        auto sourceIter = std::find_if(m_items.begin(), m_items.end(), [&source](ITreeItem::Ptr item) {
+            return item -> m_id == source -> m_id;
+        });
+
+        auto targetIter = std::find_if(m_items.begin(), m_items.end(), [&target](ITreeItem::Ptr item) {
+            return item -> m_id == target -> m_id;
+        });
+
+        auto sourceOldDistance = std::distance(m_items.begin(), sourceIter);
+        auto targetOldDistance = std::distance(m_items.begin(), targetIter);
+
+        if(sourceOldDistance > targetOldDistance) {
+            /// insert before remove last
+            m_insertItems.push_back(std::make_tuple(targetIter, source, ReorderDeleteType::Last));
+        }
+        else if (sourceOldDistance < targetOldDistance) {
+            m_insertItems.push_back(std::make_tuple(targetIter, source, ReorderDeleteType::First));
+        }
+    }
+
+    void TreeHierarchy::insertItem(ITreeItem::Ptr source, ITreeItem::Ptr anchor, bool first, bool isChained ) {
+
+        if(first) {
+            m_setItems.push_back(std::make_tuple(m_items.begin(), source, false, nullptr));
+        }
+        else {
+
+            if(!isChained) {
+                auto anchorFound = std::find_if(m_items.begin(), m_items.end(), [&anchor](ITreeItem::Ptr item) {
+                    return item -> m_id == anchor -> m_id;
+                });
+                m_setItems.push_back(std::make_tuple(anchorFound, source, false, nullptr));
+            }
+            else {
+                m_setItems.push_back(std::make_tuple(m_items.end(), source, true, anchor));
+            }
+
+        }
+
     }
 
     void TreeHierarchy::render() {
@@ -205,8 +171,20 @@ namespace editor {
             auto iter = std::get<0>(item);
             if(iter == m_items.begin())
                 m_items.insert(iter, std::get<1>(item));
-            else
-                m_items.insert(iter - 1, std::get<1>(item));
+            else {
+                bool isChained = std::get<2>(item);
+                if(!isChained) {
+                    m_items.insert(std::next(iter), std::get<1>(item));
+                }
+                else {
+                    auto anchor = std::get<3>(item);
+                    auto prevFound = std::find_if(m_items.begin(), m_items.end(),
+                                                  [&anchor](auto item) {
+                        return item -> m_id == anchor -> m_id;
+                    });
+                    m_items.insert(std::next(prevFound), std::get<1>(item));
+                }
+            }
         }
         m_setItems.clear();
 
@@ -215,13 +193,15 @@ namespace editor {
             m_items.insert(std::get<0>(item), source);
 
             if(std::get<2>(item) == ReorderDeleteType::Last) {
-                auto found = util::find_last_if(m_items.begin(), m_items.end(), [&source](ITreeItem::Ptr item) {
+                auto found = util::find_last_if(m_items.begin(), m_items.end(),
+                                                [&source](ITreeItem::Ptr item) {
                     return item -> m_id == source->m_id;
                 });
                 m_items.erase(found);
             }
             else if(std::get<2>(item) == ReorderDeleteType::First) {
-                auto found = util::find_first_if(m_items.begin(), m_items.end(), [&source](ITreeItem::Ptr item) {
+                auto found = util::find_first_if(m_items.begin(), m_items.end(),
+                                                 [&source](ITreeItem::Ptr item) {
                     return item -> m_id == source -> m_id;
                 });
                 m_items.erase(found);
@@ -244,23 +224,19 @@ namespace editor {
         m_additemsBuffer.clear();
 
 
-
-        m_multiSelection.setMultiItemCallback(std::move(m_multiItemCallback));
-        m_multiSelection.setMultiItemRangeCallback(std::move(m_multiItemRangeCallback));
-
         static ImGuiMultiSelectFlags flags = ImGuiMultiSelectFlags_None | ImGuiMultiSelectFlags_ClearOnEscape;
 
         if(ImGui::TreeNodeEx(m_name.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
 
             ImGuiMultiSelectIO* ms_io = ImGui::BeginMultiSelect(flags);
-            m_multiSelection.applyRequests(ms_io, m_items, m_items.size());
+            m_multiSelection.applyRequests(ms_io, m_items);
 
-            const bool wantDelete = m_multiSelection.hasObjectsToDelete()
-                    && ImGui::IsWindowFocused() && ImGui::IsKeyPressed(ImGuiKey_Delete);
+            const bool wantDelete = m_multiSelection.hasQueryDeletion() || ( !m_multiSelection.empty()
+                            && ImGui::IsWindowFocused() && ImGui::IsKeyPressed(ImGuiKey_Delete));
             ITreeItem::Ptr item_curr_idx_to_focus = nullptr;
 
             if(wantDelete) {
-               item_curr_idx_to_focus = m_multiSelection.processDeletionPreLoop(ms_io, -1);
+               item_curr_idx_to_focus = m_multiSelection.processDeletionPreLoop(ms_io, m_items);
             }
 
             for(auto item: m_items) {
@@ -270,8 +246,7 @@ namespace editor {
                     node_flags |= ((m_selectedID == item -> getID()
                             && m_childSelectedID == NO_INDEX) ? ImGuiTreeNodeFlags_Selected : 0);
                     node_flags |=  ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_DefaultOpen;
-                    bool node_open = ImGui::TreeNodeEx((void*)(intptr_t)item -> m_id, node_flags,
-                                                       item -> m_name -> c_str());
+                    bool node_open = ImGui::TreeNodeEx(item -> m_name -> c_str(), node_flags);
 
                     auto& childrens = item -> getChildrens();
 
@@ -297,7 +272,7 @@ namespace editor {
                                 if(payload -> IsDataType(m_playloadIdentifier.c_str())) {
                                     UUID id = *static_cast<UUID*>(payload -> Data);
 #ifdef _WIN32
-                                    RB_EDITOR_INFO("Treehierachy: got item with ID = {0}", id);
+                                    RB_EDITOR_INFO("TreeHierarchy: got item with ID = {0}", id);
 #else
                                     // TODO(a.raag) fmt don't support UUID Correctly
 #endif
@@ -448,10 +423,10 @@ namespace editor {
             }
 
             ms_io = ImGui::EndMultiSelect();
-            m_multiSelection.applyRequests(ms_io, m_items, m_items.size());
+            m_multiSelection.applyRequests(ms_io, m_items);
 
             if(wantDelete) {
-                m_multiSelection.processDeletionPostLoop(ms_io, m_items, -1);
+                m_multiSelection.processDeletionPostLoop(ms_io, m_items, item_curr_idx_to_focus);
             }
 
             ImGui::TreePop();
@@ -499,7 +474,6 @@ namespace editor {
             m_childSelectedID = NO_INDEX;
         }
 
-       // m_multiSelection.clear();
         m_multiSelection.updateItem(item, true);
     }
 

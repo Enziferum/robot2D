@@ -32,6 +32,7 @@ source distribution.
 #include <editor/commands/DuplicateCommand.hpp>
 #include <editor/commands/DeleteEntitiesCommand.hpp>
 #include "editor/commands/PasteCommand.hpp"
+#include "editor/async/ExportTask.hpp"
 
 namespace {
     const std::string scenePath = "assets/scenes";
@@ -62,7 +63,8 @@ namespace editor {
             m_selectedEntities.emplace_back(message.entity);
         });
 
-        m_messageDispatcher.onMessage<PrefabAssetModificatedMessage>(MessageID::PrefabAssetModificated, BIND_CLASS_FN(
+        m_messageDispatcher.onMessage<PrefabAssetModificatedMessage>(MessageID::PrefabAssetModificated,
+                                                                     BIND_CLASS_FN(
                 prefabModificated));
     }
 
@@ -90,6 +92,10 @@ namespace editor {
             return;
         }
         m_activeScene = m_sceneManager.getActiveScene();
+
+        m_activeScene -> createMainCamera();
+        m_mainCameraEntity = m_activeScene -> getEntities().back();
+        m_presenter.setMainCameraEntity(m_mainCameraEntity);
         m_router.openScene(m_activeScene, m_currentProject -> getPath());
     }
 
@@ -109,6 +115,7 @@ namespace editor {
         TaskQueue::GetQueue() -> addAsyncTask<SceneLoadTask>(loadLambda, m_sceneManager, project, scenePath, this);
     }
 
+    /// TODO(a.raag): if scene don't have entities create main camera ???
     void EditorLogic::openScene(const OpenSceneMessage& message) {
         auto path = m_currentProject -> getPath();
         auto scenePath = combinePath(path, message.path);
@@ -174,9 +181,19 @@ namespace editor {
     void EditorLogic::loadSceneCallback() {
         m_presenter.switchState(EditorState::Edit);
         m_activeScene = m_sceneManager.getActiveScene();
+        m_presenter.setMainCameraEntity({});
 
         for(auto& entity: m_activeScene -> getEntities()) {
             loadAssetsByEntity(entity);
+            if(entity.hasComponent<CameraComponent>()) {
+                auto& cameraComponent = entity.getComponent<CameraComponent>();
+                if(cameraComponent.isPrimary) {
+                    m_mainCameraEntity = entity;
+                    m_presenter.setMainCameraEntity(m_mainCameraEntity);
+                }
+            }
+
+
             auto& ts = entity.getComponent<TransformComponent>();
             for(auto child: ts.getChildren())
                 loadAssetsByEntity(child);
@@ -518,6 +535,23 @@ namespace editor {
                 }
             }
         }
+    }
+
+    robot2D::vec2f EditorLogic::getMainCameraPosition() const {
+        auto& cameraComponent = m_mainCameraEntity.getComponent<TransformComponent>();
+        return cameraComponent.getPosition();
+    }
+
+    void EditorLogic::setMainCamera(robot2D::ecs::Entity cameraEntity) {
+        m_selectedEntities.clear();
+        m_selectedEntities.emplace_back(cameraEntity);
+    }
+
+    void EditorLogic::exportProject(const ExportOptions& exportOptions) {
+        auto queue = TaskQueue::GetQueue();
+        queue -> addAsyncTask<ExportTask>([](const ExportTask& exportTask) {
+
+        }, exportOptions);
     }
 
     //////////////////////////////////////// UIInteractor ////////////////////////////////////////

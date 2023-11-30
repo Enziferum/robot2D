@@ -32,7 +32,7 @@ source distribution.
 #include <editor/UIInteractor.hpp>
 #include <editor/EditorCamera.hpp>
 #include <editor/Guizmo2D.hpp>
-#include <editor/Collider.hpp>
+#include <editor/CameraManipulator.hpp>
 #include <editor/MessageDispather.hpp>
 #include <editor/SelectionCollider.hpp>
 
@@ -58,7 +58,7 @@ namespace editor {
                       robot2D::MessageBus& messageBus,
                       MessageDispatcher& messageDispatcher,
                       Guizmo2D& guizmo2D,
-                      Collider& collider,
+                      CameraManipulator& collider,
                       SelectionCollider& selectionCollider);
         ~ViewportPanel() override = default;
 
@@ -80,7 +80,7 @@ namespace editor {
         IEditorCamera::Ptr m_editorCamera;
         robot2D::MessageBus& m_messageBus;
         MessageDispatcher& m_messageDispatcher;
-        Collider& m_CameraCollider;
+        CameraManipulator& m_CameraCollider;
         SelectionCollider& m_selectionCollider;
 
         robot2D::ResourceHandler<robot2D::Texture, IconType> m_icons;

@@ -19,9 +19,11 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include <editor/Macro.hpp>
-#include <editor/Collider.hpp>
 #include <robot2D/Core/Window.hpp>
+#include <editor/Macro.hpp>
+#include <editor/CameraManipulator.hpp>
+#include <editor/EditorResourceManager.hpp>
+#include <editor/Messages.hpp>
 
 namespace editor {
 
@@ -29,18 +31,34 @@ namespace editor {
         constexpr float sizeStep = 0.1f;
         constexpr float minSize = 1.f;
         constexpr float pixelPerStep = 500.f;
-
-
+        constexpr robot2D::vec2f minRectSize = {178, 100};
+        constexpr robot2D::vec2f movieButtonSize = {20.f, 20.f};
         constexpr robot2D::vec2f qSize = {6, 6};
     }
 
-    Collider::Collider() {
+    CameraManipulator::CameraManipulator(robot2D::MessageBus& messageBus): m_messageBus{messageBus}
+    {
         m_eventBinder.bindEvent(robot2D::Event::EventType::MousePressed, BIND_CLASS_FN(onMousePressed));
         m_eventBinder.bindEvent(robot2D::Event::EventType::MouseReleased, BIND_CLASS_FN(onMouseReleased));
         m_eventBinder.bindEvent(robot2D::Event::EventType::MouseMoved, BIND_CLASS_FN(onMouseMoved));
 
-        m_aabb.width = 178;
-        m_aabb.height = 100;
+        auto resourceManager = EditorResourceManager::getManager();
+        if(!resourceManager -> hasTexture(EditorResourceID::Movie)) {
+            if(!resourceManager -> loadFromFile(EditorResourceID::Movie, "movie.png")) {
+                ///
+            }
+        }
+
+        auto textureSize = resourceManager -> getTexture(EditorResourceID::Movie).getSize();
+        m_movieSprite.setTexture(resourceManager -> getTexture(EditorResourceID::Movie),
+                {0, 0,
+                 static_cast<int>(textureSize.x),
+                 static_cast<int>(textureSize.y)}
+        );
+        m_movieSprite.setSize(movieButtonSize);
+
+        m_aabb.width = minRectSize.x;
+        m_aabb.height = minRectSize.y;
 
 
         moveQ[0].size = qSize;
@@ -54,31 +72,37 @@ namespace editor {
         moveWalls[3].color = borderColor;
     }
 
-    void Collider::handleEvents(const robot2D::Event& event) {
+    void CameraManipulator::handleEvents(const robot2D::Event& event) {
         m_eventBinder.handleEvents(event);
     }
 
-    void Collider::onMousePressed(const robot2D::Event& event) {
+
+    void CameraManipulator::onMousePressed(const robot2D::Event& event) {
         if(event.type == robot2D::Event::MousePressed) {
             m_leftMousePressed = true;
             robot2D::vec2f pressedPoint{event.mouse.x, event.mouse.y};
             pressedPoint = m_camera -> convertPixelToCoords(pressedPoint);
 
+
+            if(m_movieSprite.getGlobalBounds().contains(pressedPoint)) {
+                m_buttonCallback(m_manipulatedEntity);
+            }
+
             int index = 0;
             for(auto& quad: moveQ) {
                 auto frame = quad.getFrame();
                 if(frame.contains(pressedPoint)) {
-                    auto botPoint = frame.botPoint();
                     m_pressedPoint = pressedPoint;
                     m_selectedQuad = index;
                     return;
                 }
                 ++index;
             }
+
         }
     }
 
-    void Collider::onMouseReleased(const robot2D::Event& event) {
+    void CameraManipulator::onMouseReleased(const robot2D::Event& event) {
         if(event.type == robot2D::Event::MouseReleased) {
             m_leftMousePressed = false;
             m_pressedPoint = {};
@@ -86,77 +110,74 @@ namespace editor {
         }
     }
 
-    void Collider::onMouseMoved(const robot2D::Event& event) {
+    void CameraManipulator::onMouseMoved(const robot2D::Event& event) {
+        if(event.type != robot2D::Event::MouseMoved || !m_leftMousePressed)
+            return;
 
-        if(event.type == robot2D::Event::MouseMoved) {
+        robot2D::vec2f moveVector {
+            event.move.x,
+            event.move.y
+        };
 
-            robot2D::vec2f moveVector {
-                event.move.x,
-                event.move.y
-            };
+        moveVector = m_camera -> convertPixelToCoords(moveVector);
+        float diffSize = m_size;
 
-            moveVector = m_camera -> convertPixelToCoords(moveVector);
+        robot2D::vec2f diff = moveVector - m_pressedPoint;
+        m_pressedPoint = moveVector;
 
-            if(!m_leftMousePressed)
-                return;
-
-           // auto frame = quad.getFrame();
-            float diffSize = m_size;
-
-            robot2D::vec2f diff = moveVector - m_pressedPoint;
-            m_pressedPoint = moveVector;
-
-            if(m_selectedQuad == 0) {
-                if(diff.y < 0 ) {
-                    diffSize += sizeStep;
-                }
-                else if(diff.y > 0 && (diffSize - sizeStep >= minSize)) {
-                    diffSize -= sizeStep;
-                }
+        if(m_selectedQuad == 0) {
+            if(diff.y < 0 ) {
+                diffSize += sizeStep;
             }
-
-            if(m_selectedQuad == 1) {
-                if(diff.x < 0 ) {
-                    diffSize += sizeStep;
-                }
-                else if(diff.x > 0 && (diffSize - sizeStep >= minSize)) {
-                    diffSize -= sizeStep;
-                }
+            else if(diff.y > 0 && (diffSize - sizeStep >= minSize)) {
+                diffSize -= sizeStep;
             }
-
-            if(m_selectedQuad == 2) {
-                if(diff.x > 0) {
-                    diffSize += sizeStep;
-                }
-                else if(diff.x < 0 && (diffSize - sizeStep >= minSize)) {
-                    diffSize -= sizeStep;
-                }
-            }
-
-            if(m_selectedQuad == 3) {
-                if(diff.y > 0) {
-                    diffSize += sizeStep;
-                }
-                else if(diff.y < 0 && (diffSize - sizeStep >= minSize)) {
-                    diffSize -= sizeStep;
-                }
-            }
-
-            if(diffSize == 0.f)
-                return;
-
-            m_needRecalculate = true;
-            m_size = diffSize;
         }
+
+        if(m_selectedQuad == 1) {
+            if(diff.x < 0 ) {
+                diffSize += sizeStep;
+            }
+            else if(diff.x > 0 && (diffSize - sizeStep >= minSize)) {
+                diffSize -= sizeStep;
+            }
+        }
+
+        if(m_selectedQuad == 2) {
+            if(diff.x > 0) {
+                diffSize += sizeStep;
+            }
+            else if(diff.x < 0 && (diffSize - sizeStep >= minSize)) {
+                diffSize -= sizeStep;
+            }
+        }
+
+        if(m_selectedQuad == 3) {
+            if(diff.y > 0) {
+                diffSize += sizeStep;
+            }
+            else if(diff.y < 0 && (diffSize - sizeStep >= minSize)) {
+                diffSize -= sizeStep;
+            }
+        }
+
+        if(diffSize == 0.f)
+            return;
+
+        m_needRecalculate = true;
+        m_size = diffSize;
     }
 
-    void Collider::setSize(float size) {
+
+    void CameraManipulator::setSize(float size) {
         m_needRecalculate = true;
         m_size = size;
     }
 
-    void Collider::recalculateRect(robot2D::vec2f mousePos, float dt) {
+    void CameraManipulator::recalculateRect(robot2D::vec2f mousePos, float dt) {
         float diffSize = m_size;
+        robot2D::vec2f aspectCoof{16/9, 1};
+
 
         mousePos = m_camera -> convertPixelToCoords(mousePos);
         robot2D::vec2f diff = mousePos - m_pressedPoint;
@@ -219,6 +240,10 @@ namespace editor {
         m_needRecalculate = false;
         m_lastSize = m_size;
 
+
+
+
+
         moveQ[0].position = {
                 ( m_aabb.lx + m_aabb.width / 2.F ) - qSize.x / 2.F,
                 m_aabb.ly - qSize.y / 2.F
@@ -253,6 +278,42 @@ namespace editor {
 
         moveWalls[3].position = robot2D::vec2f(m_aabb.lx + m_aabb.width, m_aabb.ly);
         moveWalls[3].size = robot2D::vec2f(borderSize, m_aabb.height);
+    }
+
+    void CameraManipulator::draw(robot2D::RenderTarget& target, robot2D::RenderStates states) const {
+        if(!m_manipulatedEntity)
+            return;
+
+        std::array<robot2D::Transform, 4> quads;
+        quads[0].translate(m_aabb.lx, m_aabb.ly);
+        quads[0].scale(m_aabb.width, borderSize);
+
+        quads[1].translate(m_aabb.lx, m_aabb.ly);
+        quads[1].scale(borderSize, m_aabb.height);
+
+        quads[2].translate(m_aabb.lx, m_aabb.ly + m_aabb.height);
+        quads[2].scale(m_aabb.width, borderSize);
+
+        quads[3].translate(m_aabb.lx + m_aabb.width, m_aabb.ly);
+        quads[3].scale(borderSize, m_aabb.height);
+
+
+
+        for(const auto& wall: moveWalls)
+            target.draw(wall);
+
+        target.draw(m_movieSprite);
+
+        if(!m_showDots)
+            return;
+        
+        moveQ[0].color = (m_selectedQuad == static_cast<int>(SelectQuad::Top) ? robot2D::Color::Yellow: robot2D::Color::White);
+        moveQ[1].color = (m_selectedQuad == static_cast<int>(SelectQuad::Left) ? robot2D::Color::Yellow: robot2D::Color::White);
+        moveQ[2].color = (m_selectedQuad == static_cast<int>(SelectQuad::Right) ? robot2D::Color::Yellow: robot2D::Color::White);
+        moveQ[3].color = (m_selectedQuad == static_cast<int>(SelectQuad::Bottom) ? robot2D::Color::Yellow: robot2D::Color::White);
+
+        for(const auto& q: moveQ)
+            target.draw(q);
     }
 
 }

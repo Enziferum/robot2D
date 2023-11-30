@@ -21,11 +21,72 @@ source distribution.
 
 #include <robot2D/Core/Window.hpp>
 #include <robot2D/Util/Logger.hpp>
+
 #include <editor/Guizmo2D.hpp>
 #include <editor/Macro.hpp>
+#include <editor/EditorResourceManager.hpp>
 
 namespace editor {
     DebugDrawable::~DebugDrawable() =  default;
+
+
+
+    robot2D::vec2f Guizmo2D::Manipulator::getSize() const {
+        if(m_axis == Axis::BOTH)
+            return {m_rect.width, m_rect.height};
+        else
+            return {m_sprite.getGlobalBounds().width, m_sprite.getGlobalBounds().height};
+    }
+
+    bool Guizmo2D::Manipulator::isPressed(robot2D::vec2f point) {
+        robot2D::FloatRect rect;
+        if(m_axis != Axis::BOTH)
+            rect = m_sprite.getGlobalBounds();
+        else
+            rect = m_rect;
+        m_active = rect.contains(point);
+        if(m_active)
+            m_offset = point - rect.topPoint();
+        return m_active;
+    }
+
+    bool Guizmo2D::Manipulator::active() const { return m_active; }
+
+    void Guizmo2D::Manipulator::setPosition(const robot2D::vec2f& position) {
+        m_rect.lx = position.x;
+        m_rect.ly = position.y;
+        m_sprite.setPosition({position.x, position.y});
+    }
+
+    void Guizmo2D::Manipulator::setColor(robot2D::Color color) { m_color = color; }
+
+    void Guizmo2D::Manipulator::moveX(float offset) {
+        auto pos = m_sprite.getPosition();
+        m_sprite.setPosition({pos.x + offset, pos.y});
+        m_rect.lx += offset;
+    }
+
+    void Guizmo2D::Manipulator::moveY(float offset) {
+        auto pos = m_sprite.getPosition();
+        m_sprite.setPosition({pos.x, pos.y  + offset});
+        m_rect.ly += offset;
+    }
+
+    void Guizmo2D::Manipulator::draw(robot2D::RenderTarget& target, [[maybe_unused]] robot2D::RenderStates states) const
+    {
+        if(m_axis != Axis::BOTH) {
+            target.draw(m_sprite);
+        }
+        else {
+            robot2D::Transform transform;
+            transform.translate({m_rect.lx, m_rect.ly});
+            transform.scale(m_rect.width, m_rect.height);
+            states.color = m_color;
+            states.transform *= transform;
+            target.draw(states);
+        }
+    }
+
 
     Guizmo2D::Guizmo2D():
             m_xAxisManipulator{Manipulator::Axis::X, robot2D::Color::Red},
@@ -42,6 +103,8 @@ namespace editor {
             return;
         m_eventBinder.handleEvents(event);
     }
+
+    void Guizmo2D::update() {}
 
     void Guizmo2D::setIsShow(bool flag) {
         m_isShown = flag;
@@ -161,7 +224,7 @@ namespace editor {
         }
     }
 
-    void Guizmo2D::update() {}
+
 
 
 
@@ -213,6 +276,14 @@ namespace editor {
 
     }
 
+    void Guizmo2D::setManipulated(std::vector<robot2D::Transformable* > transformables) {
+        robot2D::vec2f minLeftPoint;
+        robot2D::vec2f maxRightPoint;
+
+
+
+    }
+
     void Guizmo2D::setOperationType(Guizmo2D::Operation type) {
         m_operation = type;
         switch(m_operation) {
@@ -247,9 +318,19 @@ namespace editor {
     }
 
     void Guizmo2D::setCamera(IEditorCamera::Ptr camera) {
-        m_manipulatorTexture.loadFromFile("res/icons/gizmos.png");
+        auto resourceManager = EditorResourceManager::getManager();
+        if(!resourceManager -> hasTexture(EditorResourceID::Manipulator)) {
+            if(!resourceManager -> loadFromFile(EditorResourceID::Manipulator, "gizmos.png")) {
+                RB_EDITOR_ERROR("Guizmo2D: Can't load manipulator's texture");
+                /// TODO(a.raag): throw error
+            }
+        }
+
+
+        m_manipulatorTexture = resourceManager -> getTexture(EditorResourceID::Manipulator);
         m_camera = camera;
         setOperationType(m_operation);
     }
+
 
 }

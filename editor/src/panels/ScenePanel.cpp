@@ -446,21 +446,47 @@ namespace editor {
         auto& uiItems = m_treeHierarchy.getItems();
 
         for(auto entity: selectedEntities) {
-            for(auto uiIter = uiItems.begin(); uiIter < uiItems.end(); ++uiIter) {
-                auto uiEntity = GET_ENTITY((*uiIter));
-                if(!uiEntity -> destroyed() && *uiEntity == entity) {
-                    if(!m_treeHierarchy.deleteItem(*uiIter)) {
-                        RB_EDITOR_ERROR("TreeHierarchy can't delete item.", (*uiIter) -> getID());
-                    }
 
-                    if(uiIter == uiItems.begin())
-                        restoreUiInformation.push(*uiIter, *uiIter, true);
+            auto found = std::find_if(uiItems.begin(), uiItems.end(), [&entity, this](ITreeItem::Ptr item) {
+                auto uiEntity = GET_ENTITY(item);
+                if(!uiEntity -> destroyed() && *uiEntity == entity) {
+                    if(!m_treeHierarchy.deleteItem(item)) {
+                        RB_EDITOR_ERROR("TreeHierarchy can't delete item.", item -> getID());
+                    }
+                    return true;
+                }
+                else
+                    return false;
+            });
+
+            if(!restoreUiInformation.hasItems()) {
+
+                if(found == uiItems.begin()) {
+                    restoreUiInformation.push(*found, nullptr, true);
+                }
+                else {
+                    auto prev = std::prev(found);
+                    restoreUiInformation.push(*found, *prev, false);
+                }
+
+            }
+            else {
+                auto lastInfo = restoreUiInformation.getLast();
+                if(lastInfo.target == *(std::prev(found))) {
+                    restoreUiInformation.push(*found, lastInfo.target, false, true);
+                }
+                else {
+                    if(found == uiItems.begin()) {
+                        restoreUiInformation.push(*found, nullptr, true);
+                    }
                     else {
-                        auto prev = uiIter - 1;
-                        restoreUiInformation.push(*uiIter, *prev, false);
+                        auto prev = std::prev(found);
+                        restoreUiInformation.push(*found, *prev, false);
                     }
                 }
+
             }
+
         }
 
         return restoreUiInformation;
@@ -468,7 +494,7 @@ namespace editor {
 
     void ScenePanel::restoreEntitiesOnUI(DeletedEntitiesRestoreUIInformation& restoreUiInformation) {
         for(auto& item: restoreUiInformation.anchorItems) {
-            m_treeHierarchy.insertItem(item.target, item.anchor, item.first);
+            m_treeHierarchy.insertItem(item.target, item.anchor, item.first, item.isChained);
         }
     }
 

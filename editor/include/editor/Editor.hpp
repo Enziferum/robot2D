@@ -45,7 +45,7 @@ source distribution.
 #include "EventBinder.hpp"
 #include "Guizmo2D.hpp"
 #include "SceneGrid.hpp"
-#include "Collider.hpp"
+#include "CameraManipulator.hpp"
 #include "PopupConfiguration.hpp"
 #include "SceneRender.hpp"
 #include "SelectionCollider.hpp"
@@ -84,6 +84,7 @@ namespace editor {
 
         virtual void findSelectedEntitiesOnUI(std::vector<robot2D::ecs::Entity>& entities) = 0;
         virtual void showPopup(PopupConfiguration* configuration) = 0;
+        virtual void setMainCameraEntity(robot2D::ecs::Entity entity) = 0;
     };
 
     class Editor: public IEditor, public PopupDelegate {
@@ -109,6 +110,7 @@ namespace editor {
         void clearSelectionOnUI() override;
         DeletedEntitiesRestoreUIInformation removeEntitiesOnUI(std::vector<robot2D::ecs::Entity>& selectedEntities) override;
         void restoreEntitiesOnUI(DeletedEntitiesRestoreUIInformation& restoreUiInformation) override;
+        virtual void setMainCameraEntity(robot2D::ecs::Entity entity) override;
         /////////////////////////// IEditor ///////////////////////////
 
     private:
@@ -163,7 +165,7 @@ namespace editor {
 
         ShortCutManager<EditorShortCutType> m_shortcutManager;
         SceneGrid m_sceneGrid;
-        Collider m_cameraBox;
+        CameraManipulator m_cameraManipulator;
         SelectionCollider m_selectionCollider;
 
         bool m_leftMousePressed{false};
