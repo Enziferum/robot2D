@@ -33,6 +33,11 @@ namespace robot2D {
         RGBA = 4
     };
 
+    enum class ImageParameter {
+        Repeat = 0,
+        ClampToEdge
+    };
+
     /**
      * \brief Stores Pixel Buffer in independ format.
      * \details Under robot2D::Texture using Image.
@@ -62,6 +67,8 @@ namespace robot2D {
         /// Image has several variant of channels.
         const ImageColorFormat& getColorFormat() const;
 
+        const ImageParameter& getImageParameter() const;
+
         /// Returns pixelBuffer which not possible to modificate.
         const std::vector<std::uint8_t>& getBuffer() const;
 
@@ -69,7 +76,8 @@ namespace robot2D {
         std::uint8_t* getBuffer();
 
         /// Creating image from PixelBuffer and specify Color channels directly.
-        bool create(const vec2u& size, const void* data, const ImageColorFormat&);
+        bool create(const vec2u& size, const void* data, const ImageColorFormat&,
+                    const ImageParameter& parameter = ImageParameter::Repeat);
 
         /// Save onto disk by absolute or relative path.
         bool save(const std::string& path);
@@ -77,6 +85,7 @@ namespace robot2D {
         vec2u m_size;
         std::vector<std::uint8_t> m_pixels;
         ImageColorFormat m_colorFormat = ImageColorFormat::RED;
+        ImageParameter m_imageParameter;
     };
 
 }

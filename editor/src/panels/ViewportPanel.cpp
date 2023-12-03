@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2023
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -22,14 +22,13 @@ source distribution.
 
 #include <filesystem>
 
-#include <imgui/imgui.h>
 #include <robot2D/imgui/Api.hpp>
+#include <imgui/imgui.h>
 
 #include <editor/panels/ViewportPanel.hpp>
 #include <editor/Messages.hpp>
 #include <editor/Components.hpp>
 
-#include "ImGuizmo.h"
 
 #ifdef USE_GLM
 #define GLM_ENABLE_EXPERIMENTAL
@@ -118,63 +117,88 @@ namespace editor {
                 { IconType::Pause, "PauseButton.png" },
                 { IconType::Step, "StepButton.png" },
                 { IconType::Simulate, "SimulateButton.png" },
+                { IconType::Move, "move.png" },
+                { IconType::Scale, "scale.png" },
+                { IconType::Rotate, "rotate.png" },
         };
     }
 
 
     ViewportPanel::ViewportPanel(
-            IUIManager& uiManager,
+            UIInteractor* uiInteractor,
             IEditorCamera::Ptr editorCamera,
             robot2D::MessageBus& messageBus,
-            Scene::Ptr&& scene,
-            Guizmo2D& guizmo2D):
-        IPanel(UniqueType(typeid(ViewportPanel))),
-        m_uiManager{uiManager},
-        m_editorCamera{editorCamera},
-        m_messageBus{messageBus},
-        m_scene(std::move(scene)),
-        m_frameBuffer(nullptr) ,
-        m_panelFocused{false},
-        m_panelHovered{false},
-        m_guizmo2D{guizmo2D}
-        {
+            MessageDispatcher& messageDispatcher,
+            Guizmo2D& guizmo2D,
+            CameraManipulator& collider,
+            SelectionCollider& selectionCollider):
+            IPanel(UniqueType(typeid(ViewportPanel))),
+            m_uiInteractor{uiInteractor},
+            m_editorCamera{editorCamera},
+            m_messageBus{messageBus},
+            m_messageDispatcher{messageDispatcher},
+            m_selectionCollider{selectionCollider},
+            m_frameBuffer(nullptr) ,
+            m_panelFocused{false},
+            m_panelHovered{false},
+            m_guizmo2D{guizmo2D},
+            m_CameraCollider{collider}
+    {
         m_windowOptions = robot2D::WindowOptions {
-                {
-                        {ImGuiStyleVar_WindowPadding, {0, 0}}
-                },
-                {}
+            {
+                {ImGuiStyleVar_WindowPadding, {0, 0}}
+            },
+            {}
         };
         m_windowOptions.flagsMask = ImGuiWindowFlags_NoScrollbar;
-        m_windowOptions.name = "##Viewport";
+        m_windowOptions.name = "Viewport";
 
         for(const auto& [type, name]: iconNames) {
             std::filesystem::path path{iconPath};
             path.append(name);
             if(!m_icons.loadFromFile(type, path.string())) {
                 RB_EDITOR_ERROR("Can't load icon");
+                // TODO(a.raag) throw exception
             }
         }
 
     }
 
+    void ViewportPanel::handleEvents(const robot2D::Event& event) {
+        if(event.type == robot2D::Event::MousePressed && m_panelFocused && m_panelHovered) {
+            auto[mx, my] = ImGui::GetMousePos();
+            mx -= m_ViewportBounds[0].x;
+            my -= m_ViewportBounds[0].y;
+            robot2D::vec2f viewportSize = m_ViewportBounds[1] - m_ViewportBounds[0];
+            my = viewportSize.y - my;
+            int mouseX = (int)mx;
+            int mouseY = (int)my;
+
+            if( !m_guizmo2D.isActive() && !m_CameraCollider.isActive() ) {
+                m_frameBuffer -> Bind();
+                int graphicsEntityID = m_frameBuffer -> readPixel(1, { mouseX, mouseY });
+                m_frameBuffer -> unBind();
+                m_uiInteractor -> getSelectedEntity(graphicsEntityID);
+            }
+        }
+    }
+
+    void ViewportPanel::set(robot2D::FrameBuffer::Ptr frameBuffer) {
+        m_frameBuffer = std::move(frameBuffer);
+        needResetViewport = true;
+    }
 
     void ViewportPanel::update(float deltaTime) {
         auto[mx, my] = ImGui::GetMousePos();
         mx -= m_ViewportBounds[0].x;
         my -= m_ViewportBounds[0].y;
 
-
         robot2D::vec2f viewportSize = m_ViewportBounds[1] - m_ViewportBounds[0];
         my = viewportSize.y - my;
-        int mouseX = (int)mx;
-        int mouseY = (int)my;
 
-        if (mouseX >= 0 && mouseY >= 0 && mouseX < (int)viewportSize.x && mouseY < (int)viewportSize.y)
-        {
-        }
-
-        if(m_panelFocused && m_panelHovered)
+        if(m_panelFocused && m_panelHovered) {
             m_editorCamera -> update({mx, my}, deltaTime);
+        }
     }
 
     void ViewportPanel::render() {
@@ -192,69 +216,95 @@ namespace editor {
             auto ViewPanelSize = ImGui::GetContentRegionAvail();
 
             toolbarOverlay({viewportOffset.x, viewportOffset.y}, {ViewPanelSize.x, ViewPanelSize.y});
+            instrumentBar({viewportOffset.x, viewportOffset.y}, {ViewPanelSize.x, ViewPanelSize.y});
             m_editorCamera -> setViewportBounds({viewportOffset.x, viewportOffset.y
                                                                    + (viewportMaxRegion.y - ViewPanelSize.y)});
-
-
-            if(m_ViewportSize != robot2D::vec2u { ViewPanelSize.x, ViewPanelSize.y}) {
+            if(m_ViewportSize != robot2D::vec2u { ViewPanelSize.x, ViewPanelSize.y} || needResetViewport) {
                 m_ViewportSize = {ViewPanelSize.x, ViewPanelSize.y};
                 m_frameBuffer -> Resize(m_ViewportSize);
                 m_editorCamera -> setViewportSize(m_ViewportSize.as<float>());
-            }
-
-            auto[mx, my] = ImGui::GetMousePos();
-            mx -= m_ViewportBounds[0].x;
-            my -= m_ViewportBounds[0].y;
-            robot2D::vec2f viewportSize = m_ViewportBounds[1] - m_ViewportBounds[0];
-            my = viewportSize.y - my;
-            int mouseX = (int)mx;
-            int mouseY = (int)my;
-
-            if (mouseX >= 0 && mouseY >= 0 && mouseX < (int)viewportSize.x && mouseY < (int)viewportSize.y)
-            {
-                if(ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
-                    int pixelData = m_frameBuffer -> readPixel(1, {mouseX, mouseY});
-                    auto msg = m_messageBus.postMessage<EntitySelection>(EntitySelected);
-                    msg -> entityID = pixelData;
-                }
+                needResetViewport = false;
             }
 
             robot2D::RenderFrameBuffer(m_frameBuffer, m_ViewportSize.as<float>());
-            robot2D::ecs::Entity selectedEntity = m_uiManager.getSelectedEntity();
 
-            int m_GizmoType = 0;
             m_guizmo2D.setIsShow(false);
-            if (selectedEntity && m_GizmoType != -1)
-            {
-                ImGuizmo::SetOrthographic(false);
-                ImGuizmo::SetDrawlist();
+            m_CameraCollider.setIsShownDots(false);
 
-                ImGuizmo::SetRect(m_ViewportBounds[0].x, m_ViewportBounds[0].y,
-                                  m_ViewportBounds[1].x - m_ViewportBounds[0].x,
-                                  m_ViewportBounds[1].y - m_ViewportBounds[0].y);
+            auto& selectedEntities = m_uiInteractor -> getSelectedEntities();
 
-                // Editor camera
-                const robot2D::mat4& cameraProjection = m_editorCamera -> getProjectionMatrix();
-                robot2D::mat4 cameraView = m_editorCamera -> getViewMatrix();
+            if(selectedEntities.size() == 1) {
+                auto& selectedEntity = selectedEntities[0];
+                if(selectedEntity && !selectedEntity.destroyed()) {
+                    // Editor camera
+                    const robot2D::mat4& cameraProjection = m_editorCamera -> getProjectionMatrix();
+                    robot2D::mat4 cameraView = m_editorCamera -> getViewMatrix();
 
-                auto& tc = selectedEntity.getComponent<TransformComponent>();
-                m_guizmo2D.setIsShow(true);
-                m_guizmo2D.setManipulated(&tc);
+                    auto& tc = selectedEntity.getComponent<TransformComponent>();
+                    m_guizmo2D.setIsShow(true);
+                    m_guizmo2D.setManipulated(&tc);
+
+                    if(selectedEntity.hasComponent<CameraComponent>()) {
+                        m_CameraCollider.setIsShownDots(true);
+                        auto& transform = selectedEntity.getComponent<TransformComponent>();
+                        auto position = transform.getPosition();
+                        auto frame = m_CameraCollider.getRect();
+
+                        robot2D::vec2f colliderPosition = {
+                                position.x - frame.width / 2.f,
+                                position.y - frame.height / 2.f,
+                        };
+
+                        // m_CameraCollider.setSize(m_selectedEntity.getComponent<CameraComponent>().orthoSize);
+                        selectedEntity.getComponent<CameraComponent>().size = {frame.width, frame.height};
+                        selectedEntity.getComponent<CameraComponent>().position = frame.topPoint();
+                        selectedEntity.getComponent<CameraComponent>().orthoSize = m_CameraCollider.getSize();
+                    }
+                }
+            }
+            else if(selectedEntities.size() > 1) {
+                std::vector<robot2D::Transformable*> moveTfs;
+                for(auto& entity: selectedEntities) {
+                   if(entity && !entity.destroyed()) {
+                       auto &tc = entity.getComponent<TransformComponent>();
+                       moveTfs.emplace_back(&tc);
+                   }
+                }
+                // m_guizmo2D.setIsShow(true);
+                // m_guizmo2D.setManipulated(&tc);
+            }
+            else {
+                m_guizmo2D.setManipulated(nullptr);
             }
 
-            robot2D::dummyDragDrop("CONTENT_BROWSER_ITEM", [](std::string path){
-                const wchar_t* rawPath = (const wchar_t*)path.c_str();
-                std::filesystem::path scenePath = std::filesystem::path("assets") / rawPath;
-                /// TODO: @a.raag send MessageQueue to open Scene
-            });
-
+            if (ImGui::BeginDragDropTarget())
+            {
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM")) {
+                    const char* data = reinterpret_cast<const char*>(payload -> Data);
+                    if(data) {
+                        std::string payloadString = std::string(data, payload->DataSize);
+                        const wchar_t* rawPath = (const wchar_t*)payloadString.c_str();
+                        std::filesystem::path scenePath = std::filesystem::path("assets") / rawPath;
+                        auto* msg = m_messageBus.postMessage<OpenSceneMessage>(MessageID::OpenScene);
+                        msg -> path = scenePath.string();
+                    }
+                }
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_PREFAB")) {
+                    const char* data = reinterpret_cast<const char*>(payload -> Data);
+                    if(data) {
+                        std::string payloadString = std::string(data, payload->DataSize);
+                        const wchar_t* rawPath = (const wchar_t*)payloadString.c_str();
+                        std::filesystem::path prefabPath = std::filesystem::path("assets") / rawPath;
+                        auto* msg = m_messageBus.postMessage<PrefabLoadMessage>(MessageID::PrefabLoad);
+                        msg -> path = prefabPath.string();
+                    }
+                }
+                ImGui::EndDragDropTarget();
+            }
         });
     }
 
     void ViewportPanel::toolbarOverlay(robot2D::vec2f windowOffset, robot2D::vec2f windowAvailSize) {
-
-        /// TODO(a.raag) centerize buttons ///
-
         static ImGuiWindowFlags window_flags =
                 ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoDocking
                 | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings
@@ -280,21 +330,83 @@ namespace editor {
 
         if (ImGui::Begin("##Toolbar", &p_open, window_flags))
         {
-
+            auto contentSize = ImGui::GetContentRegionAvail();
+            auto buttonSize = ImVec2{20, 20};
+            ImGui::SetCursorPos({(contentSize.x - buttonSize.x) / 2.F, (contentSize.y - buttonSize.y) / 2.F});
             IconType iconType;
-            if(m_scene)
-                iconType = m_scene -> isRunning() ? IconType::Stop : IconType::Play;
+
+
+            if(m_uiInteractor)
+                iconType = m_uiInteractor -> isRunning() ? IconType::Stop : IconType::Play;
             else
                 iconType = IconType::Play;
-            if(robot2D::ImageButton(m_icons[iconType], {20, 20})) {
+            if(robot2D::ImageButton(m_icons[iconType], { buttonSize.x, buttonSize.y })) {
                 auto* msg = m_messageBus.postMessage<ToolbarMessage>(MessageID::ToolbarPressed);
-                msg -> pressedType = m_scene -> isRunning() ? 0 : 1;
+                msg -> pressedType = m_uiInteractor -> isRunning() ? 0 : 1;
             }
 
         }
         ImGui::PopStyleVar(2);
         ImGui::End();
-
     }
+
+    void ViewportPanel::instrumentBar(robot2D::vec2f windowOffset, robot2D::vec2f windowAvailSize) {
+        static ImGuiWindowFlags window_flags =
+                ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoDocking
+                | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings
+                | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoTitleBar
+                | ImGuiWindowFlags_NoScrollbar;
+        static bool p_open = true;
+
+        {
+            const ImGuiViewport* viewport = ImGui::GetWindowViewport();
+            ImVec2 window_pos;
+
+            window_pos = { 40, 40};
+            window_pos.x += windowOffset.x;
+            window_pos.y += windowOffset.y;
+
+            ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always);
+            ImGui::SetNextWindowViewport(viewport -> ID);
+            window_flags |= ImGuiWindowFlags_NoMove;
+        }
+
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1.0f);
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 8.0f);
+
+
+        ImGui::Columns(1, nullptr, false);
+        if (ImGui::Begin("##InstrumentBar", &p_open, window_flags))
+        {
+            auto contentSize = ImGui::GetContentRegionAvail();
+            auto buttonSize = ImVec2{ 30, 30 };
+
+            robot2D::ScopedStyleColor scopedStyleColor(ImGuiCol_Button, robot2D::Color(255.f, 255.f, 255.f, 127.f));
+            ImGui::SetCursorPosX((contentSize.x - buttonSize.x) / 2.F);
+            if(robot2D::ImageButton(m_icons[IconType::Move], { buttonSize.x, buttonSize.y })) {
+                auto* msg = m_messageBus.postMessage<InstrumentMessage>(MessageID::InstrumentPressed);
+                msg -> type = InstrumentMessage::Type::Move;
+
+                m_guizmo2D.setOperationType(Guizmo2D::Operation::Move);
+            }
+            ImGui::SetCursorPosX((contentSize.x - buttonSize.x) / 2.F);
+            if(robot2D::ImageButton(m_icons[IconType::Scale], { buttonSize.x, buttonSize.y })) {
+                auto* msg = m_messageBus.postMessage<InstrumentMessage>(MessageID::InstrumentPressed);
+                msg -> type = InstrumentMessage::Type::Scale;
+                m_guizmo2D.setOperationType(Guizmo2D::Operation::Scale);
+            }
+            ImGui::SetCursorPosX((contentSize.x - buttonSize.x) / 2.F);
+            if(robot2D::ImageButton(m_icons[IconType::Rotate], { buttonSize.x, buttonSize.y })) {
+                auto* msg = m_messageBus.postMessage<InstrumentMessage>(MessageID::InstrumentPressed);
+                msg -> type = InstrumentMessage::Type::Rotate;
+                m_guizmo2D.setOperationType(Guizmo2D::Operation::Rotate);
+            }
+        }
+        ImGui::PopStyleVar(2);
+
+
+        ImGui::End();
+    }
+
 
 }

@@ -76,7 +76,7 @@ namespace robot2D {
             float delta = m_frameClock.restart().asSeconds();
             timeProcessed += delta;
 
-            while (timeProcessed > timePerFrame) {
+            while (timeProcessed >= timePerFrame) {
                 timeProcessed -= timePerFrame;
                 Event event{};
                 while(renderWindow.pollEvents(event)) {

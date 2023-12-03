@@ -5,17 +5,20 @@
 #include <robot2D/Ecs/EntityManager.hpp>
 #include <robot2D/Ecs/Scene.hpp>
 
-class EntityTest : public ::testing::Test {
-protected:
-    void SetUp() override {
-        scene = std::make_unique<robot2D::ecs::Scene>(messageBus);
-    }
+namespace  {
+    class EntityTest : public ::testing::Test {
+    protected:
+        void SetUp() override {
+            scene = std::make_unique<robot2D::ecs::Scene>(messageBus);
+        }
 
-    robot2D::MessageBus messageBus{};
-    std::unique_ptr<robot2D::ecs::Scene> scene;
-};
+        robot2D::MessageBus messageBus{};
+        std::unique_ptr<robot2D::ecs::Scene> scene;
+    };
 
-struct TestComponent {};
+    struct TestComponent {};
+}
+
 
 TEST_F(EntityTest, Ecs_EntityCreate_Test) {
     robot2D::ecs::Entity entity = scene -> createEntity();

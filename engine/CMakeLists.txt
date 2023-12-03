@@ -55,6 +55,9 @@ set(ENGINE_SRC
         ${INCLROOT}/Graphics/RenderAPI.hpp
         ${INCLROOT}/Graphics/Matrix3D.hpp
         ${INCLROOT}/Graphics/Math3D.hpp
+        ${INCLROOT}/Graphics/Font.hpp
+        ${INCLROOT}/Graphics/Text.hpp
+        ${INCLROOT}/Graphics/QuadBatchRender.hpp
 
 
         #Util
@@ -109,6 +112,8 @@ set(ENGINE_SRC ${ENGINE_SRC}
         ${SRCROOT}/Graphics/RenderAPI.cpp
         ${SRCROOT}/Graphics/Matrix3D.cpp
         ${SRCROOT}/Graphics/Math3D.cpp
+        ${SRCROOT}/Graphics/Font.cpp
+        ${SRCROOT}/Graphics/Text.cpp
 
         #Ecs
         ${SRCROOT}/Ecs/Bitmask.cpp

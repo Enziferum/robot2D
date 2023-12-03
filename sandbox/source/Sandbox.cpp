@@ -23,6 +23,7 @@ source distribution.
 /// Scenes ///
 #include <sandbox/Render2DScene.hpp>
 #include <sandbox/LayerScene.hpp>
+#include <sandbox/EditorUIScene.hpp>
 /// Scenes ///
 
 Sandbox::Sandbox():
@@ -38,9 +39,14 @@ void Sandbox::setup() {
 
     LayerScene::Ptr  layerScene = std::make_unique<LayerScene>(*m_window);
     layerScene -> setup();
+
+    sandbox::EditorUIScene::Ptr editorUIScene = std::make_unique<sandbox::EditorUIScene>(*m_window);
+    editorUIScene -> setup();
     //// Put own scenes here /////
 
-    m_scene = std::move(render2DScene);
+    m_gui.setup(*m_window);
+
+    m_scene = std::move(editorUIScene);
 }
 
 void Sandbox::handleEvents(const robot2D::Event& event) {
@@ -48,6 +54,7 @@ void Sandbox::handleEvents(const robot2D::Event& event) {
        event.key.code == robot2D::Key::ESCAPE)
         m_running = false;
     m_scene -> handleEvents(event);
+    m_gui.handleEvents(event);
 }
 
 void Sandbox::update(float dt) {
@@ -57,5 +64,11 @@ void Sandbox::update(float dt) {
 void Sandbox::render() {
     m_window -> clear();
     m_scene -> render();
+    m_scene -> imGuiRender();
+    m_gui.render();
     m_window -> display();
+}
+
+void Sandbox::guiUpdate(float deltaTime) {
+    m_gui.update(deltaTime);
 }

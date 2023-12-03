@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2023
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -27,11 +27,58 @@ source distribution.
 #include <robot2D/Graphics/View.hpp>
 #include <robot2D/Graphics/Matrix3D.hpp>
 #include <robot2D/Graphics/Math3D.hpp>
+#include <robot2D/Graphics/Vertex.hpp>
+#include <robot2D/Graphics/Font.hpp>
+#include <robot2D/Ecs/Entity.hpp>
+
+#include "Uuid.hpp"
+#include "Property.hpp"
 
 namespace editor {
+    struct IDComponent
+    {
+        UUID ID;
+
+        IDComponent() = default;
+        IDComponent(const IDComponent&) = default;
+    };
+
     class TransformComponent: public robot2D::Transformable {
     public:
         ~TransformComponent() override = default;
+        void setPosition(const robot2D::vec2f& pos) override;
+
+        void addChild(robot2D::ecs::Entity);
+        void removeChild(robot2D::ecs::Entity, bool removeFromScene = true);
+        bool hasChildren() const;
+
+        robot2D::FloatRect getLocalBounds() const {
+            float w = std::abs(m_size.x);
+            float h = std::abs(m_size.y);
+            return {0.f, 0.f, w, h};
+        }
+
+        robot2D::FloatRect getGlobalBounds() const {
+            return getTransform().transformRect(getLocalBounds());
+        }
+
+        std::vector<robot2D::ecs::Entity>& getChildren() {
+            return m_children;
+        }
+
+        const std::vector<robot2D::ecs::Entity>& getChildren() const {
+            return m_children;
+        }
+
+        bool isChild() const { return (m_parent != nullptr && m_childID != -1); }
+
+        void removeSelf(bool removeFromScene = true);
+    private:
+        void removeChild(int childID, bool removeFromScene);
+    private:
+        int m_childID = -1;
+        std::vector<robot2D::ecs::Entity> m_children;
+        TransformComponent* m_parent{nullptr};
     };
 
     // TODO: @a.raag add Rotation
@@ -79,10 +126,12 @@ namespace editor {
         std::string m_tag;
     };
 
-    class SpriteComponent final {
+    using quadVertexArray = std::array<robot2D::Vertex, 4>;
+
+    class DrawableComponent final {
     public:
-        SpriteComponent();
-        ~SpriteComponent() = default;
+        DrawableComponent();
+        ~DrawableComponent() = default;
 
         void setTexture(const robot2D::Texture& texture);
         robot2D::Texture& getTexture();
@@ -91,27 +140,108 @@ namespace editor {
 
         void setColor(const robot2D::Color& color);
         const robot2D::Color& getColor() const;
+        bool hasTexture() const { return m_texture != nullptr; }
+
+        void setDepth(int value);
+        int getDepth() const;
+        int& getDepth() { return m_depth; }
+
+
+        void setTexturePath(const std::string& path) { m_texturePath = path; }
+        const std::string& getTexturePath() const { return m_texturePath; }
+
+        void setLayerIndex(unsigned int value);
+        unsigned int getLayerIndex() const;
+
+        void setQuadVertexArray(const quadVertexArray& array);
+        const quadVertexArray& getVertices() const;
+        quadVertexArray& getVertices();
+
+        void setReorderZBuffer(bool flag) { m_needUpdateZbuffer = flag; }
     private:
-        const robot2D::Texture* m_texture;
+        friend class RenderSystem;
+        friend class SceneRender;
+
+        quadVertexArray m_vertices;
+
+        int m_depth{1};
+        unsigned int m_layerIndex{1};
+
+        const robot2D::Texture* m_texture{nullptr};
         robot2D::Color m_color;
+        bool m_needUpdateZbuffer{false};
+        std::string m_texturePath{""};
     };
 
 
-    class CameraComponent final {
+    class SceneCamera
+    {
     public:
-        CameraComponent();
+        enum class ProjectionType { Perspective = 0, Orthographic = 1 };
+    public:
+        SceneCamera();
+        virtual ~SceneCamera() = default;
+
+        void SetPerspective(float verticalFOV, float nearClip, float farClip);
+        void SetOrthographic(float size, float nearClip, float farClip);
+        void SetViewportSize(uint32_t width, uint32_t height);
+
+        float GetOrthographicSize() const { return m_OrthographicSize; }
+        void SetOrthographicSize(float size) { m_OrthographicSize = size; RecalculateProjection(); }
+        float GetOrthographicNearClip() const { return m_OrthographicNear; }
+        void SetOrthographicNearClip(float nearClip) { m_OrthographicNear = nearClip; RecalculateProjection(); }
+        float GetOrthographicFarClip() const { return m_OrthographicFar; }
+        void SetOrthographicFarClip(float farClip) { m_OrthographicFar = farClip; RecalculateProjection(); }
+
+        ProjectionType GetProjectionType() const { return m_ProjectionType; }
+        void SetProjectionType(ProjectionType type) { m_ProjectionType = type; RecalculateProjection(); }
+
+    private:
+        void RecalculateProjection();
+    private:
+        ProjectionType m_ProjectionType = ProjectionType::Orthographic;
+
+        float m_OrthographicSize = 10.0f;
+        float m_OrthographicNear = -1.0f, m_OrthographicFar = 1.0f;
+        float m_AspectRatio = 0.0f;
+    };
+
+
+    struct CameraComponent final {
+    public:
+        enum class AspectRatio {
+            Desktop = 0, Mobile
+        };
+
+
+        CameraComponent() = default;
         ~CameraComponent() = default;
 
-        /// 2D Space Camera ///
-        void setViewport(const robot2D::FloatRect& viewport);
-        robot2D::View& getView() { return m_view; }
-        const robot2D::View& getView() const { return m_view; }
-        float getZoom() const;
 
-        /// Todo Add 3D Space Camera ///
-    private:
-        robot2D::View m_view;
-        robot2D::FloatRect m_actualViewport;
+        robot2D::vec2f getSize() const { return size; }
+        robot2D::vec2f getPosition() const { return position; }
+
+       // Property<float> Size;
+
+       // PROPERTY_GET(Size) {
+       //     return Size;
+      //  }
+
+      //  PROPERTY_SET(Size) {
+      //      if(oldValue != newValue) {
+                ///
+      //      }
+      //  }
+
+
+
+        AspectRatio aspectRatio;
+        float orthoSize;
+        robot2D::vec2f size;
+        robot2D::vec2f position;
+
+        SceneCamera camera;
+        bool isPrimary{false};
     };
 
 
@@ -136,16 +266,58 @@ namespace editor {
         Physics2DComponent() = default;
         ~Physics2DComponent() = default;
 
-
-
         enum class BodyType { Static = 0, Dynamic, Kinematic};
         BodyType type = BodyType::Static;
+
         bool fixedRotation = false;
         void* runtimeBody{nullptr};
     };
 
+    class TextComponent: public robot2D::Transformable {
+    public:
+        TextComponent();
+        ~TextComponent() override = default;
+
+        void setText(const std::string& text);
+        void setText(std::string&& text);
+
+        std::string& getText();
+        const std::string& getText() const;
+
+        void setCharacterSize(unsigned int value);
+        unsigned int getCharacterSize();
+
+        void setFont(const robot2D::Font& font);
+        const robot2D::Font* getFont() const;
+
+        void setFontPath(const std::string& path) { m_fontPath = path;}
+        const std::string& getFontPath() const { return m_fontPath; }
+
+        const robot2D::Texture& getTexture() const;
+        std::unordered_map<int, robot2D::GlyphQuad>& getGlyphCache();
+    private:
+        friend class TextSystem;
+        friend class SceneRender;
+
+        std::string m_text{"Hello"};
+        unsigned int m_characterSize;
+        const robot2D::Font* m_font;
+        robot2D::Texture m_texture;
+
+        bool m_needUpdate;
+        std::unordered_map<int, robot2D::GlyphQuad> m_bufferCache;
+        friend class TextSystem;
+
+        bool m_scaled = false;
+        std::string m_fontPath;
+    };
+
     struct ScriptComponent {
         std::string name;
+    };
+
+    struct PrefabComponent {
+        UUID prefabUUID;
     };
 
 }

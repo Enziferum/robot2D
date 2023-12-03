@@ -18,7 +18,7 @@ set(CMAKE_CXX_STANDARD 17)
 option(CMAKE_BUILD_TYPE "Choose the type of build (Debug or Release)" Debug)
 option(BUILD_SHARED_LIBS "Whether to build shared libraries" OFF)
 option(BUILD_SANDBOX "Build Sandbox Submodule?" OFF)
-option(BUILD_TESTS "Build Tests?" OFF)
+option(BUILD_TESTS "Build Tests?" ON)
 option(BUILD_EDITOR "Build Editor?" ON)
 
 
@@ -56,7 +56,9 @@ endif()
 find_package(glfw3 REQUIRED)
 find_package(spdlog)
 find_package(robot2D_ext QUIET)
+find_package(Freetype)
 
+include_directories(${FREETYPE_INCLUDE_DIRS})
 if(WIN32)
     set(LIBS opengl32)
 elseif(APPLE)
@@ -75,7 +77,7 @@ endif()
 add_subdirectory(engine)
 
 add_library(${PROJECT_NAME} ${ENGINE_SRC})
-set(LIBS ${LIBS} glfw robot2D_ext spdlog::spdlog)
+set(LIBS ${LIBS} glfw robot2D_ext ${FREETYPE_LIBRARIES} spdlog::spdlog)
 
 target_link_libraries(${PROJECT_NAME} ${LIBS})
 target_include_directories(${PROJECT_NAME} PUBLIC

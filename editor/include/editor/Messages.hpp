@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2023
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -22,6 +22,8 @@ source distribution.
 #pragma once
 #include <string>
 #include <robot2D/Core/Message.hpp>
+#include <robot2D/Ecs/Entity.hpp>
+#include "Uuid.hpp"
 #include "ProjectDescription.hpp"
 
 namespace editor {
@@ -33,10 +35,25 @@ namespace editor {
         SaveProject,
         OpenProject,
         OpenScene,
+        CreateScene,
         SaveScene,
         EntitySelected,
+        EntityDuplicate,
+        EntityRemove,
+        EntityRestore,
+        PanelEntitySelected,
+        PanelEntityNeedSelect,
         ShowInspector,
-        ToolbarPressed
+        ToolbarPressed,
+        InstrumentPressed,
+        Undo,
+        Redo,
+        GenerateProject,
+        ExportProject,
+        PrefabLoad,
+        PrefabAssetPressed,
+        TileElementSelected,
+        PrefabAssetModificated
     };
 
     struct ProjectMessage {
@@ -55,7 +72,65 @@ namespace editor {
         uint32_t entityID;
     };
 
+    struct EntityDuplication {
+        UUID entityID;
+    };
+
+    struct EntityRemovement {
+        UUID entityID;
+    };
+
+    struct EntityRestorement {
+        UUID entityID;
+    };
+
     struct ToolbarMessage {
         int pressedType;
+    };
+
+    struct OpenSceneMessage {
+        std::string path;
+    };
+
+    struct CreateSceneMessage {
+        std::string path;
+    };
+
+    struct UndoRedoMessage{};
+
+    struct GenerateProjectMessage{};
+
+    struct ExportProjectMessage{
+        std::string startSceneID;
+    };
+
+    struct PanelEntitySelectedMessage {
+        robot2D::ecs::Entity entity;
+    };
+
+    struct PrefabLoadMessage {
+        std::string path;
+    };
+
+    struct PrefabAssetPressedMessage {
+        std::string localPath;
+    };
+
+    struct PrefabAssetModificatedMessage {
+        UUID prefabUUID;
+        robot2D::ecs::Entity prefabEntity;
+    };
+
+
+    struct TileElementSelectedMessage {
+        robot2D::vec2i tileIndex;
+    };
+
+    struct InstrumentMessage {
+        enum class Type {
+            Move = 0,
+            Scale,
+            Rotate
+        } type;
     };
 }

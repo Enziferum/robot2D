@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2023
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -20,7 +20,7 @@ source distribution.
 *********************************************************************/
 
 #include <editor/ProjectManager.hpp>
-#include <editor/ProjectSerializer.hpp>
+#include "editor/serializers/ProjectSerializer.hpp"
 #include <editor/FileApi.hpp>
 
 namespace editor {
@@ -72,8 +72,8 @@ namespace editor {
     }
 
     bool ProjectManager::load(const ProjectDescription& description) {
-        if(m_currentProject)
-            return true;
+        m_currentProject.reset();
+
         m_currentProject = std::make_shared<Project>();
         ProjectSerializer serializer(m_currentProject);
         auto [status, extension] = m_configuration.getValue(ConfigurationKey::ProjectExtension);
@@ -105,3 +105,6 @@ namespace editor {
     }
 }
 
+bool editor::ProjectManager::hasActivateProject() const {
+    return m_currentProject != nullptr;
+}

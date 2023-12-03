@@ -24,6 +24,7 @@ find_program(
 		/bin
 		/usr/bin
 		/usr/local/bin
+		/opt/homebrew/bin
 	DOC
 		"The mono executable"
 
@@ -48,6 +49,7 @@ else ()
 			/bin
 			/usr/bin
 			/usr/local/bin
+			/opt/homebrew/bin
     )
 endif ()
 
@@ -59,20 +61,38 @@ find_program(
 		/bin
 		/usr/bin
 		/usr/local/bin
+		/opt/homebrew/bin
 )
+if (WIN32)
+	find_library(
+			MONO_MAIN_LIBRARY NAMES mono-2.0 monosgen-2.0 mono-2.0-sgen
+			PATHS
+			${MONO_DEFAULT_INSTALL_PATH}/Mono/lib
+			/usr/lib64
+			/usr/lib
+			/usr/local/lib64
+			/usr/local/lib
+			/opt/local/lib
+			/opt/homebrew/lib
+			DOC
+			"The mono-2.0 library"
+	)
 
-find_library(
-    MONO_MAIN_LIBRARY NAMES mono-2.0 monosgen-2.0 mono-2.0-sgen
-    PATHS
-		${MONO_DEFAULT_INSTALL_PATH}/Mono/lib
-		/usr/lib64
-		/usr/lib
-		/usr/local/lib64
-		/usr/local/lib
-		/opt/local/lib
-	DOC
-		"The mono-2.0 library"
-)
+else ()
+	find_library(
+			MONO_MAIN_LIBRARY NAMES mono-2.0 monosgen-2.0
+			PATHS
+			${MONO_DEFAULT_INSTALL_PATH}/Mono/lib
+			/usr/lib64
+			/usr/lib
+			/usr/local/lib64
+			/usr/local/lib
+			/opt/local/lib
+			/opt/homebrew/lib
+			DOC
+			"The mono-2.0 library"
+	)
+endif()
 
 #find_path( mono-2.0_INCLUDE_PATH mono/jit/jit.h
 #		${MONO_DEFAULT_INSTALL_PATH}/Mono/include/*

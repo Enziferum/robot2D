@@ -262,12 +262,15 @@ namespace robot2D::priv {
         window->m_event_queue.push(event);
     }
 
-    void DesktopWindowImpl::dragdrop_callback([[maybe_unused]] GLFWwindow* wnd, int count, const char** paths) {
+    void DesktopWindowImpl::dragdrop_callback(GLFWwindow* wnd, int count, const char** paths) {
+        auto window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
         std::vector<std::string> outputPaths;
-        for(int it = 0; it < count; ++it) {
-            if(paths[it] != nullptr)
-                outputPaths.emplace_back(paths[it]);
+        for(int i = 0; i < count; ++i) {
+            if(paths[i] != nullptr)
+                outputPaths.emplace_back(paths[i]);
         }
+        if(window -> m_dropCallback)
+            window -> m_dropCallback(std::move(outputPaths));
     }
 
     void DesktopWindowImpl::joystick_callback(int jid, int evt) {
@@ -418,5 +421,9 @@ namespace robot2D::priv {
 
     void DesktopWindowImpl::setVsync(bool flag) {
         glfwSwapInterval(flag ? 1 : 0);
+    }
+
+    void DesktopWindowImpl::addDropCallback(std::function<void(std::vector<std::string>&&)>&& callback) {
+        m_dropCallback = std::move(callback);
     }
 }

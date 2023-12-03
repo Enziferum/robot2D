@@ -32,7 +32,7 @@ namespace robot2D {
         m_textureRect = textureRect;
         m_texture = &texture;
         auto size = texture.getSize();
-        setSize(size.as<float>());
+      //  setSize(size.as<float>());
 
         if(!m_texture && (textureRect == IntRect())){
             m_textureRect = IntRect(0, 0, size.x, size.y);
@@ -91,7 +91,7 @@ namespace robot2D {
         vertices[2].position = states.transform * robot2D::vec2f {1.F, 1.F};
         vertices[3].position = states.transform * robot2D::vec2f {0.F, 1.F};
 
-        target.draw({vertices[0], vertices[1], vertices[2], vertices[3]}, states);
+        target.draw( {vertices[0], vertices[1], vertices[2], vertices[3] }, states);
     }
 
     void Sprite::setTextureRect(const IntRect& textureRect) {
@@ -116,6 +116,7 @@ namespace robot2D {
                                  convertToGL(top, static_cast<float>(tx_s.y))};
         vertices[3].texCoords = {convertToGL(left, static_cast<float>(tx_s.x)),
                                  convertToGL(top, static_cast<float>(tx_s.y))};
+
     }
 
     const IntRect& Sprite::getTextureRect() const {

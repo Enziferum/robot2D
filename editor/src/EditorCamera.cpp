@@ -1,3 +1,24 @@
+/*********************************************************************
+(c) Alex Raag 2023
+https://github.com/Enziferum
+robot2D - Zlib license.
+This software is provided 'as-is', without any express or
+implied warranty. In no event will the authors be held
+liable for any damages arising from the use of this software.
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute
+it freely, subject to the following restrictions:
+1. The origin of this software must not be misrepresented;
+you must not claim that you wrote the original software.
+If you use this software in a product, an acknowledgment
+in the product documentation would be appreciated but
+is not required.
+2. Altered source versions must be plainly marked as such,
+and must not be misrepresented as being the original software.
+3. This notice may not be removed or altered from any
+source distribution.
+*********************************************************************/
+
 #include <cmath>
 #include <editor/EditorCamera.hpp>
 #include <robot2D/Core/Window.hpp>
@@ -38,15 +59,13 @@ namespace editor {
 
     IEditorCamera::~IEditorCamera() = default;
 
-    EditorCamera2D::EditorCamera2D(): IEditorCamera(EditorCameraType::Orthographic) {
-
-
-
-    }
+    EditorCamera2D::EditorCamera2D():
+    IEditorCamera(EditorCameraType::Orthographic) {}
 
 
     void EditorCamera2D::setViewportSize(robot2D::vec2f newSize) {
-        m_view.reset({0, 0, newSize.x, newSize.y});
+        constexpr float zoomScale = 8.f;
+        m_view.reset({0, 0, newSize.x / zoomScale, newSize.y / zoomScale});
     }
 
     void EditorCamera2D::handleEvents(const robot2D::Event& event) {
@@ -77,6 +96,11 @@ namespace editor {
             center.y += delta.y * 2.F;
             m_view.setCenter(center);
         }
+    }
+
+    void EditorCamera2D::resetDefaults() {
+        m_zoom = 0.F;
+        m_view.reset(m_view.getRectangle());
     }
 
 
