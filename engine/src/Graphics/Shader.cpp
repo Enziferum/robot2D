@@ -35,29 +35,18 @@ namespace robot2D {
 
     //todo rewrite reading file
     std::pair<bool, std::string> loadFromFile(const std::string& path) {
-        std::fstream shaderFile(path);
-        std::stringstream shaderStream;
+        std::ifstream ifile(path);
+        std::string filetext;
 
-        if (shaderFile.is_open())
-            shaderStream << shaderFile.rdbuf();
-        shaderFile.close();
-        std::string text = shaderStream.str();
-        return {true, text};
+        while( ifile.good() ) {
+            std::string line;
+            std::getline(ifile, line);
+            filetext.append(line + "\n");
+        }
+        return {true, filetext};
     }
 
     int ShaderHandler::setupShader(ShaderType shaderType, const std::string& source, bool is_file) {
-        const char* text{nullptr};
-        if(is_file) {
-            auto [result, shaderCode] = loadFromFile(source);
-            if (!result) {
-                RB_CORE_ERROR("ERROR::SHADER::LOAD_FAILED {0} \n", infoLog);
-                return -1;
-            }
-            text = shaderCode.c_str();
-        }
-        else
-            text = source.c_str();
-
         GLenum s_type;
         switch(shaderType) {
             case ShaderType::Vertex:
@@ -70,9 +59,27 @@ namespace robot2D {
                 s_type = GL_GEOMETRY_SHADER;
                 break;
         }
-        int shader = glCreateShader(s_type);
 
-        glShaderSource(shader, 1, &text, nullptr);
+        int shader;
+        if(is_file) {
+            auto [result, shaderCode] = loadFromFile(source);
+            if (!result) {
+                RB_CORE_ERROR("ERROR::SHADER::LOAD_FAILED {0} \n", infoLog);
+                return -1;
+            }
+            shader = glCreateShader(s_type);
+            GLchar const *shader_source = shaderCode.c_str();
+            GLint const shader_length = shaderCode.size();
+            glShaderSource(shader, 1, &shader_source, &shader_length);
+        }
+        else {
+            shader = glCreateShader(s_type);
+            GLchar const *shader_source = source.c_str();
+            GLint const shader_length = source.size();
+            glShaderSource(shader, 1, &shader_source, &shader_length);
+        }
+
+
         glCompileShader(shader);
         glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
 
@@ -140,6 +147,11 @@ namespace robot2D {
     template<>
     void ShaderHandler::set<vec2f>(const std::string& param, const vec2f vec) const  {
         glUniform2f(glGetUniformLocation(m_shaderProgram, param.c_str()), vec.x, vec.y);
+    }
+
+    template<>
+    void ShaderHandler::set<vec2i>(const std::string& param, const vec2i vec) const  {
+        glUniform2i(glGetUniformLocation(m_shaderProgram, param.c_str()), vec.x, vec.y);
     }
 
     template<>

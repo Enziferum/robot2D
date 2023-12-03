@@ -71,6 +71,7 @@ namespace robot2D::priv {
         vec2f getMousePos() const override;
 
         void setVsync(bool flag) override;
+        void addDropCallback(std::function<void(std::vector<std::string>&&)>&& callback) override;
     private:
         void setup();
         void setup_callbacks();
@@ -94,5 +95,7 @@ namespace robot2D::priv {
         std::string m_name;
         WindowContext m_context;
         bool m_cursorVisible;
+
+        std::function<void(std::vector<std::string>&&)> m_dropCallback;
     };
 }

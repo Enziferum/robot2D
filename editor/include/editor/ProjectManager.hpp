@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2023
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -31,6 +31,8 @@ namespace editor {
     public:
         ProjectManager(const Configuration& configuration);
         ~ProjectManager() = default;
+
+        bool hasActivateProject() const;
 
 
         bool add(const ProjectDescription&);

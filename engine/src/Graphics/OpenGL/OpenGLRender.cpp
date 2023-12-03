@@ -262,10 +262,22 @@ namespace robot2D {
 
         void OpenGLRender::applyCurrentView(unsigned int layerID) {
             auto& m_view = m_renderLayers[layerID].m_view;
-            IntRect viewport = getViewport(m_view);
-            int top = m_size.y - (viewport.ly + viewport.height);
-            (void) top;
+            //IntRect viewport = getViewport(m_view);
+            // int top = static_cast<int>(m_size.y - (viewport.ly + viewport.height));
+            // (void) top;
             auto& m_quadShader = m_renderLayers[layerID].m_quadShader;
+
+            const FloatRect& viewport = m_view.getViewport();
+            auto size = m_view.getRectangle();
+            IntRect viewport1(static_cast<int>(0.5F + size.width  * viewport.lx),
+                    static_cast<int>(0.5F + size.height * viewport.ly),
+                    static_cast<int>(0.5F + size.width  * viewport.width),
+                    static_cast<int>(0.5F + size.height * viewport.height));
+            int top = static_cast<int>(size.height - (viewport1.ly + viewport1.height));
+            //glViewport(viewport1.lx, top, viewport1.width, viewport1.height);
+
+            if(m_view.isClipping())
+                return;
 
             m_quadShader.use();
             m_quadShader.setMatrix(m_shaderKeys[ShaderKey::Projection], m_view.getTransform().get_matrix());
@@ -280,6 +292,13 @@ namespace robot2D {
             m_quadShader.setMatrix(m_shaderKeys[ShaderKey::Projection], projection.getRaw());
             m_quadShader.setMatrix(m_shaderKeys[ShaderKey::View], view.getRaw());
             m_quadShader.set(m_shaderKeys[ShaderKey::is3DRender], true);
+            m_quadShader.unUse();
+        }
+
+        void OpenGLRender::setRawView(float* rawMatrix) {
+            auto& m_quadShader = m_renderLayers[defaultLayerID].m_quadShader;
+            m_quadShader.use();
+            m_quadShader.setMatrix(m_shaderKeys[ShaderKey::Projection], rawMatrix);
             m_quadShader.unUse();
         }
 
@@ -348,6 +367,13 @@ namespace robot2D {
             }
             m_quadShader.use();
 
+            auto& view = m_renderLayers[layerID].m_view;
+            if(view.isClipping()) {
+                glEnable(GL_SCISSOR_TEST);
+                auto rect = view.getRectangle();
+                glScissor(rect.lx, rect.ly, rect.width, rect.height);
+            }
+
             m_renderBuffer.vertexArray -> Bind();
             glDrawElements(GL_TRIANGLES,
                            static_cast<GLsizei>(m_renderBuffer.indexCount),
@@ -362,6 +388,8 @@ namespace robot2D {
             m_renderBuffer.textureSlotIndex = 1;
             m_stats.drawCalls++;
 
+            if(view.isClipping())
+                glDisable(GL_SCISSOR_TEST);
             renderCache(layerID);
         }
 
@@ -624,5 +652,7 @@ namespace robot2D {
             if(states.blendMode != BlendMode::None)
                 glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         }
+
+
     }
 }

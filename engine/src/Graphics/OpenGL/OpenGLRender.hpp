@@ -58,6 +58,7 @@ namespace robot2D {
 
             void setView(const View& view, unsigned int layerID) override;
             void setView3D(const Matrix3D& projection, const Matrix3D& view) override;
+            void setRawView(float* rawMatrix) override;
 
             /// 2D Render View ///
             const View& getView(unsigned int layerID) override;

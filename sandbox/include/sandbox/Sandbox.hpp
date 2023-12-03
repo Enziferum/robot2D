@@ -22,6 +22,7 @@ source distribution.
 #pragma once
 
 #include <robot2D/Application.hpp>
+#include <robot2D/imgui/Gui.hpp>
 #include "Scene.hpp"
 
 class Sandbox: public robot2D::Application {
@@ -34,6 +35,8 @@ protected:
     void handleEvents(const robot2D::Event& event) override;
     void update(float dt) override;
     void render() override;
+    void guiUpdate(float deltaTime) override;
 private:
     Scene::Ptr m_scene;
+    robot2D::Gui m_gui;
 };

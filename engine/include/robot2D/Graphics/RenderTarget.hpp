@@ -56,6 +56,8 @@ namespace robot2D {
         /// Set new Viewport.
         virtual void setView(const View& view, unsigned int layerID = 1);
 
+        void setRawView(float* rawMatrix);
+
         virtual void setView3D(const Matrix3D& projection, const Matrix3D& view);
 
         /// get current Viewport.

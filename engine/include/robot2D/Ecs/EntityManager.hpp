@@ -33,74 +33,18 @@ source distribution.
 #include "Component.hpp"
 #include "Defines.hpp"
 #include "Entity.hpp"
+#include "ComponentContainer.hpp"
 
 namespace robot2D::ecs {
 
-    // public non template API
-    class IContainer {
-    public:
-        using Ptr = std::shared_ptr<IContainer>;
-    public:
-        virtual ~IContainer() = default;
-        virtual size_t getSize() const = 0;
-        virtual bool removeEntity(EntityID&& entityId) = 0;
-    };
-
-    /// \brief Container for component of special type
-    template<typename T>
-    class ROBOT2D_EXPORT_API ComponentContainer: public IContainer {
-    public:
-        using Ptr = std::shared_ptr<ComponentContainer<T>>;
-    public:
-        ComponentContainer(): m_components(256) {}
-        ComponentContainer(const ComponentContainer& other);
-        ComponentContainer& operator=(const ComponentContainer& other);
-        ComponentContainer(ComponentContainer&& other);
-        ComponentContainer& operator=(ComponentContainer&& other);
-        ~ComponentContainer() = default;
-
-        size_t getSize() const override {
-            return m_components.size();
-        }
-
-        T& operator[](std::size_t index) {
-         //   assert(index < m_components.size() && "Component Container index > size()");
-            return m_components[index];
-        }
-
-        const T& operator[](std::size_t index) const {
-           // assert(index < m_components.size() && "Component Container index > size()");
-            return m_components[index];
-        }
-
-        T& at(std::size_t index) {
-            return m_components.at(index);
-        }
-
-        const T& at(std::size_t index) const {
-           return m_components.at(index);
-        }
-
-        void remove(std::size_t index) {
-            if(index >= m_components.size())
-                return;
-         //   m_components.erase(m_components.begin() + index);
-        }
-
-        bool removeEntity(robot2D::ecs::EntityID&& entityId) override {
-            return static_cast<bool>(m_components.erase(entityId));
-        }
-    private:
-        std::unordered_map<EntityID, T> m_components;
-    };
-
     class SystemManager;
+    class Scene;
     class EntityManager {
     public:
-        EntityManager(ComponentManager& componentManager);
+        EntityManager(ComponentManager& componentManager, Scene* scene);
         ~EntityManager() = default;
 
-        Entity createEntity();
+        Entity createEntity(bool needAddToScene = true);
 
         template<typename T>
         void addComponent(Entity entity, T component);
@@ -125,16 +69,23 @@ namespace robot2D::ecs {
 
         bool removeEntity(Entity entity);
 
+        bool restoreEntity(Entity entity);
+
+        void removeEntityFromScene(Entity entity);
+
         bool entityDestroyed(Entity entity);
 
         Bitmask getComponentBitmask(Entity entity);
 
+        Entity duplicateEntity(robot2D::ecs::Entity entity);
     private:
         void markDestroyed(Entity entity);
 
         /// \brief allows to get Container of special type
         template<typename T>
         ComponentContainer<T>& getContainer();
+
+        void addEntityToScene(robot2D::ecs::Entity);
     private:
         friend class Scene;
 
@@ -142,14 +93,19 @@ namespace robot2D::ecs {
         ComponentManager& m_componentManager;
         std::unordered_map<EntityID, Bitmask> m_componentMasks;
         std::vector<IContainer::Ptr> m_componentContainers;
+
+        std::vector<IContainer::Ptr> m_componentContainersDeleteBuffer;
+
+
         std::vector<bool> m_destroyFlags;
+        Scene* m_ownerScene{nullptr};
     };
 
     template<typename T>
     ComponentContainer<T>& EntityManager::getContainer() {
         const auto componentID = m_componentManager.getID<T>();
         if(m_componentContainers[componentID] == nullptr) {
-            m_componentContainers[componentID] = std::make_shared<ComponentContainer<T>>();
+            m_componentContainers[componentID] = std::make_shared<ComponentContainer<T>>(componentID);
         }
         return *(dynamic_cast<ComponentContainer<T>*>(m_componentContainers[componentID].get()));
     }
@@ -190,6 +146,7 @@ namespace robot2D::ecs {
         ComponentContainer<T>& container = getContainer<T>();
         container[entityID] = component;
         m_componentMasks[entityID].turnOnBit(componentID);
+        addEntityToScene(entity);
     }
 
     template<typename T, typename... Args>

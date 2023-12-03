@@ -24,6 +24,7 @@ source distribution.
 #include <robot2D/Graphics/Texture.hpp>
 #include <robot2D/Graphics/Color.hpp>
 #include <robot2D/Graphics/Transformable.hpp>
+#include <robot2D/Ecs/Entity.hpp>
 
 class SpriteComponent final {
 public:
@@ -55,5 +56,12 @@ public:
     TransformComponent();
     ~TransformComponent() override = default;
 
+    void setPosition(const robot2D::vec2f& pos) override;
+
+    void addChild(robot2D::ecs::Entity);
+    void removeChild(robot2D::ecs::Entity);
+    bool hasChildren() const;
+private:
+    std::vector<robot2D::ecs::Entity> m_children;
 };
 
