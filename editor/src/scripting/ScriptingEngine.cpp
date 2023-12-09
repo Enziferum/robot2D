@@ -27,6 +27,7 @@ source distribution.
 #include <unordered_map>
 
 #include <robot2D/util/Logger.hpp>
+#include <robot2D/Core/Assert.hpp>
 
 #include <mono/jit/jit.h>
 #include <mono/metadata/metadata.h>
@@ -69,9 +70,11 @@ namespace editor {
         { "robot2D.Vector4", ScriptFieldType::Vector4 },
         { "robot2D.Entity", ScriptFieldType::Entity },
         { "robot2D.Collision2D", ScriptFieldType::Collision2D },
+        { "robot2D.TransformComponent", ScriptFieldType::Transform },
     };
 
     namespace util {
+
         char* ReadBytes(const std::string& filepath, uint32_t* outSize)
         {
             std::ifstream stream(filepath, std::ios::binary | std::ios::ate);
@@ -162,7 +165,7 @@ namespace editor {
             auto it = s_ScriptFieldTypeMap.find(typeName);
             if (it == s_ScriptFieldTypeMap.end())
             {
-                //HZ_CORE_ERROR("Unknown type: {}", typeName);
+                RB_EDITOR_ERROR("Unknown type: {}", typeName);
                 return ScriptFieldType::None;
             }
 
@@ -191,8 +194,9 @@ namespace editor {
                 case ScriptFieldType::Vector4: return "Vector4";
                 case ScriptFieldType::Entity:  return "Entity";
                 case ScriptFieldType::Collision2D:  return "Collision2D";
+                case ScriptFieldType::Transform:  return "Transform";
             }
-            //HZ_CORE_ASSERT(false, "Unknown ScriptFieldType");
+            RB_CORE_ASSERT(false, "Unknown ScriptFieldType");
             return "None";
         }
 
@@ -216,8 +220,9 @@ namespace editor {
             if (fieldType == "Vector4") return ScriptFieldType::Vector4;
             if (fieldType == "Entity")  return ScriptFieldType::Entity;
             if (fieldType == "Collision2D")  return ScriptFieldType::Collision2D;
+            if (fieldType == "Transform")  return ScriptFieldType::Transform;
 
-            //HZ_CORE_ASSERT(false, "Unknown ScriptFieldType");
+            RB_CORE_ASSERT(false, "Unknown ScriptFieldType");
             return ScriptFieldType::None;
         }
 
@@ -262,6 +267,8 @@ namespace editor {
 
     }
 
+
+
     void ScriptEngine::Init() {
         s_Data = new ScriptEngineData();
 
@@ -279,13 +286,17 @@ namespace editor {
     void ScriptEngine::InitAppRuntime(const fs::path& filePath) {
         bool status = loadAppAssembly(filePath.string());
         if(!status) {
-            RB_EDITOR_ERROR("Can't load Application's Script Library");
+            RB_EDITOR_ERROR("ScriptingEngine: Can't load Application's Script Library");
             return;
         }
 
         LoadAssemblyClasses();
         ScriptGlue::registerComponents();
-        s_Data -> m_entityClass = std::make_shared<MonoClassWrapper>(s_Data, "robot2D", "Entity", true);
+        s_Data -> m_entityClass = std::make_shared<MonoClassWrapper>(s_Data,
+                                                                     "robot2D", "Entity", true);
+        s_Data -> m_entityClass -> registerMethod(".ctor", 1);
+        s_Data -> m_entityClass -> registerMethod("setComponentField", 2);
+
         util::PrintAssemblyTypes(s_Data -> m_coreAssebly);
         util::PrintAssemblyTypes(s_Data -> m_appAssebly);
     }
@@ -339,9 +350,11 @@ namespace editor {
                 {
                     MonoType* type = mono_field_get_type(field);
                     ScriptFieldType fieldType = util::MonoTypeToScriptFieldType(type);
-                    RB_EDITOR_WARN("Field Type {0}", std::string( util::ScriptFieldTypeToString(fieldType)));
+                    RB_EDITOR_WARN("ScriptingEngine: Field Type {0}", std::string( util::ScriptFieldTypeToString(fieldType)));
 
-                    scriptClass -> registerField(fieldName, { fieldType, fieldName, field });
+                    if(!scriptClass -> registerField(fieldName, { fieldType, fieldName, field })) {
+                        RB_EDITOR_ERROR("ScriptingEngine: Can't register field type {0}",  std::string( util::ScriptFieldTypeToString(fieldType)));
+                    }
                 }
             }
 
@@ -351,9 +364,10 @@ namespace editor {
                 uint32_t methodsFlags;
                 uint32_t flags = mono_method_get_flags(method, &methodsFlags);
 
+
                 if(engineRegisteredMethods.find(methodName) != engineRegisteredMethods.end()) {
                     const auto& signature = engineRegisteredMethods[methodName];
-                    RB_EDITOR_WARN("Found Method: {0}", methodName);
+                    RB_EDITOR_WARN("ScriptingEngine: Found Method: {0}", methodName);
                     auto methodToken = mono_method_get_token(method);
                     auto sig = mono_method_get_signature(method, s_Data -> m_appAssemblyImage, methodToken);
 
@@ -361,10 +375,10 @@ namespace editor {
                     int index = 0;
                     bool validSignature = true;
 
-                    int paramCount = mono_signature_get_param_count(sig);
+                    auto paramCount = mono_signature_get_param_count(sig);
                     while(MonoType* type = mono_signature_get_params(sig, &methodSigIter)) {
                         if(signature.m_types[index] != util::MonoTypeToScriptFieldType(type)) {
-                            RB_EDITOR_ERROR("Bad Signature for method {0}", methodName);
+                            RB_EDITOR_ERROR("ScriptingEngine: Bad Signature for method {0}", methodName);
                             validSignature = false;
                         }
                         ++index;
@@ -372,6 +386,7 @@ namespace editor {
                     if(validSignature)
                         scriptClass -> registerMethod(methodName, paramCount);
                 }
+
             }
         }
     }
@@ -397,8 +412,8 @@ namespace editor {
         }
 
         s_Data -> m_appAssemblyImage = mono_assembly_get_image(s_Data -> m_appAssebly);
-        s_Data -> m_fileWatcher = std::make_unique<filewatch::FileWatch<std::string>>(filePath.string(),
-                    OnAppAssemblyFileSystemEvent);
+       // s_Data -> m_fileWatcher = std::make_unique<filewatch::FileWatch<std::string>>(filePath.string(),
+        //            OnAppAssemblyFileSystemEvent);
         return true;
     }
 
@@ -443,14 +458,28 @@ namespace editor {
     void ScriptEngine::onCreateEntity(robot2D::ecs::Entity entity) {
         const auto& sc = entity.getComponent<ScriptComponent>();
         if(hasEntityClass(sc.name)) {
-            auto uuid = entity.getIndex(); // TODO(a.raag): make real uuid not index
-            auto instance = std::make_shared<ScriptInstance>(s_Data, s_Data -> m_entityClasses[sc.name], entity);
+            auto uuid = entity.getComponent<IDComponent>().ID;
+            auto instance = std::make_shared<ScriptInstance>(s_Data,
+                                                             s_Data -> m_entityClasses[sc.name], entity);
             s_Data -> m_entityInstances[uuid] = instance;
+
 
             if(s_Data -> hasEntityFields(uuid)) {
                 const auto& fields = s_Data -> m_entityScriptFields.at(uuid);
                 for(const auto& [name, field] : fields) {
-                    instance -> setFieldValueInternal(name, field.m_Buffer);
+                    /// TODO(a.raag): make part of Instance call
+                    if(field.Field.Type == ScriptFieldType::Transform) {
+                        auto klass = instance -> getClassWrapper();
+                        auto regMethods = s_Data -> m_entityClass -> getRegisterMethods();
+                        if(regMethods.find("setComponentField") != regMethods.end()) {
+                            auto MonoString = mono_string_new(s_Data->m_appDomain, field.Field.Name.c_str());
+                            void* storage[2] = { (void*)(MonoString), (void*)(field.m_Buffer)};
+                            mono_runtime_invoke(regMethods["setComponentField"],
+                                                klass -> getInstance(), storage, nullptr);
+                        }
+                    }
+                    else
+                        instance -> setFieldValueInternal(name, field.m_Buffer);
                 }
             }
 
@@ -460,7 +489,7 @@ namespace editor {
     }
 
     void ScriptEngine::onUpdateEntity(robot2D::ecs::Entity entity, float delta) {
-        auto uuid = entity.getIndex(); // TODO(a.raag): make real uuid not index
+        auto uuid = entity.getComponent<IDComponent>().ID;
         if(s_Data -> m_entityInstances.find(uuid) != s_Data -> m_entityInstances.end()) {
             auto instance = s_Data -> m_entityInstances[uuid];
             instance -> onUpdateInvoke(delta);
@@ -470,10 +499,6 @@ namespace editor {
         }
     }
 
-    bool ScriptEngine::hasEntityClass(const std::string& name) {
-        return s_Data -> hasEntityClass(name);
-    }
-
     void ScriptEngine::onRuntimeStart(ScriptInteractor::Ptr interactor) {
         s_Data -> interactor = interactor;
     }
@@ -481,48 +506,6 @@ namespace editor {
     void ScriptEngine::onRuntimeStop() {
         s_Data -> interactor = nullptr;
         s_Data -> m_entityInstances.clear();
-    }
-
-    MonoImage* ScriptEngine::GetCoreAssemblyImage() {
-        return s_Data -> m_coreAssemblyImage;
-    }
-
-    ScriptInteractor::Ptr ScriptEngine::getInteractor() {
-        return s_Data -> interactor;
-    }
-
-    MonoClassWrapper::Ptr ScriptEngine::getEntityClass(const std::string& name) {
-        return s_Data -> m_entityClasses.at(name);
-    }
-
-    ScriptFieldMap& ScriptEngine::getScriptFieldMap(robot2D::ecs::Entity entity) {
-        auto uuid = entity.getIndex();
-        return s_Data -> m_entityScriptFields[uuid];
-    }
-
-    ScriptInstance::Ptr ScriptEngine::getEntityScriptInstance(robot2D::ecs::EntityID entityID) {
-        auto found = s_Data -> m_entityInstances.find(entityID);
-        if(found == s_Data -> m_entityInstances.end())
-            return nullptr;
-        return found -> second;
-    }
-
-
-
-    void ScriptEngine::ReloadEngine() {
-        mono_domain_set(mono_get_root_domain(), false);
-
-        mono_domain_unload(s_Data -> m_appDomain);
-
-        loadCoreAssembly(s_Data -> m_coreAssemblyFilepath);
-        loadAppAssembly(s_Data -> m_appAssemblyFilepath);
-        LoadAssemblyClasses();
-
-        ScriptGlue::registerComponents();
-
-        // Retrieve and instantiate class
-        s_Data -> m_entityClass.reset();
-        s_Data -> m_entityClass = std::make_shared<MonoClassWrapper>(s_Data, "robot2D", "Entity", true);
     }
 
     void ScriptEngine::onCollision2DBegin() {
@@ -541,11 +524,58 @@ namespace editor {
         }
     }
 
-    MonoClassWrapper::Ptr ScriptEngine::getManagedObject(robot2D::ecs::EntityID entityId) {
+    MonoImage* ScriptEngine::GetCoreAssemblyImage() {
+        return s_Data -> m_coreAssemblyImage;
+    }
+
+    bool ScriptEngine::hasEntityClass(const std::string& name) {
+        return s_Data -> hasEntityClass(name);
+    }
+
+
+    ScriptInteractor::Ptr ScriptEngine::getInteractor() {
+        return s_Data -> interactor;
+    }
+
+    MonoClassWrapper::Ptr ScriptEngine::getEntityClass(const std::string& name) {
+        return s_Data -> m_entityClasses.at(name);
+    }
+
+    ScriptFieldMap& ScriptEngine::getScriptFieldMap(robot2D::ecs::Entity entity) {
+        auto uuid = entity.getComponent<IDComponent>().ID;
+        auto& fields = s_Data -> m_entityScriptFields;
+        return s_Data -> m_entityScriptFields[uuid];
+    }
+
+    ScriptInstance::Ptr ScriptEngine::getEntityScriptInstance(UUID entityID) {
+        auto found = s_Data -> m_entityInstances.find(entityID);
+        if(found == s_Data -> m_entityInstances.end())
+            return nullptr;
+        return found -> second;
+    }
+
+    void ScriptEngine::ReloadEngine() {
+        mono_domain_set(mono_get_root_domain(), false);
+
+        mono_domain_unload(s_Data -> m_appDomain);
+
+        loadCoreAssembly(s_Data -> m_coreAssemblyFilepath);
+        loadAppAssembly(s_Data -> m_appAssemblyFilepath);
+        LoadAssemblyClasses();
+
+        ScriptGlue::registerComponents();
+
+        // Retrieve and instantiate class
+        s_Data -> m_entityClass.reset();
+        s_Data -> m_entityClass = std::make_shared<MonoClassWrapper>(s_Data,
+                                                                     "robot2D", "Entity", true);
+    }
+
+    MonoClassWrapper::Ptr ScriptEngine::getManagedObject(UUID entityId) {
         return s_Data -> m_entityInstances[entityId] -> getClassWrapper();
     }
 
-    const std::unordered_map<std::string, MonoClassWrapper::Ptr> &ScriptEngine::getClasses() {
+    const std::unordered_map<std::string, MonoClassWrapper::Ptr>& ScriptEngine::getClasses() {
         return s_Data -> getClasses();
     }
 

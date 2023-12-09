@@ -4,11 +4,25 @@ namespace robot2D
 {
     public abstract class Component
     {
+        protected Component()
+        { 
+            Console.WriteLine($"Component Default Ctor");
+        }
+        internal Component(ulong ID)
+        {
+            Console.WriteLine($"Component Create with ID - {ID}");
+            Entity = new Entity(ID);
+        }
         public Entity Entity { get; internal set; }
     }
 
     public class TransformComponent : Component
     {
+        public TransformComponent()
+        {
+            Console.WriteLine("TransformComponent Constructor");    
+        }
+        
         public Vector2 Translation
         {
             get
@@ -61,5 +75,16 @@ namespace robot2D
             InternalCalls.Rigidbody2DComponent_AddForce(Entity.ID, ref force);
         }
     }
-    
+
+
+    public class CameraComponent : Component
+    {
+        public Vector2 Position
+        {
+            set
+            {
+                InternalCalls.CameraComponent_SetPosition(Entity.ID, ref value);
+            }
+        }
+    }
 }

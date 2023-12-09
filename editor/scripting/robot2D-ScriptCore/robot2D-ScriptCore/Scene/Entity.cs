@@ -1,18 +1,29 @@
 ﻿using System;
-using System.Runtime.CompilerServices;
+using System.Dynamic;
+using System.Reflection;
+using System.Reflection.Emit;
 
 namespace robot2D
 {
     
     public static class Object
     {
-        public static object FindObjectFromInstanceID(uint ID)
+        public static object FindObjectFromInstanceID(ulong ID)
         {
             return InternalCalls.GetScriptInstance(ID);
         }
     }
+
+    internal class ComponentCreator
+    {
+        public T Create<T>(ulong UUID) where T: Component, new()
+        {
+            T component = new T() { Entity = new Entity(UUID) };
+            return component;
+        }
+    }
     
-    public class Entity
+    public class Entity: System.Object
     {
         protected Entity()
         {
@@ -20,13 +31,29 @@ namespace robot2D
             ID = 0;
         } 
 
-        internal Entity(uint id)
+        internal Entity(ulong id)
         {
             Console.WriteLine($"Entity Ctor ID - {id}");
             ID = id;
         }
 
-        public readonly uint ID;
+        internal void setComponentField(string name, ulong uuid)
+        {
+            Type t = GetType();
+            FieldInfo fieldInfo = t.GetRuntimeField(name);
+            
+            if (fieldInfo != null)
+            {
+                ComponentCreator componentCreator = new ComponentCreator();
+                MethodInfo method = typeof(ComponentCreator).GetMethod(nameof(ComponentCreator.Create));
+                MethodInfo generic = method.MakeGenericMethod(fieldInfo.FieldType);
+                var component = generic.Invoke(componentCreator, new object[]{ uuid });
+                fieldInfo.SetValue(this, component);
+            }
+                
+        }
+        
+        public readonly ulong ID;
 
         public Vector2 Translation
         {
@@ -58,7 +85,7 @@ namespace robot2D
 		
         public Entity FindEntityByName(string name)
         {
-            uint entityID = InternalCalls.Entity_FindEntityByName(name);
+            ulong entityID = InternalCalls.Entity_FindEntityByName(name);
             if (entityID == 0)
                 return null;
 
@@ -70,7 +97,6 @@ namespace robot2D
             object instance = InternalCalls.GetScriptInstance(ID);
             return instance as T;
         }
-
     }
 
 }

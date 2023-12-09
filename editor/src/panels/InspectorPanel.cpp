@@ -82,11 +82,14 @@ namespace editor {
     }
 
 
-    InspectorPanel::InspectorPanel(MessageDispatcher& messageDispatcher, robot2D::MessageBus& messageBus,
-                                   PrefabManager& prefabManager):
+    InspectorPanel::InspectorPanel(MessageDispatcher& messageDispatcher,
+                                   robot2D::MessageBus& messageBus,
+                                   PrefabManager& prefabManager,
+                                   IUIManager& uiManager):
         IPanel(typeid(InspectorPanel)),
     m_messageDispatcher{messageDispatcher},
     m_messageBus{messageBus},
+    m_uiManager{uiManager},
     m_prefabManager{prefabManager}
     {
         m_messageDispatcher.onMessage<PrefabAssetPressedMessage>(MessageID::PrefabAssetPressed,
@@ -359,7 +362,7 @@ namespace editor {
 
         });
 
-        drawComponent<ScriptComponent>("Script", entity, [entity,
+        drawComponent<ScriptComponent>("Script", entity, [this, entity,
                 interactor= m_interactor, isEntity](auto& component) {
             std::string currItem = component.name; // Here we store our selection data as an index.
             bool hasScriptClass = ScriptEngine::hasEntityClass(component.name);
@@ -399,7 +402,8 @@ namespace editor {
             bool isSceneRunning = interactor -> isRunning();
 
             if(isSceneRunning) {
-                auto scriptInstance = ScriptEngine::getEntityScriptInstance(entity.getIndex());
+                auto scriptInstance =
+                        ScriptEngine::getEntityScriptInstance(entity.getComponent<IDComponent>().ID);
                 if (scriptInstance)
                 {
                     const auto& fields = scriptInstance -> getClassWrapper() -> getFields();
@@ -435,6 +439,38 @@ namespace editor {
                                 if (ImGui::DragFloat(name.c_str(), &data))
                                     scriptField.setValue(data);
                             }
+                            if(field.Type == ScriptFieldType::Int) {
+                                int data = scriptField.getValue<int>();
+                                if(ImGui::DragInt(name.c_str(), &data))
+                                    scriptField.setValue(data);
+                            }
+                            if(field.Type == ScriptFieldType::Transform) {
+                                ImGui::AlignTextToFramePadding();
+                                ImGui::Text(name.c_str());
+                                ImGui::SameLine();
+                                auto uuid = scriptField.getValue<UUID>();
+                                auto preEntity = interactor -> getByUUID(uuid);
+                                std::string resultText = "None";
+                                if(preEntity)
+                                    resultText = preEntity.getComponent<TagComponent>().getTag();
+                                ImGui::Button(resultText.c_str());
+
+                                if(ImGui::BeginDragDropTarget()) {
+                                    auto* payload = ImGui::AcceptDragDropPayload("TreeNodeItem");
+                                    if(payload) {
+                                        if(payload -> IsDataType("TreeNodeItem")) {
+                                            UUID id = *static_cast<UUID*>(payload -> Data);
+                                            auto payloadEntity = m_uiManager.getTreeItem(id);
+
+                                            if(payloadEntity) {
+                                                scriptField.setValue(payloadEntity.getComponent<IDComponent>().ID);
+                                            }
+                                        }
+                                    }
+                                    ImGui::EndDragDropTarget();
+                                }
+                            }
+
                         }
                         else
                         {
@@ -449,11 +485,37 @@ namespace editor {
                                     fieldInstance.setValue(data);
                                 }
                             }
+                            if(field.Type == ScriptFieldType::Transform) {
+                                ImGui::AlignTextToFramePadding();
+                                ImGui::Text(name.c_str());
+                                ImGui::SameLine();
+                                std::string resultText = "None";
+                                ImGui::Button(resultText.c_str());
+
+                                if(ImGui::BeginDragDropTarget()) {
+                                    auto* payload = ImGui::AcceptDragDropPayload("TreeNodeItem");
+                                    if(payload) {
+                                        if(payload -> IsDataType("TreeNodeItem")) {
+                                            UUID id = *static_cast<UUID*>(payload -> Data);
+                                            auto payloadEntity = m_uiManager.getTreeItem(id);
+
+                                            if(payloadEntity) {
+                                                if(payloadEntity != entity) {
+                                                    ScriptFieldInstance& fieldInstance = entityFields[name];
+                                                    fieldInstance.Field = field;
+                                                    fieldInstance.setValue(payloadEntity.getComponent<IDComponent>().ID);
+                                                }
+                                            }
+                                        }
+                                    }
+                                    ImGui::EndDragDropTarget();
+                                }
+                            }
+
                         }
                     }
                 }
             }
-
 
         });
 

@@ -83,7 +83,9 @@ namespace editor {
                 }
                 return entity.getComponent<IDComponent>().ID == uuid;
             });
-            assert(found != m_sceneEntities.end() && "Must be validUUID");
+            if(found == m_sceneEntities.end())
+                return {};
+            //assert(found != m_sceneEntities.end() && "Must be validUUID");
             return *found;
         }
 

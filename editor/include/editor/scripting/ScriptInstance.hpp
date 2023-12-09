@@ -49,7 +49,7 @@ namespace editor {
         template<typename T>
         T getFieldValue(const std::string& name)
         {
-            static_assert(sizeof(T) <= 16, "Type too large!");
+            static_assert(sizeof(T) <= 64, "Type too large!");
 
             bool success = getFieldValueInternal(name, s_FieldValueBuffer);
             if (!success)
@@ -61,7 +61,7 @@ namespace editor {
         template<typename T>
         void setFieldValue(const std::string& name, T value)
         {
-            static_assert(sizeof(T) <= 16, "Type too large!");
+            static_assert(sizeof(T) <= 64, "Type too large!");
 
             setFieldValueInternal(name, &value);
         }
@@ -75,6 +75,6 @@ namespace editor {
         MonoClassWrapper::Ptr m_class;
         robot2D::ecs::Entity m_entity;
 
-        inline static char s_FieldValueBuffer[16];
+        inline static char s_FieldValueBuffer[64];
     };
 } // namespace editor

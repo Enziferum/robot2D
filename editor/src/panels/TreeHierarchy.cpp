@@ -357,20 +357,22 @@ namespace editor {
                     bool node_open = false;
                     node_open = ImGui::TreeNodeEx(item -> m_name -> c_str(), node_flags);
 
-                    if(ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
-                        m_selectedID = item -> m_id;
-                        m_childSelectedID = NO_INDEX;
-                        m_selectCallback(item);
-                    }
+
 
                     if (item_curr_idx_to_focus == item)
                         ImGui::SetKeyboardFocusHere(-1);
 
 
-                    if(ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID )) {
+                    if(ImGui::BeginDragDropSource( )) {
                         ImGui::SetDragDropPayload(m_playloadIdentifier.c_str(), &item -> m_id, sizeof(item -> m_id));
                         ImGui::Text("%s", item -> m_name -> c_str());
                         ImGui::EndDragDropSource();
+                    }
+
+                    if(ImGui::IsMouseReleased(ImGuiMouseButton_Left) && ImGui::IsItemFocused() && ImGui::IsWindowHovered()) {
+                        m_selectedID = item -> m_id;
+                        m_childSelectedID = NO_INDEX;
+                        m_selectCallback(item);
                     }
 
                     if(!ImGui::IsKeyDown(static_cast<ImGuiKey>(robot2D::key2Int(m_shortCutKey)))) {

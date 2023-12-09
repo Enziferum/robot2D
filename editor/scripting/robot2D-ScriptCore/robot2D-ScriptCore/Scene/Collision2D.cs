@@ -10,9 +10,8 @@ namespace robot2D
     
     public class Collision2D
     {
-        internal uint m_CameraCollider;
-        
-        internal uint m_otherCollider;
+        internal ulong m_CameraCollider;
+        internal ulong m_otherCollider;
 
         public Collider2D collider
         {
