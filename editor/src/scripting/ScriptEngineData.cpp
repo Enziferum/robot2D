@@ -19,6 +19,7 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
+
 #include <editor/scripting/ScriptEngineData.hpp>
 #include <editor/scripting/MonoClassWrapper.hpp>
 
@@ -31,7 +32,7 @@ namespace editor {
         return m_entityClasses.find(className) != m_entityClasses.end();
     }
 
-    bool ScriptEngineData::hasEntityFields(ScriptEngineData::entityUUID uuid) const {
+    bool ScriptEngineData::hasEntityFields(UUID uuid) const {
         return m_entityScriptFields.find(uuid) != m_entityScriptFields.end();
     }
 } // namespace editor

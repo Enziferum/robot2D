@@ -12,3 +12,5 @@ editor/ext/glm
 bin/
 obj/
 depslibs/
+# generates by cmake
+OptionConfig.hpp

@@ -18,28 +18,47 @@ and must not be misrepresented as being the original software.
 3. This notice may not be removed or altered from any
 source distribution.
 *********************************************************************/
+#include <string>
+#include <unordered_map>
 
-#include <mono/metadata/object.h>
+#include <editor/Components.hpp>
 #include <editor/scripting/ScriptInstance.hpp>
 #include <editor/scripting/ScriptEngineData.hpp>
 
 namespace editor {
+
+    namespace {
+        enum class MethodType {
+            Ctor,
+            Create,
+            Update
+        };
+
+        std::unordered_map<MethodType, std::string> g_methodNames = {
+                { MethodType::Ctor, ".ctor" },
+                { MethodType::Create, "OnCreate" },
+                { MethodType::Update, "OnUpdate" },
+        };
+    }
 
     ScriptInstance::ScriptInstance(ScriptEngineData* data,
                                    MonoClassWrapper::Ptr classWrapper,
                                    robot2D::ecs::Entity entity):
             m_class{std::move(classWrapper)},
             m_entity(std::move(entity)) {
-        int index = entity.getIndex();
-        data -> m_entityClass -> callMethod(".ctor", index);
+        m_class -> Instantiate(data);
+        auto uuid = m_entity.getComponent<IDComponent>().ID;
+        auto regMethods = data -> m_entityClass -> getRegisterMethods();
+        if(regMethods.find(g_methodNames[MethodType::Ctor]) != regMethods.end())
+            m_class -> callMethodDirectly(regMethods[g_methodNames[MethodType::Ctor]], uuid);
     }
 
     void ScriptInstance::onCreateInvoke() {
-        m_class -> callMethod("OnCreate");
+        m_class -> callMethod(g_methodNames[MethodType::Create]);
     }
 
     void ScriptInstance::onUpdateInvoke(float dt) {
-        m_class -> callMethod("OnUpdate", dt);
+        m_class -> callMethod(g_methodNames[MethodType::Update], dt);
     }
 
     bool ScriptInstance::getFieldValueInternal(const std::string& name, void* buffer) {

@@ -25,19 +25,11 @@ source distribution.
 #include <filesystem>
 
 #include <robot2D/Ecs/Entity.hpp>
-#include "editor/ScriptInteractor.hpp"
+#include <editor/ScriptInteractor.hpp>
+
 #include "MonoClassWrapper.hpp"
 #include "ScriptInstance.hpp"
 #include "ScriptEngineData.hpp"
-
-extern "C" {
-    typedef struct _MonoClass MonoClass;
-    typedef struct _MonoObject MonoObject;
-    typedef struct _MonoMethod MonoMethod;
-    typedef struct _MonoAssembly MonoAssembly;
-    typedef struct _MonoImage MonoImage;
-    typedef struct _MonoClassField MonoClassField;
-}
 
 namespace editor {
     namespace fs = std::filesystem;
@@ -59,12 +51,12 @@ namespace editor {
         static void onCreateEntity(robot2D::ecs::Entity);
         static void onUpdateEntity(robot2D::ecs::Entity, float delta);
 
-        static MonoClassWrapper::Ptr getManagedObject(robot2D::ecs::EntityID);
+        static MonoClassWrapper::Ptr getManagedObject(UUID uuid);
 
         static void onCollision2DBegin();
         static void onCollision2DEnd();
 
-        static ScriptInstance::Ptr getEntityScriptInstance(robot2D::ecs::EntityID entityID);
+        static ScriptInstance::Ptr getEntityScriptInstance(UUID entityID);
         static MonoClassWrapper::Ptr getEntityClass(const std::string& name);
         static ScriptFieldMap& getScriptFieldMap(robot2D::ecs::Entity entity);
 

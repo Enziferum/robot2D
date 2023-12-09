@@ -30,7 +30,7 @@ source distribution.
 #include <editor/PrefabManager.hpp>
 #include <editor/UIInteractor.hpp>
 #include <editor/Messages.hpp>
-
+#include <editor/UIManager.hpp>
 #include "IPanel.hpp"
 
 namespace editor {
@@ -38,7 +38,7 @@ namespace editor {
     class InspectorPanel: public IPanel {
     public:
         explicit InspectorPanel(MessageDispatcher& messageDispatcher, robot2D::MessageBus& messageBus,
-                                PrefabManager& prefabManager);
+                                PrefabManager& prefabManager,  IUIManager& uiManager);
         ~InspectorPanel() override = default;
 
         void setInteractor(UIInteractor::Ptr interactor);
@@ -60,7 +60,7 @@ namespace editor {
         MessageDispatcher& m_messageDispatcher;
         PrefabManager& m_prefabManager;
         robot2D::MessageBus& m_messageBus;
-
+        IUIManager& m_uiManager;
         robot2D::ecs::Entity m_selectedEntity;
 
         UIInteractor::Ptr m_interactor{nullptr};

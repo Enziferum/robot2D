@@ -28,7 +28,7 @@ source distribution.
 
 #include <filewatch/FileWatch.hpp>
 #include "editor/ScriptInteractor.hpp"
-
+#include <editor/Uuid.hpp>
 #include "ScriptInstance.hpp"
 #include "MonoClassWrapper.hpp"
 
@@ -56,18 +56,18 @@ namespace editor {
         template<typename T>
         T getValue()
         {
-            static_assert(sizeof(T) <= 16, "Type too large!");
+            static_assert(sizeof(T) <= 64, "Type too large!");
             return *(T*)m_Buffer;
         }
 
         template<typename T>
         void setValue(T value)
         {
-            static_assert(sizeof(T) <= 16, "Type too large!");
+            static_assert(sizeof(T) <= 64, "Type too large!");
             memcpy(m_Buffer, &value, sizeof(T));
         }
     private:
-        uint8_t m_Buffer[16];
+        uint8_t m_Buffer[64];
 
         friend class ScriptEngine;
         friend class ScriptInstance;
@@ -78,13 +78,11 @@ namespace editor {
 
     class ScriptEngineData {
     public:
-        using entityUUID = int;
-
         ScriptEngineData();
         ~ScriptEngineData();
 
         bool hasEntityClass(const std::string& className) const;
-        bool hasEntityFields(entityUUID uuid) const;
+        bool hasEntityFields(UUID uuid) const;
         bool isReloadPending() const {
             return m_assemblyReloadPending;
         }
@@ -107,8 +105,8 @@ namespace editor {
 
         std::unordered_map<std::string, MonoClassWrapper::Ptr> m_entityClasses;
 
-        std::unordered_map<entityUUID, ScriptInstance::Ptr> m_entityInstances;
-        std::unordered_map<entityUUID, ScriptFieldMap> m_entityScriptFields;
+        std::unordered_map<UUID, ScriptInstance::Ptr> m_entityInstances;
+        std::unordered_map<UUID, ScriptFieldMap> m_entityScriptFields;
 
         MonoClassWrapper::Ptr m_entityClass;
         std::unique_ptr<filewatch::FileWatch<std::string>> m_fileWatcher;

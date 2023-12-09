@@ -25,6 +25,36 @@ source distribution.
 
 
 namespace editor {
+    const class_id& DrawableComponent::id() noexcept {
+        static const class_id id{"DrawableComponent"};
+        return id;
+    }
+
+    const class_id& TransformComponent::id() noexcept {
+        static const class_id id{"TransformComponent"};
+        return id;
+    }
+
+    const class_id& TextComponent::id() noexcept {
+        static const class_id id{"TextComponent"};
+        return id;
+    }
+
+    const class_id& CameraComponent::id() noexcept {
+        static const class_id id{"CameraComponent"};
+        return id;
+    }
+
+    const class_id& Collider2DComponent::id() noexcept {
+        static const class_id id{"Collider2DComponent"};
+        return id;
+    }
+
+    const class_id& Physics2DComponent::id() noexcept {
+        static const class_id id{"RigidBody2D"};
+        return id;
+    }
+
     DrawableComponent::DrawableComponent():
     m_color(robot2D::Color::White),
     m_texture(nullptr) {}

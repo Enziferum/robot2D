@@ -33,6 +33,7 @@ source distribution.
 
 #include "Uuid.hpp"
 #include "Property.hpp"
+#include "ClassID.hpp"
 
 namespace editor {
     struct IDComponent
@@ -45,6 +46,8 @@ namespace editor {
 
     class TransformComponent: public robot2D::Transformable {
     public:
+        DECLARE_COMPONENT_ID()
+
         ~TransformComponent() override = default;
         void setPosition(const robot2D::vec2f& pos) override;
 
@@ -130,6 +133,8 @@ namespace editor {
 
     class DrawableComponent final {
     public:
+        DECLARE_COMPONENT_ID()
+
         DrawableComponent();
         ~DrawableComponent() = default;
 
@@ -209,6 +214,8 @@ namespace editor {
 
     struct CameraComponent final {
     public:
+        DECLARE_COMPONENT_ID()
+
         enum class AspectRatio {
             Desktop = 0, Mobile
         };
@@ -247,6 +254,8 @@ namespace editor {
 
     class Collider2DComponent final {
     public:
+        DECLARE_COMPONENT_ID()
+
         Collider2DComponent() = default;
         ~Collider2DComponent() = default;
 
@@ -263,6 +272,8 @@ namespace editor {
 
     class Physics2DComponent final {
     public:
+        DECLARE_COMPONENT_ID()
+
         Physics2DComponent() = default;
         ~Physics2DComponent() = default;
 
@@ -275,6 +286,8 @@ namespace editor {
 
     class TextComponent: public robot2D::Transformable {
     public:
+        DECLARE_COMPONENT_ID()
+
         TextComponent();
         ~TextComponent() override = default;
 

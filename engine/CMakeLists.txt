@@ -1,5 +1,11 @@
 set(INCLROOT ${PROJECT_SOURCE_DIR}/engine/include/robot2D)
 
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    option(RB_DEBUG "Enable debugging options" ON)
+endif()
+
+configure_file(${INCLROOT}/OptionConfig.hpp.in ${INCLROOT}/OptionConfig.hpp @ONLY)
+
 set(ENGINE_SRC
         ${INCLROOT}/robot2D.hpp
 
