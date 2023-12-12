@@ -55,6 +55,7 @@ namespace editor {
         using InsertItem = std::tuple<Iterator, robot2D::ecs::Entity, ReorderDeleteType>;
 
         std::vector<InsertItem> m_insertItems;
+        robot2D::View m_cameraView;
     };
 
 }

@@ -239,8 +239,8 @@ namespace editor {
     };
 
     std::unordered_map<std::string, MethodSignature> engineRegisteredMethods = {
-            { "onCollisionEnter2D", { { ScriptFieldType::Collision2D } } },
-            { "onCollisionExit2D", { { ScriptFieldType::Collision2D } } },
+            { "onCollision2DEnter", { { ScriptFieldType::Collision2D } } },
+            { "onCollision2DExit", { { ScriptFieldType::Collision2D } } },
     };
 
     class ScriptEngineReloadTask: public ITask {
@@ -296,6 +296,7 @@ namespace editor {
                                                                      "robot2D", "Entity", true);
         s_Data -> m_entityClass -> registerMethod(".ctor", 1);
         s_Data -> m_entityClass -> registerMethod("setComponentField", 2);
+        s_Data -> m_entityClass -> registerMethod("onCollision2DInternal", 3);
 
         util::PrintAssemblyTypes(s_Data -> m_coreAssebly);
         util::PrintAssemblyTypes(s_Data -> m_appAssebly);
@@ -325,8 +326,7 @@ namespace editor {
                 fullName = className;
 
             MonoClass* monoClass = mono_class_from_name(s_Data -> m_appAssemblyImage, nameSpace, className);
-
-            if (monoClass == entityClass)
+            if (!monoClass || monoClass == entityClass || mono_class_is_enum(monoClass))
                 continue;
 
             bool isEntity = mono_class_is_subclass_of(monoClass, entityClass, false);
@@ -508,18 +508,28 @@ namespace editor {
         s_Data -> m_entityInstances.clear();
     }
 
-    void ScriptEngine::onCollision2DBegin() {
-        for(auto& [uuid, Class]: s_Data -> m_entityClasses) {
-            if( Class -> hasMethod("onCollisionEnter2D")) {
-                Class -> callMethod("onCollisionEnter2D", 42);
+    void ScriptEngine::onCollision2DBegin(const Physics2DContact& contact) {
+        for(auto& [uuid, klass]: s_Data -> m_entityClasses) {
+            if( klass -> hasMethod("onCollision2DEnter") ) {
+                auto regMethods = s_Data -> m_entityClass -> getRegisterMethods();
+                if(regMethods.find("onCollision2DInternal") != regMethods.end()) {
+                    void* storage[3] = { (void*)&contact.entityA, (void*)&contact.entityB, (void*)&contact.contanctType};
+                    mono_runtime_invoke(regMethods["onCollision2DInternal"],
+                                        klass -> getInstance(), storage, nullptr);
+                }
             }
         }
     }
 
-    void ScriptEngine::onCollision2DEnd() {
-        for(auto& [uuid, Class]: s_Data -> m_entityClasses) {
-            if( Class -> hasMethod("onCollisionExit2D")) {
-                Class -> callMethod("onCollisionExit2D", 42);
+    void ScriptEngine::onCollision2DEnd(const Physics2DContact& contact) {
+        for(auto& [uuid, klass]: s_Data -> m_entityClasses) {
+            if( klass -> hasMethod("onCollision2DExit")) {
+                auto regMethods = s_Data -> m_entityClass -> getRegisterMethods();
+                if(regMethods.find("onCollision2DInternal") != regMethods.end()) {
+                    void* storage[3] = { (void*)&contact.entityA, (void*)&contact.entityB, (void*)&contact.contanctType};
+                    mono_runtime_invoke(regMethods["onCollision2DInternal"],
+                                        klass -> getInstance(), storage, nullptr);
+                }
             }
         }
     }

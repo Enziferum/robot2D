@@ -255,7 +255,7 @@ namespace editor {
                         WRITE_SCRIPT_FIELD(UInt,    uint32_t  );
                         WRITE_SCRIPT_FIELD(ULong,   uint64_t  );
                         WRITE_SCRIPT_FIELD(Vector2, robot2D::vec2f );
-                        //WRITE_SCRIPT_FIELD(Entity,  UUID      );
+                        WRITE_SCRIPT_FIELD(Transform, UUID );
                     }
                     out << YAML::EndMap; // ScriptFields
                 }
@@ -321,6 +321,7 @@ namespace editor {
         }
 
     }
+
 
     bool EntitySerializer::serialize(YAML::Emitter& out, robot2D::ecs::Entity &entity) {
         SerializeEntity(out, entity);
@@ -415,7 +416,8 @@ namespace editor {
                             continue;
 
                         fieldInstance.Field = fields.at(name);
-
+                        if(!scriptField["Data"])
+                            continue;
                         switch (type)
                         {
                             READ_SCRIPT_FIELD(Float, float);
@@ -431,9 +433,7 @@ namespace editor {
                             READ_SCRIPT_FIELD(UInt, uint32_t);
                             READ_SCRIPT_FIELD(ULong, uint64_t);
                             READ_SCRIPT_FIELD(Vector2, robot2D::vec2f);
-                            // READ_SCRIPT_FIELD(Vector3, glm::vec3);
-                            // READ_SCRIPT_FIELD(Vector4, glm::vec4);
-                            // READ_SCRIPT_FIELD(Entity, UUID);
+                            READ_SCRIPT_FIELD(Transform, UUID);
                         }
 
                     }

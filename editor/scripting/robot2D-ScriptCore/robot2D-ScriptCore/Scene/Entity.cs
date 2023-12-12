@@ -37,22 +37,7 @@ namespace robot2D
             ID = id;
         }
 
-        internal void setComponentField(string name, ulong uuid)
-        {
-            Type t = GetType();
-            FieldInfo fieldInfo = t.GetRuntimeField(name);
-            
-            if (fieldInfo != null)
-            {
-                ComponentCreator componentCreator = new ComponentCreator();
-                MethodInfo method = typeof(ComponentCreator).GetMethod(nameof(ComponentCreator.Create));
-                MethodInfo generic = method.MakeGenericMethod(fieldInfo.FieldType);
-                var component = generic.Invoke(componentCreator, new object[]{ uuid });
-                fieldInfo.SetValue(this, component);
-            }
-                
-        }
-        
+       
         public readonly ulong ID;
 
         public Vector2 Translation
@@ -96,6 +81,31 @@ namespace robot2D
         {
             object instance = InternalCalls.GetScriptInstance(ID);
             return instance as T;
+        }
+        
+        
+        internal void setComponentField(string name, ulong uuid)
+        {
+            Type t = GetType();
+            FieldInfo fieldInfo = t.GetRuntimeField(name);
+            
+            if (fieldInfo != null)
+            {
+                ComponentCreator componentCreator = new ComponentCreator();
+                MethodInfo method = typeof(ComponentCreator).GetMethod(nameof(ComponentCreator.Create));
+                MethodInfo generic = method.MakeGenericMethod(fieldInfo.FieldType);
+                var component = generic.Invoke(componentCreator, new object[]{ uuid });
+                fieldInfo.SetValue(this, component);
+            }
+                
+        }
+
+        internal void onCollision2DInternal(ulong entityID, ulong otherEntityID, int type)
+        {
+            Collision2D collision2D = new Collision2D(entityID, otherEntityID);
+            var method = GetType().GetMethod(type == 0 ? "onCollision2DEnter" : "onCollision2DExit");
+            if(method != null)
+                method.Invoke(this, new object[] { collision2D });
         }
     }
 

@@ -26,6 +26,7 @@ source distribution.
 
 #include <robot2D/Ecs/Entity.hpp>
 #include <editor/ScriptInteractor.hpp>
+#include <editor/physics/Box2DPhysicsAdapter.hpp>
 
 #include "MonoClassWrapper.hpp"
 #include "ScriptInstance.hpp"
@@ -53,8 +54,8 @@ namespace editor {
 
         static MonoClassWrapper::Ptr getManagedObject(UUID uuid);
 
-        static void onCollision2DBegin();
-        static void onCollision2DEnd();
+        static void onCollision2DBegin(const Physics2DContact& contact);
+        static void onCollision2DEnd(const Physics2DContact& contact);
 
         static ScriptInstance::Ptr getEntityScriptInstance(UUID entityID);
         static MonoClassWrapper::Ptr getEntityClass(const std::string& name);

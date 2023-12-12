@@ -46,7 +46,7 @@ namespace editor {
     }
 
     const class_id& Collider2DComponent::id() noexcept {
-        static const class_id id{"Collider2DComponent"};
+        static const class_id id{"Collider2D"};
         return id;
     }
 

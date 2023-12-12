@@ -35,6 +35,7 @@ namespace editor {
 
     Scene::Scene(robot2D::MessageBus& messageBus):
     m_scene(messageBus),
+    m_CloneScene(messageBus),
     m_messageBus{messageBus}
     {
         initScene();
@@ -105,12 +106,13 @@ namespace editor {
             if(ts.hasChildren()) {
                 for(auto& child: ts.getChildren()) {
                     if(child.hasComponent<ScriptComponent>())
-                        ScriptEngine::onUpdateEntity(child, dt);;
+                        ScriptEngine::onUpdateEntity(child, dt);
                 }
             }
         }
 
         m_physicsAdapter -> update(dt);
+        m_scene.update(dt);
     }
 
     void Scene::addEmptyEntity() {
@@ -150,6 +152,7 @@ namespace editor {
 
     void Scene::onRuntimeStart(ScriptInteractor::Ptr scriptInteractor) {
         m_running = true;
+        m_scene.cloneSelf(m_CloneScene);
         onPhysics2DRun();
 
         m_scene.getSystem<RenderSystem>() -> setScene(this);
@@ -174,18 +177,24 @@ namespace editor {
         m_running = false;
         onPhysics2DStop();
         ScriptEngine::onRuntimeStop();
+
+        m_scene.restoreFromClone(m_CloneScene);
+        m_CloneScene.clearAll();
     }
 
     void Scene::onPhysics2DRun() {
         m_physicsAdapter = getPhysics2DAdapter(PhysicsAdapterType::Box2D);
         m_physicsAdapter -> start(m_sceneEntities);
 
-        m_physicsAdapter -> registerCallback(PhysicsCallbackType::Enter, [](const Physics2DContact&) {
-            ScriptEngine::onCollision2DBegin();
+
+        m_physicsAdapter -> registerCallback(PhysicsCallbackType::Enter,
+                                             [](const Physics2DContact& contact) {
+            ScriptEngine::onCollision2DBegin(contact);
         });
 
-        m_physicsAdapter -> registerCallback(PhysicsCallbackType::Exit, [](const Physics2DContact&) {
-            ScriptEngine::onCollision2DEnd();
+        m_physicsAdapter -> registerCallback(PhysicsCallbackType::Exit,
+                                             [](const Physics2DContact& contact) {
+            ScriptEngine::onCollision2DEnd(contact);
         });
     }
 

@@ -55,7 +55,8 @@ namespace editor {
                 m_entities.erase(found);
             }
             else if(std::get<2>(item) == ReorderDeleteType::First) {
-                auto found = util::find_first_if(m_entities.begin(), m_entities.end(), [&source](robot2D::ecs::Entity item) {
+                auto found = util::find_first_if(m_entities.begin(), m_entities.end(),
+                                                 [&source](robot2D::ecs::Entity item) {
                     return item.getIndex() == source.getIndex();
                 });
                 m_entities.erase(found);
@@ -70,6 +71,15 @@ namespace editor {
                 m_needUpdateZBuffer = true;
                 drawable.m_needUpdateZbuffer = false;
             }
+            if(entity.hasComponent<CameraComponent>()) {
+                auto camera = entity.getComponent<CameraComponent>();
+                if (camera.isPrimary) {
+                    auto size = camera.getSize();
+                    auto pos = camera.getPosition();
+
+                    m_cameraView.reset({pos.x, pos.y, size.x, size.y});
+                }
+            }
         }
 
         if(m_needUpdateZBuffer) {
@@ -83,7 +93,6 @@ namespace editor {
         }
     }
 
-    robot2D::View cameraView;
 
     void RenderSystem::draw(robot2D::RenderTarget& target, robot2D::RenderStates states) const {
         for(auto& ent: m_entities) {
@@ -94,11 +103,7 @@ namespace editor {
             if (ent.hasComponent<CameraComponent>() && m_runtimeFlag) {
                 auto camera = ent.getComponent<CameraComponent>();
                 if (camera.isPrimary) {
-                     auto size = camera.getSize();
-                     auto pos = camera.getPosition();
-
-                     cameraView.reset({pos.x, pos.y, size.x, size.y});
-                     target.setView(cameraView);
+                     target.setView(m_cameraView);
                 }
             }
 

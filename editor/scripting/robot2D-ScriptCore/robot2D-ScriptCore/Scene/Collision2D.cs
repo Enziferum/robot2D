@@ -10,17 +10,22 @@ namespace robot2D
     
     public class Collision2D
     {
-        internal ulong m_CameraCollider;
-        internal ulong m_otherCollider;
+        private Entity m_collider;
+        private Entity m_otherCollider;
 
+        internal Collision2D(ulong collider, ulong otherCollider)
+        {
+            m_collider = new Entity(collider);
+            m_otherCollider = new Entity(otherCollider);
+        }
+        
         public Collider2D collider
         {
             get
             {
                 try
                 {
-                    var ent = Object.FindObjectFromInstanceID(m_CameraCollider) as Entity;
-                    return ent.GetComponent<Collider2D>();
+                    return m_collider.GetComponent<Collider2D>();
                 }
                 catch (NullReferenceException e)
                 {
@@ -36,8 +41,7 @@ namespace robot2D
             {
                 try
                 {
-                    var ent = Object.FindObjectFromInstanceID(m_CameraCollider) as Entity;
-                    return ent.GetComponent<Collider2D>();
+                    return m_otherCollider.GetComponent<Collider2D>();
                 }
                 catch (NullReferenceException e)
                 {
@@ -53,8 +57,7 @@ namespace robot2D
             {
                 try
                 {
-                    var ent = Object.FindObjectFromInstanceID(m_CameraCollider) as Entity;
-                    return ent.GetComponent<RigidBody2D>();
+                    return m_collider.GetComponent<RigidBody2D>();
                 }
                 catch (NullReferenceException e)
                 {
@@ -70,8 +73,7 @@ namespace robot2D
             {
                 try
                 {
-                    var ent = Object.FindObjectFromInstanceID(m_CameraCollider) as Entity;
-                    return ent.GetComponent<RigidBody2D>();
+                    return m_otherCollider.GetComponent<RigidBody2D>();
                 }
                 catch (NullReferenceException e)
                 {

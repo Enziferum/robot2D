@@ -41,6 +41,12 @@ namespace robot2D::ecs {
         Scene& operator=(Scene&&) = delete;
         ~Scene() = default;
 
+        bool cloneSelf(Scene& clone, bool cloneSystems = false);
+
+        bool restoreFromClone(const Scene& clone);
+
+        bool clearAll();
+
         Entity createEntity();
         /// \brief Allocate Entity, but not add it systems. Useful for buffer
         Entity createEmptyEntity();

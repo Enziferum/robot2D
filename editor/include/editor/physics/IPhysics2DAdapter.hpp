@@ -24,6 +24,7 @@ source distribution.
 #include <vector>
 #include <functional>
 #include <robot2D/Ecs/Entity.hpp>
+#include <editor/Uuid.hpp>
 
 namespace editor {
     using editorEntityList = std::vector<robot2D::ecs::Entity>;
@@ -39,8 +40,9 @@ namespace editor {
     };
 
     struct Physics2DContact {
-        std::uint32_t entityA;
-        std::uint32_t entityB;
+        UUID entityA;
+        UUID entityB;
+        int contanctType{0};
     };
 
     using PhysicsCallback = std::function<void(const Physics2DContact&)>;

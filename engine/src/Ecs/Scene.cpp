@@ -95,6 +95,23 @@ namespace robot2D::ecs {
             m_systemManager.addEntity(entity);
     }
 
+    bool Scene::cloneSelf(Scene& cloneScene, bool cloneSystems) {
+        bool result = m_entityManager.cloneSelf(cloneScene.m_entityManager);
+
+        return true;
+    }
+
+    bool Scene::restoreFromClone(const Scene& clone) {
+        m_entityManager.clear();
+
+
+        return true;
+    }
+
+    bool Scene::clearAll() {
+        return true;
+    }
+
 
 }
 
