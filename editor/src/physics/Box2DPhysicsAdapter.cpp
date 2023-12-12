@@ -20,10 +20,11 @@ source distribution.
 *********************************************************************/
 
 #include <robot2D/Util/Logger.hpp>
-#include <editor/physics/Box2DPhysicsAdapter.hpp>
-#include <editor/Components.hpp>
 #include <robot2D/Ecs/Entity.hpp>
 #include <robot2D/Ecs/EntityManager.hpp>
+
+#include <editor/physics/Box2DPhysicsAdapter.hpp>
+#include <editor/Components.hpp>
 
 namespace editor {
 
@@ -87,16 +88,25 @@ namespace editor {
         auto entityB = contactAdapter.getContactShapeB();
 
         Physics2DContact physics2DContact {};
-        physics2DContact.entityA = entityA -> getIndex();
-        physics2DContact.entityB = entityB -> getIndex();
-
+        physics2DContact.entityA = entityA -> getComponent<IDComponent>().ID;
+        physics2DContact.entityB = entityB -> getComponent<IDComponent>().ID;
+        physics2DContact.contanctType = 0;
         m_callbacks[PhysicsCallbackType::Enter](physics2DContact);
     }
 
     void Box2DPhysicsAdapter::PostSolve([[maybe_unused]] b2Contact* contact,
                                         [[maybe_unused]] const b2ContactImpulse* impulse) {
-        //RB_EDITOR_INFO("Box2DPhysicsAdapter::PostSolve");
-        Physics2DContact physics2DContact;
+       // RB_EDITOR_INFO("Box2DPhysicsAdapter::PostSolve");
+        Box2DContactAdapter contactAdapter(contact);
+
+        auto entityA = contactAdapter.getContactShapeA();
+        auto entityB = contactAdapter.getContactShapeB();
+
+        Physics2DContact physics2DContact {};
+        physics2DContact.entityA = entityA -> getComponent<IDComponent>().ID;
+        physics2DContact.entityB = entityB -> getComponent<IDComponent>().ID;
+        physics2DContact.contanctType = 1;
+
         m_callbacks[PhysicsCallbackType::Exit](physics2DContact);
     }
 

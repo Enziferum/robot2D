@@ -45,8 +45,6 @@ namespace editor {
         m_interactor{interactor}{}
 
     void MenuPanel::render() {
-        ImGui::ShowDemoWindow();
-
         if(openDeveloperMenu)
             developerMenu();
 

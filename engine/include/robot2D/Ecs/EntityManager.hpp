@@ -86,14 +86,17 @@ namespace robot2D::ecs {
         ComponentContainer<T>& getContainer();
 
         void addEntityToScene(robot2D::ecs::Entity);
+
+        bool cloneSelf(EntityManager& cloneManager);
+        void clear();
     private:
         friend class Scene;
 
         EntityID m_entityCounter;
         ComponentManager& m_componentManager;
         std::unordered_map<EntityID, Bitmask> m_componentMasks;
-        std::vector<IContainer::Ptr> m_componentContainers;
 
+        std::vector<IContainer::Ptr> m_componentContainers;
         std::vector<IContainer::Ptr> m_componentContainersDeleteBuffer;
 
 

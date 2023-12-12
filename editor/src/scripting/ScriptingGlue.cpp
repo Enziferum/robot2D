@@ -19,7 +19,6 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include <functional>
 #include <unordered_map>
 #include <robot2D/Core/Keyboard.hpp>
 #include <robot2D/Ecs/Entity.hpp>
@@ -34,9 +33,6 @@ source distribution.
 #include <editor/Scene.hpp>
 #include <editor/Components.hpp>
 #include <editor/Uuid.hpp>
-
-/// TODO(a.raag): include PhysicsAdapter
-#include <box2d/box2d.h>
 
 namespace editor {
 
@@ -71,23 +67,10 @@ namespace editor {
 
     static std::unordered_map<MonoType*, std::function<bool(robot2D::ecs::Entity)>> s_EntityHasComponentFuncs;
 
-    /// TODO(a.raag): refactor to be more useful
     template<typename T>
     std::string combineTypeName(std::string namespaceName = "robot2D") {
-//        std::string dirtyTypeName = typeid(T).name();
-//        auto pos = dirtyTypeName.find(namespaceName);
-//        if(pos == std::string::npos)
-//            return "";
-//        auto resultType = dirtyTypeName.substr(pos, namespaceName.length());
-//        resultType += '.';
-//        pos = dirtyTypeName.find(typeName);
-//        if(pos == std::string::npos)
-//            return "";
-//        resultType += dirtyTypeName.substr(pos, typeName.length());
-
         std::string resultType = namespaceName + '.';
         resultType += T::id().getName();
-
         return resultType;
     }
 
@@ -109,7 +92,7 @@ namespace editor {
 
         MonoType* managedType = mono_reflection_type_get_type(componentType);
         std::string typeName = mono_type_get_name(managedType);
-        RB_EDITOR_INFO("ScriptingGlue: Has Component From C# ? {0}", typeName);
+
         RB_CORE_ASSERT(s_EntityHasComponentFuncs.find(managedType) != s_EntityHasComponentFuncs.end());
         bool hasComp = s_EntityHasComponentFuncs.at(managedType)(entity);
         return hasComp;
@@ -208,8 +191,6 @@ namespace editor {
         robot2D::ecs::Entity entity = interactor -> getByUUID(entityID);
         RB_CORE_ASSERT(entity);
 
-
-
         auto& rb2d = entity.getComponent<Physics2DComponent>();
         b2Body* body = (b2Body*)rb2d.runtimeBody;
         body -> SetType(Utils::Rigidbody2DTypeToBox2DBody(bodyType));
@@ -219,7 +200,7 @@ namespace editor {
         auto interactor = ScriptEngine::getInteractor();
         RB_CORE_ASSERT(interactor);
         robot2D::ecs::Entity entity = interactor -> getByUUID(entityID);
-         RB_CORE_ASSERT(entity);
+        RB_CORE_ASSERT(entity);
 
         auto& rb2d = entity.getComponent<Physics2DComponent>();
         b2Body* body = (b2Body*)rb2d.runtimeBody;
@@ -245,30 +226,6 @@ namespace editor {
         return ScriptEngine::getManagedObject(entityID) -> getInstance();
     }
 
-        #define STR_COMPONENT(component) #component
-
-    template<typename... Component>
-    static void RegisterComponents()
-    {
-        ([]()
-        {
-
-            std::string managedTypename = combineTypeName<Component>(STR_COMPONENT(Component));
-            if(managedTypename == "robot2D.Physics2DComponent")
-                managedTypename = "robot2D.RigidBody2D";
-
-            MonoType* managedType = mono_reflection_type_from_name(managedTypename.data(), ScriptEngine::GetCoreAssemblyImage());
-            if (!managedType)
-            {
-                RB_CORE_ERROR("ScriptingGlue: Could not find component type {0}", managedTypename);
-                return;
-            }
-            s_EntityHasComponentFuncs[managedType] = [](robot2D::ecs::Entity entity) {
-                return entity.hasComponent<Component>();
-            };
-        }(), ...);
-    }
-
     template<typename Component>
     static void RegisterComponent() {
         std::string managedTypename = combineTypeName<Component>();
@@ -290,7 +247,10 @@ namespace editor {
         s_EntityHasComponentFuncs.clear();
         RegisterComponent<TransformComponent>();
         RegisterComponent<Physics2DComponent>();
+        RegisterComponent<Collider2DComponent>();
         RegisterComponent<CameraComponent>();
+        RegisterComponent<TextComponent>();
+        RegisterComponent<DrawableComponent>();
     }
 
     void ScriptGlue::registerFunctions()
@@ -307,6 +267,8 @@ namespace editor {
         RB_ADD_INTERNAL_CALL(Rigidbody2DComponent_SetLinearVelocity);
         RB_ADD_INTERNAL_CALL(Rigidbody2DComponent_GetType);
         RB_ADD_INTERNAL_CALL(Rigidbody2DComponent_SetType);
+        RB_ADD_INTERNAL_CALL(RigidBody2DComponent_AddForce);
         RB_ADD_INTERNAL_CALL(CameraComponent_SetPosition);
     }
+
 } // namespace editor

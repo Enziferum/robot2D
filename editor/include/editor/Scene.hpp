@@ -120,6 +120,8 @@ namespace editor {
         friend class DuplicateCommand;
 
         robot2D::ecs::Scene m_scene;
+        robot2D::ecs::Scene m_CloneScene;
+
         robot2D::ecs::EntityList m_sceneEntities;
         robot2D::ecs::EntityList m_deletePendingEntities;
         robot2D::ecs::EntityList m_deletePendingBuffer;

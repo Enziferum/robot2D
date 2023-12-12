@@ -113,7 +113,7 @@ namespace robot2D::ecs {
         for(auto& container: m_componentContainersDeleteBuffer) {
             if(container) {
                 const auto componentID = container -> getID();
-                if (!container->
+                if (!container ->
                         cloneTo(m_componentContainers[componentID], entity.getIndex())) {
                     /// TODO(a.raag): error to clone
                     return false;
@@ -128,6 +128,17 @@ namespace robot2D::ecs {
         else
             return false;
         
+        return true;
+    }
+
+    void EntityManager::clear() {
+
+    }
+
+    bool EntityManager::cloneSelf(EntityManager& cloneManager) {
+
+
+
         return true;
     }
 
