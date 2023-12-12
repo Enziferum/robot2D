@@ -56,7 +56,7 @@ namespace robot2D::ecs {
 
 
         void removeEntity(Entity entity);
-        void restoreEntity(Entity entity);
+        bool restoreEntity(Entity entity);
 
         template<class T, typename ...Args>
         void addSystem(Args&& ...args);

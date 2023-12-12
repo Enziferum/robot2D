@@ -21,13 +21,13 @@ source distribution.
 
 #pragma once
 #include <memory>
-#include <vector>
+#include <list>
 #include <functional>
 #include <robot2D/Ecs/Entity.hpp>
 #include <editor/Uuid.hpp>
 
 namespace editor {
-    using editorEntityList = std::vector<robot2D::ecs::Entity>;
+    using editorEntityList = std::list<robot2D::ecs::Entity>;
 
     enum class PhysicsAdapterType {
         Box2D

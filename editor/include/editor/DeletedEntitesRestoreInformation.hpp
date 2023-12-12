@@ -8,6 +8,7 @@ namespace editor {
     struct DeletedEntitiesRestoreInformation {
         struct RestoreInfo {
             bool first;
+            bool isChained;
             bool child;
             robot2D::ecs::Entity anchorEntity;
             robot2D::ecs::Entity entity;
@@ -16,12 +17,18 @@ namespace editor {
         /// TODO(a.raag): correct valid statement
         bool valid() const { return true; }
 
+        bool hasItems() const { return !anchorEntitiesUuids.empty(); }
+
+        RestoreInfo& getLast() { return anchorEntitiesUuids.back(); }
+
+        const std::vector<RestoreInfo>& getInfos() const { return anchorEntitiesUuids; }
+
         void push(robot2D::ecs::Entity anchorEntity,
-                  robot2D::ecs::Entity entity, bool first, bool child) {
-            RestoreInfo info{first, child, anchorEntity, entity};
+                  robot2D::ecs::Entity entity, bool first, bool isChained, bool child) {
+            RestoreInfo info{first, isChained, child, anchorEntity, entity};
             anchorEntitiesUuids.emplace_back(info);
         }
-
+    private:
         std::vector<RestoreInfo> anchorEntitiesUuids;
     };
 
