@@ -44,8 +44,8 @@ namespace editor {
 
         UUID getID() const { return m_id; }
 
-        void setName(std::string& name) {
-            m_name = &name;
+        void setName(std::string* name) {
+            m_name = name;
         }
 
         void setTexture(robot2D::Texture& texture, const robot2D::Color& tintColor) {

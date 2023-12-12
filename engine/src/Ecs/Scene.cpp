@@ -89,10 +89,11 @@ namespace robot2D::ecs {
         m_addPending.emplace_back(entity);
     }
 
-    void Scene::restoreEntity(Entity entity) {
-        m_entityManager.restoreEntity(entity);
+    bool Scene::restoreEntity(Entity entity) {
+        bool result = m_entityManager.restoreEntity(entity);
         if(m_useSystems)
             m_systemManager.addEntity(entity);
+        return result;
     }
 
     bool Scene::cloneSelf(Scene& cloneScene, bool cloneSystems) {

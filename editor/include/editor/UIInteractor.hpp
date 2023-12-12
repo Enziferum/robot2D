@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include <list>
 #include <string>
 #include <functional>
 #include <robot2D/Ecs/Entity.hpp>
@@ -27,7 +28,7 @@ namespace editor {
 
 
         virtual std::string getAssociatedProjectPath() const = 0;
-        virtual std::vector<robot2D::ecs::Entity> getEntities() const = 0;
+        virtual std::list<robot2D::ecs::Entity> getEntities() const = 0;
         virtual void removeEntity(robot2D::ecs::Entity entity) = 0;
         virtual void addEmptyEntity() = 0;
         virtual robot2D::ecs::Entity createEmptyEntity() = 0;

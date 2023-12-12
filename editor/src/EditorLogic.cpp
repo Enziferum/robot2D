@@ -366,13 +366,6 @@ namespace editor {
             RB_EDITOR_ERROR("EditorLogic: Can't Create DeleteCommand");
         }
 
-        for(auto ent: m_selectedEntities) {
-            m_activeScene -> removeEntity(ent);
-            /// \brief send message to ScenePanel to remove from hiearchy
-            auto* msg = m_messageBus.postMessage<EntityRemovement>(EntityRemove);
-            msg -> entityID = ent.getComponent<IDComponent>().ID;
-        }
-
         m_selectedEntities.clear();
     }
 
@@ -394,7 +387,7 @@ namespace editor {
         return m_activeScene -> getAssociatedProjectPath();
     }
 
-    std::vector<robot2D::ecs::Entity> EditorLogic::getEntities() const {
+    std::list<robot2D::ecs::Entity> EditorLogic::getEntities() const {
         return m_activeScene -> getEntities();
     }
 

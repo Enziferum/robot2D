@@ -271,8 +271,6 @@ namespace editor {
             }
         }
         m_panelManager.update(dt);
-        if(m_activeScene)
-            m_sceneRender.update(m_activeScene -> getEntities());
     }
 
     void Editor::render() {

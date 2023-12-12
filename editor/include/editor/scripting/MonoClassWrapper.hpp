@@ -66,7 +66,8 @@ namespace editor {
         Bool, Char, Byte, Short, Int, Long,
         UByte, UShort, UInt, ULong,
         Vector2, Vector3, Vector4,
-        Entity, Collision2D, Transform
+        Entity, Collision2D, Transform,
+        Drawable, Text
     };
 
 

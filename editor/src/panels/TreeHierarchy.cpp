@@ -123,6 +123,13 @@ namespace editor {
         return true;
     }
 
+    bool TreeHierarchy::addInsertItemCallback(TreeHierarchy::InsertItemCallback&& callback) {
+        if(callback)
+            m_insertItemCallback = std::move(callback);
+        else
+            return false;
+        return true;
+    }
 
     void TreeHierarchy::setBefore(ITreeItem::Ptr source, ITreeItem::Ptr target) {
         auto sourceIter = std::find_if(m_items.begin(), m_items.end(), [&source](ITreeItem::Ptr item) {
@@ -153,7 +160,8 @@ namespace editor {
         else {
 
             if(!isChained) {
-                auto anchorFound = std::find_if(m_items.begin(), m_items.end(), [&anchor](ITreeItem::Ptr item) {
+                auto anchorFound = std::find_if(m_items.begin(), m_items.end(),
+                                                [&anchor](ITreeItem::Ptr item) {
                     return item -> m_id == anchor -> m_id;
                 });
                 m_setItems.push_back(std::make_tuple(anchorFound, source, false, nullptr));
@@ -169,12 +177,17 @@ namespace editor {
     void TreeHierarchy::render() {
         for(auto item: m_setItems) {
             auto iter = std::get<0>(item);
-            if(iter == m_items.begin())
-                m_items.insert(iter, std::get<1>(item));
+            if(iter == m_items.begin()) {
+                auto insertIter = m_items.insert(iter, std::get<1>(item));
+                if(insertIter != m_items.end() && m_insertItemCallback)
+                    m_insertItemCallback(*insertIter);
+            }
             else {
                 bool isChained = std::get<2>(item);
                 if(!isChained) {
-                    m_items.insert(std::next(iter), std::get<1>(item));
+                    auto insertIter = m_items.insert(std::next(iter), std::get<1>(item));
+                    if(insertIter != m_items.end() && m_insertItemCallback)
+                        m_insertItemCallback(*insertIter);
                 }
                 else {
                     auto anchor = std::get<3>(item);
@@ -182,7 +195,9 @@ namespace editor {
                                                   [&anchor](auto item) {
                         return item -> m_id == anchor -> m_id;
                     });
-                    m_items.insert(std::next(prevFound), std::get<1>(item));
+                    auto insertIter = m_items.insert(std::next(prevFound), std::get<1>(item));
+                    if(insertIter != m_items.end() && m_insertItemCallback)
+                        m_insertItemCallback(*insertIter);
                 }
             }
         }
@@ -355,7 +370,8 @@ namespace editor {
 
                     ImGui::SetNextItemSelectionUserData(static_cast<ImGuiSelectionUserData>(uuid));
                     bool node_open = false;
-                    node_open = ImGui::TreeNodeEx(item -> m_name -> c_str(), node_flags);
+                    const char* itemName = item -> m_name -> c_str();
+                    node_open = ImGui::TreeNodeEx(itemName, node_flags);
 
 
 
@@ -365,7 +381,7 @@ namespace editor {
 
                     if(ImGui::BeginDragDropSource( )) {
                         ImGui::SetDragDropPayload(m_playloadIdentifier.c_str(), &item -> m_id, sizeof(item -> m_id));
-                        ImGui::Text("%s", item -> m_name -> c_str());
+                        ImGui::Text("%s", item -> m_name  -> c_str());
                         ImGui::EndDragDropSource();
                     }
 
@@ -482,5 +498,7 @@ namespace editor {
     void TreeHierarchy::clearSelection() {
         m_multiSelection.clear();
     }
+
+
 
 }

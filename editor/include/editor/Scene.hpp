@@ -24,29 +24,32 @@ source distribution.
 #include <memory>
 #include <cassert>
 #include <functional>
+#include <list>
 
 #include <robot2D/Ecs/Scene.hpp>
 #include <robot2D/Ecs/Entity.hpp>
 #include <robot2D/Graphics/Drawable.hpp>
 
+#include <editor/UIInteractor.hpp>
 #include "Components.hpp"
 #include "physics/IPhysics2DAdapter.hpp"
 #include "ScriptInteractor.hpp"
-#include <editor/UIInteractor.hpp>
 #include "DeletedEntitesRestoreInformation.hpp"
 
 namespace editor {
     class Scene: public robot2D::Drawable {
     public:
         using Ptr = std::shared_ptr<Scene>;
+        using EntityList = std::list<robot2D::ecs::Entity>;
     public:
+
         Scene(robot2D::MessageBus& messageBus);
         ~Scene() override = default;
 
         void createMainCamera();
 
-        robot2D::ecs::EntityList& getEntities();
-        const robot2D::ecs::EntityList& getEntities() const;
+        EntityList& getEntities();
+        const EntityList& getEntities() const;
 
         void registerOnDeleteFinish(std::function<void()>&& callback);
 
@@ -72,22 +75,7 @@ namespace editor {
         void restoreEntities(DeletedEntitiesRestoreInformation& restoreInformation);
 
 
-        robot2D::ecs::Entity getByUUID(UUID uuid) {
-            auto found = std::find_if(m_sceneEntities.begin(), m_sceneEntities.end(), [&uuid](robot2D::ecs::Entity entity) {
-                auto& ts = entity.getComponent<TransformComponent>();
-                if(ts.hasChildren()) {
-                    for(auto& child: ts.getChildren()) {
-                        if(child.getComponent<IDComponent>().ID == uuid)
-                            return true;
-                    }
-                }
-                return entity.getComponent<IDComponent>().ID == uuid;
-            });
-            if(found == m_sceneEntities.end())
-                return {};
-            //assert(found != m_sceneEntities.end() && "Must be validUUID");
-            return *found;
-        }
+        robot2D::ecs::Entity getByUUID(UUID uuid);
 
         bool isRunning() const { return m_running; }
 
@@ -122,13 +110,10 @@ namespace editor {
         robot2D::ecs::Scene m_scene;
         robot2D::ecs::Scene m_CloneScene;
 
-        robot2D::ecs::EntityList m_sceneEntities;
+        EntityList m_sceneEntities;
         robot2D::ecs::EntityList m_deletePendingEntities;
         robot2D::ecs::EntityList m_deletePendingBuffer;
 
-        robot2D::ecs::EntityList m_deletePendingPostEntities;
-        robot2D::ecs::EntityList m_deletePendingPostBuffer;
-        bool m_needWaitPostDeletion{false};
 
         robot2D::MessageBus& m_messageBus;
         std::string m_path;
@@ -142,10 +127,12 @@ namespace editor {
             First, Last
         };
 
-        using Iterator = std::vector<robot2D::ecs::Entity>::iterator;
+        using Iterator = EntityList::iterator;
         using InsertItem = std::tuple<Iterator, robot2D::ecs::Entity, ReorderDeleteType>;
+        using SetItem = std::tuple<Iterator, robot2D::ecs::Entity, bool, robot2D::ecs::Entity>;
 
         std::vector<InsertItem> m_insertItems;
+        std::vector<SetItem> m_setItems;
         std::function<void()> m_onDeleteFinishCallback{nullptr};
     };
 }

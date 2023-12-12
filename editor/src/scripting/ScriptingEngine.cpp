@@ -71,6 +71,8 @@ namespace editor {
         { "robot2D.Entity", ScriptFieldType::Entity },
         { "robot2D.Collision2D", ScriptFieldType::Collision2D },
         { "robot2D.TransformComponent", ScriptFieldType::Transform },
+        { "robot2D.DrawableComponent", ScriptFieldType::Drawable },
+        { "robot2D.TextComponent", ScriptFieldType::Text },
     };
 
     namespace util {

@@ -89,8 +89,8 @@ namespace editor {
         IPanel(typeid(InspectorPanel)),
     m_messageDispatcher{messageDispatcher},
     m_messageBus{messageBus},
-    m_uiManager{uiManager},
-    m_prefabManager{prefabManager}
+    m_prefabManager{prefabManager},
+    m_uiManager{uiManager}
     {
         m_messageDispatcher.onMessage<PrefabAssetPressedMessage>(MessageID::PrefabAssetPressed,
                                                                  BIND_CLASS_FN(onPrefabAssetSelected));
@@ -157,7 +157,7 @@ namespace editor {
             if(!entity.hasComponent<TagComponent>() || entity.destroyed())
                 return;
 
-            auto& tag = entity.getComponent<TagComponent>().getTag();
+            auto tag = entity.getComponent<TagComponent>().getTag();
 
             /// TODO(a.raag): robot2D-imgui Api's Text using
             char buffer[256];
@@ -166,9 +166,10 @@ namespace editor {
 
             if (ImGui::InputText("##Tag", buffer, sizeof(buffer)))
             {
-                tag = std::string(buffer);
-                if(tag.empty())
-                    tag = "Untitled Entity";
+                std::string sbuffer = std::string(buffer);
+                if(sbuffer.empty())
+                    sbuffer = "Untitled Entity";
+                entity.getComponent<TagComponent>().setTag(sbuffer);
             }
 
             ImGui::Text("UUID: %llu", entity.getComponent<IDComponent>().ID);

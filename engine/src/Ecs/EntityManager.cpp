@@ -19,7 +19,8 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include <algorithm>
+#include <robot2D/Core/Assert.hpp>
+#include <robot2D/Util/Logger.hpp>
 #include <robot2D/Ecs/EntityManager.hpp>
 #include <robot2D/Ecs/Scene.hpp>
 
@@ -51,7 +52,6 @@ namespace robot2D::ecs {
 
     Bitmask EntityManager::getComponentBitmask(Entity entity) {
         const auto index = entity.getIndex();
-     //   assert(index < m_componentMasks.size());
         return m_componentMasks[index];
     }
 
@@ -59,12 +59,17 @@ namespace robot2D::ecs {
         for(auto& container: m_componentContainers) {
             if(container) {
                 const auto componentID = container -> getID();
+                Bitmask bitmask;
+                bitmask.turnOnBit(componentID);
+                auto entityMask = entity.getComponentMask();
+                if(!bitmask.matches(entityMask, bitmask.getBitset()))
+                    continue;
                 if(m_componentContainersDeleteBuffer[componentID] == nullptr) {
                     m_componentContainersDeleteBuffer[componentID] = container -> cloneEmpty();
                 }
                 if (!container->
                         cloneTo(m_componentContainersDeleteBuffer[componentID], entity.getIndex())) {
-                    /// TODO(a.raag): error to clone
+                    RB_CORE_ERROR("EntityManager: Can't clone component, index = {0}", entity.getIndex());
                 }
                 container -> removeEntity(entity.getIndex());
             }
@@ -109,13 +114,14 @@ namespace robot2D::ecs {
     }
 
     bool EntityManager::restoreEntity(Entity entity) {
-
         for(auto& container: m_componentContainersDeleteBuffer) {
             if(container) {
                 const auto componentID = container -> getID();
+                if(!container -> hasEntity(entity.getIndex()))
+                    continue;
                 if (!container ->
                         cloneTo(m_componentContainers[componentID], entity.getIndex())) {
-                    /// TODO(a.raag): error to clone
+                    RB_CORE_ERROR("EntityManager: Can't clone component, index = {0}", entity.getIndex());
                     return false;
                 }
                 m_componentMasks[entity.getIndex()].turnOnBit(componentID);
@@ -132,14 +138,12 @@ namespace robot2D::ecs {
     }
 
     void EntityManager::clear() {
-
+        // no - op
     }
 
     bool EntityManager::cloneSelf(EntityManager& cloneManager) {
-
-
-
+        // no - op
         return true;
     }
 
-}
+} // namespace robot2D::ecs

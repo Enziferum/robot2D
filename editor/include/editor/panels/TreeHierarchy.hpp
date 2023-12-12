@@ -139,6 +139,7 @@ namespace editor {
         using ReorderItemCallback = std::function<void(ITreeItem::Ptr source, ITreeItem::Ptr target)>;
         using MultiItemCallback = std::function<void(std::vector<ITreeItem::Ptr>)>;
         using MultiItemRangeCallback = std::function<void(std::vector<ITreeItem::Ptr>, bool del)>;
+        using InsertItemCallback = std::function<void(ITreeItem::Ptr inserted)>;
 
         template<typename T, typename ... Args>
         typename TreeItem<T>::Ptr addItem(bool needPending = false, Args&& ... args) {
@@ -172,6 +173,7 @@ namespace editor {
 
         bool addMultiSelectRangeCallback(MultiItemRangeCallback&& callback);
 
+        bool addInsertItemCallback(InsertItemCallback&& callback);
 
         template<typename T>
         TreeItem<T>* getItem(UUID id) {
@@ -232,7 +234,7 @@ namespace editor {
         ReorderItemCallback m_removeAsChildCallback;
         MultiItemCallback m_multiItemCallback;
         MultiItemRangeCallback m_multiItemRangeCallback;
-
+        InsertItemCallback  m_insertItemCallback;
 
         std::vector<InsertItem> m_insertItems;
         std::vector<SetItem> m_setItems;
