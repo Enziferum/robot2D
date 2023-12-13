@@ -70,6 +70,7 @@ namespace editor {
             child -> m_parent = this;
             child -> m_id = NO_INDEX;
             child -> m_child_id = UUID();
+            child -> isQueryDeletion = true;
             m_childrens.emplace_back(child);
         }
 
@@ -100,5 +101,7 @@ namespace editor {
         friend class TreeHierarchy;
         robot2D::Texture* m_iconTexture{nullptr};
         robot2D::Color m_tintColor = robot2D::Color::White;
+
+        bool isQueryDeletion = false;
     };
 }

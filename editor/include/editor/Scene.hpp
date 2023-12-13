@@ -99,11 +99,19 @@ namespace editor {
         void draw(robot2D::RenderTarget& target, robot2D::RenderStates states) const override;
 
     private:
+        struct RemoveEntityInfo {
+            robot2D::ecs::Entity entity;
+            bool isDeleted{false};
+        };
+
+
         void initScene();
         void onPhysics2DRun();
         void onPhysics2DStop();
 
         void removeDuplicate(robot2D::ecs::Entity entity);
+        void removeChildEntities(DeletedEntitiesRestoreInformation& information, robot2D::ecs::Entity parent,
+                                 std::vector<RemoveEntityInfo>& removingEntities);
     private:
         friend class DuplicateCommand;
 

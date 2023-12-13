@@ -133,8 +133,9 @@ namespace editor {
                             for (auto &pair: children) {
                                 for (auto &childIndex: pair.second) {
                                     if (childIndex == UUID(uuid)) {
-                                        m_scene -> getByUUID(pair.first).getComponent<TransformComponent>()
-                                                .addChild(deserializedEntity);
+                                        auto parent = m_scene -> getByUUID(pair.first);
+                                        parent.getComponent<TransformComponent>()
+                                                .addChild(parent, deserializedEntity);
                                         addToScene = false;
                                     }
                                 }

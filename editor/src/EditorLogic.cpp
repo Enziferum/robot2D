@@ -341,11 +341,8 @@ namespace editor {
                 m_selectedEntities.emplace_back(entity);
             }
 
-            for(auto& child: transform.getChildren()) {
-                if(rect.contains(transform.getGlobalBounds())) {
-                    m_selectedEntities.emplace_back(entity);
-                }
-            }
+            if(transform.hasChildren())
+                findSelectChildren(rect, entity);
         }
 
         if(!m_selectedEntities.empty())
@@ -354,6 +351,17 @@ namespace editor {
         /// TODO(a.raag): add selection command
         /// m_commandStack.addCommand();
         /// fill m_selectedEntities //
+    }
+
+    void EditorLogic::findSelectChildren(const robot2D::FloatRect &rect, robot2D::ecs::Entity entity) {
+        auto& transform = entity.getComponent<TransformComponent>();
+        for(auto& child: transform.getChildren()) {
+            auto& childTransform = child.getComponent<TransformComponent>();
+            if(rect.contains(childTransform.getGlobalBounds()))
+                m_selectedEntities.emplace_back(child);
+            if(childTransform.hasChildren())
+                findSelectChildren(rect, child);
+        }
     }
 
     void EditorLogic::removeSelectedEntities() {
@@ -546,6 +554,8 @@ namespace editor {
 
         }, exportOptions);
     }
+
+
 
     //////////////////////////////////////// UIInteractor ////////////////////////////////////////
 

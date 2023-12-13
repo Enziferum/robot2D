@@ -119,7 +119,7 @@ namespace editor {
 
     class MultiSelection {
     public:
-        using MultiItemCallback = std::function<void(std::vector<ITreeItem::Ptr>)>;
+        using MultiItemCallback = std::function<void(std::list<ITreeItem::Ptr>)>;
         using MultiItemRangeCallback = std::function<void(std::vector<ITreeItem::Ptr>, bool del)>;
 
         MultiSelection();

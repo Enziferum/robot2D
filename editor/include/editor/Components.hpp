@@ -51,7 +51,7 @@ namespace editor {
         ~TransformComponent() override = default;
         void setPosition(const robot2D::vec2f& pos) override;
 
-        void addChild(robot2D::ecs::Entity);
+        void addChild(robot2D::ecs::Entity parent, robot2D::ecs::Entity child);
         void removeChild(robot2D::ecs::Entity, bool removeFromScene = true);
         bool hasChildren() const;
 
@@ -73,15 +73,17 @@ namespace editor {
             return m_children;
         }
 
-        bool isChild() const { return (m_parent != nullptr && m_childID != -1); }
+        bool isChild() const { return ( (m_parent && m_parent.destroyed()) && m_childID != -1); }
 
         void removeSelf(bool removeFromScene = true);
+
+        robot2D::ecs::Entity getParent() { return m_parent; }
     private:
         void removeChild(int childID, bool removeFromScene);
     private:
         int m_childID = -1;
         std::vector<robot2D::ecs::Entity> m_children;
-        TransformComponent* m_parent{nullptr};
+        robot2D::ecs::Entity m_parent;
     };
 
     // TODO: @a.raag add Rotation
