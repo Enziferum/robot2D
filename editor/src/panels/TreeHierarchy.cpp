@@ -227,6 +227,7 @@ namespace editor {
         for(auto delItem: m_deletePendingItems) {
             m_items.erase(std::remove_if(m_items.begin(), m_items.end(), [this, &delItem](ITreeItem::Ptr item) {
                 bool eq = item == delItem;
+                delItem -> isQueryDeletion = false;
                 if(eq)
                     m_multiSelection.updateItem(item, false);
                 return eq;
@@ -234,12 +235,25 @@ namespace editor {
         }
         m_deletePendingItems.clear();
 
-        for(auto item: m_additemsBuffer)
+        for(auto item: m_additemsBuffer) {
             m_items.emplace_back(item);
+            constexpr bool needAdd = true;
+            m_multiSelection.updateItem(item, needAdd);
+        }
         m_additemsBuffer.clear();
 
+        renderTree();
+    }
 
+    void TreeHierarchy::renderTree() {
         static ImGuiMultiSelectFlags flags = ImGuiMultiSelectFlags_None | ImGuiMultiSelectFlags_ClearOnEscape;
+
+        constexpr auto drawTexture = [](robot2D::vec2f size, robot2D::Texture* texture,
+                                        robot2D::Color tintColor) {
+            auto imID = ImGui::convertTextureHandle(texture -> getID());
+            ImGui::ImageButton(imID, size, {0,1}, {1, 0}, -1, tintColor);
+        };
+
 
         if(ImGui::TreeNodeEx(m_name.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
 
@@ -247,25 +261,37 @@ namespace editor {
             m_multiSelection.applyRequests(ms_io, m_items);
 
             const bool wantDelete = m_multiSelection.hasQueryDeletion() || ( !m_multiSelection.empty()
-                            && ImGui::IsWindowFocused() && ImGui::IsKeyPressed(ImGuiKey_Delete));
+                                                                             && ImGui::IsWindowFocused() && ImGui::IsKeyPressed(ImGuiKey_Delete));
             ITreeItem::Ptr item_curr_idx_to_focus = nullptr;
 
             if(wantDelete) {
-               item_curr_idx_to_focus = m_multiSelection.processDeletionPreLoop(ms_io, m_items);
+                item_curr_idx_to_focus = m_multiSelection.processDeletionPreLoop(ms_io, m_items);
             }
 
             for(auto item: m_items) {
                 ImGuiTreeNodeFlags node_flags = m_tree_base_flags;
 
                 if(item -> hasChildrens()) {
+
                     node_flags |= ((m_selectedID == item -> getID()
-                            && m_childSelectedID == NO_INDEX) ? ImGuiTreeNodeFlags_Selected : 0);
+                                    && m_childSelectedID == NO_INDEX) ? ImGuiTreeNodeFlags_Selected : 0);
                     node_flags |=  ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_DefaultOpen;
+
+                    if(item -> m_iconTexture) {
+                        drawTexture({20, 20}, item -> m_iconTexture, item -> m_tintColor);
+                        ImGui::SameLine();
+                    }
+
+                    auto uuid = item -> m_id;
+                    ImGui::PushID(static_cast<void*>(&uuid));
+                    ImGui::SetNextItemSelectionUserData(static_cast<ImGuiSelectionUserData>(uuid));
+
                     bool node_open = ImGui::TreeNodeEx(item -> m_name -> c_str(), node_flags);
 
                     auto& childrens = item -> getChildrens();
 
-                    if(ImGui::IsItemClicked()) {
+                    if(ImGui::IsMouseReleased(ImGuiMouseButton_Left)
+                       && ImGui::IsItemFocused() && ImGui::IsWindowHovered()) {
                         m_selectedID = item -> m_id;
                         m_childSelectedID = NO_INDEX;
                         m_selectCallback(item);
@@ -276,7 +302,7 @@ namespace editor {
                     if(node_open) {
                         if(ImGui::BeginDragDropSource()) {
                             ImGui::SetDragDropPayload(m_playloadIdentifier.c_str(), &item -> m_id,
-                                                                                    sizeof(item -> m_id));
+                                                      sizeof(item -> m_id));
                             ImGui::Text(item -> m_name -> c_str());
                             ImGui::EndDragDropSource();
                         }
@@ -298,15 +324,25 @@ namespace editor {
                         }
 
                         for(auto child: childrens) {
+                            if(child -> m_iconTexture) {
+                                drawTexture({20, 20}, child -> m_iconTexture, child -> m_tintColor);
+                                ImGui::SameLine();
+                            }
+
                             ImGuiTreeNodeFlags child_node_flags = m_tree_base_flags;
                             child_node_flags |= ((m_childSelectedID == child -> m_child_id)
-                                                          ? ImGuiTreeNodeFlags_Selected : 0);
+                                                 ? ImGuiTreeNodeFlags_Selected : 0);
                             child_node_flags |= ImGuiTreeNodeFlags_Leaf;
-                            ImGui::TreeNodeEx((void*)(intptr_t)item -> m_child_id, child_node_flags,
-                                              child -> m_name -> c_str());
 
-                            /// recursive doNode
-                            if(ImGui::IsItemClicked()) {
+                            auto childUUID = child -> m_id;
+                            ImGui::PushID(static_cast<void*>(&childUUID));
+                            ImGui::SetNextItemSelectionUserData(static_cast<ImGuiSelectionUserData>(childUUID));
+
+                            bool childOpen = ImGui::TreeNodeEx(child -> m_name -> c_str(), child_node_flags);
+
+                            /// TODO(a.raag): recursive doNode
+                            if(ImGui::IsMouseReleased(ImGuiMouseButton_Left)
+                               && ImGui::IsItemFocused() && ImGui::IsWindowHovered()) {
                                 m_selectedID = NO_INDEX;
                                 m_childSelectedID = child -> m_child_id;
                                 m_selectCallback(child);
@@ -338,38 +374,41 @@ namespace editor {
                                 ImGui::EndDragDropTarget();
                             }
 
-
-                            ImGui::TreePop();
+                            if(childOpen)
+                                ImGui::TreePop();
+                            ImGui::PopID();
                         }
                     }
 
                     if(node_open)
                         ImGui::TreePop();
+
+                    ImGui::PopID();
                 }
                 else {
                     // | ImGuiTreeNodeFlags_NoTreePushOnOpen
                     node_flags |= ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_Leaf ;
 
+                    if(item -> isQueryDeletion || !item -> m_name)
+                        continue;
+
                     auto hasItem = m_multiSelection.hasItem(item);
                     if(hasItem)
                         node_flags |= ImGuiTreeNodeFlags_Selected;
 
-                    constexpr auto drawTexture = [](robot2D::vec2f size, robot2D::Texture* texture,
-                                robot2D::Color tintColor) {
-                        auto imID = ImGui::convertTextureHandle(texture -> getID());
-                        ImGui::ImageButton(imID, size, {0,1}, {1, 0}, -1, tintColor);
-                    };
 
                     if(item -> m_iconTexture) {
                         drawTexture({20, 20}, item -> m_iconTexture, item -> m_tintColor);
                         ImGui::SameLine();
                     }
 
+
                     auto uuid = item -> m_id;
                     ImGui::PushID(static_cast<void*>(&uuid));
 
                     ImGui::SetNextItemSelectionUserData(static_cast<ImGuiSelectionUserData>(uuid));
                     bool node_open = false;
+
                     const char* itemName = item -> m_name -> c_str();
                     node_open = ImGui::TreeNodeEx(itemName, node_flags);
 
@@ -449,8 +488,9 @@ namespace editor {
 
             ImGui::TreePop();
         }
-
     }
+
+
 
     ITreeItem::Ptr TreeHierarchy::findByID(UUID ID) {
         ITreeItem::Ptr parent = nullptr;
@@ -498,7 +538,6 @@ namespace editor {
     void TreeHierarchy::clearSelection() {
         m_multiSelection.clear();
     }
-
 
 
 }

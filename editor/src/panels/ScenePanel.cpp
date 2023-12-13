@@ -243,27 +243,28 @@ namespace editor {
         });
 
         m_treeHierarchy.addOnMakeChildCallback([this](ITreeItem::Ptr source, ITreeItem::Ptr intoTarget) {
-           auto entity = intoTarget -> getUserData<robot2D::ecs::Entity>();
-           if(!entity) {
-               RB_EDITOR_ERROR("Can't item in Hierarchy don't have userData");
-               return;
-           }
-           auto& transform = entity -> getComponent<TransformComponent>();
-           auto sourceEntity = source -> getUserData<robot2D::ecs::Entity>();
-           if(!sourceEntity) {
-               RB_EDITOR_ERROR("Can't item in Hierarchy don't have userData");
-               return;
-           }
+            RB_EDITOR_WARN("m_treeHierarchy.addOnMakeChildCallback");
+            auto entity = intoTarget -> getUserData<robot2D::ecs::Entity>();
+            if(!entity) {
+                RB_EDITOR_ERROR("Can't item in Hierarchy don't have userData");
+                return;
+            }
+            auto& transform = entity -> getComponent<TransformComponent>();
+            auto sourceEntity = source -> getUserData<robot2D::ecs::Entity>();
+            if(!sourceEntity) {
+                RB_EDITOR_ERROR("ScenePanel: Can't item in Hierarchy don't have userData");
+                return;
+            }
 
-           if(sourceEntity -> hasComponent<DrawableComponent>()) {
-               auto& sprite = sourceEntity -> getComponent<DrawableComponent>();
-               sprite.setReorderZBuffer(true);
-           }
+            if(sourceEntity -> hasComponent<DrawableComponent>()) {
+                auto& sprite = sourceEntity -> getComponent<DrawableComponent>();
+                sprite.setReorderZBuffer(true);
+            }
 
-           transform.addChild(*sourceEntity);
-           m_interactor -> removeEntityChild(*sourceEntity);
-           m_treeHierarchy.deleteItem(source);
-           intoTarget -> addChild(source);
+            transform.addChild(*entity, *sourceEntity);
+            m_interactor -> removeEntityChild(*sourceEntity);
+            m_treeHierarchy.deleteItem(source);
+            intoTarget -> addChild(source);
         });
 
         m_treeHierarchy.addOnStopBeChildCallback([this](ITreeItem::Ptr source, ITreeItem::Ptr intoTarget) {
@@ -282,7 +283,7 @@ namespace editor {
             //m_treeHierarchy.setBefore()
         });
 
-        m_treeHierarchy.addMultiSelectCallback([this](std::vector<ITreeItem::Ptr> items) {
+        m_treeHierarchy.addMultiSelectCallback([this](std::list<ITreeItem::Ptr> items) {
             RB_EDITOR_INFO("TreeHierarchy: MultiSelect All");
         });
 
@@ -443,9 +444,32 @@ namespace editor {
                 if(entity == *treeEntity) {
                     m_treeHierarchy.setSelected(treeItem);
                 }
+
+                if(treeItem -> hasChildrens())
+                    processSelectedChildren(treeItem, entities);
             }
         }
     }
+
+    void ScenePanel::processSelectedChildren(ITreeItem::Ptr parent, std::vector<robot2D::ecs::Entity>& entities) {
+        for(auto& entity: entities) {
+            for(auto& childItem: parent -> getChildrens()) {
+                auto treeEntity = childItem -> getUserData<robot2D::ecs::Entity>();
+                if(!treeEntity) {
+                    RB_EDITOR_ERROR("ScenePanel: TreeItem By UUID = {0} don't have Entity");
+                    continue;
+                }
+
+                if(entity == *treeEntity) {
+                    m_treeHierarchy.setSelected(childItem);
+                }
+
+                if(childItem -> hasChildrens())
+                    processSelectedChildren(childItem, entities);
+            }
+        }
+    }
+
 
     DeletedEntitiesRestoreUIInformation
     ScenePanel::removeEntitiesOnUI(std::vector<robot2D::ecs::Entity>& selectedEntities) {

@@ -152,19 +152,33 @@ namespace editor {
         Transformable::setPosition(pos);
     }
 
-    void TransformComponent::addChild(robot2D::ecs::Entity entity) {
-        auto found = std::find_if(m_children.begin(), m_children.end(), [&entity](robot2D::ecs::Entity ent) {
+    bool TransformComponent::hasChildren() const {
+        return !m_children.empty();
+    }
+
+    void TransformComponent::addChild(robot2D::ecs::Entity parent, robot2D::ecs::Entity entity) {
+        auto found = std::find_if(m_children.begin(),
+                                  m_children.end(), [&entity](const robot2D::ecs::Entity& ent) {
             return entity == ent;
         });
         if(found == m_children.end()) {
             entity.getComponent<TransformComponent>().m_childID = entity.getIndex();
-            entity.getComponent<TransformComponent>().m_parent = this;
+            entity.getComponent<TransformComponent>().m_parent = parent;
             m_children.emplace_back(entity);
         }
     }
 
+    void TransformComponent::removeSelf(bool removeFromScene) {
+        if(!isChild())
+            return;
+
+        if(m_parent)
+            m_parent.getComponent<TransformComponent>().removeChild(m_childID, removeFromScene);
+    }
+
     void TransformComponent::removeChild(robot2D::ecs::Entity entity, bool removeFromScene ) {
-        auto found = std::remove_if(m_children.begin(), m_children.end(), [&entity](robot2D::ecs::Entity ent) {
+        auto found = std::remove_if(m_children.begin(),
+                                    m_children.end(), [&entity](const robot2D::ecs::Entity& ent) {
             return entity == ent;
         });
 
@@ -176,19 +190,9 @@ namespace editor {
         m_children.erase(found, m_children.end());
     }
 
-    bool TransformComponent::hasChildren() const {
-        return !m_children.empty();
-    }
-
-    void TransformComponent::removeSelf(bool removeFromScene) {
-        if(!isChild())
-            return;
-
-        m_parent -> removeChild(m_childID, removeFromScene);
-    }
-
     void TransformComponent::removeChild(int childID, bool removeFromScene) {
-        auto found = std::find_if(m_children.begin(), m_children.end(), [&childID](robot2D::ecs::Entity entity) {
+        auto found = std::find_if(m_children.begin(),
+                                  m_children.end(), [&childID](robot2D::ecs::Entity entity) {
             return entity.getIndex() == childID;
         });
         if(found == m_children.end())

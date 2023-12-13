@@ -67,7 +67,7 @@ namespace editor {
                 for(auto& item: items)
                     addItem(item);
 
-                // m_multiItemCallback(items);
+                m_multiItemCallback(items);
             }
             if (request.Type == ImGuiSelectionRequestType_SetRange) {
                 std::vector<ITreeItem::Ptr> rangeItems{};

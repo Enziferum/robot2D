@@ -73,6 +73,7 @@ namespace editor {
         void onEntityRemove(const EntityRemovement& removement);
 
         void setupTreeHierarchy();
+        void processSelectedChildren(ITreeItem::Ptr parent, std::vector<robot2D::ecs::Entity>& entities);
     private:
         robot2D::MessageBus& m_messageBus;
         MessageDispatcher& m_messageDispatcher;

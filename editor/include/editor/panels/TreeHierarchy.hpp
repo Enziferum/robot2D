@@ -137,7 +137,7 @@ namespace editor {
 
         using ItemCallback = std::function<void(ITreeItem::Ptr selected)>;
         using ReorderItemCallback = std::function<void(ITreeItem::Ptr source, ITreeItem::Ptr target)>;
-        using MultiItemCallback = std::function<void(std::vector<ITreeItem::Ptr>)>;
+        using MultiItemCallback = std::function<void(std::list<ITreeItem::Ptr>)>;
         using MultiItemRangeCallback = std::function<void(std::vector<ITreeItem::Ptr>, bool del)>;
         using InsertItemCallback = std::function<void(ITreeItem::Ptr inserted)>;
 
@@ -149,8 +149,10 @@ namespace editor {
                 /// error
             }
             treeItem -> m_id = UUID();
-            if(!needPending)
+            if(!needPending) {
                 m_items.template emplace_back(treeItem);
+                m_multiSelection.updateItem(treeItem, true);
+            }
             else
                 m_additemsBuffer.emplace_back(treeItem);
             return treeItem;
@@ -208,7 +210,7 @@ namespace editor {
         void render();
     private:
         ITreeItem::Ptr findByID(UUID ID);
-
+        void renderTree();
     private:
         std::string m_name;
         std::list<ITreeItem::Ptr> m_items{};
