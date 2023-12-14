@@ -189,6 +189,7 @@ namespace editor {
 
             if(ts.isChild()) {
                 out << YAML::Key << "isChild" << YAML::Value << true;
+                out << YAML::Key << "ParentID" << YAML::Value << ts.getParent().getComponent<IDComponent>().ID;
             }
 
             out << YAML::EndMap;
@@ -329,7 +330,7 @@ namespace editor {
     }
 
     bool EntitySerializer::deserialize(void* inputData, robot2D::ecs::Entity& deserializedEntity,
-                                       bool& addToScene, std::vector<ChildPair>& children) {
+                                       bool& addToScene, std::vector<ChildInfo>& children) {
         if(!inputData)
             return false;
 
@@ -361,11 +362,24 @@ namespace editor {
             transform.setPosition(transformComponent["Position"].as<robot2D::vec2f>());
             transform.setScale(transformComponent["Size"].as<robot2D::vec2f>());
             transform.setRotate(transformComponent["Rotation"].as<float>());
+            ChildInfo childInfo;
+
             if(transformComponent["HasChildren"]) {
                 auto childIDS = transformComponent["ChildIDs"].as<std::vector<UUID>>();
                 ChildPair pair = std::make_pair(UUID(uuid), childIDS);
-                children.emplace_back(pair);
+                childInfo.childPair = std::move(pair);
             }
+            if(transformComponent["isChild"]) {
+                auto parentID = transformComponent["ParentID"].as<UUID>();
+                childInfo.isChild = true;
+                childInfo.parentUUID = parentID;
+                childInfo.self = deserializedEntity;
+                addToScene = false;
+            }
+
+            if(!childInfo.isEmpty())
+                children.emplace_back(childInfo);
+
         }
 
         auto spriteComponent = entity["SpriteComponent"];

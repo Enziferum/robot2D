@@ -291,13 +291,6 @@ namespace editor {
             RB_EDITOR_INFO("TreeHierarchy: MultiSelect RangeSelect");
             /// TODO(a.raag): Filter by items
         });
-
-        m_treeHierarchy.addInsertItemCallback([](ITreeItem::Ptr item) {
-            auto entity = item -> getUserData<robot2D::ecs::Entity>();
-            if(entity && !entity -> destroyed()) {
-                item -> setName(&entity -> getComponent<TagComponent>().getTag());
-            }
-        });
     }
 
     void ScenePanel::setInteractor(UIInteractor::Ptr interactor) {
@@ -321,23 +314,34 @@ namespace editor {
                 item -> setTexture(m_iconTextures[TreeItemIcon::Prefab], robot2D::Color::Blue);
             else
                 item -> setTexture(m_iconTextures[TreeItemIcon::Default], robot2D::Color::White);
-
+            entity.addComponent<UIComponent>().treeItem = item;
 
             auto& transform = entity.getComponent<TransformComponent>();
-            if(transform.hasChildren()) {
-                for(auto& child: transform.getChildren()) {
-                    auto childItem = item -> addChild();
-                    childItem -> setName(&child.getComponent<TagComponent>().getTag());
-                    childItem -> setUserData(child);
-                    if(child.hasComponent<PrefabComponent>())
-                        childItem -> setTexture(m_iconTextures[TreeItemIcon::Prefab], robot2D::Color::Blue);
-                    else
-                        childItem -> setTexture(m_iconTextures[TreeItemIcon::Default], robot2D::Color::White);
-                }
-            }
+            if(transform.hasChildren())
+                setStartChildEntity(entity, item);
         }
 
     }
+
+    void ScenePanel::setStartChildEntity(robot2D::ecs::Entity entity, ITreeItem::Ptr parent) {
+        auto& parentTransform = entity.getComponent<TransformComponent>();
+        if(auto item = std::dynamic_pointer_cast<TreeItem<robot2D::ecs::Entity>>(parent)) {
+            for(auto& child: parentTransform.getChildren()) {
+                auto childItem = item -> addChild();
+                childItem -> setName(&child.getComponent<TagComponent>().getTag());
+                childItem -> setUserData(child);
+                if(child.hasComponent<PrefabComponent>())
+                    childItem -> setTexture(m_iconTextures[TreeItemIcon::Prefab], robot2D::Color::Blue);
+                else
+                    childItem -> setTexture(m_iconTextures[TreeItemIcon::Default], robot2D::Color::White);
+                child.addComponent<UIComponent>().treeItem = childItem;
+                auto& childTransform = child.getComponent<TransformComponent>();
+                if(childTransform.hasChildren())
+                    setStartChildEntity(child, childItem);
+            }
+        }
+    }
+
 
     robot2D::ecs::Entity ScenePanel::getSelectedEntity(int PixelData) {
 
@@ -478,10 +482,10 @@ namespace editor {
 
         for(auto entity: selectedEntities) {
 
-            auto found = std::find_if(uiItems.begin(), uiItems.end(), [&entity, this](ITreeItem::Ptr item) {
+            auto found = std::find_if(uiItems.begin(), uiItems.end(),
+                                      [&entity, this](ITreeItem::Ptr item) {
                 auto uiEntity = GET_ENTITY(item);
                 if(!uiEntity -> destroyed() && *uiEntity == entity) {
-                    item -> setName(nullptr);
                     if(!m_treeHierarchy.deleteItem(item)) {
                         RB_EDITOR_ERROR("TreeHierarchy can't delete item.", item -> getID());
                     }
@@ -490,6 +494,9 @@ namespace editor {
                 else
                     return false;
             });
+
+            if(found == uiItems.end())
+                continue;
 
             if(!restoreUiInformation.hasItems()) {
 
@@ -516,9 +523,7 @@ namespace editor {
                         restoreUiInformation.push(*found, *prev, false);
                     }
                 }
-
             }
-
         }
 
         return restoreUiInformation;

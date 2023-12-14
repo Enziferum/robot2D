@@ -112,43 +112,63 @@ namespace editor {
 
         std::string sceneName = data["Scene"].as<std::string>();
         auto entites = data["Entities"];
+        if(!entites)
+            return false;
+
 
         EntitySerializer entitySerializer;
+        std::vector<ChildInfo> children;
 
-        if(entites) {
-            std::vector<ChildPair> children;
+        for(auto entity: entites) {
+            bool addToScene = true;
 
-            for(auto entity: entites) {
-                bool addToScene = true;
+            auto deserializedEntity = m_scene -> createEntity();
+            entitySerializer.deserialize(&entity, deserializedEntity, addToScene, children);
 
-                auto deserializedEntity = m_scene -> createEntity();
-                entitySerializer.deserialize(&entity, deserializedEntity, addToScene, children);
+            if(addToScene)
+                m_scene -> addAssociatedEntity(deserializedEntity);
+        }
 
-                uint64_t uuid = entity["Entity"].as<uint64_t>();
-                auto transformComponent = entity["TransformComponent"];
-                if(transformComponent) {
-                    if (transformComponent["isChild"]) {
-                        bool isChild = transformComponent["isChild"].as<bool>();
-                        if (isChild) {
-                            for (auto &pair: children) {
-                                for (auto &childIndex: pair.second) {
-                                    if (childIndex == UUID(uuid)) {
-                                        auto parent = m_scene -> getByUUID(pair.first);
-                                        parent.getComponent<TransformComponent>()
-                                                .addChild(parent, deserializedEntity);
-                                        addToScene = false;
-                                    }
-                                }
-                            }
-                        }
+        /// TODO(a.raag): Save and Read Scene as Tree
+        for(auto& child: children) {
+            if(child.isChild) {
+                auto selfUUID = child.self.getComponent<IDComponent>().ID;
+                if(child.hasChildren()) {
+                    for(auto& item: children) {
+                        if(item.isChild && item.parentUUID == selfUUID)
+                            child.self.getComponent<TransformComponent>().addChild(child.self, item.self);
                     }
                 }
 
-                if(addToScene)
-                    m_scene -> addAssociatedEntity(deserializedEntity);
+                auto parent = child.self.getComponent<TransformComponent>().getParent();
+                if(!parent) {
+                    auto found = m_scene -> getByUUID(child.parentUUID);
+                    if(found && !found.destroyed())
+                        found.getComponent<TransformComponent>().addChild(found, child.self);
+                    else {
+                        for(auto& item: children) {
+                            if(item.isChild && item.self.getComponent<IDComponent>().ID == child.parentUUID)
+                                item.self.getComponent<TransformComponent>().addChild(item.self, child.self);
+                        }
+                    }
+                }
+            }
+            else {
+                if(child.hasChildren()) {
+                    auto& parentUUID = child.childPair.first;
+                    auto self = m_scene -> getByUUID(parentUUID);
+
+                    for(auto& item: children) {
+                        if(item.isChild && item.parentUUID == parentUUID)
+                            self.getComponent<TransformComponent>().addChild(self, item.self);
+                    }
+
+                }
             }
 
         }
+
+
         return true;
     }
 

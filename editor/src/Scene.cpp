@@ -88,10 +88,7 @@ namespace editor {
             }
         }
 
-
-
         m_setItems.clear();
-
 
         m_deletePendingEntities.swap(m_deletePendingBuffer);
         for(auto entity: m_deletePendingEntities) {
@@ -99,7 +96,7 @@ namespace editor {
             for(auto child: ts.getChildren())
                 child.removeSelf();
 
-            m_sceneEntities.erase(std::find_if(m_sceneEntities.begin(), m_sceneEntities.end(),
+            m_sceneEntities.erase(std::remove_if(m_sceneEntities.begin(), m_sceneEntities.end(),
                                                               [&entity](robot2D::ecs::Entity item) {
                                                                   return item == entity;
             }), m_sceneEntities.end());
@@ -263,7 +260,8 @@ namespace editor {
     }
 
     robot2D::ecs::Entity Scene::getByUUID(UUID uuid) {
-        auto found = std::find_if(m_sceneEntities.begin(), m_sceneEntities.end(), [&uuid](robot2D::ecs::Entity entity) {
+        auto found = std::find_if(m_sceneEntities.begin(),
+                                  m_sceneEntities.end(), [&uuid](robot2D::ecs::Entity entity) {
             auto& ts = entity.getComponent<TransformComponent>();
             if(ts.hasChildren()) {
                 for(auto& child: ts.getChildren()) {
@@ -351,24 +349,6 @@ namespace editor {
         m_scene.removeEntity(entity);
     }
 
-    namespace util {
-        using InputIterator = std::list<robot2D::ecs::Entity>::iterator;
-
-        template<typename UnaryPredicate>
-        std::list<robot2D::ecs::Entity>::iterator entity_find_if(InputIterator first,
-                                                                 InputIterator last,
-                                                                 UnaryPredicate&& predicate) {
-
-            for(; first != last; ++first)
-                if(predicate(*first))
-                    return first;
-
-            return last;
-        };
-
-    }
-
-
     DeletedEntitiesRestoreInformation Scene::removeEntities(std::vector<robot2D::ecs::Entity>& removingEntities) {
         DeletedEntitiesRestoreInformation restoreInformation;
         std::vector<RemoveEntityInfo> removeInfos{removingEntities.size()};
@@ -382,15 +362,21 @@ namespace editor {
         for(auto item: removeInfos) {
             FoundIterator found = m_sceneEntities.begin();
 
+            bool isParentDel = false;
             for(; found != m_sceneEntities.end(); ++found) {
                 auto iterEntity = *found;
                 auto& transform = iterEntity.getComponent<TransformComponent>();
 
-                if(transform.hasChildren())
-                    removeChildEntities(restoreInformation, iterEntity, removeInfos);
-
                 if(iterEntity == item.entity) {
                     item.isDeleted = true;
+                    isParentDel = true;
+                    iterEntity.getComponent<UIComponent>().setName(nullptr);
+                }
+
+                if(transform.hasChildren())
+                    removeChildEntities(restoreInformation, removeInfos, iterEntity, isParentDel);
+
+                if(iterEntity == item.entity) {
                     break;
                 }
             }
@@ -433,36 +419,49 @@ namespace editor {
 
 
     void Scene::removeChildEntities(DeletedEntitiesRestoreInformation& information,
+                                    std::vector<RemoveEntityInfo>& removingEntities,
                                     robot2D::ecs::Entity parent,
-                                    std::vector<RemoveEntityInfo>& removingEntities) {
+                                    bool isParentDel) {
 
         for(auto& item: removingEntities) {
-            if(item.isDeleted)
-                continue;
 
             auto& transform = parent.getComponent<TransformComponent>();
             for(auto& child: transform.getChildren()) {
+                if(!child || child.destroyed())
+                    continue;
+                auto& childTransform = child.getComponent<TransformComponent>();
+
+                if(child == item.entity)
+                    isParentDel = true;
+
+                if(childTransform.hasChildren()) {
+                    removeChildEntities(information, removingEntities, child, isParentDel);
+                }
+
+                /// if parent markDeleted need delete all children
 
                 if(child == item.entity) {
                     information.push(parent, child, false, true, true);
                     item.isDeleted = true;
+                    child.getComponent<UIComponent>().setName(nullptr);
+                    m_scene.removeEntity(child);
                 }
 
-                auto& childTransform = child.getComponent<TransformComponent>();
-                if(childTransform.hasChildren()) {
-                    removeChildEntities(information, child, removingEntities);
+                if(isParentDel && !item.isDeleted) {
+                    information.push(parent, child, false, true, true);
+                    child.getComponent<UIComponent>().setName(nullptr);
+                    m_scene.removeEntity(child);
                 }
+
             }
-
         }
 
     }
 
-
     void Scene::restoreEntities(DeletedEntitiesRestoreInformation& restoreInformation) {
         std::vector<std::pair<robot2D::ecs::Entity, robot2D::ecs::Entity>> childBuffer;
 
-        for(const auto& info: restoreInformation.getInfos()) {
+        for(auto& info: restoreInformation.getInfos()) {
 
             if(info.child) {
                 if(info.anchorEntity && !info.anchorEntity.destroyed()) {
@@ -475,11 +474,13 @@ namespace editor {
                 }
 
                 m_scene.restoreEntity(info.entity);
+                info.entity.getComponent<UIComponent>().setName(&info.entity.getComponent<TagComponent>().getTag());
             }
             else {
 
                 if(info.first) {
                     m_scene.restoreEntity(info.entity);
+                    info.entity.getComponent<UIComponent>().setName(&info.entity.getComponent<TagComponent>().getTag());
                     bool isChained = false;
                     m_setItems.emplace_back(m_sceneEntities.begin(),
                                                          info.entity, isChained, robot2D::ecs::Entity{});
@@ -489,6 +490,7 @@ namespace editor {
                         if(!m_scene.restoreEntity(info.entity)) {
                             RB_EDITOR_ERROR("EditorScene: Can't Restore entity with index {0}", info.entity.getIndex());
                         }
+                        info.entity.getComponent<UIComponent>().setName(&info.entity.getComponent<TagComponent>().getTag());
                         auto anchorFound = std::find_if(m_sceneEntities.begin(),
                                                         m_sceneEntities.end(), [&info](auto item) {
                             return item == info.anchorEntity;
@@ -500,6 +502,7 @@ namespace editor {
                         if(!m_scene.restoreEntity(info.entity)) {
                             RB_EDITOR_ERROR("EditorScene: Can't Restore entity with index {0}", info.entity.getIndex());
                         };
+                        info.entity.getComponent<UIComponent>().setName(&info.entity.getComponent<TagComponent>().getTag());
                         bool isChained = true;
                         m_setItems.emplace_back(m_sceneEntities.end(), info.entity, isChained, info.anchorEntity);
                     }
@@ -518,9 +521,6 @@ namespace editor {
         }
 
     }
-
-
-
 
 }
 

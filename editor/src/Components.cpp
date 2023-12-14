@@ -145,6 +145,8 @@ namespace editor {
 
     void TransformComponent::setPosition(const robot2D::vec2f& pos) {
         for(auto child: m_children) {
+            if(!child || child.destroyed())
+                continue;
             auto& transform = child.getComponent<TransformComponent>();
             robot2D::vec2f offset = m_pos - child.getComponent<TransformComponent>().getPosition();
             transform.setPosition(pos - offset);

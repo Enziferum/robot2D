@@ -20,6 +20,7 @@ source distribution.
 *********************************************************************/
 
 #pragma once
+#include<string>
 
 #include <robot2D/Graphics/Transformable.hpp>
 #include <robot2D/Graphics/Texture.hpp>
@@ -31,6 +32,7 @@ source distribution.
 #include <robot2D/Graphics/Font.hpp>
 #include <robot2D/Ecs/Entity.hpp>
 
+#include "editor/panels/ITreeItem.hpp"
 #include "Uuid.hpp"
 #include "Property.hpp"
 #include "ClassID.hpp"
@@ -73,7 +75,7 @@ namespace editor {
             return m_children;
         }
 
-        bool isChild() const { return ( (m_parent && m_parent.destroyed()) && m_childID != -1); }
+        bool isChild() const { return ( (m_parent && !m_parent.destroyed()) && m_childID != -1); }
 
         void removeSelf(bool removeFromScene = true);
 
@@ -333,6 +335,11 @@ namespace editor {
 
     struct PrefabComponent {
         UUID prefabUUID;
+    };
+
+    struct UIComponent {
+        ITreeItem::Ptr treeItem;
+        void setName(std::string* text) { treeItem -> setName(text); }
     };
 
 }
