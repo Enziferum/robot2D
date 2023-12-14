@@ -178,13 +178,18 @@ namespace editor {
             out << YAML::Key << "Rotation" << YAML::Value << ts.getRotate();
 
             if(ts.hasChildren()) {
-                out << YAML::Key << "HasChildren" << YAML::Value << true;
                 std::vector<UUID> childIds;
+
                 for(auto& child: ts.getChildren()) {
-                    childIds.emplace_back(child.getComponent<IDComponent>().ID);
+                    if(child && !child.destroyed())
+                        childIds.emplace_back(child.getComponent<IDComponent>().ID);
                 }
-                out << YAML::Key << "ChildIDs" << YAML::Value << childIds;
-                needSerializeChildren = true;
+
+                if(!childIds.empty()) {
+                    out << YAML::Key << "HasChildren" << YAML::Value << true;
+                    out << YAML::Key << "ChildIDs" << YAML::Value << childIds;
+                    needSerializeChildren = true;
+                }
             }
 
             if(ts.isChild()) {

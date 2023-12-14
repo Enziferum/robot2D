@@ -434,11 +434,8 @@ namespace editor {
                 if(child == item.entity)
                     isParentDel = true;
 
-                if(childTransform.hasChildren()) {
+                if(childTransform.hasChildren())
                     removeChildEntities(information, removingEntities, child, isParentDel);
-                }
-
-                /// if parent markDeleted need delete all children
 
                 if(child == item.entity) {
                     information.push(parent, child, false, true, true);
