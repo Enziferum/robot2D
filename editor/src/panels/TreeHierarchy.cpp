@@ -52,6 +52,12 @@ namespace editor {
     }
 
 
+    void drawTexture(robot2D::vec2f size, robot2D::Texture* texture,
+                                    robot2D::Color tintColor) {
+        auto imID = ImGui::convertTextureHandle(texture -> getID());
+        ImGui::ImageButton(imID, size, {0,1}, {1, 0}, -1, tintColor);
+    };
+
 
 
     bool TreeHierarchy::deleteItem(ITreeItem::Ptr treeItem) {
@@ -228,7 +234,7 @@ namespace editor {
             m_items.erase(std::remove_if(m_items.begin(), m_items.end(), [this, &delItem](ITreeItem::Ptr item) {
                 bool eq = item == delItem;
                 delItem -> isQueryDeletion = false;
-                if(eq)
+                if(eq && !delItem -> isChild())
                     m_multiSelection.updateItem(item, false);
                 return eq;
             }), m_items.end());
@@ -248,235 +254,117 @@ namespace editor {
     void TreeHierarchy::renderTree() {
         static ImGuiMultiSelectFlags flags = ImGuiMultiSelectFlags_None | ImGuiMultiSelectFlags_ClearOnEscape;
 
-        constexpr auto drawTexture = [](robot2D::vec2f size, robot2D::Texture* texture,
-                                        robot2D::Color tintColor) {
-            auto imID = ImGui::convertTextureHandle(texture -> getID());
-            ImGui::ImageButton(imID, size, {0,1}, {1, 0}, -1, tintColor);
-        };
-
-
         if(ImGui::TreeNodeEx(m_name.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
 
             ImGuiMultiSelectIO* ms_io = ImGui::BeginMultiSelect(flags);
             m_multiSelection.applyRequests(ms_io, m_items);
 
-            const bool wantDelete = m_multiSelection.hasQueryDeletion() || ( !m_multiSelection.empty()
-                                                                             && ImGui::IsWindowFocused() && ImGui::IsKeyPressed(ImGuiKey_Delete));
+            const bool wantDelete = m_multiSelection.hasQueryDeletion() ||
+                    ( !m_multiSelection.empty() && ImGui::IsWindowFocused() && ImGui::IsKeyPressed(ImGuiKey_Delete));
             ITreeItem::Ptr item_curr_idx_to_focus = nullptr;
 
-            if(wantDelete) {
+            if(wantDelete)
                 item_curr_idx_to_focus = m_multiSelection.processDeletionPreLoop(ms_io, m_items);
-            }
 
             for(auto item: m_items) {
                 ImGuiTreeNodeFlags node_flags = m_tree_base_flags;
 
                 if(item -> hasChildrens()) {
-
-                    node_flags |= ((m_selectedID == item -> getID()
-                                    && m_childSelectedID == NO_INDEX) ? ImGuiTreeNodeFlags_Selected : 0);
                     node_flags |=  ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_DefaultOpen;
-
-                    if(item -> m_iconTexture) {
-                        drawTexture({20, 20}, item -> m_iconTexture, item -> m_tintColor);
-                        ImGui::SameLine();
-                    }
-
-                    auto uuid = item -> m_id;
-                    ImGui::PushID(static_cast<void*>(&uuid));
-                    ImGui::SetNextItemSelectionUserData(static_cast<ImGuiSelectionUserData>(uuid));
-
-                    bool node_open = ImGui::TreeNodeEx(item -> m_name -> c_str(), node_flags);
-
-                    auto& childrens = item -> getChildrens();
-
-                    if(ImGui::IsMouseReleased(ImGuiMouseButton_Left)
-                       && ImGui::IsItemFocused() && ImGui::IsWindowHovered()) {
-                        m_selectedID = item -> m_id;
-                        m_childSelectedID = NO_INDEX;
-                        m_selectCallback(item);
-                    }
-
-                    m_callback(item);
-
-                    if(node_open) {
-                        if(ImGui::BeginDragDropSource()) {
-                            ImGui::SetDragDropPayload(m_playloadIdentifier.c_str(), &item -> m_id,
-                                                      sizeof(item -> m_id));
-                            ImGui::Text(item -> m_name -> c_str());
-                            ImGui::EndDragDropSource();
-                        }
-
-                        if(ImGui::BeginDragDropTarget()) {
-                            auto* payload = ImGui::AcceptDragDropPayload(m_playloadIdentifier.c_str());
-                            if(payload) {
-                                if(payload -> IsDataType(m_playloadIdentifier.c_str())) {
-                                    UUID id = *static_cast<UUID*>(payload -> Data);
-#ifdef _WIN32
-                                    RB_EDITOR_INFO("TreeHierarchy: got item with ID = {0}", id);
-#else
-                                    // TODO(a.raag) fmt don't support UUID Correctly
-#endif
-                                    m_reorderCallback(findByID(id), item);
-                                }
-                            }
-                            ImGui::EndDragDropTarget();
-                        }
-
-                        for(auto child: childrens) {
-                            if(child -> m_iconTexture) {
-                                drawTexture({20, 20}, child -> m_iconTexture, child -> m_tintColor);
-                                ImGui::SameLine();
-                            }
-
-                            ImGuiTreeNodeFlags child_node_flags = m_tree_base_flags;
-                            child_node_flags |= ((m_childSelectedID == child -> m_child_id)
-                                                 ? ImGuiTreeNodeFlags_Selected : 0);
-                            child_node_flags |= ImGuiTreeNodeFlags_Leaf;
-
-                            auto childUUID = child -> m_id;
-                            ImGui::PushID(static_cast<void*>(&childUUID));
-                            ImGui::SetNextItemSelectionUserData(static_cast<ImGuiSelectionUserData>(childUUID));
-
-                            bool childOpen = ImGui::TreeNodeEx(child -> m_name -> c_str(), child_node_flags);
-
-                            /// TODO(a.raag): recursive doNode
-                            if(ImGui::IsMouseReleased(ImGuiMouseButton_Left)
-                               && ImGui::IsItemFocused() && ImGui::IsWindowHovered()) {
-                                m_selectedID = NO_INDEX;
-                                m_childSelectedID = child -> m_child_id;
-                                m_selectCallback(child);
-                            }
-
-                            m_callback(child);
-
-                            if(ImGui::BeginDragDropSource()) {
-                                ImGui::SetDragDropPayload(m_playloadIdentifier.c_str(),
-                                                          &child -> m_child_id, sizeof(child -> m_child_id));
-                                ImGui::Text(item -> m_name -> c_str());
-                                ImGui::EndDragDropSource();
-                            }
-
-
-                            if(ImGui::BeginDragDropTarget()) {
-                                auto* payload = ImGui::AcceptDragDropPayload(m_playloadIdentifier.c_str());
-                                if(payload) {
-                                    if(payload -> IsDataType(m_playloadIdentifier.c_str())) {
-                                        UUID id = *static_cast<UUID*>(payload -> Data);
-#ifdef _WIN32
-                                        RB_EDITOR_INFO("TreeHierachy: Want make as child item with ID = {0}", id);
-#else
-                                        // TODO(a.raag) fmt don't support UUID Correctly
-#endif
-                                        m_makeAsChildCallback(findByID(id), item);
-                                    }
-                                }
-                                ImGui::EndDragDropTarget();
-                            }
-
-                            if(childOpen)
-                                ImGui::TreePop();
-                            ImGui::PopID();
-                        }
-                    }
-
-                    if(node_open)
-                        ImGui::TreePop();
-
-                    ImGui::PopID();
                 }
                 else {
-                    // | ImGuiTreeNodeFlags_NoTreePushOnOpen
                     node_flags |= ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_Leaf ;
+                }
 
-                    if(item -> isQueryDeletion || !item -> m_name)
-                        continue;
+                if(item -> isQueryDeletion || !item -> m_name)
+                    continue;
 
-                    auto hasItem = m_multiSelection.hasItem(item);
-                    if(hasItem)
-                        node_flags |= ImGuiTreeNodeFlags_Selected;
+                auto hasItem = m_multiSelection.hasItem(item);
+                if(hasItem)
+                    node_flags |= ImGuiTreeNodeFlags_Selected;
 
+                if(item -> m_iconTexture) {
+                    drawTexture({20, 20}, item -> m_iconTexture, item -> m_tintColor);
+                    ImGui::SameLine();
+                }
 
-                    if(item -> m_iconTexture) {
-                        drawTexture({20, 20}, item -> m_iconTexture, item -> m_tintColor);
-                        ImGui::SameLine();
-                    }
+                auto uuid = item -> m_id;
+                ImGui::PushID(static_cast<void*>(&uuid));
 
+                ImGui::SetNextItemSelectionUserData(static_cast<ImGuiSelectionUserData>(uuid));
+                bool node_open = false;
 
-                    auto uuid = item -> m_id;
-                    ImGui::PushID(static_cast<void*>(&uuid));
-
-                    ImGui::SetNextItemSelectionUserData(static_cast<ImGuiSelectionUserData>(uuid));
-                    bool node_open = false;
-
-                    const char* itemName = item -> m_name -> c_str();
-                    node_open = ImGui::TreeNodeEx(itemName, node_flags);
-
+                const char* itemName = item -> m_name -> c_str();
+                node_open = ImGui::TreeNodeEx(itemName, node_flags);
 
 
-                    if (item_curr_idx_to_focus == item)
-                        ImGui::SetKeyboardFocusHere(-1);
+                if (item_curr_idx_to_focus == item)
+                    ImGui::SetKeyboardFocusHere(-1);
 
 
-                    if(ImGui::BeginDragDropSource( )) {
-                        ImGui::SetDragDropPayload(m_playloadIdentifier.c_str(), &item -> m_id, sizeof(item -> m_id));
-                        ImGui::Text("%s", item -> m_name  -> c_str());
-                        ImGui::EndDragDropSource();
-                    }
+                if(ImGui::BeginDragDropSource( )) {
+                    ImGui::SetDragDropPayload(m_playloadIdentifier.c_str(),
+                                              &item -> m_id,
+                                              sizeof(item -> m_id));
+                    ImGui::Text("%s", item -> m_name  -> c_str());
+                    ImGui::EndDragDropSource();
+                }
 
-                    if(ImGui::IsMouseReleased(ImGuiMouseButton_Left) && ImGui::IsItemFocused() && ImGui::IsWindowHovered()) {
-                        m_selectedID = item -> m_id;
-                        m_childSelectedID = NO_INDEX;
-                        m_selectCallback(item);
-                    }
+                if(ImGui::IsMouseReleased(ImGuiMouseButton_Left)
+                        && ImGui::IsItemFocused() && ImGui::IsWindowHovered()) {
+                    m_selectCallback(item);
+                }
 
-                    if(!ImGui::IsKeyDown(static_cast<ImGuiKey>(robot2D::key2Int(m_shortCutKey)))) {
-                        if(ImGui::BeginDragDropTarget()) {
-                            auto* payload = ImGui::AcceptDragDropPayload(m_playloadIdentifier.c_str());
-                            if(payload) {
-                                if(payload -> IsDataType(m_playloadIdentifier.c_str())) {
-                                    UUID id = *static_cast<UUID*>(payload -> Data);
+                if(!ImGui::IsKeyDown(static_cast<ImGuiKey>(robot2D::key2Int(m_shortCutKey)))) {
+                    if(ImGui::BeginDragDropTarget()) {
+                        auto* payload = ImGui::AcceptDragDropPayload(m_playloadIdentifier.c_str());
+                        if(payload) {
+                            if(payload -> IsDataType(m_playloadIdentifier.c_str())) {
+                                UUID id = *static_cast<UUID*>(payload -> Data);
 #ifdef _WIN32
-                                    RB_EDITOR_INFO("Not Child: Got item with ID = {0}", id);
+                                RB_EDITOR_INFO("Not Child: Got item with ID = {0}", id);
 #else
-                                    // TODO(a.raag) fmt don't support UUID Correctly
+                                // TODO(a.raag) fmt don't support UUID Correctly
 #endif
-                                    auto found = findByID(id);
-                                    if(!found -> isChild() )
-                                        m_reorderCallback( found, item);
-                                    else
-                                        m_removeAsChildCallback(found, item);
-                                }
+                                auto found = findByID(id);
+                                if(!found -> isChild() )
+                                    m_reorderCallback( found, item);
+                                else
+                                    m_removeAsChildCallback(found, item);
                             }
-                            ImGui::EndDragDropTarget();
                         }
+                        ImGui::EndDragDropTarget();
                     }
-                    else if(ImGui::IsKeyDown(static_cast<ImGuiKey>(robot2D::key2Int(m_shortCutKey)))) {
-                        if(ImGui::BeginDragDropTarget()) {
-                            auto* payload = ImGui::AcceptDragDropPayload(m_playloadIdentifier.c_str());
-                            if(payload) {
-                                if(payload -> IsDataType(m_playloadIdentifier.c_str())) {
-                                    UUID id = *static_cast<UUID*>(payload -> Data);
+                }
+                else if(ImGui::IsKeyDown(static_cast<ImGuiKey>(robot2D::key2Int(m_shortCutKey)))) {
+                    if(ImGui::BeginDragDropTarget()) {
+                        auto* payload = ImGui::AcceptDragDropPayload(m_playloadIdentifier.c_str());
+                        if(payload) {
+                            if(payload -> IsDataType(m_playloadIdentifier.c_str())) {
+                                UUID id = *static_cast<UUID*>(payload -> Data);
 #ifdef _WIN32
-                                    RB_EDITOR_INFO("Not Child: want as make as child item with ID = {0}", id);
+                                RB_EDITOR_INFO("Not Child: want as make as child item with ID = {0}", id);
 #else
-                                    // TODO(a.raag) fmt don't support UUID Correctly
+                                // TODO(a.raag) fmt don't support UUID Correctly
 #endif
-                                    m_makeAsChildCallback(findByID(id), item);
-                                }
+                                m_makeAsChildCallback(findByID(id), item);
                             }
-                            ImGui::EndDragDropTarget();
                         }
+                        ImGui::EndDragDropTarget();
                     }
+                }
 
 
-                    if(node_open)
-                        ImGui::TreePop();
+                if(node_open) {
+                    if(item -> hasChildrens())
+                        renderTreeChildren(item);
 
                     m_callback(item);
 
-                    ImGui::PopID();
+                    ImGui::TreePop();
                 }
+
+                ImGui::PopID();
             }
 
             ms_io = ImGui::EndMultiSelect();
@@ -490,6 +378,74 @@ namespace editor {
         }
     }
 
+    void TreeHierarchy::renderTreeChildren(ITreeItem::Ptr parent) {
+        for(auto child: parent -> getChildrens()) {
+            if(child -> isQueryDeletion || !child -> m_name)
+                continue;
+
+            if(child -> m_iconTexture) {
+                drawTexture({20, 20}, child -> m_iconTexture, child -> m_tintColor);
+                ImGui::SameLine();
+            }
+
+            ImGuiTreeNodeFlags child_node_flags = m_tree_base_flags;
+            if(child -> hasChildrens()) {
+                child_node_flags |=  ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_DefaultOpen;
+            }
+            else {
+                child_node_flags |= ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_Leaf ;
+            }
+
+            auto hasItem = m_multiSelection.hasItem(child);
+            if(hasItem)
+                child_node_flags |= ImGuiTreeNodeFlags_Selected;
+
+            auto childUUID = child -> m_id;
+            ImGui::PushID(static_cast<void*>(&childUUID));
+            ImGui::SetNextItemSelectionUserData(static_cast<ImGuiSelectionUserData>(childUUID));
+
+            bool childOpen = ImGui::TreeNodeEx(child -> m_name -> c_str(), child_node_flags);
+
+            /// TODO(a.raag): recursive doNode
+            if(ImGui::IsMouseReleased(ImGuiMouseButton_Left)
+               && ImGui::IsItemFocused() && ImGui::IsWindowHovered()) {
+                m_selectCallback(child);
+            }
+
+            if(ImGui::BeginDragDropSource()) {
+                ImGui::SetDragDropPayload(m_playloadIdentifier.c_str(),
+                                          &child -> m_id, sizeof(child -> m_id));
+                ImGui::Text(child -> m_name -> c_str());
+                ImGui::EndDragDropSource();
+            }
+
+
+            if(ImGui::BeginDragDropTarget()) {
+                auto* payload = ImGui::AcceptDragDropPayload(m_playloadIdentifier.c_str());
+                if(payload) {
+                    if(payload -> IsDataType(m_playloadIdentifier.c_str())) {
+                        UUID id = *static_cast<UUID*>(payload -> Data);
+#ifdef _WIN32
+                        RB_EDITOR_INFO("TreeHierachy: Want make as child item with ID = {0}", id);
+#else
+                        // TODO(a.raag) fmt don't support UUID Correctly
+#endif
+                        m_makeAsChildCallback(findByID(id), child);
+                    }
+                }
+                ImGui::EndDragDropTarget();
+            }
+
+            if(childOpen) {
+                if(child -> hasChildrens())
+                    renderTreeChildren(child);
+
+                ImGui::TreePop();
+                m_callback(child);
+            }
+            ImGui::PopID();
+        }
+    }
 
 
     ITreeItem::Ptr TreeHierarchy::findByID(UUID ID) {
@@ -497,7 +453,7 @@ namespace editor {
         auto found = std::find_if(m_items.begin(), m_items.end(),
                                   [ID, &parent](ITreeItem::Ptr item) {
             for(auto child: item -> getChildrens()) {
-                if(child -> m_child_id == ID) {
+                if(child -> m_id == ID) {
                     parent = item;
                     return false;
                 }
@@ -509,7 +465,7 @@ namespace editor {
 
         if(parent) {
             for(auto child: parent -> getChildrens()) {
-                if (child -> m_child_id == ID) {
+                if (child -> m_id == ID) {
                     return child;
                 }
             }
@@ -523,21 +479,11 @@ namespace editor {
     }
 
     void TreeHierarchy::setSelected(ITreeItem::Ptr item) {
-        if(item -> isChild()) {
-            m_selectedID = NO_INDEX;
-            m_childSelectedID = item -> m_child_id;
-        }
-        else {
-            m_selectedID = item -> getID();
-            m_childSelectedID = NO_INDEX;
-        }
-
         m_multiSelection.updateItem(item, true);
     }
 
     void TreeHierarchy::clearSelection() {
         m_multiSelection.clear();
     }
-
 
 }
