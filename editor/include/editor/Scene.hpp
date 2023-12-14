@@ -110,8 +110,10 @@ namespace editor {
         void onPhysics2DStop();
 
         void removeDuplicate(robot2D::ecs::Entity entity);
-        void removeChildEntities(DeletedEntitiesRestoreInformation& information, robot2D::ecs::Entity parent,
-                                 std::vector<RemoveEntityInfo>& removingEntities);
+        void removeChildEntities(DeletedEntitiesRestoreInformation& information,
+                                 std::vector<RemoveEntityInfo>& removingEntities,
+                                 robot2D::ecs::Entity parent, bool isParentDel = false);
+
     private:
         friend class DuplicateCommand;
 

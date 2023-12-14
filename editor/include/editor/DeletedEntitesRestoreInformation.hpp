@@ -21,7 +21,7 @@ namespace editor {
 
         RestoreInfo& getLast() { return anchorEntitiesUuids.back(); }
 
-        const std::vector<RestoreInfo>& getInfos() const { return anchorEntitiesUuids; }
+        std::vector<RestoreInfo>& getInfos() { return anchorEntitiesUuids; }
 
         void push(robot2D::ecs::Entity anchorEntity,
                   robot2D::ecs::Entity entity, bool first, bool isChained, bool child) {

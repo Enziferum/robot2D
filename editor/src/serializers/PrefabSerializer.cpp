@@ -105,11 +105,11 @@ namespace editor {
 
         EntitySerializer entitySerializer;
 
+        /// TODO(a.raag): special deserialze for prefab
         if(prefabEntities) {
-            std::vector<ChildPair> children;
+            std::vector<ChildInfo> children;
             for(auto entity: prefabEntities) {
                 bool addToScene = true;
-
                 auto &deserializedEntity = prefab -> entity;
                 entitySerializer.deserialize(&entity, deserializedEntity, addToScene, children);
             }

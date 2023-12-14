@@ -234,7 +234,7 @@ namespace editor {
         ReorderItemCallback m_removeAsChildCallback;
         MultiItemCallback m_multiItemCallback;
         MultiItemRangeCallback m_multiItemRangeCallback;
-        InsertItemCallback  m_insertItemCallback;
+        InsertItemCallback  m_insertItemCallback{nullptr};
 
         std::vector<InsertItem> m_insertItems;
         std::vector<SetItem> m_setItems;

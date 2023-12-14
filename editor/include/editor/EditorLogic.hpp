@@ -129,6 +129,7 @@ namespace editor {
         void onEndPopup() override;
 
         void findSelectChildren(const robot2D::FloatRect& rect, robot2D::ecs::Entity child);
+        robot2D::ecs::Entity getSelectedEntityChild(robot2D::ecs::Entity parent, int graphicsEntityID);
     private:
         robot2D::MessageBus& m_messageBus;
         MessageDispatcher& m_messageDispatcher;

@@ -356,6 +356,8 @@ namespace editor {
     void EditorLogic::findSelectChildren(const robot2D::FloatRect &rect, robot2D::ecs::Entity entity) {
         auto& transform = entity.getComponent<TransformComponent>();
         for(auto& child: transform.getChildren()) {
+            if(!child || child.destroyed())
+                continue;
             auto& childTransform = child.getComponent<TransformComponent>();
             if(rect.contains(childTransform.getGlobalBounds()))
                 m_selectedEntities.emplace_back(child);
@@ -448,14 +450,13 @@ namespace editor {
                 msg -> entity = entity;
                 return entity;
             }
+
+
             auto& tx = entity.getComponent<TransformComponent>();
-            for(auto& child: tx.getChildren()) {
-                if(child.getIndex() == graphicsEntityID) {
-                    m_selectedEntities.emplace_back(child);
-                    auto* msg =
-                            m_messageBus.postMessage<PanelEntitySelectedMessage>(MessageID::PanelEntityNeedSelect);
-                    msg -> entity = child;
-                    return child;
+            if(tx.hasChildren()) {
+                robot2D::ecs::Entity childEntity = getSelectedEntityChild(entity, graphicsEntityID);
+                if(childEntity && !childEntity.destroyed()) {
+                    return childEntity;
                 }
             }
         }
@@ -465,6 +466,28 @@ namespace editor {
 
         return robot2D::ecs::Entity{};
     }
+
+
+    robot2D::ecs::Entity EditorLogic::getSelectedEntityChild(robot2D::ecs::Entity parent, int graphicsEntityID) {
+        auto& tx = parent.getComponent<TransformComponent>();
+        for(auto& child: tx.getChildren()) {
+            if(!child || child.destroyed())
+                continue;
+            if(child.getIndex() == graphicsEntityID) {
+                m_selectedEntities.emplace_back(child);
+                auto* msg =
+                        m_messageBus.postMessage<PanelEntitySelectedMessage>(MessageID::PanelEntityNeedSelect);
+                msg -> entity = child;
+                return child;
+            }
+
+            auto& childTransform = child.getComponent<TransformComponent>();
+            if(childTransform.hasChildren())
+                return getSelectedEntityChild(child, graphicsEntityID);
+        }
+        return robot2D::ecs::Entity{};
+    }
+
 
     bool EditorLogic::hasSelectedEntities() const {
         return !m_selectedEntities.empty();
