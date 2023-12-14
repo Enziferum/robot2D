@@ -87,8 +87,10 @@ namespace editor {
                         updateItem(*firstFound, request.RangeSelected);
                         rangeItems.push_back(*firstFound);
                     }
+                    updateItem(*lastFound, request.RangeSelected);
+                    rangeItems.push_back(*lastFound);
                 }
-                else
+                else if(firstFound != items.end())
                     updateItem(*firstFound, request.RangeSelected);
 
 

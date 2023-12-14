@@ -60,8 +60,7 @@ namespace editor {
         template<typename... Args>
         TreeItem::Ptr addChild(Args&& ... args) {
             auto child = std::make_shared<TreeItem<UserDataT>>(std::forward<Args>(args)...);
-            child -> m_id = m_id;
-            child -> m_child_id = UUID();
+            child -> m_id = UUID();
             child -> m_parent = this;
             m_childrens.template emplace_back(child);
             return child;
@@ -211,6 +210,7 @@ namespace editor {
     private:
         ITreeItem::Ptr findByID(UUID ID);
         void renderTree();
+        void renderTreeChildren(ITreeItem::Ptr parent);
     private:
         std::string m_name;
         std::list<ITreeItem::Ptr> m_items{};
@@ -226,8 +226,6 @@ namespace editor {
         using SetItem = std::tuple<Iterator, ITreeItem::Ptr, bool, ITreeItem::Ptr>;
 
         int m_tree_base_flags = 0;
-        UUID m_selectedID = NO_INDEX;
-        UUID m_childSelectedID = NO_INDEX;
 
         ItemCallback m_selectCallback;
         ItemCallback m_callback;

@@ -59,7 +59,7 @@ namespace editor {
             return static_cast<T*>(getUserDataInternal());
         }
 
-        bool isChild() const { return m_child_id != NO_INDEX; }
+        bool isChild() const { return m_parent != nullptr; }
 
         bool deleteChild(ITreeItem::Ptr item) {
             m_deletePendingItems.emplace_back(item);
@@ -68,8 +68,6 @@ namespace editor {
 
         void addChild(ITreeItem::Ptr child) {
             child -> m_parent = this;
-            child -> m_id = NO_INDEX;
-            child -> m_child_id = UUID();
             child -> isQueryDeletion = true;
             m_childrens.emplace_back(child);
         }
@@ -83,15 +81,16 @@ namespace editor {
         std::vector<ITreeItem::Ptr>& getChildrens() { return m_childrens; }
     protected:
         void removeChild(ITreeItem* child) {
-            auto found = std::find_if(m_childrens.begin(), m_childrens.end(), [&child](ITreeItem::Ptr item) {
-                return child -> m_child_id == item -> m_child_id;
+            auto found = std::find_if(m_childrens.begin(),
+                                      m_childrens.end(), [&child](ITreeItem::Ptr item) {
+                /// TODO(a.raag): add operator==();
+                return child -> m_id == item -> m_id;
             });
             m_childrens.erase(found, m_childrens.end());
         }
 
         virtual void* getUserDataInternal() const = 0;
         UUID m_id;
-        UUID m_child_id{NO_INDEX};
 
         std::string* m_name{nullptr};
         ITreeItem* m_parent{nullptr};
