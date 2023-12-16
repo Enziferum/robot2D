@@ -51,10 +51,12 @@ namespace editor {
         DECLARE_COMPONENT_ID()
 
         ~TransformComponent() override = default;
+        void setPosition(const robot2D::vec2f& pos, bool needUpdateChild);
         void setPosition(const robot2D::vec2f& pos) override;
 
         void addChild(robot2D::ecs::Entity parent, robot2D::ecs::Entity child);
         void removeChild(robot2D::ecs::Entity, bool removeFromScene = true);
+        void clearChildren() { m_children.clear(); }
         bool hasChildren() const;
 
         robot2D::FloatRect getLocalBounds() const {
@@ -167,6 +169,9 @@ namespace editor {
         quadVertexArray& getVertices();
 
         void setReorderZBuffer(bool flag) { m_needUpdateZbuffer = flag; }
+        bool isUtil{false};
+
+        void FlipTexture();
     private:
         friend class RenderSystem;
         friend class SceneRender;
@@ -180,6 +185,7 @@ namespace editor {
         robot2D::Color m_color;
         bool m_needUpdateZbuffer{false};
         std::string m_texturePath{""};
+
     };
 
 

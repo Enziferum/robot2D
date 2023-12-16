@@ -197,6 +197,8 @@ namespace editor {
                 case ScriptFieldType::Entity:  return "Entity";
                 case ScriptFieldType::Collision2D:  return "Collision2D";
                 case ScriptFieldType::Transform:  return "Transform";
+                case ScriptFieldType::Drawable:  return "Drawable";
+                case ScriptFieldType::Text:  return "Text";
             }
             RB_CORE_ASSERT(false, "Unknown ScriptFieldType");
             return "None";
@@ -223,6 +225,8 @@ namespace editor {
             if (fieldType == "Entity")  return ScriptFieldType::Entity;
             if (fieldType == "Collision2D")  return ScriptFieldType::Collision2D;
             if (fieldType == "Transform")  return ScriptFieldType::Transform;
+            if (fieldType == "Drawable")  return ScriptFieldType::Drawable;
+            if (fieldType == "Text")  return ScriptFieldType::Text;
 
             RB_CORE_ASSERT(false, "Unknown ScriptFieldType");
             return ScriptFieldType::None;
@@ -511,26 +515,41 @@ namespace editor {
     }
 
     void ScriptEngine::onCollision2DBegin(const Physics2DContact& contact) {
-        for(auto& [uuid, klass]: s_Data -> m_entityClasses) {
-            if( klass -> hasMethod("onCollision2DEnter") ) {
-                auto regMethods = s_Data -> m_entityClass -> getRegisterMethods();
-                if(regMethods.find("onCollision2DInternal") != regMethods.end()) {
-                    void* storage[3] = { (void*)&contact.entityA, (void*)&contact.entityB, (void*)&contact.contanctType};
-                    mono_runtime_invoke(regMethods["onCollision2DInternal"],
-                                        klass -> getInstance(), storage, nullptr);
+        for(auto& [uuid, instance]: s_Data -> m_entityInstances) {
+            auto klass = instance -> getClassWrapper();
+            if(contact.entityA == uuid || contact.entityB == uuid) {
+
+                UUID ownContact = (contact.entityA == uuid) ? contact.entityA : contact.entityB;
+                UUID otherContact = (contact.entityA != uuid) ? contact.entityA : contact.entityB;
+
+                if( klass -> hasMethod("onCollision2DEnter") ) {
+                    auto regMethods = s_Data -> m_entityClass -> getRegisterMethods();
+                    if(regMethods.find("onCollision2DInternal") != regMethods.end()) {
+                        void* storage[3] = { (void*)&ownContact, (void*)&otherContact, (void*)&contact.contanctType};
+                        mono_runtime_invoke(regMethods["onCollision2DInternal"],
+                                            klass -> getInstance(), storage, nullptr);
+                    }
                 }
+
             }
         }
     }
 
     void ScriptEngine::onCollision2DEnd(const Physics2DContact& contact) {
-        for(auto& [uuid, klass]: s_Data -> m_entityClasses) {
-            if( klass -> hasMethod("onCollision2DExit")) {
-                auto regMethods = s_Data -> m_entityClass -> getRegisterMethods();
-                if(regMethods.find("onCollision2DInternal") != regMethods.end()) {
-                    void* storage[3] = { (void*)&contact.entityA, (void*)&contact.entityB, (void*)&contact.contanctType};
-                    mono_runtime_invoke(regMethods["onCollision2DInternal"],
-                                        klass -> getInstance(), storage, nullptr);
+        for(auto& [uuid, instance]: s_Data -> m_entityInstances) {
+            auto klass = instance -> getClassWrapper();
+            if(contact.entityA == uuid || contact.entityB == uuid) {
+
+                UUID ownContact = (contact.entityA == uuid) ? contact.entityA : contact.entityB;
+                UUID otherContact = (contact.entityA != uuid) ? contact.entityA : contact.entityB;
+
+                if( klass -> hasMethod("onCollision2DExit") ) {
+                    auto regMethods = s_Data -> m_entityClass -> getRegisterMethods();
+                    if(regMethods.find("onCollision2DInternal") != regMethods.end()) {
+                        void* storage[3] = { (void*)&ownContact, (void*)&otherContact, (void*)&contact.contanctType};
+                        mono_runtime_invoke(regMethods["onCollision2DInternal"],
+                                            klass -> getInstance(), storage, nullptr);
+                    }
                 }
             }
         }

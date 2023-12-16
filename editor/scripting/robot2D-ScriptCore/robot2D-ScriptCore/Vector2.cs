@@ -24,20 +24,34 @@ namespace robot2D
         {
             return new Vector2(a.X + b.X, a.Y + b.Y);
         }
+        
+        public static Vector2 operator -(Vector2 a, Vector2 b)
+        {
+            return new Vector2(a.X - b.X, a.Y - b.Y);
+        }
 
         public static Vector2 operator *(Vector2 vector, float scalar)
         {
             return new Vector2(vector.X * scalar, vector.Y * scalar);
         }
-
+        
         public float LengthSquared()
         {
             return X * X + Y * Y;
         }
 
+        /// <summary>
+        ///  Length = Magnitude
+        /// </summary>
+        /// <returns></returns>
         public float Length()
         {
             return (float)Math.Sqrt(LengthSquared());
+        }
+        
+        public static float Dot(Vector2 a, Vector2 b)
+        {
+            return a.X * b.X + a.Y * b.Y;
         }
     }
 }

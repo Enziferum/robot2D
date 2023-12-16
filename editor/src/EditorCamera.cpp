@@ -64,7 +64,7 @@ namespace editor {
 
 
     void EditorCamera2D::setViewportSize(robot2D::vec2f newSize) {
-        constexpr float zoomScale = 8.f;
+        constexpr float zoomScale = 1.f;
         m_view.reset({0, 0, newSize.x / zoomScale, newSize.y / zoomScale});
     }
 

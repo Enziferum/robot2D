@@ -29,7 +29,9 @@ source distribution.
 namespace editor {
     class PasteCommand final: public ICommand {
     public:
-        PasteCommand(robot2D::MessageBus& messageBus, std::vector<robot2D::ecs::Entity> entities, UIInteractor::Ptr);
+        PasteCommand(robot2D::MessageBus& messageBus,
+                     std::vector<robot2D::ecs::Entity> entities,
+                     UIInteractor::Ptr);
         ~PasteCommand() override = default;
 
         DECLARE_CLASS_ID(PasteCommand)

@@ -35,6 +35,11 @@ namespace robot2D
                 InternalCalls.TransformComponent_SetTranslation(Entity.ID, ref value);
             }
         }
+
+        public void addChild(Entity child)
+        {
+            InternalCalls.TransformComponent_AddChild(Entity.ID, child.ID);
+        }
     }
     
     public class RigidBody2D : Component
@@ -76,6 +81,18 @@ namespace robot2D
         }
     }
 
+    public class DrawableComponent : Component
+    {
+        public void Flip()
+        {
+            InternalCalls.DrawableComponent_Flip(Entity.ID);
+        }
+    }
+
+    public class TextComponent : Component
+    {
+        
+    }
 
     public class CameraComponent : Component
     {
@@ -85,6 +102,16 @@ namespace robot2D
             {
                 InternalCalls.CameraComponent_SetPosition(Entity.ID, ref value);
             }
+        }
+
+        public Vector2 Size
+        {
+            get
+            {
+                InternalCalls.CameraComponent_GetSize(Entity.ID, out Vector2 size);
+                return size;
+            }
+            set => InternalCalls.CameraComponent_SetSize(Entity.ID, ref value);
         }
     }
 }

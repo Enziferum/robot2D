@@ -197,12 +197,22 @@ namespace editor {
                 ImGui::CloseCurrentPopup();
             }
 
-            if (ImGui::MenuItem("Sprite Renderer"))
+            if(ImGui::MenuItem("UtilRender")) {
+                if(!m_selectedEntity.hasComponent<DrawableComponent>())
+                    m_selectedEntity.addComponent<DrawableComponent>().isUtil = true;
+                else
+                    RB_EDITOR_WARN("This entity already has the Sprite Renderer Component!");
+                ImGui::CloseCurrentPopup();
+            }
+
+            if (ImGui::MenuItem("SpriteRender"))
             {
                 if (!m_selectedEntity.hasComponent<DrawableComponent>())
                     m_selectedEntity.addComponent<DrawableComponent>();
-                else
+                else {
                     RB_EDITOR_WARN("This entity already has the Sprite Renderer Component!");
+                }
+
                 ImGui::CloseCurrentPopup();
             }
 
@@ -310,6 +320,10 @@ namespace editor {
             colors[2] = color.blue; colors[3] = color.alpha;
             ImGui::ColorEdit4("Color", colors);
 
+
+            if(component.isUtil)
+                return;
+
             component.setColor(robot2D::Color::fromGL(colors[0], colors[1], colors[2], colors[3]));
             int lastDepth = component.getDepth();
             ImGui::InputInt("zDepth", &component.getDepth());
@@ -359,8 +373,6 @@ namespace editor {
                     ImGui::Text("ImageColorFormat = %s", "RGBA");
                 }
             }
-
-
         });
 
         drawComponent<ScriptComponent>("Script", entity, [this, entity,

@@ -106,6 +106,7 @@ namespace editor {
         void restoreDeletedEntities(DeletedEntitiesRestoreInformation& restoreInformation,
                                     DeletedEntitiesRestoreUIInformation& restoreUiInformation) override;
 
+        void uiSelectedAllEntities() override;
         const std::vector<class_id>& getCommandStack() const override;
         void exportProject(const ExportOptions& exportOptions) override;
         //////////////////////////////////////// UIInteractor ////////////////////////////////////////

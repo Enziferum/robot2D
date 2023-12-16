@@ -217,9 +217,17 @@ namespace editor {
         std::vector<robot2D::ecs::Entity> copiedEntites{int(m_copyEntities.size())};
         int counter = 0;
 
+        struct PasteInfo {
+            bool isParentPasted{false};
+            robot2D::ecs::Entity entity;
+        };
+
         for(auto& copy: m_copyEntities) {
-            const auto& copyPosition = copy.getComponent<TransformComponent>().getPosition();
-            auto copiedEntity = m_activeScene -> duplicateEntity(copyPosition, copy);
+            auto& transform = copy.getComponent<TransformComponent>();
+            auto copiedEntity = m_activeScene -> duplicateEntity(transform.getPosition(), copy);
+
+            if(transform.hasChildren()) {}
+
             copiedEntites[counter] = copiedEntity;
             ++counter;
         }
@@ -578,7 +586,14 @@ namespace editor {
         }, exportOptions);
     }
 
-
+    void EditorLogic::uiSelectedAllEntities() {
+        m_selectedEntities.clear();
+        auto& entities = m_activeScene -> getEntities();
+        std::transform(entities.begin(), entities.end(), m_selectedEntities.begin(),
+                       [](robot2D::ecs::Entity entity) {
+           return entity;
+        });
+    }
 
     //////////////////////////////////////// UIInteractor ////////////////////////////////////////
 

@@ -33,6 +33,7 @@ source distribution.
 #include "EventBinder.hpp"
 #include "EditorCamera.hpp"
 #include "Quad.hpp"
+#include "Components.hpp"
 
 namespace editor {
 
@@ -128,8 +129,8 @@ namespace editor {
         void handleEvents(const robot2D::Event& event);
         void update();
 
-        void setManipulated(robot2D::Transformable* transformable);
-        void setManipulated(std::vector<robot2D::Transformable*> transformables);
+        void setManipulated(TransformComponent* transformable);
+        void setManipulated(std::vector<TransformComponent*>& transformables);
 
         void setOperationType(Operation type);
         void setCamera(IEditorCamera::Ptr camera);
@@ -137,9 +138,9 @@ namespace editor {
         void draw(robot2D::RenderTarget& target,
                     robot2D::RenderStates states) const override;
 
-        bool hasManipulated() const { return m_manipulated != nullptr; }
+        bool hasManipulated() const { return !m_manipulateds.empty(); }
         bool isActive() const {
-            return m_leftMousePressed && m_manipulated != nullptr && m_isCollide;
+            return m_leftMousePressed && !m_manipulateds.empty() && m_isCollide;
         }
     private:
         void processMouseMoved(robot2D::Event event);
@@ -150,9 +151,7 @@ namespace editor {
         bool m_isCollide{false};
         bool m_leftMousePressed{false};
 
-        robot2D::Transformable* m_manipulated{nullptr};
-
-        std::vector<robot2D::Transformable*> m_manipulateds;
+        std::vector<TransformComponent*> m_manipulateds;
 
         EventBinder m_eventBinder;
         Operation m_operation{Operation::Move};

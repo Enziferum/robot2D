@@ -263,15 +263,15 @@ namespace editor {
                 }
             }
             else if(selectedEntities.size() > 1) {
-                std::vector<robot2D::Transformable*> moveTfs;
+                std::vector<TransformComponent*> moveTfs;
                 for(auto& entity: selectedEntities) {
                    if(entity && !entity.destroyed()) {
                        auto &tc = entity.getComponent<TransformComponent>();
                        moveTfs.emplace_back(&tc);
                    }
                 }
-                // m_guizmo2D.setIsShow(true);
-                // m_guizmo2D.setManipulated(&tc);
+                m_guizmo2D.setIsShow(true);
+                m_guizmo2D.setManipulated(moveTfs);
             }
             else {
                 m_guizmo2D.setManipulated(nullptr);

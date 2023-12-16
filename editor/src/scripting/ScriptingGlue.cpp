@@ -116,6 +116,29 @@ namespace editor {
         RB_CORE_ASSERT(entity);
 
         entity.getComponent<TransformComponent>().setPosition(*translation);
+        if(entity.hasComponent<Physics2DComponent>()) {
+            auto& p2c = entity.getComponent<Physics2DComponent>();
+            if(p2c.type == Physics2DComponent::BodyType::Kinematic) {
+
+                b2Body* body = static_cast<b2Body*>(p2c.runtimeBody);
+                body -> SetTransform({ (*translation).x / 32, (*translation).y / 32 }, 0.f);
+            }
+        }
+
+    }
+
+    static void TransformComponent_AddChild(UUID entityID, UUID child)
+    {
+        auto interactor = ScriptEngine::getInteractor();
+        RB_CORE_ASSERT(interactor);
+        robot2D::ecs::Entity entity = interactor -> getByUUID(entityID);
+        RB_CORE_ASSERT(entity);
+
+        robot2D::ecs::Entity childEntity = interactor -> getByUUID(child);
+        RB_CORE_ASSERT(childEntity);
+
+        auto& ts = entity.getComponent<TransformComponent>();
+        ts.addChild(entity, childEntity);
     }
 
     static void Rigidbody2DComponent_ApplyLinearImpulse(UUID entityID, robot2D::vec2f* impulse, robot2D::vec2f* point, bool wake)
@@ -215,6 +238,37 @@ namespace editor {
 
         auto& cameraComponent = entity.getComponent<CameraComponent>();
         cameraComponent.position = *position;
+        entity.getComponent<TransformComponent>().setPosition(*position);
+    }
+
+    static void CameraComponent_GetSize(UUID entityID, robot2D::vec2f* size) {
+        auto interactor = ScriptEngine::getInteractor();
+        RB_CORE_ASSERT(interactor);
+        robot2D::ecs::Entity entity = interactor -> getByUUID(entityID);
+        RB_CORE_ASSERT(entity);
+
+        auto& cameraComponent = entity.getComponent<CameraComponent>();
+        *size = cameraComponent.size;
+    }
+
+    static void CameraComponent_SetSize(UUID entityID, robot2D::vec2f* size) {
+        auto interactor = ScriptEngine::getInteractor();
+        RB_CORE_ASSERT(interactor);
+        robot2D::ecs::Entity entity = interactor -> getByUUID(entityID);
+        RB_CORE_ASSERT(entity);
+
+        auto& cameraComponent = entity.getComponent<CameraComponent>();
+        cameraComponent.size = *size;
+    }
+
+    static void DrawableComponent_Flip(UUID entityID) {
+        auto interactor = ScriptEngine::getInteractor();
+        RB_CORE_ASSERT(interactor);
+        robot2D::ecs::Entity entity = interactor -> getByUUID(entityID);
+        RB_CORE_ASSERT(entity);
+
+        auto& drawable = entity.getComponent<DrawableComponent>();
+        drawable.FlipTexture();
     }
 
     static bool Input_IsKeyDown(std::uint16_t keycode)
@@ -258,9 +312,10 @@ namespace editor {
         RB_ADD_INTERNAL_CALL(NativeLog);
         RB_ADD_INTERNAL_CALL(GetScriptInstance);
         RB_ADD_INTERNAL_CALL(Entity_HasComponent);
+        RB_ADD_INTERNAL_CALL(Input_IsKeyDown);
         RB_ADD_INTERNAL_CALL(TransformComponent_GetTranslation);
         RB_ADD_INTERNAL_CALL(TransformComponent_SetTranslation);
-        RB_ADD_INTERNAL_CALL(Input_IsKeyDown);
+        RB_ADD_INTERNAL_CALL(TransformComponent_AddChild);
         RB_ADD_INTERNAL_CALL(Rigidbody2DComponent_ApplyLinearImpulse);
         RB_ADD_INTERNAL_CALL(Rigidbody2DComponent_ApplyLinearImpulseToCenter);
         RB_ADD_INTERNAL_CALL(Rigidbody2DComponent_GetLinearVelocity);
@@ -269,6 +324,9 @@ namespace editor {
         RB_ADD_INTERNAL_CALL(Rigidbody2DComponent_SetType);
         RB_ADD_INTERNAL_CALL(RigidBody2DComponent_AddForce);
         RB_ADD_INTERNAL_CALL(CameraComponent_SetPosition);
+        RB_ADD_INTERNAL_CALL(CameraComponent_GetSize);
+        RB_ADD_INTERNAL_CALL(CameraComponent_SetSize);
+        RB_ADD_INTERNAL_CALL(DrawableComponent_Flip);
     }
 
 } // namespace editor

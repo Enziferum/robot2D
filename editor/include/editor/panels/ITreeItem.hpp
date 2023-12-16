@@ -78,6 +78,13 @@ namespace editor {
             m_parent -> removeChild(this);
         }
 
+        void update() {
+            for(auto delItem: m_deletePendingItems)
+                m_childrens.erase(std::remove_if(m_childrens.begin(), m_childrens.end(), [&delItem](auto item) {
+                    return delItem -> m_id == item -> m_id;
+            }), m_childrens.end());
+        }
+
         std::vector<ITreeItem::Ptr>& getChildrens() { return m_childrens; }
     protected:
         void removeChild(ITreeItem* child) {
@@ -86,7 +93,8 @@ namespace editor {
                 /// TODO(a.raag): add operator==();
                 return child -> m_id == item -> m_id;
             });
-            m_childrens.erase(found, m_childrens.end());
+
+            m_deletePendingItems.emplace_back(*found);
         }
 
         virtual void* getUserDataInternal() const = 0;
