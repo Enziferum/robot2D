@@ -23,7 +23,9 @@ namespace robot2D
         internal extern static bool removeEntity(ulong entityID);
         
         #endregion
-        
+
+        #region Transform
+
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void TransformComponent_GetTranslation(ulong entityID, out Vector2 translation);
 
@@ -31,8 +33,14 @@ namespace robot2D
         internal extern static void TransformComponent_SetTranslation(ulong entityID, ref Vector2 translation);
         
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void TransformComponent_AddChild(ulong entityID, ulong childID);
+        
+        #endregion
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static bool Input_IsKeyDown(KeyCode keycode);
 
+        
         #region Physics2D
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
@@ -60,6 +68,22 @@ namespace robot2D
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void CameraComponent_SetPosition(ulong entityID, ref Vector2 position);
+        
+        
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void CameraComponent_GetSize(ulong entityID, out Vector2 size);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void CameraComponent_SetSize(ulong entityID, ref Vector2 position);
+
+        
+        #endregion
+        
+        
+        #region Drawable
+        
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void DrawableComponent_Flip(ulong entityID);
         
         #endregion
     }

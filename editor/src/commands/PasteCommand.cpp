@@ -24,6 +24,12 @@ source distribution.
 
 namespace editor {
 
+    const class_id& PasteCommand::id() noexcept {
+        static const class_id id{"PasteCommand"};
+        return id;
+    }
+
+
     PasteCommand::PasteCommand(robot2D::MessageBus& messageBus,
                                std::vector<robot2D::ecs::Entity> entities,
                                UIInteractor::Ptr interactor):
@@ -34,10 +40,6 @@ namespace editor {
 
     }
 
-    const class_id& PasteCommand::id() noexcept {
-        static const class_id id{"PasteCommand"};
-        return id;
-    }
 
 
     void PasteCommand::undo() {

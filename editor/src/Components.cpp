@@ -109,6 +109,14 @@ namespace editor {
         return m_vertices;
     }
 
+    void DrawableComponent::FlipTexture() {
+        if(!m_texture)
+            return;
+
+        /// TODO(a.raag) update Vertices Texture Coords
+
+    }
+
     SceneCamera::SceneCamera()
     {
         RecalculateProjection();
@@ -140,6 +148,14 @@ namespace editor {
 
         //m_Projection = glm::ortho(orthoLeft, orthoRight, orthoBottom, orthoTop, m_OrthographicNear, m_OrthographicFar);
 
+    }
+
+    void TransformComponent::setPosition(const robot2D::vec2f& pos, bool needUpdateChild) {
+        if(needUpdateChild)
+            setPosition(pos);
+        else {
+            Transformable::setPosition(pos);
+        }
     }
 
 
@@ -201,6 +217,7 @@ namespace editor {
             return;
         removeChild(*found, removeFromScene);
     }
+
 
 
     TextComponent::TextComponent():

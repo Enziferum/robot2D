@@ -31,7 +31,7 @@ namespace editor {
         constexpr float sizeStep = 0.1f;
         constexpr float minSize = 1.f;
         constexpr float pixelPerStep = 500.f;
-        constexpr robot2D::vec2f minRectSize = {178, 100};
+        constexpr robot2D::vec2f minRectSize = {894, 489};
         constexpr robot2D::vec2f movieButtonSize = {20.f, 20.f};
         constexpr robot2D::vec2f qSize = {6, 6};
     }

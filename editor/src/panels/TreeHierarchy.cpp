@@ -180,6 +180,11 @@ namespace editor {
 
     }
 
+    void TreeHierarchy::applyChildModification(ITreeItem::Ptr source, ITreeItem::Ptr target) {
+        m_source = source;
+        m_target = target;
+    }
+
     void TreeHierarchy::render() {
         for(auto item: m_setItems) {
             auto iter = std::get<0>(item);
@@ -247,6 +252,19 @@ namespace editor {
             m_multiSelection.updateItem(item, needAdd);
         }
         m_additemsBuffer.clear();
+
+
+        /// has childModification
+        if(m_source && m_target) {
+
+            m_source -> m_parent -> update();
+
+
+
+            m_source = nullptr;
+            m_target = nullptr;
+        }
+
 
         renderTree();
     }
@@ -449,29 +467,32 @@ namespace editor {
 
 
     ITreeItem::Ptr TreeHierarchy::findByID(UUID ID) {
-        ITreeItem::Ptr parent = nullptr;
-        auto found = std::find_if(m_items.begin(), m_items.end(),
-                                  [ID, &parent](ITreeItem::Ptr item) {
-            for(auto child: item -> getChildrens()) {
-                if(child -> m_id == ID) {
-                    parent = item;
-                    return false;
-                }
+        auto startIter = m_items.begin();
+        for(; startIter != m_items.end(); ++startIter) {
+            auto start = *startIter;
+            if(start -> hasChildrens()) {
+                auto item = findByID(start, ID);
+                if(item)
+                    return item;
             }
-            return item -> m_id == ID;
-        });
-        if(found == m_items.end() && !parent)
-            return nullptr;
 
-        if(parent) {
-            for(auto child: parent -> getChildrens()) {
-                if (child -> m_id == ID) {
-                    return child;
-                }
-            }
+            if(start -> m_id == ID)
+                return start;
         }
+        return nullptr;
+    }
 
-        return *found;
+    ITreeItem::Ptr TreeHierarchy::findByID(ITreeItem::Ptr parent, UUID ID) {
+        for(auto child: parent -> getChildrens()) {
+            if(child -> hasChildrens()) {
+                auto item = findByID(child, ID);
+                if(item)
+                    return item;
+            }
+            if(child -> m_id == ID)
+                return child;
+        }
+        return nullptr;
     }
 
     void TreeHierarchy::clear() {
@@ -485,5 +506,7 @@ namespace editor {
     void TreeHierarchy::clearSelection() {
         m_multiSelection.clear();
     }
+
+
 
 }

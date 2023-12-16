@@ -205,10 +205,13 @@ namespace editor {
         std::list<ITreeItem::Ptr>& getItems() { return m_items; }
         const std::list<ITreeItem::Ptr>& getItems() const { return m_items; }
 
+        void applyChildModification(ITreeItem::Ptr source, ITreeItem::Ptr target);
+
         void clear();
         void render();
     private:
         ITreeItem::Ptr findByID(UUID ID);
+        ITreeItem::Ptr findByID(ITreeItem::Ptr Parent, UUID ID);
         void renderTree();
         void renderTreeChildren(ITreeItem::Ptr parent);
     private:
@@ -243,6 +246,9 @@ namespace editor {
         robot2D::Key m_shortCutKey{robot2D::Key::Q};
         std::string m_playloadIdentifier = "TreeNodeItem";
         MultiSelection m_multiSelection;
+
+        ITreeItem::Ptr m_source{nullptr};
+        ITreeItem::Ptr m_target{nullptr};
     };
 
 

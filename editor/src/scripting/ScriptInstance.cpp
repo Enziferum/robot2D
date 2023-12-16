@@ -68,4 +68,5 @@ namespace editor {
     bool ScriptInstance::setFieldValueInternal(const std::string& name, const void* value) {
         return m_class -> setFieldValue(name, value);
     }
+
 } // namespace editor

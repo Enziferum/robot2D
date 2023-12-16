@@ -38,7 +38,7 @@ namespace editor {
         template<typename T>
         constexpr T pixel_to_meters(const T& x)
         {
-            return x/PIXELS_PER_METERS;
+            return x / PIXELS_PER_METERS;
         };
 
         template<typename T>
@@ -57,11 +57,11 @@ namespace editor {
         void setEnabled(bool flag) { m_contact -> SetEnabled(flag); }
 
         robot2D::ecs::Entity* getContactShapeA() const {
-            return static_cast<robot2D::ecs::Entity*>(m_contact -> GetFixtureA() -> GetUserData().getData());
+            return (robot2D::ecs::Entity*)(m_contact -> GetFixtureA() -> GetUserData().getData());
         }
 
         robot2D::ecs::Entity* getContactShapeB() const {
-            return static_cast<robot2D::ecs::Entity*>(m_contact -> GetFixtureB() -> GetUserData().getData());
+            return (robot2D::ecs::Entity*)(m_contact -> GetFixtureB() -> GetUserData().getData());
         }
     private:
         b2Contact* m_contact{nullptr};
@@ -70,18 +70,21 @@ namespace editor {
     using ContactCallback = std::function<void(const Box2DContactAdapter&)>;
 
     void Box2DPhysicsAdapter::BeginContact([[maybe_unused]] b2Contact* contact) {
-       // RB_EDITOR_INFO("Box2DPhysicsAdapter::BeginContact");
+        RB_EDITOR_INFO("Box2DPhysicsAdapter::BeginContact");
         Box2DContactAdapter contactAdapter(contact);
     }
 
     void Box2DPhysicsAdapter::EndContact([[maybe_unused]] b2Contact* contact) {
-       // RB_EDITOR_INFO("Box2DPhysicsAdapter::EndContact");
+        RB_EDITOR_INFO("Box2DPhysicsAdapter::EndContact");
+        Box2DContactAdapter contactAdapter(contact);
     }
 
 
 
     void Box2DPhysicsAdapter::PreSolve([[maybe_unused]] b2Contact* contact, const b2Manifold* oldManifold) {
-        //RB_EDITOR_INFO("Box2DPhysicsAdapter::PreSolve");
+        return;
+        RB_EDITOR_INFO("Box2DPhysicsAdapter::PreSolve");
+
         Box2DContactAdapter contactAdapter(contact);
 
         auto entityA = contactAdapter.getContactShapeA();
@@ -96,7 +99,9 @@ namespace editor {
 
     void Box2DPhysicsAdapter::PostSolve([[maybe_unused]] b2Contact* contact,
                                         [[maybe_unused]] const b2ContactImpulse* impulse) {
-       // RB_EDITOR_INFO("Box2DPhysicsAdapter::PostSolve");
+        return;
+        RB_EDITOR_INFO("Box2DPhysicsAdapter::PostSolve");
+
         Box2DContactAdapter contactAdapter(contact);
 
         auto entityA = contactAdapter.getContactShapeA();
@@ -117,10 +122,16 @@ namespace editor {
         }
         m_physicsWorld -> Step(dt, velocityUpdateIterations, positionUpdateIterations);
 
-        for(auto& entity: *m_entityList) {
-            if(!entity.hasComponent<Physics2DComponent>())
-                continue;
-            auto& transform = entity.getComponent<TransformComponent>();
+        for(auto& entity: m_entityList)
+            updateEntity(entity);
+    }
+
+    void Box2DPhysicsAdapter::updateEntity(robot2D::ecs::Entity entity) {
+        if(!entity || entity.destroyed())
+            return;
+
+        auto& transform = entity.getComponent<TransformComponent>();
+        if(entity.hasComponent<Physics2DComponent>()) {
             auto& p2c = entity.getComponent<Physics2DComponent>();
 
             auto* body = static_cast<b2Body*>(p2c.runtimeBody);
@@ -128,7 +139,7 @@ namespace editor {
             const float& angle = body -> GetAngle();
 
             transform.setPosition({meters_to_pixels(position.x), meters_to_pixels(position.y) });
-            transform.setRotate(angle);
+            transform.rotate(angle);
         }
     }
 
@@ -140,13 +151,20 @@ namespace editor {
         }
 
         m_physicsWorld -> SetContactListener(this);
-        m_entityList = &entityList;
 
-        for(auto& entity: *m_entityList) {
-            if(!entity.hasComponent<Physics2DComponent>())
-                continue;
-            auto& transform = entity.getComponent<TransformComponent>();
-            auto& rb2d = entity.getComponent<Physics2DComponent>();
+        for(auto& item: entityList)
+            addEntity(item);
+
+    }
+
+    void Box2DPhysicsAdapter::addEntity(robot2D::ecs::Entity entity) {
+        if(!entity || entity.destroyed())
+            return;
+
+        auto& transform = entity.getComponent<TransformComponent>();
+        if(entity.hasComponent<Physics2DComponent>()) {
+            auto& lEntity = m_entityList.emplace_back(entity);
+            auto& rb2d = lEntity.getComponent<Physics2DComponent>();
 
             b2BodyDef b2BodyDef;
             switch(rb2d.type) {
@@ -161,6 +179,7 @@ namespace editor {
                     break;
             }
 
+
             b2BodyDef.position.Set(pixel_to_meters<float>(transform.getPosition().x),
                                    pixel_to_meters<float>(transform.getPosition().y));
             b2BodyDef.angle = 0;
@@ -170,8 +189,8 @@ namespace editor {
             rb2d.runtimeBody = b2body;
 
 
-            if(entity.hasComponent<Collider2DComponent>()) {
-                auto& c2d = entity.getComponent<Collider2DComponent>();
+            if(lEntity.hasComponent<Collider2DComponent>()) {
+                auto& c2d = lEntity.getComponent<Collider2DComponent>();
                 b2PolygonShape polygonShape;
 
                 auto center  = robot2D::vec2f {
@@ -183,19 +202,25 @@ namespace editor {
 
                 b2FixtureDef fixtureDef;
                 fixtureDef.shape = &polygonShape;
-                fixtureDef.density = c2d.density;
-                fixtureDef.friction = c2d.friction;
-                fixtureDef.restitution = c2d.restitution;
-                fixtureDef.restitution = c2d.restitutionThreshold;
-                fixtureDef.userData.setData(&entity);
+                if(b2BodyDef.type !=  b2BodyType::b2_kinematicBody) {
+                    fixtureDef.density = c2d.density;
+                    fixtureDef.friction = c2d.friction;
+                    fixtureDef.restitution = c2d.restitution;
+                    fixtureDef.restitution = c2d.restitutionThreshold;
+                }
 
+               // fixtureDef.userData.pointer = (void*)new robot2D::ecs::Entity();
+                fixtureDef.userData.pointer = &entity;
                 b2body -> CreateFixture(&fixtureDef);
             }
         }
 
+        for(auto& child: transform.getChildren())
+            addEntity(child);
     }
 
     void Box2DPhysicsAdapter::stop() {
         m_physicsWorld.reset();
     }
+
 }

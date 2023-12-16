@@ -110,10 +110,13 @@ namespace editor {
                     storage[n] = static_cast<void*>(&std::forward<decltype(value)>(value));
                 });
 
-                mono_runtime_invoke(m_registerMethods[name], m_instance, storage, nullptr);
+
+                if(m_registerMethods.find(name) != m_registerMethods.end())
+                    mono_runtime_invoke(m_registerMethods[name], m_instance, storage, nullptr);
             }
             else {
-                mono_runtime_invoke(m_registerMethods[name], m_instance, nullptr, nullptr);
+                if(m_registerMethods.find(name) != m_registerMethods.end())
+                    mono_runtime_invoke(m_registerMethods[name], m_instance, nullptr, nullptr);
             }
         }
 

@@ -45,8 +45,11 @@ namespace editor {
             m_callbacks[callbackType] = std::move(callback);
         }
     private:
+        void addEntity(robot2D::ecs::Entity entity);
+        void updateEntity(robot2D::ecs::Entity entity);
+    private:
         std::unique_ptr<b2World> m_physicsWorld{nullptr};
-        editorEntityList* m_entityList{nullptr};
+        std::vector<robot2D::ecs::Entity> m_entityList;
         std::unordered_map<PhysicsCallbackType, PhysicsCallback> m_callbacks;
     };
 }

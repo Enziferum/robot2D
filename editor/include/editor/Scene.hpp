@@ -104,7 +104,7 @@ namespace editor {
             bool isDeleted{false};
         };
 
-
+        robot2D::ecs::Entity getByUUID(robot2D::ecs::Entity, UUID uuid);
         void initScene();
         void onPhysics2DRun();
         void onPhysics2DStop();
@@ -113,6 +113,8 @@ namespace editor {
         void removeChildEntities(DeletedEntitiesRestoreInformation& information,
                                  std::vector<RemoveEntityInfo>& removingEntities,
                                  robot2D::ecs::Entity parent, bool isParentDel = false);
+
+        void duplicateEntityChild(robot2D::ecs::Entity parent, robot2D::ecs::Entity dupEntity);
 
     private:
         friend class DuplicateCommand;

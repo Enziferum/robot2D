@@ -127,11 +127,14 @@ namespace editor {
 
         switch(m_operation) {
             case Operation::Move: {
-                auto pos = m_manipulated -> getPosition();
                 if(m_xAxisManipulator.active()) {
                     /// move transformAble by x
                     float diff = moveVector.x - m_manipulatorLastPos.x;
-                    m_manipulated -> setPosition({pos.x + diff, pos.y});
+                    for(auto transform: m_manipulateds) {
+                        auto pos = transform -> getPosition();
+                        transform -> setPosition({pos.x + diff, pos.y});
+                    }
+
                     m_manipulatorLastPos.x += diff;
                     m_xAxisManipulator.moveX(diff);
                     m_yAxisManipulator.moveX(diff);
@@ -141,7 +144,11 @@ namespace editor {
                 else if(m_yAxisManipulator.active()) {
                     /// move transformAble by y
                     float diff = moveVector.y - m_manipulatorLastPos.y;
-                    m_manipulated -> setPosition({pos.x, pos.y + diff});
+                    for(auto transform: m_manipulateds) {
+                        auto pos = transform -> getPosition();
+                        transform -> setPosition({pos.x, pos.y + diff});
+                    }
+
                     m_manipulatorLastPos.y += diff;
                     m_xAxisManipulator.moveY(diff);
                     m_yAxisManipulator.moveY(diff);
@@ -150,7 +157,10 @@ namespace editor {
                 }
                 else if(m_XYAxisManipulator.active()) {
                     robot2D::vec2f diff = moveVector - m_manipulatorLastPos;
-                    m_manipulated -> setPosition(pos + diff);
+                    for(auto transform: m_manipulateds) {
+                        auto pos = transform -> getPosition();
+                        transform -> setPosition(pos + diff);
+                    }
                     m_manipulatorLastPos += diff;
                     m_xAxisManipulator.moveX(diff.x);
                     m_xAxisManipulator.moveY(diff.y);
@@ -163,12 +173,15 @@ namespace editor {
                 break;
             }
             case Operation::Scale: {
-                auto size = m_manipulated -> getScale();
+
                 if (m_xAxisManipulator.active()) {
                     /// move transformAble by x
                     float diff = moveVector.x - m_manipulatorLastPos.x;
                     m_manipulatorLastPos.x += diff;
-                    m_manipulated -> setScale( {size.x + diff, size.y} );
+                    for(auto transform: m_manipulateds) {
+                        auto size = transform -> getScale();
+                        transform -> setScale( {size.x + diff, size.y} );
+                    }
                     m_xAxisManipulator.moveX(diff);
                     m_yAxisManipulator.moveX(diff);
                     m_XYAxisManipulator.moveX(diff);
@@ -177,7 +190,10 @@ namespace editor {
                     /// move transformAble by y
                     float diff = moveVector.y - m_manipulatorLastPos.y;
                     m_manipulatorLastPos.y += diff;
-                    m_manipulated -> setScale( {size.x , size.y + diff} );
+                    for(auto transform: m_manipulateds) {
+                        auto size = transform -> getScale();
+                        transform -> setScale( {size.x, size.y + diff} );
+                    }
                     m_xAxisManipulator.moveY(diff);
                     m_yAxisManipulator.moveY(diff);
                     m_XYAxisManipulator.moveY(diff);
@@ -185,7 +201,10 @@ namespace editor {
                 }
                 else if(m_XYAxisManipulator.active()) {
                     robot2D::vec2f diff = moveVector - m_manipulatorLastPos;
-                    m_manipulated -> setScale(size + diff);
+                    for(auto transform: m_manipulateds) {
+                        auto size = transform -> getScale();
+                        transform -> setScale( size + diff );
+                    }
                     m_manipulatorLastPos += diff;
                     m_xAxisManipulator.moveX(diff.x);
                     m_xAxisManipulator.moveY(diff.y);
@@ -228,10 +247,14 @@ namespace editor {
 
 
 
-    void Guizmo2D::setManipulated(robot2D::Transformable* transformable) {
-        m_manipulated = transformable;
-        if(!m_manipulated)
+    void Guizmo2D::setManipulated(TransformComponent* transformable) {
+        m_manipulateds.clear();
+        if(!transformable)
             return;
+        m_manipulateds.emplace_back(transformable);
+
+        auto m_manipulated = m_manipulateds[0];
+
         const auto& position = m_manipulated -> getPosition();
         auto size = transformable -> getScale();
         const auto& rotation = m_manipulated -> getRotate();
@@ -276,12 +299,36 @@ namespace editor {
 
     }
 
-    void Guizmo2D::setManipulated(std::vector<robot2D::Transformable* > transformables) {
-        robot2D::vec2f minLeftPoint;
-        robot2D::vec2f maxRightPoint;
+    void Guizmo2D::setManipulated(std::vector<TransformComponent*>& transformables) {
+        m_manipulateds = transformables;
+        robot2D::vec2f minLeftPoint = transformables[0] -> getPosition();
+        robot2D::vec2f maxRightPoint = transformables[0] -> getPosition();
 
+        for(auto transform: transformables) {
+            auto position = transform -> getPosition();
+            if(position.x < minLeftPoint.x)
+                minLeftPoint.x = position.x;
+            if(position.y < minLeftPoint.y)
+                minLeftPoint.y = position.y;
+            if(position.x > maxRightPoint.x)
+                minLeftPoint.x = position.x;
+            if(position.y > maxRightPoint.y)
+                maxRightPoint.y = position.y;
+        }
 
+        constexpr float xyOffset = 3.f;
 
+        robot2D::vec2f distance = {maxRightPoint.x - minLeftPoint.x, maxRightPoint.y - minLeftPoint.y};
+
+        auto middle = robot2D::vec2f{ minLeftPoint.x + distance.x / 2.f,
+                                      minLeftPoint.y + distance.y / 2.f};
+        auto xSize = m_xAxisManipulator.getSize();
+        auto ySize = m_yAxisManipulator.getSize();
+        auto xySize = m_XYAxisManipulator.getSize();
+
+        m_xAxisManipulator.setPosition({middle.x, middle.y + xSize.y / 2.f});
+        m_yAxisManipulator.setPosition({middle.x + ySize.x / 2.F, middle.y});
+        m_XYAxisManipulator.setPosition({middle.x + xyOffset, middle.y - xySize.y - xyOffset});
     }
 
     void Guizmo2D::setOperationType(Guizmo2D::Operation type) {

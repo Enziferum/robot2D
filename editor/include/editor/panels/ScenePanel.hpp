@@ -72,6 +72,8 @@ namespace editor {
         void onEntityDuplicate(const EntityDuplication& duplication);
         void onEntityRemove(const EntityRemovement& removement);
 
+        void entityDuplicateChild(robot2D::ecs::Entity parentEntity, ITreeItem::Ptr parentItem);
+
         void setupTreeHierarchy();
         void setStartChildEntity(robot2D::ecs::Entity entity, ITreeItem::Ptr parent);
         void processSelectedChildren(ITreeItem::Ptr parent, std::vector<robot2D::ecs::Entity>& entities);
