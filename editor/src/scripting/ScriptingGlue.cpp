@@ -320,7 +320,7 @@ namespace editor {
         RegisterComponent<CameraComponent>();
         RegisterComponent<TextComponent>();
         RegisterComponent<DrawableComponent>();
-        RegisterComponent<AnimationComponent>();
+        RegisterComponent<AnimatorComponent>();
     }
 
     void ScriptGlue::registerFunctions()

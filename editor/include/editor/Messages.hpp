@@ -129,6 +129,10 @@ namespace editor {
 
     struct AnimationPlayMessage {
         robot2D::ecs::Entity entity;
+        enum class Mode: int {
+            Play = 0,
+            Stop = 1
+        } mode;
     };
 
     struct InstrumentMessage {

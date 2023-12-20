@@ -7,6 +7,9 @@
 #include <editor/Animation.hpp>
 #include <editor/Observer.hpp>
 #include <editor/UIInteractor.hpp>
+#include <editor/MessageDispather.hpp>
+#include <editor/Messages.hpp>
+
 #include "editor/async/AnimationTextureSliceTask.hpp"
 #include "IPanel.hpp"
 
@@ -15,7 +18,8 @@ namespace editor {
 
     class AnimationPanel: public IPanel {
     public:
-        AnimationPanel(robot2D::MessageBus& messageBus, UIInteractor::Ptr interactor);
+        AnimationPanel(robot2D::MessageBus& messageBus,
+                       MessageDispatcher& messageDispatcher, UIInteractor::Ptr interactor);
         ~AnimationPanel() override = default;
 
         void render() override;
@@ -24,9 +28,11 @@ namespace editor {
         void renderSequencer();
         void renderScrollBar(ImGuiIO& io);
         void processDragDrop();
-        void onAnimationSlice(const AnimationTextureSliceTask& task);
         void renderSlicePreview();
 
+
+        void onAnimationSlice(const AnimationTextureSliceTask& task);
+        void onSelectEntity(const PanelEntitySelectedMessage& message);
 
         void drawLine(ImDrawList* draw_list, int i, int regionHeight);
         void drawLineContent(ImDrawList* draw_list, int i, int /*regionHeight*/);
@@ -43,6 +49,7 @@ namespace editor {
         }
     private:
         robot2D::MessageBus& m_messageBus;
+        MessageDispatcher& m_messageDispatcher;
         UIInteractor::Ptr m_interactor;
 
 
@@ -88,9 +95,17 @@ namespace editor {
         UIKeyFrame* m_currentKeyFrame = nullptr;
         Animation* m_currentAnimation{nullptr};
         bool m_needShowSlicePreview{false};
+        std::string m_loadTexturePath;
+        robot2D::ecs::Entity m_animationEntity;
 
         bool m_popupOpened{false};
         bool m_popupHovered{false};
+
+        enum class PlayMode: int {
+            Play = 0,
+            Stop
+        } m_mode = PlayMode::Play;
+
 
         float m_height{300};
         bool m_focused{false};

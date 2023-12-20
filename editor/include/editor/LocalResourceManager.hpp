@@ -20,9 +20,16 @@ source distribution.
 *********************************************************************/
 
 #pragma once
+#include <unordered_map>
+#include <string>
+
 #include <robot2D/Graphics/Texture.hpp>
 #include <robot2D/Graphics/Font.hpp>
 #include <robot2D/Util/ResourceHandler.hpp>
+
+#include <editor/Uuid.hpp>
+#include <editor/Animation.hpp>
+
 
 namespace editor {
     class LocalResourceManager {
@@ -39,7 +46,6 @@ namespace editor {
         bool loadFromFile(const std::string& id, const std::string& filePath) {
             return m_textures.loadFromFile(id, filePath);
         }
-
 
         bool hasFont(const std::string& id) const {
             return m_fonts.has(id);
@@ -61,8 +67,36 @@ namespace editor {
             return m_fonts.get(id);
         }
 
+        Animation* addAnimation(UUID entityUUID) {
+            if(m_animations.find(entityUUID) == m_animations.end())
+                m_animations[entityUUID] = std::vector<Animation>();
+
+            m_animations[entityUUID].emplace_back();
+            return &m_animations[entityUUID].back();
+        }
+
+        Animation* getAnimation(UUID entityUUID, const std::string& animationID) {
+            if(m_animations.find(entityUUID) == m_animations.end())
+                return nullptr;
+
+            for(auto& animation: m_animations[entityUUID]) {
+                if(animation.name == animationID)
+                    return &animation;
+            }
+            return nullptr;
+        }
+
+        bool hasAnimations(UUID uuid)  {
+            return !m_animations[uuid].empty();
+        }
+
+        std::vector<Animation>& getAnimations(UUID uuid) {
+            return m_animations.at(uuid);
+        }
     private:
         robot2D::ResourceHandler<robot2D::Texture, std::string> m_textures;
         robot2D::ResourceHandler<robot2D::Font, std::string> m_fonts;
+
+        std::unordered_map<UUID, std::vector<Animation>> m_animations;
     };
 }

@@ -81,5 +81,15 @@ namespace editor {
             return {};
         return filePath.extension().string();
     }
+
+
+    std::string cutPath(const std::string& fullPath, const std::string& anchor) {
+        std::string path;
+        fs::path fsPath{fullPath};
+        auto relative = fsPath.relative_path().string();
+        auto pos = relative.find(anchor);
+        path = relative.substr(pos, relative.size() - pos);
+        return path;
+    }
 }
 
