@@ -5,7 +5,9 @@
 #include <editor/Components.hpp>
 #include <editor/scripting/ScriptingEngine.hpp>
 #include <editor/AnimationManager.hpp>
-
+#include <editor/ResouceManager.hpp>
+#include <editor/LocalResourceManager.hpp>
+#include <editor/FileApi.hpp>
 
 namespace YAML {
     template<>
@@ -318,8 +320,27 @@ namespace editor {
             out << YAML::EndMap;
         }
 
+        if(entity.hasComponent<AnimationComponent>()) {
+            auto* animationManager = LocalResourceManager::getManager();
+            auto animations= animationManager -> getAnimations(entity.getComponent<IDComponent>().ID);
 
+            out << YAML::Key << "AnimationComponent";
+            out << YAML::BeginMap;
+            std::vector<std::string> animationPaths;
+            animationPaths.reserve(animations.size());
+            AnimationParser animationParser;
 
+            for(auto& animation: animations) {
+                animationPaths.emplace_back(cutPath(animation.filePath, "assets"));
+                animationParser.saveToFile(animation.filePath, &animation);
+            }
+
+            out << YAML::Key << "Animations" << animationPaths;
+            out << YAML::EndMap;
+        }
+        if(entity.hasComponent<AnimatorComponent>()) {
+            /// TODO(a.raag):
+        }
 
         out << YAML::EndMap;
 
@@ -486,6 +507,15 @@ namespace editor {
         auto prefabComponent = entity["PrefabComponent"];
         if(prefabComponent) {
             deserializedEntity.addComponent<PrefabComponent>().prefabUUID = prefabComponent["UUID"].as<uint64_t>();
+        }
+
+        auto animationComponent = entity["AnimationComponent"];
+        if(animationComponent) {
+            auto resourceManager = ResourceManager::getManager();
+            auto animationPaths = animationComponent["Animations"].as<std::vector<std::string>>();
+            resourceManager -> setAnimationPathsToLoad(uuid, std::move(animationPaths));
+            deserializedEntity.addComponent<AnimationComponent>();
+            deserializedEntity.addComponent<AnimatorComponent>();
         }
 
         return true;

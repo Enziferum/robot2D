@@ -213,7 +213,7 @@ namespace editor {
                                                m_selectionCollider);
 
         m_panelManager.addPanel<GameViewport>(m_messageBus);
-        m_panelManager.addPanel<AnimationPanel>(m_messageBus, m_interactor);
+        m_panelManager.addPanel<AnimationPanel>(m_messageBus, m_messageDispather, m_interactor);
 
         setupBindings();
         setupShortCuts();

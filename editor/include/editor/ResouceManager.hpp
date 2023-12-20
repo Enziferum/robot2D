@@ -28,7 +28,11 @@ source distribution.
 #include <robot2D/Graphics/Font.hpp>
 #include <robot2D/Util/ResourceHandler.hpp>
 
+#include <editor/Uuid.hpp>
+#include <editor/Animation.hpp>
+
 namespace editor {
+    /// TODO(a.raag): clear all after loading
     class ResourceManager {
     public:
         static ResourceManager* getManager() {
@@ -66,10 +70,36 @@ namespace editor {
             return m_fonts.has(id);
         }
 
+        void setAnimationPathsToLoad(UUID uuid, std::vector<std::string>&& animationPaths) {
+            std::lock_guard<std::mutex> lockGuard{m_mutex};
+            m_animationPaths[uuid] = std::move(animationPaths);
+        }
 
+        std::vector<std::string>& getAnimationsPathToLoad(UUID uuid) {
+            std::lock_guard<std::mutex> lockGuard{m_mutex};
+            return m_animationPaths.at(uuid);
+        }
+
+        Animation* addAnimation(UUID uuid, const std::string& id) {
+            std::lock_guard<std::mutex> lockGuard{m_mutex};
+            if(m_animations.find(uuid) == m_animations.end())
+                m_animations[uuid] = std::vector<Animation>();
+
+            Animation animation;
+            animation.name = id;
+            m_animations[uuid].emplace_back(animation);
+            return &m_animations[uuid].back();
+        }
+
+        std::vector<Animation>& getAnimations(UUID uuid) {
+            std::lock_guard<std::mutex> lockGuard{m_mutex};
+            return m_animations.at(uuid);
+        }
     private:
         mutable std::mutex m_mutex;
         robot2D::ResourceHandler<robot2D::Image, std::string> m_images;
         robot2D::ResourceHandler<robot2D::Font, std::string> m_fonts;
+        std::unordered_map<UUID, std::vector<std::string>> m_animationPaths;
+        std::unordered_map<UUID, std::vector<Animation>> m_animations;
     };
 }

@@ -69,8 +69,12 @@ namespace editor {
         m_messageDispatcher.onMessage<AnimationPlayMessage>(MessageID::AnimationPlay,
                                                             [](const AnimationPlayMessage& message){
             auto entity = message.entity;
-            auto& animation = entity.getComponent<AnimationComponent>();
-            animation.Play();
+            auto& animator = entity.getComponent<AnimatorComponent>();
+            auto& animationComponent = entity.getComponent<AnimationComponent>();
+            if(message.mode == AnimationPlayMessage::Mode::Play)
+                animator.Play(animationComponent.getAnimation() -> name);
+            else
+                animator.Stop(animationComponent.getAnimation() -> name);
         });
     }
 
@@ -280,13 +284,13 @@ namespace editor {
             drawable.setTexture(localManager -> getTexture(id));
         }
         else {
-            if(!manager -> hasImage(id))
-                return;
-            auto& image = manager -> getImage(id);
-            auto* texture = localManager -> addTexture(texturePath.filename().string());
-            if(texture) {
-                texture -> create(image);
-                drawable.setTexture(*texture);
+            if(manager -> hasImage(id)) {
+                auto& image = manager -> getImage(id);
+                auto* texture = localManager -> addTexture(texturePath.filename().string());
+                if(texture) {
+                    texture -> create(image);
+                    drawable.setTexture(*texture);
+                }
             }
         }
 
@@ -310,9 +314,27 @@ namespace editor {
         }
 
         if(entity.hasComponent<AnimationComponent>()) {
+            for(auto& copyAnimation: manager -> getAnimations(entity.getComponent<IDComponent>().ID)) {
+                auto* animation = localManager -> addAnimation(entity.getComponent<IDComponent>().ID);
+                *animation = copyAnimation;
 
-            /// TODO(a.raag): load animations ///
+                std::filesystem::path imagePath { animation -> texturePath };
+                auto imageId = imagePath.filename().string();
 
+                if(localManager -> hasTexture(imageId))
+                    animation -> texture = &localManager -> getTexture(imageId);
+                else {
+                    auto& image = manager -> getImage(imageId);
+                    auto* localTexture = localManager -> addTexture(imageId);
+                    if(localTexture) {
+                        localTexture -> create(image);
+                        animation -> texture = localTexture;
+                    }
+                }
+            }
+            auto& animationComponent = entity.getComponent<AnimationComponent>();
+            animationComponent.setAnimation(
+                    &localManager -> getAnimations(entity.getComponent<IDComponent>().ID)[0]);
         }
     }
 

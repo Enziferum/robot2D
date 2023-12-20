@@ -56,7 +56,7 @@ namespace editor {
     }
 
 
-    const class_id& AnimationComponent::id() noexcept {
+    const class_id& AnimatorComponent::id() noexcept {
         static const class_id id{"Animator"};
         return id;
     }
@@ -288,12 +288,16 @@ namespace editor {
     }
 
 
-    void AnimationComponent::Play() {
+    void AnimatorComponent::Play(const std::string& animationName) {
         isPlaying = true;
+        m_animationName = animationName;
+        m_frameID = 0;
+        m_currentFrameTime = 0.f;
     }
 
-    void AnimationComponent::Stop() {
-
+    void AnimatorComponent::Stop(const std::string& animationName) {
+        isPlaying = false;
+        m_animationName = animationName;
     }
 
 }

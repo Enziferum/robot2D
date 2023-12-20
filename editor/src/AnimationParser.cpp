@@ -58,7 +58,7 @@ namespace editor {
         };
     }
 
-    bool AnimationParser::loadFromFile(const std::string& path, Animation* _animation) {
+    bool AnimationParser::loadFromFile(const std::string& path, Animation* anim) {
         const char* p = path.c_str();
         TiXmlDocument document(p);
         if (!document.LoadFile())
@@ -68,17 +68,17 @@ namespace editor {
         if(!head)
             return false;
 
-        std::string maskColor = head -> Attribute(m_keys[XmlKey::maskColor].c_str());
+        anim -> texturePath = head -> Attribute(m_keys[XmlKey::image].c_str());
+        // std::string maskColor = head -> Attribute(m_keys[XmlKey::maskColor].c_str());
 
         TiXmlElement* animation = head -> FirstChildElement(m_keys[XmlKey::animation].c_str());
         if(!animation)
             return false;
 
         while(animation) {
-            Animation anim;
-            anim.name = animation -> Attribute(m_keys[XmlKey::title].c_str());
-            animation -> Attribute(m_keys[XmlKey::delay].c_str(), &anim.delay);
-            RB_EDITOR_INFO("Start process animation, title: {0}, delay: {1}", anim.name, anim.delay);
+            anim -> name = animation -> Attribute(m_keys[XmlKey::title].c_str());
+            animation -> Attribute(m_keys[XmlKey::delay].c_str(), &anim -> framesPerSecond);
+            RB_EDITOR_INFO("Start process animation, title: {0}, delay: {1}", anim -> name, anim -> framesPerSecond);
 
             TiXmlElement* cut = animation -> FirstChildElement(m_keys[XmlKey::cut].c_str());
             if(!cut)
@@ -90,16 +90,12 @@ namespace editor {
                 cut -> Attribute(m_keys[XmlKey::y_coord].c_str(), &frame.ly);
                 cut -> Attribute(m_keys[XmlKey::width].c_str(), &frame.width);
                 cut -> Attribute(m_keys[XmlKey::height].c_str(), &frame.height);
-                anim.frames.emplace_back(frame);
-                anim.flip_frames.emplace_back(robot2D::IntRect(frame.lx + frame.width, frame.ly, -frame.width,
-                                                               frame.height));
+                anim -> addFrame(frame);
                 cut = cut->NextSiblingElement();
             }
             animation = animation -> NextSiblingElement();
-            RB_EDITOR_INFO("Animation reading finish, got : {0} frames", anim.frames.size());
-            animations.emplace_back(anim);
+            RB_EDITOR_INFO("Animation reading finish, got : {0} frames", anim -> frames.size());
         }
-
         return true;
     }
 
@@ -114,10 +110,11 @@ namespace editor {
         auto head = std::make_unique<TiXmlElement>(m_keys[XmlKey::head].c_str());
         if(!head)
             return false;
+        head -> SetAttribute(m_keys[XmlKey::image].c_str(), anim -> texturePath.c_str());
 
-       // auto hexColor = colorToHex(maskColor.red, maskColor.green, maskColor.blue, maskColor.alpha);
-       // std::string hexColorStr = std::to_string(hexColor);
-       // head -> SetAttribute(m_keys[XmlKey::maskColor].c_str(), hexColorStr.c_str());
+//        auto hexColor = colorToHex(maskColor.red, maskColor.green, maskColor.blue, maskColor.alpha);
+//        std::string hexColorStr = std::to_string(hexColor);
+//        head -> SetAttribute(m_keys[XmlKey::maskColor].c_str(), hexColorStr.c_str());
 
         auto animation = std::make_unique<TiXmlElement>(m_keys[XmlKey::animation].c_str());
         if(!animation)

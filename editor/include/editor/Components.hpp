@@ -20,7 +20,8 @@ source distribution.
 *********************************************************************/
 
 #pragma once
-#include<string>
+#include <string>
+#include <unordered_map>
 
 #include <robot2D/Graphics/Transformable.hpp>
 #include <robot2D/Graphics/Texture.hpp>
@@ -33,6 +34,7 @@ source distribution.
 #include <robot2D/Ecs/Entity.hpp>
 
 #include "editor/panels/ITreeItem.hpp"
+#include <editor/Animation.hpp>
 #include "Uuid.hpp"
 #include "Property.hpp"
 #include "ClassID.hpp"
@@ -348,22 +350,13 @@ namespace editor {
         void setName(std::string* text) { treeItem -> setName(text); }
     };
 
-    struct SpriteComponent {
-
-        struct Animation {
-            bool isLooped;
-            float speed;
-            bool isFlipped;
-            std::vector<robot2D::IntRect> frames;
-            std::vector<robot2D::IntRect> flip_frames;
-        };
-
+    struct AnimationComponent {
         void setTexture(const robot2D::Texture& texture) {
             m_texture = &texture;
         }
 
         const robot2D::Texture* getTexture() const {
-            return m_texture;
+            return m_animation -> texture;
         }
 
         void setTextureRect(const robot2D::IntRect& rect) {
@@ -375,29 +368,30 @@ namespace editor {
             return m_textureRect;
         }
 
-        void addAnimation(const Animation& animation) { m_animations.emplace_back(animation); }
-        std::vector<Animation>& getAnimations() { return m_animations; }
+        void setAnimation(Animation* animation) { m_animation = animation; }
+        Animation* getAnimation() { return m_animation; }
     private:
-        std::vector<Animation> m_animations;
-        friend class SpriteSystem;
+        friend class AnimationSystem;
+
         bool m_hasUpdate{false};
+        Animation* m_animation;
         robot2D::IntRect m_textureRect;
         const robot2D::Texture* m_texture;
     };
 
-    struct AnimationComponent {
+    struct AnimatorComponent {
         DECLARE_COMPONENT_ID()
 
-        void Play();
-        void Stop();
+        void Play(const std::string& animationName);
+        void Stop(const std::string& animationName);
 
 
-        bool isPlaying{false};
     private:
-        friend class AnimationSystem;
-        int m_animationID = 0;
+        bool isPlaying{false};
+        friend class AnimatorSystem;
         float m_currentFrameTime{0.f};
         std::uint32_t m_frameID{0};
+        std::string m_animationName;
     };
 
 }

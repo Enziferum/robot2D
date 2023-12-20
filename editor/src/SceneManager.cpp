@@ -20,12 +20,15 @@ source distribution.
 *********************************************************************/
 
 #include <filesystem>
+#include <robot2D/Util/Logger.hpp>
+
 #include <editor/SceneManager.hpp>
 #include <editor/FileApi.hpp>
-#include "editor/serializers/SceneSerializer.hpp"
+#include <editor/serializers/SceneSerializer.hpp>
 #include <editor/Components.hpp>
 #include <editor/ResouceManager.hpp>
-#include <robot2D/Util/Logger.hpp>
+#include <editor/AnimationParser.hpp>
+
 
 namespace editor {
     namespace {
@@ -196,11 +199,40 @@ namespace editor {
             }
         }
         if(entity.hasComponent<AnimationComponent>()) {
-            auto& animComponent = entity.getComponent<AnimationComponent>();
+            auto resourceManager = ResourceManager::getManager();
+            if(!resourceManager)
+                return;
 
+            auto& animationPaths = resourceManager
+                                    -> getAnimationsPathToLoad(entity.getComponent<IDComponent>().ID);
+            AnimationParser animationParser;
+            for(auto& localAnimationPath: animationPaths) {
+                fs::path animationPath{localAnimationPath};
+                auto id = animationPath.filename().string();
+                auto animation = resourceManager -> addAnimation(entity.getComponent<IDComponent>().ID, id);
+                if(!animation)
+                    continue;
+                auto absolutePath = combinePath(m_activeScene -> getAssociatedProjectPath(),
+                                                animationPath.string());
+                if(!animationParser.loadFromFile(absolutePath, animation)) {
+                    RB_EDITOR_WARN("Can't load animation by path {0}", absolutePath);
+                }
+                animation -> filePath = absolutePath;
 
+                auto localImagePath = animation -> texturePath;
+                fs::path imagePath{localImagePath};
+                auto imageId = imagePath.filename().string();
+                auto* image = resourceManager -> addImage(imageId);
+                if(!image)
+                    continue;
+                auto absoluteImagePath =
+                        combinePath(m_activeScene -> getAssociatedProjectPath(), imagePath.string());
+
+                if(!image -> loadFromFile(absoluteImagePath)) {
+                    RB_EDITOR_WARN("Can't load animation' image by path {0}", absoluteImagePath);
+                }
+            }
 
         }
-
     }
 }

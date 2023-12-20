@@ -174,11 +174,49 @@ namespace editor {
     }
 
 
+    ////////////////////////////// UIKeyFrame //////////////////////////////////////////
 
-    AnimationPanel::AnimationPanel(robot2D::MessageBus& messageBus, UIInteractor::Ptr interactor):
+
+    ////////////////////////////// UIKeyFrame //////////////////////////////////////////
+
+
+
+    ////////////////////////////// Cursor //////////////////////////////////////////
+
+    AnimationPanel::Cursor::Cursor() {
+
+    }
+
+    void AnimationPanel::Cursor::reset() {
+
+    }
+
+    void AnimationPanel::Cursor::nextKeyFrame() {
+
+    }
+
+    void AnimationPanel::Cursor::prevKeyFrame() {
+
+    }
+
+    void AnimationPanel::Cursor::draw(ImDrawList* drawList) {
+
+    }
+
+
+    ////////////////////////////// Cursor //////////////////////////////////////////
+
+
+    AnimationPanel::AnimationPanel(robot2D::MessageBus& messageBus,
+                                   MessageDispatcher& messageDispatcher, UIInteractor::Ptr interactor):
         IPanel(typeid(AnimationPanel)),
         m_messageBus{messageBus},
+        m_messageDispatcher{messageDispatcher},
         m_interactor{interactor}{
+
+
+        m_messageDispatcher.onMessage<PanelEntitySelectedMessage>(
+                MessageID::PanelEntityNeedSelect,BIND_CLASS_FN(onSelectEntity));
 
     }
 
@@ -235,14 +273,15 @@ namespace editor {
 
 
     void AnimationPanel::renderHeader(ImGuiWindow* window, ImDrawList* draw_list) {
-        static const char* textButtonImages[6] = {"<<|", "<|", ">", "|>", "|>>", "Save"};
+        static const char* textButtonImages[7] = {"<<|", "<|", ">", "||", "|>", "|>>", "Save"};
         constexpr float xOffset = 3.f;
         float startButtonOffsetX = 10;
         float outButtonWidth = 0;
         static int item_current_idx = 0;
         m_popupOpened = false;
+
         std::string previewAnimation = m_currentAnimation ? m_currentAnimation -> name : "No Animation";
-        auto* manager = AnimationManager::getManager();
+        auto* localManager = LocalResourceManager::getManager();
 
         if(renderButton(textButtonImages[0], draw_list,
                         {m_canvas_pos.x + startButtonOffsetX, m_canvas_pos.y + 2}, &outButtonWidth)) {
@@ -261,14 +300,25 @@ namespace editor {
         if(outButtonWidth != 0)
             startButtonOffsetX += (outButtonWidth + 2);
 
-        if(renderButton(textButtonImages[2], draw_list,
+        std::string playButton = m_mode == PlayMode::Play ? textButtonImages[2] : textButtonImages[3];
+        if(renderButton(playButton, draw_list,
                         {m_canvas_pos.x + startButtonOffsetX, m_canvas_pos.y + 2}, &outButtonWidth)) {
             if(m_interactor -> isRunning() || !m_currentAnimation)
                 return;
 
             auto* msg =
                     m_messageBus.postMessage<AnimationPlayMessage>(MessageID::AnimationPlay);
-            msg -> entity = m_currentAnimation -> associatedEntity;
+            msg -> entity = m_animationEntity;
+            msg -> mode = static_cast<AnimationPlayMessage::Mode>(static_cast<int>(m_mode));
+
+            if(m_mode == PlayMode::Play) {
+                m_mode = PlayMode::Stop;
+                m_currentAnimation -> isLooped = true;
+            }
+            else if(m_mode == PlayMode::Stop) {
+                m_mode = PlayMode::Play;
+                m_currentAnimation -> isLooped = false;
+            }
 
             /// Start Move cursor from start to end looping
         }
@@ -276,7 +326,7 @@ namespace editor {
         if(outButtonWidth != 0)
             startButtonOffsetX += (outButtonWidth + 2);
 
-        if(renderButton(textButtonImages[3], draw_list,
+        if(renderButton(textButtonImages[4], draw_list,
                         {m_canvas_pos.x + startButtonOffsetX, m_canvas_pos.y + 2}, &outButtonWidth)) {
             /// TODO(a.raag): move cursor to next Frame
             m_cursor.nextKeyFrame();
@@ -285,7 +335,7 @@ namespace editor {
         if(outButtonWidth != 0)
             startButtonOffsetX += (outButtonWidth + 2);
 
-        if(renderButton(textButtonImages[4], draw_list,
+        if(renderButton(textButtonImages[5], draw_list,
                         {m_canvas_pos.x + startButtonOffsetX, m_canvas_pos.y + 2}, &outButtonWidth)) {
             /// TODO(a.raag): move cursor to last frame
         }
@@ -293,14 +343,14 @@ namespace editor {
         if(outButtonWidth != 0)
             startButtonOffsetX += (outButtonWidth + 2);
 
-        if(renderButton(textButtonImages[5], draw_list,
+        if(renderButton(textButtonImages[6], draw_list,
                         {m_canvas_pos.x + startButtonOffsetX, m_canvas_pos.y + 2}, &outButtonWidth)) {
             if(!m_currentAnimation)
                 return;
 
-            if(!manager -> saveAnimation(m_currentAnimation)) {
-                RB_EDITOR_ERROR("AnimationPanel: Cant' Save Animation");
-            }
+//            if(!manager -> saveAnimation(m_currentAnimation)) {
+//                RB_EDITOR_ERROR("AnimationPanel: Cant' Save Animation");
+//            }
         }
 
         draw_list -> PushClipRect(m_childFramePos, m_childFramePos + m_childFrameSize,
@@ -308,27 +358,35 @@ namespace editor {
 
         if(renderCombo(window, draw_list, {contentMin.x + xOffset,contentMin.y + 1},
                        {}, previewAnimation, &m_popupHovered)) {
-            int n = 0;
-            for(auto& animation: manager -> getAnimations()) {
-                const bool is_selected = (item_current_idx == n);
-                if (ImGui::Selectable(animation.first.c_str(), is_selected))
-                    item_current_idx = n;
+            if(localManager -> hasAnimations(m_animationEntity.getComponent<IDComponent>().ID)) {
+                for(auto& animation:
+                        localManager -> getAnimations(m_animationEntity.getComponent<IDComponent>().ID)) {
+                    const bool is_selected = (m_currentAnimation -> name == animation.name);
+                    if (ImGui::Selectable(animation.name.c_str(), is_selected)) {
+                        m_currentAnimation = &animation;
+                        m_animationEntity.getComponent<AnimationComponent>().setAnimation(m_currentAnimation);
+                        m_keyFrames.clear();
 
-                // Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
-                if (is_selected)
-                    ImGui::SetItemDefaultFocus();
-                ++n;
+                        int frameOffset = 0;
+                        for(auto& frame: m_currentAnimation -> frames) {
+                            UIKeyFrame keyFrame;
+                            keyFrame.currentFrame = frameOffset;
+                            frameOffset += m_currentAnimation -> framesPerSecond;
+                            m_keyFrames.emplace_back(keyFrame);
+                        }
+                    }
+
+                    // Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
+                    if (is_selected)
+                        ImGui::SetItemDefaultFocus();
+                }
             }
             if(ImGui::Button("Add New")) {
-                auto& entites = m_interactor -> getSelectedEntities();
-                if(entites.size() > 1 || entites.empty())
-                    return;
-
-                auto entity = entites[0];
-                if(!entity || entity.destroyed())
-                    return;
-
                 auto* dialogAdapter = FiledialogAdapter::get();
+
+                if(!m_animationEntity || m_animationEntity.destroyed()) {
+                    ///// TODO(a.raag): no-op
+                }
 
                 std::string path;
                 if(!dialogAdapter -> saveFile(path, "Save Animation")) {
@@ -342,19 +400,23 @@ namespace editor {
                     /// errror
                 }
 
-
-                if(!entity.hasComponent<SpriteComponent>()) {
-                    if(!entity.hasComponent<AnimationComponent>())
-                        entity.addComponent<AnimationComponent>();
-                    entity.addComponent<SpriteComponent>();
+                if(!m_animationEntity.hasComponent<AnimationComponent>()) {
+                    if(!m_animationEntity.hasComponent<AnimationComponent>())
+                        m_animationEntity.addComponent<AnimationComponent>();
+                    m_animationEntity.addComponent<AnimationComponent>();
                 }
 
-                manager -> addAnimation(entity, path, name);
-                auto& anims = manager -> getAnimations();
-                auto found = anims.find(name);
-                if(found != anims.end())
-                    m_currentAnimation = &(found->second);
+                auto& animationComponent = m_animationEntity.getComponent<AnimationComponent>();
+                m_currentAnimation = nullptr;
+                m_currentAnimation = localManager -> addAnimation(m_animationEntity.getComponent<IDComponent>().ID);
+                if(!m_currentAnimation) {
+                    /// TODO(a.raag): Error
+                }
 
+                m_currentAnimation -> name = name;
+                m_currentAnimation -> filePath = path;
+                m_animationEntity.getComponent<AnimationComponent>().setAnimation(m_currentAnimation);
+                m_keyFrames.clear();
 
                 //m_popupOpened = false;
             }
@@ -942,6 +1004,7 @@ namespace editor {
         }
     }
 
+
     void AnimationPanel::processDragDrop() {
         if(ImGui::BeginDragDropTarget()) {
             auto* payload = ImGui::AcceptDragDropPayload(contentItemID);
@@ -966,15 +1029,121 @@ namespace editor {
             if(getFileExtension(realPath) != ".png")
                 return;
 
-            auto* localManager = LocalResourceManager::getManager();
-            auto fileName = getFileName(realPath);
-
-            TaskQueue::GetQueue() -> addAsyncTask<AnimationTextureSliceTask>(
-                    BIND_CLASS_FN(onAnimationSlice), fileName, realPath
-            );
+            m_loadTexturePath = realPath;
+            m_needShowSlicePreview = true;
 
             ImGui::EndDragDropTarget();
         }
+    }
+
+    void AnimationPanel::renderSlicePreview() {
+
+        if(!ImGui::Begin("AnimationSlice", &m_needShowSlicePreview, ImGuiWindowFlags_NoDocking)) {
+            ImGui::End();
+            return;
+        }
+
+        auto drawList = ImGui::GetWindowDrawList();
+        ImVec2 canvas_p0 = ImGui::GetCursorScreenPos();
+        ImGuiIO& io = ImGui::GetIO();
+
+        static ImU32 defaultColor = IM_COL32(0, 255, 0, 255);
+        static ImU32 selectColor = 0xA02A2AFF;
+        static std::vector<AnimationFrame> gluingFrames;
+
+        if(m_currentAnimation -> texture) {
+            auto textureSize = m_currentAnimation -> texture -> getSize();
+            ImVec2 tSize{static_cast<float>(textureSize.x), static_cast<float>(textureSize.y)};
+
+            //// Draw Texture
+            {
+                ImTextureID textureID = (ImTextureID) nullptr;
+                std::memcpy(&textureID, &m_currentAnimation -> texture -> getID(), sizeof(unsigned int));
+                ImRect bb(canvas_p0, canvas_p0 + tSize);
+                drawList -> AddImage(textureID, bb.Min, bb.Max, {0,0}, {1, 1});
+            }
+
+            int textNumber = 1;
+            for(auto& frame: m_currentAnimation -> frames) {
+                ImVec2 tPos{frame.frame.lx + frame.frame.width / 2.f, frame.frame.ly - 20.f};
+                drawList -> AddText({canvas_p0 + tPos},
+                                    IM_COL32(255, 255, 255, 255), std::to_string(textNumber).c_str());
+
+                ImVec2 lT = canvas_p0 + ImVec2{static_cast<float>(frame.frame.lx - 1), static_cast<float>(frame.frame.ly - 1)};
+                ImVec2 rB = canvas_p0 + ImVec2{static_cast<float>(frame.frame.lx + frame.frame.width + 2),
+                                               static_cast<float>(frame.frame.ly + frame.frame.height + 2)};
+
+                /// TODO(a.raag): change color to green default and glue are red //
+                auto found = std::find_if(gluingFrames.begin(), gluingFrames.end(),
+                                          [&frame](const auto& item) {
+                    return frame.frameIndex == item.frameIndex;
+                });
+                drawList -> AddRect(lT, rB, found == gluingFrames.end() ? defaultColor : selectColor);
+
+                ImRect bb = {lT, rB};
+
+                if(bb.Contains(io.MousePos) && bb.Contains(io.MouseClickedPos[0]) && found == gluingFrames.end())
+                    gluingFrames.emplace_back(frame);
+
+                ++textNumber;
+            }
+
+            auto offsetPos = canvas_p0 + tSize;
+            float outWidth = 0.f;
+            if(gluingFrames.size() > 1) {
+                if(renderButton("Glue Frames", drawList, offsetPos, &outWidth)) {
+                    robot2D::vec2i minPoint = { gluingFrames[0].frame.lx, gluingFrames[0].frame.ly };
+                    robot2D::vec2i maxPoint = { gluingFrames[0].frame.widthPoint().x,
+                                                gluingFrames[0].frame.heightPoint().y};
+
+                    for(auto& item: gluingFrames) {
+                        auto& frame = item.frame;
+                        if(minPoint.x > frame.lx)
+                            minPoint.x = frame.lx;
+                        if(minPoint.y > frame.ly)
+                            minPoint.y = frame.ly;
+
+                        if(maxPoint.x < frame.widthPoint().x)
+                            maxPoint.x = frame.widthPoint().x;
+                        if(maxPoint.y < frame.heightPoint().y)
+                            maxPoint.y = frame.heightPoint().y;
+
+                    }
+                    robot2D::IntRect gluedRect = robot2D::IntRect::create(minPoint, maxPoint);
+                    AnimationFrame animationFrame;
+                    animationFrame.addRect(gluedRect);
+                     m_currentAnimation -> replaceFrames(gluingFrames, animationFrame);
+                     gluingFrames.clear();
+                }
+            }
+
+            if(gluingFrames.empty()) {
+                /// TODO(a.raag): confirm button if only slice done
+                if(renderButton("Confirm", drawList, offsetPos + ImVec2(outWidth, 0.f))) {
+                    m_currentAnimation -> setFrameIndices();
+                    int frameOffset = 0;
+                    for(auto& frame: m_currentAnimation -> frames) {
+                        UIKeyFrame keyFrame;
+                        keyFrame.currentFrame = frameOffset;
+                        frameOffset += m_currentAnimation -> framesPerSecond;
+                        m_keyFrames.emplace_back(keyFrame);
+                    }
+                }
+            }
+        }
+        else {
+            float outWidth;
+            auto offsetPos = canvas_p0 + ImVec2{100, 100};
+
+            if(renderButton("Slice", drawList, offsetPos, &outWidth)) {
+                auto name = getFileName(m_loadTexturePath);
+                TaskQueue::GetQueue() -> addAsyncTask<AnimationTextureSliceTask>(
+                        BIND_CLASS_FN(onAnimationSlice), name,  m_loadTexturePath
+                );
+            }
+        }
+
+        ImGui::End();
     }
 
     void AnimationPanel::onAnimationSlice(const AnimationTextureSliceTask& task) {
@@ -997,99 +1166,35 @@ namespace editor {
         }
 
         m_currentAnimation -> texture = texture;
+        m_currentAnimation -> texturePath = cutPath(task.getFilePath(), "assets");
         m_keyFrames.clear();
         m_currentKeyFrame = nullptr;
 
         int frameOffset = 0;
-        auto entity = m_currentAnimation -> associatedEntity;
 
-        auto& sprite = entity.getComponent<SpriteComponent>();
+        for(auto& frame: frames)
+            m_currentAnimation -> addFrame(frame);
 
-        for(auto& frame: frames) {
-            AnimationFrame animFrame{0.f, frame};
-            m_currentAnimation -> frames.emplace_back(animFrame);
+        m_currentAnimation -> framesPerSecond = 10.f; // HardCode only for Test
+    }
 
+    void AnimationPanel::onSelectEntity(const editor::PanelEntitySelectedMessage& message) {
+        m_animationEntity = message.entity;
+        m_currentAnimation = nullptr;
+        m_keyFrames.clear();
+
+        if(!m_animationEntity.hasComponent<AnimationComponent>())
+            return;
+
+        m_currentAnimation = m_animationEntity.getComponent<AnimationComponent>().getAnimation();
+        int frameOffset = 0;
+        for(auto& frame: m_currentAnimation -> frames) {
             UIKeyFrame keyFrame;
             keyFrame.currentFrame = frameOffset;
-            frameOffset += framesPerSecond;
+            frameOffset += m_currentAnimation -> framesPerSecond;
             m_keyFrames.emplace_back(keyFrame);
         }
-
-        sprite.setTexture(*m_currentAnimation -> texture);
-        SpriteComponent::Animation spriteAnimation;
-
-        spriteAnimation.isFlipped = false;
-        spriteAnimation.speed = 1.F; // HardCode only for Test
-        for(auto& frame: m_currentAnimation -> frames) {
-            auto& f = frame.frame;
-            spriteAnimation.frames.emplace_back(f);
-            spriteAnimation.flip_frames.emplace_back(f.lx + f.width, f.ly, -f.width, f.height);
-        }
-        spriteAnimation.isLooped = true; // HardCode only for Test
-        sprite.addAnimation(spriteAnimation);
-
-
-        m_needShowSlicePreview = true;
-    }
-
-    void AnimationPanel::renderSlicePreview() {
-        auto textureSize = m_currentAnimation -> texture -> getSize();
-
-        if(!ImGui::Begin("AnimationSlice", &m_needShowSlicePreview, ImGuiWindowFlags_NoDocking)) {
-            ImGui::End();
-            return;
-        }
-
-        auto drawList = ImGui::GetWindowDrawList();
-        ImVec2 canvas_p0 = ImGui::GetCursorScreenPos();      // ImDrawList API uses screen coordinates!
-
-        ImTextureID textureID = (ImTextureID) nullptr;
-        std::memcpy(&textureID, &m_currentAnimation -> texture -> getID(), sizeof(unsigned int));
-        ImRect bb(canvas_p0, canvas_p0 + ImVec2{static_cast<float>(textureSize.x), static_cast<float>(textureSize.y)});
-        drawList -> AddImage(textureID, bb.Min, bb.Max, {0,0}, {1, 1});
-
-        auto pos = ImGui::GetCursorPos();
-        int textNumber = 1;
-        for(auto& frame: m_currentAnimation -> frames) {
-            ImVec2 tPos{frame.frame.lx + frame.frame.width / 2.f, frame.frame.ly - 20.f};
-            drawList -> AddText({canvas_p0 + tPos},
-                                IM_COL32(255, 255, 255, 255), std::to_string(textNumber).c_str());
-
-            ImVec2 lT = canvas_p0 + ImVec2{static_cast<float>(frame.frame.lx - 1), static_cast<float>(frame.frame.ly - 1)};
-            ImVec2 rB = canvas_p0 + ImVec2{static_cast<float>(frame.frame.lx + frame.frame.width + 2),
-                        static_cast<float>(frame.frame.ly + frame.frame.height + 2)};
-
-            drawList -> AddRect(lT, rB, 0xA02A2AFF);
-            ++textNumber;
-        }
-
-        ImGui::End();
     }
 
 
-
-    ////////////////////////////// Cursor //////////////////////////////////////////
-
-    AnimationPanel::Cursor::Cursor() {
-
-    }
-
-    void AnimationPanel::Cursor::reset() {
-
-    }
-
-    void AnimationPanel::Cursor::nextKeyFrame() {
-
-    }
-
-    void AnimationPanel::Cursor::prevKeyFrame() {
-
-    }
-
-    void AnimationPanel::Cursor::draw(ImDrawList* drawList) {
-
-    }
-
-
-    ////////////////////////////// Cursor //////////////////////////////////////////
 }

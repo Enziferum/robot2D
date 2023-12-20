@@ -40,6 +40,10 @@ namespace editor {
             return m_animations;
         }
 
+        std::vector<Animation> getAnimations(robot2D::ecs::Entity entity) {
+
+        }
+
 
         void addAnimation(robot2D::ecs::Entity associatedEntity,
                           const std::string& path, const std::string& name);

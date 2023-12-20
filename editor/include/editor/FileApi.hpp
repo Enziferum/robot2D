@@ -40,4 +40,6 @@ namespace editor {
     std::string combinePath(const std::string& basePath, const std::string& appendPath);
 
     std::string addFilename(const std::string& path, const std::string& filename);
+
+    std::string cutPath(const std::string& fullPath, const std::string& anchor);
 }

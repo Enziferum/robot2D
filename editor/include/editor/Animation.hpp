@@ -23,6 +23,8 @@ source distribution.
 
 #include <string>
 #include <list>
+#include <algorithm>
+
 #include <robot2D/Graphics/Texture.hpp>
 #include <robot2D/Graphics/Rect.hpp>
 #include <robot2D/Ecs/Entity.hpp>
@@ -30,19 +32,85 @@ source distribution.
 namespace editor {
 
     struct AnimationFrame {
-        float duration;
+        int frameIndex{0};
+        float duration{0.f};
         robot2D::IntRect frame;
+        robot2D::IntRect flipFrame;
+
+        void addRect(const robot2D::IntRect& rect) {
+            robot2D::IntRect _flipFrame(rect.lx + rect.width, rect.ly, -rect.width,
+                                       rect.height);
+            frame = rect;
+            flipFrame = _flipFrame;
+        }
     };
 
     struct Animation {
         int m_currentFrame{0};
-        int framesPerSecond;
-        float totalDuration;
+        int framesPerSecond{0};
+        float totalDuration{0.f};
         std::list<AnimationFrame> frames;
+        bool isLooped{false};
+        bool isFlipped{false};
+
         robot2D::Texture* texture{nullptr};
+        std::string texturePath;
         std::string name;
         std::string filePath;
+
         robot2D::ecs::Entity associatedEntity;
+
+        void setFrameIndices() {
+            int index = 0;
+            for(auto& frame: frames)
+                frame.frameIndex = ++index;
+        }
+
+        void addFrame(const robot2D::IntRect& frame) {
+            robot2D::IntRect flipFrame(frame.lx + frame.width, frame.ly, -frame.width,
+                             frame.height);
+            AnimationFrame animationFrame;
+            animationFrame.frame = frame;
+            animationFrame.flipFrame = flipFrame;
+            animationFrame.frameIndex = static_cast<int>(frames.size());
+            frames.emplace_back(animationFrame);
+        }
+
+        robot2D::IntRect* getFrame(int frameIndex) {
+            auto found = std::find_if(frames.begin(), frames.end(),
+                                      [&frameIndex](const auto& frame) {
+                return frame.frameIndex == frameIndex;
+            });
+            if(found == frames.end())
+                return nullptr;
+            return isFlipped ? &(*found).flipFrame : &(*found).frame;
+        }
+
+        /// TODO(a.raag): replaceFrames fix bug
+        void replaceFrames(std::vector<AnimationFrame>& animationFrames, AnimationFrame& replace) {
+            using Iterator = std::list<AnimationFrame>::iterator;
+            Iterator first;
+            Iterator last = frames.end();
+            Iterator newLast = frames.end();
+            first = std::find_if(frames.begin(), frames.end(),
+                                 [&animationFrames](const auto& item) {
+                 return animationFrames[0].frameIndex == item.frameIndex;
+            });
+
+            replace.frameIndex = first -> frameIndex;
+
+            for(auto& frame: animationFrames) {
+                newLast = frames.erase(std::remove_if(frames.begin(),
+                                            frames.end(), [&frame](const auto& item) {
+                    return frame.frameIndex == item.frameIndex;
+                }), frames.end());
+            }
+
+            if(last == newLast)
+                frames.emplace_back(replace);
+            else
+                frames.insert(first, replace);
+        }
     };
 
 
