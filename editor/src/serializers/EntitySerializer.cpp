@@ -4,7 +4,7 @@
 #include <editor/serializers/EntitySerializer.hpp>
 #include <editor/Components.hpp>
 #include <editor/scripting/ScriptingEngine.hpp>
-
+#include <editor/AnimationManager.hpp>
 
 
 namespace YAML {
@@ -317,6 +317,9 @@ namespace editor {
             out << YAML::Key << "UUID" << YAML::Value << uuid;
             out << YAML::EndMap;
         }
+
+
+
 
         out << YAML::EndMap;
 

@@ -36,6 +36,11 @@ namespace editor {
             return m_textures.has(id);
         }
 
+        bool loadFromFile(const std::string& id, const std::string& filePath) {
+            return m_textures.loadFromFile(id, filePath);
+        }
+
+
         bool hasFont(const std::string& id) const {
             return m_fonts.has(id);
         }

@@ -45,7 +45,7 @@ source distribution.
 #include <editor/FileApi.hpp>
 
 #include "imgui/imgui_internal.h"
-
+#include "editor/panels/AnimationPanel.hpp"
 
 
 namespace editor {
@@ -213,6 +213,7 @@ namespace editor {
                                                m_selectionCollider);
 
         m_panelManager.addPanel<GameViewport>(m_messageBus);
+        m_panelManager.addPanel<AnimationPanel>(m_messageBus, m_interactor);
 
         setupBindings();
         setupShortCuts();

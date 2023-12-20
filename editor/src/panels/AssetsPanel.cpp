@@ -47,6 +47,7 @@ namespace editor {
                 {".cs", AssetsPanelConfiguration::ResourceIconType::Script },
                 {".ttf", AssetsPanelConfiguration::ResourceIconType::Font },
                 {".prefab", AssetsPanelConfiguration::ResourceIconType::Prefab },
+                {".anim", AssetsPanelConfiguration::ResourceIconType::Animation },
         };
 
 
@@ -97,7 +98,7 @@ namespace editor {
         }
 
         m_itemEditName.second = false;
-        addCallback(BIND_CLASS_FN(dropFiles));
+        addObserverCallback(BIND_CLASS_FN(dropFiles));
     }
 
     void AssetsPanel::setAssetsPath(const std::string& path) {
@@ -110,6 +111,8 @@ namespace editor {
         static bool anyItemIsHovered = false;
 
         ImGui::Begin("Assets");
+
+        m_visible = ImGui::IsWindowHovered();
 
         if(!m_unlock) {
             ImGui::End();
@@ -244,7 +247,7 @@ namespace editor {
 #endif
 
                 if(extension == ".scene" || extension == ".png" || extension == ".ttf") {
-                    ImGui::SetDragDropPayload("CONTENT_BROWSER_ITEM", itemPath, len);
+                    ImGui::SetDragDropPayload(contentItemID, itemPath, len);
                     ImGui::Text(relativePath.filename().string().c_str());
                 }
                 if(extension == ".prefab") {
@@ -325,6 +328,9 @@ namespace editor {
     }
 
     void AssetsPanel::dropFiles(std::vector<std::string>&& paths) {
+        if(!m_visible)
+            return;
+
         namespace fs = std::filesystem;
         for(const auto& path: paths) {
             try {

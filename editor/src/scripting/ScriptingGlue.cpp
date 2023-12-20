@@ -271,6 +271,21 @@ namespace editor {
         drawable.FlipTexture();
     }
 
+
+    static void AnimationComponent_Play(UUID entityID, std::string name) {
+        auto interactor = ScriptEngine::getInteractor();
+        RB_CORE_ASSERT(interactor);
+        robot2D::ecs::Entity entity = interactor -> getByUUID(entityID);
+        RB_CORE_ASSERT(entity);
+    }
+
+    static void AnimationComponent_Stop(UUID entityID, std::string name) {
+        auto interactor = ScriptEngine::getInteractor();
+        RB_CORE_ASSERT(interactor);
+        robot2D::ecs::Entity entity = interactor -> getByUUID(entityID);
+        RB_CORE_ASSERT(entity);
+    }
+
     static bool Input_IsKeyDown(std::uint16_t keycode)
     {
         return robot2D::Keyboard::isKeyPressed(robot2D::Int2Key(keycode));
@@ -305,6 +320,7 @@ namespace editor {
         RegisterComponent<CameraComponent>();
         RegisterComponent<TextComponent>();
         RegisterComponent<DrawableComponent>();
+        RegisterComponent<AnimationComponent>();
     }
 
     void ScriptGlue::registerFunctions()
@@ -327,6 +343,8 @@ namespace editor {
         RB_ADD_INTERNAL_CALL(CameraComponent_GetSize);
         RB_ADD_INTERNAL_CALL(CameraComponent_SetSize);
         RB_ADD_INTERNAL_CALL(DrawableComponent_Flip);
+        RB_ADD_INTERNAL_CALL(AnimationComponent_Play);
+        RB_ADD_INTERNAL_CALL(AnimationComponent_Stop);
     }
 
 } // namespace editor

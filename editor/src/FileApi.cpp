@@ -67,5 +67,19 @@ namespace editor {
 
         return false;
     }
+
+    std::string getFileName(const std::string& path) {
+        fs::path filePath{path};
+        if(!hasFile(path))
+            return {};
+        return filePath.filename().string();
+    }
+
+    std::string getFileExtension(const std::string& path) {
+        fs::path filePath{path};
+        if(!hasFile(path))
+            return {};
+        return filePath.extension().string();
+    }
 }
 

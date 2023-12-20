@@ -94,6 +94,20 @@ namespace robot2D
         
     }
 
+
+    public class Animator : Component
+    {
+        public void Play(string animation)
+        {
+            InternalCalls.AnimationComponent_Play(Entity.ID, animation);
+        }
+
+        public void Stop(string animation)
+        {
+            InternalCalls.AnimationComponent_Stop(Entity.ID, animation);
+        }
+    }
+    
     public class CameraComponent : Component
     {
         public Vector2 Position

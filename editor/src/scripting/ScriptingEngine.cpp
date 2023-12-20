@@ -73,6 +73,7 @@ namespace editor {
         { "robot2D.TransformComponent", ScriptFieldType::Transform },
         { "robot2D.DrawableComponent", ScriptFieldType::Drawable },
         { "robot2D.TextComponent", ScriptFieldType::Text },
+        { "robot2D.Animator", ScriptFieldType::Animation },
     };
 
     namespace util {
@@ -199,6 +200,7 @@ namespace editor {
                 case ScriptFieldType::Transform:  return "Transform";
                 case ScriptFieldType::Drawable:  return "Drawable";
                 case ScriptFieldType::Text:  return "Text";
+                case ScriptFieldType::Animation:  return "Animation";
             }
             RB_CORE_ASSERT(false, "Unknown ScriptFieldType");
             return "None";
@@ -227,6 +229,7 @@ namespace editor {
             if (fieldType == "Transform")  return ScriptFieldType::Transform;
             if (fieldType == "Drawable")  return ScriptFieldType::Drawable;
             if (fieldType == "Text")  return ScriptFieldType::Text;
+            if (fieldType == "Animation")  return ScriptFieldType::Animation;
 
             RB_CORE_ASSERT(false, "Unknown ScriptFieldType");
             return ScriptFieldType::None;

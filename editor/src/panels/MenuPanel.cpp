@@ -48,6 +48,8 @@ namespace editor {
         if(openDeveloperMenu)
             developerMenu();
 
+        ImGui::ShowDemoWindow();
+
         if (ImGui::BeginMenuBar())
         {
             if (ImGui::BeginMenu("File"))

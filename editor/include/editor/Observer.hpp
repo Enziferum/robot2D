@@ -31,7 +31,7 @@ namespace editor {
         using Ptr = Observer*;
         virtual ~Observer() = 0;
 
-        void addCallback(std::function<void(std::vector<std::string>&&)>&& callback);
+        void addObserverCallback(std::function<void(std::vector<std::string>&&)>&& callback);
         void notify(std::vector<std::string>&& paths);
     private:
         std::function<void(std::vector<std::string>&&)> m_callback;

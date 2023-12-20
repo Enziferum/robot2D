@@ -39,7 +39,7 @@ source distribution.
 namespace editor {
 
     #define GET_ENTITY_UUID(item) item -> getUserData<robot2D::ecs::Entity>() -> getComponent<IDComponent>().ID;
-    #define GET_ENTITY(item) item -> getUserData<robot2D::ecs::Entity>()
+    #define GET_ENTITY(item) item -> template getUserData<robot2D::ecs::Entity>()
 
 
 
@@ -305,7 +305,15 @@ namespace editor {
 
         m_treeHierarchy.addMultiSelectRangeCallback([this](std::vector<ITreeItem::Ptr> items, bool deleted) {
             RB_EDITOR_INFO("TreeHierarchy: MultiSelect RangeSelect");
-            /// TODO(a.raag): Filter by items
+
+            std::vector<robot2D::ecs::Entity> entities;
+            for(auto item: items) {
+                auto entity = GET_ENTITY(item);
+                if(entity)
+                    entities.emplace_back(*entity);
+            }
+
+            m_interactor -> uiSelectedRangeEntities(std::move(entities));
         });
     }
 

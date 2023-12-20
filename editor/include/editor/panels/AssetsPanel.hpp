@@ -40,7 +40,8 @@ namespace editor {
             Script,
             Directory,
             Font,
-            Prefab
+            Prefab,
+            Animation
         };
 
         const std::string iconsPath = "res/icons/";
@@ -53,7 +54,8 @@ namespace editor {
                 { ResourceIconType::Image, "image.png"},
                 { ResourceIconType::Script, "script.png"},
                 { ResourceIconType::Font, "text.png"},
-                { ResourceIconType::Prefab, "content.png"}
+                { ResourceIconType::Prefab, "content.png"},
+                { ResourceIconType::Animation, "animation.png"}
         };
     };
 
@@ -102,5 +104,7 @@ namespace editor {
 
         bool m_unlock{false};
         bool m_itemClicked{false};
+
+        bool m_visible{false};
     };
 }
