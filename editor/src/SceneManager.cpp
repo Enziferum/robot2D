@@ -195,5 +195,12 @@ namespace editor {
                 }
             }
         }
+        if(entity.hasComponent<AnimationComponent>()) {
+            auto& animComponent = entity.getComponent<AnimationComponent>();
+
+
+
+        }
+
     }
 }

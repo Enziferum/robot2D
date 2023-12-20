@@ -86,5 +86,15 @@ namespace robot2D
         internal extern static void DrawableComponent_Flip(ulong entityID);
         
         #endregion
+
+        #region Animation
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void AnimationComponent_Play(ulong entityID, string animation);
+        
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void AnimationComponent_Stop(ulong entityID, string animation);
+
+        #endregion
     }
 }

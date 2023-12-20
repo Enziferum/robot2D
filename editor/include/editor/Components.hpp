@@ -348,4 +348,56 @@ namespace editor {
         void setName(std::string* text) { treeItem -> setName(text); }
     };
 
+    struct SpriteComponent {
+
+        struct Animation {
+            bool isLooped;
+            float speed;
+            bool isFlipped;
+            std::vector<robot2D::IntRect> frames;
+            std::vector<robot2D::IntRect> flip_frames;
+        };
+
+        void setTexture(const robot2D::Texture& texture) {
+            m_texture = &texture;
+        }
+
+        const robot2D::Texture* getTexture() const {
+            return m_texture;
+        }
+
+        void setTextureRect(const robot2D::IntRect& rect) {
+            m_textureRect = rect;
+            m_hasUpdate = true;
+        }
+
+        const robot2D::IntRect& getTextureRect() const {
+            return m_textureRect;
+        }
+
+        void addAnimation(const Animation& animation) { m_animations.emplace_back(animation); }
+        std::vector<Animation>& getAnimations() { return m_animations; }
+    private:
+        std::vector<Animation> m_animations;
+        friend class SpriteSystem;
+        bool m_hasUpdate{false};
+        robot2D::IntRect m_textureRect;
+        const robot2D::Texture* m_texture;
+    };
+
+    struct AnimationComponent {
+        DECLARE_COMPONENT_ID()
+
+        void Play();
+        void Stop();
+
+
+        bool isPlaying{false};
+    private:
+        friend class AnimationSystem;
+        int m_animationID = 0;
+        float m_currentFrameTime{0.f};
+        std::uint32_t m_frameID{0};
+    };
+
 }

@@ -20,24 +20,28 @@ source distribution.
 *********************************************************************/
 
 #pragma once
-
-#include <filesystem>
-#include <string>
+#include <vector>
+#include <robot2D/Graphics/Rect.hpp>
+#include "editor/Task.hpp"
+#include "editor/SpriteCutter.hpp"
 
 namespace editor {
-    bool hasFile(const std::string& path);
 
-    bool createDirectory(const std::string& path);
+    class AnimationTextureSliceTask: public ITask {
+    public:
+        AnimationTextureSliceTask(ITaskFunction::Ptr function,
+                                  const std::string& fileName, const std::string& filePath);
+        ~AnimationTextureSliceTask() override = default;
 
-    bool createDirectory(const std::string& basePath, const std::string& appendPath);
+        void execute() override;
+        const std::string& getFileName() const { return m_fileName;}
+        const std::string& getFilePath() const { return m_filePath;}
+        const std::vector<robot2D::IntRect>& getRects() const { return m_frameRects; }
+    private:
+        std::vector<robot2D::IntRect> m_frameRects;
+        SpriteCutter m_sheetCutter;
+        std::string m_fileName;
+        std::string m_filePath;
+    };
 
-    bool deleteDirectory(const std::string& path);
-
-    std::string getFileName(const std::string& path);
-
-    std::string getFileExtension(const std::string& path);
-
-    std::string combinePath(const std::string& basePath, const std::string& appendPath);
-
-    std::string addFilename(const std::string& path, const std::string& filename);
-}
+} // namespace editor

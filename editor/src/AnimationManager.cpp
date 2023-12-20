@@ -19,25 +19,35 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#pragma once
-
-#include <filesystem>
-#include <string>
+#include <editor/AnimationManager.hpp>
 
 namespace editor {
-    bool hasFile(const std::string& path);
 
-    bool createDirectory(const std::string& path);
+    void AnimationManager::addAnimation(robot2D::ecs::Entity associatedEntity,
+                                        const std::string& path, const std::string& name) {
 
-    bool createDirectory(const std::string& basePath, const std::string& appendPath);
+        Animation animation;
+        animation.associatedEntity = associatedEntity;
+        animation.filePath = path;
+        animation.name = name;
+        m_animations[name] = animation;
+    }
 
-    bool deleteDirectory(const std::string& path);
+    Animation* AnimationManager::getAnimation(const std::string& name) const {
 
-    std::string getFileName(const std::string& path);
+    }
 
-    std::string getFileExtension(const std::string& path);
 
-    std::string combinePath(const std::string& basePath, const std::string& appendPath);
+    bool AnimationManager::saveToFile(const std::string& path) {
+        return true;
+    }
 
-    std::string addFilename(const std::string& path, const std::string& filename);
-}
+    bool AnimationManager::loadFromFile(const std::string& path) {
+        return true;
+    }
+
+    bool AnimationManager::saveAnimation(const Animation* animation) {
+        return m_animationParser.saveToFile(animation -> filePath, animation);
+    }
+
+} // namespace editor

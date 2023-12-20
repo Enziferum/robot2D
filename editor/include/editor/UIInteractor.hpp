@@ -12,10 +12,6 @@
 
 namespace editor {
 
-    struct DeleteEntitiesInfo {
-
-    };
-
     class UIInteractor {
     public:
         using Ptr = UIInteractor*;
@@ -39,6 +35,7 @@ namespace editor {
         virtual robot2D::ecs::Entity getByUUID(UUID uuid) = 0;
         virtual void registerOnDeleteFinish(std::function<void()>&& callback) = 0;
         virtual void uiSelectedAllEntities() = 0;
+        virtual void uiSelectedRangeEntities(std::vector<robot2D::ecs::Entity>&& entities) = 0;
 
         virtual void exportProject(const ExportOptions& exportOptions) = 0;
         virtual const std::vector<class_id>& getCommandStack() const = 0;

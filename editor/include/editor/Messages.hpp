@@ -53,7 +53,8 @@ namespace editor {
         PrefabLoad,
         PrefabAssetPressed,
         TileElementSelected,
-        PrefabAssetModificated
+        PrefabAssetModificated,
+        AnimationPlay
     };
 
     struct ProjectMessage {
@@ -124,6 +125,10 @@ namespace editor {
 
     struct TileElementSelectedMessage {
         robot2D::vec2i tileIndex;
+    };
+
+    struct AnimationPlayMessage {
+        robot2D::ecs::Entity entity;
     };
 
     struct InstrumentMessage {

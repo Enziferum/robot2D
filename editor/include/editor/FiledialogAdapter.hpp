@@ -10,7 +10,7 @@ namespace editor {
         }
 
         bool openFile(std::string& path, std::string title) {}
-
+        bool saveFile(std::string& path, const std::string& title);
     private:
         enum class LibType {
             TinyFileDialog

@@ -55,9 +55,22 @@ namespace editor {
         return id;
     }
 
+
+    const class_id& AnimationComponent::id() noexcept {
+        static const class_id id{"Animator"};
+        return id;
+    }
+
+
+
     DrawableComponent::DrawableComponent():
     m_color(robot2D::Color::White),
-    m_texture(nullptr) {}
+    m_texture(nullptr) {
+        m_vertices[0].texCoords = {0.F, 0.F};
+        m_vertices[1].texCoords = {1.F, 0.F};
+        m_vertices[2].texCoords = {1.F, 1.F};
+        m_vertices[3].texCoords = {0.F, 1.F};
+    }
 
     void DrawableComponent::setTexture(const robot2D::Texture &texture) {
         m_texture = &texture;
@@ -273,4 +286,14 @@ namespace editor {
         }
         return m_bufferCache;
     }
+
+
+    void AnimationComponent::Play() {
+        isPlaying = true;
+    }
+
+    void AnimationComponent::Stop() {
+
+    }
+
 }

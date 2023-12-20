@@ -107,6 +107,8 @@ namespace editor {
                                     DeletedEntitiesRestoreUIInformation& restoreUiInformation) override;
 
         void uiSelectedAllEntities() override;
+        void uiSelectedRangeEntities(std::vector<robot2D::ecs::Entity>&& entities) override;
+
         const std::vector<class_id>& getCommandStack() const override;
         void exportProject(const ExportOptions& exportOptions) override;
         //////////////////////////////////////// UIInteractor ////////////////////////////////////////

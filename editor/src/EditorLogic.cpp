@@ -64,8 +64,14 @@ namespace editor {
         });
 
         m_messageDispatcher.onMessage<PrefabAssetModificatedMessage>(MessageID::PrefabAssetModificated,
-                                                                     BIND_CLASS_FN(
-                prefabModificated));
+                                                                     BIND_CLASS_FN(prefabModificated));
+
+        m_messageDispatcher.onMessage<AnimationPlayMessage>(MessageID::AnimationPlay,
+                                                            [](const AnimationPlayMessage& message){
+            auto entity = message.entity;
+            auto& animation = entity.getComponent<AnimationComponent>();
+            animation.Play();
+        });
     }
 
     void EditorLogic::update(float dt) {
@@ -301,6 +307,12 @@ namespace editor {
                     text.setFont(*localFont);
                 }
             }
+        }
+
+        if(entity.hasComponent<AnimationComponent>()) {
+
+            /// TODO(a.raag): load animations ///
+
         }
     }
 
@@ -593,6 +605,16 @@ namespace editor {
                        [](robot2D::ecs::Entity entity) {
            return entity;
         });
+    }
+
+    void EditorLogic::uiSelectedRangeEntities(std::vector<robot2D::ecs::Entity>&& entities) {
+        m_selectedEntities.clear();
+        for(auto& entity: m_activeScene -> getEntities()) {
+            for(auto item: entities) {
+                if(entity == item)
+                    m_selectedEntities.emplace_back(item);
+            }
+        }
     }
 
     //////////////////////////////////////// UIInteractor ////////////////////////////////////////

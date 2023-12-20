@@ -24,7 +24,7 @@ source distribution.
 namespace editor {
     Observer::~Observer() = default;
 
-    void Observer::addCallback(std::function<void(std::vector<std::string> &&)>&& callback) {
+    void Observer::addObserverCallback(std::function<void(std::vector<std::string> &&)>&& callback) {
         m_callback = std::move(callback);
     }
 

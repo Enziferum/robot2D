@@ -21,23 +21,29 @@ source distribution.
 
 #pragma once
 
-#include <filesystem>
 #include <string>
+#include <list>
+#include <robot2D/Graphics/Texture.hpp>
+#include <robot2D/Graphics/Rect.hpp>
+#include <robot2D/Ecs/Entity.hpp>
 
 namespace editor {
-    bool hasFile(const std::string& path);
 
-    bool createDirectory(const std::string& path);
+    struct AnimationFrame {
+        float duration;
+        robot2D::IntRect frame;
+    };
 
-    bool createDirectory(const std::string& basePath, const std::string& appendPath);
+    struct Animation {
+        int m_currentFrame{0};
+        int framesPerSecond;
+        float totalDuration;
+        std::list<AnimationFrame> frames;
+        robot2D::Texture* texture{nullptr};
+        std::string name;
+        std::string filePath;
+        robot2D::ecs::Entity associatedEntity;
+    };
 
-    bool deleteDirectory(const std::string& path);
 
-    std::string getFileName(const std::string& path);
-
-    std::string getFileExtension(const std::string& path);
-
-    std::string combinePath(const std::string& basePath, const std::string& appendPath);
-
-    std::string addFilename(const std::string& path, const std::string& filename);
-}
+} // namespace editor

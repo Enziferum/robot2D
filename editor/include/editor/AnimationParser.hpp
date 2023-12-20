@@ -21,23 +21,34 @@ source distribution.
 
 #pragma once
 
-#include <filesystem>
 #include <string>
+#include <unordered_map>
+#include "Animation.hpp"
 
 namespace editor {
-    bool hasFile(const std::string& path);
 
-    bool createDirectory(const std::string& path);
+    class AnimationParser {
+    public:
+        AnimationParser();
+        ~AnimationParser() = default;
 
-    bool createDirectory(const std::string& basePath, const std::string& appendPath);
+        bool loadFromFile(const std::string& path, Animation* animation);
+        bool saveToFile(const std::string& path, const Animation* animation);
+    private:
+        enum class XmlKey {
+            image,
+            maskColor,
+            head,
+            animation,
+            cut,
+            title,
+            delay,
+            x_coord,
+            y_coord,
+            width,
+            height
+        };
+        std::unordered_map<XmlKey, std::string> m_keys;
+    };
 
-    bool deleteDirectory(const std::string& path);
-
-    std::string getFileName(const std::string& path);
-
-    std::string getFileExtension(const std::string& path);
-
-    std::string combinePath(const std::string& basePath, const std::string& appendPath);
-
-    std::string addFilename(const std::string& path, const std::string& filename);
 }

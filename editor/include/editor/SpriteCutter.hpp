@@ -20,20 +20,39 @@ source distribution.
 *********************************************************************/
 
 #pragma once
-#include <functional>
+
 #include <vector>
-#include <string>
-#include <memory>
+#include <set>
+
+#include "robot2D/Graphics/Texture.hpp"
+#include "robot2D/Graphics/Rect.hpp"
+#include "robot2D/Graphics/Color.hpp"
 
 namespace editor {
-    class Observer {
-    public:
-        using Ptr = Observer*;
-        virtual ~Observer() = 0;
+    struct ColorPoint {
+        bool opaque;
+        robot2D::vec2i pos;
 
-        void addObserverCallback(std::function<void(std::vector<std::string>&&)>&& callback);
-        void notify(std::vector<std::string>&& paths);
-    private:
-        std::function<void(std::vector<std::string>&&)> m_callback;
+        explicit operator bool() const noexcept {
+            return opaque;
+        }
     };
-}
+
+    using visitMatrix = std::vector<std::vector<int>>;
+    using colorPointMatrix = std::vector<std::vector<ColorPoint>>;
+
+    class SpriteCutter {
+    public:
+        using colorPoint = std::pair<robot2D::Color, robot2D::vec2i>;
+        SpriteCutter() = default;
+        ~SpriteCutter() = default;
+
+        std::vector<robot2D::IntRect> cutFrames(const robot2D::UIntRect& clipRegion, robot2D::Image& image,
+                                                robot2D::vec2f worldPosition);
+    private:
+        bool isSafe(const colorPointMatrix& M, int row, int col, visitMatrix& visited);
+        void dfs(const colorPointMatrix& M, int row, int col, visitMatrix& visited,
+                 std::vector<robot2D::vec2i>& points);
+    };
+
+} // namespace editor

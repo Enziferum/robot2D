@@ -26,6 +26,8 @@ source distribution.
 
 #include <editor/RendererSystem.hpp>
 #include <editor/TextSystem.hpp>
+#include <editor/AnimationSystem.hpp>
+#include <editor/SpriteSystem.hpp>
 
 #include <editor/scripting/ScriptingEngine.hpp>
 #include <editor/panels/TreeHierarchy.hpp>
@@ -44,6 +46,8 @@ namespace editor {
     void Scene::initScene() {
         m_scene.addSystem<RenderSystem>(m_messageBus);
         m_scene.addSystem<TextSystem>(m_messageBus);
+        m_scene.addSystem<SpriteSystem>(m_messageBus);
+        m_scene.addSystem<AnimationSystem>(m_messageBus);
     }
 
     void Scene::createMainCamera() {
@@ -127,6 +131,7 @@ namespace editor {
                 m_sceneEntities.erase(found);
             }
         }
+
         m_insertItems.clear();
         m_scene.update(dt);
     }

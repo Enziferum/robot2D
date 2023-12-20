@@ -29,9 +29,11 @@ source distribution.
 #include <editor/FileApi.hpp>
 #include <editor/TaskQueue.hpp>
 #include <editor/ResouceManager.hpp>
+#include <editor/DragDropIDS.hpp>
 
 #include <editor/async/ImageLoadTask.hpp>
 #include <editor/async/FontLoadTask.hpp>
+#include <editor/AnimationManager.hpp>
 
 namespace editor {
 
@@ -250,7 +252,16 @@ namespace editor {
                     m_selectedEntity.getComponent<TransformComponent>().setScale({1.f, 1.f});
                 }
                 else
-                    RB_EDITOR_WARN("This entity already has the Scripting Component!");
+                    RB_EDITOR_WARN("This entity already has the Text Component!");
+                ImGui::CloseCurrentPopup();
+            }
+
+            if(ImGui::MenuItem("Animation")) {
+                if (!m_selectedEntity.hasComponent<AnimationComponent>()) {
+                    m_selectedEntity.addComponent<AnimationComponent>();
+                }
+                else
+                    RB_EDITOR_WARN("This entity already has the Animation Component!");
                 ImGui::CloseCurrentPopup();
             }
 
@@ -335,7 +346,7 @@ namespace editor {
             {
                 // all string types make as Parameters somewhere
 
-                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(contentItemID))
                 {
                     const wchar_t* path = (const wchar_t*)payload->Data;
                     std::filesystem::path localPath = std::filesystem::path("assets") / path;
@@ -350,6 +361,7 @@ namespace editor {
                         }, texturePath, entity);
                     }
                     else {
+                        /// TODO(a.raag): use Local ResourceManager
                         auto texture = m_textures.template add(entity.getIndex());
                         if(texture) {
                             auto image = manager -> getImage(localPath.filename().string());
@@ -375,6 +387,8 @@ namespace editor {
             }
         });
 
+
+        /// TODO(a.raag): split code into several functions ///
         drawComponent<ScriptComponent>("Script", entity, [this, entity,
                 interactor= m_interactor, isEntity](auto& component) {
             std::string currItem = component.name; // Here we store our selection data as an index.
@@ -575,7 +589,7 @@ namespace editor {
             {
                 // all string types make as Parameters somewhere
 
-                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(contentItemID))
                 {
                     const wchar_t* path = (const wchar_t*)payload->Data;
                     std::filesystem::path localPath = std::filesystem::path("assets") / path;
@@ -594,6 +608,14 @@ namespace editor {
                 component.setText(component.getText());
             }
         });
+
+
+        drawComponent<AnimationComponent>("Animation", entity, [this](auto& component){
+            auto* animationManager = AnimationManager::getManager();
+            // auto& animations = animationManager -> getAnimations(entity);
+
+        });
+
     }
 
     void InspectorPanel::onLoadImage(const robot2D::Image& image, robot2D::ecs::Entity entity) {

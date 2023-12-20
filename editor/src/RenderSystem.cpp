@@ -140,8 +140,7 @@ namespace editor {
                 robot2D::VertexData vertexData{};
                 for(const auto& vertex: vertices)
                     vertexData.emplace_back(vertex);
-                target.draw(renderStates);
-                // target.draw(vertexData, renderStates);
+                target.draw(vertexData, renderStates);
             }
 
         }

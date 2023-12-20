@@ -21,23 +21,39 @@ source distribution.
 
 #pragma once
 
-#include <filesystem>
-#include <string>
+#include <unordered_map>
+#include <robot2D/Ecs/Entity.hpp>
+
+#include "Animation.hpp"
+#include "AnimationParser.hpp"
 
 namespace editor {
-    bool hasFile(const std::string& path);
 
-    bool createDirectory(const std::string& path);
+    class AnimationManager {
+    public:
+        static AnimationManager* getManager() {
+            static AnimationManager animationManager;
+            return &animationManager;
+        }
 
-    bool createDirectory(const std::string& basePath, const std::string& appendPath);
+        std::unordered_map<std::string, Animation>& getAnimations() {
+            return m_animations;
+        }
 
-    bool deleteDirectory(const std::string& path);
 
-    std::string getFileName(const std::string& path);
+        void addAnimation(robot2D::ecs::Entity associatedEntity,
+                          const std::string& path, const std::string& name);
+        Animation* getAnimation(const std::string& name) const;
 
-    std::string getFileExtension(const std::string& path);
 
-    std::string combinePath(const std::string& basePath, const std::string& appendPath);
+        bool saveToFile(const std::string& path);
+        bool loadFromFile(const std::string& path);
 
-    std::string addFilename(const std::string& path, const std::string& filename);
-}
+        bool saveAnimation(const Animation* animation);
+    private:
+        std::unordered_map<std::string, Animation> m_animations;
+        AnimationParser m_animationParser;
+    };
+
+
+} // namespace editor
