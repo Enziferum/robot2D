@@ -8,7 +8,12 @@ Mac/Linux: [![Build Status](https://github.com/Enziferum/robot2D/actions/workflo
 \
 Robot2D - C++ 2D Engine. Graphics Api is OpenGL 3.3/4.5.
 \
-In current version 0.4 support platforms are: Windows / MacOS / Linux.
+In current version 0.7(W.I.P) support platforms are: Windows / MacOS / Linux?.
+\
+Primary focus is fully work with project as `Engine` in editor way only. It's means Engine will be private as core 
+of editor.
+\
+Next planning version is 0.8. See `Project 0.8` to check actual tasks.
 
 \
 Project's idea - learning, have fun and sometimes make games on it :) 
@@ -23,7 +28,9 @@ Code Guards
 -------
 
 [![CodeFactor](https://www.codefactor.io/repository/github/enziferum/robot2d/badge)](https://www.codefactor.io/repository/github/enziferum/robot2d)
+<!--- TODO(a.raag) check correctness 
 [![BCH compliance](https://bettercodehub.com/edge/badge/Enziferum/robot2D?branch=master)](https://bettercodehub.com/)
+-->
 -------
 
 ## Requirements
@@ -41,4 +48,4 @@ Code Guards
   cd robot2D
   python scripts/build_engine.py
 ```
- - Your output will be 'output' folder
+ - Your output will be inside `output` folder.
