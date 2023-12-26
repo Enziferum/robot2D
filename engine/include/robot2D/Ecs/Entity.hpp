@@ -33,7 +33,7 @@ namespace robot2D::ecs {
 
     class ROBOT2D_EXPORT_API Entity {
     public:
-        Entity();
+        Entity(EntityID index = 0);
         Entity(const Entity& other);
         Entity& operator=(const Entity& other);
         Entity(Entity&& other);
@@ -55,14 +55,13 @@ namespace robot2D::ecs {
         template<typename T>
         void removeComponent();
 
-        EntityID getIndex() const { return m_id; }
-
+        const EntityID& getIndex() const { return m_id; }
+        EntityID getIndex() { return m_id; }
         Bitmask getComponentMask() const;
 
+
         void setTag(const std::string& tag) { m_tag = tag; }
-
         const std::string& getTag() const { return m_tag; }
-
         std::string& getTag() { return m_tag; }
 
         friend bool operator == (const Entity& l, const Entity& r);
@@ -74,13 +73,16 @@ namespace robot2D::ecs {
         explicit operator bool() const {
             return m_entityManager != nullptr && m_id != INT_MAX;
         }
+
+        void removeSelf();
     private:
         friend class EntityManager;
-        explicit Entity(EntityManager* entityManager, const EntityID& id);
+        Entity(EntityManager* entityManager, const EntityID& id);
         EntityManager* m_entityManager;
 
         EntityID m_id;
         std::string m_tag;
+        bool m_needAddToScene{true};
     };
 
 }

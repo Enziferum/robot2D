@@ -21,6 +21,7 @@ source distribution.
 
 #pragma once
 #include <cstdint>
+#include <cstddef>
 #include <robot2D/Core/Vector3.hpp>
 
 namespace robot2D {

@@ -29,12 +29,14 @@ else()
     #enable_cxx_compiler_flag_if_supported("-Werror")
 endif()
 
+
 set(LIBS)
 if(UNIX)
     find_package(OpenGL REQUIRED)
     set(LIBS OpenGL::GL ${CMAKE_DL_LIBS})
 endif()
-set(LIBS robot2D robot2D_ext ${LIBS})
+set(LIBS robot2D robot2D_ext robot2D_imgui ${LIBS})
+
 
 set(SRC
         source/main.cpp
@@ -43,7 +45,10 @@ set(SRC
         source/Scene.cpp
         source/Components.cpp
         source/Systems.cpp
-        source/LayerScene.cpp)
+        source/LayerScene.cpp
+        source/EditorUIScene.cpp
+        source/TreeHierarchy.cpp
+        )
 
 
 add_executable(${PROJECT_NAME} ${SRC})

@@ -51,7 +51,7 @@ namespace robot2D::ecs {
     void SystemManager::addEntity(Entity entity) {
         const auto mask = entity.getComponentMask();
         for(auto& system: m_systems) {
-            if(system -> fitsRequirements(mask)) {
+            if(system -> fitsRequirements(mask) && !system -> hasEntity(entity.getIndex())) {
                 system -> addEntity(entity);
             }
         }

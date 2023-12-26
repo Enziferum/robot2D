@@ -100,7 +100,7 @@ namespace robot2D {
     }
 
     bool Window::isMousePressed(const Mouse& button) {
-        return m_windowImpl->isMousePressed(button);
+        return m_windowImpl -> isMousePressed(button);
     }
 
     bool Window::isKeyboardPressed(const Key& key) {
@@ -153,15 +153,15 @@ namespace robot2D {
     }
 
     void Window::setMaximazed(const bool &flag) {
-        m_windowImpl ->setMaximazed(flag);
+        m_windowImpl -> setMaximazed(flag);
     }
 
     void Window::setMousePos(const vec2f& pos) {
-        m_windowImpl ->setMousePos(pos);
+        m_windowImpl -> setMousePos(pos);
     }
 
     vec2f Window::getMousePos() const {
-        return m_windowImpl->getMousePos();
+        return m_windowImpl -> getMousePos();
     }
 
     bool Window::getJoystickGamepadInput(const JoystickType& joystickType, JoystickGamepadInput& gamepadInput) {
@@ -170,6 +170,10 @@ namespace robot2D {
 
     void Window::setVsync(bool flag) {
         m_windowImpl -> setVsync(flag);
+    }
+
+    void Window::addDropCallback(std::function<void(std::vector<std::string>&&)>&& callback) {
+        m_windowImpl -> addDropCallback(std::move(callback));
     }
 
 }

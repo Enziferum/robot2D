@@ -24,6 +24,7 @@ source distribution.
 #include <string>
 #include <vector>
 #include <memory>
+#include <functional>
 
 #include <robot2D/Graphics/Color.hpp>
 #include <robot2D/Graphics/Image.hpp>
@@ -113,6 +114,8 @@ namespace robot2D {
 
         ////// Window manipulate options //////
 
+
+        void addDropCallback(std::function<void(std::vector<std::string>&&)>&& callback);
 
         void setMousePos(const vec2f& pos);
         vec2f getMousePos() const;

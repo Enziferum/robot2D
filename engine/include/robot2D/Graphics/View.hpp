@@ -39,6 +39,7 @@ namespace robot2D {
 
         void setViewport(const FloatRect& viewport);
         const FloatRect& getViewport() const;
+        const FloatRect& getRectangle() const;
 
         void setCenter(const vec2f& origin);
         void setCenter(float x, float y);
@@ -60,15 +61,20 @@ namespace robot2D {
 
         const Transform& getTransform() const;
         const Transform& getInverseTransform() const;
+
+        void setIsClipping(bool flag) { m_clips = flag; }
+        bool isClipping() const { return m_clips; }
     private:
         vec2f m_center;
         vec2f m_size;
         float m_rotation;
 
         FloatRect m_viewport;
+        FloatRect m_rectangle;
         mutable Transform m_transform;
         mutable Transform m_invTransform;
         mutable bool needTransformUpdate;
         mutable bool needInvTransformUpdate;
+        bool m_clips{false};
     };
 }
