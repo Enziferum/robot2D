@@ -37,6 +37,7 @@ namespace editor {
     namespace fs = std::filesystem;
     namespace  {
         static bool openDeveloperMenu = false;
+        static bool openPluginMenu = false;
     }
 
     MenuPanel::MenuPanel(robot2D::MessageBus& messageBus, UIInteractor::Ptr interactor):
@@ -48,7 +49,7 @@ namespace editor {
         if(openDeveloperMenu)
             developerMenu();
 
-        ImGui::ShowDemoWindow();
+
 
         if (ImGui::BeginMenuBar())
         {

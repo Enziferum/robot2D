@@ -49,9 +49,9 @@ namespace editor {
     private:
         void drawComponentsBase(robot2D::ecs::Entity entity, bool isEntity = true);
         void drawComponents(robot2D::ecs::Entity entity, bool isEntity = true);
+        void drawUIComponents(robot2D::ecs::Entity);
 
         void drawAssetBase();
-
         void onPrefabAssetSelected(const PrefabAssetPressedMessage& message);
 
         void onLoadImage(const robot2D::Image& image, robot2D::ecs::Entity entity);

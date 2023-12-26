@@ -13,6 +13,8 @@ endif()
 
 include(CheckCXXCompilerFlag)
 
+#set(CMAKE_VERBOSE_MAKEFILE ON)
+
 set(CMAKE_CXX_STANDARD 17)
 # Some default variables which the user may change
 option(CMAKE_BUILD_TYPE "Choose the type of build (Debug or Release)" Debug)

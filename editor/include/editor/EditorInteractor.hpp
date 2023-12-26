@@ -1,11 +1,13 @@
 #pragma once
 
 #include <robot2D/Graphics/Rect.hpp>
+#include <robot2D/Core/Event.hpp>
 
 #include "EditorState.hpp"
 #include "UIInteractor.hpp"
 #include "Observer.hpp"
 #include "EditorState.hpp"
+#include "EditorCamera.hpp"
 
 namespace editor {
 
@@ -13,6 +15,7 @@ namespace editor {
     public:
         virtual ~EditorInteractor() = 0;
 
+        virtual void handleEventsRuntime(const robot2D::Event& event) = 0;
         virtual void update(float dt) = 0;
         virtual void findSelectEntities(const robot2D::FloatRect& rect) = 0;
         virtual bool hasSelectedEntities() const = 0;
@@ -28,6 +31,7 @@ namespace editor {
         virtual bool saveScene() = 0;
         virtual robot2D::vec2f getMainCameraPosition() const = 0;
         virtual void setMainCamera(robot2D::ecs::Entity cameraEntity) = 0;
+        virtual void setEditorCamera(IEditorCamera::Ptr editorCamera) = 0;
     protected:
     };
 

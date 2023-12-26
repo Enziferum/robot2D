@@ -27,12 +27,18 @@ source distribution.
 #include <editor/LocalResourceManager.hpp>
 #include <editor/Components.hpp>
 
+#include <editor/components/ButtonComponent.hpp>
+#include "editor/components/UIHitBox.hpp"
+#include <editor/scripting/ScriptingEngine.hpp>
+
+
 #include <editor/async/SceneLoadTask.hpp>
 #include <editor/Components.hpp>
 #include <editor/commands/DuplicateCommand.hpp>
 #include <editor/commands/DeleteEntitiesCommand.hpp>
 #include "editor/commands/PasteCommand.hpp"
 #include "editor/async/ExportTask.hpp"
+
 
 namespace {
     const std::string scenePath = "assets/scenes";
@@ -76,6 +82,11 @@ namespace editor {
             else
                 animator.Stop(animationComponent.getAnimation() -> name);
         });
+    }
+
+
+    void EditorLogic::handleEventsRuntime(const robot2D::Event& event) {
+        m_activeScene -> handleEventsRuntime(event);
     }
 
     void EditorLogic::update(float dt) {
@@ -203,6 +214,18 @@ namespace editor {
                 }
             }
 
+            if(entity.hasComponent<ButtonComponent>()) {
+                auto& btnComp = entity.getComponent<ButtonComponent>();
+                if(!btnComp.onClickCallback) {
+                    m_activeScene -> registerUICallback(entity);
+
+                    btnComp.onClickCallback = [](UUID scriptUUID, const std::string& methodName) {
+                        auto instance = ScriptEngine::getEntityScriptInstance(scriptUUID);
+                        if(instance)
+                            instance -> getClassWrapper() -> callMethod(methodName);
+                    };
+                }
+            }
 
             auto& ts = entity.getComponent<TransformComponent>();
             for(auto child: ts.getChildren())
@@ -224,7 +247,7 @@ namespace editor {
     }
 
     void EditorLogic::pasterFromBuffer() {
-        std::vector<robot2D::ecs::Entity> copiedEntites{int(m_copyEntities.size())};
+        std::vector<robot2D::ecs::Entity> copiedEntities{};
         int counter = 0;
 
         struct PasteInfo {
@@ -236,26 +259,23 @@ namespace editor {
             auto& transform = copy.getComponent<TransformComponent>();
             auto copiedEntity = m_activeScene -> duplicateEntity(transform.getPosition(), copy);
 
-            if(transform.hasChildren()) {}
+            if(transform.hasChildren())
+                pasteChild(copy);
 
-            copiedEntites[counter] = copiedEntity;
-            ++counter;
+            copiedEntities.emplace_back(copiedEntity);
         }
 
-        auto command = m_commandStack.addCommand<PasteCommand>(m_messageBus, copiedEntites, this);
+        auto command = m_commandStack.addCommand<PasteCommand>(m_messageBus, copiedEntities, this);
         if(!command) {
             RB_EDITOR_ERROR("EditorLogic: Can't Create PasteCommand");
         }
 
-        m_selectedEntities = copiedEntites;
-        if(m_selectedEntities.size() == 1) {
-            auto* msg =
-                    m_messageBus.postMessage<PanelEntitySelectedMessage>(MessageID::PanelEntityNeedSelect);
-            msg -> entity = m_selectedEntities[0];
-        }
-        else {
-            // TODO(a.raag): multiply selection
-        }
+        /// m_selectedEntities = copiedEntities;
+        /// ui create
+    }
+
+
+    void EditorLogic::pasteChild(robot2D::ecs::Entity parent) {
     }
 
 
@@ -271,6 +291,19 @@ namespace editor {
     }
 
     void EditorLogic::loadAssetsByEntity(robot2D::ecs::Entity entity) {
+        if(entity.hasComponent<ButtonComponent>()) {
+            auto& btnComp = entity.getComponent<ButtonComponent>();
+            if(!btnComp.onClickCallback) {
+                m_activeScene -> registerUICallback(entity);
+
+                btnComp.onClickCallback = [](UUID scriptUUID, const std::string& methodName) {
+                    auto instance = ScriptEngine::getEntityScriptInstance(scriptUUID);
+                    if(instance)
+                        instance -> getClassWrapper() -> callMethod(methodName);
+                };
+            }
+        }
+
         if(!entity.hasComponent<DrawableComponent>())
             return;
 
@@ -449,6 +482,10 @@ namespace editor {
 
     void EditorLogic::addEmptyEntity() {
         m_activeScene -> addEmptyEntity();
+    }
+
+    robot2D::ecs::Entity EditorLogic::addButton() {
+        return m_activeScene -> addEmptyButton();
     }
 
     robot2D::ecs::Entity EditorLogic::createEmptyEntity() {
@@ -638,6 +675,39 @@ namespace editor {
             }
         }
     }
+
+    void EditorLogic::setEditorCamera(IEditorCamera::Ptr editorCamera) {
+        m_activeScene -> setEditorCamera(editorCamera);
+    }
+
+    bool EditorLogic::loadSceneRuntime(std::string&& name) {
+        RB_EDITOR_WARN("EditorLogic::loadSceneRuntime Not Implemented Method, Want Load Scene by Name {0}", name);
+        /*
+         * Steps: TODO(a.raag)
+         *  - LoadScene
+         *  - Recreate Physics, ScriptEngine
+         *  - Update UI
+         *  - Command Stack ??
+         */
+
+        return true;
+    }
+
+    void EditorLogic::loadSceneAsyncRuntime(std::string&& name) {
+        RB_EDITOR_WARN("EditorLogic::loadSceneRuntime Not Implemented Method, Want Load Scene by Name {0}", name);
+        // TODO(a.raag): work on algorithm in future
+    }
+
+    void EditorLogic::exitEngineRuntime() {
+        /// TODO(a.raag): check param some where
+        constexpr bool insideEngine = true;
+        if(insideEngine) {
+            /// TODO(a.raag): if runtime scene != default Scene reload defaultScene
+            m_activeScene -> onRuntimeStop();
+            m_presenter.switchState(EditorState::Edit);
+        }
+    }
+
 
     //////////////////////////////////////// UIInteractor ////////////////////////////////////////
 

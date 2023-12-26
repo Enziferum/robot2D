@@ -150,7 +150,6 @@ namespace editor {
             treeItem -> m_id = UUID();
             if(!needPending) {
                 m_items.template emplace_back(treeItem);
-                m_multiSelection.updateItem(treeItem, true);
             }
             else
                 m_additemsBuffer.emplace_back(treeItem);

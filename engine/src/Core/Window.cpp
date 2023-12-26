@@ -153,15 +153,15 @@ namespace robot2D {
     }
 
     void Window::setMaximazed(const bool &flag) {
-        m_windowImpl ->setMaximazed(flag);
+        m_windowImpl -> setMaximazed(flag);
     }
 
     void Window::setMousePos(const vec2f& pos) {
-        m_windowImpl ->setMousePos(pos);
+        m_windowImpl -> setMousePos(pos);
     }
 
     vec2f Window::getMousePos() const {
-        return m_windowImpl->getMousePos();
+        return m_windowImpl -> getMousePos();
     }
 
     bool Window::getJoystickGamepadInput(const JoystickType& joystickType, JoystickGamepadInput& gamepadInput) {

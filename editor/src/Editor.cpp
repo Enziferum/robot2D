@@ -198,6 +198,8 @@ namespace editor {
         }
 
         m_editorCamera = std::make_shared<EditorCamera2D>();
+        ScriptEngine::SetCamera(m_editorCamera);
+
 
         m_panelManager.addPanel<ScenePanel>(m_messageBus, m_messageDispather, m_prefabManager);
         m_panelManager.addPanel<AssetsPanel>(m_messageBus, m_panelManager, m_prefabManager);
@@ -234,16 +236,17 @@ namespace editor {
         if(m_state == State::LostFocus)
             return;
 
-        if(m_interactor -> getState() != EditorState::Edit) {
-            return;
+        if(m_interactor -> getState() == EditorState::Edit) {
+            m_editorCamera -> handleEvents(event);
+            m_shortcutManager.handleEvents(event);
+            m_guizmo2D.handleEvents(event);
+            m_cameraManipulator.handleEvents(event);
+            m_panelManager.getPanel<ViewportPanel>().handleEvents(event);
+            m_eventBinder.handleEvents(event);
         }
-
-        m_editorCamera -> handleEvents(event);
-        m_shortcutManager.handleEvents(event);
-        m_guizmo2D.handleEvents(event);
-        m_cameraManipulator.handleEvents(event);
-        m_panelManager.getPanel<ViewportPanel>().handleEvents(event);
-        m_eventBinder.handleEvents(event);
+        else if(m_interactor -> getState() == EditorState::Run) {
+            m_interactor -> handleEventsRuntime(event);
+        }
     }
 
     void Editor::handleMessages(const robot2D::Message& message) {
@@ -404,6 +407,8 @@ namespace editor {
         auto& assetsPanel = m_panelManager.getPanel<AssetsPanel>();
         assetsPanel.setAssetsPath(assetsPath);
         assetsPanel.unlock();
+
+        m_interactor -> setEditorCamera(m_editorCamera);
     }
 
     void Editor::onKeyPressed(const robot2D::Event& event) {

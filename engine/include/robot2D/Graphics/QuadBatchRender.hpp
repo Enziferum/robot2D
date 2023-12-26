@@ -48,7 +48,7 @@ namespace robot2D {
         int batchElementIndex = 0;
         int indexCount = 0;
         /// need update indexCount and check valid vertex / indices count
-        int cutQuadCntr = 1;
+        int cutQuadCntr = 0;
         /// Counters ///
 
         robot2D::VertexArray::Ptr m_vertexArray;
@@ -100,7 +100,7 @@ namespace robot2D {
         ++batchElementIndex;
         ++cutQuadCntr;
         if(cutQuadCntr == quadSize) {
-            cutQuadCntr = 1;
+            cutQuadCntr = 0;
             indexCount += quadIndicesSize;
         }
     }

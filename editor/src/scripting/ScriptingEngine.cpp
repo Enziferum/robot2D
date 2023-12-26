@@ -374,7 +374,7 @@ namespace editor {
                 uint32_t flags = mono_method_get_flags(method, &methodsFlags);
 
 
-                if(engineRegisteredMethods.find(methodName) != engineRegisteredMethods.end()) {
+            //    if(engineRegisteredMethods.find(methodName) != engineRegisteredMethods.end()) {
                     const auto& signature = engineRegisteredMethods[methodName];
                     RB_EDITOR_WARN("ScriptingEngine: Found Method: {0}", methodName);
                     auto methodToken = mono_method_get_token(method);
@@ -386,15 +386,15 @@ namespace editor {
 
                     auto paramCount = mono_signature_get_param_count(sig);
                     while(MonoType* type = mono_signature_get_params(sig, &methodSigIter)) {
-                        if(signature.m_types[index] != util::MonoTypeToScriptFieldType(type)) {
-                            RB_EDITOR_ERROR("ScriptingEngine: Bad Signature for method {0}", methodName);
-                            validSignature = false;
-                        }
+//                        if(signature.m_types[index] != util::MonoTypeToScriptFieldType(type)) {
+//                            RB_EDITOR_ERROR("ScriptingEngine: Bad Signature for method {0}", methodName);
+//                            validSignature = false;
+//                        }
                         ++index;
                     }
                     if(validSignature)
                         scriptClass -> registerMethod(methodName, paramCount);
-                }
+            //    }
 
             }
         }
@@ -611,6 +611,22 @@ namespace editor {
 
     const std::unordered_map<std::string, MonoClassWrapper::Ptr>& ScriptEngine::getClasses() {
         return s_Data -> getClasses();
+    }
+
+    void ScriptEngine::SetWindow(robot2D::RenderWindow* window) {
+        s_Data -> window = window;
+    }
+
+    robot2D::Window* ScriptEngine::GetWindow() {
+        return s_Data -> window;
+    }
+
+    IEditorCamera::Ptr ScriptEngine::GetCamera() {
+        return s_Data -> camera;
+    }
+
+    void ScriptEngine::SetCamera(IEditorCamera::Ptr camera) {
+        s_Data -> camera = camera;
     }
 
 

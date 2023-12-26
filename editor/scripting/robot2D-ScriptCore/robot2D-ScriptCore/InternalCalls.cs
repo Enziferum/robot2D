@@ -37,14 +37,26 @@ namespace robot2D
         
         #endregion
 
+        #region Input
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static bool Input_IsKeyDown(KeyCode keycode);
 
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static bool Input_IsMousePressed(MouseButton mouseButton);
+        
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Input_GetMousePosition(out Vector2 position);
+        
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Input_SetMousePosition(ref Vector2 position);
+
+        #endregion
         
         #region Physics2D
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static void Rigidbody2DComponent_ApplyLinearImpulse(ulong entityID, ref Vector2 impulse, ref Vector2 point, bool wake);
+        internal extern static void Rigidbody2DComponent_ApplyLinearImpulse(ulong entityID, ref Vector2 impulse, 
+                                                                                            ref Vector2 point, bool wake);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void Rigidbody2DComponent_GetLinearVelocity(ulong entityID, out Vector2 linearVelocity);
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
@@ -79,7 +91,6 @@ namespace robot2D
         
         #endregion
         
-        
         #region Drawable
         
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
@@ -96,5 +107,14 @@ namespace robot2D
         internal extern static void AnimationComponent_Stop(ulong entityID, string animation);
 
         #endregion
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static bool SceneManager_LoadScene(string name);
+        
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void SceneManager_LoadSceneAsync(string name);
+        
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Engine_Exit();
     }
 }
