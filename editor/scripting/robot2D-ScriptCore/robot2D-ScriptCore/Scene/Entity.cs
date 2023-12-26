@@ -12,8 +12,13 @@ namespace robot2D
         {
             return InternalCalls.GetScriptInstance(ID);
         }
-    }
 
+        public static object Instantiate()
+        {
+            return new object();
+        }
+    }
+    
     internal class ComponentCreator
     {
         public T Create<T>(ulong UUID) where T: Component, new()

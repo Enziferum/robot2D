@@ -25,6 +25,8 @@ source distribution.
 #include <filesystem>
 
 #include <robot2D/Ecs/Entity.hpp>
+#include <robot2D/Graphics/RenderWindow.hpp>
+
 #include <editor/ScriptInteractor.hpp>
 #include <editor/physics/Box2DPhysicsAdapter.hpp>
 
@@ -66,6 +68,12 @@ namespace editor {
         static MonoImage* GetCoreAssemblyImage();
         static bool hasEntityClass(const std::string& name);
         static const std::unordered_map<std::string, MonoClassWrapper::Ptr>& getClasses();
+
+        static void SetWindow(robot2D::RenderWindow* window);
+        static robot2D::Window* GetWindow();
+
+        static IEditorCamera::Ptr GetCamera();
+        static void SetCamera(IEditorCamera::Ptr camera);
     private:
         static bool loadCoreAssembly(const fs::path& );
         static bool loadAppAssembly(const fs::path& );

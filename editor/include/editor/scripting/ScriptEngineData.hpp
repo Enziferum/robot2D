@@ -26,9 +26,13 @@ source distribution.
 #include <vector>
 #include <filesystem>
 
+#include <robot2D/Core/Window.hpp>
 #include <filewatch/FileWatch.hpp>
-#include "editor/ScriptInteractor.hpp"
+
+#include <editor/ScriptInteractor.hpp>
 #include <editor/Uuid.hpp>
+#include <editor/EditorCamera.hpp>
+
 #include "ScriptInstance.hpp"
 #include "MonoClassWrapper.hpp"
 
@@ -117,5 +121,7 @@ namespace editor {
 
         std::vector<std::string> m_entityClassesNames;
         ScriptInteractor::Ptr interactor;
+        robot2D::Window* window;
+        IEditorCamera::Ptr camera;
     };
 } // namespace editor

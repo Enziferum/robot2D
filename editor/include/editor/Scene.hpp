@@ -35,6 +35,7 @@ source distribution.
 #include "physics/IPhysics2DAdapter.hpp"
 #include "ScriptInteractor.hpp"
 #include "DeletedEntitesRestoreInformation.hpp"
+#include "EditorCamera.hpp"
 
 namespace editor {
     class Scene: public robot2D::Drawable {
@@ -53,6 +54,7 @@ namespace editor {
 
         void registerOnDeleteFinish(std::function<void()>&& callback);
 
+        void handleEventsRuntime(const robot2D::Event& event);
         void update(float dt);
         void updateRuntime(float dt);
 
@@ -68,6 +70,8 @@ namespace editor {
 
         /// ScenePanel API
         void addEmptyEntity();
+        robot2D::ecs::Entity addEmptyButton();
+
         void setBefore(robot2D::ecs::Entity source, robot2D::ecs::Entity target);
         void removeEntity(robot2D::ecs::Entity entity);
         void removeEntityChild(robot2D::ecs::Entity entity);
@@ -94,6 +98,8 @@ namespace editor {
         const std::string& getPath() const {return m_path;}
         std::string& getPath()  {return m_path;}
 
+        void setEditorCamera(EditorCamera::Ptr editorCamera);
+
         bool hasChanges() const { return m_hasChanges; }
     protected:
         void draw(robot2D::RenderTarget& target, robot2D::RenderStates states) const override;
@@ -116,11 +122,14 @@ namespace editor {
 
         void duplicateEntityChild(robot2D::ecs::Entity parent, robot2D::ecs::Entity dupEntity);
 
+        void registerUICallback(robot2D::ecs::Entity uiEntity);
     private:
+        friend class EditorLogic;
         friend class DuplicateCommand;
 
         robot2D::ecs::Scene m_scene;
         robot2D::ecs::Scene m_CloneScene;
+        IEditorCamera::Ptr m_editorCamera{nullptr};
 
         EntityList m_sceneEntities;
         robot2D::ecs::EntityList m_deletePendingEntities;

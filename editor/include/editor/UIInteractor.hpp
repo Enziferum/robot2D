@@ -27,6 +27,7 @@ namespace editor {
         virtual std::list<robot2D::ecs::Entity> getEntities() const = 0;
         virtual void removeEntity(robot2D::ecs::Entity entity) = 0;
         virtual void addEmptyEntity() = 0;
+        virtual robot2D::ecs::Entity addButton() = 0;
         virtual robot2D::ecs::Entity createEmptyEntity() = 0;
         virtual robot2D::ecs::Entity duplicateEmptyEntity(robot2D::ecs::Entity entity) = 0;
         virtual void setBefore(robot2D::ecs::Entity sourceEntity, robot2D::ecs::Entity target) = 0;

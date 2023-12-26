@@ -55,7 +55,8 @@ namespace editor {
     void drawTexture(robot2D::vec2f size, robot2D::Texture* texture,
                                     robot2D::Color tintColor) {
         auto imID = ImGui::convertTextureHandle(texture -> getID());
-        ImGui::ImageButton(imID, size, {0,1}, {1, 0}, -1, tintColor);
+        ImGui::ImageButton(imID, size, {0,0}, {1, 1}, -1, ImVec4(1, 1, 1, 0),
+                           ImVec4(1, 1, 1, 1));
     };
 
 
@@ -256,15 +257,11 @@ namespace editor {
 
         /// has childModification
         if(m_source && m_target) {
-
             m_source -> m_parent -> update();
-
-
-
+            m_target -> addChild(m_source);
             m_source = nullptr;
             m_target = nullptr;
         }
-
 
         renderTree();
     }
@@ -398,7 +395,7 @@ namespace editor {
 
     void TreeHierarchy::renderTreeChildren(ITreeItem::Ptr parent) {
         for(auto child: parent -> getChildrens()) {
-            if(child -> isQueryDeletion || !child -> m_name)
+            if(!child -> m_name)
                 continue;
 
             if(child -> m_iconTexture) {

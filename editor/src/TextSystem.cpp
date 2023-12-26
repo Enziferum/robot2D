@@ -103,7 +103,7 @@ namespace editor {
             }
         }
 
-     //   if(m_needUpdate) {
+        if(m_needUpdate) {
             m_quadBatchRender.preProcessBatching();
             m_quadBatchRender.refresh();
 
@@ -140,6 +140,6 @@ namespace editor {
 
             m_quadBatchRender.processBatching();
             m_needUpdate = false;
-    //    }
+        }
     }
 }

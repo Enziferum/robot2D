@@ -23,11 +23,14 @@ source distribution.
 
 #include <editor/Scene.hpp>
 #include <editor/Components.hpp>
+#include <editor/components/UIHitBox.hpp>
+#include <editor/components/ButtonComponent.hpp>
 
 #include <editor/RendererSystem.hpp>
 #include <editor/TextSystem.hpp>
 #include <editor/AnimatorSystem.hpp>
 #include <editor/AnimationSystem.hpp>
+#include <editor/UISystem.hpp>
 
 #include <editor/scripting/ScriptingEngine.hpp>
 #include <editor/panels/TreeHierarchy.hpp>
@@ -48,6 +51,7 @@ namespace editor {
         m_scene.addSystem<TextSystem>(m_messageBus);
         m_scene.addSystem<AnimatorSystem>(m_messageBus);
         m_scene.addSystem<AnimationSystem>(m_messageBus);
+        m_scene.addSystem<UISystem>(m_messageBus);
     }
 
     void Scene::createMainCamera() {
@@ -73,6 +77,11 @@ namespace editor {
     const Scene::EntityList& Scene::getEntities() const {
         return m_sceneEntities;
     }
+
+    void Scene::handleEventsRuntime(const robot2D::Event& event) {
+        m_scene.getSystem<UISystem>() -> handleEvents(event);
+    }
+
 
     void Scene::update(float dt) {
         for(auto& item: m_setItems) {
@@ -214,6 +223,12 @@ namespace editor {
                     if(child.hasComponent<ScriptComponent>())
                         ScriptEngine::onCreateEntity(child);
                 }
+            }
+
+            if(entity.hasComponent<ButtonComponent>()) {
+                auto& hitbox = entity.getComponent<UIHitbox>();
+                // TODO(a.raag) ts.getGlobalBounds();
+                hitbox.m_area = robot2D::FloatRect::create(ts.getPosition(), ts.getScale() + ts.getPosition());
             }
         }
 
@@ -558,6 +573,43 @@ namespace editor {
         }
 
     }
+
+    robot2D::ecs::Entity Scene::addEmptyButton() {
+        auto entity = m_scene.createEntity();
+        auto& transform = entity.addComponent<TransformComponent>();
+        entity.addComponent<IDComponent>(UUID());
+        entity.addComponent<TagComponent>();
+        transform.setPosition({100, 100});
+        transform.setScale({20, 20});
+
+        entity.addComponent<ButtonComponent>();
+        entity.addComponent<UIHitbox>().callbackIDs[UIHitbox::CallbackID::MouseDown] =
+                m_scene.getSystem<UISystem>() -> addMousePressedCallback([](robot2D::ecs::Entity entity, std::uint64_t){
+                    auto& btnComp = entity.getComponent<ButtonComponent>();
+                    if(btnComp.hasEntity()
+                            && btnComp.onClickCallback && !btnComp.clickMethodName.empty())
+                        btnComp.onClickCallback(btnComp.scriptEntity, btnComp.clickMethodName);
+                });
+
+        m_sceneEntities.emplace_back(entity);
+        return entity;
+    }
+
+    void Scene::setEditorCamera(IEditorCamera::Ptr editorCamera) {
+        m_editorCamera = editorCamera;
+        m_scene.getSystem<UISystem>() -> setCamera(m_editorCamera);
+    }
+
+    void Scene::registerUICallback(robot2D::ecs::Entity uiEntity) {
+        uiEntity.addComponent<UIHitbox>().callbackIDs[UIHitbox::CallbackID::MouseDown] =
+                m_scene.getSystem<UISystem>() -> addMousePressedCallback([](robot2D::ecs::Entity entity, std::uint64_t){
+                    auto& btnComp = entity.getComponent<ButtonComponent>();
+                    if(btnComp.hasEntity()
+                       && btnComp.onClickCallback && !btnComp.clickMethodName.empty())
+                        btnComp.onClickCallback(btnComp.scriptEntity, btnComp.clickMethodName);
+                });
+    }
+
 
 }
 

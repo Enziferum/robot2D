@@ -62,6 +62,7 @@ namespace editor {
         }
 
         //////////////////////////////////////// EditorInteractor ////////////////////////////////////////
+        void handleEventsRuntime(const robot2D::Event &event) override;
         void update(float dt) override;
         void findSelectEntities(const robot2D::FloatRect& rect) override;
         bool hasSelectedEntities() const override;
@@ -81,6 +82,7 @@ namespace editor {
         void closeCurrentProject(std::function<void()>&& resultCallback);
         robot2D::vec2f getMainCameraPosition() const override;
         void setMainCamera(robot2D::ecs::Entity cameraEntity) override;
+        void setEditorCamera(IEditorCamera::Ptr editorCamera) override;
         //////////////////////////////////////// EditorInteractor ////////////////////////////////////////
 
 
@@ -94,6 +96,8 @@ namespace editor {
         std::list<robot2D::ecs::Entity> getEntities() const override;
         void removeEntity(robot2D::ecs::Entity entity) override;
         void addEmptyEntity() override;
+        robot2D::ecs::Entity addButton() override;
+
         robot2D::ecs::Entity createEmptyEntity() override;
         /// \brief using when need create entity on scene, but don't want to notify someone
         robot2D::ecs::Entity duplicateEmptyEntity(robot2D::ecs::Entity entity) override;
@@ -115,6 +119,9 @@ namespace editor {
 
         //////////////////// ScriptInteractor ////////////////////
         robot2D::ecs::Entity getByUUID(std::uint64_t uuid) override;
+        bool loadSceneRuntime(std::string &&name) override;
+        void loadSceneAsyncRuntime(std::string &&name) override;
+        void exitEngineRuntime() override;
         //////////////////// ScriptInteractor ////////////////////
 
         void destroy();
@@ -133,6 +140,8 @@ namespace editor {
 
         void findSelectChildren(const robot2D::FloatRect& rect, robot2D::ecs::Entity child);
         robot2D::ecs::Entity getSelectedEntityChild(robot2D::ecs::Entity parent, int graphicsEntityID);
+
+        void pasteChild(robot2D::ecs::Entity parent);
     private:
         robot2D::MessageBus& m_messageBus;
         MessageDispatcher& m_messageDispatcher;

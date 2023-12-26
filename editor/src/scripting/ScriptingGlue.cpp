@@ -21,8 +21,10 @@ source distribution.
 
 #include <unordered_map>
 #include <robot2D/Core/Keyboard.hpp>
+#include <robot2D/Core/Mouse.hpp>
 #include <robot2D/Ecs/Entity.hpp>
 #include <robot2D/Core/Assert.hpp>
+#include <robot2D/Core/Window.hpp>
 
 #include <mono/metadata/loader.h>
 #include <mono/metadata/object.h>
@@ -61,7 +63,17 @@ namespace editor {
 
             return Physics2DComponent::BodyType::Static;
         }
+
+        std::string MonoStringToString(MonoString* string)
+        {
+            char* cStr = mono_string_to_utf8(string);
+            std::string str(cStr);
+            mono_free(cStr);
+            return str;
+        }
+
     }
+
 
     #define RB_ADD_INTERNAL_CALL(Name) mono_add_internal_call("robot2D.InternalCalls::" #Name, (void*)Name)
 
@@ -272,14 +284,14 @@ namespace editor {
     }
 
 
-    static void AnimationComponent_Play(UUID entityID, std::string name) {
+    static void AnimationComponent_Play(UUID entityID, MonoString* name) {
         auto interactor = ScriptEngine::getInteractor();
         RB_CORE_ASSERT(interactor);
         robot2D::ecs::Entity entity = interactor -> getByUUID(entityID);
         RB_CORE_ASSERT(entity);
     }
 
-    static void AnimationComponent_Stop(UUID entityID, std::string name) {
+    static void AnimationComponent_Stop(UUID entityID, MonoString* name) {
         auto interactor = ScriptEngine::getInteractor();
         RB_CORE_ASSERT(interactor);
         robot2D::ecs::Entity entity = interactor -> getByUUID(entityID);
@@ -289,6 +301,46 @@ namespace editor {
     static bool Input_IsKeyDown(std::uint16_t keycode)
     {
         return robot2D::Keyboard::isKeyPressed(robot2D::Int2Key(keycode));
+    }
+
+    static bool Input_IsMousePressed(std::uint16_t button)
+    {
+        return robot2D::isMousePressed(robot2D::int2mouse(button));
+    }
+
+    static void Input_GetMousePosition(robot2D::vec2f* position) {
+        auto* window = ScriptEngine::GetWindow();
+        auto camera = ScriptEngine::GetCamera();
+
+        auto mousePos = window -> getMousePos();
+        mousePos = camera -> convertPixelToCoords(mousePos);
+        *position = mousePos;
+    }
+
+    static void Input_SetMousePosition(robot2D::vec2f* position) {
+        auto* window = ScriptEngine::GetWindow();
+        window -> setMousePos(*position);
+    }
+
+    static bool SceneManager_LoadScene(MonoString* name) {
+        auto cppString = Utils::MonoStringToString(name);
+        auto interactor = ScriptEngine::getInteractor();
+        RB_CORE_ASSERT(interactor);
+
+        return interactor -> loadSceneRuntime(std::move(cppString));
+    }
+
+    static void SceneManager_LoadSceneAsync(MonoString* name) {
+        auto cppString = Utils::MonoStringToString(name);
+        auto interactor = ScriptEngine::getInteractor();
+        RB_CORE_ASSERT(interactor);
+        interactor -> loadSceneAsyncRuntime(std::move(cppString));
+    }
+
+    static void Engine_Exit() {
+        auto interactor = ScriptEngine::getInteractor();
+        RB_CORE_ASSERT(interactor);
+        interactor -> exitEngineRuntime();
     }
 
     static MonoObject* GetScriptInstance(UUID entityID) {
@@ -329,6 +381,9 @@ namespace editor {
         RB_ADD_INTERNAL_CALL(GetScriptInstance);
         RB_ADD_INTERNAL_CALL(Entity_HasComponent);
         RB_ADD_INTERNAL_CALL(Input_IsKeyDown);
+        RB_ADD_INTERNAL_CALL(Input_IsMousePressed);
+        RB_ADD_INTERNAL_CALL(Input_GetMousePosition);
+        RB_ADD_INTERNAL_CALL(Input_SetMousePosition);
         RB_ADD_INTERNAL_CALL(TransformComponent_GetTranslation);
         RB_ADD_INTERNAL_CALL(TransformComponent_SetTranslation);
         RB_ADD_INTERNAL_CALL(TransformComponent_AddChild);
@@ -345,6 +400,9 @@ namespace editor {
         RB_ADD_INTERNAL_CALL(DrawableComponent_Flip);
         RB_ADD_INTERNAL_CALL(AnimationComponent_Play);
         RB_ADD_INTERNAL_CALL(AnimationComponent_Stop);
+        RB_ADD_INTERNAL_CALL(SceneManager_LoadScene);
+        RB_ADD_INTERNAL_CALL(SceneManager_LoadSceneAsync);
+        RB_ADD_INTERNAL_CALL(Engine_Exit);
     }
 
 } // namespace editor

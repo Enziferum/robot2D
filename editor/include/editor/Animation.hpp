@@ -105,7 +105,6 @@ namespace editor {
                     return frame.frameIndex == item.frameIndex;
                 }), frames.end());
             }
-
             if(last == newLast)
                 frames.emplace_back(replace);
             else

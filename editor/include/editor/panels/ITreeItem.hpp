@@ -83,6 +83,7 @@ namespace editor {
                 m_childrens.erase(std::remove_if(m_childrens.begin(), m_childrens.end(), [&delItem](auto item) {
                     return delItem -> m_id == item -> m_id;
             }), m_childrens.end());
+            m_deletePendingItems.clear();
         }
 
         std::vector<ITreeItem::Ptr>& getChildrens() { return m_childrens; }

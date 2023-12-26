@@ -371,8 +371,10 @@ namespace robot2D::priv {
     vec2f DesktopWindowImpl::getMousePos() const {
         double pos_x, pos_y;
         glfwGetCursorPos(m_window, &pos_x, &pos_y);
-        return {static_cast<float>(pos_x),
-                static_cast<float>(pos_y)};
+        return {
+            static_cast<float>(pos_x),
+            static_cast<float>(pos_y)
+        };
     }
 
     bool DesktopWindowImpl::getJoystickGamepadInput(const JoystickType& joystickType,

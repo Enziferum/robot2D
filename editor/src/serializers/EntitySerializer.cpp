@@ -2,8 +2,12 @@
 #include <robot2D/Ecs/EntityManager.hpp>
 
 #include <editor/serializers/EntitySerializer.hpp>
-#include <editor/Components.hpp>
 #include <editor/scripting/ScriptingEngine.hpp>
+
+#include <editor/Components.hpp>
+#include <editor/components/ButtonComponent.hpp>
+#include <editor/components/UIHitBox.hpp>
+
 #include <editor/AnimationManager.hpp>
 #include <editor/ResouceManager.hpp>
 #include <editor/LocalResourceManager.hpp>
@@ -338,8 +342,16 @@ namespace editor {
             out << YAML::Key << "Animations" << animationPaths;
             out << YAML::EndMap;
         }
-        if(entity.hasComponent<AnimatorComponent>()) {
-            /// TODO(a.raag):
+        if(entity.hasComponent<ButtonComponent>()) {
+            auto& btnComp = entity.getComponent<ButtonComponent>();
+            if(btnComp.hasEntity()) {
+                out << YAML::Key << "ButtonComponent";
+                out << YAML::BeginMap;
+                out << YAML::Key << "ScriptUUID" << YAML::Value << btnComp.scriptEntity;
+                if(!btnComp.clickMethodName.empty())
+                    out << YAML::Key << "MethodName" << YAML::Value << btnComp.clickMethodName;
+                out << YAML::EndMap;
+            }
         }
 
         out << YAML::EndMap;
@@ -516,6 +528,15 @@ namespace editor {
             resourceManager -> setAnimationPathsToLoad(uuid, std::move(animationPaths));
             deserializedEntity.addComponent<AnimationComponent>();
             deserializedEntity.addComponent<AnimatorComponent>();
+        }
+
+        auto buttonComponent = entity["ButtonComponent"];
+        if(buttonComponent) {
+            auto& btnComponent = deserializedEntity.addComponent<ButtonComponent>();
+            deserializedEntity.addComponent<UIHitbox>();
+            btnComponent.scriptEntity = buttonComponent["ScriptUUID"].as<UUID>();
+            if(buttonComponent["MethodName"])
+                btnComponent.clickMethodName = buttonComponent["MethodName"].as<std::string>();
         }
 
         return true;

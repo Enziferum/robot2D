@@ -39,6 +39,7 @@
         <Reference Include="System.Xml" />
     </ItemGroup>
     <ItemGroup>
+        <Compile Include="Engine.cs" />
         <Compile Include="Input.cs" />
         <Compile Include="InternalCalls.cs" />
         <Compile Include="KeyCode.cs" />
@@ -46,6 +47,7 @@
         <Compile Include="Scene\Collision2D.cs" />
         <Compile Include="Scene\Component.cs" />
         <Compile Include="Scene\Entity.cs" />
+        <Compile Include="Scene\SceneManager.cs" />
         <Compile Include="Vector2.cs" />
     </ItemGroup>
     <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

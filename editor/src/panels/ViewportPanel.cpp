@@ -28,7 +28,7 @@ source distribution.
 #include <editor/panels/ViewportPanel.hpp>
 #include <editor/Messages.hpp>
 #include <editor/Components.hpp>
-
+#include <editor/DragDropIDS.hpp>
 
 #ifdef USE_GLM
 #define GLM_ENABLE_EXPERIMENTAL
@@ -279,7 +279,7 @@ namespace editor {
 
             if (ImGui::BeginDragDropTarget())
             {
-                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM")) {
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(contentItemID)) {
                     const char* data = reinterpret_cast<const char*>(payload -> Data);
                     if(data) {
                         std::string payloadString = std::string(data, payload->DataSize);
@@ -289,7 +289,7 @@ namespace editor {
                         msg -> path = scenePath.string();
                     }
                 }
-                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_PREFAB")) {
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(contentPrefabItemID)) {
                     const char* data = reinterpret_cast<const char*>(payload -> Data);
                     if(data) {
                         std::string payloadString = std::string(data, payload->DataSize);

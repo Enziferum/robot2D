@@ -111,6 +111,20 @@ namespace editor {
                 m_treeHierarchy.setSelected(item);
             }
 
+            if(ImGui::BeginMenu("Create UI Element")) {
+                if(ImGui::MenuItem("Button")) {
+                    m_selectedEntity = m_interactor -> addButton();
+                    auto item = m_treeHierarchy.addItem<robot2D::ecs::Entity>();
+                    item -> setName(&m_selectedEntity.getComponent<TagComponent>().getTag());
+                    item -> setUserData(m_selectedEntity);
+                    item -> setTexture(m_iconTextures[TreeItemIcon::Default], robot2D::Color::White);
+                    m_selectedEntity.addComponent<UIComponent>().treeItem = item;
+                    m_treeHierarchy.setSelected(item);
+                }
+                ImGui::EndMenu();
+            }
+
+
             ImGui::EndPopup();
         }
 
@@ -126,7 +140,8 @@ namespace editor {
                         std::string payloadString = std::string(data, payload->DataSize);
                         const wchar_t* rawPath = (const wchar_t *) payloadString.c_str();
                         std::filesystem::path prefabPath = std::filesystem::path("assets") / rawPath;
-                        auto realPrefabPath = combinePath(m_interactor -> getAssociatedProjectPath(), prefabPath.string());
+                        auto realPrefabPath = combinePath(m_interactor -> getAssociatedProjectPath(),
+                                                          prefabPath.string());
 
                         if(auto prefab = m_prefabManager.findPrefab(realPrefabPath)) {
                             auto item = m_treeHierarchy.addItem<robot2D::ecs::Entity>();
@@ -245,6 +260,7 @@ namespace editor {
             m_treeHierarchy.setBefore(source, target);
         });
 
+
         m_treeHierarchy.addOnMakeChildCallback([this](ITreeItem::Ptr source, ITreeItem::Ptr intoTarget) {
             RB_EDITOR_WARN("m_treeHierarchy.addOnMakeChildCallback");
             auto entity = intoTarget -> getUserData<robot2D::ecs::Entity>();
@@ -253,6 +269,7 @@ namespace editor {
                 return;
             }
             auto& transform = entity -> getComponent<TransformComponent>();
+
             auto sourceEntity = source -> getUserData<robot2D::ecs::Entity>();
             if(!sourceEntity) {
                 RB_EDITOR_ERROR("ScenePanel: Can't item in Hierarchy don't have userData");
@@ -264,10 +281,21 @@ namespace editor {
                 sprite.setReorderZBuffer(true);
             }
 
-            transform.addChild(*entity, *sourceEntity);
-            m_interactor -> removeEntityChild(*sourceEntity);
-            m_treeHierarchy.deleteItem(source);
-            intoTarget -> addChild(source);
+            if(source -> isChild()) {
+                auto& sourceTransform = sourceEntity -> getComponent<TransformComponent>();
+                const bool needRemoveFromScene = false;
+                sourceTransform.removeSelf(needRemoveFromScene);
+                source -> removeSelf();
+                transform.addChild(*entity, *sourceEntity);
+                m_treeHierarchy.applyChildModification(source, intoTarget);
+            }
+            else {
+                transform.addChild(*entity, *sourceEntity);
+                m_interactor -> removeEntityChild(*sourceEntity);
+                m_treeHierarchy.deleteItem(source);
+                intoTarget -> addChild(source);
+            }
+
         });
 
         m_treeHierarchy.addOnStopBeChildCallback([this](ITreeItem::Ptr source, ITreeItem::Ptr intoTarget) {

@@ -46,6 +46,9 @@ namespace editor {
 
         m_guiWrapper.setup(*m_window);
 
+        //// Load C# Mono
+        ScriptEngine::Init();
+        ScriptEngine::SetWindow(m_window);
 
 
         m_editorModule = EditorAssembly::createEditorModule(m_window,
@@ -61,8 +64,6 @@ namespace editor {
         m_logic.setup( m_editorModule.get());
         m_editorModule -> setup(m_window);
 
-        //// Load C# Mono
-        ScriptEngine::Init();
 
         if(m_logic.getState() == AppState::ProjectInspector) {
             auto windowSize = m_window -> getSize();
