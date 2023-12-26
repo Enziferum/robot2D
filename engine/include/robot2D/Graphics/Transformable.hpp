@@ -39,6 +39,10 @@ namespace robot2D {
         virtual void setPosition(const vec2f& pos);
         vec2f& getPosition();
 
+        const vec2f& getPosition() const {
+            return m_pos;
+        }
+
         virtual void setOrigin(const vec2f& origin);
         vec2f& getOrigin();
 
@@ -52,6 +56,7 @@ namespace robot2D {
         /// Set internal scale.
         virtual void setScale(const vec2f& factor);
         vec2f& getScale();
+        const vec2f& getScale() const { return m_scale_factor; }
 
         /// Set internal rotation angle.
         virtual void setRotate(const float& angle);

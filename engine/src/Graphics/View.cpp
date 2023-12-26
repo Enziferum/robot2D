@@ -59,7 +59,7 @@ namespace robot2D {
         needTransformUpdate = true;
     }
 
-    const FloatRect &View::getViewport() const {
+    const FloatRect& View::getViewport() const {
         return m_viewport;
     }
 
@@ -131,6 +131,7 @@ namespace robot2D {
         m_size.x   = rectangle.width;
         m_size.y   = rectangle.height;
         m_rotation = 0;
+        m_rectangle = rectangle;
         needTransformUpdate = true;
         needInvTransformUpdate = true;
     }
@@ -167,5 +168,9 @@ namespace robot2D {
         }
 
         return m_invTransform;
+    }
+
+    const FloatRect &View::getRectangle() const {
+        return m_rectangle;
     }
 }

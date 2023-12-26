@@ -63,6 +63,7 @@ namespace robot2D {
 
             virtual IntRect getViewport(const View& view) = 0;
             virtual void setView3D(const Matrix3D& projection, const Matrix3D& view) = 0;
+            virtual void setRawView(float* rawMatrix) = 0;
         protected:
             vec2u m_size;
         };

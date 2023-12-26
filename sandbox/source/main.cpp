@@ -54,17 +54,87 @@ Collection filter(const Collection& collection, Pred pred) {
 
 #define DECAY(value) decltype(std::decay_t<typeof(value)>())
 
-int run() {
-    std::vector<int> vec{1, 2, 3, 4};
+template <class BidirectionalIterator, class T> inline
+BidirectionalIterator find_first_if(const BidirectionalIterator first, const BidirectionalIterator last, T&& predicate)
+{
+    for (BidirectionalIterator it = first; it != last;)
+        //reverse iteration: 1. check 2. decrement 3. evaluate
+    {
+        if (predicate(*it))
+            return it;
+        ++it; //
+    }
+    return first;
+}
 
-    auto filteredCollection = filter(vec, [](int value) {
-        return value % 2 == 0;
+template <class BidirectionalIterator, class T> inline
+BidirectionalIterator find_last_if(const BidirectionalIterator first, const BidirectionalIterator last, T&& predicate)
+{
+    for (BidirectionalIterator it = last; it != first;)
+        //reverse iteration: 1. check 2. decrement 3. evaluate
+    {
+        --it; //
+
+        if (predicate(*it))
+            return it;
+    }
+    return last;
+}
+
+struct Item {
+    int index;
+    friend std::ostream& operator <<(std::ostream&, const Item& item);
+};
+
+std::ostream& operator <<(std::ostream& os, const Item& item) {
+    os << item.index;
+    return os;
+}
+
+int run() {
+    std::vector<Item> vec{Item{1}, Item{2}, Item{3}, Item{4}};
+
+    auto sourceItem = vec[0];
+    auto targetItem = vec[3];
+
+
+    auto sourceIter = std::find_if(vec.begin(), vec.end(), [&sourceItem](const Item& item) {
+        return item.index == sourceItem.index;
     });
 
-    for(const auto& i: filteredCollection)
-        std::cout << i << "\n";
+    auto targetIter = std::find_if(vec.begin(), vec.end(), [&targetItem](const Item& item) {
+        return item.index == targetItem.index;
+    });
+
+    auto sourceOldDistance = std::distance(vec.begin(), sourceIter);
+    auto targetOldDistance = std::distance(vec.begin(), targetIter);
+
+    if(sourceOldDistance > targetOldDistance) {
+        /// insert before remove last
+        vec.insert(targetIter, sourceItem);
+        vec.erase(find_last_if(vec.begin(), vec.end(), [&sourceItem](const Item& item) {
+            return item.index == sourceItem.index;
+        }), vec.end());
+    }
+    else if (sourceOldDistance < targetOldDistance) {
+        vec.insert(targetIter, sourceItem);
+        vec.erase(find_first_if(vec.begin(), vec.end(), [&sourceItem](const Item& item) {
+            return item.index == sourceItem.index;
+        }));
+    }
+
+
+    for(auto i: vec)
+        std::cout << i << " ";
+
 
     return 0;
 }
 
-ROBOT2D_MAIN(Sandbox)
+int main() {
+    robot2D::EngineConfiguration engineConfiguration{};
+    engineConfiguration.windowTitle = "Sandbox";
+    engineConfiguration.windowSize = { 1920, 1080 };
+    //return run();
+    ROBOT2D_RUN_ENGINE(Sandbox, engineConfiguration);
+}

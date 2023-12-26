@@ -27,7 +27,7 @@ namespace robot2D::ecs {
     Scene::Scene(robot2D::MessageBus& messageBus, const bool& useSystems):
     m_messageBus(messageBus),
     m_componentManager(),
-    m_entityManager(m_componentManager),
+    m_entityManager(m_componentManager, this),
     m_systemManager(messageBus, m_componentManager, this),
     m_useSystems(useSystems) {}
 
@@ -39,8 +39,23 @@ namespace robot2D::ecs {
         return m_addPending.back();
     }
 
+
+    Entity Scene::createEmptyEntity() {
+        constexpr bool needAddToScene = false;
+        Entity entity = m_entityManager.createEntity(needAddToScene);
+        return entity;
+    }
+
+    Entity Scene::duplicateEntity(robot2D::ecs::Entity entity) {
+        auto duplicated = m_entityManager.duplicateEntity(entity);
+        if(!m_useSystems)
+            return entity;
+        m_addPending.emplace_back(duplicated);
+        return m_addPending.back();
+    }
+
     void Scene::removeEntity(Entity entity) {
-        m_deletePending.emplace_back(entity);
+        m_deletePendingBuffer.emplace_back(entity);
         m_entityManager.markDestroyed(entity);
     }
 
@@ -49,7 +64,7 @@ namespace robot2D::ecs {
     }
 
     void Scene::update(float dt) {
-        // TODO(a.raag) double buffer fix
+        m_deletePending.swap(m_deletePendingBuffer);
         for(auto& entity: m_deletePending) {
             if(m_useSystems)
                 m_systemManager.removeEntity(entity);
@@ -69,6 +84,35 @@ namespace robot2D::ecs {
         for(auto& drawable: m_drawables)
             target.draw(*drawable);
     }
+
+    void Scene::addEntity(robot2D::ecs::Entity entity) {
+        m_addPending.emplace_back(entity);
+    }
+
+    bool Scene::restoreEntity(Entity entity) {
+        bool result = m_entityManager.restoreEntity(entity);
+        if(m_useSystems)
+            m_systemManager.addEntity(entity);
+        return result;
+    }
+
+    bool Scene::cloneSelf(Scene& cloneScene, bool cloneSystems) {
+        bool result = m_entityManager.cloneSelf(cloneScene.m_entityManager);
+
+        return true;
+    }
+
+    bool Scene::restoreFromClone(const Scene& clone) {
+        m_entityManager.clear();
+
+
+        return true;
+    }
+
+    bool Scene::clearAll() {
+        return true;
+    }
+
 
 }
 

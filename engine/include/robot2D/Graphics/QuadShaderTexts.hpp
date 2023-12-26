@@ -34,8 +34,8 @@ namespace robot2D {
 
             out vec2 TexCoords;
             out vec4 Color;
-            out flat float TexIndex;
-            out flat int v_entityID;
+            out float TexIndex;
+            out int v_entityID;
 
             uniform mat4 projection;
             uniform mat4 view;

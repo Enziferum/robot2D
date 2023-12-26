@@ -47,7 +47,7 @@ namespace robot2D::priv {
         setup();
     }
 
-    DesktopWindowImpl::~DesktopWindowImpl() {}
+    DesktopWindowImpl::~DesktopWindowImpl() = default;
 
     bool DesktopWindowImpl::pollEvents(Event& event) {
         //TODO: @a.raag sleep/wait some time ?
@@ -262,12 +262,15 @@ namespace robot2D::priv {
         window->m_event_queue.push(event);
     }
 
-    void DesktopWindowImpl::dragdrop_callback([[maybe_unused]] GLFWwindow* wnd, int count, const char** paths) {
+    void DesktopWindowImpl::dragdrop_callback(GLFWwindow* wnd, int count, const char** paths) {
+        auto window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
         std::vector<std::string> outputPaths;
-        for(int it = 0; it < count; ++it) {
-            if(paths[it] != nullptr)
-                outputPaths.emplace_back(paths[it]);
+        for(int i = 0; i < count; ++i) {
+            if(paths[i] != nullptr)
+                outputPaths.emplace_back(paths[i]);
         }
+        if(window -> m_dropCallback)
+            window -> m_dropCallback(std::move(outputPaths));
     }
 
     void DesktopWindowImpl::joystick_callback(int jid, int evt) {
@@ -368,8 +371,10 @@ namespace robot2D::priv {
     vec2f DesktopWindowImpl::getMousePos() const {
         double pos_x, pos_y;
         glfwGetCursorPos(m_window, &pos_x, &pos_y);
-        return {static_cast<float>(pos_x),
-                static_cast<float>(pos_y)};
+        return {
+            static_cast<float>(pos_x),
+            static_cast<float>(pos_y)
+        };
     }
 
     bool DesktopWindowImpl::getJoystickGamepadInput(const JoystickType& joystickType,
@@ -418,5 +423,9 @@ namespace robot2D::priv {
 
     void DesktopWindowImpl::setVsync(bool flag) {
         glfwSwapInterval(flag ? 1 : 0);
+    }
+
+    void DesktopWindowImpl::addDropCallback(std::function<void(std::vector<std::string>&&)>&& callback) {
+        m_dropCallback = std::move(callback);
     }
 }
