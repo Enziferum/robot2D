@@ -41,6 +41,7 @@ namespace editor {
         void update(float dt) override;
         void start(editorEntityList& entityList) override;
         void stop() override;
+        void addRuntime(robot2D::ecs::Entity entity) override;
         void registerCallback(PhysicsCallbackType callbackType, editor::PhysicsCallback&& callback) override {
             m_callbacks[callbackType] = std::move(callback);
         }
@@ -49,7 +50,7 @@ namespace editor {
         void updateEntity(robot2D::ecs::Entity entity);
     private:
         std::unique_ptr<b2World> m_physicsWorld{nullptr};
-        std::vector<robot2D::ecs::Entity> m_entityList;
+        std::list<robot2D::ecs::Entity> m_entityList;
         std::unordered_map<PhysicsCallbackType, PhysicsCallback> m_callbacks;
     };
 }

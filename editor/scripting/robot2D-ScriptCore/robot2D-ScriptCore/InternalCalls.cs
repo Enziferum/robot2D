@@ -17,7 +17,12 @@ namespace robot2D
         internal extern static object GetScriptInstance(ulong entityID);
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
-        internal extern static object createEntity();
+        internal extern static void Object_Instantiate(ulong from);
+        
+        
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static void Object_Instantiate_WithPos(ulong from, ref Vector2 position);
+
         
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static bool removeEntity(ulong entityID);

@@ -15,20 +15,6 @@ GIT_END = '.git'
     4. Add lib cmake options libCmakeOptions if no make empty string
 """
 
-class bcolors:
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKCYAN = '\033[96m'
-    OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
-
-
-def printColored(color, text, endColor: bool = True):
-    print(f"{color}{text}{bcolors.ENDC if endColor else ''}")
 
 
 class PlatformType(str, enum.Enum):
@@ -55,7 +41,6 @@ def get_platform():
 class LibType(str, enum.Enum):
     GLFW = 'glfw'
     SPDLOG = 'spdlog'
-    ROBOT2D_EXT = 'robot2D_ext'
 
     @classmethod
     def libs(cls) -> list:
@@ -67,7 +52,6 @@ class Consts:
     def getURL(lib: LibType) -> str:
         githubUserNames = {
             'glfw': 'glfw',
-            'robot2D_ext': 'Enziferum',
             'spdlog': 'gabime'
         }
         return f'{GITHUB_URL}{githubUserNames[lib.value]}/{lib.value}{GIT_END}'
@@ -94,12 +78,7 @@ class WinVSVersion(enum.IntEnum):
             return "Visual Studio 17 2022"
 
 
-class Cmd:
-    def __init__(self, cmd: str):
-        self.cmd = cmd
 
-    def getCmd(self) -> str:
-        return self.cmd
 
 
 class NixLibName:
@@ -138,7 +117,7 @@ class Lib:
 
     def __build_library(self, generator, os_make='', cmake_options=''):
         cmake_cmd = Cmd(f'cd {self.name} && mkdir build '
-                           f'&& cd build && cmake .. -G "{generator}" {cmake_options} && {os_make}make '
+                           f'&& cd build && cmake .. -G "{generator}" -DCMAKE_BUILD_TYPE=Release {cmake_options} && {os_make}make '
                            f'&& sudo {os_make}make install')
         self.cmds.append(cmake_cmd)
 
@@ -169,10 +148,10 @@ class Lib:
         else:
             git_cmd = f'git clone {self.giturl}'
             self.cmds.append(Cmd(git_cmd))
-            if currentPlatform is PlatformType.Windows:
-                self.__build_library_vs(self.cmakeOptions.generator,
-                                     self.cmakeOptions.options)
-                return
+            # if currentPlatform is PlatformType.Windows:
+            #     self.__build_library_vs(self.cmakeOptions.generator,
+            #                          self.cmakeOptions.options)
+            #     return
             self.__build_library(self.cmakeOptions.generator,
                                  self.cmakeOptions.os_make,
                                  self.cmakeOptions.options)
@@ -198,19 +177,32 @@ class ConfigurationType(enum.IntEnum):
         if self.value == self.Release:
             return "Release"
 
+# Install
+# glfw, spdlog, freetype ??
+
+
+
 class DepsInstaller:
     def __init__(self):
         self.libs = []
         self.__wincompiler = WinCompiler.No
         self.__winvsversion = WinVSVersion.No
 
+
+    def __process_args(self):
+        import argparse
+        parser = argparse.ArgumentParser()
+
     def __setup(self):
+        self.__process_args()
+
+
         currentPlatform = get_platform()
         printColored(bcolors.WARNING, f'Current platform is: {currentPlatform.value}')
         # configuration = input("Choose Configuration: \n"
         #                      "1 - Debug \n"
         #                      "2 - Release \n")
-        configuration = ConfigurationType(int("1"))
+        configuration = ConfigurationType(int("2"))
         if get_platform() == PlatformType.Windows:
             # compiler = input("Choose Compiler: \n"
             #                  "1 - MinGW \n"
@@ -226,13 +218,11 @@ class DepsInstaller:
         nixLibNames = {
             'glfw': NixLibName('glfw3', 'libglfw3 libglfw3-dev'),
             'spdlog': NixLibName('spdlog', 'libspdlog-dev'),
-            'robot2D_ext': NixLibName('', ''),
         }
 
         libCmakeOptions = {
             'glfw': '-DGLFW_BUILD_EXAMPLES=OFF -DGLFW_BUILD_TESTS=OFF -DGLFW_BUILD_DOCS=OFF',
             'spdlog': '-DSPDLOG_BUILD_EXAMPLE=OFF',
-            'robot2D_ext': ''
         }
 
         generator = ''
@@ -244,12 +234,12 @@ class DepsInstaller:
             if self.__wincompiler is WinCompiler.VS:
                 generator = str(self.__winvsversion)
 
-        for it in LibType.libs():
-            key = it.value
+        for lib in LibType.libs():
+            key = lib.value
             cmakeOptions = CMakeOptions(generator,
                                         libCmakeOptions[key],
                                         'mingw32-' if self.__wincompiler is WinCompiler.MinGW else '')
-            lib = Lib(key, Consts.getURL(LibType(it)),
+            lib = Lib(key, Consts.getURL(LibType(lib)),
                       nixLibNames[key].MacOSName, nixLibNames[key].LinuxName,
                       cmakeOptions,
                       str(configuration))

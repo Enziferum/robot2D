@@ -14,6 +14,8 @@ namespace editor {
         virtual bool loadSceneRuntime(std::string&& name) = 0;
         virtual void loadSceneAsyncRuntime(std::string&& name) = 0;
         virtual void exitEngineRuntime() = 0;
+        virtual robot2D::ecs::Entity duplicateRuntime(robot2D::ecs::Entity entity,
+                                                      robot2D::vec2f position = robot2D::vec2f{}) = 0;
     };
 
 } // namespace editor

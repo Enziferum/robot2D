@@ -1,5 +1,5 @@
 #include <algorithm>
-
+#include <robot2D/Ecs/EntityManager.hpp>
 #include <editor/SceneRender.hpp>
 #include <editor/Components.hpp>
 

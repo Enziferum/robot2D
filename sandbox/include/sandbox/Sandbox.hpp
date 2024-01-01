@@ -22,7 +22,7 @@ source distribution.
 #pragma once
 
 #include <robot2D/Application.hpp>
-#include <robot2D/imgui/Gui.hpp>
+//#include <robot2D/imgui/Gui.hpp>
 #include "Scene.hpp"
 
 class Sandbox: public robot2D::Application {
@@ -38,5 +38,5 @@ protected:
     void guiUpdate(float deltaTime) override;
 private:
     Scene::Ptr m_scene;
-    robot2D::Gui m_gui;
+    //robot2D::Gui m_gui;
 };

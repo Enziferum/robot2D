@@ -73,7 +73,7 @@ namespace editor {
         { "robot2D.TransformComponent", ScriptFieldType::Transform },
         { "robot2D.DrawableComponent", ScriptFieldType::Drawable },
         { "robot2D.TextComponent", ScriptFieldType::Text },
-        { "robot2D.Animator", ScriptFieldType::Animator },
+        { "robot2D.Animator", ScriptFieldType::Animator }
     };
 
     namespace util {
@@ -305,6 +305,7 @@ namespace editor {
                                                                      "robot2D", "Entity", true);
         s_Data -> m_entityClass -> registerMethod(".ctor", 1);
         s_Data -> m_entityClass -> registerMethod("setComponentField", 2);
+        s_Data -> m_entityClass -> registerMethod("setEntityField", 2);
         s_Data -> m_entityClass -> registerMethod("onCollision2DInternal", 3);
 
         util::PrintAssemblyTypes(s_Data -> m_coreAssebly);
@@ -333,7 +334,6 @@ namespace editor {
                 fullName = fmt::format("{}.{}", nameSpace, className);
             else
                 fullName = className;
-
             MonoClass* monoClass = mono_class_from_name(s_Data -> m_appAssemblyImage, nameSpace, className);
             if (!monoClass || monoClass == entityClass || mono_class_is_enum(monoClass))
                 continue;
@@ -358,11 +358,26 @@ namespace editor {
                 if (flags & MONO_FIELD_ATTRIBUTE_PUBLIC)
                 {
                     MonoType* type = mono_field_get_type(field);
-                    ScriptFieldType fieldType = util::MonoTypeToScriptFieldType(type);
-                    RB_EDITOR_WARN("ScriptingEngine: Field Type {0}", std::string( util::ScriptFieldTypeToString(fieldType)));
+                    std::string typeName = mono_type_get_name(type);
+                    if(auto pos = typeName.find('.'); pos != std::string::npos)
+                        typeName = typeName.substr(pos + 1, typeName.size() - pos);
 
-                    if(!scriptClass -> registerField(fieldName, { fieldType, fieldName, field })) {
-                        RB_EDITOR_ERROR("ScriptingEngine: Can't register field type {0}",  std::string( util::ScriptFieldTypeToString(fieldType)));
+
+                    auto klazz = mono_class_from_name(s_Data -> m_appAssemblyImage, nameSpace, typeName.c_str());
+                    if(klazz) {
+                        if(mono_class_is_subclass_of(klazz, entityClass, false)) {
+                            ScriptFieldType fieldType = ScriptFieldType::Entity;
+                            if(!scriptClass -> registerField(fieldName, { fieldType, fieldName, field })) {
+                                RB_EDITOR_ERROR("ScriptingEngine: Can't register field type {0}",  std::string( util::ScriptFieldTypeToString(fieldType)));
+                            }
+                        }
+                    }
+                    else {
+                        ScriptFieldType fieldType = util::MonoTypeToScriptFieldType(type);
+                        RB_EDITOR_WARN("ScriptingEngine: Field Type {0}", std::string( util::ScriptFieldTypeToString(fieldType)));
+                        if(!scriptClass -> registerField(fieldName, { fieldType, fieldName, field })) {
+                            RB_EDITOR_ERROR("ScriptingEngine: Can't register field type {0}",  std::string( util::ScriptFieldTypeToString(fieldType)));
+                        }
                     }
                 }
             }
@@ -376,7 +391,7 @@ namespace editor {
 
             //    if(engineRegisteredMethods.find(methodName) != engineRegisteredMethods.end()) {
                     const auto& signature = engineRegisteredMethods[methodName];
-                    RB_EDITOR_WARN("ScriptingEngine: Found Method: {0}", methodName);
+                 //   RB_EDITOR_WARN("ScriptingEngine: Found Method: {0}", methodName);
                     auto methodToken = mono_method_get_token(method);
                     auto sig = mono_method_get_signature(method, s_Data -> m_appAssemblyImage, methodToken);
 
@@ -487,6 +502,16 @@ namespace editor {
                                                 klass -> getInstance(), storage, nullptr);
                         }
                     }
+                    else if(field.Field.Type == ScriptFieldType::Entity) {
+                        auto klass = instance -> getClassWrapper();
+                        auto regMethods = s_Data -> m_entityClass -> getRegisterMethods();
+                        if(regMethods.find("setEntityField") != regMethods.end()) {
+                            auto MonoString = mono_string_new(s_Data -> m_appDomain, field.Field.Name.c_str());
+                            void* storage[2] = { (void*)(MonoString), (void*)(field.m_Buffer)};
+                            mono_runtime_invoke(regMethods["setEntityField"],
+                                                klass -> getInstance(), storage, nullptr);
+                        }
+                    }
                     else
                         instance -> setFieldValueInternal(name, field.m_Buffer);
                 }
@@ -527,8 +552,9 @@ namespace editor {
 
                 if( klass -> hasMethod("onCollision2DEnter") ) {
                     auto regMethods = s_Data -> m_entityClass -> getRegisterMethods();
+                    int contactType = static_cast<int>(contact.contanctType);
                     if(regMethods.find("onCollision2DInternal") != regMethods.end()) {
-                        void* storage[3] = { (void*)&ownContact, (void*)&otherContact, (void*)&contact.contanctType};
+                        void* storage[3] = { (void*)&ownContact, (void*)&otherContact, (void*)&contactType};
                         mono_runtime_invoke(regMethods["onCollision2DInternal"],
                                             klass -> getInstance(), storage, nullptr);
                     }
@@ -548,12 +574,58 @@ namespace editor {
 
                 if( klass -> hasMethod("onCollision2DExit") ) {
                     auto regMethods = s_Data -> m_entityClass -> getRegisterMethods();
+                    int contactType = static_cast<int>(contact.contanctType);
                     if(regMethods.find("onCollision2DInternal") != regMethods.end()) {
-                        void* storage[3] = { (void*)&ownContact, (void*)&otherContact, (void*)&contact.contanctType};
+                        void* storage[3] = { (void*)&ownContact, (void*)&otherContact, (void*)&contactType};
                         mono_runtime_invoke(regMethods["onCollision2DInternal"],
                                             klass -> getInstance(), storage, nullptr);
                     }
                 }
+            }
+        }
+    }
+
+
+    void ScriptEngine::onCollision2DBeginTrigger(const Physics2DContact& contact) {
+        for(auto& [uuid, instance]: s_Data -> m_entityInstances) {
+            auto klass = instance -> getClassWrapper();
+            if(contact.entityA == uuid || contact.entityB == uuid) {
+
+                UUID ownContact = (contact.entityA == uuid) ? contact.entityA : contact.entityB;
+                UUID otherContact = (contact.entityA != uuid) ? contact.entityA : contact.entityB;
+
+                if( klass -> hasMethod("onCollision2DEnterTrigger") ) {
+                    auto regMethods = s_Data -> m_entityClass -> getRegisterMethods();
+                    int contactType = static_cast<int>(contact.contanctType);
+                    if(regMethods.find("onCollision2DInternal") != regMethods.end()) {
+                        void* storage[3] = { (void*)&ownContact, (void*)&otherContact, (void*)&contactType};
+                        mono_runtime_invoke(regMethods["onCollision2DInternal"],
+                                            klass -> getInstance(), storage, nullptr);
+                    }
+                }
+
+            }
+        }
+    }
+
+    void ScriptEngine::onCollision2DEndTrigger(const Physics2DContact& contact) {
+        for(auto& [uuid, instance]: s_Data -> m_entityInstances) {
+            auto klass = instance -> getClassWrapper();
+            if(contact.entityA == uuid || contact.entityB == uuid) {
+
+                UUID ownContact = (contact.entityA == uuid) ? contact.entityA : contact.entityB;
+                UUID otherContact = (contact.entityA != uuid) ? contact.entityA : contact.entityB;
+
+                if( klass -> hasMethod("onCollision2DEndTrigger") ) {
+                    auto regMethods = s_Data -> m_entityClass -> getRegisterMethods();
+                    int contactType = static_cast<int>(contact.contanctType);
+                    if(regMethods.find("onCollision2DInternal") != regMethods.end()) {
+                        void* storage[3] = { (void*)&ownContact, (void*)&otherContact, (void*)&contactType};
+                        mono_runtime_invoke(regMethods["onCollision2DInternal"],
+                                            klass -> getInstance(), storage, nullptr);
+                    }
+                }
+
             }
         }
     }
@@ -627,6 +699,18 @@ namespace editor {
 
     void ScriptEngine::SetCamera(IEditorCamera::Ptr camera) {
         s_Data -> camera = camera;
+    }
+
+    ScriptInstance::Ptr ScriptEngine::CloneObject(MonoObject* cloneObject) {
+        auto klass = mono_object_get_class(cloneObject);
+        auto className = mono_class_get_name(klass);
+        std::string s{className};
+
+        for(auto [name, klass]: s_Data -> m_entityClasses) {
+            if(s == name) {
+
+            }
+        }
     }
 
 

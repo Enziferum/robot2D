@@ -13,7 +13,7 @@ set(TESTS_NAME run_all_tests)
 set(SRC ${ECS_SRC} main.cpp)
 
 add_executable(${TESTS_NAME} ${SRC})
-target_link_libraries(${TESTS_NAME} gtest robot2D)
+target_link_libraries(${TESTS_NAME} PUBLIC gtest PRIVATE robot2D)
 
 add_dependencies(${TESTS_NAME} gtest_ext)
 add_test(NAME unit_tests COMMAND ${TESTS_NAME})

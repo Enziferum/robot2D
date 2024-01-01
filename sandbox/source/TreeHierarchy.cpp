@@ -144,32 +144,32 @@ namespace robot2D {
                         ImGui::EndDragDropSource();
                     }
 
-                    if(!ImGui::IsKeyDown(robot2D::key2Int(m_shortCutKey))) {
-                        if(ImGui::BeginDragDropTarget()) {
-                            auto* payload = ImGui::AcceptDragDropPayload(m_playloadIdentifier.c_str());
-                            if(payload) {
-                                if(payload -> IsDataType(m_playloadIdentifier.c_str())) {
-                                    int id = *static_cast<int*>(payload -> Data);
-                                    RB_EDITOR_INFO("TreeHierachy: Got item with ID = {0}", id);
-                                    m_reorderCallback(findByID(id), item);
-                                }
-                            }
-                            ImGui::EndDragDropTarget();
-                        }
-                    }
-                    else if(ImGui::IsKeyDown(robot2D::key2Int(m_shortCutKey))) {
-                        if(ImGui::BeginDragDropTarget()) {
-                            auto* payload = ImGui::AcceptDragDropPayload(m_playloadIdentifier.c_str());
-                            if(payload) {
-                                if(payload -> IsDataType(m_playloadIdentifier.c_str())) {
-                                    int id = *static_cast<int*>(payload -> Data);
-                                    RB_EDITOR_INFO("TreeHierachy: want as make as child item with ID = {0}", id);
-                                    m_makeAsChildCallback(findByID(id), item);
-                                }
-                            }
-                            ImGui::EndDragDropTarget();
-                        }
-                    }
+//                    if(!ImGui::IsKeyDown(robot2D::key2Int(m_shortCutKey))) {
+//                        if(ImGui::BeginDragDropTarget()) {
+//                            auto* payload = ImGui::AcceptDragDropPayload(m_playloadIdentifier.c_str());
+//                            if(payload) {
+//                                if(payload -> IsDataType(m_playloadIdentifier.c_str())) {
+//                                    int id = *static_cast<int*>(payload -> Data);
+//                                    RB_EDITOR_INFO("TreeHierachy: Got item with ID = {0}", id);
+//                                    m_reorderCallback(findByID(id), item);
+//                                }
+//                            }
+//                            ImGui::EndDragDropTarget();
+//                        }
+//                    }
+//                    else if(ImGui::IsKeyDown(robot2D::key2Int(m_shortCutKey))) {
+//                        if(ImGui::BeginDragDropTarget()) {
+//                            auto* payload = ImGui::AcceptDragDropPayload(m_playloadIdentifier.c_str());
+//                            if(payload) {
+//                                if(payload -> IsDataType(m_playloadIdentifier.c_str())) {
+//                                    int id = *static_cast<int*>(payload -> Data);
+//                                    RB_EDITOR_INFO("TreeHierachy: want as make as child item with ID = {0}", id);
+//                                    m_makeAsChildCallback(findByID(id), item);
+//                                }
+//                            }
+//                            ImGui::EndDragDropTarget();
+//                        }
+//                    }
                 }
             }
             ImGui::TreePop();

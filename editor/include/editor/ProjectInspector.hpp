@@ -56,6 +56,8 @@ namespace editor {
         void render();
     private:
         void createProject();
+        void addProject();
+
         void loadProject(const unsigned& index);
         void deleteProject(const unsigned& index);
     private:

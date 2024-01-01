@@ -236,7 +236,7 @@ namespace editor {
         m_currentProject -> setStartScene(filename);
 
         // TODO(a.raag): update project's start scene
-        // m_currentProject -> save();
+        //m_currentProject -> save();
         m_router.openScene(m_activeScene, m_currentProject -> getPath());
     }
 
@@ -706,6 +706,10 @@ namespace editor {
             m_activeScene -> onRuntimeStop();
             m_presenter.switchState(EditorState::Edit);
         }
+    }
+
+    robot2D::ecs::Entity EditorLogic::duplicateRuntime(robot2D::ecs::Entity entity, robot2D::vec2f position) {
+        return m_activeScene -> duplicateRuntime(entity, position);
     }
 
 

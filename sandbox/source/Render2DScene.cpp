@@ -120,13 +120,13 @@ void Render2DScene::render() {
     m_window.beforeRender();
     m_window.draw(m_scene);
     robot2D::Sprite sp;
-    sp.setSize({200, 200});
+    //sp.setSize({200, 200});
     sp.setTexture(m_textures.get(ResourceID::Logo));
-    sp.setPosition({300, 300});
+   // sp.setPosition({300, 300});
    // sp.setTextureRect({0, 0, 100, 100});
-    m_window.draw(sp);
+   // m_window.draw(sp);
 
-    //m_window.draw(q);
+    m_window.draw(q);
     m_window.afterRender();
 }
 

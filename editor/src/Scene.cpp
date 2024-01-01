@@ -215,7 +215,7 @@ namespace editor {
 
         ScriptEngine::onRuntimeStart(scriptInteractor);
         for(auto& entity: m_sceneEntities) {
-            if(entity.hasComponent<ScriptComponent>())
+            if(entity.hasComponent<ScriptComponent>() && !entity.hasComponent<PrefabComponent>())
                 ScriptEngine::onCreateEntity(entity);
             auto& ts = entity.getComponent<TransformComponent>();
             if(ts.hasChildren()) {
@@ -258,6 +258,17 @@ namespace editor {
                                              [](const Physics2DContact& contact) {
             ScriptEngine::onCollision2DEnd(contact);
         });
+
+        m_physicsAdapter -> registerCallback(PhysicsCallbackType::EnterTrigger,
+                                             [](const Physics2DContact& contact) {
+            ScriptEngine::onCollision2DBeginTrigger(contact);
+        });
+
+        m_physicsAdapter -> registerCallback(PhysicsCallbackType::ExitTrigger,
+                                             [](const Physics2DContact& contact) {
+            ScriptEngine::onCollision2DEndTrigger(contact);
+        });
+
     }
 
     void Scene::onPhysics2DStop() {
@@ -608,6 +619,18 @@ namespace editor {
                        && btnComp.onClickCallback && !btnComp.clickMethodName.empty())
                         btnComp.onClickCallback(btnComp.scriptEntity, btnComp.clickMethodName);
                 });
+    }
+
+    robot2D::ecs::Entity Scene::duplicateRuntime(robot2D::ecs::Entity entity, robot2D::vec2f position) {
+
+        auto dupEntity = m_scene.duplicateEntity(entity);
+        dupEntity.getComponent<TagComponent>().setTag("RuntimeClone");
+        dupEntity.getComponent<IDComponent>().ID = UUID();
+        dupEntity.getComponent<TransformComponent>().setPosition(position);
+        m_sceneEntities.emplace_back(dupEntity);
+
+        m_physicsAdapter -> addRuntime(entity);
+        return dupEntity;
     }
 
 

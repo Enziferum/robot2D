@@ -142,5 +142,8 @@ set(ENGINE_SRC ${ENGINE_SRC}
         ${SRCROOT}/Graphics/OpenGL/OpenGLFrameBuffer.cpp
         ${SRCROOT}/Graphics/OpenGL/GL.cpp
 
+        ${SRCROOT}/Graphics/internal/glad.c
+        ${SRCROOT}/Graphics/internal/stb_image_aug.c
+
         PARENT_SCOPE
         )
