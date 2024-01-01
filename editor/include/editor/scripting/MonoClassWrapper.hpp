@@ -85,6 +85,8 @@ namespace editor {
     public:
         MonoClassWrapper(ScriptEngineData* data,
                          std::string namespaceStr, std::string className, bool isCore = false);
+        MonoClassWrapper(MonoObject* rawClass);
+
         ~MonoClassWrapper() = default;
 
 

@@ -56,8 +56,7 @@ else()
 endif()
 
 find_package(glfw3 REQUIRED)
-find_package(spdlog)
-find_package(robot2D_ext QUIET)
+find_package(spdlog REQUIRED)
 find_package(Freetype)
 
 include_directories(${FREETYPE_INCLUDE_DIRS})
@@ -79,11 +78,12 @@ endif()
 add_subdirectory(engine)
 
 add_library(${PROJECT_NAME} ${ENGINE_SRC})
-set(LIBS ${LIBS} glfw robot2D_ext ${FREETYPE_LIBRARIES} spdlog::spdlog)
+set(LIBS ${LIBS} ${FREETYPE_LIBRARIES} glfw spdlog::spdlog)
 
-target_link_libraries(${PROJECT_NAME} ${LIBS})
+target_link_libraries(${PROJECT_NAME} PUBLIC ${LIBS})
 target_include_directories(${PROJECT_NAME} PUBLIC
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/engine/include>"
+        INTERFACE
         "$<INSTALL_INTERFACE:include>")
 
 include(CMakePackageConfigHelpers)

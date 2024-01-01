@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Specialized;
 using System.Dynamic;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -13,10 +14,16 @@ namespace robot2D
             return InternalCalls.GetScriptInstance(ID);
         }
 
-        public static object Instantiate()
+        public static void Instantiate(Entity from)
         {
-            return new object();
+            InternalCalls.Object_Instantiate(from.ID);
         }
+        
+        public static void Instantiate(Entity from, Vector2 position)
+        {
+            InternalCalls.Object_Instantiate_WithPos(from.ID, ref position);
+        }
+        
     }
     
     internal class ComponentCreator
@@ -25,6 +32,15 @@ namespace robot2D
         {
             T component = new T() { Entity = new Entity(UUID) };
             return component;
+        }
+    }
+
+    internal class EntityCreator
+    {
+        public T Create<T>() where T: Entity, new()
+        {
+            T entity = (T)Activator.CreateInstance(typeof(T));
+            return entity;
         }
     }
     
@@ -36,13 +52,12 @@ namespace robot2D
             ID = 0;
         } 
 
-        internal Entity(ulong id)
+        public Entity(ulong id)
         {
             Console.WriteLine($"Entity Ctor ID - {id}");
             ID = id;
         }
-
-       
+        
         public readonly ulong ID;
 
         public Vector2 Translation
@@ -104,14 +119,58 @@ namespace robot2D
             }
                 
         }
+        
+        internal void setEntityField(string name, ulong uuid)
+        {
+            Type t = GetType();
+            FieldInfo fieldInfo = t.GetRuntimeField(name);
+            
+            if (fieldInfo != null)
+            {
+                Type baseType = fieldInfo.FieldType.BaseType;
+                Console.WriteLine($"setEntityField::calls and basetype is {baseType.ToString()}");
+                foreach (var MyConstructor in baseType.GetConstructors())
+                {
+                    Console.WriteLine($"for type {baseType.ToString()}, " +
+                                      $"constructor has {MyConstructor.GetParameters().Length} params");
+                    if (MyConstructor.GetParameters().Length != 0)
+                    {
+                        EntityCreator entityCreator = new EntityCreator();
+                        MethodInfo method = typeof(EntityCreator).GetMethod(nameof(EntityCreator.Create));
+                        MethodInfo generic = method.MakeGenericMethod(fieldInfo.FieldType);
+                        var entity = generic.Invoke(entityCreator, new object[]{ });
+                        Console.WriteLine($"setEntityField::Base Constructor Call to uuid {uuid}");
+                        MyConstructor.Invoke(entity, new object[] { uuid });
+                        fieldInfo.SetValue(this, entity);
+                        break;
+                    }
+                }
+            }
+                
+        }
 
         internal void onCollision2DInternal(ulong entityID, ulong otherEntityID, int type)
         {
             Collision2D collision2D = new Collision2D(entityID, otherEntityID);
-            var method = GetType().GetMethod(type == 0 ? "onCollision2DEnter" : "onCollision2DExit");
+            string methodName = "None";
+            switch (type)
+            {
+                case 0:
+                    methodName = "onCollision2DEnter";
+                    break;
+                case 1:
+                    methodName = "onCollision2DExit";
+                    break;
+                case 2:
+                    methodName = "onCollision2DEnterTrigger";
+                    break;
+                case 3:
+                    methodName = "onCollision2DExitTrigger";
+                    break;
+            }
+            var method = GetType().GetMethod(methodName);
             if(method != null)
                 method.Invoke(this, new object[] { collision2D });
         }
     }
-
 }

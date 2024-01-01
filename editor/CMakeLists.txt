@@ -33,6 +33,9 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
 include(Mono)
 
+find_package(spdlog REQUIRED)
+find_package(robot2D REQUIRED)
+
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 file(GLOB_RECURSE SRC src/*.cpp)
 
@@ -43,6 +46,7 @@ add_subdirectory(ext/tinyfiledialog)
 add_subdirectory(ext/filewatch)
 add_subdirectory(ext/box2d)
 add_subdirectory(ext/TinyXML)
+
 
 
 set(INTERNAL_MONO_ASSEMBLY_DIR "${MONO_ASSEMBLY_PATH}"
@@ -66,9 +70,8 @@ if(UNIX)
     add_definitions(${GCC_COVERAGE_COMPILE_FLAGS})
 endif()
 
-target_link_libraries(${PROJECT_NAME} ${LIBS})
+target_link_libraries(${PROJECT_NAME} PRIVATE ${LIBS})
 target_include_directories(${PROJECT_NAME} PUBLIC ${MONO_INCLUDE_PATH})
-
 
 add_custom_command(
         TARGET ${PROJECT_NAME} POST_BUILD

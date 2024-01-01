@@ -23,20 +23,23 @@ if(MSVC)
     # Show C4200 (zero-sized array in struct/union) only on warning level 4
     enable_cxx_compiler_flag_if_supported("/w44200")
 else()
-    enable_cxx_compiler_flag_if_supported("-Wall")
-    enable_cxx_compiler_flag_if_supported("-Wextra")
-    enable_cxx_compiler_flag_if_supported("-Wpedantic")
+    #enable_cxx_compiler_flag_if_supported("-Wall")
+    #enable_cxx_compiler_flag_if_supported("-Wextra")
+    #enable_cxx_compiler_flag_if_supported("-Wpedantic")
     #enable_cxx_compiler_flag_if_supported("-Werror")
 endif()
 
+
+set(CMAKE_VERBOSE_MAKEFILE ON)
 
 set(LIBS)
 if(UNIX)
     find_package(OpenGL REQUIRED)
     set(LIBS OpenGL::GL ${CMAKE_DL_LIBS})
 endif()
-set(LIBS robot2D robot2D_ext robot2D_imgui ${LIBS})
+set(LIBS robot2D ${LIBS})
 
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 set(SRC
         source/main.cpp
@@ -46,15 +49,15 @@ set(SRC
         source/Components.cpp
         source/Systems.cpp
         source/LayerScene.cpp
-        source/EditorUIScene.cpp
-        source/TreeHierarchy.cpp
+       # source/EditorUIScene.cpp
+       # source/TreeHierarchy.cpp
         )
 
 
 add_executable(${PROJECT_NAME} ${SRC})
-target_include_directories(${PROJECT_NAME} PUBLIC
-        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-        "$<INSTALL_INTERFACE:include>")
+#target_include_directories(${PROJECT_NAME} PUBLIC
+#        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+#        "$<INSTALL_INTERFACE:include>")
 
 if(UNIX)
     SET(GCC_COVERAGE_LINK_FLAGS "-ldl -Wl --start-group")

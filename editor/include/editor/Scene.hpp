@@ -63,14 +63,16 @@ namespace editor {
 
         void setRuntimeCamera(bool flag);
 
-        /// Serializer Api
+        ////////////// Serializer Api //////////////
         robot2D::ecs::Entity createEntity();
         robot2D::ecs::Entity createEmptyEntity();
         void addAssociatedEntity(robot2D::ecs::Entity entity);
 
-        /// ScenePanel API
+        ////////////// ScenePanel API //////////////
         void addEmptyEntity();
         robot2D::ecs::Entity addEmptyButton();
+
+
 
         void setBefore(robot2D::ecs::Entity source, robot2D::ecs::Entity target);
         void removeEntity(robot2D::ecs::Entity entity);
@@ -94,6 +96,9 @@ namespace editor {
         robot2D::ecs::Entity
         duplicateEntity(robot2D::vec2f mousePos, robot2D::ecs::Entity entity);
         robot2D::ecs::Entity duplicateEmptyEntity(robot2D::ecs::Entity entity);
+
+        [[maybe_unused]]
+        robot2D::ecs::Entity duplicateRuntime(robot2D::ecs::Entity entity, robot2D::vec2f position);
 
         const std::string& getPath() const {return m_path;}
         std::string& getPath()  {return m_path;}

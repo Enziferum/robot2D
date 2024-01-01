@@ -343,6 +343,27 @@ namespace editor {
         interactor -> exitEngineRuntime();
     }
 
+    static void Object_Instantiate(UUID uuid) {
+        auto interactor = ScriptEngine::getInteractor();
+        RB_CORE_ASSERT(interactor);
+        auto entity = interactor -> getByUUID(uuid);
+        RB_CORE_ASSERT(entity);
+
+        interactor -> duplicateRuntime(entity);
+    }
+
+    static void Object_Instantiate_WithPos(UUID uuid, robot2D::vec2f* position) {
+        auto interactor = ScriptEngine::getInteractor();
+        RB_CORE_ASSERT(interactor);
+        auto entity = interactor -> getByUUID(uuid);
+        RB_CORE_ASSERT(entity);
+
+        robot2D::vec2f dupPosition = *position;
+        auto dupEntity = interactor -> duplicateRuntime(entity, dupPosition);
+
+        ScriptEngine::onCreateEntity(dupEntity);
+    }
+
     static MonoObject* GetScriptInstance(UUID entityID) {
         return ScriptEngine::getManagedObject(entityID) -> getInstance();
     }
@@ -403,6 +424,8 @@ namespace editor {
         RB_ADD_INTERNAL_CALL(SceneManager_LoadScene);
         RB_ADD_INTERNAL_CALL(SceneManager_LoadSceneAsync);
         RB_ADD_INTERNAL_CALL(Engine_Exit);
+        RB_ADD_INTERNAL_CALL(Object_Instantiate);
+        RB_ADD_INTERNAL_CALL(Object_Instantiate_WithPos);
     }
 
 } // namespace editor

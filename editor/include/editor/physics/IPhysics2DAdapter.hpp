@@ -33,16 +33,17 @@ namespace editor {
         Box2D
     };
 
-    enum class PhysicsCallbackType {
-        Enter,
-        Stay,
-        Exit
+    enum class PhysicsCallbackType: int {
+        Enter = 0,
+        Exit = 1,
+        EnterTrigger = 2,
+        ExitTrigger = 3
     };
 
     struct Physics2DContact {
         UUID entityA;
         UUID entityB;
-        int contanctType{0};
+        PhysicsCallbackType contanctType{PhysicsCallbackType::Enter};
     };
 
     using PhysicsCallback = std::function<void(const Physics2DContact&)>;
@@ -56,6 +57,7 @@ namespace editor {
 
         virtual void start(editorEntityList& entityList) = 0;
         virtual void stop() = 0;
+        virtual void addRuntime(robot2D::ecs::Entity entity) = 0;
         virtual void registerCallback(PhysicsCallbackType callbackType, PhysicsCallback&& callback) = 0;
     };
 

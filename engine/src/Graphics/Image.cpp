@@ -19,8 +19,8 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include <robot2D/internal/stb_image.h>
-#include <robot2D/internal/stb_image_write.h>
+#include "internal/stb_image.h"
+#include "internal/stb_image_write.h"
 
 #include <robot2D/Graphics/Image.hpp>
 #include <robot2D/Util/Logger.hpp>

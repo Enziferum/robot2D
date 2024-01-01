@@ -501,7 +501,54 @@ namespace editor {
                                     ImGui::EndDragDropTarget();
                                 }
                             }
+                            if(field.Type == ScriptFieldType::Entity) {
+                                ImGui::AlignTextToFramePadding();
+                                ImGui::Text(name.c_str());
+                                ImGui::SameLine();
+                                auto uuid = scriptField.getValue<UUID>();
+                                auto preEntity = interactor -> getByUUID(uuid);
+                                std::string resultText = "None";
+                                if(preEntity)
+                                    resultText = preEntity.getComponent<TagComponent>().getTag();
+                                ImGui::Button(resultText.c_str());
 
+                                if(ImGui::BeginDragDropTarget()) {
+                                    auto* payload = ImGui::AcceptDragDropPayload(contentPrefabItemID);
+                                    if(payload) {
+                                        if(payload -> IsDataType(contentPrefabItemID)) {
+                                            const char* data = static_cast<const char*>(payload -> Data);
+                                            std::string payloadString = std::string(data, payload -> DataSize);
+                                            const wchar_t* rawPath = (const wchar_t *) payloadString.c_str();
+                                            std::filesystem::path prefabPath = std::filesystem::path("assets") / rawPath;
+                                            auto realPrefabPath = combinePath(m_interactor -> getAssociatedProjectPath(),
+                                                                              prefabPath.string());
+
+                                            if(auto prefab = m_prefabManager.findPrefab(realPrefabPath)) {
+                                                robot2D::ecs::Entity duplicateEntity = m_interactor -> duplicateEmptyEntity(prefab -> entity);
+                                                if(duplicateEntity) {
+                                                    if(duplicateEntity != entity) {
+                                                        scriptField.setValue(duplicateEntity.getComponent<IDComponent>().ID);
+                                                    }
+                                                }
+                                            }
+                                            else {
+                                                if(auto prefab = m_prefabManager.loadPrefab(m_interactor,
+                                                                                            realPrefabPath)) {
+                                                    robot2D::ecs::Entity duplicateEntity = m_interactor -> duplicateEmptyEntity(prefab -> entity);
+                                                    if(duplicateEntity) {
+                                                        if(duplicateEntity != entity) {
+                                                            ScriptFieldInstance& fieldInstance = entityFields[name];
+                                                            fieldInstance.Field = field;
+                                                            scriptField.setValue(duplicateEntity.getComponent<IDComponent>().ID);
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    ImGui::EndDragDropTarget();
+                                }
+                            }
                         }
                         else
                         {
@@ -542,7 +589,53 @@ namespace editor {
                                     ImGui::EndDragDropTarget();
                                 }
                             }
+                            if(field.Type == ScriptFieldType::Entity) {
+                                ImGui::AlignTextToFramePadding();
+                                ImGui::Text(name.c_str());
+                                ImGui::SameLine();
+                                std::string resultText = "None";
+                                ImGui::Button(resultText.c_str());
 
+                                if(ImGui::BeginDragDropTarget()) {
+                                    auto* payload = ImGui::AcceptDragDropPayload(contentPrefabItemID);
+                                    if(payload) {
+                                        if(payload -> IsDataType(contentPrefabItemID)) {
+                                            const char* data = static_cast<const char*>(payload -> Data);
+                                            std::string payloadString = std::string(data, payload -> DataSize);
+                                            const wchar_t* rawPath = (const wchar_t *) payloadString.c_str();
+                                            std::filesystem::path prefabPath = std::filesystem::path("assets") / rawPath;
+                                            auto realPrefabPath = combinePath(m_interactor -> getAssociatedProjectPath(),
+                                                                              prefabPath.string());
+
+                                            if(auto prefab = m_prefabManager.findPrefab(realPrefabPath)) {
+                                                robot2D::ecs::Entity duplicateEntity = m_interactor -> duplicateEmptyEntity(prefab -> entity);
+                                                if(duplicateEntity) {
+                                                    if(duplicateEntity != entity) {
+                                                        ScriptFieldInstance& fieldInstance = entityFields[name];
+                                                        fieldInstance.Field = field;
+                                                        fieldInstance.setValue(duplicateEntity.getComponent<IDComponent>().ID);
+                                                    }
+                                                }
+                                            }
+                                            else {
+
+                                                if(auto prefab = m_prefabManager.loadPrefab(m_interactor,
+                                                                                            realPrefabPath)) {
+                                                    robot2D::ecs::Entity duplicateEntity = m_interactor -> duplicateEmptyEntity(prefab -> entity);
+                                                    if(duplicateEntity) {
+                                                        if(duplicateEntity != entity) {
+                                                            ScriptFieldInstance& fieldInstance = entityFields[name];
+                                                            fieldInstance.Field = field;
+                                                            fieldInstance.setValue(duplicateEntity.getComponent<IDComponent>().ID);
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    ImGui::EndDragDropTarget();
+                                }
+                            }
                         }
                     }
                 }

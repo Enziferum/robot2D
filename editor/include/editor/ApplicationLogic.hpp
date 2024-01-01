@@ -45,6 +45,7 @@ namespace editor {
     private:
         void createProject(const ProjectMessage& projectDescription);
         void createProjectInternal(const ProjectMessage& projectDescription);
+        void addProject(const ProjectMessage& projectDescription);
         void deleteProject(const ProjectMessage& projectDescription);
         void loadProject(const ProjectMessage& projectDescription);
         void loadProjectInternal(const ProjectMessage& projectDescription);

@@ -122,6 +122,7 @@ namespace editor {
         bool loadSceneRuntime(std::string &&name) override;
         void loadSceneAsyncRuntime(std::string &&name) override;
         void exitEngineRuntime() override;
+        robot2D::ecs::Entity duplicateRuntime(robot2D::ecs::Entity entity, robot2D::vec2f position) override;
         //////////////////// ScriptInteractor ////////////////////
 
         void destroy();

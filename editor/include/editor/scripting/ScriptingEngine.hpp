@@ -59,6 +59,9 @@ namespace editor {
         static void onCollision2DBegin(const Physics2DContact& contact);
         static void onCollision2DEnd(const Physics2DContact& contact);
 
+        static void onCollision2DBeginTrigger(const Physics2DContact& contact);
+        static void onCollision2DEndTrigger(const Physics2DContact& contact);
+
         static ScriptInstance::Ptr getEntityScriptInstance(UUID entityID);
         static MonoClassWrapper::Ptr getEntityClass(const std::string& name);
         static ScriptFieldMap& getScriptFieldMap(robot2D::ecs::Entity entity);
@@ -71,6 +74,8 @@ namespace editor {
 
         static void SetWindow(robot2D::RenderWindow* window);
         static robot2D::Window* GetWindow();
+
+        static ScriptInstance::Ptr CloneObject(MonoObject* cloneObject);
 
         static IEditorCamera::Ptr GetCamera();
         static void SetCamera(IEditorCamera::Ptr camera);

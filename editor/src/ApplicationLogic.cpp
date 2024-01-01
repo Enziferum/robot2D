@@ -54,6 +54,8 @@ namespace editor {
         if(m_state == AppState::ProjectInspector) {
             m_messageDispatcher.onMessage<ProjectMessage>(MessageID::CreateProject,
                                                           BIND_CLASS_FN(createProject));
+            m_messageDispatcher.onMessage<ProjectMessage>(MessageID::AddProject,
+                                                          BIND_CLASS_FN(addProject));
             m_messageDispatcher.onMessage<ProjectMessage>(MessageID::LoadProject,
                                                           BIND_CLASS_FN(loadProject));
             m_messageDispatcher.onMessage<ProjectMessage>(MessageID::DeleteProject,
@@ -121,6 +123,36 @@ namespace editor {
         // m_window -> setResizable(true);
         m_state = AppState::Editor;
     }
+
+    void ApplicationLogic::addProject(const ProjectMessage& projectDescription) {
+        if(!m_editorCache.addProject(projectDescription.description)) {
+            RB_EDITOR_ERROR("Can't add Project to Cache := {0}",
+                            errorToString(m_editorCache.getError()));
+            return;
+        }
+
+        if(!m_projectManager.load(projectDescription.description)) {
+            RB_EDITOR_ERROR("Can't create Project := {0}",
+                            errorToString(m_projectManager.getError()));
+            return;
+        }
+
+        auto project = m_projectManager.getCurrentProject();
+
+        std::filesystem::path scriptModulePath{ project -> getPath()};
+        scriptModulePath.append("assets\\scripts\\bin");
+        scriptModulePath.append(project -> getName());
+#ifdef ROBOT2D_WINDOWS
+        scriptModulePath += ".dll";
+#endif
+        /// TODO(a.raag) load somewhere else in real
+        ScriptEngine::InitAppRuntime(scriptModulePath);
+
+        m_editorOpener -> loadProject(project);
+        // m_window -> setResizable(true);
+        m_state = AppState::Editor;
+    }
+
 
     void ApplicationLogic::loadProject(const ProjectMessage& projectDescription) {
         if(m_projectManager.hasActivateProject()) {

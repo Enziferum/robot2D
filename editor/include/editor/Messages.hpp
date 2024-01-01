@@ -30,6 +30,7 @@ namespace editor {
 
     enum MessageID {
         CreateProject = robot2D::Message::Count,
+        AddProject,
         DeleteProject,
         LoadProject,
         SaveProject,

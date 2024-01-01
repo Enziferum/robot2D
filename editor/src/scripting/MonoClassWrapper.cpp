@@ -37,6 +37,15 @@ namespace editor {
 
     }
 
+    MonoClassWrapper::MonoClassWrapper(MonoObject* rawClass) {
+        m_class = mono_object_get_class(rawClass);
+        if(!m_class) {
+            RB_EDITOR_ERROR("MonoClassWrapper: Can't create mono class object");
+            /// TODO(a.raag): throw exception error
+        }
+    }
+
+
     void MonoClassWrapper::Instantiate(ScriptEngineData* data) {
         m_instance = mono_object_new(data -> m_appDomain, m_class);
         if(!m_instance) {

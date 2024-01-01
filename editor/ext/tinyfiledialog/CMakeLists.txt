@@ -12,6 +12,7 @@ if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
 endif()
 
 set(CMAKE_C_STANDARD 99)
+set(CMAKE_DEFAULT_BUILD_TYPE Release)
 
 set(SRC src/tinyfiledialogs.c)
 
