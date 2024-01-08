@@ -302,6 +302,9 @@ namespace editor {
         if(m_selectionCollider.isShown())
             m_window -> draw(m_selectionCollider);
 
+        if(m_objectManipulator.isShown())
+            m_window -> draw(m_objectManipulator);
+
         if(m_mode == Mode::TiledMap) {
             m_window -> draw(m_tileSpritePreview);
         }

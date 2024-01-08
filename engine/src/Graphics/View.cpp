@@ -54,7 +54,7 @@ namespace robot2D {
 
     }
 
-    void View::setViewport(const FloatRect &viewport) {
+    void View::setViewport(const FloatRect& viewport) {
         m_viewport = viewport;
         needTransformUpdate = true;
     }
@@ -65,6 +65,8 @@ namespace robot2D {
 
     void View::setCenter(const vec2f& center) {
         m_center = center;
+        m_rectangle.lx = center.x - m_rectangle.width / 2.f;
+        m_rectangle.ly = center.y - m_rectangle.height / 2.f;
         needTransformUpdate = true;
         needInvTransformUpdate = true;
     }
@@ -72,6 +74,8 @@ namespace robot2D {
     void View::setCenter(float x, float y) {
         m_center.x = x;
         m_center.y = y;
+        m_rectangle.lx = x - m_rectangle.width / 2.f;
+        m_rectangle.ly = y - m_rectangle.height / 2.f;
         needTransformUpdate = true;
         needInvTransformUpdate = true;
     }
@@ -80,7 +84,7 @@ namespace robot2D {
         return m_center;
     }
 
-    void View::setSize(const vec2f &size) {
+    void View::setSize(const vec2f& size) {
         m_size = size;
         needTransformUpdate = true;
         needInvTransformUpdate = true;
@@ -89,6 +93,8 @@ namespace robot2D {
     void View::setSize(float x, float y) {
         m_size.x = x;
         m_size.y = y;
+        m_rectangle.width = m_size.x;
+        m_rectangle.height = m_size.y;
         needTransformUpdate = true;
         needInvTransformUpdate = true;
     }
@@ -109,7 +115,7 @@ namespace robot2D {
         return m_rotation;
     }
 
-    void View::move(const vec2f &offset) {
+    void View::move(const vec2f& offset) {
         setCenter(m_center + offset);
     }
 
