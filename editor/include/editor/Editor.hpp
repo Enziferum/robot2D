@@ -41,6 +41,7 @@ source distribution.
 #include "EditorCamera.hpp"
 #include "EditorLogic.hpp"
 #include "EditorInteractor.hpp"
+#include "ObjectManipulator.hpp"
 
 #include "EventBinder.hpp"
 #include "Guizmo2D.hpp"
@@ -165,8 +166,10 @@ namespace editor {
 
         ShortCutManager<EditorShortCutType> m_shortcutManager;
         SceneGrid m_sceneGrid;
+
         CameraManipulator m_cameraManipulator;
         SelectionCollider m_selectionCollider;
+        ObjectManipulator m_objectManipulator;
 
         bool m_leftMousePressed{false};
 

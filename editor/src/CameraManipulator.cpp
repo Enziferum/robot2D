@@ -60,6 +60,7 @@ namespace editor {
         m_aabb.width = minRectSize.x;
         m_aabb.height = minRectSize.y;
 
+        m_cameraView.reset({0, 0, minRectSize.x, minRectSize.y});
 
         moveQ[0].size = qSize;
         moveQ[1].size = qSize;
@@ -125,39 +126,49 @@ namespace editor {
         robot2D::vec2f diff = moveVector - m_pressedPoint;
         m_pressedPoint = moveVector;
 
+        bool inscrease = true;
+
         if(m_selectedQuad == 0) {
             if(diff.y < 0 ) {
                 diffSize += sizeStep;
+                inscrease = true;
             }
-            else if(diff.y > 0 && (diffSize - sizeStep >= minSize)) {
+            else if(diff.y > 0) {
                 diffSize -= sizeStep;
+                inscrease = false;
             }
         }
 
         if(m_selectedQuad == 1) {
             if(diff.x < 0 ) {
                 diffSize += sizeStep;
+                inscrease = true;
             }
-            else if(diff.x > 0 && (diffSize - sizeStep >= minSize)) {
+            else if(diff.x > 0) {
                 diffSize -= sizeStep;
+                inscrease = false;
             }
         }
 
         if(m_selectedQuad == 2) {
             if(diff.x > 0) {
                 diffSize += sizeStep;
+                inscrease = true;
             }
-            else if(diff.x < 0 && (diffSize - sizeStep >= minSize)) {
+            else if(diff.x < 0) {
                 diffSize -= sizeStep;
+                inscrease = false;
             }
         }
 
         if(m_selectedQuad == 3) {
             if(diff.y > 0) {
                 diffSize += sizeStep;
+                inscrease = true;
             }
-            else if(diff.y < 0 && (diffSize - sizeStep >= minSize)) {
+            else if(diff.y < 0) {
                 diffSize -= sizeStep;
+                inscrease = false;
             }
         }
 
@@ -166,6 +177,12 @@ namespace editor {
 
         m_needRecalculate = true;
         m_size = diffSize;
+
+        if(m_selectedQuad != static_cast<int>(SelectQuad::None)) {
+            float factor = inscrease ? 1.01f : 0.99f;
+            m_cameraView.zoom(factor);
+        }
+
     }
 
 
@@ -241,7 +258,7 @@ namespace editor {
         m_lastSize = m_size;
 
 
-
+        m_aabb = m_cameraView.getRectangle();
 
 
         moveQ[0].position = {
@@ -296,7 +313,6 @@ namespace editor {
 
         quads[3].translate(m_aabb.lx + m_aabb.width, m_aabb.ly);
         quads[3].scale(borderSize, m_aabb.height);
-
 
 
         for(const auto& wall: moveWalls)

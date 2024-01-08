@@ -29,6 +29,7 @@ source distribution.
 #include <robot2D/Graphics/Drawable.hpp>
 #include <robot2D/Graphics/RenderTarget.hpp>
 #include <robot2D/Graphics/Sprite.hpp>
+#include <robot2D/Graphics/View.hpp>
 
 #include "Quad.hpp"
 #include "EventBinder.hpp"
@@ -78,6 +79,9 @@ namespace editor {
 
             m_aabb.lx = colliderPosition.x;
             m_aabb.ly = colliderPosition.y;
+
+            auto rect = m_cameraView.getRectangle();
+            m_cameraView.setCenter({position.x, position.y});
 
             robot2D::vec2f midPoint = { m_aabb.lx + m_aabb.width / 2.f, m_aabb.ly + m_aabb.height / 2.f};
             m_movieSprite.setPosition({midPoint.x - 10, midPoint.y - 10});
@@ -169,6 +173,8 @@ namespace editor {
         IEditorCamera::Ptr m_camera{nullptr};
         bool m_needRecalculate{false};
         ButtonCallback m_buttonCallback;
+
+        robot2D::View m_cameraView;
     };
 
 }
