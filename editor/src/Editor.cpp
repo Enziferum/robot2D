@@ -167,6 +167,8 @@ namespace editor {
 
         applyStyle(EditorStyle::UE4);
         m_needPrepare = false;
+
+        m_window -> setSize({2560, 1920});
         m_window -> setMaximazed(true);
         auto& viewportPanel = m_panelManager.getPanel<ViewportPanel>();
         viewportPanel.set(m_frameBuffer);

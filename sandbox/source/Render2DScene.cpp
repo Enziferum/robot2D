@@ -46,10 +46,7 @@ struct Quad: robot2D::Drawable, robot2D::Transformable {
 
 Quad q;
 
-Render2DScene::Render2DScene(robot2D::RenderWindow& window) : Scene(window),
-                                                              m_scene(messageBus) {
-
-}
+Render2DScene::Render2DScene(robot2D::RenderWindow& window) : Scene(window), m_scene(messageBus) {}
 
 void Render2DScene::setup() {
     ///// setup Ecs /////
@@ -62,6 +59,7 @@ void Render2DScene::setup() {
     q.setPosition({100, 100});
     q.scale({100, 100});
     q.color = robot2D::Color::Cyan;
+    q.texture = &m_textures.get(ResourceID::Logo);
 }
 
 void Render2DScene::handleEvents(const robot2D::Event& event) {
@@ -119,13 +117,6 @@ robot2D::vec2f getScale(robot2D::vec2f targetSize, robot2D::vec2u originSize) {
 void Render2DScene::render() {
     m_window.beforeRender();
     m_window.draw(m_scene);
-    robot2D::Sprite sp;
-    //sp.setSize({200, 200});
-    sp.setTexture(m_textures.get(ResourceID::Logo));
-   // sp.setPosition({300, 300});
-   // sp.setTextureRect({0, 0, 100, 100});
-   // m_window.draw(sp);
-
     m_window.draw(q);
     m_window.afterRender();
 }

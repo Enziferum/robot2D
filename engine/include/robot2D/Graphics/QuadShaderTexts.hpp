@@ -30,12 +30,12 @@ namespace robot2D {
             layout (location = 1) in vec4 color;
             layout (location = 2) in vec2 textureCoords;
             layout (location = 3) in float textureIndex;
-            layout (location = 4) in int a_entityID;
+            layout (location = 4) in float a_entityID;
 
             out vec2 TexCoords;
             out vec4 Color;
             out float TexIndex;
-            out int v_entityID;
+            out float v_entityID;
 
             uniform mat4 projection;
             uniform mat4 view;
@@ -61,12 +61,12 @@ namespace robot2D {
 
         const char* fragmentSource = R"(
             layout (location = 0) out vec4 fragColor;
-            layout (location = 1) out int o_entityID;
+            layout (location = 1) out float o_entityID;
 
             in vec2 TexCoords;
             in vec4 Color;
-            in flat float TexIndex;
-            in flat int v_entityID;
+            in float TexIndex;
+            in float v_entityID;
 
             uniform sampler2D textureSamplers[16];
 

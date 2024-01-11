@@ -33,7 +33,7 @@ namespace robot2D {
     struct ROBOT2D_EXPORT_API WindowContext {
         /// Possible Graphics API
         enum class RenderApi {
-            OpenGL3_3,
+            OpenGL4_3,
             OpenGL4_5
         };
 
@@ -60,7 +60,7 @@ namespace robot2D {
         /// According to documentation input parameters set options.
         WindowContext(const bool& vsync = false,
                       const bool& fullscreen = false,
-                      const RenderApi& renderApi = WindowContext::RenderApi::OpenGL4_5,
+                      const RenderApi& renderApi = WindowContext::RenderApi::OpenGL4_3,
                       const RenderDimensionType& = WindowContext::RenderDimensionType::TwoD);
         /// Stores default values
         static const WindowContext Default;

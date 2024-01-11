@@ -24,6 +24,7 @@ source distribution.
 #include <imgui/imgui_internal.h>
 #include <tfd/tinyfiledialogs.h>
 
+#include <robot2D/Config.hpp>
 #include <editor/ProjectInspector.hpp>
 #include <editor/Messages.hpp>
 
@@ -150,7 +151,13 @@ namespace editor {
         }
 
         std::string creationPath(path);
-        auto pathComps = split(creationPath, "\\");
+        std::string separator;
+#ifdef ROBOT2D_WINDOWS
+        separator = "\\";
+#else
+        separator = "/";
+#endif
+        auto pathComps = split(creationPath, separator);
 
         ProjectDescription description;
         description.name = pathComps[pathComps.size() - 1];

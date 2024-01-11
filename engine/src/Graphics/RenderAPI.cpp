@@ -1,7 +1,7 @@
 #include <robot2D/Graphics/RenderAPI.hpp>
 
 namespace robot2D {
-    RenderApi RenderAPI::m_api = RenderApi::OpenGL3_3;
+    RenderApi RenderAPI::m_api = RenderApi::OpenGL4_3;
     RenderDimensionType RenderAPI::m_dimensionType = RenderDimensionType::TwoD;
 
     RenderApi& RenderAPI::getOpenGLVersion() {

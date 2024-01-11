@@ -25,7 +25,7 @@ source distribution.
 namespace editor {
 
     namespace {
-        const std::string editorVersion = "0.1";
+        const std::string editorVersion = "0.5";
         const std::string projectExtension = ".robot2D";
         const std::string defaultName = "Scene.scene";
         const std::string cachePath = "editor.cache";

@@ -27,7 +27,7 @@ source distribution.
 namespace editor {
 
     const std::string gridVertexShader = R"(
-        #version 450 core
+        #version 410 core
         layout (location = 0) in vec2 Position;
         layout (location = 1) in vec2 TexCoord;
 

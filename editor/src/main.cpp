@@ -26,7 +26,7 @@ int main() {
     robot2D::WindowContext windowContext {
         true,
         false,
-        robot2D::WindowContext::RenderApi::OpenGL4_5,
+        robot2D::WindowContext::RenderApi::OpenGL4_3,
         robot2D::WindowContext::RenderDimensionType::TwoD
     };
 

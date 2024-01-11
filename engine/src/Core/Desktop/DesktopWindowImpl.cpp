@@ -21,7 +21,7 @@ source distribution.
 
 #include <robot2D/Util/Logger.hpp>
 #include <robot2D/Graphics/GL.hpp>
-
+#include <robot2D/Config.hpp>
 #include "DesktopWindowImpl.hpp"
 
 namespace robot2D::priv {
@@ -70,26 +70,33 @@ namespace robot2D::priv {
         /* Initialize the library */
         if (!glfwInit())
             throw std::runtime_error("Can't Init GLFW3");
+
+        RB_CORE_WARN("Engine's Version {0}.{1}", std::to_string(RB2_MAJOR_VERSION),
+                     std::to_string(RB2_MINOR_VERSION));
+        RB_CORE_WARN("Window background is GLFW3 with flags: {0}", glfwGetVersionString());
+
 #ifdef ROBOT2D_MACOS
-        glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
+       glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 #endif
         int opengl_major = 0;
         int opengl_minor = 0;
 
         switch(m_context.renderApi) {
-            case WindowContext::RenderApi::OpenGL3_3: {
-                opengl_major = 3;
+            case WindowContext::RenderApi::OpenGL4_3: {
+                opengl_major = 4;
                 opengl_minor = 3;
                 break;
             }
             case WindowContext::RenderApi::OpenGL4_5: {
                 opengl_major = 4;
-                opengl_minor = 5;
+                opengl_minor = 3;
                 break;
             }
         }
+        RB_CORE_WARN("Engine's GraphicsApi is OpenGL, Version {0}.{1}.", std::to_string(opengl_major),
+                     std::to_string(opengl_minor));
 
-        if(m_context.renderApi == WindowContext::RenderApi::OpenGL3_3 ||
+        if(m_context.renderApi == WindowContext::RenderApi::OpenGL4_3 ||
            m_context.renderApi == WindowContext::RenderApi::OpenGL4_5) {
             glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, opengl_major);
             glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, opengl_minor);
