@@ -21,8 +21,8 @@ source distribution.
 
 #pragma once
 
-#define MAJOR_VERSION 0
-#define MINOR_VERSION 3
+#define RB2_MAJOR_VERSION 0
+#define RB2_MINOR_VERSION 7
 
 #if defined(_WIN32)
     #define ROBOT2D_WINDOWS

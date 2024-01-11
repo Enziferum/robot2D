@@ -15,10 +15,12 @@ in the product documentation would be appreciated but
 is not required.
 2. Altered source versions must be plainly marked as such,
 and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any
+3. This notice may nocountt be removed or altered from any
 source distribution.
 *********************************************************************/
 #include <robot2D/Graphics/GL.hpp>
+#include <robot2D/Graphics/RenderAPI.hpp>
+
 #include "OpenGLFrameBuffer.hpp"
 
 namespace robot2D::priv {
@@ -30,14 +32,19 @@ namespace robot2D::priv {
         }
 
         static void createTextures(bool multiSampled, RenderID* outID, uint32_t count) {
-            // TODO: @a.raag support OpenGL 3.3 stuff and MACOS
-#ifdef ROBOT2D_WINDOWS
-            glCreateTextures(TextureTarget(multiSampled), count, outID);
-#endif
+            if(RenderAPI::getOpenGLVersion() == RenderApi::OpenGL4_5)
+                glCall(glCreateTextures, TextureTarget(multiSampled), count, outID);
+            else {
+                for(int n{0}; n < count; ++n) {
+                    glCall(glGenTextures, 1, outID);
+                    glCall(glBindTexture, GL_TEXTURE_2D, *outID);
+                    outID++;
+                }
+            }
         }
 
         static void bindTexture(bool multiSampled, RenderID id) {
-            glBindTexture(TextureTarget(multiSampled), id);
+            glCall(glBindTexture, TextureTarget(multiSampled), id);
         }
 
         static void AttachColorTexture(RenderID id, int samples, GLenum internalFormat,
@@ -64,9 +71,7 @@ namespace robot2D::priv {
             if(multiSampled) {
                 glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, format, size.x, size.y, GL_FALSE);
             } else {
-#ifdef ROBOT2D_WINDOWS
                 glTexStorage2D(GL_TEXTURE_2D, 1, format, size.x, size.y);
-#endif
 
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -108,12 +113,12 @@ namespace robot2D::priv {
     }
 
     void OpenGLFrameBuffer::Bind() {
-        glBindFramebuffer(GL_FRAMEBUFFER, m_renderID);
-        glViewport(0, 0, m_specification.size.x, m_specification.size.y);
+        glCall(glBindFramebuffer, GL_FRAMEBUFFER, m_renderID);
+        glCall(glViewport, 0, 0, m_specification.size.x, m_specification.size.y);
     }
 
     void OpenGLFrameBuffer::unBind() {
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glCall(glBindFramebuffer, GL_FRAMEBUFFER, 0);
     }
 
     void OpenGLFrameBuffer::Invalidate() {
@@ -121,13 +126,13 @@ namespace robot2D::priv {
             deleteGLStuff();
         }
 
-// TODO: @a.raag support OpenGL 3.3 stuff and MACOS
+        if(RenderAPI::getOpenGLVersion() == RenderApi::OpenGL4_5)
+            glCall(glCreateFramebuffers, 1, &m_renderID);
+        else
+            glCall(glGenFramebuffers, 1, &m_renderID);
 
-#if defined(ROBOT2D_WINDOWS) || defined(ROBOT2D_LINUX)
-        glCreateFramebuffers(1, &m_renderID);
-#endif
 
-        glBindFramebuffer(GL_FRAMEBUFFER, m_renderID);
+        glCall(glBindFramebuffer, GL_FRAMEBUFFER, m_renderID);
 
         // Attachments
         bool multiSampled = m_specification.Samples > 1;
@@ -174,13 +179,13 @@ namespace robot2D::priv {
             GLenum buffers[4] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1,
                                   GL_COLOR_ATTACHMENT2,
                                   GL_COLOR_ATTACHMENT3};
-            glDrawBuffers(m_colorAttachments.size(), buffers);
+            glCall(glDrawBuffers, m_colorAttachments.size(), buffers);
         } else if(m_colorAttachments.empty()) {
             // only depth pass
-            glDrawBuffer(GL_NONE);
+            glCall(glDrawBuffer, GL_NONE);
         }
 
-        glBindFramebuffer(GL_FRAMEBUFFER, 0);
+        glCall(glBindFramebuffer, GL_FRAMEBUFFER, 0);
     }
 
     const FrameBufferSpecification &OpenGLFrameBuffer::getSpecification() const {
@@ -203,9 +208,9 @@ namespace robot2D::priv {
     }
 
     void OpenGLFrameBuffer::deleteGLStuff() {
-        glDeleteFramebuffers(1, &m_renderID);
-        glDeleteTextures(m_colorAttachments.size(), m_colorAttachments.data());
-        glDeleteTextures(1, &m_depthAttachment);
+        glCall(glDeleteFramebuffers, 1, &m_renderID);
+        glCall(glDeleteTextures, m_colorAttachments.size(), m_colorAttachments.data());
+        glCall(glDeleteTextures, 1, &m_depthAttachment);
 
         m_colorAttachments.clear();
         m_depthAttachment = 0;
@@ -213,9 +218,9 @@ namespace robot2D::priv {
 
     int OpenGLFrameBuffer::readPixel(RenderID attachmentIndex, vec2i mousePos) {
         // TODO: @a.raag assert for ID
-        glReadBuffer(GL_COLOR_ATTACHMENT0 + attachmentIndex);
+        glCall(glReadBuffer, GL_COLOR_ATTACHMENT0 + attachmentIndex);
         int pixelData;
-        glReadPixels(mousePos.x, mousePos.y, 1, 1, GL_RED_INTEGER, GL_INT, &pixelData);
+        glCall(glReadPixels, mousePos.x, mousePos.y, 1, 1, GL_RED_INTEGER, GL_INT, &pixelData);
         return pixelData;
     }
 }

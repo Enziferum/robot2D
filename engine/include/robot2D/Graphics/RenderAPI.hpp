@@ -2,7 +2,7 @@
 
 namespace robot2D {
     enum class RenderApi {
-        OpenGL3_3,
+        OpenGL4_3,
         OpenGL4_5
     };
 

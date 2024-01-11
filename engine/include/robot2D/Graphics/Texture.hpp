@@ -37,6 +37,7 @@ namespace robot2D {
 
         /// Load Pixel buffer.
         bool loadFromFile(const std::string& path);
+        bool saveToFile(const std::string& path);
 
         /// Returns Pixel buffer.
         const unsigned char* getPixels() const;
@@ -55,8 +56,6 @@ namespace robot2D {
 
         const ImageColorFormat& getColorFormat() const { return m_image.getColorFormat(); }
         void bind(uint32_t slot);
-
-        bool save(const std::string& path);
 
         const Image& getImage() const { return m_image; }
         Image& getImage() { return m_image; }

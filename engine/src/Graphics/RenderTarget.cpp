@@ -34,8 +34,8 @@ namespace robot2D {
                                const WindowContext::RenderDimensionType renderDimensionType):
     m_render(nullptr),
     m_size(size) {
-        if(openGLVersion == WindowContext::RenderApi::OpenGL3_3)
-            RenderAPI::m_api = RenderApi::OpenGL3_3;
+        if(openGLVersion == WindowContext::RenderApi::OpenGL4_3)
+            RenderAPI::m_api = RenderApi::OpenGL4_3;
         else if(openGLVersion == WindowContext::RenderApi::OpenGL4_5)
             RenderAPI::m_api = RenderApi::OpenGL4_5;
 
