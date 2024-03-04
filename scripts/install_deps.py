@@ -3,6 +3,7 @@ import sys
 import functools
 import enum
 import subprocess
+from common import Cmd, printColored, bcolors
 
 GITHUB_URL = 'https://github.com/'
 GIT_END = '.git'
