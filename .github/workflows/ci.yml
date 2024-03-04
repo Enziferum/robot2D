@@ -37,15 +37,16 @@ jobs:
         run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
 
       - name: Run Tests
-        run: ctest test --output-junit engine_tests.xml --output-on-failure --test-dir ${{github.workspace}}/build/tests
-      
+        run: ctest --output-junit engine_tests.xml --output-on-failure --test-dir ${{github.workspace}}/build/tests
+        continue-on-error: true
+        
       - name: Test Report
         uses: dorny/test-reporter@v1
         if: success() || failure()    # run this step even if previous step failed
         with:
           name: Engine Tests            # Name of the check run which will be created
           path: build/tests/*.xml    # Path to test results
-          reporter: jest-junit        # Format of test results   	
+          reporter: java-junit        # Format of test results   	
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
