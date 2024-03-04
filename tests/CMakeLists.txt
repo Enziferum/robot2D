@@ -3,17 +3,24 @@ add_subdirectory(Ecs)
 add_subdirectory(Graphics)
 add_subdirectory(Util)
 
-include(../cmake/External_GTest.cmake)
-include_directories(${GTEST_INCLUDE_DIRS})
+include(FetchContent)
+FetchContent_Declare(
+  googletest
+  URL https://github.com/google/googletest/archive/refs/tags/v1.14.0.zip
+)
+
+# For Windows: Prevent overriding the parent project's compiler/linker settings
+set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(googletest)
+
 enable_testing()
 
 set(CMAKE_CXX_STANDARD 17)
 set(TESTS_NAME run_all_tests)
-#${CORE_SRC} ${GRAPHICS_SRC}
 set(SRC ${ECS_SRC} main.cpp)
 
 add_executable(${TESTS_NAME} ${SRC})
-target_link_libraries(${TESTS_NAME} PUBLIC gtest PRIVATE robot2D)
+target_link_libraries(${TESTS_NAME} PUBLIC GTest::gtest_main PRIVATE robot2D)
 
-add_dependencies(${TESTS_NAME} gtest_ext)
-add_test(NAME unit_tests COMMAND ${TESTS_NAME})
+include(GoogleTest)
+gtest_discover_tests(${TESTS_NAME})
