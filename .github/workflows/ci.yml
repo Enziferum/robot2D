@@ -1,6 +1,7 @@
 name: Engine Build
 
 on:
+  push:
   pull_request:
     types: [opened, edited, reopened]
 
@@ -30,7 +31,7 @@ jobs:
         run: python3 ${{github.workspace}}/scripts/install_deps.py
 
       - name: Configure CMake
-        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DBUILD_EDITOR=OFF 
 
       - name: Engine Build
         run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
@@ -60,7 +61,7 @@ jobs:
         run: python3 ${{github.workspace}}/scripts/install_deps.py
 
       - name: Configure CMake
-        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}}
+        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DBUILD_EDITOR=OFF
 
       - name: Engine Build
         run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
