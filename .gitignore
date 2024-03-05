@@ -14,3 +14,5 @@ obj/
 depslibs/
 # generates by cmake
 OptionConfig.hpp
+#python 
+scripts/__pycache__/

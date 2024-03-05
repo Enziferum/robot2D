@@ -79,9 +79,6 @@ class WinVSVersion(enum.IntEnum):
             return "Visual Studio 17 2022"
 
 
-
-
-
 class NixLibName:
     MacOSName: str
     LinuxName: str
