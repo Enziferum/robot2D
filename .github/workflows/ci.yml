@@ -31,22 +31,19 @@ jobs:
         run: python3 ${{github.workspace}}/scripts/install_deps.py --mode 2
 
       - name: Configure Core CMake
-        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DRB2D_BUILD_TESTS=ON -DRB2D_BUILD_EDITOR=OFF
+        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DRB2D_BUILD_TESTS=ON -DRB2D_BUILD_EDITOR=OFF -DRB2D_INSTALL_CORE=ON
 
       - name: Core Build
         run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
 
-      - name: Move to Build
-        run: cd ${{github.workspace}}/build
-
       - name: Core Install
-        run: cmake --install . --config ${{env.BUILD_TYPE}}
+        run: sudo cmake --install ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
 
       - name: Cmake Bug Patch
-        run: mv /usr/local/lib/cmake/robot2D/robot2D-config.cmake /usr/local/lib/cmake/robot2D/robot2d-config.cmake
+        run: sudo mv /usr/local/lib/cmake/robot2D/robot2D-config.cmake /usr/local/lib/cmake/robot2D/robot2d-config.cmake
 
       - name: Configure Engine CMake
-        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DRB2D_BUILD_TESTS=ON -DRB2D_BUILD_EDITOR=ON
+        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DRB2D_BUILD_TESTS=ON -DRB2D_BUILD_EDITOR=ON -DRB2D_INSTALL_CORE=OFF
 
       - name: Engine Build
         run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target robot2D-editor
