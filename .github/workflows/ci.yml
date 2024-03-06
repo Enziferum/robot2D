@@ -37,7 +37,7 @@ jobs:
         run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
 
       - name: Move to Build
-        run: cd build
+        run: cd ${{github.workspace}}/build
 
       - name: Core Install
         run: cmake --install . --config ${{env.BUILD_TYPE}}
