@@ -13,7 +13,7 @@ process_logging_core_deps()
 add_subdirectory(engine)
 
 add_library(${PROJECT_NAME} ${ENGINE_SRC})
-set(LIBS ${LIBS} ${FREETYPE_LIBRARIES} glfw spdlog::spdlog)
+set(LIBS ${LIBS} Freetype::Freetype glfw spdlog::spdlog)
 
 target_link_libraries(${PROJECT_NAME} PUBLIC ${LIBS})
 target_include_directories(${PROJECT_NAME} PUBLIC

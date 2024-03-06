@@ -482,7 +482,8 @@ namespace editor {
 
     void ScriptEngine::ShutdownMono() {
         mono_domain_set(mono_get_root_domain(), false);
-        mono_domain_unload(s_Data -> m_appDomain);
+        if(s_Data -> m_appDomain)
+            mono_domain_unload(s_Data -> m_appDomain);
         s_Data -> m_appDomain = nullptr;
         mono_jit_cleanup(s_Data -> m_rootDomain);
     }

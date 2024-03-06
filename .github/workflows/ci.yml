@@ -27,14 +27,29 @@ jobs:
         run: python3 -m cpplint --recursive --output=junit ${{github.workspace}}/engine 2> ${{github.workspace}}/linter/output.xml
         continue-on-error: true
 
-      - name: Download dependencies
-        run: python3 ${{github.workspace}}/scripts/install_core_deps.py
+      - name: Install dependencies
+        run: python3 ${{github.workspace}}/scripts/install_deps.py --mode 2
 
-      - name: Configure CMake
-        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DRB2D_BUILD_EDITOR=OFF -DRB2D_BUILD_TESTS=ON
+      - name: Configure Core CMake
+        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DRB2D_BUILD_TESTS=ON -DRB2D_BUILD_EDITOR=OFF
+
+      - name: Core Build
+        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+
+      - name: Move to Build
+        run: cd build
+
+      - name: Core Install
+        run: cmake --install . --config ${{env.BUILD_TYPE}}
+
+      - name: Cmake Bug Patch
+        run: mv /usr/local/lib/cmake/robot2D/robot2D-config.cmake /usr/local/lib/cmake/robot2D/robot2d-config.cmake
+
+      - name: Configure Engine CMake
+        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DRB2D_BUILD_TESTS=ON -DRB2D_BUILD_EDITOR=ON
 
       - name: Engine Build
-        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target robot2D-editor
 
       - name: Run Tests
         run: ctest --output-junit engine_tests.xml --output-on-failure --test-dir ${{github.workspace}}/build/tests
