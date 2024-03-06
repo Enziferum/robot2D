@@ -3,6 +3,7 @@ import sys
 import functools
 import enum
 import subprocess
+
 from common import Cmd, printColored, bcolors
 
 GITHUB_URL = 'https://github.com/'
@@ -42,6 +43,7 @@ def get_platform():
 class LibType(str, enum.Enum):
     GLFW = 'glfw'
     SPDLOG = 'spdlog'
+    #FREETYPE = 'freetype'
 
     @classmethod
     def libs(cls) -> list:
@@ -99,6 +101,17 @@ class CMakeOptions:
         self.os_make = os_make
 
 
+class BuildMode(enum.IntEnum):
+    Debug = 1
+    Release = 2
+
+    def __str__(self):
+        if self.value == self.Debug:
+            return "Debug"
+        if self.value == self.Release:
+            return "Release"
+
+
 class Lib:
     def __init__(self, name: str, giturl: str,
                  macOSname: str, linuxName: str,
@@ -138,8 +151,8 @@ class Lib:
                 packman_cmd = 'brew install'
                 libname = self.macOSname
             if currentPlatform is PlatformType.Linux:
-                # todo support not only ubuntu
-                packman_cmd = 'sudo apt install'
+                # TODO(a.raag): Support not only Ubuntu
+                packman_cmd = 'sudo apt-get install -y'
                 libname = self.linuxName
 
             self.cmds.append(Cmd(f'{packman_cmd} {libname}'))
@@ -154,54 +167,63 @@ class Lib:
                                  self.cmakeOptions.os_make,
                                  self.cmakeOptions.options)
 
-    def run(self):
+    def run(self) -> bool:
         self.__pack_cmds()
 
         for cmd in self.cmds:
             printColored(bcolors.WARNING, f'Execute command {cmd.getCmd()}')
-            proc = subprocess.Popen(cmd.getCmd(), shell=True)
-            proc.wait()
+            try:
+                proc = subprocess.Popen(cmd.getCmd(), shell=True)
+                proc.wait()
+                return True
+            except OSError:
+                return False
 
     def __str__(self):
         return str(self.__dict__)
 
-class ConfigurationType(enum.IntEnum):
-    Debug = 1
-    Release = 2
-    
-    def __str__(self):
-        if self.value == self.Debug:
-            return "Debug"
-        if self.value == self.Release:
-            return "Release"
 
-# Install
-# glfw, spdlog, freetype ??
 
+class DepsCache:
+    def read_cache(self):
+        pass
+    def add_record(self):
+        pass
 
 
 class DepsInstaller:
     def __init__(self):
         self.libs = []
+        self.__build_mode = BuildMode.Debug
         self.__wincompiler = WinCompiler.No
         self.__winvsversion = WinVSVersion.No
+        self.__depsCache = DepsCache()
 
 
     def __process_args(self):
         import argparse
         parser = argparse.ArgumentParser()
+        parser.add_argument('-m', "--mode", help='Libraries build mode: Debug = 1, Release = 2',
+                            type=int, required=True)
+        args = parser.parse_args()
+        if args.mode:
+            self.__build_mode = BuildMode(args.mode)
+
+    def __process_cache(self):
+        self.__depsCache.read_cache()
+
 
     def __setup(self):
         self.__process_args()
-
+        self.__process_cache()
 
         currentPlatform = get_platform()
+
         printColored(bcolors.WARNING, f'Current platform is: {currentPlatform.value}')
-        # configuration = input("Choose Configuration: \n"
-        #                      "1 - Debug \n"
-        #                      "2 - Release \n")
-        configuration = ConfigurationType(int("2"))
         if get_platform() == PlatformType.Windows:
+            printColored(bcolors.WARNING, "Freetype library will not installed by this script. "
+                                          "Will be using included during CMake.")
+
             # compiler = input("Choose Compiler: \n"
             #                  "1 - MinGW \n"
             #                  "2 - VS \n")
@@ -213,18 +235,21 @@ class DepsInstaller:
                 #                 "3 - Visual Studio 2022 \n"
                 #                 )
                 self.__winvsversion = WinVSVersion(int("3"))
+
         nixLibNames = {
             'glfw': NixLibName('glfw3', 'libglfw3 libglfw3-dev'),
             'spdlog': NixLibName('spdlog', 'libspdlog-dev'),
+            #'freetype': NixLibName('freetype', 'libfreetype')
         }
 
         libCmakeOptions = {
             'glfw': '-DGLFW_BUILD_EXAMPLES=OFF -DGLFW_BUILD_TESTS=OFF -DGLFW_BUILD_DOCS=OFF',
             'spdlog': '-DSPDLOG_BUILD_EXAMPLE=OFF',
+            #'freetype': ''
         }
 
         generator = ''
-        if currentPlatform != PlatformType.Windows:
+        if currentPlatform is not PlatformType.Windows:
             generator = 'Unix Makefiles'
         else:
             if self.__wincompiler is WinCompiler.MinGW:
@@ -237,32 +262,63 @@ class DepsInstaller:
             cmakeOptions = CMakeOptions(generator,
                                         libCmakeOptions[key],
                                         'mingw32-' if self.__wincompiler is WinCompiler.MinGW else '')
-            lib = Lib(key, Consts.getURL(LibType(lib)),
+            lib = Lib(key,
+                      Consts.getURL(LibType(lib)),
                       nixLibNames[key].MacOSName, nixLibNames[key].LinuxName,
                       cmakeOptions,
-                      str(configuration))
+                      str(self.__build_mode))
             self.libs.append(lib)
 
-    def run(self):
-        self.__setup()
-
+    def __install_core_deps(self):
         deps = functools.reduce(lambda l, r: l + ', ' + r, [lib.name for lib in self.libs])
         print(f"Install dependencies: \n {deps}")
         deps_folder = 'depslibs'
 
-        if not os.path.exists(os.path.join(os.curdir, deps_folder)):
-            os.mkdir(deps_folder)
-            os.chdir(deps_folder)
+        if not os.path.exists(os.path.join(os.getcwd(), deps_folder)):
+            try:
+                os.mkdir(deps_folder)
+                os.chdir(deps_folder)
+            except OSError:
+                printColored(bcolors.FAIL, "Can't create and move to deps folder")
+                # TODO(a.raag): exit code statuses
+                exit(1)
 
         for lib in self.libs:
             print('-----------------------------------------------------------')
             printColored(bcolors.HEADER, f"1. Processing {lib.name} library")
-            lib.run()
-            printColored(bcolors.HEADER, f"2. Success install {lib.name} library")
+            if lib.run():
+                printColored(bcolors.HEADER, f"2. Success install {lib.name} library")
+                # TODO(a.raag): mark cache lib is installed
+            else:
+                pass
             print('-----------------------------------------------------------')
         printColored(bcolors.OKGREEN, "All libs installed")
 
-#TODO: @a.raag add ArgsParser
+        # print('Uninstall tmp deps folder')
+        # try:
+        #     os.rmdir(deps_folder)
+        #     print('Uninstall - done')
+        # except OSError:
+        #     printColored(bcolors.FAIL, "Can't uninstall deps folder")
+        #     # TODO(a.raag): exit code statuses
+        #     exit(1)
+
+    def __install_editor_deps(self):
+        # update git submodules
+        try:
+            cmd = Cmd("git submodule update --init --recursive")
+            proc = subprocess.Popen(cmd.getCmd(), shell=True)
+            proc.wait()
+        except Exception:
+            pass
+        # install mono experimental
+
+    def run(self):
+        self.__setup()
+        self.__install_core_deps()
+        self.__install_editor_deps()
+
+
 if __name__ == '__main__':
     installer = DepsInstaller()
     installer.run()
