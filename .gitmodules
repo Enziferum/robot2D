@@ -1,9 +1,6 @@
 [submodule "editor/ext/yaml-cpp"]
 	path = editor/ext/yaml-cpp
 	url = https://github.com/jbeder/yaml-cpp.git
-[submodule "editor/ext/robot2D-imgui"]
-	path = editor/ext/robot2D-imgui
-	url = https://github.com/Enziferum/robot2D-imgui.git
 [submodule "editor/ext/box2d"]
 	path = editor/ext/box2d
 	url = https://github.com/erincatto/box2d.git
