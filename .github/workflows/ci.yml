@@ -34,7 +34,7 @@ jobs:
         run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DRB2D_BUILD_TESTS=ON
 
       - name: Engine Build
-        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target robot2D-editor
+        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target robot2D-editor --target run_all_tests -- -j 2
 
       - name: Run Tests
         run: ctest --output-junit engine_tests.xml --output-on-failure --test-dir ${{github.workspace}}/build/tests
