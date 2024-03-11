@@ -1,15 +1,15 @@
 # Robot2D
 
-<img align="right" src="https://github.com/Enziferum/robot2D/blob/master/logo/logo.png" alt="logo" width="256"/>
+<img align="right" src="https://github.com/Enziferum/robot2D/blob/master/logo/old_logo.png" alt="logo" width="256"/>
 
 \
 Windows: [![Build status](https://ci.appveyor.com/api/projects/status/ilga4qquggcsfy65?svg=true)](https://ci.appveyor.com/project/Enziferum/robot2d) \
-Linux: [![Build Status](https://github.com/Enziferum/robot2D/actions/workflows/ci.yml/badge.svg)] \
-Core tests: [![Build Status](https://camo.githubusercontent.com/937ec0fa06b6039f43e7e0b50502303f71a7726fc7def469aa4bde2916b75711/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f74657374732d3136253230706173736564253243253230312532306661696c65642d637269746963616c)]
+Linux: ![Build Status](https://github.com/Enziferum/robot2D/actions/workflows/ci.yml/badge.svg) \
+MacOS: Temporary not supported due to OpenGL max version 4.1 \
 \
-Robot2D - C++ 2D Engine. Graphics Api is OpenGL 3.3/4.5.
+Robot2D - C++ 2D Engine. Graphics Api is OpenGL 4.5 only.
 \
-In current version 0.7(W.I.P) support platforms are: Windows / MacOS / Linux?.
+In current version 0.8(W.I.P) support platforms are: Windows / Linux / MacOS ?.
 \
 Primary focus is fully work with project as `Engine` in editor way only. It's means Engine will be private as core 
 of editor.
@@ -30,23 +30,31 @@ Code Guards
 
 [![CodeFactor](https://www.codefactor.io/repository/github/enziferum/robot2d/badge)](https://www.codefactor.io/repository/github/enziferum/robot2d)
 <!--- TODO(a.raag) check correctness 
-[![BCH compliance](https://bettercodehub.com/edge/badge/Enziferum/robot2D?branch=master)](https://bettercodehub.com/)
+[![BCH compliance](https://bettercodehub.com/edge/badge/Enziferum/robot2D?branch=dev)](https://bettercodehub.com/)
 -->
 -------
 
 ## Requirements
-   * C++17 compiler
-   * CMake
+   * C++17 support compiler
+   * CMake 3.21+
    * Python 3.6 (for automatic build / install deps)
+   * [Mono](https://www.mono-project.com/download/stable/)
 
 ## How-to
  - Install C++17 compiler
  - Install CMake
  - Install Python 3.6+
- - Run as admin:
+ - Install Mono
+ - Run:
 ```shell
   git clone 
   cd robot2D
-  python scripts/build_engine.py
+  # install deps
+  sudo (For *nix) python scripts/install_deps.py
+  cmake -B build/ -G "YOUR_GENERATOR" -DCMAKE_BUILD_TYPE=Debug/Release -DRB2D_## (see cmake/Options.cmake)
+  # remove target run_all_tests if you don't want build tests
+  cmake --build build --config Debug/Release --target robot2D-editor --target run_all_tests -- -j (1 to YOUR_CPU_SUPPORT)
+  # if you want run tests
+  ctest --output-junit engine_tests.xml --output-on-failure --test-dir build/tests
 ```
- - Your output will be inside `output` folder.
+ - Your output will be inside `build` folder.
