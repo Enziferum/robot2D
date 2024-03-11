@@ -130,8 +130,8 @@ namespace editor {
     }
 
     void Application::destroy() {
-       ScriptEngine::Shutdown();
-       m_editorModule -> destroy();
+        ScriptEngine::Shutdown();
+        m_editorModule -> destroy();
     }
 
 } // namespace editor

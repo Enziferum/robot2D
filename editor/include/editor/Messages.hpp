@@ -100,7 +100,9 @@ namespace editor {
 
     struct UndoRedoMessage{};
 
-    struct GenerateProjectMessage{};
+    struct GenerateProjectMessage{
+        std::string genPath;
+    };
 
     struct ExportProjectMessage{
         std::string startSceneID;
