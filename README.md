@@ -4,7 +4,8 @@
 
 \
 Windows: [![Build status](https://ci.appveyor.com/api/projects/status/ilga4qquggcsfy65?svg=true)](https://ci.appveyor.com/project/Enziferum/robot2d) \
-Mac/Linux: [![Build Status](https://github.com/Enziferum/robot2D/actions/workflows/ci.yml/badge.svg)]
+Linux: [![Build Status](https://github.com/Enziferum/robot2D/actions/workflows/ci.yml/badge.svg)] \
+Core tests: [![Build Status](https://camo.githubusercontent.com/937ec0fa06b6039f43e7e0b50502303f71a7726fc7def469aa4bde2916b75711/68747470733a2f2f696d672e736869656c64732e696f2f62616467652f74657374732d3136253230706173736564253243253230312532306661696c65642d637269746963616c)]
 \
 Robot2D - C++ 2D Engine. Graphics Api is OpenGL 3.3/4.5.
 \
