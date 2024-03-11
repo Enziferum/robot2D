@@ -167,9 +167,12 @@ namespace editor {
 
         applyStyle(EditorStyle::UE4);
         m_needPrepare = false;
-
+#ifdef ROBOT2D_LINUX
+        m_window -> setResizable(true);
         m_window -> setSize({2560, 1920});
+#else
         m_window -> setMaximazed(true);
+#endif
         auto& viewportPanel = m_panelManager.getPanel<ViewportPanel>();
         viewportPanel.set(m_frameBuffer);
 

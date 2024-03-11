@@ -173,8 +173,20 @@ namespace editor {
     }
 
     void MenuPanel::projectMenu() {
-        if(ImGui::MenuItem("Generate Project", "Ctrl+G"))
-            m_messageBus.postMessage<GenerateProjectMessage>(MessageID::GenerateProject);
+        if(ImGui::MenuItem("Generate Project", "Ctrl+G")) {
+            const char* path = tinyfd_selectFolderDialog("Generate Robot2D Scripts's project", nullptr);
+
+            // close, either
+            if(path == nullptr) {
+                ImGui::EndMenu();
+                return;
+            }
+
+            auto* msg = m_messageBus.postMessage<GenerateProjectMessage>(MessageID::GenerateProject);
+            /// TODO(a.raag): Fileadapter
+            msg -> genPath = std::string(path);
+        }
+
 
         if(ImGui::MenuItem("Export Project")) {
             auto* manager = PopupManager::getManager();

@@ -57,7 +57,7 @@ namespace editor {
 
             m_inputTasksQueue.pop();
 
-            task->execute();
+            task -> execute();
 
             {
                 std::lock_guard<std::mutex> outLock{m_outputMutex};

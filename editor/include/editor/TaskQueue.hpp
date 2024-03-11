@@ -46,20 +46,20 @@ namespace editor {
         template<typename T, typename ... Args, typename Callback>
         TaskID addAsyncTask(Callback&& callback, Args&& ...args) {
 
-                auto function = std::make_shared<TaskFunction<T, Callback>>(std::forward<Callback>(callback));
-                if(!function) {
-                    //TODO: add logging
-                    return -1;
-                }
-                auto task = std::make_shared<T>(function, std::forward<Args>(args)...);
+        auto function = std::make_shared<TaskFunction<T, Callback>>(std::forward<Callback>(callback));
+            if(!function) {
+                //TODO: add logging
+                return -1;
+            }
+            auto task = std::make_shared<T>(function, std::forward<Args>(args)...);
 
 
-                task -> m_taskID = m_currentId;
-                ++m_currentId;
-                if(!task) {
-                    //TODO: add logging
-                    return -1;
-                }
+            task -> m_taskID = m_currentId;
+            ++m_currentId;
+            if(!task) {
+                //TODO: add logging
+                return -1;
+            }
             {
                 std::lock_guard<std::mutex> lock(m_inputMutex);
                 m_inputTasksQueue.push(task);
