@@ -29,11 +29,12 @@ source distribution.
 #endif
 
 #include <spdlog/spdlog.h>
-#if defined(ROBOT2D_LINUX) || defined(ROBOT2D_WINDOWS)
-    #include <spdlog/fmt/ostr.h>
-    #include <fmt/format.h>
+#if defined(ROBOT2D_WINDOWS)
+  #include <spdlog/fmt/ostr.h>
+#elif defined(ROBOT2D_LINUX)
+  #include <fmt/format.h>
 #elif defined(ROBOT2D_MACOS)
-    #include <fmt/format.h>
+   #include <fmt/format.h>
 #endif
 #ifdef _MSVC
     #pragma warning(pop)

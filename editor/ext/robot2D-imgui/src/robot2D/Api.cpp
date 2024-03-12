@@ -23,7 +23,8 @@ namespace robot2D {
         if(!sprTexture || size == robot2D::vec2f{})
             return;
         const robot2D::Texture& texture = *sprTexture;
-        robot2D::vec2f textureSize = {texture.getSize().x, texture.getSize().y};
+		auto texSize = texture.getSize();
+        robot2D::vec2f textureSize = texSize.as<float>();
         auto textureRect = sprite.getLocalBounds();
 
         auto imID = ImGui::convertTextureHandle(texture.getID());
@@ -38,7 +39,7 @@ namespace robot2D {
         if(!sprTexture || size == robot2D::vec2f{})
             return;
         const robot2D::Texture& texture = *sprTexture;
-        robot2D::vec2f textureSize = {texture.getSize().x, texture.getSize().y};
+        robot2D::vec2f textureSize;// = { texture.getSize().x, texture.getSize().y };
         auto textureRect = sprite.getTextureRect();
 
         auto imID = ImGui::convertTextureHandle(texture.getID());

@@ -65,16 +65,18 @@ class WinCompiler(enum.IntEnum):
     MinGW = 1
     VS = 2
 
+    def __str__(self):
+        if self.value == self.MinGW:
+            return "MinGW"
+        if self.value == self.VS:
+            return "Visual Studio"
 
 class WinVSVersion(enum.IntEnum):
     No = 0
-    VS_17 = 1
-    VS_19 = 2
-    VS_22 = 3
+    VS_19 = 1
+    VS_22 = 2
 
     def __str__(self):
-        if self.value == self.VS_17:
-            return "Visual Studio 15 2017 Win64"
         if self.value == self.VS_19:
             return "Visual Studio 16 2019"
         if self.value == self.VS_22:
@@ -133,11 +135,11 @@ class Lib:
         self.cmds.append(cmake_cmd)
 
     def __build_library_vs(self, generator, cmake_options=''):
-        cmake_cmd = Cmd(f'cd {self.name} && mkdir build '
-                           f'&& cd build && cmake .. -G "{generator}" -DCMAKE_CONFIGURATION_TYPES:STRING="{self.configuration}" '
+        cmake_cmd = Cmd(f'cd {self.name} &&'
+                           f'cmake -B build/ -G "{generator}" -A x64 -DCMAKE_CONFIGURATION_TYPES:STRING="{self.configuration}" '
                            f' -DCMAKE_VS_INCLUDE_INSTALL_TO_DEFAULT_BUILD=ON '
-                           f'{cmake_options} && cmake --build .'
-                           f' && cmake --install .')
+                           f'{cmake_options} && cmake --build build/ --config {self.configuration}'
+                           f' && cmake --install build/ --config {self.configuration}')
         self.cmds.append(cmake_cmd)
 
     def __pack_cmds(self):
@@ -159,13 +161,12 @@ class Lib:
         else:
             git_cmd = f'git clone {self.giturl}'
             self.cmds.append(Cmd(git_cmd))
-            # if currentPlatform is PlatformType.Windows:
-            #     self.__build_library_vs(self.cmakeOptions.generator,
-            #                          self.cmakeOptions.options)
-            #     return
-            self.__build_library(self.cmakeOptions.generator,
-                                 self.cmakeOptions.os_make,
-                                 self.cmakeOptions.options)
+            self.__build_library_vs(self.cmakeOptions.generator,
+                                      self.cmakeOptions.options)                          
+                                      
+            #self.__build_library(self.cmakeOptions.generator,
+            #                     self.cmakeOptions.os_make,
+            #                     self.cmakeOptions.options)
 
     def run(self) -> bool:
         self.__pack_cmds()
@@ -175,10 +176,10 @@ class Lib:
             try:
                 proc = subprocess.Popen(cmd.getCmd(), shell=True)
                 proc.wait()
-                return True
             except OSError:
                 return False
-
+        return True
+        
     def __str__(self):
         return str(self.__dict__)
 
@@ -205,9 +206,16 @@ class DepsInstaller:
         parser = argparse.ArgumentParser()
         parser.add_argument('-m', "--mode", help='Libraries build mode: Debug = 1, Release = 2',
                             type=int, required=True)
+        if get_platform() == PlatformType.Windows:
+            parser.add_argument("--wincompiler", type=int, default=2)
+            parser.add_argument("--winvsversion", type=int, default=2)
         args = parser.parse_args()
-        if args.mode:
-            self.__build_mode = BuildMode(args.mode)
+        self.__build_mode = BuildMode(args.mode)
+        if get_platform() == PlatformType.Windows:
+            if args.wincompiler:
+                self.__wincompiler = WinCompiler(args.wincompiler)
+            if args.winvsversion:
+                self.__winvsversion = WinVSVersion(args.winvsversion)
 
     def __process_cache(self):
         self.__depsCache.read_cache()
@@ -223,18 +231,6 @@ class DepsInstaller:
         if get_platform() == PlatformType.Windows:
             printColored(bcolors.WARNING, "Freetype library will not installed by this script. "
                                           "Will be using included during CMake.")
-
-            # compiler = input("Choose Compiler: \n"
-            #                  "1 - MinGW \n"
-            #                  "2 - VS \n")
-            self.__wincompiler = WinCompiler(int("1"))
-            if self.__wincompiler == WinCompiler.VS:
-                # version = input("Choose Version: \n"
-                #                 "1 - Visual Studio 2017 \n"
-                #                 "2 - Visual Studio 2019 \n"
-                #                 "3 - Visual Studio 2022 \n"
-                #                 )
-                self.__winvsversion = WinVSVersion(int("3"))
 
         nixLibNames = {
             'glfw': NixLibName('glfw3', 'libglfw3 libglfw3-dev'),
@@ -273,7 +269,8 @@ class DepsInstaller:
         deps = functools.reduce(lambda l, r: l + ', ' + r, [lib.name for lib in self.libs])
         print(f"Install dependencies: \n {deps}")
         deps_folder = 'depslibs'
-
+        full_path = os.path.join(os.path.basename(__file__), deps_folder)
+        
         if not os.path.exists(os.path.join(os.getcwd(), deps_folder)):
             try:
                 os.mkdir(deps_folder)
@@ -316,7 +313,7 @@ class DepsInstaller:
     def run(self):
         self.__setup()
         self.__install_core_deps()
-        self.__install_editor_deps()
+        #self.__install_editor_deps()
 
 
 if __name__ == '__main__':

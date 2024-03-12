@@ -1,3 +1,8 @@
+#ifdef _WIN32
+    #define _USE_MATH_DEFINES
+#endif 
+#include <cmath>
+
 #include <robot2D/imgui/Spinner.hpp>
 #include <imgui/imgui_internal.h>
 

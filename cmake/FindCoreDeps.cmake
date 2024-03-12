@@ -18,8 +18,7 @@ function(process_logging_core_deps)
     unset(missingComponents)
 
     logging_find_package(glfw3 missingComponents)
-    logging_find_package(spdlog missingComponents)
-    logging_find_package(Freetype missingComponents)
+    logging_find_package(spdlog missingComponents)	
 
     list(POP_BACK CMAKE_MESSAGE_INDENT)
     if(missingComponents)

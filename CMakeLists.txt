@@ -21,7 +21,9 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
 cmake_policy(SET CMP0074 NEW)
 
 include(cmake/ProcessCore.cmake)
-add_subdirectory(editor)
+if(RB2D_BUILD_EDITOR)
+	add_subdirectory(editor)
+endif()
 
 if(NOT RB2D_BUILD_SHARED_LIBS)
     target_compile_definitions(${PROJECT_NAME} PUBLIC "ROBOT2D_STATIC")

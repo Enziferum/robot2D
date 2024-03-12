@@ -1,4 +1,5 @@
 set(INCLROOT ${PROJECT_SOURCE_DIR}/engine/include/robot2D)
+set(SRCROOT ${PROJECT_SOURCE_DIR}/engine/src)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     option(RB_DEBUG "Enable debugging options" ON)
@@ -6,7 +7,7 @@ endif()
 
 configure_file(${INCLROOT}/OptionConfig.hpp.in ${INCLROOT}/OptionConfig.hpp @ONLY)
 
-set(ENGINE_SRC
+set(ENGINE_INCLUDES
         ${INCLROOT}/robot2D.hpp
 
         ${INCLROOT}/Engine.hpp
@@ -72,13 +73,11 @@ set(ENGINE_SRC
         PARENT_SCOPE
         )
 
-set(SRCROOT ${PROJECT_SOURCE_DIR}/engine/src)
-
-set(ENGINE_SRC ${ENGINE_SRC}
+set(ENGINE_SRC
         ${SRCROOT}/Engine.cpp
         ${SRCROOT}/Application.cpp
 
-        #Core
+		#Core
         ${SRCROOT}/Core/FileInputStream.cpp
         ${SRCROOT}/Core/Window.cpp
         ${SRCROOT}/Core/Event.cpp
