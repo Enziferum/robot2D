@@ -171,6 +171,8 @@ namespace editor {
         ImGui::RenderTextClipped(
                 labelBB.Min + style.FramePadding, ImVec2(label_x2, labelBB.Max.y),
                 label.c_str(), NULL, NULL);
+
+        return false;
     }
 
 

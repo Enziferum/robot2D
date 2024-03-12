@@ -66,8 +66,8 @@ namespace editor {
         std::vector<std::vector<ColorPoint>> colorPoints;
 
         auto size = image.getSize();
-        robot2D::vec2i localPosition = {clipRegion.lx - worldPosition.x,
-                                        clipRegion.ly - worldPosition.y};
+        robot2D::vec2i localPosition = {static_cast<int>(clipRegion.lx - worldPosition.x),
+                                        static_cast<int>(clipRegion.ly - worldPosition.y)};
 
         constexpr const int channelsNum = 4;
         constexpr const int colorIndex = 4;

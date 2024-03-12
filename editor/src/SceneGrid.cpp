@@ -113,7 +113,7 @@ namespace editor {
 
     void SceneGrid::render(robot2D::vec2i size) const{
         m_shader.use();
-        m_shader.set("u_resolution", robot2D::vec2f{size.x, size.y});
+        m_shader.set("u_resolution", robot2D::vec2f{static_cast<float>(size.x), static_cast<float>(size.y)});
 
         m_vertexArray -> getVertexBuffer() -> setData(m_vertices.data(), sizeof(GridVertex) * m_vertices.size());
         m_vertexArray -> Bind();

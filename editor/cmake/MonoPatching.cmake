@@ -63,10 +63,6 @@ if (NOT MONO_FOUND)
     message(FATAL_ERROR "Mono is required for this CMake script. Please install it.")
 endif ()
 
-if (WIN32)
-    find_file(MONO_DLL_PATH NAMES mono-2.0.dll mono-2.0-sgen.dll PATHS ${MONO_BINARY_PATH})
-    copy_files_to_runtime_path(FILES ${MONO_DLL_PATH})
-endif ()
 set(INTERNAL_MONO_ASSEMBLY_DIR "${MONO_ASSEMBLY_PATH}"
         CACHE PATH "Path to the Mono assembly dir (mono/lib). May be a relative path.")
 set(INTERNAL_MONO_CONFIG_DIR "${MONO_CONFIG_PATH}"
