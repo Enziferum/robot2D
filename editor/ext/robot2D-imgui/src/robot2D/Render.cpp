@@ -134,7 +134,7 @@ namespace robot2D {
         io.Fonts -> GetTexDataAsRGBA32(&pixels, &width, &height);
         if(!pixels)
             return;
-        m_fontTexture.create({width, height}, pixels);
+		m_fontTexture.create({static_cast<float>(width), static_cast<float>(height)}, pixels);
 
         ImTextureID texID = ImGui::convertTextureHandle(m_fontTexture.getID());
         io.Fonts -> SetTexID(texID);

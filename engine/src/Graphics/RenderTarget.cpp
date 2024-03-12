@@ -145,7 +145,8 @@ namespace robot2D {
         // First, convert from viewport coordinates to homogeneous coordinates
         vec2f normalized;
         auto port = m_render -> getViewport(view);
-        FloatRect viewport = {port.lx, port.ly, port.width, port.height};
+        FloatRect viewport = { static_cast<float>(port.lx), static_cast<float>(port.ly), 
+								static_cast<float>(port.width), static_cast<float>(port.height) };
         normalized.x       = -1.f + 2.f * (static_cast<float>(point.x) - viewport.lx) / viewport.width;
         normalized.y       = 1.f - 2.f * (static_cast<float>(point.y) - viewport.ly) / viewport.height;
 

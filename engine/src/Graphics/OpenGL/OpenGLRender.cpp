@@ -99,9 +99,10 @@ namespace robot2D::priv {
     void OpenGLRender::setupOpenGL() {
 #if defined(ROBOT2D_WINDOWS) or defined(ROBOT2D_LINUX)
         RB_CORE_INFO("OpenGL Info:");
-        RB_CORE_INFO("Vendor: {0} ", glGetString(GL_VENDOR));
-        RB_CORE_INFO("Renderer: {0}", glGetString(GL_RENDERER));
-        RB_CORE_INFO("Version: {0}", glGetString(GL_VERSION));
+       // RB_CORE_INFO("Vendor: {0} ", glGetString(GL_VENDOR));
+       // RB_CORE_INFO("Renderer: {0}", glGetString(GL_RENDERER));
+       // RB_CORE_INFO("Version: {0}", glGetString(GL_VERSION));
+       RB_CORE_INFO("Version: {0}", "SomeVersion");
 #endif
 
         m_renderApi = RenderAPI::getOpenGLVersion();
