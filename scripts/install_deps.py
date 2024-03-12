@@ -235,13 +235,11 @@ class DepsInstaller:
         nixLibNames = {
             'glfw': NixLibName('glfw3', 'libglfw3 libglfw3-dev'),
             'spdlog': NixLibName('spdlog', 'libspdlog-dev'),
-            #'freetype': NixLibName('freetype', 'libfreetype')
         }
 
         libCmakeOptions = {
             'glfw': '-DGLFW_BUILD_EXAMPLES=OFF -DGLFW_BUILD_TESTS=OFF -DGLFW_BUILD_DOCS=OFF',
             'spdlog': '-DSPDLOG_BUILD_EXAMPLE=OFF',
-            #'freetype': ''
         }
 
         generator = ''
@@ -313,7 +311,7 @@ class DepsInstaller:
     def run(self):
         self.__setup()
         self.__install_core_deps()
-        #self.__install_editor_deps()
+        self.__install_editor_deps()
 
 
 if __name__ == '__main__':

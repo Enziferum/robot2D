@@ -720,6 +720,8 @@ namespace editor {
 
             }
         }
+
+        return nullptr;
     }
 
 

@@ -54,8 +54,8 @@ namespace editor {
 
     void GameViewport::windowFunction() {
         auto ViewPanelSize = ImGui::GetContentRegionAvail();
-        if(m_ViewportSize != robot2D::vec2u { ViewPanelSize.x, ViewPanelSize.y}) {
-            m_ViewportSize = {ViewPanelSize.x, ViewPanelSize.y};
+        if(m_ViewportSize != robot2D::vec2u { static_cast<unsigned int>(ViewPanelSize.x), static_cast<unsigned int>(ViewPanelSize.y)}) {
+            m_ViewportSize = { static_cast<unsigned int>(ViewPanelSize.x), static_cast<unsigned int>(ViewPanelSize.y)};
             m_frameBuffer -> Resize(m_ViewportSize);
         }
         robot2D::RenderFrameBuffer(m_frameBuffer, m_ViewportSize.as<float>());

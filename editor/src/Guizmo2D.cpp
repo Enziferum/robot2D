@@ -19,6 +19,13 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
+#ifdef _MSC_VER
+    #define _USE_MATH_DEFINES
+    #include <cmath>
+#endif
+
+
+
 #include <robot2D/Core/Window.hpp>
 #include <robot2D/Util/Logger.hpp>
 
@@ -222,7 +229,7 @@ namespace editor {
 
     void Guizmo2D::processMousePressed(robot2D::Event event) {
         if(event.mouse.btn == robot2D::mouse2int(robot2D::Mouse::MouseLeft)) {
-            robot2D::vec2f mousePoint{event.mouse.x, event.mouse.y};
+            robot2D::vec2f mousePoint{static_cast<float>(event.mouse.x), static_cast<float>(event.mouse.y)};
             mousePoint = m_camera -> convertPixelToCoords(mousePoint);
             m_leftMousePressed = true;
             if(m_xAxisManipulator.isPressed(mousePoint)
@@ -272,7 +279,7 @@ namespace editor {
 
             m_xAxisManipulator.setPosition({middle.x, middle.y + xSize.y / 2.f});
             m_yAxisManipulator.setPosition({middle.x + ySize.x / 2.F, middle.y});
-            m_XYAxisManipulator.setPosition({middle.x + xyOffset, middle.y - xySize.y - xyOffset});
+            m_XYAxisManipulator.setPosition(robot2D::vec2f{middle.x + xyOffset, middle.y - xySize.y - xyOffset});
         }
         else {
             constexpr auto degreesToRadians = [](float degrees) {
@@ -283,8 +290,8 @@ namespace editor {
 
             /// TODO(a.raag): more correct math calculation
 
-            auto middle = robot2D::vec2f { position.x + (size.x / 2) * std::cos(radianAngle),
-                                           position.y + (size.x / 2 ) * std::sin(radianAngle) - (size.y / 2) };
+            auto middle = robot2D::vec2f { static_cast<float>(position.x + (size.x / 2) * std::cos(radianAngle)),
+                                           static_cast<float>(position.y + (size.x / 2 ) * std::sin(radianAngle) - (size.y / 2)) };
 
             auto xSize = m_xAxisManipulator.getSize();
             auto ySize = m_yAxisManipulator.getSize();

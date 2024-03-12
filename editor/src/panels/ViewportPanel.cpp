@@ -219,8 +219,9 @@ namespace editor {
             instrumentBar({viewportOffset.x, viewportOffset.y}, {ViewPanelSize.x, ViewPanelSize.y});
             m_editorCamera -> setViewportBounds({viewportOffset.x, viewportOffset.y
                                                                    + (viewportMaxRegion.y - ViewPanelSize.y)});
-            if(m_ViewportSize != robot2D::vec2u { ViewPanelSize.x, ViewPanelSize.y} || needResetViewport) {
-                m_ViewportSize = {ViewPanelSize.x, ViewPanelSize.y};
+            if(m_ViewportSize != robot2D::vec2u { static_cast<unsigned int>(ViewPanelSize.x), 
+                        static_cast<unsigned int>(ViewPanelSize.y)} || needResetViewport) {
+                m_ViewportSize = {static_cast<unsigned int>(ViewPanelSize.x), static_cast<unsigned int>(ViewPanelSize.y)};
                 m_frameBuffer -> Resize(m_ViewportSize);
                 m_editorCamera -> setViewportSize(m_ViewportSize.as<float>());
                 needResetViewport = false;

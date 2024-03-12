@@ -48,7 +48,9 @@ namespace editor {
         std::aligned_storage<sizeof(T), alignof(T)> m_storage;
     };
 
-    template<typename UserDataT, typename = std::enable_if_t<std::is_standard_layout_v<UserDataT>>>
+    // TODO(a.raag): robot2D::ecs::Entity is not is_standard_layout_v on MSVC
+    // typename = std::enable_if_t<std::is_standard_layout_v<UserDataT>>
+    template<typename UserDataT>
     class TreeItem: public ITreeItem {
     private:
         using TreeItemUserData = std::shared_ptr<UserDataT>;
@@ -62,7 +64,7 @@ namespace editor {
             auto child = std::make_shared<TreeItem<UserDataT>>(std::forward<Args>(args)...);
             child -> m_id = UUID();
             child -> m_parent = this;
-            m_childrens.template emplace_back(child);
+            m_childrens.emplace_back(child);
             return child;
         }
 
@@ -142,14 +144,16 @@ namespace editor {
 
         template<typename T, typename ... Args>
         typename TreeItem<T>::Ptr addItem(bool needPending = false, Args&& ... args) {
-            static_assert(std::is_standard_layout_v<T> && "UserData Type must be pod");
+            // TODO(a.raag): robot2D::ecs::Entity is not is_standard_layout_v on MSVC
+            //static_assert(std::is_standard_layout_v<T> && "UserData Type must be pod");
+            
             auto treeItem = std::make_shared<TreeItem<T>>(std::forward<Args>(args)...);
             if(!treeItem) {
                 /// error
             }
             treeItem -> m_id = UUID();
             if(!needPending) {
-                m_items.template emplace_back(treeItem);
+                m_items.emplace_back(treeItem);
             }
             else
                 m_additemsBuffer.emplace_back(treeItem);

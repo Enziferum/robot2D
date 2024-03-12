@@ -366,7 +366,7 @@ namespace editor {
                     }
                     else {
                         /// TODO(a.raag): use Local ResourceManager
-                        auto texture = m_textures.template add(entity.getIndex());
+                        auto texture = m_textures.add(entity.getIndex());
                         if(texture) {
                             auto image = manager -> getImage(localPath.filename().string());
                             texture -> create(image);
