@@ -44,20 +44,19 @@ add_custom_command(
         COMMAND ${CMAKE_COMMAND} -E copy_directory
         ${CMAKE_CURRENT_SOURCE_DIR}/res/
         ${CMAKE_CURRENT_BINARY_DIR}/res/)
-		
-if (WIN32)
-	# TODO(a.raag): Correct copy mono bins 
-	#message(STATUS "Save mono bin_path: ${MONO_BINARY_PATH}")
-	#add_custom_command(TARGET ${PROJECT_NAME}
-    #POST_BUILD
-    #COMMAND ${CMAKE_COMMAND} 
-        #-DMONO_BINARY_PATH=${MONO_BINARY_PATH}
-        #-P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/MonoCopyRuntime.cmake
-    #COMMENT "Copy runtime mono libs to executable..."
-    #WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-	#VERBATIM
-    #)
-endif ()		
+
+if (RB2D_OS_WINDOWS)
+	add_custom_command(TARGET ${PROJECT_NAME}
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND}
+            -DDESTINATION_PATH=${CMAKE_CURRENT_BINARY_DIR}
+            -DMONO_BINARY_PATH=${MONO_BINARY_PATH}
+            -P ${CMAKE_CURRENT_SOURCE_DIR}/cmake/MonoCopyRuntime.cmake
+    COMMENT "Copy runtime mono libs to executable..."
+    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+	VERBATIM
+    )
+endif ()
 
 
 		
