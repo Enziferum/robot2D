@@ -27,7 +27,7 @@ namespace {
 }
 
 namespace robot2D::priv {
-    CursorImpl::~CursorImpl() = default;
+    CursorImpl::~CursorImpl() {}
 
     std::unique_ptr<CursorImpl> CursorImpl::createImpl() {
         return std::make_unique<CursorHandler>();

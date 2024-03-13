@@ -23,6 +23,9 @@ set(CORE_INCLUDE_FILES
 
 set(CORE_SOURCE_FILES
         ${SRCROOT}/FileInputStream.cpp
+        ${SRCROOT}/Cursor.cpp
+        ${SRCROOT}/CursorImpl.cpp	
+        ${SRCROOT}/CursorImpl.hpp
         ${SRCROOT}/Window.cpp
         ${SRCROOT}/Event.cpp
         ${SRCROOT}/WindowImpl.cpp
@@ -33,15 +36,17 @@ set(CORE_SOURCE_FILES
         ${SRCROOT}/Joystick.cpp
         ${SRCROOT}/Clock.cpp
         ${SRCROOT}/Time.cpp
-        ${SRCROOT}/Cursor.cpp
-        ${SRCROOT}/CursorImpl.cpp
+ 
         ${SRCROOT}/memory/IAllocator.cpp
         ${SRCROOT}/memory/StackAllocator.cpp
         ${SRCROOT}/memory/MemoryManager.cpp
 
         # Desktop Impl
-        ${SRCROOT}/Desktop/DesktopWindowImpl.cpp
         ${SRCROOT}/Desktop/DesktopCursorImpl.cpp
+	${SRCROOT}/Desktop/DesktopCursorImpl.hpp
+	${SRCROOT}/Desktop/DesktopWindowImpl.cpp
+	${SRCROOT}/Desktop/DesktopWindowImpl.hpp
+       
 
         PARENT_SCOPE
     )

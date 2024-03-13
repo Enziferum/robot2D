@@ -34,7 +34,7 @@ source distribution.
 
 #if(!defined(ROBOT2D_STATIC))
     // Windows dll export options
-    #if ROBOT2D_WINDOWS
+    #ifdef ROBOT2D_WINDOWS
         #define ROBOT2D_EXPORT_API __declspec(dllexport)
         #define ROBOT2D_IMPORT_API __declspec(dllimport)
 
