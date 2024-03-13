@@ -51,8 +51,8 @@ namespace robot2D {
         Cursor();
         Cursor(const Cursor& other) = delete;
         Cursor& operator=(const Cursor& other) = delete;
-        Cursor(Cursor&& other) = default;
-        Cursor& operator=(Cursor&& other) = default;
+        Cursor(Cursor&& other) = delete;
+        Cursor& operator=(Cursor&& other) = delete;
         ~Cursor() noexcept;
 
         /**

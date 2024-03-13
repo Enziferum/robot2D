@@ -1,8 +1,10 @@
 cmake_minimum_required(VERSION 3.21)
 project(robot2D)
 
+set(CMAKE_CXX_STANDARD 17)
+
 if(MSVC)
-    add_definitions(/MP)
+    add_definitions(/MP2)
 endif()
 
 if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
