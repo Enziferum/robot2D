@@ -1,6 +1,3 @@
-cmake_minimum_required(VERSION 3.11)
-project(robot2D-editor)
-
 option(RB2D_EDITOR_USE_GLM "Use GLM?" OFF)
 option(RB2D_EDITOR_THREAD_SANITIZER "Using thread sanitizer ?" OFF)
 
@@ -12,11 +9,11 @@ if(RB2D_EDITOR_THREAD_SANITIZER)
 endif ()
 
 # must be preinstall
-add_subdirectory(ext/robot2D-imgui)
-add_subdirectory(ext/yaml-cpp)
-add_subdirectory(ext/tinyfiledialog)
-add_subdirectory(ext/filewatch)
-add_subdirectory(ext/TinyXML)
+add_subdirectory(extlibs/robot2D-imgui)
+add_subdirectory(extlibs/yaml-cpp)
+add_subdirectory(extlibs/tinyfiledialog)
+add_subdirectory(extlibs/filewatch)
+add_subdirectory(extlibs/TinyXML)
 
 include(cmake/Box2DPatching.cmake)
 include(cmake/MonoPatching.cmake)
@@ -26,9 +23,9 @@ if(RB2D_EDITOR_USE_GLM)
     set(LIBS glm)
 endif()
 
-set(LIBS robot2D robot2D_imgui yaml-cpp tinyfiledialogs FileWatch box2d tinyxml ${MONO_LIBRARIES} ${LIBS})
-file(GLOB_RECURSE SRC src/*.cpp)
+set(LIBS robot2D-core robot2D-imgui yaml-cpp tinyfiledialogs FileWatch box2d tinyxml ${MONO_LIBRARIES} ${LIBS})
 
+file(GLOB_RECURSE SRC src/*.cpp)
 add_executable(${PROJECT_NAME} ${SRC})
 
 if(UNIX)
@@ -36,10 +33,11 @@ if(UNIX)
     add_definitions(${GCC_COVERAGE_COMPILE_FLAGS})
 endif()
 
-target_link_libraries(${PROJECT_NAME} PRIVATE ${LIBS})
-target_include_directories(${PROJECT_NAME} PUBLIC ${MONO_INCLUDE_PATH})
+target_include_directories(${PROJECT_NAME} PRIVATE ${MONO_INCLUDE_PATH})
 target_include_directories(${PROJECT_NAME} PUBLIC
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>")
+
+target_link_libraries(${PROJECT_NAME} PRIVATE ${LIBS})
 
 add_custom_command(
         TARGET ${PROJECT_NAME} POST_BUILD

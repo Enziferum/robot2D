@@ -16,11 +16,11 @@ FetchContent_MakeAvailable(googletest)
 enable_testing()
 
 set(CMAKE_CXX_STANDARD 17)
-set(TESTS_NAME run_all_tests)
+set(TESTS_NAME robot2D-core-tests)
 set(SRC ${ECS_SRC} main.cpp)
 
 add_executable(${TESTS_NAME} ${SRC})
-target_link_libraries(${TESTS_NAME} PUBLIC GTest::gtest_main PRIVATE robot2D)
+target_link_libraries(${TESTS_NAME} PUBLIC GTest::gtest_main PRIVATE robot2D-core)
 
 include(GoogleTest)
 gtest_discover_tests(${TESTS_NAME})

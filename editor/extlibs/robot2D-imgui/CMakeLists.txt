@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.21)
-project(robot2D_imgui)
+project(robot2D-imgui)
 
 option(RB2D_IMGUI_BUILD_EXAMPLE "Build example application ?" ON)
 
@@ -53,9 +53,9 @@ set(SRC ${SRC}
         )
 
 add_library(${PROJECT_NAME} ${SRC})
-target_link_libraries(${PROJECT_NAME} robot2D)
 target_include_directories(${PROJECT_NAME} PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_link_libraries(${PROJECT_NAME} robot2D-core)
 
 if(RB2D_IMGUI_BUILD_EXAMPLE)
     add_subdirectory(example)

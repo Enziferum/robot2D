@@ -20,7 +20,6 @@ source distribution.
 *********************************************************************/
 
 #include <robot2D/Graphics/Buffer.hpp>
-
 #include "OpenGL/OpenGLBuffer.hpp"
 
 namespace robot2D {

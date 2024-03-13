@@ -20,6 +20,16 @@ function(process_logging_core_deps)
     logging_find_package(glfw3 missingComponents)
     logging_find_package(spdlog missingComponents)	
 
+    if(RB2D_OS_WINDOWS)
+        if (RB2D_COMPILER_MSVC OR (RB2D_COMPILER_CLANG AND NOT MINGW))
+            list(APPEND CMAKE_LIBRARY_PATH "${PROJECT_SOURCE_DIR}/extlibs/libs-msvc-universal/x64")
+        elseif (RB2D_COMPILER_GCC OR (RB2D_COMPILER_CLANG AND MINGW))
+            list(APPEND CMAKE_LIBRARY_PATH "${PROJECT_SOURCE_DIR}/extlibs/libs-mingw/x64")
+        endif ()
+    endif ()
+
+    logging_find_package(Freetype missingComponents)
+
     list(POP_BACK CMAKE_MESSAGE_INDENT)
     if(missingComponents)
         message(CHECK_FAIL "missing components: ${missingComponents}")

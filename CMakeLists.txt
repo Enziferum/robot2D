@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.21)
 project(robot2D)
 
-set(CMAKE_CXX_STANDARD 17)
-
 if(MSVC)
     add_definitions(/MP)
 endif()
@@ -13,26 +11,13 @@ if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
 	and run CMake from there. You may need to remove CMakeCache.txt.")
 endif()
 
+cmake_policy(SET CMP0074 NEW)
+
 if(RB2D_USE_CMAKE_VERBOSE)
     set(CMAKE_VERBOSE_MAKEFILE ON)
 endif ()
 
-list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
-cmake_policy(SET CMP0074 NEW)
+include(cmake/Base.cmake)
 
-include(cmake/ProcessCore.cmake)
-if(RB2D_BUILD_EDITOR)
-	add_subdirectory(editor)
-endif()
-
-if(NOT RB2D_BUILD_SHARED_LIBS)
-    target_compile_definitions(${PROJECT_NAME} PUBLIC "ROBOT2D_STATIC")
-endif()
-
-if(RB2D_BUILD_SANDBOX)
-    add_subdirectory(sandbox)
-endif()
-
-if(RB2D_BUILD_TESTS)
-    add_subdirectory(tests)
-endif()
+add_subdirectory(core)
+add_subdirectory(editor)
