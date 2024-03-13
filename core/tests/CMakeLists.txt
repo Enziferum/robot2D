@@ -3,6 +3,8 @@ add_subdirectory(Ecs)
 add_subdirectory(Graphics)
 add_subdirectory(Util)
 
+cmake_policy(SET CMP0135 NEW)
+
 include(FetchContent)
 FetchContent_Declare(
   googletest

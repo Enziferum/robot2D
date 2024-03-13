@@ -1,3 +1,4 @@
+include(${CMAKE_SOURCE_DIR}/cmake/Functions.cmake)
 include(FindDeps)
 include(Options)
 # - brief processing core
