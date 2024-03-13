@@ -57,7 +57,7 @@ namespace editor {
             ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{ 4, 4 });
             float lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
             ImGui::Separator();
-            bool open = ImGui::TreeNodeEx((void*)typeid(T).hash_code(), treeNodeFlags, name.c_str());
+            bool open = ImGui::TreeNodeEx((void*)typeid(T).hash_code(), treeNodeFlags, "%s", name.c_str());
             ImGui::PopStyleVar();
             ImGui::SameLine(contentRegionAvailable.x - lineHeight * 0.5f);
             if (ImGui::Button("-", ImVec2{ lineHeight, lineHeight }))
@@ -477,7 +477,7 @@ namespace editor {
                             }
                             if(field.Type == ScriptFieldType::Transform) {
                                 ImGui::AlignTextToFramePadding();
-                                ImGui::Text(name.c_str());
+                                ImGui::Text("%s", name.c_str());
                                 ImGui::SameLine();
                                 auto uuid = scriptField.getValue<UUID>();
                                 auto preEntity = interactor -> getByUUID(uuid);
@@ -503,7 +503,7 @@ namespace editor {
                             }
                             if(field.Type == ScriptFieldType::Entity) {
                                 ImGui::AlignTextToFramePadding();
-                                ImGui::Text(name.c_str());
+                                ImGui::Text("%s", name.c_str());
                                 ImGui::SameLine();
                                 auto uuid = scriptField.getValue<UUID>();
                                 auto preEntity = interactor -> getByUUID(uuid);
@@ -565,7 +565,7 @@ namespace editor {
                             }
                             if(field.Type == ScriptFieldType::Transform) {
                                 ImGui::AlignTextToFramePadding();
-                                ImGui::Text(name.c_str());
+                                ImGui::Text("%s", name.c_str());
                                 ImGui::SameLine();
                                 std::string resultText = "None";
                                 ImGui::Button(resultText.c_str());
@@ -591,7 +591,7 @@ namespace editor {
                             }
                             if(field.Type == ScriptFieldType::Entity) {
                                 ImGui::AlignTextToFramePadding();
-                                ImGui::Text(name.c_str());
+                                ImGui::Text("%s", name.c_str());
                                 ImGui::SameLine();
                                 std::string resultText = "None";
                                 ImGui::Button(resultText.c_str());

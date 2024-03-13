@@ -1,6 +1,6 @@
-[submodule "editor/ext/yaml-cpp"]
-	path = editor/ext/yaml-cpp
+[submodule "editor/extlibs/yaml-cpp"]
+	path = editor/extlibs/yaml-cpp
 	url = https://github.com/jbeder/yaml-cpp.git
-[submodule "editor/ext/box2d"]
-	path = editor/ext/box2d
+[submodule "editor/extlibs/box2d"]
+	path = editor/extlibs/box2d
 	url = https://github.com/erincatto/box2d.git

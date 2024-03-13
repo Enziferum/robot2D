@@ -75,8 +75,10 @@ namespace editor {
             }
         }
 
-        friend bool operator ==(const TreeItem<UserDataT>& left, const TreeItem<UserDataT>& right);
-        friend bool operator !=(const TreeItem<UserDataT>& left, const TreeItem<UserDataT>& right);
+        template<typename T>
+        friend bool operator ==(const TreeItem<T>& left, const TreeItem<T>& right);
+        template<typename T>
+        friend bool operator !=(const TreeItem<T>& left, const TreeItem<T>& right);
     protected:
         void* getUserDataInternal() const override {
             assert(m_userData != nullptr && "before get data store it, using SetUserData Method");
