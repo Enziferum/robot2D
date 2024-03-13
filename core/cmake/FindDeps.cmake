@@ -26,6 +26,7 @@ function(process_logging_core_deps)
         elseif (RB2D_COMPILER_GCC OR (RB2D_COMPILER_CLANG AND MINGW))
             list(APPEND CMAKE_LIBRARY_PATH "${PROJECT_SOURCE_DIR}/extlibs/libs-mingw/x64")
         endif ()
+        list(APPEND CMAKE_INCLUDE_PATH "${PROJECT_SOURCE_DIR}/extlibs/headers/freetype2")
     endif ()
 
     logging_find_package(Freetype missingComponents)
