@@ -66,14 +66,6 @@ set(GRAPHICS_SOURCE_FILES
 
     PARENT_SCOPE)
 
-# let CMake know about our additional graphics libraries paths
-if(RB2D_OS_WINDOWS)
-    list(APPEND CMAKE_INCLUDE_PATH "${PROJECT_SOURCE_DIR}/extlibs/headers/freetype2")
-elseif(RB2D_OS_MACOS)
-    list(APPEND CMAKE_INCLUDE_PATH "${PROJECT_SOURCE_DIR}/extlibs/headers/freetype2")
-    list(APPEND CMAKE_LIBRARY_PATH "${PROJECT_SOURCE_DIR}/extlibs/libs-macos/Frameworks")
-endif ()
-
 # Image.cpp must be compiled with the -fno-strict-aliasing
 # when gcc is used; otherwise saving PNGs may crash in stb_image_write
 if(RB2D_COMPILER_GCC)
