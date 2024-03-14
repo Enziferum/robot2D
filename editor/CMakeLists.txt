@@ -1,3 +1,5 @@
+include(${CMAKE_SOURCE_DIR}/cmake/Functions.cmake)
+
 option(RB2D_EDITOR_USE_GLM "Use GLM?" OFF)
 option(RB2D_EDITOR_THREAD_SANITIZER "Using thread sanitizer ?" OFF)
 
@@ -25,8 +27,17 @@ endif()
 
 set(LIBS robot2D-core robot2D-imgui yaml-cpp tinyfiledialogs FileWatch box2d tinyxml ${MONO_LIBRARIES} ${LIBS})
 
+file(GLOB_RECURSE INCLS include/editor/*.hpp)
 file(GLOB_RECURSE SRC src/*.cpp)
-add_executable(${PROJECT_NAME} ${SRC})
+
+add_executable(${PROJECT_NAME} ${INCLS} ${SRC})
+
+if (RB2D_OS_WINDOWS)
+    if(RB2D_COMPILER_MSVC)
+        GroupSourcesByFolder(${PROJECT_NAME})
+    endif ()
+endif ()
+
 
 if(UNIX)
     set(GCC_COVERAGE_LINK_FLAGS "-ldl -Wl --start-group")

@@ -22,11 +22,11 @@ source distribution.
 #include <cassert>
 #include <imgui/imgui.h>
 #include <imgui/imgui_internal.h>
-#include <tfd/tinyfiledialogs.h>
 
 #include <robot2D/Config.hpp>
 #include <editor/ProjectInspector.hpp>
 #include <editor/Messages.hpp>
+#include <editor/FiledialogAdapter.hpp>
 
 namespace editor {
 
@@ -86,6 +86,11 @@ namespace editor {
                         loadProject(it);
                         ImGui::CloseCurrentPopup();
                     }
+                    if(ImGui::MenuItem("Remove from list")) {
+                        // TODO(a.raag): remove from cache
+                        ImGui::CloseCurrentPopup();
+                    }
+
                     if(ImGui::MenuItem("Delete")) {
                         deleteProject(it);
                         ImGui::CloseCurrentPopup();
@@ -144,13 +149,12 @@ namespace editor {
     }
 
     void ProjectInspector::createProject() {
-        char* path = tinyfd_selectFolderDialog("Create Robot2D Project", nullptr);
-        // close, either
-        if(path == nullptr) {
+
+        std::string creationPath;
+        if(!FiledialogAdapter::get() -> selectFolder(creationPath, "Create Robot2D Project")) {
             return;
         }
 
-        std::string creationPath(path);
         std::string separator;
 #ifdef ROBOT2D_WINDOWS
         separator = "\\";
@@ -168,18 +172,21 @@ namespace editor {
     }
 
     void ProjectInspector::addProject() {
-        char* path = tinyfd_selectFolderDialog("Create Robot2D Project", nullptr);
-        // close, either
-        if(path == nullptr) {
+        std::string addPath;
+        if(!FiledialogAdapter::get() -> selectFolder(addPath, "Add Existing Robot2D Project")) {
             return;
         }
-
-        std::string creationPath(path);
-        auto pathComps = split(creationPath, "\\");
+        std::string separator;
+#ifdef ROBOT2D_WINDOWS
+        separator = "\\";
+#else
+        separator = "/";
+#endif
+        auto pathComps = split(addPath, separator);
 
         ProjectDescription description;
         description.name = pathComps[pathComps.size() - 1];
-        description.path = creationPath;
+        description.path = addPath;
 
         auto* msg = m_messageBus.postMessage<ProjectMessage>(MessageID::AddProject);
         msg -> description = description;

@@ -430,7 +430,7 @@ namespace editor {
             if(ImGui::BeginDragDropSource()) {
                 ImGui::SetDragDropPayload(m_playloadIdentifier.c_str(),
                                           &child -> m_id, sizeof(child -> m_id));
-                ImGui::Text(child -> m_name -> c_str());
+                ImGui::Text("%s", child -> m_name -> c_str());
                 ImGui::EndDragDropSource();
             }
 

@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <vector>
 
 namespace editor {
     class FiledialogAdapter {
@@ -9,11 +10,24 @@ namespace editor {
             return &adapter;
         }
 
-        bool openFile(std::string& path, std::string title) { return false;  }
-        bool saveFile(std::string& path, const std::string& title);
+        bool openFile(std::string& path,
+                      std::string title,
+                      std::string defaultPath2Open = "",
+                      const std::vector<std::string>& filePatterns = {},
+                      std::string singleFilterDescription = "",
+                      bool allowMultiSelection = false);
+        bool saveFile(std::string& path,
+                      const std::string& title,
+                      std::string defaultPath2Open = "",
+                      const std::vector<std::string>& filePatterns = {},
+                      std::string singleFilterDescription = "");
+        bool selectFolder(std::string& path,
+                          const std::string& title,
+                          std::string defaultPath2Open = "");
     private:
         enum class LibType {
-            TinyFileDialog
-        } m_libType;
+            TinyFileDialog,
+            Pfd
+        } m_libType = LibType::TinyFileDialog;
     };
 }
