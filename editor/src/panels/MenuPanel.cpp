@@ -20,8 +20,6 @@ source distribution.
 *********************************************************************/
 
 #include <imgui/imgui.h>
-#include <tfd/tinyfiledialogs.h>
-
 #include <filesystem>
 
 #include <robot2D/imgui/Api.hpp>
@@ -79,17 +77,15 @@ namespace editor {
 
     void MenuPanel::fileMenu() {
         if(ImGui::MenuItem("New", "Ctrl+N")) {
-            const char* path = tinyfd_selectFolderDialog("Create Robot2D Project", nullptr);
-
-            // close, either
-            if(path == nullptr) {
+            std::string path;
+            if(!FiledialogAdapter::get() -> selectFolder(path, "Create Robot2D Project")) {
                 ImGui::EndMenu();
                 return;
             }
-            std::string creationPath(path);
+
             ProjectDescription description;
             description.name = "Project";
-            description.path = creationPath;
+            description.path = path;
 
             auto msg = m_messageBus.postMessage<ProjectMessage>(MessageID::CreateProject);
             msg -> description = std::move(description);
@@ -100,15 +96,15 @@ namespace editor {
         ImGui::Separator();
 
         if(ImGui::MenuItem("Open", "Ctrl+O")) {
-            std::string openPath = "assets/scenes/demoScene.robot2D";
-            const char* patterns[1] = {"*.robot2D"};
-            const char* path = tinyfd_openFileDialog("Load Project", nullptr,
-                                                     1,
-                                                     patterns,
-                                                     "Project",
-                                                     0);
-            if (path != nullptr) {
-                fs::path openPath{std::string(path)};
+            std::vector<std::string> openPatterns = {"*.robot2D"};
+            std::string outputPath;
+
+            if (FiledialogAdapter::get() -> openFile(outputPath,
+                                                     "Open robot2D project",
+                                                     "",
+                                                     openPatterns,
+                                                     "Robot2D Project")) {
+                fs::path openPath{std::string(outputPath)};
                 auto filePath = openPath.filename();
                 openPath.remove_filename();
                 auto str = filePath.string();
@@ -128,13 +124,15 @@ namespace editor {
         }
 
         if(ImGui::MenuItem("Save", "Ctrl+S")) {
-            std::string savePath = "assets/scenes/demoScene.robot2D";
-            const char* patterns[1] = {"*.robot2D"};
-            const char* path = tinyfd_saveFileDialog("Save Scene", nullptr,
-                                                     1, patterns,
-                                                     "Scene");
-            if(path != nullptr) {
-                savePath = std::string(path);
+            std::string savePath;
+            std::vector<std::string> saveFilePatterns = {"*.robot2D"};
+
+            // TODO(a.raag): get current project path
+            if(FiledialogAdapter::get() -> saveFile(savePath,
+                                                    "Save Robot2D Project",
+                                                    "",
+                                                    saveFilePatterns,
+                                                    "Scene")) {
                 auto msg =
                         m_messageBus.postMessage<MenuProjectMessage>(MessageID::SaveProject);
                 msg -> path = std::move(savePath);
@@ -142,13 +140,17 @@ namespace editor {
         }
 
         if(ImGui::MenuItem("Save", "Ctrl+Shift+S")) {
-            std::string savePath = "assets/scenes/demoScene.robot2D";
-            const char* patterns[1] = {"*.scene"};
-            const char* path = tinyfd_saveFileDialog("Save Scene", nullptr,
-                                                     1, patterns,
-                                                     "Scene");
-            if(path != nullptr) {
-                savePath = std::string(path);
+            std::string savePath;
+            std::vector<std::string> saveFilePatterns = {"*.scene"};
+
+            // TODO(a.raag): get current project path
+            std::string defaultSavePath = "assets/scenes";
+
+            if(FiledialogAdapter::get() -> saveFile(savePath,
+                                                    "Save Robot2D Scene",
+                                                     defaultSavePath,
+                                                     saveFilePatterns,
+                                                     "Scene")){
                 auto msg =
                         m_messageBus.postMessage<MenuProjectMessage>(MessageID::SaveScene);
                 msg -> path = std::move(savePath);
@@ -174,17 +176,17 @@ namespace editor {
 
     void MenuPanel::projectMenu() {
         if(ImGui::MenuItem("Generate Project", "Ctrl+G")) {
-            const char* path = tinyfd_selectFolderDialog("Generate Robot2D Scripts's project", nullptr);
-
-            // close, either
-            if(path == nullptr) {
+            std::string genPath;
+            if(!FiledialogAdapter::get() -> selectFolder(genPath,
+                                                         "Generate Robot2D Scripts's project",
+                                                         "")) {
                 ImGui::EndMenu();
                 return;
             }
 
-            auto* msg = m_messageBus.postMessage<GenerateProjectMessage>(MessageID::GenerateProject);
-            /// TODO(a.raag): Fileadapter
-            msg -> genPath = std::string(path);
+            auto* msg =
+                    m_messageBus.postMessage<GenerateProjectMessage>(MessageID::GenerateProject);
+            msg -> genPath = genPath;
         }
 
 
@@ -277,9 +279,10 @@ namespace editor {
 
             if(ImGui::Button("Export")) {
                 m_popupType = PopupType::None;
-                const char* path = tinyfd_selectFolderDialog("Export Robot2D Project", nullptr);
-                if(path) {
-                    m_exportOptions.outputFolder = path;
+                std::string exportPath;
+
+                if(FiledialogAdapter::get() -> selectFolder(exportPath, "Export Robot2D Project")) {
+                    m_exportOptions.outputFolder = exportPath;
                     m_interactor -> exportProject(m_exportOptions);
                 }
 

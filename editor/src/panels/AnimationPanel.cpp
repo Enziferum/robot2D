@@ -391,7 +391,10 @@ namespace editor {
                 }
 
                 std::string path;
-                if(!dialogAdapter -> saveFile(path, "Save Animation")) {
+                std::vector<std::string> savePatterns = {"*.anim"};
+                if(!dialogAdapter -> saveFile(path, "Save Animation",
+                                              "",
+                                              savePatterns)) {
                     RB_EDITOR_ERROR("AnimationPanel: Cant' get Save Path");
                     return;
                 }
