@@ -135,6 +135,7 @@ namespace editor {
         void createScene(const CreateSceneMessage& message);
         void addPrefabEntity(const PrefabLoadMessage& message);
         void prefabModificated(const PrefabAssetModificatedMessage& message);
+        void generateProject(const GenerateProjectMessage& message);
 
         void onBeginPopup() override;
         void onEndPopup() override;

@@ -14,3 +14,6 @@ obj/
 depslibs/
 # generates by cmake
 OptionConfig.hpp
+mono_build_config.h
+#python 
+scripts/__pycache__/

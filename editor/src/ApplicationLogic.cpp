@@ -33,6 +33,11 @@ namespace editor {
     {}
 
     void ApplicationLogic::setup(IEditorOpener* editorModule) {
+        auto [hasKey, version] = m_configuration.getValue(ConfigurationKey::Version);
+        if(hasKey) {
+            RB_EDITOR_WARN("Editor's Current Version {0}.", version);
+        }
+
         m_editorOpener = editorModule;
 
         auto [status, result] = m_configuration.getValue(ConfigurationKey::CachePath);
@@ -178,17 +183,19 @@ namespace editor {
         }
 
         m_state = AppState::Editor;
-        // m_window -> setResizable(true);
+        //m_window -> setResizable(true);
         auto project = m_projectManager.getCurrentProject();
 
         std::filesystem::path scriptModulePath{ project -> getPath()};
-        scriptModulePath.append("assets\\scripts\\bin");
+        scriptModulePath.append("assets/scripts/bin");
         scriptModulePath.append(project -> getName());
-#ifdef ROBOT2D_WINDOWS
         scriptModulePath += ".dll";
-#endif
-        if(exists(scriptModulePath))
+
+        if(exists(scriptModulePath)) {
+            RB_EDITOR_INFO("Found project's script dll by path: {0}", scriptModulePath.string());
             ScriptEngine::InitAppRuntime(scriptModulePath);
+        }
+
 
         m_editorOpener -> loadProject(project);
     }

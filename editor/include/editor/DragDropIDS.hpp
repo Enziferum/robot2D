@@ -1,6 +1,6 @@
 #pragma once
 
 namespace editor {
-    constexpr char* contentItemID = "CONTENT_ITEM_ID";
-    constexpr char* contentPrefabItemID = "CONTENT_PREFAB_ITEM_ID";
+    const char* const contentItemID = "CONTENT_ITEM_ID";
+    const char* const contentPrefabItemID = "CONTENT_PREFAB_ITEM_ID";
 }

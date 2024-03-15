@@ -167,7 +167,12 @@ namespace editor {
 
         applyStyle(EditorStyle::UE4);
         m_needPrepare = false;
+#ifdef ROBOT2D_LINUX
+        m_window -> setResizable(true);
+        m_window -> setSize({2560, 1920});
+#else
         m_window -> setMaximazed(true);
+#endif
         auto& viewportPanel = m_panelManager.getPanel<ViewportPanel>();
         viewportPanel.set(m_frameBuffer);
 
@@ -451,7 +456,7 @@ namespace editor {
         if(event.mouse.btn == robot2D::mouse2int(robot2D::Mouse::MouseLeft)
                         && !m_interactor -> hasSelectedEntities() && !m_guizmo2D.isActive() && viewportPanel.isActive()) {
             m_leftMousePressed = true;
-            auto mousePos = m_editorCamera -> convertPixelToCoords({event.mouse.x, event.mouse.y});
+            auto mousePos = m_editorCamera -> convertPixelToCoords({static_cast<float>(event.mouse.x), static_cast<float>(event.mouse.y)});
             m_selectionCollider.setPosition(mousePos);
             m_selectionCollider.setIsShown(true);
         }

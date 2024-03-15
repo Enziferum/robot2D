@@ -21,9 +21,14 @@ namespace editor {
 
             if (texture) {
                 drawable.setTexture(*texture);
-                tx_s = {animation.getTexture() -> getSize().x, animation.getTexture() -> getSize().y};
-            } else
-                tx_s = {drawable.getTexture().getSize().x, drawable.getTexture().getSize().y};
+                auto texSize = animation.getTexture() -> getSize();
+                tx_s = texSize.as<float>();
+            }
+            else {
+                auto texSize = drawable.getTexture().getSize();
+                tx_s = texSize.as<float>();
+            }
+               
 
             auto& vertices = drawable.getVertices();
             auto textureRect = animation.getTextureRect();

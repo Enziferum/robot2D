@@ -41,7 +41,7 @@ namespace editor {
         }
 
         std::vector<Animation> getAnimations(robot2D::ecs::Entity entity) {
-
+            return {};
         }
 
 

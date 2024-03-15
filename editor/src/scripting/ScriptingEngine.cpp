@@ -26,8 +26,9 @@ source distribution.
 #include <memory>
 #include <unordered_map>
 
-#include <robot2D/util/Logger.hpp>
+#include <robot2D/Util/Logger.hpp>
 #include <robot2D/Core/Assert.hpp>
+#include <robot2D/Config.hpp>
 
 #include <mono/jit/jit.h>
 #include <mono/metadata/metadata.h>
@@ -284,7 +285,14 @@ namespace editor {
         InitMono();
         ScriptGlue::registerFunctions();
 
-        bool status = loadCoreAssembly("res/script/robot2D_ScriptCore.dll");
+        std::string coreLibPath = "res/script/robot2D_ScriptCore";
+#ifdef ROBOT2D_WINDOWS
+        coreLibPath += ".dll";
+#else
+        coreLibPath += ".dll";
+#endif
+
+        bool status = loadCoreAssembly(coreLibPath);
         if(!status) {
             RB_EDITOR_ERROR("Can't load Core Scripting Engine Library");
             return;
@@ -474,7 +482,8 @@ namespace editor {
 
     void ScriptEngine::ShutdownMono() {
         mono_domain_set(mono_get_root_domain(), false);
-        mono_domain_unload(s_Data -> m_appDomain);
+        if(s_Data -> m_appDomain)
+            mono_domain_unload(s_Data -> m_appDomain);
         s_Data -> m_appDomain = nullptr;
         mono_jit_cleanup(s_Data -> m_rootDomain);
     }
@@ -711,6 +720,8 @@ namespace editor {
 
             }
         }
+
+        return nullptr;
     }
 
 
