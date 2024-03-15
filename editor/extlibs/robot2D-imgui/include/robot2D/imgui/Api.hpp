@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2024
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -34,6 +34,29 @@ source distribution.
 #include "Sugar.hpp"
 
 namespace robot2D {
+
+    void createWindow(const WindowOptions& windowOptions, std::function<void()>&& callback);
+
+    bool ImageButton(const robot2D::Texture& texture, const robot2D::vec2f& size);
+
+    void RenderFrameBuffer(const robot2D::FrameBuffer::Ptr& frameBuffer, const robot2D::vec2f& size);
+
+    bool InputText(
+            const std::string& label,
+            std::string* str,
+            ImGuiInputTextFlags flags,
+            ImGuiInputTextCallback callback = nullptr,
+            void* user_data = nullptr
+    );
+
+    /////////////////////////////////////////////////////////// Deprecated / Unused ///////////////////////////////////////////////////////////
+
+    [[deprecated("Unstable method need rework")]]
+    void DrawImage(robot2D::Sprite& sprite, const robot2D::vec2f& size);
+
+    [[deprecated("Unstable method need rework")]]
+    void DrawAnimatedImage(robot2D::Sprite& sprite, const robot2D::vec2f& size);
+
     template<typename F,
             typename = std::enable_if_t<std::is_invocable_v<F>>>
     struct Defer {
@@ -52,23 +75,17 @@ namespace robot2D {
     };
 
 
+    struct ColorButton {
+        enum class Type {
+            Default, Hovered, Active
+        } type;
 
-
-
-
-    void createWindow(const WindowOptions& windowOptions, std::function<void()>&& callback);
-
-    void DrawImage(robot2D::Sprite& sprite, const robot2D::vec2f& size);
-
-    void DrawAnimatedImage(robot2D::Sprite& sprite, const robot2D::vec2f& size);
-
-    bool ImageButton(const robot2D::Texture& texture, const robot2D::vec2f& size);
-
-    void RenderFrameBuffer(const robot2D::FrameBuffer::Ptr& frameBuffer, const robot2D::vec2f& size);
-
+        robot2D::Color color;
+    };
 
 
     template<typename T>
+    [[deprecated("Unstable method need rework")]]
     void SimpleDragDrop(const std::string& payloadID, std::function<void(T*)>&& callback) {
         if (ImGui::BeginDragDropTarget())
         {
@@ -81,21 +98,12 @@ namespace robot2D {
         }
     }
 
-
-
-    struct ColorButton {
-        enum class Type {
-            Default, Hovered, Active
-        } type;
-
-        robot2D::Color color;
-    };
-
     template<
             typename Func,
             typename ...Args,
             typename = std::enable_if_t<std::is_invocable_v<Func, Args...>>
     >
+    [[deprecated("Unstable method need rework")]]
     void colorButton(std::string title,
                      std::initializer_list<ColorButton> colors,
                      Func&& func, Args&& ... args) {
@@ -143,26 +151,6 @@ namespace robot2D {
         ImGui::PopID();
     }
 
-    bool InputText(
-        const std::string& label,
-        std::string* str,
-        ImGuiInputTextFlags flags,
-        ImGuiInputTextCallback callback = nullptr,
-        void* user_data = nullptr
-    );
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/////////////////////////////////////////////////////////// Deprecated / Unused ///////////////////////////////////////////////////////////
 
 } // namespace robot2D
