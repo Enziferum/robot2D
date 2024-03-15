@@ -1,10 +1,9 @@
 # Robot2D
 
-<img align="right" src="https://github.com/Enziferum/robot2D/blob/master/logo/old_logo.png" alt="logo" width="256"/>
+<img align="right" src="https://github.com/Enziferum/robot2D/blob/dev/logo/logo.png" alt="logo" width="128"/>
 
 \
-Windows: [![Build status](https://ci.appveyor.com/api/projects/status/ilga4qquggcsfy65?svg=true)](https://ci.appveyor.com/project/Enziferum/robot2d) \
-Linux: ![Build Status](https://github.com/Enziferum/robot2D/actions/workflows/ci.yml/badge.svg) \
+Windows / Linux: ![Build Status](https://github.com/Enziferum/robot2D/actions/workflows/ci.yml/badge.svg) \
 MacOS: Temporary not supported due to OpenGL max version 4.1 \
 \
 Robot2D - C++ 2D Engine. Graphics Api is OpenGL 4.5 only.
