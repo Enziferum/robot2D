@@ -98,7 +98,8 @@ namespace editor {
 
     void ScenePanel::windowFunction() {
         // Right-click on blank space
-        if (ImGui::BeginPopupContextWindow("ScenePanelEntityCreation", m_configuration.rightMouseButton))
+        if (ImGui::BeginPopupContextWindow("ScenePanelEntityCreation",
+                                           m_configuration.rightMouseButton))
         {
             if (ImGui::MenuItem("Create Empty Entity")) {
                 m_interactor -> addEmptyEntity();
@@ -186,7 +187,8 @@ namespace editor {
             auto entity = selectedItem -> getUserData<robot2D::ecs::Entity>();
             if(entity) {
                 m_selectedEntity = *entity;
-                auto* msg = m_messageBus.postMessage<PanelEntitySelectedMessage>(MessageID::PanelEntitySelected);
+                auto* msg =
+                        m_messageBus.postMessage<PanelEntitySelectedMessage>(MessageID::PanelEntitySelected);
                 msg -> entity = m_selectedEntity;
             }
             else {
@@ -259,7 +261,6 @@ namespace editor {
             m_interactor -> setBefore(*sourceEntity, *target -> getUserData<robot2D::ecs::Entity>());
             m_treeHierarchy.setBefore(source, target);
         });
-
 
         m_treeHierarchy.addOnMakeChildCallback([this](ITreeItem::Ptr source, ITreeItem::Ptr intoTarget) {
             RB_EDITOR_WARN("m_treeHierarchy.addOnMakeChildCallback");

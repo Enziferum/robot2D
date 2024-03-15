@@ -46,6 +46,8 @@ namespace editor {
 
         m_guiWrapper.setup(*m_window);
 
+
+
         //// Load C# Mono
         ScriptEngine::Init();
         ScriptEngine::SetWindow(m_window);
@@ -79,17 +81,13 @@ namespace editor {
         }
 
         m_eventBinder.bindEvent(robot2D::Event::Resized, [this](const robot2D::Event& evt) {
-            RB_EDITOR_INFO("New Size = {0} and {1}", evt.size.widht, evt.size.heigth);
+            RB_EDITOR_INFO("Window's new size = {0} and {1}", evt.size.widht, evt.size.heigth);
             m_window -> resize({static_cast<int>(evt.size.widht),
                                 static_cast<int>(evt.size.heigth)});
-            m_window -> setView({{0, 0}, {evt.size.widht, evt.size.heigth}});
+            m_window -> setView({{0, 0}, {static_cast<float>(evt.size.widht), static_cast<float>(evt.size.heigth)}});
         });
 
-        m_eventBinder.bindEvent(robot2D::Event::KeyPressed, [this](const robot2D::Event& evt) {
-//            if(evt.key.code == robot2D::Key::ESCAPE)
-//                m_running = false;
-        });
-
+        m_eventBinder.bindEvent(robot2D::Event::KeyPressed, [this](const robot2D::Event& evt) {});
     }
 
     void Application::handleEvents(const robot2D::Event& event) {
@@ -132,8 +130,8 @@ namespace editor {
     }
 
     void Application::destroy() {
-       ScriptEngine::Shutdown();
-       m_editorModule -> destroy();
+        ScriptEngine::Shutdown();
+        m_editorModule -> destroy();
     }
 
 } // namespace editor

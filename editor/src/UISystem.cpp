@@ -23,7 +23,7 @@ namespace editor {
             if(event.mouse.btn == mouse2int(robot2D::Mouse::MouseMiddle))
                 m_mouseDownEvents.emplace_back(Flags::MiddleMouse);
 
-            m_eventPosition = m_editorCamera -> convertPixelToCoords({ event.mouse.x, event.mouse.y}).as<int>();
+            m_eventPosition = m_editorCamera -> convertPixelToCoords({ static_cast<float>(event.mouse.x), static_cast<float>(event.mouse.y)}).as<int>();
         }
 
         if(event.type == robot2D::Event::MouseReleased) {
@@ -34,11 +34,11 @@ namespace editor {
             if(event.mouse.btn == mouse2int(robot2D::Mouse::MouseMiddle))
                 m_mouseUpEvents.emplace_back(Flags::MiddleMouse);
 
-            m_eventPosition = m_editorCamera -> convertPixelToCoords({ event.mouse.x, event.mouse.y}).as<int>();
+            m_eventPosition = m_editorCamera -> convertPixelToCoords({ static_cast<float>(event.mouse.x), static_cast<float>(event.mouse.y)}).as<int>();
         }
 
         if(event.type == robot2D::Event::MouseMoved) {
-            m_eventPosition = m_editorCamera -> convertPixelToCoords({ event.mouse.x, event.mouse.y}).as<int>();
+            m_eventPosition = m_editorCamera -> convertPixelToCoords({ static_cast<float>(event.mouse.x), static_cast<float>(event.mouse.y)}).as<int>();
         }
 
         if(event.type == robot2D::Event::MouseWheel) {
@@ -72,7 +72,7 @@ namespace editor {
             auto& hitbox = ent.getComponent<UIHitbox>();
 
 
-            if((contains = hitbox.m_area.contains( { m_eventPosition.x, m_eventPosition.y } ))) {
+            if((contains = hitbox.m_area.contains( { static_cast<float>(m_eventPosition.x), static_cast<float>(m_eventPosition.y) } ))) {
                 hitbox.isHovered = true;
             }
             else

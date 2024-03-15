@@ -221,7 +221,6 @@ namespace editor {
                     fixtureDef.restitution = c2d.restitutionThreshold;
                 }
 
-
                 fixtureDef.userData.setData((void*)&lEntity);
                 b2body -> CreateFixture(&fixtureDef);
             }

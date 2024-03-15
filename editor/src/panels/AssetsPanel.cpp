@@ -193,7 +193,7 @@ namespace editor {
                 }
             }
             else {
-                ImGui::TextWrapped(filenameString.c_str());
+                ImGui::TextWrapped("%s", filenameString.c_str());
             }
 
             if(ImGui::IsItemHovered() || ImGui::IsItemFocused()) {
@@ -248,11 +248,11 @@ namespace editor {
 
                 if(extension == ".scene" || extension == ".png" || extension == ".ttf") {
                     ImGui::SetDragDropPayload(contentItemID, itemPath, len);
-                    ImGui::Text(relativePath.filename().string().c_str());
+                    ImGui::Text("%s", relativePath.filename().string().c_str());
                 }
                 if(extension == ".prefab") {
                     ImGui::SetDragDropPayload(contentPrefabItemID, itemPath, len);
-                    ImGui::Text(relativePath.filename().string().c_str());
+                    ImGui::Text("%s", relativePath.filename().string().c_str());
                 }
 
                 ImGui::EndDragDropSource();
