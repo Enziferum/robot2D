@@ -36,7 +36,7 @@ jobs:
         if: success() || failure()    # run this step even if previous step failed
         with:
           name: tests-ubuntu            # Name of the check run which will be created
-          path: build/tests/*.xml    # Path to test results
+          path: build/core/tests/*.xml    # Path to test results
           reporter: java-junit        # Format of test results
         continue-on-error: true  	
 
@@ -86,7 +86,7 @@ jobs:
         if: success() || failure()    # run this step even if previous step failed
         with:
           name: tests-windows           # Name of the check run which will be created
-          path: build/tests/*.xml    # Path to test results
+          path: build/core/tests/*.xml    # Path to test results
           reporter: java-junit        # Format of test results
         continue-on-error: true  	
         
