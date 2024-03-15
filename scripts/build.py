@@ -5,8 +5,6 @@ import install_deps
 
 mono_url_path = "https://download.mono-project.com/archive/6.12.0/windows-installer/mono-6.12.0.199-x64-0.msi"
 
-
-
 class Cmd:
     def __init__(self, cmd: str):
         self.cmd = cmd

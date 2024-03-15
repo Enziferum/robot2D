@@ -81,7 +81,7 @@ namespace editor {
     void CameraManipulator::onMousePressed(const robot2D::Event& event) {
         if(event.type == robot2D::Event::MousePressed) {
             m_leftMousePressed = true;
-            robot2D::vec2f pressedPoint{event.mouse.x, event.mouse.y};
+            robot2D::vec2f pressedPoint{static_cast<float>(event.mouse.x), static_cast<float>(event.mouse.y)};
             pressedPoint = m_camera -> convertPixelToCoords(pressedPoint);
 
 

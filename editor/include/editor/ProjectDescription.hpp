@@ -31,7 +31,7 @@ namespace editor {
 
 
         bool empty() const {
-            bool res = (name.empty() and path.empty());
+            bool res = (name.empty() && path.empty());
             return res;
         }
 

@@ -34,7 +34,7 @@ namespace editor {
     }
 
     Animation* AnimationManager::getAnimation(const std::string& name) const {
-
+        return nullptr;
     }
 
 

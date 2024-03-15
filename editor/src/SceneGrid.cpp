@@ -27,7 +27,7 @@ source distribution.
 namespace editor {
 
     const std::string gridVertexShader = R"(
-        #version 450 core
+        #version 410 core
         layout (location = 0) in vec2 Position;
         layout (location = 1) in vec2 TexCoord;
 
@@ -113,7 +113,7 @@ namespace editor {
 
     void SceneGrid::render(robot2D::vec2i size) const{
         m_shader.use();
-        m_shader.set("u_resolution", robot2D::vec2f{size.x, size.y});
+        m_shader.set("u_resolution", robot2D::vec2f{static_cast<float>(size.x), static_cast<float>(size.y)});
 
         m_vertexArray -> getVertexBuffer() -> setData(m_vertices.data(), sizeof(GridVertex) * m_vertices.size());
         m_vertexArray -> Bind();

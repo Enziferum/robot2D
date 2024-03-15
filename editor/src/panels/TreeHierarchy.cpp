@@ -282,7 +282,7 @@ namespace editor {
                 item_curr_idx_to_focus = m_multiSelection.processDeletionPreLoop(ms_io, m_items);
 
             for(auto item: m_items) {
-                ImGuiTreeNodeFlags node_flags = m_tree_base_flags;
+                ImGuiTreeNodeFlags node_flags = m_tree_base_flags | ImGuiTreeNodeFlags_FramePadding;
 
                 if(item -> hasChildrens()) {
                     node_flags |=  ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_DefaultOpen;
@@ -310,7 +310,20 @@ namespace editor {
                 bool node_open = false;
 
                 const char* itemName = item -> m_name -> c_str();
-                node_open = ImGui::TreeNodeEx(itemName, node_flags);
+
+                {
+                    auto currContext = ImGui::GetCurrentContext();
+                    auto style = currContext -> Style;
+
+                    /// TODO(a.raag): move from hardcode to calculations
+                    float TreeNodeFramePaddingY = 6;
+
+                    /// TODO(a.raag): Make some ScopedStyleVar
+                    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{style.FramePadding.x, TreeNodeFramePaddingY});
+                    /// TODO(a.raag): check correctness of using id as ptr_id
+                    node_open = ImGui::TreeNodeEx(static_cast<void*>(&uuid), node_flags, "%s" , itemName);
+                    ImGui::PopStyleVar();
+                }
 
 
                 if (item_curr_idx_to_focus == item)
@@ -403,7 +416,7 @@ namespace editor {
                 ImGui::SameLine();
             }
 
-            ImGuiTreeNodeFlags child_node_flags = m_tree_base_flags;
+            ImGuiTreeNodeFlags child_node_flags = m_tree_base_flags | ImGuiTreeNodeFlags_FramePadding;
             if(child -> hasChildrens()) {
                 child_node_flags |=  ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_DefaultOpen;
             }
@@ -417,9 +430,21 @@ namespace editor {
 
             auto childUUID = child -> m_id;
             ImGui::PushID(static_cast<void*>(&childUUID));
+            bool childOpen = false;
             ImGui::SetNextItemSelectionUserData(static_cast<ImGuiSelectionUserData>(childUUID));
+            {
+                auto currContext = ImGui::GetCurrentContext();
+                auto style = currContext -> Style;
 
-            bool childOpen = ImGui::TreeNodeEx(child -> m_name -> c_str(), child_node_flags);
+                /// TODO(a.raag): move from hardcode to calculations
+                float TreeNodeFramePaddingY = 6;
+
+                /// TODO(a.raag): Make some ScopedStyleVar
+                ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{style.FramePadding.x, TreeNodeFramePaddingY});
+                /// TODO(a.raag): check correctness of using id as ptr_id
+                childOpen = ImGui::TreeNodeEx(static_cast<void*>(&childUUID), child_node_flags, "%s" , child -> m_name -> c_str());
+                ImGui::PopStyleVar();
+            }
 
             /// TODO(a.raag): recursive doNode
             if(ImGui::IsMouseReleased(ImGuiMouseButton_Left)
@@ -430,7 +455,7 @@ namespace editor {
             if(ImGui::BeginDragDropSource()) {
                 ImGui::SetDragDropPayload(m_playloadIdentifier.c_str(),
                                           &child -> m_id, sizeof(child -> m_id));
-                ImGui::Text(child -> m_name -> c_str());
+                ImGui::Text("%s", child -> m_name -> c_str());
                 ImGui::EndDragDropSource();
             }
 
