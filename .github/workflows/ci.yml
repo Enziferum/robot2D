@@ -15,59 +15,83 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    
       - uses: actions/checkout@v3
 
-      - name: install cpplint
-        run: python3 -m pip install cpplint
-
-      - name: Create linter folder
-        run: mkdir ${{github.workspace}}/linter
-
-      - name: Lint
-        run: python3 -m cpplint --recursive --output=junit ${{github.workspace}}/engine 2> ${{github.workspace}}/linter/output.xml
-        continue-on-error: true
-
-      - name: Download dependencies
-        run: python3 ${{github.workspace}}/scripts/install_deps.py
+      - name: Install dependencies
+        run: python3 ${{github.workspace}}/scripts/install_deps.py --mode 2
 
       - name: Configure CMake
-        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DBUILD_EDITOR=OFF 
+        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DRB2D_BUILD_CORE_TESTS=ON
 
       - name: Engine Build
-        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
+        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target robot2D --target robot2D-core-tests -- -j 2
+
+      - name: Run Core's tests
+        run: ctest --output-junit engine_tests.xml --output-on-failure --test-dir ${{github.workspace}}/build/core/tests
+        continue-on-error: true
+        
+      - name: Test Report
+        uses: dorny/test-reporter@v1
+        if: success() || failure()    # run this step even if previous step failed
+        with:
+          name: tests-ubuntu            # Name of the check run which will be created
+          path: build/core/tests/*.xml    # Path to test results
+          reporter: java-junit        # Format of test results
+        continue-on-error: true  	
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
         with:
-            name: linux-assets
-            path: ${{github.workspace}}/linter
+          name: linux-assets
+          path: ${{github.workspace}}/linter
 
-  build-macos:
-    runs-on: macos-latest
+  build-windows:
+    env: 
+      glfw3_DIR: 'C:\Program Files\GLFW\lib\cmake\glfw3'
+      spdlog_DIR: 'C:\Program Files\spdlog\lib\cmake\spdlog'      
+    runs-on: windows-latest
+
     steps:
+    
       - uses: actions/checkout@v3
 
-      - name: install cpplint
-        run: python3 -m pip install cpplint
-
       - name: Create linter folder
-        run: mkdir ${{github.workspace}}/linter
-
-      - name: Lint
-        run: python3 -m cpplint --recursive --output=junit ${{github.workspace}}/engine 2> ${{github.workspace}}/linter/output.xml
-        continue-on-error: true
-
-      - name: Download dependencies
-        run: python3 ${{github.workspace}}/scripts/install_deps.py
-
+        run: mkdir ${{github.workspace}}\linter
+        shell: cmd
+        
+      - name: Install dependencies
+        run: python3 ${{github.workspace}}/scripts/install_deps.py --mode 2 --wincompiler 2 --winvsversion 2
+        shell: cmd
+        
+      - name: Setup Mono
+        run: |
+          choco install mono
+      
       - name: Configure CMake
-        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DBUILD_EDITOR=OFF
+        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DRB2D_BUILD_CORE_TESTS=ON
+        shell: cmd
 
       - name: Engine Build
-        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}}
-
+        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target robot2D --target robot2D-core-tests
+        shell: cmd
+        
+      - name: Run Core's tests
+        run: ctest --output-junit engine_tests.xml --output-on-failure --test-dir ${{github.workspace}}/build/core/tests
+        continue-on-error: true
+        shell: cmd
+        
+      - name: Test Report
+        uses: dorny/test-reporter@v1
+        if: success() || failure()    # run this step even if previous step failed
+        with:
+          name: tests-windows           # Name of the check run which will be created
+          path: build/core/tests/*.xml    # Path to test results
+          reporter: java-junit        # Format of test results
+        continue-on-error: true  	
+        
       - name: Upload artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: macos-assets
+          name: windows-assets
           path: ${{github.workspace}}/linter

@@ -55,8 +55,19 @@
          Other similar extension points exist, see Microsoft.Common.targets.
     <Target Name="BeforeBuild">
     </Target>
-    <Target Name="AfterBuild">
-    </Target>
     -->
+    <Target Name="CustomAfterBuild" AfterTargets="Build">
+        <PropertyGroup>
+            <AfterOutputPath>../../../../cmake-build-$([System.String]::Copy('$(Configuration)').ToLower())/editor/res/script/</AfterOutputPath>
+        </PropertyGroup>
+        <ItemGroup>
+            <_FilesToCopy Include="bin\$(Configuration)\*"/>
+        </ItemGroup>
+            <Message Importance="high" Text="Want _FilesToCopy: @(_FilesToCopy)"/>
 
+            <Message Importance="high" Text="DestFiles: @(_FilesToCopy->'$(AfterOutputPath)%(RecursiveDir)%(Filename)%(Extension)')"/>
+            <Copy SourceFiles="@(_FilesToCopy)"
+                  DestinationFiles=
+                          "@(_FilesToCopy->'$(AfterOutputPath)%(RecursiveDir)%(Filename)%(Extension)')"/>
+    </Target>
 </Project>

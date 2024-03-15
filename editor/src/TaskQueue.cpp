@@ -46,12 +46,16 @@ namespace editor {
             using namespace std::chrono_literals;
 
             std::unique_lock<std::mutex> lock(m_inputMutex);
-            data_cond.wait(lock, [this]{ return !m_inputTasksQueue.empty(); });
+            data_cond.wait(lock, [this] {
+                return !m_inputTasksQueue.empty()
+                       || !m_running.load(std::memory_order::memory_order_relaxed);
+            });
 
             auto task = m_inputTasksQueue.front();
-            m_inputTasksQueue.pop();
-            if(!task)
+            if (!task)
                 continue;
+
+            m_inputTasksQueue.pop();
 
             task -> execute();
 
@@ -77,9 +81,10 @@ namespace editor {
 
     void TaskQueue::stop() {
         m_running.store(false, std::memory_order::memory_order_relaxed);
-
-        data_cond.notify_all();
-        std::unique_lock<std::mutex> lock(m_inputMutex);
+        {
+            std::unique_lock<std::mutex> lock(m_inputMutex);
+            data_cond.notify_all();
+        }
 
         if(m_thread.joinable())
             m_thread.join();

@@ -200,7 +200,7 @@ namespace editor {
     }
 
     bool EditorCache::isShowInspector() const {
-        return m_showInspector or m_currentDescription.empty();
+        return m_showInspector || m_currentDescription.empty();
     }
 
     const EditorCacheError& EditorCache::getError() const {

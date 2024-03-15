@@ -84,7 +84,7 @@ namespace editor {
             auto ptr = std::make_unique<FunctionWrapper<Callback, CallbackFuncArg>>(std::forward<Callback>(callback));
             if(!ptr)
                 return;
-            m_functions.template emplace(std::pair<robot2D::Message::ID,
+            m_functions.emplace(std::pair<robot2D::Message::ID,
                             IFunction::Ptr>(messageId, std::move(ptr)));
         }
 

@@ -51,7 +51,7 @@ namespace editor {
         virtual void handleEvents(const robot2D::Event& event) = 0;
         virtual void update(robot2D::vec2f mousePos, float deltaTime) = 0;
 
-        virtual robot2D::vec2f convertPixelToCoords(robot2D::vec2f mousePos) const {}
+        virtual robot2D::vec2f convertPixelToCoords(robot2D::vec2f mousePos) const { return robot2D::vec2f{}; }
         void setFrameBuffer(robot2D::FrameBuffer::Ptr ptr) { m_framebuffer = ptr; }
         void setViewportBounds(robot2D::vec2f bounds) { m_bounds = bounds; }
 

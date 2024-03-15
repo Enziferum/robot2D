@@ -40,8 +40,30 @@ source distribution.
 #include "editor/async/ExportTask.hpp"
 
 
+#ifdef ROBOT2D_WINDOWS
+    #include <windows.h>    //GetModuleFileNameW
+#else
+    #include <climits>
+    #include <unistd.h>     //readlink
+#endif
+
+
+
+
 namespace {
     const std::string scenePath = "assets/scenes";
+
+    std::filesystem::path get_exec_path() {
+    #ifdef ROBOT2D_WINDOWS
+            wchar_t path[MAX_PATH] = { 0 };
+            GetModuleFileNameW(NULL, path, MAX_PATH);
+            return path;
+    #else
+            char result[PATH_MAX];
+            ssize_t count = readlink("/proc/self/exe", result, PATH_MAX);
+            return std::string(result, (count > 0) ? count : 0);
+    #endif
+    }
 }
 
 namespace editor {
@@ -82,6 +104,10 @@ namespace editor {
             else
                 animator.Stop(animationComponent.getAnimation() -> name);
         });
+
+
+        m_messageDispatcher.onMessage<GenerateProjectMessage>(MessageID::GenerateProject,
+                                                              BIND_CLASS_FN(generateProject));
     }
 
 
@@ -710,6 +736,33 @@ namespace editor {
 
     robot2D::ecs::Entity EditorLogic::duplicateRuntime(robot2D::ecs::Entity entity, robot2D::vec2f position) {
         return m_activeScene -> duplicateRuntime(entity, position);
+    }
+
+    void EditorLogic::generateProject(const GenerateProjectMessage& message) {
+        std::string genCmd;
+#ifdef ROBOT2D_WINDOWS
+        genCmd = "python res/gen/gen_project.py";
+#else
+        genCmd = "python3 res/gen/gen_project.py";
+#endif
+        genCmd += " --path " + message.genPath;
+        genCmd += " --name " + m_currentProject -> getName();
+        genCmd += " --copypath " + m_currentProject -> getPath() + "/assets/scripts/bin/";
+        auto exePath = get_exec_path();
+        exePath = exePath.remove_filename();
+        genCmd += " --coredllpath " + exePath.string() + "res/script/robot2D_ScriptCore.dll";
+
+        RB_EDITOR_INFO("EditorLogic: command to generate robot2D's script's project {0}", genCmd);
+
+        /// TODO(a.raag): GenerateProjectTask + Popup
+        auto f= std::async([genCmd](){
+            if(std::system(genCmd.c_str())) {
+                /// nice
+            }
+            else {
+                /// TODO(a.raag): ShowError
+            }
+        });
     }
 
 
