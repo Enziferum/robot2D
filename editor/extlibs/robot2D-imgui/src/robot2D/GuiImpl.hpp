@@ -21,8 +21,38 @@ source distribution.
 
 #pragma once
 
-#include <imgui/imgui.h>
+#include <array>
+#include <memory>
 
-namespace ImGui {
-    ImTextureID convertTextureHandle(const unsigned int& handle);
-} // namespace ImGui
+#include <imgui/imgui.h>
+#include <robot2D/Graphics/RenderWindow.hpp>
+#include "Render.hpp"
+
+namespace robot2D::priv {
+
+    class GuiImpl {
+    public:
+        GuiImpl();
+        GuiImpl(const GuiImpl& other)=delete;
+        GuiImpl& operator=(const GuiImpl& other)=delete;
+        GuiImpl(GuiImpl&& other)=delete;
+        GuiImpl& operator=(GuiImpl&& other)=delete;
+        ~GuiImpl() noexcept;
+
+        void setup(robot2D::Window& window);
+        void setCustomFont();
+        void handleEvents(const robot2D::Event& event);
+        void update(float dt);
+        void render();
+    private:
+        void shutdown();
+        void updateMouseCursor();
+    private:
+        robot2D::Window* m_window;
+        std::array<robot2D::Cursor, ImGuiMouseCursor_COUNT> m_cursors;
+        std::array<bool, 3> m_mousePressed;
+
+        bool m_windowHasFocus;
+        GuiRender m_render;
+    };
+} // namespace robot2D

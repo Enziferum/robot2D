@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2024
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -25,10 +25,13 @@ source distribution.
 #include <memory>
 
 #include <imgui/imgui.h>
-#include <robot2D/Graphics/RenderWindow.hpp>
-#include "Render.hpp"
+#include <robot2D/Core/Window.hpp>
 
 namespace robot2D {
+
+    namespace priv {
+        class GuiImpl;
+    }
 
     class Gui {
     public:
@@ -40,19 +43,10 @@ namespace robot2D {
         ~Gui() noexcept;
 
         void setup(robot2D::Window& window);
-        void setCustomFont();
         void handleEvents(const robot2D::Event& event);
         void update(float dt);
         void render();
     private:
-        void shutdown();
-        void updateMouseCursor();
-    private:
-        robot2D::Window* m_window;
-        std::array<robot2D::Cursor, ImGuiMouseCursor_COUNT> m_cursors;
-        std::array<bool, 3> m_mousePressed;
-
-        bool m_windowHasFocus;
-        GuiRender m_render;
+        std::unique_ptr<priv::GuiImpl> m_impl{nullptr};
     };
 } // namespace robot2D
