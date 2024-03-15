@@ -154,3 +154,5 @@ namespace robot2D::Sugar {
 #define imgui_CollapsingHeader(...) if (ImGui::CollapsingHeader(__VA_ARGS__))
 #define imgui_MenuItem(...) if (ImGui::MenuItem(__VA_ARGS__))
 #define imgui_Button(...) if (ImGui::Button(__VA_ARGS__))
+#define imgui_InputText(...) if(robot2D::InputText(__VA_ARGS__))
+#define imgui_Text(text) ImGui::Text("%s", text)
