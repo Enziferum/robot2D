@@ -24,6 +24,7 @@ source distribution.
 
 #include <robot2D/Util/Logger.hpp>
 #include <robot2D/imgui/Api.hpp>
+#include <imgui/imgui_internal.h>
 #include <robot2D/Core/Mouse.hpp>
 
 #include <editor/FileApi.hpp>
@@ -78,6 +79,26 @@ namespace editor {
             }
         }
 
+
+        bool BeginDrapDropTargetWindow(const char* payload_type)
+        {
+            using namespace ImGui;
+            ImRect inner_rect = GetCurrentWindow() -> InnerRect;
+            if (BeginDragDropTargetCustom(inner_rect, GetID("##WindowBgArea")))
+                if (const ImGuiPayload* payload = AcceptDragDropPayload(payload_type, ImGuiDragDropFlags_AcceptBeforeDelivery | ImGuiDragDropFlags_AcceptNoDrawDefaultRect))
+                {
+                    if (payload->IsPreview())
+                    {
+                        ImDrawList* draw_list = GetForegroundDrawList();
+                        draw_list->AddRectFilled(inner_rect.Min, inner_rect.Max, GetColorU32(ImGuiCol_DragDropTarget, 0.05f));
+                        draw_list->AddRect(inner_rect.Min, inner_rect.Max, GetColorU32(ImGuiCol_DragDropTarget), 0.0f, 0, 2.0f);
+                    }
+                    if (payload->IsDelivery())
+                        return true;
+                    EndDragDropTarget();
+                }
+            return false;
+        }
     }
 
     AssetsPanel::AssetsPanel(robot2D::MessageBus& messageBus,
@@ -107,7 +128,7 @@ namespace editor {
 
     void AssetsPanel::render() {
         const float cellSize = m_configuration.m_thumbnaleSize + m_configuration.m_padding;
-        static bool anyItemIsHovered = false;
+        bool anyItemIsHovered = false;
 
         imgui_Window("Assets") {
             m_visible = ImGui::IsWindowHovered();
@@ -128,77 +149,93 @@ namespace editor {
             if(columnCount < 1)
                 columnCount = 1;
 
-            ImGui::Columns(columnCount, nullptr, false);
-
-            for(auto& directoryEntry: fs::directory_iterator(m_currentPath)) {
-                const auto& path = directoryEntry.path();
-                auto relativePath = fs::relative(path, m_assetsPath);
-                std::string filenameString = relativePath.filename().string();
-
-                ImGui::PushID(filenameString.c_str());
-                AssetsPanelConfiguration::ResourceIconType iconType = directoryEntry.is_directory() ?
-                                                                      AssetsPanelConfiguration::ResourceIconType::Directory:
-                                                                      AssetsPanelConfiguration::ResourceIconType::File;
-
-                if(!directoryEntry.is_directory()) {
-                    auto extension = relativePath.extension();
-                    iconType = resourceTypes[extension.string()];
+            if(is_directory(m_currentPath) && is_empty(m_currentPath)) {
+                if(BeginDrapDropTargetWindow("TreeNodeItem")) {
+                    auto* payload = ImGui::AcceptDragDropPayload("TreeNodeItem");
+                    UUID id = *static_cast<UUID*>(payload -> Data);
+                    auto entity = m_uiManager.getTreeItem(id);
+                    if(entity) {
+                        auto path = fs::relative(m_currentPath);
+                        bool ok = m_prefabManager.addPrefab(entity, path.string());
+                        if(!ok) {
+                            RB_EDITOR_ERROR("AssetPanel: Can't add prefab by path: {0}", path.string());
+                        }
+                    }
+                    ImGui::EndDragDropTarget();
                 }
+            }
+            else {
+                for(auto& directoryEntry: fs::directory_iterator(m_currentPath)) {
+                    const auto& path = directoryEntry.path();
+                    auto relativePath = fs::relative(path, m_assetsPath);
+                    std::string filenameString = relativePath.filename().string();
 
-                {
-                    robot2D::ScopedStyleColor scopedStyleColor(ImGuiCol_Button,
-                                                               robot2D::Color(255.f, 255.f, 255.f, 127.f));
+                    ImGui::PushID(filenameString.c_str());
+                    AssetsPanelConfiguration::ResourceIconType iconType = directoryEntry.is_directory() ?
+                                                                          AssetsPanelConfiguration::ResourceIconType::Directory:
+                                                                          AssetsPanelConfiguration::ResourceIconType::File;
 
-                    if(robot2D::ImageButton(m_assetsIcons[iconType], {m_configuration.m_thumbnaleSize,
-                                                                      m_configuration.m_thumbnaleSize})) {
-                        m_itemEditName.first = relativePath;
-                        m_itemEditName.second = true;
-
+                    if(!directoryEntry.is_directory()) {
                         auto extension = relativePath.extension();
-                        if(extension == ".prefab") {
-                            auto* msg =
-                                    m_messageBus.postMessage<PrefabAssetPressedMessage>(MessageID::PrefabAssetPressed);
-                            msg -> localPath = relativePath.string();
+                        iconType = resourceTypes[extension.string()];
+                    }
+
+                    {
+                        robot2D::ScopedStyleColor scopedStyleColor(ImGuiCol_Button,
+                                                                   robot2D::Color(255.f, 255.f, 255.f, 127.f));
+
+                        if(robot2D::ImageButton(m_assetsIcons[iconType], {m_configuration.m_thumbnaleSize,
+                                                                          m_configuration.m_thumbnaleSize})) {
+                            m_itemEditName.first = relativePath;
+                            m_itemEditName.second = true;
+
+                            auto extension = relativePath.extension();
+                            if(extension == ".prefab") {
+                                auto* msg =
+                                        m_messageBus.postMessage<PrefabAssetPressedMessage>(MessageID::PrefabAssetPressed);
+                                msg -> localPath = relativePath.string();
+                            }
+
+                        }
+                        if(ImGui::IsItemClicked(robot2D::mouse2int(robot2D::Mouse::MouseRight))) {
+                            ImGui::OpenPopup("##Delete");
+                            m_itemClicked = true;
+                            m_itemEditName.second = false;
                         }
 
-                    }
-                    if(ImGui::IsItemClicked(robot2D::mouse2int(robot2D::Mouse::MouseRight))) {
-                        ImGui::OpenPopup("##Delete");
-                        m_itemClicked = true;
-                        m_itemEditName.second = false;
+                        itemDeletePopUp(directoryEntry, path);
                     }
 
-                    itemDeletePopUp(directoryEntry, path);
-                }
+                    processDragDrop(directoryEntry, relativePath);
 
-                processDragDrop(directoryEntry, relativePath);
-
-                if(ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
-                    if(directoryEntry.is_directory()) {
-                        m_currentPath /= path.filename();
-                        m_assetItems.clear();
+                    if(ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+                        if(directoryEntry.is_directory()) {
+                            m_currentPath /= path.filename();
+                            m_assetItems.clear();
+                        }
                     }
-                }
 
-                if(m_itemEditName.first == relativePath && m_itemEditName.second) {
-                    imgui_InputText("##ItemName", &filenameString, inputFlags) {
-                        auto rename_path = path;
-                        rename_path.replace_filename(filenameString);
-                        fs::rename(path, rename_path);
-                        m_itemEditName.second = false;
+                    if(m_itemEditName.first == relativePath && m_itemEditName.second) {
+                        imgui_InputText("##ItemName", &filenameString, inputFlags) {
+                            auto rename_path = path;
+                            rename_path.replace_filename(filenameString);
+                            fs::rename(path, rename_path);
+                            m_itemEditName.second = false;
+                        }
                     }
-                }
-                else {
-                    ImGui::TextWrapped("%s", filenameString.c_str());
-                }
+                    else {
+                        ImGui::TextWrapped("%s", filenameString.c_str());
+                    }
 
-                if(ImGui::IsItemHovered() || ImGui::IsItemFocused()) {
-                    anyItemIsHovered = true;
-                }
+                    if(ImGui::IsItemHovered() || ImGui::IsItemFocused()) {
+                        anyItemIsHovered = true;
+                    }
 
-                ImGui::NextColumn();
-                ImGui::PopID();
+                    ImGui::PopID();
+                }
             }
+
+
 
             if(ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !anyItemIsHovered) {
                 m_itemEditName.second = false;
@@ -210,24 +247,22 @@ namespace editor {
         }
     }
 
+
     void AssetsPanel::processDragDrop(const std::filesystem::directory_entry& directoryEntry,
                                       std::filesystem::path& relativePath) {
 
-        imgui_DragDropTarget {
+        if(BeginDrapDropTargetWindow("TreeNodeItem")) {
             auto* payload = ImGui::AcceptDragDropPayload("TreeNodeItem");
-            if(payload) {
-                if(payload -> IsDataType("TreeNodeItem")) {
-                    UUID id = *static_cast<UUID*>(payload -> Data);
-                    auto entity = m_uiManager.getTreeItem(id);
-                    if(entity) {
-                        auto path = fs::relative(m_assetsPath);
-                        bool ok = m_prefabManager.addPrefab(entity, path.string());
-                        if(!ok) {
-                            RB_EDITOR_ERROR("AssetPanel: Can't add prefab by path: {0}", path.string());
-                        }
-                    }
+            UUID id = *static_cast<UUID*>(payload -> Data);
+            auto entity = m_uiManager.getTreeItem(id);
+            if(entity) {
+                auto path = fs::relative(m_assetsPath);
+                bool ok = m_prefabManager.addPrefab(entity, path.string());
+                if(!ok) {
+                    RB_EDITOR_ERROR("AssetPanel: Can't add prefab by path: {0}", path.string());
                 }
             }
+            ImGui::EndDragDropTarget();
         }
 
 
