@@ -23,6 +23,7 @@ source distribution.
 #include <sstream>
 #include <filesystem>
 #include <yaml-cpp/yaml.h>
+#include <robot2D/Util/Logger.hpp>
 #include <editor/EditorCache.hpp>
 
 namespace editor {
@@ -58,10 +59,12 @@ namespace editor {
             return false;
         }
 
-        for(auto it: projects) {
+        for(auto proj: projects) {
             ProjectDescription currentProject;
-            currentProject.path = it["Path"].as<std::string>();
-            currentProject.name = it["Name"].as<std::string>();
+
+            currentProject.path = proj["Path"].as<std::string>();
+            currentProject.name = proj["Name"].as<std::string>();
+
             m_cacheDescriptions.emplace_back(currentProject);
         }
 
@@ -169,12 +172,12 @@ namespace editor {
         m_cacheDescriptions.clear();
 
         for(auto project: data["Projects"]) {
-            ProjectDescription it;
-            it.path = project["Path"].as<std::string>();
-            it.name = project["Name"].as<std::string>();
-            if (it.path == description.path)
+            ProjectDescription desc;
+            desc.path = project["Path"].as<std::string>();
+            desc.name = project["Name"].as<std::string>();
+            if (desc.path == description.path)
                 continue;
-            m_cacheDescriptions.emplace_back(std::move(it));
+            m_cacheDescriptions.emplace_back(std::move(desc));
         }
 
         auto version = data["Robot2D Editor"].as<std::string>();
@@ -189,7 +192,7 @@ namespace editor {
         }
         out << YAML::EndSeq;
         if(description.path != m_currentDescription.path)
-            out << YAML::Key << "CurrentProject" << YAML::Value << m_currentDescription.path;
+           out << YAML::Key << "CurrentProject" << YAML::Value << m_currentDescription.path;
         out << YAML::Key << "ShowInspector" << YAML::Value << m_showInspector;
         out << YAML::EndMap;
 

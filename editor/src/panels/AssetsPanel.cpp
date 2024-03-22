@@ -150,7 +150,7 @@ namespace editor {
                 columnCount = 1;
 
             if(is_directory(m_currentPath) && is_empty(m_currentPath)) {
-                if(BeginDrapDropTargetWindow("TreeNodeItem")) {
+               /* if(BeginDrapDropTargetWindow("TreeNodeItem")) {
                     auto* payload = ImGui::AcceptDragDropPayload("TreeNodeItem");
                     UUID id = *static_cast<UUID*>(payload -> Data);
                     auto entity = m_uiManager.getTreeItem(id);
@@ -162,7 +162,7 @@ namespace editor {
                         }
                     }
                     ImGui::EndDragDropTarget();
-                }
+                }*/
             }
             else {
                 for(auto& directoryEntry: fs::directory_iterator(m_currentPath)) {
@@ -251,19 +251,19 @@ namespace editor {
     void AssetsPanel::processDragDrop(const std::filesystem::directory_entry& directoryEntry,
                                       std::filesystem::path& relativePath) {
 
-        if(BeginDrapDropTargetWindow("TreeNodeItem")) {
-            auto* payload = ImGui::AcceptDragDropPayload("TreeNodeItem");
-            UUID id = *static_cast<UUID*>(payload -> Data);
-            auto entity = m_uiManager.getTreeItem(id);
-            if(entity) {
-                auto path = fs::relative(m_assetsPath);
-                bool ok = m_prefabManager.addPrefab(entity, path.string());
-                if(!ok) {
-                    RB_EDITOR_ERROR("AssetPanel: Can't add prefab by path: {0}", path.string());
-                }
-            }
-            ImGui::EndDragDropTarget();
-        }
+        //if(BeginDrapDropTargetWindow("TreeNodeItem")) {
+        //    auto* payload = ImGui::AcceptDragDropPayload("TreeNodeItem");
+        //    UUID id = *static_cast<UUID*>(payload -> Data);
+        //    auto entity = m_uiManager.getTreeItem(id);
+        //    if(entity) {
+        //        auto path = fs::relative(m_assetsPath);
+        //        bool ok = m_prefabManager.addPrefab(entity, path.string());
+        //        if(!ok) {
+        //            RB_EDITOR_ERROR("AssetPanel: Can't add prefab by path: {0}", path.string());
+        //        }
+        //    }
+        //    ImGui::EndDragDropTarget();
+        //}
 
 
         imgui_DragDropSource() {

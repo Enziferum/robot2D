@@ -30,8 +30,12 @@ namespace editor {
 
     bool ProjectManager::add(const ProjectDescription& description) {
         Project::Ptr project = std::make_shared<Project>();
-        project -> setPath(description.path);
-        project -> setName(description.name);
+        
+        std::string path = description.path;
+        std::string name = description.name;
+
+        project -> setPath(path);
+        project -> setName(name);
         {
             auto [status, result] = m_configuration.getValue(ConfigurationKey::Version);
             project->setEditorVersion(result);
@@ -42,15 +46,13 @@ namespace editor {
         }
 
         auto [status, extension] = m_configuration.getValue(ConfigurationKey::ProjectExtension);
-        auto fullname = description.name + extension;
-        auto fullPath = addFilename(description.path, fullname);
+        auto fullname = name + extension;
+        auto fullPath = addFilename(path, fullname);
 
-        if(!ProjectSerializer(project).serialize(fullPath)) {
+       if(!ProjectSerializer(project).serialize(fullPath)) {
             m_error = ProjectManagerError::ProjectSerialize;
             return false;
-        }
-
-        auto path = project -> getPath();
+       }
 
         if(!createDirectory(path, "assets")) {
             m_error = ProjectManagerError::CreateFolder;
@@ -77,8 +79,15 @@ namespace editor {
         m_currentProject = std::make_shared<Project>();
         ProjectSerializer serializer(m_currentProject);
         auto [status, extension] = m_configuration.getValue(ConfigurationKey::ProjectExtension);
-        auto fullname = description.name + extension;
-        auto fullPath = combinePath(description.path, fullname);
+        if (!status)
+            return false;
+
+        std::string path = description.path;
+        std::string name = description.name;
+
+
+        auto fullname = name + extension;
+        auto fullPath = combinePath(path, fullname);
 
         if(!serializer.deserialize(fullPath)) {
             m_error = ProjectManagerError::ProjectDeserialize;
@@ -89,7 +98,7 @@ namespace editor {
     }
 
     bool ProjectManager::remove(const ProjectDescription& description) {
-        if(!deleteDirectory(description.path)) {
+        if (!deleteDirectory(description.path)) {
             m_error = ProjectManagerError::RemoveFolder;
             return false;
         }

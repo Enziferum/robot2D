@@ -23,6 +23,8 @@ source distribution.
 #include <string>
 #include <robot2D/Core/Message.hpp>
 #include <robot2D/Ecs/Entity.hpp>
+
+#include "Buffer.hpp"
 #include "Uuid.hpp"
 #include "ProjectDescription.hpp"
 
@@ -60,74 +62,152 @@ namespace editor {
 
     struct ProjectMessage {
         ProjectDescription description;
+
+        void unpack(void* rawBuffer) {
+            Buffer buffer{ rawBuffer };
+            StringBuffer str_buff1;
+            StringBuffer str_buff2;
+            buffer.unpackFromBuffer(str_buff1);
+            buffer.unpackFromBuffer(str_buff2);
+
+            description.name = str_buff1.as_str();
+            description.path = str_buff2.as_str();
+        }
     };
 
     struct ShowInspectorMessage {
         bool showAlways;
+
+        void unpack(void* rawBuffer) {}
     };
 
     struct MenuProjectMessage {
         std::string path;
+
+        void unpack(void* rawBuffer) {
+            Buffer buffer{ rawBuffer };
+            StringBuffer str_buff1;
+            buffer.unpackFromBuffer(str_buff1);
+            path = str_buff1.as_str();
+        }
     };
 
     struct EntitySelection {
         uint32_t entityID;
+
+        void unpack(void* rawBuffer) {}
     };
 
     struct EntityDuplication {
         UUID entityID;
+
+        void unpack(void* rawBuffer) {}
     };
 
     struct EntityRemovement {
         UUID entityID;
+
+        void unpack(void* rawBuffer) {}
     };
 
     struct EntityRestorement {
         UUID entityID;
+
+        void unpack(void* rawBuffer) {}
     };
 
     struct ToolbarMessage {
         int pressedType;
+
+        void unpack(void* rawBuffer) {}
     };
 
     struct OpenSceneMessage {
         std::string path;
+
+        void unpack(void* rawBuffer) {
+            Buffer buffer{ rawBuffer };
+            StringBuffer str_buff1;
+            buffer.unpackFromBuffer(str_buff1);
+            path = str_buff1.as_str();
+        }
     };
 
     struct CreateSceneMessage {
         std::string path;
+
+        void unpack(void* rawBuffer) {
+            Buffer buffer{ rawBuffer };
+            StringBuffer str_buff1;
+            buffer.unpackFromBuffer(str_buff1);
+            path = str_buff1.as_str();
+        }
     };
 
     struct UndoRedoMessage{};
 
     struct GenerateProjectMessage{
         std::string genPath;
+
+        void unpack(void* rawBuffer) {
+            Buffer buffer{ rawBuffer };
+            StringBuffer str_buff1;
+            buffer.unpackFromBuffer(str_buff1);
+            genPath = str_buff1.as_str();
+        }
     };
 
     struct ExportProjectMessage{
         std::string startSceneID;
+
+        void unpack(void* rawBuffer) {
+            Buffer buffer{ rawBuffer };
+            StringBuffer str_buff1;
+            buffer.unpackFromBuffer(str_buff1);
+            startSceneID = str_buff1.as_str();
+        }
     };
 
     struct PanelEntitySelectedMessage {
         robot2D::ecs::Entity entity;
+
+        void unpack(void* rawBuffer) {}
     };
 
     struct PrefabLoadMessage {
         std::string path;
+
+        void unpack(void* rawBuffer) {
+            Buffer buffer{ rawBuffer };
+            StringBuffer str_buff1;
+            buffer.unpackFromBuffer(str_buff1);
+            path = str_buff1.as_str();
+        }
     };
 
     struct PrefabAssetPressedMessage {
         std::string localPath;
+
+        void unpack(void* rawBuffer) {
+            Buffer buffer{ rawBuffer };
+            StringBuffer str_buff1;
+            buffer.unpackFromBuffer(str_buff1);
+            localPath = str_buff1.as_str();
+        }
     };
 
     struct PrefabAssetModificatedMessage {
         UUID prefabUUID;
         robot2D::ecs::Entity prefabEntity;
+
+        void unpack(void* rawBuffer) {}
     };
 
 
     struct TileElementSelectedMessage {
         robot2D::vec2i tileIndex;
+
+        void unpack(void* rawBuffer) {}
     };
 
     struct AnimationPlayMessage {
@@ -136,6 +216,8 @@ namespace editor {
             Play = 0,
             Stop = 1
         } mode;
+
+        void unpack(void* rawBuffer) {}
     };
 
     struct InstrumentMessage {
@@ -144,5 +226,7 @@ namespace editor {
             Scale,
             Rotate
         } type;
+
+        void unpack(void* rawBuffer) {}
     };
 }

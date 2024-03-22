@@ -23,12 +23,32 @@ source distribution.
 #include <imgui/imgui.h>
 #include <imgui/imgui_internal.h>
 
+#include <robot2D/imgui/Sugar.hpp>
 #include <robot2D/Config.hpp>
 #include <editor/ProjectInspector.hpp>
 #include <editor/Messages.hpp>
 #include <editor/FiledialogAdapter.hpp>
+#include <editor/Buffer.hpp>
+
 
 namespace editor {
+
+    std::vector<std::string> split(const std::string& str, std::string separator) {
+        std::vector<std::string> res;
+        const auto sepSize = separator.size();
+        std::string::size_type start{ 0 }, end;
+
+        while ((end = str.find(separator, start)) != std::string::npos) {
+            res.emplace_back(str.substr(start, end - start));
+            start = end + sepSize;
+        }
+
+        res.emplace_back(str.substr(start));
+
+        return res;
+    }
+
+
 
     ProjectInspector::ProjectInspector(robot2D::MessageBus& messageBus):
     m_window{nullptr},
@@ -56,9 +76,8 @@ namespace editor {
         auto halfWidth = windowSize.x / 2;
         auto height = ImGui::GetContentRegionAvail().y;
 
-         if (ImGui::BeginListBox("##label", ImVec2(halfWidth, height)))
-        {
-            ImVec2 startPos{m_configuration.textOffset, m_configuration.textOffset};
+        imgui_ListBox("##label", ImVec2(halfWidth, height)) {
+            ImVec2 startPos{ m_configuration.textOffset, m_configuration.textOffset };
 
             for (int it = 0; it < m_descriptions.size(); ++it)
             {
@@ -67,31 +86,29 @@ namespace editor {
 
                 ImGui::PushID(it);
 
-                ImVec2 nameTextSize = font -> CalcTextSizeA(fontSize, halfWidth,
-                                                        halfWidth, description.name.c_str());
-                ImVec2 pathTextSize = font -> CalcTextSizeA(fontSize, halfWidth,
-                                                            halfWidth, description.path.c_str());
+                ImVec2 nameTextSize = font->CalcTextSizeA(fontSize, halfWidth, halfWidth, description.name.c_str());
+                ImVec2 pathTextSize = font->CalcTextSizeA(fontSize, halfWidth, halfWidth, description.path.c_str());
                 ImVec2 textSize = ImVec2(nameTextSize.x + pathTextSize.x + 2 * m_configuration.textOffset,
-                                         nameTextSize.y + pathTextSize.y + 2 * m_configuration.textOffset);
+                    nameTextSize.y + pathTextSize.y + 2 * m_configuration.textOffset);
 
                 if (ImGui::Selectable(itemid.c_str(), it == m_configuration.m_selectedItem,
-                                      m_configuration.selectableFlags,
-                                      ImVec2(textSize.x, textSize.y))) {
+                    m_configuration.selectableFlags,
+                    ImVec2(textSize.x, textSize.y))) {
                     m_configuration.m_selectedItem = it;
                     ImGui::OpenPopup(itemid.c_str());
                 }
 
-                if(ImGui::BeginPopup(itemid.c_str())) {
-                    if(ImGui::MenuItem("Load")) {
+                if (ImGui::BeginPopup(itemid.c_str())) {
+                    if (ImGui::MenuItem("Load")) {
                         loadProject(it);
                         ImGui::CloseCurrentPopup();
                     }
-                    if(ImGui::MenuItem("Remove from list")) {
+                    if (ImGui::MenuItem("Remove from list")) {
                         // TODO(a.raag): remove from cache
                         ImGui::CloseCurrentPopup();
                     }
 
-                    if(ImGui::MenuItem("Delete")) {
+                    if (ImGui::MenuItem("Delete")) {
                         deleteProject(it);
                         ImGui::CloseCurrentPopup();
                     }
@@ -99,20 +116,21 @@ namespace editor {
                 }
 
                 auto drawList = ImGui::GetWindowDrawList();
-                drawList -> AddText(font, fontSize, startPos, m_configuration.colID,
-                                    description.name.c_str(), nullptr, halfWidth);
+
+                drawList->AddText(font, fontSize, startPos, m_configuration.colID,
+                    description.name.c_str(), nullptr, halfWidth);
                 startPos.y += nameTextSize.y;
-                drawList -> AddText(font, fontSize, ImVec2(startPos.x, startPos.y + m_configuration.textOffset),
-                                    m_configuration.colID,
-                                    description.path.c_str(), nullptr, halfWidth);
+                drawList->AddText(font, fontSize, ImVec2(startPos.x, startPos.y + m_configuration.textOffset),
+                    m_configuration.colID,
+                    description.path.c_str(), nullptr, halfWidth);
 
                 startPos.y += pathTextSize.y + 3 * m_configuration.textOffset;
 
                 ImGui::Separator();
                 ImGui::PopID();
             }
-            ImGui::EndListBox();
         }
+
 
         ImGui::SameLine();
         ImGui::BeginGroup();
@@ -133,21 +151,6 @@ namespace editor {
         ImGui::End();
     }
 
-    std::vector<std::string> split(const std::string& str, std::string separator) {
-        std::vector<std::string> res;
-        const auto sepSize = separator.size();
-        std::string::size_type start{0}, end;
-
-        while((end = str.find(separator, start)) != std::string::npos) {
-            res.emplace_back(str.substr(start, end - start));
-            start = end + sepSize;
-        }
-
-        res.emplace_back(str.substr(start));
-
-        return res;
-    }
-
     void ProjectInspector::createProject() {
 
         std::string creationPath;
@@ -163,12 +166,16 @@ namespace editor {
 #endif
         auto pathComps = split(creationPath, separator);
 
-        ProjectDescription description;
-        description.name = pathComps[pathComps.size() - 1];
-        description.path = creationPath;
+        m_projectName = pathComps[pathComps.size() - 1];
+        m_projectPath = std::move(creationPath);
 
-        auto* msg = m_messageBus.postMessage<ProjectMessage>(MessageID::CreateProject);
-        msg -> description = description;
+      
+        int allocSize = StringBuffer::calcAllocSize(m_projectName) + StringBuffer::calcAllocSize(m_projectPath);
+        void* rawBuffer = m_messageBus.postMessage(MessageID::CreateProject, allocSize);
+
+        Buffer buffer{ rawBuffer };
+        pack_message_string(m_projectName, buffer);
+        pack_message_string(m_projectPath, buffer);
     }
 
     void ProjectInspector::addProject() {
@@ -184,28 +191,38 @@ namespace editor {
 #endif
         auto pathComps = split(addPath, separator);
 
-        ProjectDescription description;
-        description.name = pathComps[pathComps.size() - 1];
-        description.path = addPath;
+        m_projectName = pathComps[pathComps.size() - 1];
+        m_projectPath = std::move(addPath);
 
-        auto* msg = m_messageBus.postMessage<ProjectMessage>(MessageID::AddProject);
-        msg -> description = description;
+  
+        int allocSize = StringBuffer::calcAllocSize(m_projectName) + StringBuffer::calcAllocSize(m_projectPath);
+        void* rawBuffer = m_messageBus.postMessage(MessageID::AddProject, allocSize);
+
+        Buffer buffer{ rawBuffer };
+        pack_message_string(m_projectName, buffer);
+        pack_message_string(m_projectPath, buffer);
     }
 
     void ProjectInspector::loadProject(const unsigned int& index) {
-        auto* msg = m_messageBus.postMessage<ProjectMessage>(MessageID::LoadProject);
-        msg -> description = m_descriptions[index];
+        auto& desc = m_descriptions[index];
+        int allocSize = StringBuffer::calcAllocSize(desc.name) + StringBuffer::calcAllocSize(desc.path);
+        void* rawBuffer = m_messageBus.postMessage(MessageID::LoadProject, allocSize);
+        
+        Buffer buffer{ rawBuffer };
+        pack_message_string(desc.name, buffer);
+        pack_message_string(desc.path, buffer);
     }
 
     void ProjectInspector::deleteProject(const unsigned int& index) {
         assert(index < m_descriptions.size() && "Index out of Range");
         auto project = m_descriptions[index];
         m_descriptions.erase(m_descriptions.begin() + index);
-        auto* msg = m_messageBus.postMessage<ProjectMessage>(MessageID::DeleteProject);
-        msg -> description = project;
+        int allocSize = StringBuffer::calcAllocSize(project.name) + StringBuffer::calcAllocSize(project.path);
+        void* rawBuffer = m_messageBus.postMessage(MessageID::DeleteProject, allocSize);
+        
+        Buffer buffer{ rawBuffer };
+        pack_message_string(project.name, buffer);
+        pack_message_string(project.path, buffer);
     }
-
-
-
 }
 

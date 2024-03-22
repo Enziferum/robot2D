@@ -29,6 +29,7 @@ source distribution.
 #include <editor/Messages.hpp>
 #include <editor/PopupManager.hpp>
 #include <editor/FiledialogAdapter.hpp>
+#include <editor/Buffer.hpp>
 
 namespace editor {
 
@@ -72,16 +73,21 @@ namespace editor {
     void MenuPanel::fileMenu() {
         imgui_MenuItem("New", "Ctrl + N") {
             std::string path;
-            if(!FiledialogAdapter::get() -> selectFolder(path, "Create Robot2D Project")) {
+            if(!FiledialogAdapter::get() -> selectFolder(path, "Create Robot2D Project"))
                 return;
-            }
 
             ProjectDescription description;
             description.name = "Project";
             description.path = path;
 
-            auto msg = m_messageBus.postMessage<ProjectMessage>(MessageID::CreateProject);
-            msg -> description = std::move(description);
+            int allocSize = StringBuffer::calcAllocSize(description.name) 
+                                + StringBuffer::calcAllocSize(description.path);
+
+            void* rawBuffer = m_messageBus.postMessage(MessageID::CreateProject, allocSize);
+            Buffer buffer{ rawBuffer };
+            pack_message_string(description.name, buffer);
+            pack_message_string(description.path, buffer);
+
             return;
         }
         ImGui::Separator();
@@ -100,11 +106,17 @@ namespace editor {
                 openPath.remove_filename();
                 auto str = filePath.string();
                 auto found = str.find('.');
-                std::string name = str.substr(0, found);
 
-                auto msg = m_messageBus.postMessage<ProjectMessage>(MessageID::LoadProject);
-                msg -> description.path = openPath.string();
-                msg -> description.name = name;
+                std::string name = str.substr(0, found);
+                std::string path = openPath.string();
+
+                int allocSize = StringBuffer::calcAllocSize(name) + StringBuffer::calcAllocSize(path);
+                void* rawBuffer = m_messageBus.postMessage(MessageID::LoadProject, allocSize);
+
+                Buffer buffer{ rawBuffer };
+                pack_message_string(name, buffer);
+                pack_message_string(path, buffer);
+
                 return;
             }
         }
@@ -119,9 +131,10 @@ namespace editor {
                                                     "",
                                                     saveFilePatterns,
                                                     "Scene")) {
-                auto msg =
-                        m_messageBus.postMessage<MenuProjectMessage>(MessageID::SaveProject);
-                msg -> path = std::move(savePath);
+                int allocSize = StringBuffer::calcAllocSize(savePath);
+                void* rawBuffer = m_messageBus.postMessage(MessageID::SaveProject, allocSize);
+                Buffer buffer{ rawBuffer };
+                pack_message_string(savePath, buffer);
             }
         }
 
@@ -137,9 +150,11 @@ namespace editor {
                                                      defaultSavePath,
                                                      saveFilePatterns,
                                                      "Scene")){
-                auto msg =
-                        m_messageBus.postMessage<MenuProjectMessage>(MessageID::SaveScene);
-                msg -> path = std::move(savePath);
+
+                int allocSize = StringBuffer::calcAllocSize(savePath);
+                void* rawBuffer = m_messageBus.postMessage(MessageID::SaveScene, allocSize);
+                Buffer buffer{ rawBuffer };
+                pack_message_string(savePath, buffer);
             }
         }
     }
@@ -165,9 +180,10 @@ namespace editor {
                 return;
             }
 
-            auto* msg =
-                    m_messageBus.postMessage<GenerateProjectMessage>(MessageID::GenerateProject);
-            msg -> genPath = genPath;
+            int allocSize = StringBuffer::calcAllocSize(genPath);
+            void* rawBuffer = m_messageBus.postMessage(MessageID::GenerateProject, allocSize);
+            Buffer buffer{ rawBuffer };
+            pack_message_string(genPath, buffer);
         }
 
 
@@ -191,18 +207,16 @@ namespace editor {
     }
 
     void MenuPanel::developerMenu() {
-        imgui_Window("Debug Info") {
+        imgui_Window("Developer Info") {
             const auto& commandStack = m_interactor -> getCommandStack();
 
-            if (ImGui::BeginListBox("CommandsPool"))
-            {
+            imgui_ListBox("CommandsPool") {
                 int cntr = 1;
                 for (int n = commandStack.size() - 1; n >= 0; --n)
                 {
                     ImGui::Text("%i. %s", cntr, commandStack[n].getName());
                     ++cntr;
                 }
-                ImGui::EndListBox();
             }
         }
     }

@@ -51,6 +51,8 @@ namespace editor {
                        || !m_running.load(std::memory_order::memory_order_relaxed);
             });
 
+            if (m_inputTasksQueue.empty())
+                continue;
             auto task = m_inputTasksQueue.front();
             if (!task)
                 continue;

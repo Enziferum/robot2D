@@ -255,7 +255,8 @@ namespace editor {
     }
 
     void Editor::handleMessages(const robot2D::Message& message) {
-        m_messageDispather.process(message);
+        robot2D::Message* msg = const_cast<robot2D::Message*>(&message);
+        m_messageDispather.process(*msg);
     }
 
     void Editor::update(float dt) {

@@ -65,5 +65,8 @@ namespace editor {
         robot2D::MessageBus& m_messageBus;
         std::vector<ProjectDescription> m_descriptions;
         ProjectInspectorConfiguration m_configuration;
+
+        std::string m_projectName;
+        std::string m_projectPath;
     };
 }
