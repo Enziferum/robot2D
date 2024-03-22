@@ -92,7 +92,7 @@ namespace robot2D::mem {
         using memory_pair = std::pair<std::string, memoryBuffer>;
 
         /// \brief Pointer to global allocated memory
-        void* m_GlobalMemory;
+        void* m_GlobalMemory{ nullptr };
         /// \brief Allocator used to manager memory allocation from global memory
         Allocator*	m_MemoryAllocator;
         std::vector<std::pair<const char*, memoryBuffer>> m_PendingMemory;
@@ -103,17 +103,17 @@ namespace robot2D::mem {
     template<typename Allocator>
     MemoryManager<Allocator>::MemoryManager()
     {
-        //RB_CORE_INFO("Initialize MemoryManager!");
+        RB_CORE_INFO("Initialize MemoryManager!");
 
         // allocate global memory
         m_GlobalMemory = malloc(MemoryManager::MEMORY_CAPACITY);
         if (m_GlobalMemory != nullptr)
         {
-          // RB_CORE_INFO("{0} bytes of memory allocated.", MemoryManager::MEMORY_CAPACITY);
+            RB_CORE_INFO("{0} bytes of memory allocated.", MemoryManager::MEMORY_CAPACITY);
         }
         else
         {
-            //RB_CORE_ERROR("Failed to allocate %d bytes of memory!", MemoryManager::MEMORY_CAPACITY);
+            RB_CORE_ERROR("Failed to allocate %d bytes of memory!", MemoryManager::MEMORY_CAPACITY);
             assert(m_GlobalMemory != nullptr && "Failed to allocate global memory.");
         }
 

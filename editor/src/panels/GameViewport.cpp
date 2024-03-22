@@ -19,9 +19,9 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
+#include <robot2D/imgui/Api.hpp>
 #include <editor/panels/GameViewport.hpp>
 #include <editor/Macro.hpp>
-#include <robot2D/imgui/Api.hpp>
 
 namespace editor {
 
@@ -35,16 +35,11 @@ namespace editor {
         const auto& buttonHovered = colors[ImGuiCol_ButtonHovered];
         const auto& buttonActive = colors[ImGuiCol_ButtonActive];
 
-        robot2D::WindowOptions windowOptions {
+        static robot2D::WindowOptions windowOptions {
                 {
                         {ImGuiStyleVar_WindowPadding, {0, 0}},
-                   //     {ImGuiStyleVar_ItemInnerSpacing, {}}
                 },
-                {
-                //        {ImGuiCol_Button, robot2D::Color::fromGL(0.F, 0.F, 0.F, 0.F)},
-                 //       {ImGuiCol_ButtonHovered, robot2D::Color::fromGL(buttonHovered.x, buttonHovered.z, 0.5F)},
-                  //      {ImGuiCol_ButtonActive,robot2D::Color::fromGL(buttonActive.x, buttonActive.z, 0.5F)}
-                }
+                {}
         };
         windowOptions.name = "Game";
         windowOptions.flagsMask = ImGuiWindowFlags_NoScrollbar;

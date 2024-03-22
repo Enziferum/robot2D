@@ -64,6 +64,8 @@ namespace robot2D {
         template<typename T>
         T* postMessage(Message::ID);
 
+        void* postMessage(Message::ID, std::size_t allocSize);
+
         /// Clear internal buffers
         void clear();
 
@@ -136,6 +138,31 @@ namespace robot2D {
         m_clearBuffer.emplace_back(msg.m_buffer);
         return static_cast<T*>(msg.m_buffer);
     }
+
+
+    template<typename Allocator, std::size_t size>
+    void* TMessageBus<Allocator, size>::postMessage(Message::ID messageType, std::size_t allocSize) {
+        Message msg{};
+        msg.m_needUnpack = true;
+
+        try {
+            msg.m_buffer = m_memoryManager.allocate(allocSize);
+            if (msg.m_buffer == nullptr) {
+                std::cerr << "can' allocate memory for message buffer" << std::endl;
+                return nullptr;
+            }
+        }
+        catch (...) {
+            /// bad alloc or smth ///
+        }
+
+        msg.id = messageType;
+        msg.m_buffersz = allocSize;
+        m_messageQueue.push(msg);
+        m_clearBuffer.emplace_back(msg.m_buffer);
+        return msg.m_buffer;
+    }
+
 
     template<typename Allocator, std::size_t maxMessageSize>
     bool TMessageBus<Allocator, maxMessageSize>::empty() const noexcept {

@@ -164,6 +164,12 @@ namespace editor {
 
     }
 
+    void ViewportPanel::set(robot2D::FrameBuffer::Ptr frameBuffer) {
+        m_frameBuffer = std::move(frameBuffer);
+        needResetViewport = true;
+    }
+
+
     void ViewportPanel::handleEvents(const robot2D::Event& event) {
         if(event.type == robot2D::Event::MousePressed && m_panelFocused && m_panelHovered) {
             auto[mx, my] = ImGui::GetMousePos();
@@ -183,11 +189,6 @@ namespace editor {
         }
     }
 
-    void ViewportPanel::set(robot2D::FrameBuffer::Ptr frameBuffer) {
-        m_frameBuffer = std::move(frameBuffer);
-        needResetViewport = true;
-    }
-
     void ViewportPanel::update(float deltaTime) {
         auto[mx, my] = ImGui::GetMousePos();
         mx -= m_ViewportBounds[0].x;
@@ -200,6 +201,7 @@ namespace editor {
             m_editorCamera -> update({mx, my}, deltaTime);
         }
     }
+
 
     void ViewportPanel::render() {
         robot2D::createWindow(m_windowOptions, [this]() {
@@ -215,8 +217,10 @@ namespace editor {
             /// TODO: @a.raag switch mode of camera ///
             auto ViewPanelSize = ImGui::GetContentRegionAvail();
 
-            toolbarOverlay({viewportOffset.x, viewportOffset.y}, {ViewPanelSize.x, ViewPanelSize.y});
-            instrumentBar({viewportOffset.x, viewportOffset.y}, {ViewPanelSize.x, ViewPanelSize.y});
+            if (ImGui::IsWindowDocked()) {
+                toolbarOverlay({ viewportOffset.x, viewportOffset.y }, { ViewPanelSize.x, ViewPanelSize.y });
+                instrumentBar({ viewportOffset.x, viewportOffset.y }, { ViewPanelSize.x, ViewPanelSize.y });
+            }
             m_editorCamera -> setViewportBounds({viewportOffset.x, viewportOffset.y
                                                                    + (viewportMaxRegion.y - ViewPanelSize.y)});
             if(m_ViewportSize != robot2D::vec2u { static_cast<unsigned int>(ViewPanelSize.x), 
@@ -280,7 +284,7 @@ namespace editor {
 
             if (ImGui::BeginDragDropTarget())
             {
-                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(contentItemID)) {
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(contentItemID, ImGuiDragDropFlags_AcceptNoDrawDefaultRect)) {
                     const char* data = reinterpret_cast<const char*>(payload -> Data);
                     if(data) {
                         std::string payloadString = std::string(data, payload->DataSize);
@@ -290,10 +294,10 @@ namespace editor {
                         msg -> path = scenePath.string();
                     }
                 }
-                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(contentPrefabItemID)) {
+                if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(contentPrefabItemID, ImGuiDragDropFlags_AcceptNoDrawDefaultRect)) {
                     const char* data = reinterpret_cast<const char*>(payload -> Data);
                     if(data) {
-                        std::string payloadString = std::string(data, payload->DataSize);
+                        std::string payloadString = std::string(data, payload -> DataSize);
                         const wchar_t* rawPath = (const wchar_t*)payloadString.c_str();
                         std::filesystem::path prefabPath = std::filesystem::path("assets") / rawPath;
                         auto* msg = m_messageBus.postMessage<PrefabLoadMessage>(MessageID::PrefabLoad);
