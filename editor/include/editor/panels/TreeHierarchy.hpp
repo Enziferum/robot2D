@@ -139,11 +139,21 @@ namespace editor {
     private:
         using ItemCallback = std::function<void(ITreeItem::Ptr selected)>;
         using ReorderItemCallback = std::function<void(ITreeItem::Ptr source, ITreeItem::Ptr target)>;
-        using MultiItemCallback = std::function<void(std::list<ITreeItem::Ptr>)>;
-        using MultiItemRangeCallback = std::function<void(std::vector<ITreeItem::Ptr>, bool del)>;
-        using InsertItemCallback = std::function<void(ITreeItem::Ptr inserted)>;
+        using MultiItemCallback = std::function<void(std::set<ITreeItem::Ptr>&, bool)>;
 
+        using Iterator = std::list<ITreeItem::Ptr>::iterator;
     public:
+        struct RestoreInfo {
+            bool isChained;
+            bool isFirst;
+            ITreeItem::Ptr target;
+            ITreeItem::Ptr anchor;
+
+        private:
+            friend class TreeHierarchy;
+            Iterator m_sourceIterator;
+        };
+
         explicit TreeHierarchy(std::string name);
         TreeHierarchy(const TreeHierarchy& other) = delete;
         TreeHierarchy& operator=(const TreeHierarchy& other) = delete;
@@ -195,12 +205,10 @@ namespace editor {
         bool addOnMakeChildCallback(ReorderItemCallback&& callback);
         bool addOnStopBeChildCallback(ReorderItemCallback&& callback);
         bool addMultiSelectCallback(MultiItemCallback&& callback);
-        bool addMultiSelectRangeCallback(MultiItemRangeCallback&& callback);
-        bool addInsertItemCallback(InsertItemCallback&& callback);
         //////////////////////////////////////// Callbacks ////////////////////////////////////////
      
         void setBefore(ITreeItem::Ptr source, ITreeItem::Ptr target);
-        void insertItem(ITreeItem::Ptr source, ITreeItem::Ptr anchor, bool first = false, bool isChained = false);
+        void restoreItem(RestoreInfo&& restoreInfo);
         bool deleteItem(ITreeItem::Ptr treeItem);
 
         void setSelected(ITreeItem::Ptr item);
@@ -210,6 +218,9 @@ namespace editor {
         const std::list<ITreeItem::Ptr>& getItems() const { return m_items; }
 
         void applyChildModification(ITreeItem::Ptr source, ITreeItem::Ptr target);
+
+        const std::size_t getItemsValue() const;
+
 
         void clear();
         void render();
@@ -230,9 +241,8 @@ namespace editor {
             First, Last
         };
 
-        using Iterator = std::list<ITreeItem::Ptr>::iterator;
+
         using InsertItem = std::tuple<Iterator, ITreeItem::Ptr, ReorderDeleteType>;
-        using SetItem = std::tuple<Iterator, ITreeItem::Ptr, bool, ITreeItem::Ptr>;
 
         int m_tree_base_flags = 0;
 
@@ -242,11 +252,9 @@ namespace editor {
         ReorderItemCallback m_makeAsChildCallback;
         ReorderItemCallback m_removeAsChildCallback;
         MultiItemCallback m_multiItemCallback;
-        MultiItemRangeCallback m_multiItemRangeCallback;
-        InsertItemCallback  m_insertItemCallback{nullptr};
 
         std::vector<InsertItem> m_insertItems;
-        std::vector<SetItem> m_setItems;
+        std::vector<RestoreInfo> m_restoreItems;
 
 
         robot2D::Key m_shortCutKey{robot2D::Key::Q};

@@ -39,7 +39,8 @@ namespace robot2D::priv {
         GuiImpl& operator=(GuiImpl&& other)=delete;
         ~GuiImpl() noexcept;
 
-        void setup(robot2D::Window& window);
+        void setup(robot2D::Window& window,
+                   const std::string& customFontPath = "", std::vector<std::string>&& customIconsPaths = {});
         void setCustomFont();
         void handleEvents(const robot2D::Event& event);
         void update(float dt);

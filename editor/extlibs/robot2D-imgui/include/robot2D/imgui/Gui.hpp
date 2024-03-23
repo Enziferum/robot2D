@@ -42,7 +42,8 @@ namespace robot2D {
         Gui& operator=(Gui&& other)=delete;
         ~Gui() noexcept;
 
-        void setup(robot2D::Window& window);
+        void setup(robot2D::Window& window,
+                   const std::string& customFontPath = "", std::vector<std::string>&& customIconsPaths = {});
         void handleEvents(const robot2D::Event& event);
         void update(float dt);
         void render();

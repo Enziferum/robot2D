@@ -22,7 +22,7 @@ namespace editor {
     class IEditorModule: public IEditorOpener {
     public:
         using Ptr = std::unique_ptr<IEditorModule>;
-        virtual ~IEditorModule() = 0;
+        ~IEditorModule() override = 0;
 
         virtual void setup(robot2D::RenderWindow* window) = 0;
         virtual void handleEvents(const robot2D::Event& event) = 0;
@@ -30,12 +30,9 @@ namespace editor {
         virtual void update(float dt) = 0;
         virtual void render() = 0;
         virtual void destroy() = 0;
-
-        virtual void createProject(Project::Ptr project) = 0;
-        virtual void loadProject(Project::Ptr project) = 0;
     };
 
-    class EditorModule: public IEditorModule {
+    class EditorModule final: public IEditorModule {
     public:
         EditorModule(robot2D::MessageBus& messageBus, MessageDispatcher& messageDispatcher, robot2D::Gui& gui);
         ~EditorModule() override = default;
@@ -50,7 +47,7 @@ namespace editor {
         ////////////////// IEditorOpener //////////////////
         void createProject(Project::Ptr project) override;
         void loadProject(Project::Ptr project) override;
-        virtual void closeCurrentProject(std::function<void()>&& resultCallback) override;
+        void closeCurrentProject(std::function<void()>&& resultCallback) override;
         ////////////////// IEditorOpener //////////////////
     private:
         Editor m_editor;

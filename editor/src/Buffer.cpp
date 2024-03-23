@@ -1,15 +1,16 @@
+#include <cstring>
 #include <editor/Buffer.hpp>
 
 namespace editor {
     template<>
     void Buffer::copy2Buffer(const int& value) {
-        memcpy(m_buffer + m_offset, &value, sizeof(int));
+        std::memcpy(m_buffer + m_offset, &value, sizeof(int));
         m_offset += sizeof(int);
     }
 
     template<>
     void Buffer::copy2Buffer(const std::string& value) {
-        memcpy(m_buffer + m_offset, value.data(), value.length());
+        std::memcpy(m_buffer + m_offset, value.data(), value.length());
         m_buffer[m_offset + value.length()] = '\0';
         m_offset += value.length() + 1;
     }

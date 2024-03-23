@@ -29,22 +29,27 @@ source distribution.
 
 namespace robot2D {
 
+    /// \brief RAII wrapper ImGui StyleColor
     struct ScopedStyleColor {
-        ScopedStyleColor(int rawIdx, robot2D::Color color) {
+        ScopedStyleColor() = delete;
+        ScopedStyleColor(const ScopedStyleColor& other) = delete;
+        ScopedStyleColor& operator=(const ScopedStyleColor& other) = delete;
+        ScopedStyleColor(ScopedStyleColor&& other) = delete;
+        ScopedStyleColor& operator=(ScopedStyleColor&& other) = delete;
+
+        ScopedStyleColor(int rawIdx, robot2D::Color color): m_count { 1 } {
             ImGui::PushStyleColor(rawIdx, color);
-            m_count = 1;
         }
 
         ScopedStyleColor(const std::initializer_list<std::pair<int, robot2D::Color>>& colors) {
-            for(const auto& color: colors) {
+            for(const auto& color: colors)
                 ImGui::PushStyleColor(color.first, color.second);
-            }
             m_count = colors.size();
         }
 
         ~ScopedStyleColor() { ImGui::PopStyleColor(m_count); }
     private:
-        int m_count;
+        int m_count { 0 };
     };
 
-}
+} // namespace robot2D

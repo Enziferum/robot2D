@@ -18,16 +18,40 @@ and must not be misrepresented as being the original software.
 3. This notice may not be removed or altered from any
 source distribution.
 *********************************************************************/
-
-#ifdef _WIN32
+#include <robot2D/Config.hpp>
+#ifdef ROBOT2D_WINDOWS
     #define _USE_MATH_DEFINES
-#endif 
-#include <cmath>
+#endif
 
+#include <cmath>
 #include <robot2D/imgui/Spinner.hpp>
 #include <imgui/imgui_internal.h>
 
 namespace robot2D {
+
+    bool Spinner::begin() {
+        ImVec2 pos, size;
+
+        ImGuiWindow* window = ImGui::GetCurrentWindow();
+        if (window -> SkipItems)
+            return false;
+
+        ImGuiContext* g = ImGui::GetCurrentContext();
+        const ImGuiStyle& style = g -> Style;
+        const ImGuiID id = window -> GetID(m_label.c_str());
+
+        pos = window -> DC.CursorPos;
+        size = ImVec2((m_radius) * 2, (m_radius + style.FramePadding.y) * 2);
+
+        const ImRect bb(pos, ImVec2(pos.x + size.x, pos.y + size.y));
+        ImGui::ItemSize(bb, style.FramePadding.y);
+
+        m_center = bb.GetCenter();
+        if (!ImGui::ItemAdd(bb, id))
+            return false;
+
+        return true;
+    }
 
     void Spinner::draw() {
         if(!begin())
@@ -56,30 +80,6 @@ namespace robot2D {
             window -> DrawList -> PathLineTo(ImVec2(m_center.x + std::cos(a) * m_radius, m_center.y + std::sin(a) * m_radius));
         }
         window -> DrawList-> PathStroke(ImColor(m_color), false, m_thickness);
-    }
-
-    bool Spinner::begin() {
-        ImVec2 pos, size;
-
-        ImGuiWindow* window = ImGui::GetCurrentWindow();
-        if (window -> SkipItems)
-            return false;
-
-        ImGuiContext* g = ImGui::GetCurrentContext();
-        const ImGuiStyle& style = g -> Style;
-        const ImGuiID id = window -> GetID(m_label.c_str());
-
-        pos = window -> DC.CursorPos;
-        size = ImVec2((m_radius) * 2, (m_radius + style.FramePadding.y) * 2);
-
-        const ImRect bb(pos, ImVec2(pos.x + size.x, pos.y + size.y));
-        ImGui::ItemSize(bb, style.FramePadding.y);
-
-        m_center = bb.GetCenter();
-        if (!ImGui::ItemAdd(bb, id))
-            return false;
-
-        return true;
     }
 
 }

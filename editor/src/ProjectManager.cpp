@@ -112,8 +112,10 @@ namespace editor {
     const ProjectManagerError& ProjectManager::getError() const {
         return m_error;
     }
+
+    bool ProjectManager::hasActivateProject() const {
+        return m_currentProject != nullptr;
+    }
 }
 
-bool editor::ProjectManager::hasActivateProject() const {
-    return m_currentProject != nullptr;
-}
+

@@ -21,141 +21,66 @@ source distribution.
 
 #pragma once
 #include <list>
+#include <set>
 #include <functional>
-#include <imgui/imgui.h>
+
 #include "ITreeItem.hpp"
 
 namespace editor {
-
-    class MultiSelectionStorageAdapter {
-    public:
-        MultiSelectionStorageAdapter() {
-            m_AdapterIndexToStorageId = [](MultiSelectionStorageAdapter*, ITreeItem::Ptr node) {
-                return static_cast<ImGuiID>(node -> getID());
-            };
-        }
-        ~MultiSelectionStorageAdapter() = default;
-
-        void reserve(int size) {
-            if(m_mode == Mode::ImGui) {
-                m_ImGuistorage.Data.resize(0);
-                m_ImGuistorage.Data.reserve(size);
-            }
-            else {
-
-            }
-
-        }
-
-        bool hasItem(ITreeItem::Ptr node) const {
-            if(m_mode == Mode::ImGui) {
-                ImGuiID key = m_AdapterIndexToStorageId(const_cast<MultiSelectionStorageAdapter *>(this), node);
-                return m_ImGuistorage.GetInt(key, 0) != 0;
-            }
-            else {
-                return false;
-            }
-
-        }
-
-        bool addItem(ITreeItem::Ptr node) {
-            if(m_mode == Mode::ImGui) {
-                ImGuiID key = m_AdapterIndexToStorageId(const_cast<MultiSelectionStorageAdapter *>(this), node);
-                int* p_int = m_ImGuistorage.GetIntRef(key, 0);
-                if (*p_int != 0)
-                    return false;
-                *p_int = 1;
-                return true;
-            }
-            else {
-                return true;
-            }
-        }
-
-        bool removeItem(ITreeItem::Ptr node) {
-            if(m_mode == Mode::ImGui) {
-                ImGuiID key = m_AdapterIndexToStorageId(const_cast<MultiSelectionStorageAdapter *>(this), node);
-                int* p_int = m_ImGuistorage.GetIntRef(key, 0);
-                if (*p_int == 0)
-                    return false;
-                *p_int = 0;
-                return true;
-            }
-            else {
-                return true;
-            }
-
-        }
-
-        void clear() {
-            if(m_mode == Mode::ImGui) {
-                m_ImGuistorage.Data.resize(0);
-            }
-            else {
-                m_storage.clear();
-            }
-        }
-
-        bool empty() const {
-            if(m_mode == Mode::ImGui) {
-                return m_ImGuistorage.Data.empty();
-            }
-            else {
-                return false;
-            }
-        }
-    private:
-        enum class Mode {
-            ImGui,
-            Custom
-        } m_mode = Mode::ImGui;
-
-
-        ImGuiID (*m_AdapterIndexToStorageId)(MultiSelectionStorageAdapter* self, ITreeItem::Ptr node);
-
-        ImGuiStorage m_ImGuistorage;
-        std::vector<UUID> m_storage;
-    };
-
     class MultiSelection {
     public:
-        using MultiItemCallback = std::function<void(std::list<ITreeItem::Ptr>)>;
-        using MultiItemRangeCallback = std::function<void(std::vector<ITreeItem::Ptr>, bool del)>;
+        using MultiItemCallback = std::function<void(std::set<ITreeItem::Ptr>&, bool)>;
 
-        MultiSelection();
+        MultiSelection() = default;
+        MultiSelection(const MultiSelection& other) = delete;
+        MultiSelection& operator=(const MultiSelection& other) = delete;
+        MultiSelection(MultiSelection&& other) = delete;
+        MultiSelection& operator=(MultiSelection&& other) = delete;
         ~MultiSelection() = default;
 
-        [[nodiscard]] bool hasItem(ITreeItem::Ptr node) const;
-        void updateItem(ITreeItem::Ptr node, bool needAdd);
-        void clear();
 
-        void applyRequests(ImGuiMultiSelectIO* multiSelectIo, std::list<ITreeItem::Ptr>& items);
-        ITreeItem::Ptr processDeletionPreLoop(ImGuiMultiSelectIO*, std::list<ITreeItem::Ptr>& items);
-        void processDeletionPostLoop(ImGuiMultiSelectIO*, std::list<ITreeItem::Ptr>& items,
-                                        ITreeItem::Ptr item_next_idx_to_select);
-
-        void setMultiItemCallback(MultiItemCallback&& multiItemCallback) {
-            m_multiItemCallback = multiItemCallback;
-        }
-        void setMultiItemRangeCallback(MultiItemRangeCallback && callback) {
-            m_multiRangeItemCallback = callback;
+        bool hasItem(ITreeItem::Ptr item) const {
+            return std::find_if(m_selectedItems.begin(), m_selectedItems.end(), [&item](ITreeItem::Ptr obj) {
+                return *item == *obj;
+            }) != m_selectedItems.end();
         }
 
-        void setQueueDeletion() { m_queueDeletion = true; }
+        void setMultiItemCallback(MultiItemCallback&& callback) { m_callback = std::move(callback); }
 
-        bool hasQueryDeletion() const { return m_queueDeletion; }
-        bool empty() const { return m_size == 0; }
+        void preUpdate(std::list<ITreeItem::Ptr>& items);
+        void update();
+        void postUpdate();
+        /// \brief Using only due to Hierarchy process, to outside update use AddItem() / removeItem()
+        void markSelected(ITreeItem::Ptr item);
+
+        void addItem(ITreeItem::Ptr item);
+
+        void removeItem(ITreeItem::Ptr item);
+        void clearAll();
+
+        bool isSingleSelect() const {
+            return m_currentState == State::SingleSelect;
+        }
     private:
-        void addItem(ITreeItem::Ptr node);
-        void removeItem(ITreeItem::Ptr node);
+        enum class State {
+            Clear,
+            SingleSelect,
+            MultiSelect,
+            MultiAllSelect,
+            RangeSelect
+        };
 
-    private:
-        MultiSelectionStorageAdapter m_storage;
+        State m_lastState = State::SingleSelect;
+        State m_currentState = State::SingleSelect;
 
-        bool m_queueDeletion{false};
-        int m_size{0};
 
-        MultiItemCallback m_multiItemCallback;
-        MultiItemRangeCallback m_multiRangeItemCallback;
+        std::set<ITreeItem::Ptr> m_preSelectedItems;
+        std::set<ITreeItem::Ptr> m_selectedItems;
+
+        bool m_ControlDown{ false };
+        bool m_ShiftDown{ false };
+
+        const int m_rangeMaxItems = 2;
+        MultiItemCallback m_callback { nullptr };
     };
 }

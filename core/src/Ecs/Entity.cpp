@@ -24,7 +24,7 @@ source distribution.
 
 namespace robot2D::ecs {
 
-    Entity::Entity(EntityID entityId): m_entityManager(nullptr), m_id(entityId), m_tag("") {}
+    Entity::Entity(EntityID entityId): m_entityManager(nullptr), m_id(entityId){}
     Entity::Entity(EntityManager* entityManager, const EntityID& id):
     m_entityManager(entityManager),
     m_id(id){}
@@ -50,7 +50,7 @@ namespace robot2D::ecs {
     }
 
     bool operator==(const Entity& left, const Entity& right) {
-        return (left.m_id == right.m_id) && (left.m_tag == right.m_tag);
+        return (left.m_id == right.m_id);
     }
 
     bool operator != (const Entity& l, const Entity& r) {

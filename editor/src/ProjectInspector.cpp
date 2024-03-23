@@ -68,87 +68,81 @@ namespace editor {
         auto windowSize = m_window -> getSize();
 
         ImGui::SetNextWindowSize(ImVec2(windowSize.x, windowSize.y));
-        ImGui::Begin("ProjectInspector", &m_configuration.isOpen, m_configuration.windowFlags);
-        ImGui::SetWindowPos(ImVec2(0.F, 0.F));
+        imgui_Window("ProjectInspector", &m_configuration.isOpen, m_configuration.windowFlags) {
+            ImGui::SetWindowPos(ImVec2(0.F, 0.F));
 
-        static const float fontSize = ImGui::GetFontSize();
+            static const float fontSize = ImGui::GetFontSize();
 
-        auto halfWidth = windowSize.x / 2;
-        auto height = ImGui::GetContentRegionAvail().y;
+            auto halfWidth = windowSize.x / 2;
+            auto height = ImGui::GetContentRegionAvail().y;
 
-        imgui_ListBox("##label", ImVec2(halfWidth, height)) {
-            ImVec2 startPos{ m_configuration.textOffset, m_configuration.textOffset };
+            imgui_ListBox("##label", ImVec2(halfWidth, height)) {
+                ImVec2 startPos{ m_configuration.textOffset, m_configuration.textOffset };
 
-            for (int it = 0; it < m_descriptions.size(); ++it)
-            {
-                auto& description = m_descriptions[it];
-                std::string itemid = "##" + std::to_string(it);
+                for (int i = 0; i < m_descriptions.size(); ++i)
+                {
+                    auto& description = m_descriptions[i];
+                    std::string itemid = "##" + std::to_string(i);
 
-                ImGui::PushID(it);
+                    ImGui::PushID(i);
 
-                ImVec2 nameTextSize = font->CalcTextSizeA(fontSize, halfWidth, halfWidth, description.name.c_str());
-                ImVec2 pathTextSize = font->CalcTextSizeA(fontSize, halfWidth, halfWidth, description.path.c_str());
-                ImVec2 textSize = ImVec2(nameTextSize.x + pathTextSize.x + 2 * m_configuration.textOffset,
-                    nameTextSize.y + pathTextSize.y + 2 * m_configuration.textOffset);
+                    ImVec2 nameTextSize = font->CalcTextSizeA(fontSize, halfWidth, halfWidth, description.name.c_str());
+                    ImVec2 pathTextSize = font->CalcTextSizeA(fontSize, halfWidth, halfWidth, description.path.c_str());
+                    ImVec2 textSize = ImVec2(nameTextSize.x + pathTextSize.x + 2 * m_configuration.textOffset,
+                                             nameTextSize.y + pathTextSize.y + 2 * m_configuration.textOffset);
 
-                if (ImGui::Selectable(itemid.c_str(), it == m_configuration.m_selectedItem,
-                    m_configuration.selectableFlags,
-                    ImVec2(textSize.x, textSize.y))) {
-                    m_configuration.m_selectedItem = it;
-                    ImGui::OpenPopup(itemid.c_str());
+                    if (ImGui::Selectable(itemid.c_str(), i == m_configuration.m_selectedItem,
+                                          m_configuration.selectableFlags,
+                                          ImVec2(textSize.x, textSize.y))) {
+                        m_configuration.m_selectedItem = i;
+                        ImGui::OpenPopup(itemid.c_str());
+                    }
+
+                    imgui_Popup(itemid.c_str()) {
+                        imgui_MenuItem("Load") {
+                            loadProject(i);
+                            ImGui::CloseCurrentPopup();
+                        }
+                        imgui_MenuItem("Remove from list") {
+                            // TODO(a.raag): remove from cache
+                            ImGui::CloseCurrentPopup();
+                        }
+                        imgui_MenuItem("Delete") {
+                            deleteProject(i);
+                            ImGui::CloseCurrentPopup();
+                        }
+                    }
+
+                    auto drawList = ImGui::GetWindowDrawList();
+
+                    drawList->AddText(font, fontSize, startPos, m_configuration.colID,
+                                      description.name.c_str(), nullptr, halfWidth);
+                    startPos.y += nameTextSize.y;
+                    drawList->AddText(font, fontSize, ImVec2(startPos.x, startPos.y + m_configuration.textOffset),
+                                      m_configuration.colID,
+                                      description.path.c_str(), nullptr, halfWidth);
+
+                    startPos.y += pathTextSize.y + 3 * m_configuration.textOffset;
+
+                    ImGui::Separator();
+                    ImGui::PopID();
                 }
+            }
 
-                if (ImGui::BeginPopup(itemid.c_str())) {
-                    if (ImGui::MenuItem("Load")) {
-                        loadProject(it);
-                        ImGui::CloseCurrentPopup();
-                    }
-                    if (ImGui::MenuItem("Remove from list")) {
-                        // TODO(a.raag): remove from cache
-                        ImGui::CloseCurrentPopup();
-                    }
 
-                    if (ImGui::MenuItem("Delete")) {
-                        deleteProject(it);
-                        ImGui::CloseCurrentPopup();
-                    }
-                    ImGui::EndPopup();
+            ImGui::SameLine();
+            imgui_Group {
+                imgui_Button("Create Project", m_configuration.createButtonSize)
+                    createProject();
+                imgui_Button("Add Existing", m_configuration.createButtonSize)
+                    addProject();
+
+                if(ImGui::Checkbox("Open always", &m_configuration.openAlways)) {
+                    auto* msg = m_messageBus.postMessage<ShowInspectorMessage>(MessageID::ShowInspector);
+                    msg -> showAlways = m_configuration.openAlways;
                 }
-
-                auto drawList = ImGui::GetWindowDrawList();
-
-                drawList->AddText(font, fontSize, startPos, m_configuration.colID,
-                    description.name.c_str(), nullptr, halfWidth);
-                startPos.y += nameTextSize.y;
-                drawList->AddText(font, fontSize, ImVec2(startPos.x, startPos.y + m_configuration.textOffset),
-                    m_configuration.colID,
-                    description.path.c_str(), nullptr, halfWidth);
-
-                startPos.y += pathTextSize.y + 3 * m_configuration.textOffset;
-
-                ImGui::Separator();
-                ImGui::PopID();
             }
         }
-
-
-        ImGui::SameLine();
-        ImGui::BeginGroup();
-
-        if(ImGui::Button("Create Project", m_configuration.createButtonSize))
-            createProject();
-        if(ImGui::Button("Add Existing", m_configuration.createButtonSize))
-            addProject();
-
-
-        if(ImGui::Checkbox("Open always", &m_configuration.openAlways)) {
-            auto* msg = m_messageBus.postMessage<ShowInspectorMessage>(MessageID::ShowInspector);
-            msg -> showAlways = m_configuration.openAlways;
-        }
-
-        ImGui::EndGroup();
-
-        ImGui::End();
     }
 
     void ProjectInspector::createProject() {

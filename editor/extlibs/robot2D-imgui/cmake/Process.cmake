@@ -38,8 +38,10 @@ set(RB2D_IMGUI_INCL
         ${INCLROOT}/robot2D/imgui/Util.hpp
         ${INCLROOT}/robot2D/imgui/WindowOptions.hpp
         ${INCLROOT}/robot2D/imgui/ScopedStyleColor.hpp
+        ${INCLROOT}/robot2D/imgui/ScopedStyleVar.hpp
         ${INCLROOT}/robot2D/imgui/Spinner.hpp
         ${INCLROOT}/robot2D/imgui/Sugar.hpp
+        ${INCLROOT}/robot2D/imgui/DragDropTarget.hpp
 )
 
 set(RB2D_IMGUI_SRC
@@ -54,6 +56,8 @@ set(RB2D_IMGUI_SRC
         ${SRCROOT}/robot2D/Util.cpp
         ${SRCROOT}/robot2D/WindowOptions.cpp
         ${SRCROOT}/robot2D/Spinner.cpp
+        ${SRCROOT}/robot2D/ScopedStyleVar.cpp
+        ${SRCROOT}/robot2D/DragDropTarget.cpp
 )
 
 

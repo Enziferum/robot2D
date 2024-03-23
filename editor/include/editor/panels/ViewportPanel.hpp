@@ -39,6 +39,7 @@ source distribution.
 #include "IPanel.hpp"
 
 namespace editor {
+
     enum class IconType {
         Play,
         Stop,
@@ -51,7 +52,6 @@ namespace editor {
     };
 
     class ViewportPanel final: public IPanel {
-
     public:
         ViewportPanel(UIInteractor* uiInteractor,
                       IEditorCamera::Ptr editorCamera,
@@ -60,14 +60,19 @@ namespace editor {
                       Guizmo2D& guizmo2D,
                       CameraManipulator& collider,
                       SelectionCollider& selectionCollider);
+        ViewportPanel(const ViewportPanel& other) = delete;
+        ViewportPanel& operator=(const ViewportPanel& other) = delete;
+        ViewportPanel(ViewportPanel&& other) = delete;
+        ViewportPanel& operator=(ViewportPanel&& other) = delete;
         ~ViewportPanel() override = default;
 
-        void handleEvents(const robot2D::Event& event);
-        void set(robot2D::FrameBuffer::Ptr frameBuffer);
-
-        bool isActive() const {
+        bool isActive() const noexcept {
             return m_panelHovered && m_panelFocused;
         }
+
+        void handleEvents(const robot2D::Event& event);
+        void setFramebuffer(robot2D::FrameBuffer::Ptr frameBuffer);
+
 
         void update(float deltaTime) override;
         void render() override;
@@ -82,20 +87,22 @@ namespace editor {
         MessageDispatcher& m_messageDispatcher;
         CameraManipulator& m_CameraCollider;
         SelectionCollider& m_selectionCollider;
+        Guizmo2D& m_guizmo2D;
 
         robot2D::ResourceHandler<robot2D::Texture, IconType> m_icons;
 
-        robot2D::FrameBuffer::Ptr m_frameBuffer;
+        std::vector<robot2D::ecs::Entity> m_selectedEntities;
+        robot2D::FrameBuffer::Ptr m_frameBuffer{ nullptr };
         robot2D::vec2u  m_ViewportSize{};
         robot2D::WindowOptions m_windowOptions;
 
-        robot2D::vec2f m_ViewportBounds[2];
+        struct ViewportBounds {
+            robot2D::vec2f minRegion { };
+            robot2D::vec2f maxRegion { };
+        } m_ViewportBounds;
 
-        bool m_panelHovered;
-        bool m_panelFocused;
+        bool m_panelHovered { false };
+        bool m_panelFocused { false };
         bool needResetViewport{false};
-
-        Guizmo2D& m_guizmo2D;
-        std::vector<robot2D::ecs::Entity> m_selectedEntities;
     };
 }

@@ -70,4 +70,18 @@ namespace editor {
 
         m_deletePendingItems.emplace_back(*found);
     }
+
+    /// -
+    ///  - -
+    ///  -- -
+
+    const std::size_t ITreeItem::getChildValue(std::size_t& size) const {
+        if(hasChildrens()) {
+            for(auto& child: m_childrens)
+                size += child -> getChildValue(size);
+            return size;
+        }
+        size += m_childrens.size();
+        return size;
+    }
 }

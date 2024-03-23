@@ -51,23 +51,26 @@ namespace editor {
 
         bool hasChildrens() const { return !m_childrens.empty(); }
         bool isChild() const { return m_parent != nullptr; }
+        void addChild(ITreeItem::Ptr child);
+        bool deleteChild(ITreeItem::Ptr item);
         std::vector<ITreeItem::Ptr>& getChildrens() { return m_childrens; }
+
+
+        void removeSelf();
+
 
 
         void setName(std::string* name);
         void setTexture(robot2D::Texture& texture, const robot2D::Color& tintColor);
 
-      
-        void addChild(ITreeItem::Ptr child);
-        bool deleteChild(ITreeItem::Ptr item);
-
-        void removeSelf();
 
         void update();
 
         bool operator==(const ITreeItem& other) {
-            return (m_id == other.m_id) && (m_name == other.m_name);
+            return (m_id == other.m_id);
         }
+
+        const std::size_t getChildValue(std::size_t& size) const;
     protected:
         void removeChild(ITreeItem* child);
         virtual void* getUserDataInternal() const = 0;

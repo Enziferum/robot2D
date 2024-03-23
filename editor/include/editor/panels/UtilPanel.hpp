@@ -14,8 +14,13 @@ namespace editor {
     class UtilPanel: public IPanel {
     public:
         explicit UtilPanel(IEditorCamera::Ptr sceneCamera);
+        UtilPanel(const UtilPanel& other) = delete;
+        UtilPanel& operator=(const UtilPanel& other) = delete;
+        UtilPanel(UtilPanel&& other) = delete;
+        UtilPanel& operator=(const UtilPanel&& other) = delete;
         ~UtilPanel() override = default;
 
+        [[nodiscard]]
         const robot2D::Color& getColor() const;
 
         void setRenderStats(robot2D::RenderStats&& renderStats);

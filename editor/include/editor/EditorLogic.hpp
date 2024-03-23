@@ -110,8 +110,7 @@ namespace editor {
         void restoreDeletedEntities(DeletedEntitiesRestoreInformation& restoreInformation,
                                     DeletedEntitiesRestoreUIInformation& restoreUiInformation) override;
 
-        void uiSelectedAllEntities() override;
-        void uiSelectedRangeEntities(std::vector<robot2D::ecs::Entity>&& entities) override;
+        void uiSelectedEntities(std::set<ITreeItem::Ptr>& uiItems, bool isAll) override;
 
         const std::vector<class_id>& getCommandStack() const override;
         void exportProject(const ExportOptions& exportOptions) override;
@@ -162,7 +161,6 @@ namespace editor {
         std::vector<robot2D::ecs::Entity> m_copyEntities;
 
         robot2D::ecs::Entity m_mainCameraEntity;
-
         std::function<void()> m_closeResultProjectCallback{nullptr};
     };
 }
