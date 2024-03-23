@@ -36,15 +36,31 @@ source distribution.
 #include "ScriptInteractor.hpp"
 #include "DeletedEntitesRestoreInformation.hpp"
 #include "EditorCamera.hpp"
+#include "SceneEntity.hpp"
 
 namespace editor {
+
+
+    class SceneGraph {
+    public:
+
+    private:
+        std::list<SceneEntity> m_sceneEntities;
+    };
+
+
+
+
     class Scene: public robot2D::Drawable {
     public:
         using Ptr = std::shared_ptr<Scene>;
         using EntityList = std::list<robot2D::ecs::Entity>;
     public:
-
         Scene(robot2D::MessageBus& messageBus);
+        Scene(const Scene& other) = delete;
+        Scene& operator=(const Scene& other) = delete;
+        Scene(Scene&& other) = delete;
+        Scene& operator=(Scene&& other) = delete;
         ~Scene() override = default;
 
         void createMainCamera();

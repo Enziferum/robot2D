@@ -115,7 +115,7 @@ namespace robot2D::ecs {
 
 
     template<typename T, typename... Args>
-    T& Entity::addComponent(Args &&... args) {
+    T& Entity::addComponent(Args&& ... args) {
        return m_entityManager -> addComponent<T>(*this, std::forward<Args>(args)...);
     }
 

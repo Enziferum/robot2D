@@ -42,10 +42,14 @@ source distribution.
 namespace editor {
     struct IDComponent
     {
-        UUID ID;
-
         IDComponent() = default;
-        IDComponent(const IDComponent&) = default;
+        ~IDComponent() = default;
+        IDComponent(const IDComponent& other) = default;
+        IDComponent& operator=(const IDComponent& other) = default;
+        IDComponent(IDComponent&& other) = default;
+        IDComponent& operator=(IDComponent&& other) = default;
+
+        UUID ID;
     };
 
     class TransformComponent: public robot2D::Transformable {
@@ -327,7 +331,7 @@ namespace editor {
         std::string m_text{"Hello"};
         unsigned int m_characterSize;
         const robot2D::Font* m_font;
-        robot2D::Texture m_texture;
+        robot2D::Texture* m_texture;
 
         bool m_needUpdate;
         std::unordered_map<int, robot2D::GlyphQuad> m_bufferCache;

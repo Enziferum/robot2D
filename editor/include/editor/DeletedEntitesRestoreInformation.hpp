@@ -16,7 +16,6 @@ namespace editor {
 
         /// TODO(a.raag): correct valid statement
         bool valid() const { return true; }
-
         bool hasItems() const { return !anchorEntitiesUuids.empty(); }
 
         RestoreInfo& getLast() { return anchorEntitiesUuids.back(); }
@@ -35,26 +34,25 @@ namespace editor {
     class DeletedEntitiesRestoreUIInformation {
     public:
         struct RestoreInfo {
-            bool first;
-            bool isChained;
-            ITreeItem::Ptr target;
-            ITreeItem::Ptr anchor;
+            bool first { false };
+            bool isChained { false };
+            ITreeItem::Ptr target { nullptr };
+            ITreeItem::Ptr anchor { nullptr };
         };
+
         /// TODO(a.raag): correct valid statement
-        bool valid() const { return true; }
+        bool valid() const noexcept { return true; }
+        bool hasItems() const noexcept { return !m_anchorItems.empty(); }
 
-        bool hasItems() const { return !anchorItems.empty(); }
+        const RestoreInfo& getLast() const { return m_anchorItems.back(); }
 
-        RestoreInfo& getLast() { return anchorItems.back(); }
-
-        void push(ITreeItem::Ptr target, ITreeItem::Ptr anchor, bool first = false, bool isChained = false) {
-            auto info = RestoreInfo{first, isChained, target, anchor};
-            anchorItems.push_back(info);
+        void push(RestoreInfo&& restoreInfo) {
+            m_anchorItems.emplace_back(std::move(restoreInfo));
         }
-    //private:
 
-
-        std::vector<RestoreInfo> anchorItems;
+        const std::vector<RestoreInfo>& getItems() const { return m_anchorItems; }
+    private:
+        std::vector<RestoreInfo> m_anchorItems;
     };
 
 }

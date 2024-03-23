@@ -364,18 +364,18 @@ namespace editor {
 
     }
 
+    IEntitySerializer::~IEntitySerializer() noexcept = default;
 
-    bool EntitySerializer::serialize(YAML::Emitter& out, robot2D::ecs::Entity &entity) {
+    bool EntityYAMLSerializer::serialize(YAML::Emitter& out, robot2D::ecs::Entity &entity) {
         SerializeEntity(out, entity);
         return true;
     }
 
-    bool EntitySerializer::deserialize(void* inputData, robot2D::ecs::Entity& deserializedEntity,
-                                       bool& addToScene, std::vector<ChildInfo>& children) {
-        if(!inputData)
-            return false;
+    bool EntityYAMLSerializer::deserialize(const YAML::detail::iterator_value& iterator,
+                                           robot2D::ecs::Entity& deserializedEntity,
+                                           bool& addToScene, std::vector<ChildInfo>& children) {
 
-        auto entity = *static_cast<YAML::detail::iterator_value*>(inputData);
+        const auto& entity = iterator;
 
         uint64_t uuid = entity["Entity"].as<uint64_t>();
         std::string name;

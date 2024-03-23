@@ -40,7 +40,8 @@ namespace robot2D::priv {
         shutdown();
     }
 
-    void GuiImpl::setup(robot2D::Window& window) {
+    void GuiImpl::setup(robot2D::Window& window,
+                        const std::string& customFontPath, std::vector<std::string>&& customIconsPaths) {
         m_window = &window;
         ImGui::CreateContext();
         ImGuiIO& io = ImGui::GetIO();
@@ -92,7 +93,7 @@ namespace robot2D::priv {
         m_cursors[ImGuiMouseCursor_ResizeNWSE].createDefault();
         m_cursors[ImGuiMouseCursor_NotAllowed].createDefault();
 
-        m_render.setup();
+        m_render.setup(customFontPath, std::move(customIconsPaths));
     }
 
 

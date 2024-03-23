@@ -2,9 +2,11 @@
 #include <vector>
 #include <list>
 #include <string>
+#include <set>
 #include <functional>
 #include <robot2D/Ecs/Entity.hpp>
 
+#include <editor/panels/ITreeItem.hpp>
 #include "Uuid.hpp"
 #include "DeletedEntitesRestoreInformation.hpp"
 #include "CommandStack.hpp"
@@ -17,8 +19,10 @@ namespace editor {
         using Ptr = UIInteractor*;
 
         virtual ~UIInteractor() = 0;
+
         virtual std::vector<robot2D::ecs::Entity>& getSelectedEntities()  = 0;
         virtual robot2D::ecs::Entity getSelectedEntity(int graphicsEntityID) = 0;
+
         virtual void restoreDeletedEntities(DeletedEntitiesRestoreInformation& restoreInformation,
                                             DeletedEntitiesRestoreUIInformation& restoreUiInformation) = 0;
 
@@ -35,8 +39,8 @@ namespace editor {
         virtual bool isRunning() const = 0;
         virtual robot2D::ecs::Entity getByUUID(UUID uuid) = 0;
         virtual void registerOnDeleteFinish(std::function<void()>&& callback) = 0;
-        virtual void uiSelectedAllEntities() = 0;
-        virtual void uiSelectedRangeEntities(std::vector<robot2D::ecs::Entity>&& entities) = 0;
+
+        virtual void uiSelectedEntities(std::set<ITreeItem::Ptr>& uiItems, bool isAll) = 0;
 
         virtual void exportProject(const ExportOptions& exportOptions) = 0;
         virtual const std::vector<class_id>& getCommandStack() const = 0;

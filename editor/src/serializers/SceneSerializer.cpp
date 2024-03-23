@@ -59,18 +59,18 @@ namespace editor {
     SceneSerializer::SceneSerializer(Scene::Ptr scene): m_scene(scene) {}
 
 
-
-    bool SceneSerializer::serialize(const std::string& path) {
+    bool SceneSerializer::serialize(const std::string& path, const std::string& sceneName) {
         if(m_scene == nullptr)
             return false;
 
         YAML::Emitter out;
         out << YAML::BeginMap;
-        out << YAML::Key << "Scene" << YAML::Value << "Unnamed Scene";
+        out << YAML::Key << "Scene" << YAML::Value << sceneName;
         out << YAML::Key << "Entities" << YAML::Value << YAML::BeginSeq;
-        EntitySerializer entitySerializer;
+
+        auto entitySerializer = getSerializer<EntityYAMLSerializer>();
         for(auto& entity: m_scene -> getEntities())
-            entitySerializer.serialize(out, entity);
+            entitySerializer -> serialize(out, entity);
         out << YAML::EndSeq;
         out << YAML::EndMap;
 
@@ -116,14 +116,14 @@ namespace editor {
             return false;
 
 
-        EntitySerializer entitySerializer;
+        auto entitySerializer = getSerializer<EntityYAMLSerializer>();
         std::vector<ChildInfo> children;
 
-        for(auto entity: entites) {
+        for(const auto& entity: entites) {
             bool addToScene = true;
 
             auto deserializedEntity = m_scene -> createEntity();
-            entitySerializer.deserialize(&entity, deserializedEntity, addToScene, children);
+            entitySerializer -> deserialize(entity, deserializedEntity, addToScene, children);
 
             if(addToScene)
                 m_scene -> addAssociatedEntity(deserializedEntity);

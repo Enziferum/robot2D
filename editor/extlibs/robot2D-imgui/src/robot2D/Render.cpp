@@ -23,11 +23,21 @@ source distribution.
 #include <robot2D/Graphics/Vertex.hpp>
 #include <robot2D/Util/Logger.hpp>
 #include <robot2D/imgui/Util.hpp>
+#include <array>
 
 #include "Render.hpp"
+#define STB_IMAGE_RESIZE_IMPLEMENTATION
+#include "stb_image_resize.hpp"
 
 namespace robot2D {
     #define IMGUI_IMPL_OPENGL_USE_VERTEX_ARRAY
+
+    namespace {
+        constexpr int defaultFontSize = 20;
+        constexpr int iconQuadSize = 23;
+        /// \brief IconID startOffset. Icon1 = 0xe000 Icon2 = 0xe001 and etc...
+        const wchar_t start = 0xe000; // 57344
+    }
 
     const std::string vertexShader = R"(
         #version 330 core
@@ -132,32 +142,65 @@ namespace robot2D {
     GuiRender::GuiRender()  = default;
     GuiRender::~GuiRender() = default;
 
-    void GuiRender::setup() {
+    void GuiRender::setup(const std::string& customFontPath, std::vector<std::string>&& customIconsPaths) {
         if(!setupGL()) {
             RB_EDITOR_ERROR("Can't setup Gui Render");
             return;
         }
-        setupFonts();
+        setupFonts(customFontPath, std::move(customIconsPaths));
     }
 
-    void GuiRender::setupFonts() {
+    void GuiRender::setupFonts(const std::string& customFontPath, std::vector<std::string>&& customIconsPaths) {
         ImGuiIO& io = ImGui::GetIO();
         unsigned char* pixels;
         int width, height;
 
+        if(!customFontPath.empty())
+            io.FontDefault = io.Fonts->AddFontFromFileTTF(customFontPath.c_str(), defaultFontSize);
 
-//        ImFontConfig config;
-//        config.SizePixels = 16.F;
-//        io.Fonts -> AddFontDefault(&config);
+        if(!customIconsPaths.empty()) {
+            int iconRectIDs[64];
+            for (uint32_t i = 0; i < 64; i++)
+                iconRectIDs[i] = io.Fonts -> AddCustomRectFontGlyph(io.FontDefault, start + i,
+                                                                  iconQuadSize, iconQuadSize, iconQuadSize, {0, -2});
+            io.Fonts -> Build();
 
+            io.Fonts -> GetTexDataAsRGBA32(&pixels, &width, &height);
 
-        io.Fonts -> GetTexDataAsRGBA32(&pixels, &width, &height);
+            for (uint32_t i = 0; i < customIconsPaths.size(); i++)
+            {
+                int rectId = iconRectIDs[i];
+                if (const ImFontAtlasCustomRect* rect = io.Fonts->GetCustomRectByIndex(rectId))
+                {
+                    int desiredChannels = 4;
+                    robot2D::Image image;
+                    image.loadFromFile(customIconsPaths[i], desiredChannels);
+                    auto* buffer = image.getBuffer();
+                    stbir_resize_uint8(buffer, image.getSize().x, image.getSize().y, 0, buffer, rect -> Width, rect -> Height, 0, 4);
+                    // Fill the custom rectangle with red pixels (in reality you would draw/copy your bitmap data here!)
+                    for (int y = 0; y < rect->Height; y++)
+                    {
+                        ImU32* p = (ImU32*)pixels + (rect->Y + y) * width + (rect->X);
+                        for (int x = 0; x < rect->Width; x++)
+                            *p++ = IM_COL32(
+                                    buffer[y*4 * rect->Width + x*4 + 0],
+                                    buffer[y*4 * rect->Width + x*4 + 1],
+                                    buffer[y*4 * rect->Width + x*4 + 2],
+                                    buffer[y*4 * rect->Width + x*4 + 3]);
+                    }
+                }
+            }
+        }
+        else
+            io.Fonts -> GetTexDataAsRGBA32(&pixels, &width, &height);
+
         if(!pixels)
             return;
 		m_fontTexture.create({static_cast<unsigned int>(width), static_cast<unsigned int>(height)}, pixels);
 
         ImTextureID texID = ImGui::convertTextureHandle(m_fontTexture.getID());
         io.Fonts -> SetTexID(texID);
+        ImGui::StyleColorsDark();
     }
 
     bool GuiRender::setupGL()
@@ -308,8 +351,8 @@ namespace robot2D {
         glDeleteVertexArrays(1, &vertex_array_object);
 
         m_shader.unUse();
-        glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, m_fontTexture.getID());
+        //glActiveTexture(GL_TEXTURE0);
+        //glBindTexture(GL_TEXTURE_2D, m_fontTexture.getID());
 
         m_renderContext -> restore();
     }

@@ -19,36 +19,32 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include <robot2D/imgui/Gui.hpp>
-#include "GuiImpl.hpp"
+#pragma once
+#include <utility>
+#include <imgui/imgui.h>
 
 namespace robot2D {
 
-    Gui::Gui()
-    {
-        m_impl = std::make_unique<priv::GuiImpl>();
-        if(!m_impl) {
-            // TODO(a.raag): fatal error
-        }
-    }
+    /// \brief Simple RAII wrapper around ImGuiStyleVar, support both float and ImVec2 / robot2D::vec2f
+    template<typename T>
+    class ScopedStyleVar {
+        using ImGuiPair = std::pair<ImGuiStyleVar, T>;
+    public:
+        ScopedStyleVar() = delete;
+        ScopedStyleVar(const ScopedStyleVar& other) = delete;
+        ScopedStyleVar& operator=(const ScopedStyleVar& other) = delete;
+        ScopedStyleVar(ScopedStyleVar&& other) = delete;
+        ScopedStyleVar& operator=(ScopedStyleVar&& other) = delete;
 
-    Gui::~Gui() = default;
+        ScopedStyleVar(ImGuiStyleVar ImGuiVar, const T& value);
+        ScopedStyleVar(std::initializer_list<ImGuiPair> values);
 
-    void Gui::setup(robot2D::Window& window,
-                    const std::string& customFontPath, std::vector<std::string>&& customIconsPaths) {
-        m_impl -> setup(window, customFontPath, std::move(customIconsPaths));
-    }
+        ~ScopedStyleVar();
+    private:
+        int m_count{ 0 };
+    };
 
-    void Gui::handleEvents(const robot2D::Event& event) {
-        m_impl -> handleEvents(event);
-    }
-
-    void Gui::update(float dt) {
-        m_impl -> update(dt);
-    }
-
-    void Gui::render() {
-        m_impl -> render();
-    }
+    using ScopedStyleVarF = ScopedStyleVar<float>;
+    using ScopedStyleVarVec2 = ScopedStyleVar<ImVec2>;
 
 } // namespace robot2D

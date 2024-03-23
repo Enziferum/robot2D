@@ -268,7 +268,8 @@ namespace editor {
 
     void TextComponent::setFont(const robot2D::Font& font) {
         m_font = &font;
-        m_texture.create(*(m_font -> getImages()[0]));
+        m_texture = new robot2D::Texture();
+        m_texture -> create(*(m_font -> getImages()[0]));
     }
 
     const robot2D::Font* TextComponent::getFont() const {
@@ -276,7 +277,7 @@ namespace editor {
     }
 
     const robot2D::Texture& TextComponent::getTexture() const {
-        return m_texture;
+        return *m_texture;
     }
 
     std::unordered_map<int, robot2D::GlyphQuad>& TextComponent::getGlyphCache() {

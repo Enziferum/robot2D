@@ -21,7 +21,7 @@ source distribution.
 
 #pragma once
 #include <string>
-#include <limits.h>
+#include <limits>
 
 #include <robot2D/Config.hpp>
 
@@ -40,11 +40,11 @@ namespace robot2D::ecs {
         Entity& operator=(Entity&& other) = default;
         ~Entity() = default;
 
-        template<typename T, typename ...Args>
-        T& addComponent(Args&& ... args);
-
         template<typename T>
         bool hasComponent() const;
+
+        template<typename T, typename ...Args>
+        T& addComponent(Args&& ... args);
 
         template<typename T>
         T& getComponent();
@@ -55,33 +55,30 @@ namespace robot2D::ecs {
         template<typename T>
         void removeComponent();
 
+        [[nodiscard]]
         const EntityID& getIndex() const { return m_id; }
         EntityID getIndex() { return m_id; }
+
+        [[nodiscard]]
         Bitmask getComponentMask() const;
 
-
-        void setTag(const std::string& tag) { m_tag = tag; }
-        const std::string& getTag() const { return m_tag; }
-        std::string& getTag() { return m_tag; }
 
         friend bool operator == (const Entity& l, const Entity& r);
         friend bool operator != (const Entity& l, const Entity& r);
         friend bool operator < (const Entity& l, const Entity& r);
 
-        bool destroyed() const;
-
         explicit operator bool() const {
-            return m_entityManager != nullptr && m_id != INT_MAX;
+            return m_entityManager != nullptr && m_id != std::numeric_limits<EntityID>::max();
         }
 
+        bool destroyed() const;
         void removeSelf();
     private:
         friend class EntityManager;
         Entity(EntityManager* entityManager, const EntityID& id);
-        EntityManager* m_entityManager;
+        EntityManager* m_entityManager{ nullptr };
 
-        EntityID m_id;
-        std::string m_tag;
+        EntityID m_id{std::numeric_limits<EntityID>::max()};
         bool m_needAddToScene{true};
     };
 
