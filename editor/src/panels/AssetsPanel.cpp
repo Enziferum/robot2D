@@ -31,7 +31,7 @@ source distribution.
 #include <editor/Messages.hpp>
 #include <editor/panels/AssetsPanel.hpp>
 #include <editor/Macro.hpp>
-#include "editor/serializers/PrefabSerializer.hpp"
+#include <editor/serializers/PrefabSerializer.hpp>
 #include <editor/Uuid.hpp>
 #include <editor/DragDropIDS.hpp>
 
@@ -85,7 +85,9 @@ namespace editor {
             using namespace ImGui;
             ImRect inner_rect = GetCurrentWindow() -> InnerRect;
             if (BeginDragDropTargetCustom(inner_rect, GetID("##WindowBgArea")))
-                if (const ImGuiPayload* payload = AcceptDragDropPayload(payload_type, ImGuiDragDropFlags_AcceptBeforeDelivery | ImGuiDragDropFlags_AcceptNoDrawDefaultRect))
+                if (const ImGuiPayload* payload = AcceptDragDropPayload(payload_type,
+                                                                        ImGuiDragDropFlags_AcceptBeforeDelivery
+                                                                        | ImGuiDragDropFlags_AcceptNoDrawDefaultRect))
                 {
                     if (payload->IsPreview())
                     {
@@ -93,7 +95,7 @@ namespace editor {
                         draw_list->AddRectFilled(inner_rect.Min, inner_rect.Max, GetColorU32(ImGuiCol_DragDropTarget, 0.05f));
                         draw_list->AddRect(inner_rect.Min, inner_rect.Max, GetColorU32(ImGuiCol_DragDropTarget), 0.0f, 0, 2.0f);
                     }
-                    if (payload->IsDelivery())
+                    if (payload -> IsDelivery())
                         return true;
                     EndDragDropTarget();
                 }
@@ -133,7 +135,7 @@ namespace editor {
         imgui_Window("Assets") {
             m_visible = ImGui::IsWindowHovered();
 
-            if(!m_unlock)
+            if(m_state == State::Loading)
                 return;
 
             if(m_currentPath != fs::path(m_assetsPath)) {
@@ -150,19 +152,21 @@ namespace editor {
                 columnCount = 1;
 
             if(is_directory(m_currentPath) && is_empty(m_currentPath)) {
-               /* if(BeginDrapDropTargetWindow("TreeNodeItem")) {
-                    auto* payload = ImGui::AcceptDragDropPayload("TreeNodeItem");
-                    UUID id = *static_cast<UUID*>(payload -> Data);
-                    auto entity = m_uiManager.getTreeItem(id);
-                    if(entity) {
-                        auto path = fs::relative(m_currentPath);
-                        bool ok = m_prefabManager.addPrefab(entity, path.string());
-                        if(!ok) {
-                            RB_EDITOR_ERROR("AssetPanel: Can't add prefab by path: {0}", path.string());
+                if(BeginDrapDropTargetWindow(treeNodeItemID)) {
+                    auto* payload = ImGui::AcceptDragDropPayload(treeNodeItemID);
+                    if(payload && payload -> IsDataType(treeNodeItemID)) {
+                        UUID id = *static_cast<UUID*>(payload -> Data);
+                        auto entity = m_uiManager.getTreeItem(id);
+                        if(entity) {
+                            auto path = fs::relative(m_currentPath);
+                            bool ok = m_prefabManager.addPrefab(entity, path.string());
+                            if(!ok) {
+                                RB_EDITOR_ERROR("AssetPanel: Can't add prefab by path: {0}", path.string());
+                            }
                         }
+                        ImGui::EndDragDropTarget();
                     }
-                    ImGui::EndDragDropTarget();
-                }*/
+                }
             }
             else {
                 for(auto& directoryEntry: fs::directory_iterator(m_currentPath)) {
@@ -251,31 +255,32 @@ namespace editor {
     void AssetsPanel::processDragDrop(const std::filesystem::directory_entry& directoryEntry,
                                       std::filesystem::path& relativePath) {
 
-        //if(BeginDrapDropTargetWindow("TreeNodeItem")) {
-        //    auto* payload = ImGui::AcceptDragDropPayload("TreeNodeItem");
-        //    UUID id = *static_cast<UUID*>(payload -> Data);
-        //    auto entity = m_uiManager.getTreeItem(id);
-        //    if(entity) {
-        //        auto path = fs::relative(m_assetsPath);
-        //        bool ok = m_prefabManager.addPrefab(entity, path.string());
-        //        if(!ok) {
-        //            RB_EDITOR_ERROR("AssetPanel: Can't add prefab by path: {0}", path.string());
-        //        }
-        //    }
-        //    ImGui::EndDragDropTarget();
-        //}
-
+        if(BeginDrapDropTargetWindow(treeNodeItemID)) {
+            auto* payload = ImGui::AcceptDragDropPayload(treeNodeItemID);
+            if(payload && payload -> IsDataType(treeNodeItemID)) {
+                UUID id = *static_cast<UUID*>(payload -> Data);
+                auto entity = m_uiManager.getTreeItem(id);
+                if(entity) {
+                    auto path = fs::relative(m_assetsPath);
+                    bool success = m_prefabManager.addPrefab(entity, path.string());
+                    if(!success)
+                        RB_EDITOR_ERROR("AssetPanel: Can't add prefab by path: {0}", path.string());
+                }
+            }
+            ImGui::EndDragDropTarget();
+        }
 
         imgui_DragDropSource() {
             if(!directoryEntry.is_directory()) {
                 auto extension = relativePath.extension();
-#ifdef _WIN32
+#ifdef ROBOT2D_WINDOWS
                 const wchar_t* itemPath = relativePath.c_str();
                 auto len  = (wcslen(itemPath) + 1) * sizeof(wchar_t );
 #else
                 const char* itemPath = relativePath.c_str();
                 auto len = (strlen(itemPath) + 1) * sizeof(char);
 #endif
+
 
                 if(extension == ".scene" || extension == ".png" || extension == ".ttf") {
                     ImGui::SetDragDropPayload(contentItemID, itemPath, len);
@@ -285,6 +290,7 @@ namespace editor {
                     ImGui::SetDragDropPayload(contentPrefabItemID, itemPath, len);
                     imgui_Text(relativePath.filename().string().c_str());
                 }
+
             }
         }
     }

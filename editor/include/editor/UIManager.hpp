@@ -64,7 +64,8 @@ namespace editor {
         robot2D::ecs::Entity getSelectedEntity() override;
         robot2D::ecs::Entity getTreeItem(editor::UUID uuid) override;
     private:
-        void dockingCanvas();
+        void renderBaseCanvas();
+        void canvasWindowFunction();
     private:
         robot2D::Gui& m_gui;
         std::vector<IPanel::Ptr> m_panels;

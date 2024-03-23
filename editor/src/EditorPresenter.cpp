@@ -10,7 +10,7 @@ namespace editor {
     }
 
     void EditorPresenter::prepareView() {
-        m_editor -> prepare();
+        m_editor -> prepareView();
     }
 
     void EditorPresenter::restoreEntitiesOnUI(DeletedEntitiesRestoreUIInformation &restoreUiInformation) {
