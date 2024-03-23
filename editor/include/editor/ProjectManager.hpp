@@ -29,12 +29,14 @@ source distribution.
 namespace editor {
     class ProjectManager {
     public:
-        ProjectManager(const Configuration& configuration);
+        explicit ProjectManager(const Configuration& configuration);
+        ProjectManager(const ProjectManager& other) = delete;
+        ProjectManager& operator=(const ProjectManager& other) = delete;
+        ProjectManager(ProjectManager&& other) = delete;
+        ProjectManager& operator=(ProjectManager&& other) = delete;
         ~ProjectManager() = default;
 
         bool hasActivateProject() const;
-
-
         bool add(const ProjectDescription&);
         bool load(const ProjectDescription&);
         bool remove(const ProjectDescription&);

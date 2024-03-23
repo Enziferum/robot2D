@@ -162,7 +162,6 @@ namespace editor {
         std::vector<robot2D::ecs::Entity> m_copyEntities;
 
         robot2D::ecs::Entity m_mainCameraEntity;
-
         std::function<void()> m_closeResultProjectCallback{nullptr};
     };
 }

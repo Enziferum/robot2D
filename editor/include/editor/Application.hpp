@@ -46,6 +46,10 @@ namespace editor {
     class Application: public robot2D::Application {
     public:
         Application();
+        Application(const Application& other) = delete;
+        Application& operator=(const Application& other) = delete;
+        Application(Application&& other) = delete;
+        Application& operator=(Application&& other) = delete;
         ~Application() override = default;
 
         void setup() override;

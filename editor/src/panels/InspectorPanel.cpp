@@ -66,7 +66,7 @@ namespace editor {
             lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
             ImGui::Separator();
 
-            bool node_open = ImGui::TreeNodeEx((void*)typeid(T).hash_code(), treeNodeFlags, "%s", name.c_str());
+            node_open = ImGui::TreeNodeEx((void*)typeid(T).hash_code(), treeNodeFlags, "%s", name.c_str());
             ImGui::PopStyleVar();
             ImGui::SameLine(contentRegionAvailable.x - lineHeight * 0.5f);
         }
@@ -156,21 +156,16 @@ namespace editor {
 
     void InspectorPanel::drawAssetBase() {
         switch (m_inspectType) {
-        default:
-            break;
-        case InspectType::AssetPrefab: {
-            drawComponentsBase(m_selectedEntity, false);
-            break;
-        }
-        case InspectType::AssetScene: {
-            break;
-        }
-        case InspectType::AssetImage: {
-            break;
-        }
-        case InspectType::AssetFont: {
-            break;
-        }
+            default:
+                break;
+            case InspectType::AssetPrefab: {
+                drawComponentsBase(m_selectedEntity, false);
+                break;
+            }
+            case InspectType::AssetScene:
+            case InspectType::AssetImage:
+            case InspectType::AssetFont:
+                break;
         }
     }
 
@@ -205,21 +200,18 @@ namespace editor {
         ImGui::SameLine();
         ImGui::PushItemWidth(-1);
 
-        if (ImGui::Button("Add Component"))
+        imgui_Button("Add Component")
             ImGui::OpenPopup("AddComponent");
 
-        if (ImGui::BeginPopup("AddComponent"))
-        {
-            if (ImGui::MenuItem("Camera"))
-            {
+        imgui_Popup("AddComponent") {
+            imgui_MenuItem("Camera") {
                 if (!m_selectedEntity.hasComponent<CameraComponent>())
                     m_selectedEntity.addComponent<CameraComponent>();
                 else
                     RB_EDITOR_WARN("This entity already has the Camera Component!");
                 ImGui::CloseCurrentPopup();
             }
-
-            if(ImGui::MenuItem("UtilRender")) {
+            imgui_MenuItem("UtilRender") {
                 if(!m_selectedEntity.hasComponent<DrawableComponent>())
                     m_selectedEntity.addComponent<DrawableComponent>().isUtil = true;
                 else
@@ -227,8 +219,7 @@ namespace editor {
                 ImGui::CloseCurrentPopup();
             }
 
-            if (ImGui::MenuItem("SpriteRender"))
-            {
+            imgui_MenuItem("SpriteRender") {
                 if (!m_selectedEntity.hasComponent<DrawableComponent>())
                     m_selectedEntity.addComponent<DrawableComponent>();
                 else {
@@ -238,8 +229,7 @@ namespace editor {
                 ImGui::CloseCurrentPopup();
             }
 
-            if (ImGui::MenuItem("RigidBody2D"))
-            {
+            imgui_MenuItem("RigidBody2D") {
                 if (!m_selectedEntity.hasComponent<Physics2DComponent>())
                     m_selectedEntity.addComponent<Physics2DComponent>();
                 else
@@ -247,8 +237,7 @@ namespace editor {
                 ImGui::CloseCurrentPopup();
             }
 
-            if (ImGui::MenuItem("Collider2D"))
-            {
+            imgui_MenuItem("Collider2D") {
                 if (!m_selectedEntity.hasComponent<Collider2DComponent>())
                     m_selectedEntity.addComponent<Collider2DComponent>();
                 else
@@ -256,8 +245,7 @@ namespace editor {
                 ImGui::CloseCurrentPopup();
             }
 
-            if (ImGui::MenuItem("Scripting"))
-            {
+            imgui_MenuItem("Scripting") {
                 if (!m_selectedEntity.hasComponent<ScriptComponent>())
                     m_selectedEntity.addComponent<ScriptComponent>();
                 else
@@ -265,8 +253,7 @@ namespace editor {
                 ImGui::CloseCurrentPopup();
             }
 
-            if (ImGui::MenuItem("Text"))
-            {
+            imgui_MenuItem("Text") {
                 if (!m_selectedEntity.hasComponent<TextComponent>()) {
                     m_selectedEntity.addComponent<TextComponent>();
                     m_selectedEntity.getComponent<TransformComponent>().setScale({1.f, 1.f});
@@ -276,7 +263,7 @@ namespace editor {
                 ImGui::CloseCurrentPopup();
             }
 
-            if(ImGui::MenuItem("Animation")) {
+            imgui_MenuItem("Animation") {
                 if (!m_selectedEntity.hasComponent<AnimationComponent>()) {
                     m_selectedEntity.addComponent<AnimationComponent>();
                 }
@@ -284,9 +271,6 @@ namespace editor {
                     RB_EDITOR_WARN("This entity already has the Animation Component!");
                 ImGui::CloseCurrentPopup();
             }
-
-
-            ImGui::EndPopup();
         }
 
         ImGui::PopItemWidth();
@@ -334,8 +318,7 @@ namespace editor {
 
         const char* aspectRatioTypeStrings[] = { "16:9", "9:16" };
         const char* aspectRatioProjectionTypeString = aspectRatioTypeStrings[(int)component.aspectRatio];
-        if (ImGui::BeginCombo("AspectRatio", aspectRatioProjectionTypeString))
-        {
+        imgui_Combo("AspectRation", aspectRatioProjectionTypeString) {
             for (int i = 0; i < 2; i++)
             {
                 bool isSelected = aspectRatioProjectionTypeString == aspectRatioTypeStrings[i];
@@ -349,14 +332,10 @@ namespace editor {
                     ImGui::SetItemDefaultFocus();
             }
 
-            ImGui::EndCombo();
         }
-
-
     }
     
     void InspectorPanel::drawDrawableComponent(robot2D::ecs::Entity entity, DrawableComponent& component) {
-
         // TODO(a.raag): fix color getting
         auto color = component.getColor().toGL();
         float colors[4];
@@ -375,8 +354,8 @@ namespace editor {
             component.setReorderZBuffer(true);
 
         ImGui::Button("Texture", ImVec2(100.0f, 0.0f));
-        if (ImGui::BeginDragDropTarget())
-        {
+
+        imgui_DragDropTarget {
             // all string types make as Parameters somewhere
 
             if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(contentItemID))
@@ -391,7 +370,7 @@ namespace editor {
                     auto queue = TaskQueue::GetQueue();
                     queue -> template addAsyncTask<ImageLoadTask>([this](const ImageLoadTask& task) {
                         this->onLoadImage(task.getImage(), task.getEntity());
-                        }, texturePath, entity);
+                    }, texturePath, entity);
                 }
                 else {
                     /// TODO(a.raag): use Local ResourceManager
@@ -403,7 +382,6 @@ namespace editor {
                     }
                 }
             }
-            ImGui::EndDragDropTarget();
         }
 
         if (entity.hasComponent<DrawableComponent>()) {
@@ -424,8 +402,7 @@ namespace editor {
     void InspectorPanel::drawPhysics2DComponent(robot2D::ecs::Entity, Physics2DComponent& component) {
         const char* bodyTypeStrings[] = { "Static", "Dynamic", "Kinematic" };
         const char* currentBodyTypeString = bodyTypeStrings[(int)component.type];
-        if (ImGui::BeginCombo("Body Type", currentBodyTypeString))
-        {
+        imgui_Combo("Body Type", currentBodyTypeString) {
             for (int i = 0; i < 3; i++)
             {
                 bool isSelected = currentBodyTypeString == bodyTypeStrings[i];
@@ -439,13 +416,11 @@ namespace editor {
                     ImGui::SetItemDefaultFocus();
             }
 
-            ImGui::EndCombo();
         }
-
         ImGui::Checkbox("Fixed Rotation", &component.fixedRotation);
     }
     
-    void InspectorPanel::drawCollider2DComponent(robot2D::ecs::Entity, Collider2DComponent& component) {
+    void InspectorPanel::drawCollider2DComponent(robot2D::ecs::Entity entity, Collider2DComponent& component) {
         float offset[2] = { component.offset.x, component.offset.y };
         float size[2] = { component.size.x, component.size.y };
         ImGui::DragFloat2("Offset", offset);
@@ -460,8 +435,7 @@ namespace editor {
     
     void InspectorPanel::drawTextComponent(robot2D::ecs::Entity entity, TextComponent& component) {
         ImGui::Button("Font", ImVec2(100.0f, 0.0f));
-        if (ImGui::BeginDragDropTarget())
-        {
+        imgui_DragDropTarget {
             // all string types make as Parameters somewhere
 
             if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(contentItemID))
@@ -473,11 +447,9 @@ namespace editor {
                 auto queue = TaskQueue::GetQueue();
                 queue -> template addAsyncTask<FontLoadTask>([this](const FontLoadTask& task) {
                     this->onLoadFont(task.getFont(), task.getEntity());
-                    }, texturePath, entity);
+                }, texturePath, entity);
             }
-            ImGui::EndDragDropTarget();
         }
-
         if (component.getFont()) {
             robot2D::InputText("##Text", &component.getText(), 0);
             component.setText(component.getText());
@@ -486,8 +458,6 @@ namespace editor {
 
     void InspectorPanel::drawAnimationComponent(robot2D::ecs::Entity, AnimationComponent& component) {
         auto* animationManager = AnimationManager::getManager();
-        // auto& animations = animationManager -> getAnimations(entity);
-
     }
 
 
@@ -504,14 +474,12 @@ namespace editor {
         if (ImGui::IsItemClicked())
             ImGui::OpenPopup("Find Script Class");
 
-        if (ImGui::BeginPopupContextItem("Find Script Class"))
-        {
+        imgui_PopupContextItem("Find Script Class") {
             auto classes = ScriptEngine::getClasses();
 
             ImGuiTextFilter textFilter;
             textFilter.Draw("Classes", 180);
-            if (ImGui::BeginListBox("##Listbox"))
-            {
+            imgui_ListBox("##ListBox") {
                 for (const auto& [name, Class] : classes) {
                     if (!textFilter.PassFilter(name.c_str())) continue;
                     const bool is_selected = (name == currItem);
@@ -521,11 +489,9 @@ namespace editor {
                         component.name = currItem;
                     }
                 }
-                ImGui::EndListBox();
             }
-
-            ImGui::EndPopup();
         }
+
 
         bool isSceneRunning = m_interactor -> isRunning();
 
@@ -742,7 +708,6 @@ namespace editor {
     }
 
 
-
     void InspectorPanel::drawUIComponents(robot2D::ecs::Entity entity) {
         /*
         drawComponent<ButtonComponent>("Button", entity, [this, interactor = m_interactor]
@@ -811,7 +776,6 @@ namespace editor {
             });
             */
     }
-
 
 
     void InspectorPanel::onLoadImage(const robot2D::Image& image, robot2D::ecs::Entity entity) {

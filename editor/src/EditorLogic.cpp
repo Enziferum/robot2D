@@ -28,7 +28,6 @@ source distribution.
 #include <editor/Components.hpp>
 
 #include <editor/components/ButtonComponent.hpp>
-#include "editor/components/UIHitBox.hpp"
 #include <editor/scripting/ScriptingEngine.hpp>
 
 
@@ -36,8 +35,8 @@ source distribution.
 #include <editor/Components.hpp>
 #include <editor/commands/DuplicateCommand.hpp>
 #include <editor/commands/DeleteEntitiesCommand.hpp>
-#include "editor/commands/PasteCommand.hpp"
-#include "editor/async/ExportTask.hpp"
+#include <editor/commands/PasteCommand.hpp>
+#include <editor/async/ExportTask.hpp>
 
 
 #ifdef ROBOT2D_WINDOWS
