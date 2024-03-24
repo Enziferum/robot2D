@@ -42,10 +42,7 @@ namespace editor {
     template<typename T, typename UIFunction>
     static void drawComponent(const std::string& name, robot2D::ecs::Entity& entity, UIFunction uiFunction)
     {
-        if(!entity || entity.destroyed())
-            return;
-
-        if (!entity.hasComponent<T>())
+        if(!entity || entity.destroyed() || !entity.hasComponent<T>())
             return;
 
         static const ImGuiTreeNodeFlags treeNodeFlags = ImGuiTreeNodeFlags_DefaultOpen
@@ -87,6 +84,14 @@ namespace editor {
 
         if (removeComponent)
             entity.removeComponent<T>();
+    }
+
+
+    void drawScriptFieldInfo(const std::string& text, std::string resultText = "None") {
+        ImGui::AlignTextToFramePadding();
+        imgui_Text(text.c_str());
+        ImGui::SameLine();
+        ImGui::Button(resultText.c_str());
     }
 
 
@@ -160,7 +165,7 @@ namespace editor {
             default:
                 break;
             case InspectType::AssetPrefab: {
-                drawComponentsBase(m_selectedEntity, false);
+                drawComponentsBase(m_selectedEntity);
                 break;
             }
             case InspectType::AssetScene:
@@ -170,8 +175,8 @@ namespace editor {
         }
     }
 
-    void InspectorPanel::drawComponentsBase(robot2D::ecs::Entity entity, bool isEntity) {
-        if(isEntity) {
+    void InspectorPanel::drawComponentsBase(robot2D::ecs::Entity entity) {
+        if(m_inspectType == InspectType::EditorEntity) {
             if(!entity.hasComponent<TagComponent>() || entity.destroyed())
                 return;
 
@@ -271,11 +276,11 @@ namespace editor {
 
         ImGui::PopItemWidth();
 
-        drawComponents(entity, isEntity);
+        drawComponents(entity);
         drawUIComponents(entity);
     }
 
-    void InspectorPanel::drawComponents(robot2D::ecs::Entity entity, bool isEntity) {
+    void InspectorPanel::drawComponents(robot2D::ecs::Entity entity) {
         drawComponent<TransformComponent>("Transform", entity, BIND_CLASS_FN(drawTransformComponent));
         drawComponent<CameraComponent>("Camera", entity, BIND_CLASS_FN(drawCameraComponent));
         drawComponent<DrawableComponent>("Drawable", entity, BIND_CLASS_FN(drawDrawableComponent));
@@ -345,10 +350,10 @@ namespace editor {
 
         ImGui::Button("Texture", ImVec2(100.0f, 0.0f));
 
-        imgui_DragDropTarget {
-            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(contentItemID))
-            {
-                const char* path = static_cast<const char*>(payload -> Data);
+        {
+            robot2D::DragDropTarget dragDropTarget{ contentItemID };
+            if(auto&& payloadBuffer = dragDropTarget.unpackPayload2Buffer()) {
+                auto&& path = payloadBuffer.unpack<std::string>();
                 std::filesystem::path localPath = std::filesystem::path("assets") / path;
                 auto texturePath = combinePath(m_interactor -> getAssociatedProjectPath(), localPath.string());
 
@@ -385,7 +390,30 @@ namespace editor {
         }
 
     }
-    
+
+    void InspectorPanel::drawTextComponent(robot2D::ecs::Entity entity, TextComponent& component) {
+        ImGui::Button("Font", ImVec2(100.0f, 0.0f));
+
+        {
+            robot2D::DragDropTarget dragDropTarget{ contentItemID };
+            if(auto&& payloadBuffer = dragDropTarget.unpackPayload2Buffer()) {
+                auto&& path = payloadBuffer.unpack<std::string>();
+                std::filesystem::path localPath = std::filesystem::path("assets") / path;
+                auto fontPath = combinePath(m_interactor -> getAssociatedProjectPath(), localPath.string());
+
+                auto queue = TaskQueue::GetQueue();
+                queue -> template addAsyncTask<FontLoadTask>([](const FontLoadTask& task) {
+                    InspectorPanel::onLoadFont(task.getFont(), task.getEntity());
+                }, fontPath, entity);
+            }
+        }
+
+        if (component.getFont()) {
+            robot2D::InputText("##Text", &component.getText(), 0);
+            component.setText(component.getText());
+        }
+    }
+
     void InspectorPanel::drawPhysics2DComponent([[maybe_unused]] robot2D::ecs::Entity entity, Physics2DComponent& component) {
         const char* bodyTypeStrings[] = { "Static", "Dynamic", "Kinematic" };
         const char* currentBodyTypeString = bodyTypeStrings[(int)component.type];
@@ -419,27 +447,7 @@ namespace editor {
         component.offset = { offset[0], offset[1] };
         component.size = { size[0], size[1] };
     }
-    
-    void InspectorPanel::drawTextComponent(robot2D::ecs::Entity entity, TextComponent& component) {
-        ImGui::Button("Font", ImVec2(100.0f, 0.0f));
-        imgui_DragDropTarget {
-            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(contentItemID))
-            {
-                const char* path = static_cast<const char*>(payload -> Data);
-                std::filesystem::path localPath = std::filesystem::path("assets") / path;
-                auto fontPath = combinePath(m_interactor -> getAssociatedProjectPath(), localPath.string());
 
-                auto queue = TaskQueue::GetQueue();
-                queue -> template addAsyncTask<FontLoadTask>([](const FontLoadTask& task) {
-                    InspectorPanel::onLoadFont(task.getFont(), task.getEntity());
-                }, fontPath, entity);
-            }
-        }
-        if (component.getFont()) {
-            robot2D::InputText("##Text", &component.getText(), 0);
-            component.setText(component.getText());
-        }
-    }
 
     void InspectorPanel::drawAnimationComponent(robot2D::ecs::Entity, AnimationComponent& component) {
         auto* animationManager = AnimationManager::getManager();
@@ -450,11 +458,11 @@ namespace editor {
         std::string currItem = component.name; // Here we store our selection data as an index.
         bool hasScriptClass = ScriptEngine::hasEntityClass(component.name);
 
-        if (!hasScriptClass)
-            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.9f, 0.2f, 0.3f, 1.0f));
-        ImGui::Selectable(currItem.empty() ? "FindClass" : currItem.c_str());
-        if (!hasScriptClass)
-            ImGui::PopStyleColor();
+        {
+            if(!hasScriptClass)
+                robot2D::ScopedStyleColor{ImGuiCol_Text, robot2D::Color::fromGL(0.9f, 0.2f, 0.3f, 1.0f)};
+            ImGui::Selectable(currItem.empty() ? "FindClass" : currItem.c_str());
+        }
 
         if (ImGui::IsItemClicked())
             ImGui::OpenPopup("Find Script Class");
@@ -483,18 +491,18 @@ namespace editor {
         if (isSceneRunning) {
             auto scriptInstance =
                 ScriptEngine::getEntityScriptInstance(entity.getComponent<IDComponent>().ID);
-            if (scriptInstance)
+            if(!scriptInstance)
+                return;
+            const auto& fields = scriptInstance->getClassWrapper()->getFields();
+            for (const auto& [name, field] : fields)
             {
-                const auto& fields = scriptInstance->getClassWrapper()->getFields();
-                for (const auto& [name, field] : fields)
-                {
-                    if (field.Type == ScriptFieldType::Float)
-                    {
-                        float data = scriptInstance->getFieldValue<float>(name);
+                switch(field.Type) {
+                    default:
+                        break;
+                    case ScriptFieldType::Float: {
+                        float data = scriptInstance -> getFieldValue<float>(name);
                         if (ImGui::DragFloat(name.c_str(), &data))
-                        {
                             scriptInstance -> setFieldValue(name, data);
-                        }
                     }
                 }
             }
@@ -503,108 +511,30 @@ namespace editor {
             if (!hasScriptClass)
                 return;
 
-            auto entityClass = ScriptEngine::getEntityClass(component.name);
-            const auto& fields = entityClass -> getFields();
-            auto& entityFields = ScriptEngine::getScriptFieldMap(entity);
+            processScriptComponent(entity, component);
+        }
+    }
 
-            for (const auto& [name, field] : fields) {
-                // Field has been set in editor
-                if (entityFields.find(name) != entityFields.end())
-                {
-                    ScriptFieldInstance& scriptField = entityFields.at(name);
 
-                    // Display control to set it maybe
-                    if (field.Type == ScriptFieldType::Float)
-                    {
+    void InspectorPanel::processScriptComponent(robot2D::ecs::Entity entity, ScriptComponent& component) {
+        auto entityClass = ScriptEngine::getEntityClass(component.name);
+        const auto& fields = entityClass -> getFields();
+        auto& entityFields = ScriptEngine::getScriptFieldMap(entity);
+
+        for (const auto& [name, field] : fields) {
+            bool hasField = (entityFields.find(name) != entityFields.end());
+            ScriptFieldInstance& scriptField = entityFields.at(name);
+
+            switch(field.Type) {
+                default:
+                    break;
+                case ScriptFieldType::Float: {
+                    if(hasField) {
                         float data = scriptField.getValue<float>();
                         if (ImGui::DragFloat(name.c_str(), &data))
                             scriptField.setValue(data);
                     }
-                    if (field.Type == ScriptFieldType::Int) {
-                        int data = scriptField.getValue<int>();
-                        if (ImGui::DragInt(name.c_str(), &data))
-                            scriptField.setValue(data);
-                    }
-                    if (field.Type == ScriptFieldType::Transform) {
-                        ImGui::AlignTextToFramePadding();
-                        imgui_Text(name.c_str());
-                        ImGui::SameLine();
-                        auto uuid = scriptField.getValue<UUID>();
-                        auto preEntity = m_interactor->getByUUID(uuid);
-                        std::string resultText = "None";
-                        if (preEntity)
-                            resultText = preEntity.getComponent<TagComponent>().getTag();
-                        ImGui::Button(resultText.c_str());
-
-                        if (ImGui::BeginDragDropTarget()) {
-                            auto* payload = ImGui::AcceptDragDropPayload("TreeNodeItem");
-                            if (payload) {
-                                if (payload->IsDataType("TreeNodeItem")) {
-                                    UUID id = *static_cast<UUID*>(payload->Data);
-                                    auto payloadEntity = m_uiManager.getTreeItem(id);
-
-                                    if (payloadEntity) {
-                                        scriptField.setValue(payloadEntity.getComponent<IDComponent>().ID);
-                                    }
-                                }
-                            }
-                            ImGui::EndDragDropTarget();
-                        }
-                    }
-                    if (field.Type == ScriptFieldType::Entity) {
-                        ImGui::AlignTextToFramePadding();
-                        imgui_Text(name.c_str());
-                        ImGui::SameLine();
-                        auto uuid = scriptField.getValue<UUID>();
-                        auto preEntity = m_interactor->getByUUID(uuid);
-                        std::string resultText = "None";
-                        if (preEntity)
-                            resultText = preEntity.getComponent<TagComponent>().getTag();
-                        ImGui::Button(resultText.c_str());
-
-                        if (ImGui::BeginDragDropTarget()) {
-                            auto* payload = ImGui::AcceptDragDropPayload(contentPrefabItemID);
-                            if (payload) {
-                                if (payload->IsDataType(contentPrefabItemID)) {
-                                    const char* data = static_cast<const char*>(payload->Data);
-                                    std::string payloadString = std::string(data, payload->DataSize);
-                                    const wchar_t* rawPath = (const wchar_t*)payloadString.c_str();
-                                    std::filesystem::path prefabPath = std::filesystem::path("assets") / rawPath;
-                                    auto realPrefabPath = combinePath(m_interactor->getAssociatedProjectPath(),
-                                        prefabPath.string());
-
-                                    if (auto prefab = m_prefabManager.findPrefab(realPrefabPath)) {
-                                        robot2D::ecs::Entity duplicateEntity = m_interactor->duplicateEmptyEntity(prefab->entity);
-                                        if (duplicateEntity) {
-                                            if (duplicateEntity != entity) {
-                                                scriptField.setValue(duplicateEntity.getComponent<IDComponent>().ID);
-                                            }
-                                        }
-                                    }
-                                    else {
-                                        if (auto prefab = m_prefabManager.loadPrefab(m_interactor,
-                                            realPrefabPath)) {
-                                            robot2D::ecs::Entity duplicateEntity = m_interactor->duplicateEmptyEntity(prefab->entity);
-                                            if (duplicateEntity) {
-                                                if (duplicateEntity != entity) {
-                                                    ScriptFieldInstance& fieldInstance = entityFields[name];
-                                                    fieldInstance.Field = field;
-                                                    scriptField.setValue(duplicateEntity.getComponent<IDComponent>().ID);
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                            ImGui::EndDragDropTarget();
-                        }
-                    }
-                }
-                else
-                {
-                    // Display control to set it maybe
-                    if (field.Type == ScriptFieldType::Float)
-                    {
+                    else {
                         float data = 0.0f;
                         if (ImGui::DragFloat(name.c_str(), &data))
                         {
@@ -613,85 +543,92 @@ namespace editor {
                             fieldInstance.setValue(data);
                         }
                     }
-                    if (field.Type == ScriptFieldType::Transform) {
-                        ImGui::AlignTextToFramePadding();
-                        imgui_Text(name.c_str());
-                        ImGui::SameLine();
-                        std::string resultText = "None";
-                        ImGui::Button(resultText.c_str());
 
-                        if (ImGui::BeginDragDropTarget()) {
-                            auto* payload = ImGui::AcceptDragDropPayload("TreeNodeItem");
-                            if (payload) {
-                                if (payload->IsDataType("TreeNodeItem")) {
-                                    UUID id = *static_cast<UUID*>(payload->Data);
-                                    auto payloadEntity = m_uiManager.getTreeItem(id);
+                    break;
+                }
+                case ScriptFieldType::Int: {
+                    if(hasField) {
+                        int data = scriptField.getValue<int>();
+                        if (ImGui::DragInt(name.c_str(), &data))
+                            scriptField.setValue(data);
+                    }
+                    else {
+                        /// TODO(a.raag): add logic
+                    }
 
-                                    if (payloadEntity) {
-                                        if (payloadEntity != entity) {
-                                            ScriptFieldInstance& fieldInstance = entityFields[name];
-                                            fieldInstance.Field = field;
-                                            fieldInstance.setValue(payloadEntity.getComponent<IDComponent>().ID);
-                                        }
-                                    }
+                    break;
+                }
+                case ScriptFieldType::Transform: {
+                    std::string resultButtonText = "None";
+                    if(hasField) {
+                        auto uuid = scriptField.getValue<UUID>();
+                        auto preEntity = m_interactor -> getByUUID(uuid);
+                        if (preEntity)
+                            resultButtonText = preEntity.getComponent<TagComponent>().getTag();
+                    }
+                    drawScriptFieldInfo(name, resultButtonText);
+
+                    {
+                        robot2D::DragDropTarget dragDropTarget { treeNodeItemID };
+                        if(auto uuid = dragDropTarget.unpackPayload<UUID>()) {
+                            auto payloadEntity = m_uiManager.getTreeItem(*uuid);
+                            if (payloadEntity && payloadEntity != entity) {
+                                if(hasField)
+                                    scriptField.setValue(payloadEntity.getComponent<IDComponent>().ID);
+                                else {
+                                    ScriptFieldInstance& fieldInstance = entityFields[name];
+                                    fieldInstance.Field = field;
+                                    fieldInstance.setValue(payloadEntity.getComponent<IDComponent>().ID);
                                 }
                             }
-                            ImGui::EndDragDropTarget();
                         }
                     }
-                    if (field.Type == ScriptFieldType::Entity) {
-                        ImGui::AlignTextToFramePadding();
-                        imgui_Text(name.c_str());
-                        ImGui::SameLine();
-                        std::string resultText = "None";
-                        ImGui::Button(resultText.c_str());
+                    break;
+                }
+                case ScriptFieldType::Entity: {
+                    std::string resultButtonText = "None";
+                    if(hasField) {
+                        auto uuid = scriptField.getValue<UUID>();
+                        auto preEntity = m_interactor -> getByUUID(uuid);
+                        if (preEntity)
+                            resultButtonText = preEntity.getComponent<TagComponent>().getTag();
+                    }
+                    drawScriptFieldInfo(name, resultButtonText);
+                    {
+                        robot2D::DragDropTarget dragDropTarget{ contentPrefabItemID };
+                        if(auto&& payloadBuffer = dragDropTarget.unpackPayload2Buffer()) {
+                            auto&& path = payloadBuffer.unpack<std::string>();
+                            std::filesystem::path prefabPath = std::filesystem::path("assets") / path;
+                            auto realPrefabPath = combinePath(m_interactor->getAssociatedProjectPath(),
+                                                              prefabPath.string());
 
-                        if (ImGui::BeginDragDropTarget()) {
-                            auto* payload = ImGui::AcceptDragDropPayload(contentPrefabItemID);
-                            if (payload) {
-                                if (payload->IsDataType(contentPrefabItemID)) {
-                                    const char* data = static_cast<const char*>(payload->Data);
-                                    std::string payloadString = std::string(data, payload->DataSize);
-                                    const wchar_t* rawPath = (const wchar_t*)payloadString.c_str();
-                                    std::filesystem::path prefabPath = std::filesystem::path("assets") / rawPath;
-                                    auto realPrefabPath = combinePath(m_interactor->getAssociatedProjectPath(),
-                                        prefabPath.string());
+                            Prefab::Ptr prefab { nullptr };
+                            if(auto findPrefab = m_prefabManager.findPrefab(realPrefabPath))
+                                prefab = findPrefab;
+                            else if(auto loadPrefab = m_prefabManager.loadPrefab(m_interactor, realPrefabPath))
+                                prefab = loadPrefab;
 
-                                    if (auto prefab = m_prefabManager.findPrefab(realPrefabPath)) {
-                                        robot2D::ecs::Entity duplicateEntity = m_interactor->duplicateEmptyEntity(prefab->entity);
-                                        if (duplicateEntity) {
-                                            if (duplicateEntity != entity) {
-                                                ScriptFieldInstance& fieldInstance = entityFields[name];
-                                                fieldInstance.Field = field;
-                                                fieldInstance.setValue(duplicateEntity.getComponent<IDComponent>().ID);
-                                            }
-                                        }
-                                    }
-                                    else {
+                            if(!prefab)
+                                break;
 
-                                        if (auto prefab = m_prefabManager.loadPrefab(m_interactor,
-                                            realPrefabPath)) {
-                                            robot2D::ecs::Entity duplicateEntity = m_interactor->duplicateEmptyEntity(prefab->entity);
-                                            if (duplicateEntity) {
-                                                if (duplicateEntity != entity) {
-                                                    ScriptFieldInstance& fieldInstance = entityFields[name];
-                                                    fieldInstance.Field = field;
-                                                    fieldInstance.setValue(duplicateEntity.getComponent<IDComponent>().ID);
-                                                }
-                                            }
-                                        }
-                                    }
+                            robot2D::ecs::Entity duplicateEntity =
+                                    m_interactor -> duplicateEmptyEntity(prefab -> entity);
+                            if (duplicateEntity && duplicateEntity != entity) {
+                                if(hasField)
+                                    scriptField.setValue(duplicateEntity.getComponent<IDComponent>().ID);
+                                else {
+                                    ScriptFieldInstance& fieldInstance = entityFields[name];
+                                    fieldInstance.Field = field;
+                                    scriptField.setValue(duplicateEntity.getComponent<IDComponent>().ID);
                                 }
                             }
-                            ImGui::EndDragDropTarget();
                         }
                     }
+                    break;
                 }
             }
         }
-
     }
-
 
     void InspectorPanel::drawUIComponents(robot2D::ecs::Entity entity) {
         /*

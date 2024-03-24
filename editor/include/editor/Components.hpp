@@ -327,7 +327,7 @@ namespace editor {
         std::string m_text{"Hello"};
         unsigned int m_characterSize;
         const robot2D::Font* m_font;
-        robot2D::Texture m_texture;
+        robot2D::Texture* m_texture;
 
         bool m_needUpdate;
         std::unordered_map<int, robot2D::GlyphQuad> m_bufferCache;

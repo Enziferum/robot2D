@@ -46,8 +46,9 @@ namespace editor {
                 { IconType::Scale, "scale.png" },
                 { IconType::Rotate, "rotate.png" },
         };
-    }
 
+        constexpr int frameBufferAttachmentIndex = 1;
+    }
 
     ViewportPanel::ViewportPanel(
             UIInteractor* uiInteractor,
@@ -99,12 +100,11 @@ namespace editor {
             my -= m_ViewportBounds.minRegion.y;
             robot2D::vec2f viewportSize = m_ViewportBounds.maxRegion - m_ViewportBounds.minRegion;
             my = viewportSize.y - my;
-            int mouseX = (int)mx;
-            int mouseY = (int)my;
 
             if( !m_guizmo2D.isActive() && !m_CameraCollider.isActive() ) {
                 m_frameBuffer -> Bind();
-                int graphicsEntityID = m_frameBuffer -> readPixel(1, { mouseX, mouseY });
+                int graphicsEntityID = m_frameBuffer -> readPixel(frameBufferAttachmentIndex,
+                                                                  { static_cast<int>(mx), static_cast<int>(my) });
                 m_frameBuffer -> unBind();
                 m_uiInteractor -> getSelectedEntity(graphicsEntityID);
             }
@@ -145,7 +145,8 @@ namespace editor {
                                                                    + (viewportMaxRegion.y - ViewPanelSize.y)});
             if(m_ViewportSize != robot2D::vec2u { static_cast<unsigned int>(ViewPanelSize.x), 
                         static_cast<unsigned int>(ViewPanelSize.y)} || needResetViewport) {
-                m_ViewportSize = {static_cast<unsigned int>(ViewPanelSize.x), static_cast<unsigned int>(ViewPanelSize.y)};
+                m_ViewportSize = {static_cast<unsigned int>(ViewPanelSize.x),
+                                  static_cast<unsigned int>(ViewPanelSize.y)};
                 m_frameBuffer -> Resize(m_ViewportSize);
                 m_editorCamera -> setViewportSize(m_ViewportSize.as<float>());
                 needResetViewport = false;

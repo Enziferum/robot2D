@@ -54,8 +54,8 @@ namespace editor {
         void clearSelection();
     private:
         void drawAssetBase();
-        void drawComponentsBase(robot2D::ecs::Entity entity, bool isEntity = true);
-        void drawComponents(robot2D::ecs::Entity entity, bool isEntity = true);
+        void drawComponentsBase(robot2D::ecs::Entity entity);
+        void drawComponents(robot2D::ecs::Entity entity);
         void drawUIComponents(robot2D::ecs::Entity);
         
         void drawTransformComponent(robot2D::ecs::Entity, TransformComponent& component);
@@ -66,6 +66,7 @@ namespace editor {
         void drawTextComponent(robot2D::ecs::Entity, TextComponent& component);
         void drawAnimationComponent(robot2D::ecs::Entity, AnimationComponent& component);
         void drawScriptComponent(robot2D::ecs::Entity, ScriptComponent& component);
+        void processScriptComponent(robot2D::ecs::Entity, ScriptComponent& component);
 
         void onPrefabAssetSelected(const PrefabAssetPressedMessage& message);
         void onPanelEntityNeedSelect(const PanelEntitySelectedMessage& message);

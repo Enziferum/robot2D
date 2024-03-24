@@ -33,6 +33,7 @@ source distribution.
 #include "ScopedStyleVar.hpp"
 #include "Spinner.hpp"
 #include "Sugar.hpp"
+#include "DragDropTarget.hpp"
 
 namespace robot2D {
 
