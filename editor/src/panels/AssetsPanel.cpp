@@ -34,6 +34,8 @@ source distribution.
 #include <editor/serializers/PrefabSerializer.hpp>
 #include <editor/Uuid.hpp>
 #include <editor/DragDropIDS.hpp>
+#include <editor/EditorResourceManager.hpp>
+#include <editor/Buffer.hpp>
 
 namespace editor {
     namespace fs = std::filesystem;
@@ -101,7 +103,45 @@ namespace editor {
                 }
             return false;
         }
+
+        class DragDropTarget {
+        public:
+            explicit DragDropTarget(const std::string& id);
+            DragDropTarget() = delete;
+            DragDropTarget(const DragDropTarget& other) = delete;
+            DragDropTarget& operator=(const DragDropTarget& other) = delete;
+            DragDropTarget(DragDropTarget&& other) = delete;
+            DragDropTarget& operator=(DragDropTarget&& other) = delete;
+            ~DragDropTarget();
+
+            template<typename T>
+            T* unpackPayload();
+        private:
+            const std::string& m_id;
+            bool m_beginTarget { false };
+        };
+
+        DragDropTarget::DragDropTarget(const std::string& id): m_id(id) {
+            if(BeginDrapDropTargetWindow(m_id.c_str()))
+                m_beginTarget = true;
+        }
+
+        DragDropTarget::~DragDropTarget() {
+            if(m_beginTarget)
+                ImGui::EndDragDropTarget();
+        }
+
+        template<typename T>
+        inline T* DragDropTarget::unpackPayload() {
+            if(!m_beginTarget)
+                return nullptr;
+            auto* payload = ImGui::AcceptDragDropPayload(m_id.c_str());
+            if(!payload || !payload -> IsDataType(m_id.c_str()))
+                return nullptr;
+            return static_cast<T*>(payload -> Data);
+        }
     }
+
 
     AssetsPanel::AssetsPanel(robot2D::MessageBus& messageBus,
                              IUIManager& iuiManager, PrefabManager& prefabManager):
@@ -133,7 +173,7 @@ namespace editor {
         bool anyItemIsHovered = false;
 
         imgui_Window("Assets") {
-            m_visible = ImGui::IsWindowHovered();
+            m_visible = ImGui::IsWindowFocused();
 
             if(m_state == State::Loading)
                 return;
@@ -152,19 +192,15 @@ namespace editor {
                 columnCount = 1;
 
             if(is_directory(m_currentPath) && is_empty(m_currentPath)) {
-                if(BeginDrapDropTargetWindow(treeNodeItemID)) {
-                    auto* payload = ImGui::AcceptDragDropPayload(treeNodeItemID);
-                    if(payload && payload -> IsDataType(treeNodeItemID)) {
-                        UUID id = *static_cast<UUID*>(payload -> Data);
-                        auto entity = m_uiManager.getTreeItem(id);
-                        if(entity) {
-                            auto path = fs::relative(m_currentPath);
-                            bool ok = m_prefabManager.addPrefab(entity, path.string());
-                            if(!ok) {
-                                RB_EDITOR_ERROR("AssetPanel: Can't add prefab by path: {0}", path.string());
-                            }
+                DragDropTarget dragDropTarget{treeNodeItemID};
+                if(auto uuid = dragDropTarget.unpackPayload<UUID>()) {
+                    auto entity = m_uiManager.getTreeItem(*uuid);
+                    if(entity) {
+                        auto path = fs::relative(m_currentPath);
+                        bool ok = m_prefabManager.addPrefab(entity, path.string());
+                        if(!ok) {
+                            RB_EDITOR_ERROR("AssetPanel: Can't add prefab by path: {0}", path.string());
                         }
-                        ImGui::EndDragDropTarget();
                     }
                 }
             }
@@ -195,9 +231,11 @@ namespace editor {
 
                             auto extension = relativePath.extension();
                             if(extension == ".prefab") {
-                                auto* msg =
-                                        m_messageBus.postMessage<PrefabAssetPressedMessage>(MessageID::PrefabAssetPressed);
-                                msg -> localPath = relativePath.string();
+                                auto str = relativePath.string();
+                                int allocSize = StringBuffer::calcAllocSize(str);
+                                void* rawBuffer = m_messageBus.postMessage(MessageID::PrefabAssetPressed, allocSize);
+                                Buffer buffer { rawBuffer };
+                                pack_message_string(str, buffer);
                             }
 
                         }
@@ -251,15 +289,12 @@ namespace editor {
         }
     }
 
-
     void AssetsPanel::processDragDrop(const std::filesystem::directory_entry& directoryEntry,
                                       std::filesystem::path& relativePath) {
-
-        if(BeginDrapDropTargetWindow(treeNodeItemID)) {
-            auto* payload = ImGui::AcceptDragDropPayload(treeNodeItemID);
-            if(payload && payload -> IsDataType(treeNodeItemID)) {
-                UUID id = *static_cast<UUID*>(payload -> Data);
-                auto entity = m_uiManager.getTreeItem(id);
+        {
+            DragDropTarget dragDropTarget{treeNodeItemID};
+            if(auto* uuid = dragDropTarget.unpackPayload<UUID>()) {
+                auto entity = m_uiManager.getTreeItem(*uuid);
                 if(entity) {
                     auto path = fs::relative(m_assetsPath);
                     bool success = m_prefabManager.addPrefab(entity, path.string());
@@ -267,8 +302,8 @@ namespace editor {
                         RB_EDITOR_ERROR("AssetPanel: Can't add prefab by path: {0}", path.string());
                 }
             }
-            ImGui::EndDragDropTarget();
         }
+
 
         imgui_DragDropSource() {
             if(!directoryEntry.is_directory()) {
@@ -281,8 +316,11 @@ namespace editor {
                 auto len = (strlen(itemPath) + 1) * sizeof(char);
 #endif
 
-
-                if(extension == ".scene" || extension == ".png" || extension == ".ttf") {
+                if(extension == ".scene") {
+                    ImGui::SetDragDropPayload(contentSceneID, itemPath, len);
+                    imgui_Text(relativePath.filename().string().c_str());
+                }
+                if(extension == ".png" || extension == ".ttf") {
                     ImGui::SetDragDropPayload(contentItemID, itemPath, len);
                     imgui_Text(relativePath.filename().string().c_str());
                 }

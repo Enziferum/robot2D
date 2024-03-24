@@ -29,10 +29,10 @@ source distribution.
 #include <editor/FileApi.hpp>
 #include <editor/TaskQueue.hpp>
 #include <editor/ResouceManager.hpp>
+#include <editor/LocalResourceManager.hpp>
 #include <editor/DragDropIDS.hpp>
 
 #include <editor/components/ButtonComponent.hpp>
-
 #include <editor/async/ImageLoadTask.hpp>
 #include <editor/async/FontLoadTask.hpp>
 #include <editor/AnimationManager.hpp>
@@ -60,14 +60,13 @@ namespace editor {
         bool node_open = false;
         float lineHeight = 0.f;
 
-        /// TODO(a.raag): Scoped StyleVar
         {
-            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{ 4, 4 });
+            robot2D::ScopedStyleVarVec2 styleVar{ ImGuiStyleVar_FramePadding, ImVec2{ 4, 4 }};
             lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
             ImGui::Separator();
 
-            node_open = ImGui::TreeNodeEx((void*)typeid(T).hash_code(), treeNodeFlags, "%s", name.c_str());
-            ImGui::PopStyleVar();
+            auto hashCode = typeid(T).hash_code();
+            node_open = ImGui::TreeNodeEx(reinterpret_cast<void*>(hashCode), treeNodeFlags, "%s", name.c_str());
             ImGui::SameLine(contentRegionAvailable.x - lineHeight * 0.5f);
         }
 
@@ -101,8 +100,10 @@ namespace editor {
     m_prefabManager{prefabManager},
     m_uiManager{uiManager}
     {
-        m_messageDispatcher.onMessage<PrefabAssetPressedMessage>(MessageID::PrefabAssetPressed,
-                                                                 BIND_CLASS_FN(onPrefabAssetSelected));
+        m_messageDispatcher.onMessage<PrefabAssetPressedMessage>(
+                MessageID::PrefabAssetPressed,
+                BIND_CLASS_FN(onPrefabAssetSelected)
+        );
 
         m_messageDispatcher.onMessage<PanelEntitySelectedMessage>(
                 MessageID::PanelEntityNeedSelect,
@@ -175,18 +176,13 @@ namespace editor {
                 return;
 
             auto tag = entity.getComponent<TagComponent>().getTag();
+            static ImGuiInputTextFlags inputFlags = ImGuiInputTextFlags_EnterReturnsTrue
+                                                    | ImGuiInputTextFlags_AutoSelectAll;
 
-            /// TODO(a.raag): robot2D-imgui Api's Text using
-            char buffer[256];
-            memset(buffer, 0, sizeof(buffer));
-            std::strncpy(buffer, tag.c_str(), sizeof(buffer));
-
-            if (ImGui::InputText("##Tag", buffer, sizeof(buffer)))
-            {
-                std::string sbuffer = std::string(buffer);
-                if(sbuffer.empty())
-                    sbuffer = "Untitled Entity";
-                entity.getComponent<TagComponent>().setTag(sbuffer);
+            imgui_InputText("##Tag", &tag, inputFlags) {
+                if(tag.empty())
+                    tag = "Untitled Entity";
+                entity.getComponent<TagComponent>().setTag(tag);
             }
 
             ImGui::Text("UUID: %llu", entity.getComponent<IDComponent>().ID);
@@ -280,7 +276,6 @@ namespace editor {
     }
 
     void InspectorPanel::drawComponents(robot2D::ecs::Entity entity, bool isEntity) {
-
         drawComponent<TransformComponent>("Transform", entity, BIND_CLASS_FN(drawTransformComponent));
         drawComponent<CameraComponent>("Camera", entity, BIND_CLASS_FN(drawCameraComponent));
         drawComponent<DrawableComponent>("Drawable", entity, BIND_CLASS_FN(drawDrawableComponent));
@@ -292,7 +287,7 @@ namespace editor {
     }
 
 
-    void InspectorPanel::drawTransformComponent(robot2D::ecs::Entity entity, TransformComponent& component) {
+    void InspectorPanel::drawTransformComponent([[maybe_unused]] robot2D::ecs::Entity entity, TransformComponent& component) {
         robot2D::vec2f lastPosition = component.getPosition();
         robot2D::vec2f lastScale = component.getScale();
         float lastRotation = component.getRotate();
@@ -308,8 +303,7 @@ namespace editor {
 
     }
     
-    void InspectorPanel::drawCameraComponent(robot2D::ecs::Entity entity, CameraComponent& component) {
-
+    void InspectorPanel::drawCameraComponent([[maybe_unused]] robot2D::ecs::Entity entity, CameraComponent& component) {
         auto& camera = component.camera;
         ImGui::Checkbox("Primary", &component.isPrimary);
         float orthoSize = component.orthoSize;
@@ -336,18 +330,14 @@ namespace editor {
     }
     
     void InspectorPanel::drawDrawableComponent(robot2D::ecs::Entity entity, DrawableComponent& component) {
-        // TODO(a.raag): fix color getting
         auto color = component.getColor().toGL();
-        float colors[4];
-        colors[0] = color.red; colors[1] = color.green;
-        colors[2] = color.blue; colors[3] = color.alpha;
-        ImGui::ColorEdit4("Color", colors);
-
+        auto p_color = reinterpret_cast<float*>(&color);
+        ImGui::ColorEdit4("Color", p_color);
 
         if (component.isUtil)
             return;
 
-        component.setColor(robot2D::Color::fromGL(colors[0], colors[1], colors[2], colors[3]));
+        component.setColor(robot2D::Color::fromGL(p_color[0], p_color[1], p_color[2], p_color[3]));
         int lastDepth = component.getDepth();
         ImGui::InputInt("zDepth", &component.getDepth());
         if (lastDepth != component.getDepth())
@@ -356,28 +346,27 @@ namespace editor {
         ImGui::Button("Texture", ImVec2(100.0f, 0.0f));
 
         imgui_DragDropTarget {
-            // all string types make as Parameters somewhere
-
             if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(contentItemID))
             {
-                const wchar_t* path = (const wchar_t*)payload->Data;
+                const char* path = static_cast<const char*>(payload -> Data);
                 std::filesystem::path localPath = std::filesystem::path("assets") / path;
-                auto texturePath = combinePath(m_interactor->getAssociatedProjectPath(), localPath.string());
+                auto texturePath = combinePath(m_interactor -> getAssociatedProjectPath(), localPath.string());
 
                 component.setTexturePath(localPath.string());
                 auto manager = ResourceManager::getManager();
-                if (!manager->hasImage(localPath.filename().string())) {
+                if (!manager -> hasImage(localPath.filename().string())) {
                     auto queue = TaskQueue::GetQueue();
-                    queue -> template addAsyncTask<ImageLoadTask>([this](const ImageLoadTask& task) {
-                        this->onLoadImage(task.getImage(), task.getEntity());
+                    queue -> template addAsyncTask<ImageLoadTask>([](const ImageLoadTask& task) {
+                        InspectorPanel::onLoadImage(task.getImage(), task.getEntity());
                     }, texturePath, entity);
                 }
                 else {
-                    /// TODO(a.raag): use Local ResourceManager
-                    auto texture = m_textures.add(entity.getIndex());
+                    auto* localManager = LocalResourceManager::getManager();
+                    auto idComponent = entity.getComponent<IDComponent>();
+                    auto* texture = localManager -> addTexture(std::to_string(idComponent.ID));
                     if (texture) {
-                        auto image = manager->getImage(localPath.filename().string());
-                        texture->create(image);
+                        auto image = manager -> getImage(localPath.filename().string());
+                        texture -> create(image);
                         component.setTexture(*texture);
                     }
                 }
@@ -388,8 +377,6 @@ namespace editor {
             auto& spriteComponent = entity.template getComponent<DrawableComponent>();
             if (spriteComponent.hasTexture()) {
                 auto size = spriteComponent.getTexture().getSize();
-                auto colorFormat = spriteComponent.getTexture().getColorFormat();
-
                 ImGui::Text("Width = %i", size.x);
                 ImGui::SameLine();
                 ImGui::Text("Height = %i", size.y);
@@ -399,7 +386,7 @@ namespace editor {
 
     }
     
-    void InspectorPanel::drawPhysics2DComponent(robot2D::ecs::Entity, Physics2DComponent& component) {
+    void InspectorPanel::drawPhysics2DComponent([[maybe_unused]] robot2D::ecs::Entity entity, Physics2DComponent& component) {
         const char* bodyTypeStrings[] = { "Static", "Dynamic", "Kinematic" };
         const char* currentBodyTypeString = bodyTypeStrings[(int)component.type];
         imgui_Combo("Body Type", currentBodyTypeString) {
@@ -420,7 +407,7 @@ namespace editor {
         ImGui::Checkbox("Fixed Rotation", &component.fixedRotation);
     }
     
-    void InspectorPanel::drawCollider2DComponent(robot2D::ecs::Entity entity, Collider2DComponent& component) {
+    void InspectorPanel::drawCollider2DComponent([[maybe_unused]] robot2D::ecs::Entity entity, Collider2DComponent& component) {
         float offset[2] = { component.offset.x, component.offset.y };
         float size[2] = { component.size.x, component.size.y };
         ImGui::DragFloat2("Offset", offset);
@@ -436,18 +423,16 @@ namespace editor {
     void InspectorPanel::drawTextComponent(robot2D::ecs::Entity entity, TextComponent& component) {
         ImGui::Button("Font", ImVec2(100.0f, 0.0f));
         imgui_DragDropTarget {
-            // all string types make as Parameters somewhere
-
             if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload(contentItemID))
             {
-                const wchar_t* path = (const wchar_t*)payload->Data;
+                const char* path = static_cast<const char*>(payload -> Data);
                 std::filesystem::path localPath = std::filesystem::path("assets") / path;
-                auto texturePath = combinePath(m_interactor->getAssociatedProjectPath(), localPath.string());
+                auto fontPath = combinePath(m_interactor -> getAssociatedProjectPath(), localPath.string());
 
                 auto queue = TaskQueue::GetQueue();
-                queue -> template addAsyncTask<FontLoadTask>([this](const FontLoadTask& task) {
-                    this->onLoadFont(task.getFont(), task.getEntity());
-                }, texturePath, entity);
+                queue -> template addAsyncTask<FontLoadTask>([](const FontLoadTask& task) {
+                    InspectorPanel::onLoadFont(task.getFont(), task.getEntity());
+                }, fontPath, entity);
             }
         }
         if (component.getFont()) {
@@ -476,12 +461,13 @@ namespace editor {
 
         imgui_PopupContextItem("Find Script Class") {
             auto classes = ScriptEngine::getClasses();
-
+            constexpr float filterWidth = 180.f;
             ImGuiTextFilter textFilter;
-            textFilter.Draw("Classes", 180);
+            textFilter.Draw("Classes", filterWidth);
             imgui_ListBox("##ListBox") {
                 for (const auto& [name, Class] : classes) {
-                    if (!textFilter.PassFilter(name.c_str())) continue;
+                    if (!textFilter.PassFilter(name.c_str()))
+                        continue;
                     const bool is_selected = (name == currItem);
                     ImGui::Selectable(name.c_str(), is_selected);
                     if (ImGui::IsItemClicked()) {
@@ -491,7 +477,6 @@ namespace editor {
                 }
             }
         }
-
 
         bool isSceneRunning = m_interactor -> isRunning();
 
@@ -542,7 +527,7 @@ namespace editor {
                     }
                     if (field.Type == ScriptFieldType::Transform) {
                         ImGui::AlignTextToFramePadding();
-                        ImGui::Text("%s", name.c_str());
+                        imgui_Text(name.c_str());
                         ImGui::SameLine();
                         auto uuid = scriptField.getValue<UUID>();
                         auto preEntity = m_interactor->getByUUID(uuid);
@@ -568,7 +553,7 @@ namespace editor {
                     }
                     if (field.Type == ScriptFieldType::Entity) {
                         ImGui::AlignTextToFramePadding();
-                        ImGui::Text("%s", name.c_str());
+                        imgui_Text(name.c_str());
                         ImGui::SameLine();
                         auto uuid = scriptField.getValue<UUID>();
                         auto preEntity = m_interactor->getByUUID(uuid);
@@ -630,7 +615,7 @@ namespace editor {
                     }
                     if (field.Type == ScriptFieldType::Transform) {
                         ImGui::AlignTextToFramePadding();
-                        ImGui::Text("%s", name.c_str());
+                        imgui_Text(name.c_str());
                         ImGui::SameLine();
                         std::string resultText = "None";
                         ImGui::Button(resultText.c_str());
@@ -656,7 +641,7 @@ namespace editor {
                     }
                     if (field.Type == ScriptFieldType::Entity) {
                         ImGui::AlignTextToFramePadding();
-                        ImGui::Text("%s", name.c_str());
+                        imgui_Text(name.c_str());
                         ImGui::SameLine();
                         std::string resultText = "None";
                         ImGui::Button(resultText.c_str());
@@ -784,13 +769,15 @@ namespace editor {
             return;
         }
 
-        auto t = m_textures.add(entity.getIndex());
-        if(t)
-            t -> create(image);
+        auto* localManager = LocalResourceManager::getManager();
+        auto idComponent = entity.getComponent<IDComponent>();
+        auto* texture = localManager -> addTexture(std::to_string(idComponent.ID));
+        if(!texture)
+            return;
+        texture -> create(image);
 
-        if(entity.hasComponent<DrawableComponent>()) {
-            entity.getComponent<DrawableComponent>().setTexture(m_textures[entity.getIndex()]);
-        }
+        if(entity.hasComponent<DrawableComponent>())
+            entity.getComponent<DrawableComponent>().setTexture(*texture);
     }
 
     void InspectorPanel::onLoadFont(const robot2D::Font& font, robot2D::ecs::Entity entity) {
@@ -799,14 +786,15 @@ namespace editor {
             return;
         }
 
-        auto f = m_fonts.add(entity.getIndex());
+        auto* localManager = LocalResourceManager::getManager();
+        auto idComponent = entity.getComponent<IDComponent>();
+        auto* f = localManager -> addFont(std::to_string(idComponent.ID));
         if(!f)
             return;
-        f -> clone(const_cast<robot2D::Font &>(font));
+        f -> clone(const_cast<robot2D::Font&>(font));
 
-        if(entity.hasComponent<TextComponent>()) {
-            entity.getComponent<TextComponent>().setFont(m_fonts[entity.getIndex()]);
-        }
+        if(entity.hasComponent<TextComponent>())
+            entity.getComponent<TextComponent>().setFont(*f);
     }
 
 
@@ -822,7 +810,7 @@ namespace editor {
             RB_EDITOR_ERROR("InspectorPanel: Can't load prefab by path {0}", fullPath);
         }
         else {
-            m_selectedEntity = prefab->entity;
+            m_selectedEntity = prefab -> entity;
         }
     }
 

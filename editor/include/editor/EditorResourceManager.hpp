@@ -37,9 +37,7 @@ namespace editor {
         }
 
         bool hasTexture(EditorResourceID ID) const;
-
         bool loadFromFile(EditorResourceID, const std::string& path);
-
         robot2D::Texture& getTexture(EditorResourceID);
     private:
         robot2D::ResourceHandler<robot2D::Texture, EditorResourceID> m_resources;

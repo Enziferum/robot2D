@@ -20,36 +20,31 @@ source distribution.
 *********************************************************************/
 
 #pragma once
-
-#include <initializer_list>
 #include <utility>
-
 #include <imgui/imgui.h>
-#include <robot2D/Graphics/Color.hpp>
 
 namespace robot2D {
 
-    /// \brief RAII wrapper ImGui StyleColor
-    struct ScopedStyleColor {
-        ScopedStyleColor() = delete;
-        ScopedStyleColor(const ScopedStyleColor& other) = delete;
-        ScopedStyleColor& operator=(const ScopedStyleColor& other) = delete;
-        ScopedStyleColor(ScopedStyleColor&& other) = delete;
-        ScopedStyleColor& operator=(ScopedStyleColor&& other) = delete;
+    /// \brief Simple RAII wrapper around ImGuiStyleVar, support both float and ImVec2 / robot2D::vec2f
+    template<typename T>
+    class ScopedStyleVar {
+        using ImGuiPair = std::pair<ImGuiStyleVar, T>;
+    public:
+        ScopedStyleVar() = delete;
+        ScopedStyleVar(const ScopedStyleVar& other) = delete;
+        ScopedStyleVar& operator=(const ScopedStyleVar& other) = delete;
+        ScopedStyleVar(ScopedStyleVar&& other) = delete;
+        ScopedStyleVar& operator=(ScopedStyleVar&& other) = delete;
 
-        ScopedStyleColor(int rawIdx, robot2D::Color color): m_count { 1 } {
-            ImGui::PushStyleColor(rawIdx, color);
-        }
+        ScopedStyleVar(ImGuiStyleVar ImGuiVar, const T& value);
+        ScopedStyleVar(std::initializer_list<ImGuiPair> values);
 
-        ScopedStyleColor(const std::initializer_list<std::pair<int, robot2D::Color>>& colors) {
-            for(const auto& color: colors)
-                ImGui::PushStyleColor(color.first, color.second);
-            m_count = colors.size();
-        }
-
-        ~ScopedStyleColor() { ImGui::PopStyleColor(m_count); }
+        ~ScopedStyleVar();
     private:
-        int m_count { 0 };
+        int m_count{ 0 };
     };
+
+    using ScopedStyleVarF = ScopedStyleVar<float>;
+    using ScopedStyleVarVec2 = ScopedStyleVar<ImVec2>;
 
 } // namespace robot2D

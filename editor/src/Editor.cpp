@@ -345,7 +345,7 @@ namespace editor {
         m_window -> setMaximazed(true);
 #endif
         auto& viewportPanel = m_panelManager.getPanel<ViewportPanel>();
-        viewportPanel.set(m_frameBuffer);
+        viewportPanel.setFramebuffer(m_frameBuffer);
 
         m_panelManager.getPanel<GameViewport>().setFrameBuffer(m_gameFrameBuffer);
         m_needPrepareView = false;
@@ -364,7 +364,7 @@ namespace editor {
         inspectorPanel.setInteractor(m_interactor);
 
         auto& viewportPanel = m_panelManager.getPanel<ViewportPanel>();
-        viewportPanel.set(m_frameBuffer);
+        viewportPanel.setFramebuffer(m_frameBuffer);
 
         auto assetsPath = combinePath(path, "assets");
         auto& assetsPanel = m_panelManager.getPanel<AssetsPanel>();

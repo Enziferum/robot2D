@@ -30,6 +30,7 @@ source distribution.
 
 #include "WindowOptions.hpp"
 #include "ScopedStyleColor.hpp"
+#include "ScopedStyleVar.hpp"
 #include "Spinner.hpp"
 #include "Sugar.hpp"
 

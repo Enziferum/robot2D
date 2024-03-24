@@ -71,20 +71,15 @@ namespace editor {
         void onPanelEntityNeedSelect(const PanelEntitySelectedMessage& message);
         void onPanelEntitySelected(const PanelEntitySelectedMessage& message);
 
-        void onLoadImage(const robot2D::Image& image, robot2D::ecs::Entity entity);
-        void onLoadFont(const robot2D::Font& font, robot2D::ecs::Entity entity);
+        static void onLoadImage(const robot2D::Image& image, robot2D::ecs::Entity entity);
+        static void onLoadFont(const robot2D::Font& font, robot2D::ecs::Entity entity);
     private:
         MessageDispatcher& m_messageDispatcher;
         PrefabManager& m_prefabManager;
         robot2D::MessageBus& m_messageBus;
         IUIManager& m_uiManager;
-        robot2D::ecs::Entity m_selectedEntity;
-
         UIInteractor::Ptr m_interactor{nullptr};
-
-        robot2D::ResourceHandler<robot2D::Texture, robot2D::ecs::EntityID> m_textures;
-        robot2D::ResourceHandler<robot2D::Font, robot2D::ecs::EntityID> m_fonts;
-
+        robot2D::ecs::Entity m_selectedEntity;
 
         enum class InspectType {
             EditorEntity,

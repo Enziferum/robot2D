@@ -30,10 +30,20 @@ namespace robot2D {
     class Spinner {
     public:
         Spinner() = default;
+        Spinner(const Spinner& other) = delete;
+        Spinner& operator=(const Spinner& other) = delete;
+        Spinner(Spinner&& other) = delete;
+        Spinner& operator=(Spinner&& other) = delete;
         ~Spinner() = default;
 
         void setPosition(const robot2D::vec2f& position) {
+            m_position = position;
             ImGui::SetCursorPos(position);
+        }
+
+        [[nodiscard]]
+        robot2D::vec2f getPosition() const noexcept {
+            return m_position;
         }
 
         void setRadius(float radius) { m_radius = radius; }
@@ -45,28 +55,28 @@ namespace robot2D {
         void setBackgroundColor(robot2D::Color color) { m_backgroundColor = color; }
 
         // TODO(a.raag): calculate size over whole spinner bb
-        robot2D::vec2f calculateSize(const ImGuiStyle& style) {
+        [[nodiscard]]
+        robot2D::vec2f calculateSize(const ImGuiStyle& style) const {
             return {(m_radius + m_thickness) * 2, (m_radius + m_thickness + style.FramePadding.y) * 2};
         }
 
         void setIsShow(bool flag) { m_isShowing = flag; }
-        bool isShowing() const {
-            return m_isShowing;
-        }
+        bool isShowing() const noexcept { return m_isShowing; }
 
         void draw();
     private:
         bool begin();
     private:
         bool m_isShowing{false};
-        robot2D::vec2f m_center;
+        robot2D::vec2f m_center { };
+        robot2D::vec2f m_position{ };
 
         std::string m_label;
-        float m_radius;
-        float m_thickness;
-        float m_speed;
-        float m_angle;
-        robot2D::Color m_color;
-        robot2D::Color m_backgroundColor;
+        float m_radius { 0.f };
+        float m_thickness { 0.f };
+        float m_speed { 0.f };
+        float m_angle { 0.f };
+        robot2D::Color m_color { robot2D::Color::White };
+        robot2D::Color m_backgroundColor { robot2D::Color::White };
     };
-}
+} // namespace robot2D
