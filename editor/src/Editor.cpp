@@ -424,12 +424,12 @@ namespace editor {
     }
 
 
-    void Editor::findSelectedEntitiesOnUI(std::vector<robot2D::ecs::Entity>& entities) {
+    void Editor::findSelectedEntitiesOnUI(std::vector<ITreeItem::Ptr>&& items) {
         auto& scenePanel = m_panelManager.getPanel<ScenePanel>();
-        scenePanel.processSelectedEntities(entities);
+        scenePanel.processSelectedEntities(std::move(items));
 
-        auto& inspectorPanel = m_panelManager.getPanel<InspectorPanel>();
-        inspectorPanel.setSelected(entities.back());
+        // auto& inspectorPanel = m_panelManager.getPanel<InspectorPanel>();
+        // inspectorPanel.setSelected(entities.back());
     }
 
     DeletedEntitiesRestoreUIInformation

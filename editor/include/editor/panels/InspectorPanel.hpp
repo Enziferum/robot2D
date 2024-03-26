@@ -34,6 +34,7 @@ source distribution.
 #include <editor/Components.hpp>
 
 #include "IPanel.hpp"
+#include "editor/components/ButtonComponent.hpp"
 
 namespace editor {
 
@@ -67,6 +68,8 @@ namespace editor {
         void drawAnimationComponent(robot2D::ecs::Entity, AnimationComponent& component);
         void drawScriptComponent(robot2D::ecs::Entity, ScriptComponent& component);
         void processScriptComponent(robot2D::ecs::Entity, ScriptComponent& component);
+
+        void drawUIButtonComponent(robot2D::ecs::Entity, ButtonComponent& component);
 
         void onPrefabAssetSelected(const PrefabAssetPressedMessage& message);
         void onPanelEntityNeedSelect(const PanelEntitySelectedMessage& message);

@@ -448,11 +448,9 @@ namespace editor {
         component.size = { size[0], size[1] };
     }
 
-
     void InspectorPanel::drawAnimationComponent(robot2D::ecs::Entity, AnimationComponent& component) {
         auto* animationManager = AnimationManager::getManager();
     }
-
 
     void InspectorPanel::drawScriptComponent(robot2D::ecs::Entity entity, ScriptComponent& component) {
         std::string currItem = component.name; // Here we store our selection data as an index.
@@ -514,7 +512,6 @@ namespace editor {
             processScriptComponent(entity, component);
         }
     }
-
 
     void InspectorPanel::processScriptComponent(robot2D::ecs::Entity entity, ScriptComponent& component) {
         auto entityClass = ScriptEngine::getEntityClass(component.name);
@@ -602,6 +599,7 @@ namespace editor {
                             auto realPrefabPath = combinePath(m_interactor->getAssociatedProjectPath(),
                                                               prefabPath.string());
 
+                            /// TODO(a.raag): findPrefab remove when test loadPrefab Correctness
                             Prefab::Ptr prefab { nullptr };
                             if(auto findPrefab = m_prefabManager.findPrefab(realPrefabPath))
                                 prefab = findPrefab;
@@ -631,72 +629,57 @@ namespace editor {
     }
 
     void InspectorPanel::drawUIComponents(robot2D::ecs::Entity entity) {
-        /*
-        drawComponent<ButtonComponent>("Button", entity, [this, interactor = m_interactor]
-        (auto& component) {
+        drawComponent<ButtonComponent>("Button", entity, BIND_CLASS_FN(drawUIButtonComponent));
+    }
 
-                ImGui::Text("OnClick");
+    void InspectorPanel::drawUIButtonComponent([[maybe_unused]] robot2D::ecs::Entity entity, ButtonComponent& component) {
+        ImGui::Text("OnClick");
+        std::string resultText = "No Object";
+        if (component.hasEntity()) {
+            auto preEntity = m_interactor -> getByUUID(component.scriptEntity);
 
+            if (preEntity)
+                resultText = preEntity.template getComponent<TagComponent>().getTag();
+        }
 
-                ImGui::AlignTextToFramePadding();
-                ImGui::Text("Object");
-                ImGui::SameLine();
-                std::string resultText = "No Object";
-                if (component.hasEntity()) {
-                    auto preEntity = interactor->getByUUID(component.scriptEntity);
+        drawScriptFieldInfo("Object", resultText);
+        {
+            robot2D::DragDropTarget dragDropTarget{ treeNodeItemID };
+            if(auto uuid = dragDropTarget.unpackPayload<UUID>()) {
+                auto payloadEntity = m_uiManager.getTreeItem(*uuid);
 
-                    if (preEntity)
-                        resultText = preEntity.template getComponent<TagComponent>().getTag();
-                }
+                if (payloadEntity && payloadEntity.hasComponent<ScriptComponent>())
+                    component.scriptEntity = payloadEntity.getComponent<IDComponent>().ID;
+            }
+        }
 
-                ImGui::Button(resultText.c_str());
+        if (!component.hasEntity())
+            return;
 
-                if (ImGui::BeginDragDropTarget()) {
-                    auto* payload = ImGui::AcceptDragDropPayload("TreeNodeItem");
-                    if (payload && payload->IsDataType("TreeNodeItem")) {
-                        UUID id = *static_cast<UUID*>(payload->Data);
-                        auto payloadEntity = m_uiManager.getTreeItem(id);
+        auto klasses = ScriptEngine::getClasses();
+        auto scriptEntity = m_interactor -> getByUUID(component.scriptEntity);
+        MonoClassWrapper::Ptr klass = klasses[scriptEntity.template getComponent<ScriptComponent>().name];
 
-                        if (payloadEntity && payloadEntity.hasComponent<ScriptComponent>()) {
-                            component.scriptEntity = payloadEntity.getComponent<IDComponent>().ID;
-                        }
+        std::string preview = component.clickMethodName.empty() ? "No Function" : component.clickMethodName;
+        imgui_Combo("##RegMethods", preview.c_str()) {
+            for (auto& [name, _] : klass->getRegisterMethods()) {
+                const bool is_selected = (component.clickMethodName == name);
+                if (ImGui::Selectable(name.c_str(), is_selected)) {
+                    if (!component.onClickCallback) {
+                        component.onClickCallback = [](UUID uuid, const std::string& methodName) {
+                            auto instance = ScriptEngine::getEntityScriptInstance(uuid);
+                            if (instance)
+                                instance->getClassWrapper()->callMethod(methodName);
+                        };
                     }
-                    ImGui::EndDragDropTarget();
+                    component.clickMethodName = name;
                 }
 
+                if (is_selected)
+                    ImGui::SetItemDefaultFocus();
+            }
+        }
 
-                if (!component.hasEntity())
-                    return;
-
-
-                auto klasses = ScriptEngine::getClasses();
-                auto scriptEntity = m_interactor->getByUUID(component.scriptEntity);
-                MonoClassWrapper::Ptr klass = klasses[scriptEntity.template getComponent<ScriptComponent>().name];
-
-                std::string preview = component.clickMethodName.empty() ? "No Function" : component.clickMethodName;
-                if (ImGui::BeginCombo("##RegMethods", preview.c_str())) {
-                    for (auto& [name, _] : klass->getRegisterMethods()) {
-                        const bool is_selected = (component.clickMethodName == name);
-                        if (ImGui::Selectable(name.c_str(), is_selected)) {
-                            if (!component.onClickCallback) {
-                                component.onClickCallback = [](UUID uuid, const std::string& methodName) {
-                                    auto instance = ScriptEngine::getEntityScriptInstance(uuid);
-                                    if (instance)
-                                        instance->getClassWrapper()->callMethod(methodName);
-                                    };
-                            }
-                            component.clickMethodName = name;
-                        }
-
-
-                        if (is_selected)
-                            ImGui::SetItemDefaultFocus();
-                    }
-
-                    ImGui::EndCombo();
-                }
-            });
-            */
     }
 
 
@@ -783,5 +766,6 @@ namespace editor {
         m_inspectType = InspectType::EditorEntity;
         m_selectedEntity = message.entity;
     }
+
 
 }

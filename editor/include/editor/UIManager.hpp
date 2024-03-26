@@ -36,7 +36,6 @@ namespace editor {
     public:
         virtual ~IUIManager() = 0;
         virtual void blockEvents(bool flag) = 0;
-        virtual robot2D::ecs::Entity getSelectedEntity(int PixelIndex) = 0;
         virtual robot2D::ecs::Entity getSelectedEntity()  = 0;
         virtual robot2D::ecs::Entity getTreeItem(UUID uuid)  = 0;
     };
@@ -60,7 +59,6 @@ namespace editor {
         void render();
 
         void blockEvents(bool flag) override;
-        robot2D::ecs::Entity getSelectedEntity(int PixelIndex) override;
         robot2D::ecs::Entity getSelectedEntity() override;
         robot2D::ecs::Entity getTreeItem(editor::UUID uuid) override;
     private:

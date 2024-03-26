@@ -54,13 +54,12 @@ namespace editor {
         void setInteractor(UIInteractor::Ptr interactor);
         void render() override;
 
-        robot2D::ecs::Entity getSelectedEntity(int PixelData);
         robot2D::ecs::Entity getSelectedEntity() const;
         robot2D::ecs::Entity getTreeItem(UUID uuid);
 
         void clearSelection();
 
-        void processSelectedEntities(std::vector<robot2D::ecs::Entity>& entities);
+        void processSelectedEntities(std::vector<ITreeItem::Ptr>&& items);
 
         DeletedEntitiesRestoreUIInformation
         removeEntitiesOnUI(std::vector<robot2D::ecs::Entity>& selectedEntities);
@@ -76,7 +75,7 @@ namespace editor {
 
         void setupTreeHierarchy();
         void setStartChildEntity(robot2D::ecs::Entity entity, ITreeItem::Ptr parent);
-        void processSelectedChildren(ITreeItem::Ptr parent, std::vector<robot2D::ecs::Entity>& entities);
+        void processSelectedChildren(ITreeItem::Ptr parent, std::vector<ITreeItem::Ptr>& items);
     private:
         robot2D::MessageBus& m_messageBus;
         MessageDispatcher& m_messageDispatcher;

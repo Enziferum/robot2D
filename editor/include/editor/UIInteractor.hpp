@@ -17,8 +17,10 @@ namespace editor {
         using Ptr = UIInteractor*;
 
         virtual ~UIInteractor() = 0;
+
         virtual std::vector<robot2D::ecs::Entity>& getSelectedEntities()  = 0;
         virtual robot2D::ecs::Entity getSelectedEntity(int graphicsEntityID) = 0;
+
         virtual void restoreDeletedEntities(DeletedEntitiesRestoreInformation& restoreInformation,
                                             DeletedEntitiesRestoreUIInformation& restoreUiInformation) = 0;
 
@@ -35,6 +37,7 @@ namespace editor {
         virtual bool isRunning() const = 0;
         virtual robot2D::ecs::Entity getByUUID(UUID uuid) = 0;
         virtual void registerOnDeleteFinish(std::function<void()>&& callback) = 0;
+
         virtual void uiSelectedAllEntities() = 0;
         virtual void uiSelectedRangeEntities(std::vector<robot2D::ecs::Entity>&& entities) = 0;
 

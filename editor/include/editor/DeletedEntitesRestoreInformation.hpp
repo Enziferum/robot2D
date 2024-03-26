@@ -16,7 +16,6 @@ namespace editor {
 
         /// TODO(a.raag): correct valid statement
         bool valid() const { return true; }
-
         bool hasItems() const { return !anchorEntitiesUuids.empty(); }
 
         RestoreInfo& getLast() { return anchorEntitiesUuids.back(); }
@@ -42,7 +41,6 @@ namespace editor {
         };
         /// TODO(a.raag): correct valid statement
         bool valid() const { return true; }
-
         bool hasItems() const { return !anchorItems.empty(); }
 
         RestoreInfo& getLast() { return anchorItems.back(); }

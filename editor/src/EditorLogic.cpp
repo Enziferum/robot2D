@@ -65,7 +65,34 @@ namespace {
     }
 }
 
+namespace {
+    /// (a.raag): Placeholder code for future
+    class MemManager {
+    public:
+        static MemManager* getManager() {
+            static MemManager manager;
+            return &manager;
+        }
+        editor::Buffer allocateMemory(std::size_t memSize);
+
+    };
+
+    template<typename T, typename = std::enable_if_t<std::is_pod_v<T>>>
+    class Array {
+    public:
+        Array(const editor::Buffer& buffer);
+
+        void push_back(const T& value);
+    private:
+        T* m_arr;
+        std::size_t size;
+    };
+
+}
+
+
 namespace editor {
+
     ScriptInteractor::~ScriptInteractor() = default;
 
     EditorLogic::EditorLogic(robot2D::MessageBus& messageBus,
@@ -128,6 +155,10 @@ namespace editor {
             default:
                 break;
         }
+    }
+
+    void EditorLogic::destroy() {
+        TaskQueue::GetQueue() -> stop();
     }
 
     void EditorLogic::createProject(Project::Ptr project) {
@@ -300,8 +331,7 @@ namespace editor {
     }
 
 
-    void EditorLogic::pasteChild(robot2D::ecs::Entity parent) {
-    }
+    void EditorLogic::pasteChild(robot2D::ecs::Entity parent) {}
 
 
     void EditorLogic::toolbarPressed(const ToolbarMessage& message) {
@@ -432,28 +462,40 @@ namespace editor {
         m_commandStack.redo();
     }
 
+
     void EditorLogic::findSelectEntities(const robot2D::FloatRect& rect) {
         m_selectedEntities.clear();
 
         for(auto& entity: m_activeScene -> getEntities()) {
             auto& transform = entity.getComponent<TransformComponent>();
-            if(rect.contains(transform.getGlobalBounds())) {
+            if(rect.contains(transform.getGlobalBounds()))
                 m_selectedEntities.emplace_back(entity);
-            }
 
             if(transform.hasChildren())
                 findSelectChildren(rect, entity);
         }
 
-        if(!m_selectedEntities.empty())
-            m_presenter.findSelectedEntitiesOnUI(m_selectedEntities);
+        if(!m_selectedEntities.empty()) {
+            std::vector<ITreeItem::Ptr> selected_items{};
+            selected_items.reserve(m_selectedEntities.size());
 
-        /// TODO(a.raag): add selection command
-        /// m_commandStack.addCommand();
-        /// fill m_selectedEntities //
+            for(auto& entity: m_selectedEntities) {
+                auto& component = entity.getComponent<UIComponent>();
+                selected_items.push_back(component.treeItem);
+            }
+            m_presenter.findSelectedEntitiesOnUI(std::move(selected_items));
+
+            if(m_selectedEntities.size() == 1) {
+                auto* msg = m_messageBus.postMessage<PanelEntitySelectedMessage>(MessageID::PanelEntityNeedSelect);
+                msg -> entity = m_selectedEntities.back();
+            }
+
+        }
+
+        /// TODO(a.raag): add Selection Command
     }
 
-    void EditorLogic::findSelectChildren(const robot2D::FloatRect &rect, robot2D::ecs::Entity entity) {
+    void EditorLogic::findSelectChildren(const robot2D::FloatRect& rect, robot2D::ecs::Entity entity) {
         auto& transform = entity.getComponent<TransformComponent>();
         for(auto& child: transform.getChildren()) {
             if(!child || child.destroyed())
@@ -603,9 +645,6 @@ namespace editor {
         m_presenter.restoreEntitiesOnUI(restoreUiInformation);
     }
 
-    void EditorLogic::destroy() {
-        TaskQueue::GetQueue() -> stop();
-    }
 
     const std::vector<class_id>& EditorLogic::getCommandStack() const {
         return m_commandStack.getCommandStack();

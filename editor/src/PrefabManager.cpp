@@ -31,7 +31,12 @@ namespace editor {
 
     Prefab::Ptr PrefabManager::loadPrefab(UIInteractor::Ptr interactor, const std::string& path) {
 
-        auto prefab = std::make_shared<Prefab>();
+        Prefab::Ptr prefab{ nullptr };
+        prefab = findPrefab(path);
+        if(prefab)
+            return prefab;
+
+        prefab = std::make_shared<Prefab>();
         prefab -> entity = interactor -> createEmptyEntity();
         prefab -> localPath = path;
 

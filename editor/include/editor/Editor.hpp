@@ -82,7 +82,7 @@ namespace editor {
         virtual DeletedEntitiesRestoreUIInformation removeEntitiesOnUI(std::vector<robot2D::ecs::Entity>& selectedEntities) = 0;
         virtual void restoreEntitiesOnUI(DeletedEntitiesRestoreUIInformation& restoreUiInformation) = 0;
 
-        virtual void findSelectedEntitiesOnUI(std::vector<robot2D::ecs::Entity>& entities) = 0;
+        virtual void findSelectedEntitiesOnUI(std::vector<ITreeItem::Ptr>&& item) = 0;
         virtual void showPopup(PopupConfiguration* configuration) = 0;
         virtual void setMainCameraEntity(robot2D::ecs::Entity entity) = 0;
     };
@@ -106,7 +106,7 @@ namespace editor {
         void openScene(Scene::Ptr scene, std::string path) override;
         void prepareView() override;
         void showPopup(editor::PopupConfiguration* configuration) override;
-        void findSelectedEntitiesOnUI(std::vector<robot2D::ecs::Entity>& entities) override;
+        void findSelectedEntitiesOnUI(std::vector<ITreeItem::Ptr>&& items) override;
         void clearSelectionOnUI() override;
         DeletedEntitiesRestoreUIInformation removeEntitiesOnUI(std::vector<robot2D::ecs::Entity>& selectedEntities) override;
         void restoreEntitiesOnUI(DeletedEntitiesRestoreUIInformation& restoreUiInformation) override;

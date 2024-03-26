@@ -88,11 +88,6 @@ namespace editor {
 
     void UIManager::blockEvents(bool flag) {}
 
-
-    robot2D::ecs::Entity UIManager::getSelectedEntity(int PixelData) {
-        return getPanel<ScenePanel>().getSelectedEntity(PixelData);
-    }
-
     robot2D::ecs::Entity UIManager::getSelectedEntity() {
         return getPanel<ScenePanel>().getSelectedEntity();
     }
