@@ -22,10 +22,6 @@ source distribution.
 #include <filesystem>
 
 #include <robot2D/imgui/Api.hpp>
-#include <imgui/imgui.h>
-#include <imgui/imgui_internal.h>
-
-
 #include <editor/panels/ScenePanel.hpp>
 #include <editor/Components.hpp>
 #include <editor/Messages.hpp>
@@ -127,9 +123,8 @@ namespace editor {
 
         m_treeHierarchy.render();
 
+        /// \brief prefab processing
         {
-            /// \brief prefab processing
-
             robot2D::DragDropTarget dragDropTarget{ contentPrefabItemID };
             if(auto&& payloadBuffer = dragDropTarget.unpackPayload2Buffer()) {
                 auto&& path = payloadBuffer.unpack<std::string>();
@@ -149,12 +144,10 @@ namespace editor {
             }
         }
 
-
         if (ImGui::IsMouseDown(ImGuiMouseButton_Left) && ImGui::IsWindowHovered()) {
             m_selectedEntity = {};
             auto* msg = m_messageBus.postMessage<PanelEntitySelectedMessage>(MessageID::PanelEntitySelected);
             msg -> entity = m_selectedEntity;
-            m_treeHierarchy.clearSelection();
         }
 
     }
@@ -177,7 +170,7 @@ namespace editor {
         m_treeHierarchy.addOnCallback([this](ITreeItem::Ptr item) {
 
             bool deleteSelected = false;
-            if (ImGui::BeginPopupContextItem())
+            if (ImGui::BeginPopupContextItem("TreeHierarchyDeletePopup"))
             {
                 if (ImGui::MenuItem("Delete Entity"))
                     deleteSelected = false;

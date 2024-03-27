@@ -66,7 +66,7 @@ namespace editor {
         void update();
 
         bool operator==(const ITreeItem& other) {
-            return (m_id == other.m_id) && (m_name == other.m_name);
+            return (m_id == other.m_id);
         }
     protected:
         void removeChild(ITreeItem* child);

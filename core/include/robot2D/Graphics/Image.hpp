@@ -56,7 +56,7 @@ namespace robot2D {
          * @param path absolute or relative path to file on disk.
          * @return Were loading process is success?
          */
-        bool loadFromFile(const std::string& path);
+        bool loadFromFile(const std::string& path, int desiredChannels = 0);
 
         /// Full size.
         const robot2D::vec2u& getSize() const;

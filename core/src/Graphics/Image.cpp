@@ -30,14 +30,13 @@ namespace robot2D {
 
     Image::Image(): m_pixels() {}
 
-    bool Image::loadFromFile(const std::string& path) {
+    bool Image::loadFromFile(const std::string& path, int desiredChannels) {
         m_pixels.clear();
 
         int width = 0;
         int height = 0;
         int channels = 0;
-        unsigned char* ptr = stbi_load(path.c_str(), &width, &height, &channels, 0);
-
+        unsigned char* ptr = stbi_load(path.c_str(), &width, &height, &channels, desiredChannels);
         if (ptr)
         {
             // Assign the image properties

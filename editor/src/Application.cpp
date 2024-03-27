@@ -45,7 +45,14 @@ namespace editor {
             m_window -> setIcon(std::move(iconImage));
         }
 
-        m_guiWrapper.setup(*m_window);
+        {
+            std::string customFontPath = "res/fonts/SourceSansPro-Regular.ttf";
+            std::vector<std::string> customFontPaths = {
+                    "res/icons/message.png"
+            };
+            m_guiWrapper.setup(*m_window, customFontPath, std::move(customFontPaths));
+        }
+
 
         //////////// Load C# Mono ////////////
         ScriptEngine::Init();

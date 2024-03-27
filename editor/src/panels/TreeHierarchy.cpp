@@ -20,6 +20,7 @@ source distribution.
 *********************************************************************/
 
 #include <algorithm>
+#include <set>
 
 #include <robot2D/Config.hpp>
 #include <robot2D/imgui/Api.hpp>
@@ -29,14 +30,189 @@ source distribution.
 
 #include <editor/panels/TreeHierarchy.hpp>
 
+#define IMGUI_ICON_ENTITY			u8"\ue000"
+
 namespace editor {
 
-    void drawTexture(robot2D::vec2f size, robot2D::Texture* texture,
-                                    robot2D::Color tintColor) {
-        auto imID = ImGui::convertTextureHandle(texture -> getID());
-        ImGui::ImageButton(imID, size, {0,0}, {1, 1}, -1, ImVec4(1, 1, 1, 0),
-                           ImVec4(1, 1, 1, 1));
-    };
+    namespace {
+        class TreeSelection {
+        public:
+            TreeSelection() = default;
+            TreeSelection(const TreeSelection& other) = delete;
+            TreeSelection& operator=(const TreeSelection& other) = delete;
+            TreeSelection(TreeSelection&& other) = delete;
+            TreeSelection& operator=(TreeSelection&& other) = delete;
+            ~TreeSelection() = default;
+
+
+            bool hasItem(ITreeItem::Ptr item) const {
+                return std::find_if(m_selectedItems.begin(), m_selectedItems.end(), [&item](ITreeItem::Ptr obj) {
+                    return *item == *obj;
+                }) != m_selectedItems.end();
+            }
+
+            void preUpdate(std::list<ITreeItem::Ptr>& items);
+            void update();
+            void postUpdate();
+            /// \brief Using only due to Hierarchy process, to outside update use AddItem() / removeItem()
+            void markSelected(ITreeItem::Ptr item);
+
+            void addItem(ITreeItem::Ptr item) {
+                m_selectedItems.insert(item);
+            }
+
+            void removeItem();
+            void clearAll();
+
+            bool isSingleSelect() const {
+                return m_currentState == State::SingleSelect;
+            }
+        private:
+            enum class State {
+                Clear,
+                SingleSelect,
+                MultiSelect,
+                MultiAllSelect,
+                RangeSelect
+            };
+
+            State m_lastState = State::SingleSelect;
+            State m_currentState = State::SingleSelect;
+
+
+            std::set<ITreeItem::Ptr> m_preSelectedItems;
+            std::set<ITreeItem::Ptr> m_selectedItems;
+
+            bool m_ControlDown{ false };
+            bool m_ShiftDown{ false };
+
+            const int m_rangeMaxItems = 2;
+        };
+
+
+        void TreeSelection::preUpdate(std::list<ITreeItem::Ptr>& items) {
+
+            switch(m_currentState) {
+                case State::Clear:
+                    m_selectedItems.clear();
+                    break;
+                case State::SingleSelect: {
+                    if(!m_preSelectedItems.empty())
+                        m_selectedItems.clear();
+                    for(auto& item: m_preSelectedItems)
+                        m_selectedItems.insert(item);
+                    break;
+                }
+                case State::MultiSelect: {
+                    for(auto& item: m_preSelectedItems)
+                        m_selectedItems.insert(item);
+                    /// TODO(a.raag): multiselect callback
+                    break;
+                }
+                case State::MultiAllSelect: {
+                    for(auto& item: items)
+                        m_selectedItems.insert(item);
+
+                    /// TODO(a.raag): multiallselect callback
+                    break;
+                }
+                case State::RangeSelect: {
+                    if(m_selectedItems.empty() && !m_preSelectedItems.empty())
+                    {
+                        m_selectedItems.insert(*m_preSelectedItems.begin());
+                        break;
+                    }
+                    else if(m_preSelectedItems.size() == 1 && m_selectedItems.size() == 1) {
+                        std::vector<ITreeItem::Ptr> rangeItems;
+                        rangeItems.push_back(*m_selectedItems.begin());
+                        rangeItems.push_back(*m_preSelectedItems.begin());
+
+                        auto firstFound = std::find_if(items.begin(), items.end(),
+                                                       [&rangeItems](const ITreeItem::Ptr& ptr) {
+                                                           return *ptr == *rangeItems[0];
+                                                       });
+
+                        auto lastFound = std::find_if(items.begin(), items.end(),
+                                                      [&rangeItems](const ITreeItem::Ptr& ptr) {
+                                                          return *ptr == *rangeItems[1];
+                                                      });
+
+                        if(firstFound != items.end() && lastFound != items.end()) {
+                            for(; firstFound != lastFound; ++firstFound)
+                                m_selectedItems.insert(*firstFound);
+                            m_selectedItems.insert(*lastFound);
+
+
+                            /// TODO(a.raag): rangeSelect callback
+                        }
+
+                    }
+
+                    break;
+                }
+            }
+
+            m_preSelectedItems.clear();
+        }
+
+
+        void TreeSelection::update() {
+            m_ControlDown = ImGui::GetIO().KeyCtrl;
+            m_ShiftDown = ImGui::GetIO().KeyShift;
+
+            if(m_ControlDown && !m_ShiftDown && ImGui::IsKeyDown(ImGuiKey_A))
+                m_currentState = State::MultiAllSelect;
+            else if(!m_ControlDown && m_ShiftDown)
+                m_currentState = State::RangeSelect;
+            else if(m_ControlDown && !m_ShiftDown)
+                m_currentState = State::MultiSelect;
+            else if(!m_ControlDown && !m_ShiftDown)
+                m_currentState = State::SingleSelect;
+        }
+
+        void TreeSelection::postUpdate() {
+            bool needClear = false;
+            if(ImGui::IsMouseClicked(ImGuiMouseButton_Left) && ImGui::IsWindowHovered()
+               && !m_selectedItems.empty() && !(m_currentState == State::MultiSelect
+                                                || m_currentState == State::RangeSelect))
+                needClear = true;
+
+            if(ImGui::IsKeyPressed(ImGuiKey_Escape) || needClear)
+                m_currentState = State::Clear;
+        }
+
+        void TreeSelection::markSelected(ITreeItem::Ptr item) {
+
+            switch(m_currentState) {
+                case State::Clear:
+                case State::MultiAllSelect:
+                    break;
+                case State::RangeSelect: {
+
+                    if(m_preSelectedItems.size() < m_rangeMaxItems)
+                        m_preSelectedItems.insert(item);
+                    break;
+                }
+                case State::MultiSelect: {
+                    m_preSelectedItems.insert(item);
+                    break;
+                }
+                case State::SingleSelect: {
+                    m_preSelectedItems.insert(item);
+                    break;
+                }
+            }
+        }
+
+        void TreeSelection::clearAll() {
+            m_preSelectedItems.clear();
+            m_selectedItems.clear();
+        }
+
+        static TreeSelection exp_multiSelection;
+
+    }
+
 
     TreeHierarchy::TreeHierarchy(std::string name) : m_name(std::move(name)) {
         m_tree_base_flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick
@@ -202,11 +378,19 @@ namespace editor {
     }
 
     void TreeHierarchy::setSelected(ITreeItem::Ptr item) {
+#ifdef RB2D_OLD_MULTISELECTION
         m_multiSelection.updateItem(item, true);
+#else
+        exp_multiSelection.addItem(item);
+#endif
     }
 
     void TreeHierarchy::clearSelection() {
+#ifdef RB2D_OLD_MULTISELECTION
         m_multiSelection.clear();
+#else
+        exp_multiSelection.clearAll();
+#endif
     }
 
     void TreeHierarchy::update() {
@@ -293,23 +477,46 @@ namespace editor {
         renderTree();
     }
 
+
+    template<typename T>
+    class DragDropSource {
+    public:
+        DragDropSource() = delete;
+        DragDropSource(const std::string& ID, const T& value) {
+            if(ImGui::BeginDragDropSource()) {
+                m_beginSource = true;
+                ImGui::SetDragDropPayload(ID.c_str(), &value, sizeof(value));
+            }
+        }
+        ~DragDropSource() {
+            if(m_beginSource)
+                ImGui::EndDragDropSource();
+        }
+
+    private:
+        bool m_beginSource { false };
+    };
+
     void TreeHierarchy::renderTree() {
         static ImGuiMultiSelectFlags flags = ImGuiMultiSelectFlags_None | ImGuiMultiSelectFlags_ClearOnEscape;
 
         if (ImGui::TreeNodeEx(m_name.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+            exp_multiSelection.preUpdate(m_items);
+#ifdef RB2D_OLD_MULTISELECTION
+        ImGuiMultiSelectIO* ms_io = ImGui::BeginMultiSelect(flags);
+        m_multiSelection.applyRequests(ms_io, m_items);
 
-            ImGuiMultiSelectIO* ms_io = ImGui::BeginMultiSelect(flags);
-            m_multiSelection.applyRequests(ms_io, m_items);
-
-            const bool wantDelete = m_multiSelection.hasQueryDeletion() ||
-                (!m_multiSelection.empty() && ImGui::IsWindowFocused() && ImGui::IsKeyPressed(ImGuiKey_Delete));
-            ITreeItem::Ptr item_curr_idx_to_focus = nullptr;
-
-            if (wantDelete)
-                item_curr_idx_to_focus = m_multiSelection.processDeletionPreLoop(ms_io, m_items);
-
+        const bool wantDelete = m_multiSelection.hasQueryDeletion() ||
+        (!m_multiSelection.empty() && ImGui::IsWindowFocused() && ImGui::IsKeyPressed(ImGuiKey_Delete));
+#endif
+        ITreeItem::Ptr item_curr_idx_to_focus = nullptr;
+#ifdef RB2D_OLD_MULTISELECTION
+        if (wantDelete)
+            item_curr_idx_to_focus = m_multiSelection.processDeletionPreLoop(ms_io, m_items);
+#endif
             for (auto item : m_items) {
-                ImGuiTreeNodeFlags node_flags = m_tree_base_flags | ImGuiTreeNodeFlags_FramePadding;
+                ImGuiTreeNodeFlags node_flags = m_tree_base_flags | ImGuiTreeNodeFlags_FramePadding
+                                                                            | ImGuiTreeNodeFlags_Framed ;
 
                 if (item -> hasChildrens())
                     node_flags |= ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_DefaultOpen;
@@ -320,35 +527,37 @@ namespace editor {
                 if (item->isQueryDeletion || !item->m_name)
                     continue;
 
-                auto hasItem = m_multiSelection.hasItem(item);
+                auto hasItem = exp_multiSelection.hasItem(item);
                 if (hasItem)
                     node_flags |= ImGuiTreeNodeFlags_Selected;
-
-                if (item -> m_iconTexture) {
-                    drawTexture({ 20, 20 }, item -> m_iconTexture, item -> m_tintColor);
-                    ImGui::SameLine();
-                }
 
                 auto uuid = item -> m_id;
                 bool node_open = false;
                 const char* itemName = item->m_name->c_str();
-
+                std::string treeNodeText;
+                treeNodeText += IMGUI_ICON_ENTITY + std::string("  ") + std::string(itemName);
 
                 ImGui::PushID(static_cast<void*>(&uuid));
                 ImGui::SetNextItemSelectionUserData(static_cast<ImGuiSelectionUserData>(uuid));
-
                 {
-                    auto currContext = ImGui::GetCurrentContext();
-                    auto style = currContext->Style;
-
-                    /// TODO(a.raag): move from hardcode to calculations
-                    float TreeNodeFramePaddingY = 6;
-
-                    /// TODO(a.raag): Make some ScopedStyleVar
-                    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{ style.FramePadding.x, TreeNodeFramePaddingY });
+                    robot2D::ScopedStyleVarVec2 var(ImGuiStyleVar_FramePadding, { 2, 2 });
+                    if(!hasItem)
+                        ImGui::PushStyleColor(ImGuiCol_Header, { 0.0, 0.0, 0.0, 0.0 });
+                    else
+                        ImGui::PushStyleColor(ImGuiCol_Header, ImGui::GetStyle().Colors[ImGuiCol_HeaderHovered]);
                     /// TODO(a.raag): check correctness of using id as ptr_id
-                    node_open = ImGui::TreeNodeEx(static_cast<void*>(&uuid), node_flags, "%s", itemName);
-                    ImGui::PopStyleVar();
+                    node_open = ImGui::TreeNodeEx(static_cast<void*>(&uuid), node_flags, "%s", treeNodeText.c_str());
+
+                    ImGui::PopStyleColor();
+                }
+
+
+                exp_multiSelection.update();
+
+                if(ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
+                    exp_multiSelection.markSelected(item);
+                    if(exp_multiSelection.isSingleSelect())
+                        m_selectCallback(item);
                 }
 
 
@@ -356,17 +565,16 @@ namespace editor {
                     ImGui::SetKeyboardFocusHere(-1);
 
 
+
+                {
+                    DragDropSource dragDropSource{m_playloadIdentifier, item -> m_id};
+                }
                 if (ImGui::BeginDragDropSource()) {
                     ImGui::SetDragDropPayload(m_playloadIdentifier.c_str(),
                         &item->m_id,
                         sizeof(item->m_id));
                     imgui_Text(item -> m_name);
                     ImGui::EndDragDropSource();
-                }
-
-                if (ImGui::IsMouseReleased(ImGuiMouseButton_Left)
-                    && ImGui::IsItemFocused() && ImGui::IsWindowHovered()) {
-                    m_selectCallback(item);
                 }
 
                 if (!ImGui::IsKeyDown(static_cast<ImGuiKey>(robot2D::key2Int(m_shortCutKey)))) {
@@ -415,13 +623,15 @@ namespace editor {
 
                 ImGui::PopID();
             }
-
+#ifdef RB2D_OLD_MULTISELECTION
             ms_io = ImGui::EndMultiSelect();
             m_multiSelection.applyRequests(ms_io, m_items);
 
             if (wantDelete) {
                 m_multiSelection.processDeletionPostLoop(ms_io, m_items, item_curr_idx_to_focus);
             }
+#endif
+            exp_multiSelection.postUpdate();
 
             ImGui::TreePop();
         }
@@ -432,18 +642,15 @@ namespace editor {
             if (!child -> m_name)
                 continue;
 
-            if (child -> m_iconTexture) {
-                drawTexture({ 20, 20 }, child -> m_iconTexture, child -> m_tintColor);
-                ImGui::SameLine();
-            }
 
-            ImGuiTreeNodeFlags child_node_flags = m_tree_base_flags | ImGuiTreeNodeFlags_FramePadding;
+            ImGuiTreeNodeFlags child_node_flags = m_tree_base_flags | ImGuiTreeNodeFlags_FramePadding
+                                                                                    | ImGuiTreeNodeFlags_Framed;
             if (child -> hasChildrens())
                 child_node_flags |= ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_DefaultOpen;
             else
                 child_node_flags |= ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_Leaf;
 
-            auto hasItem = m_multiSelection.hasItem(child);
+            auto hasItem = exp_multiSelection.hasItem(child);
             if (hasItem)
                 child_node_flags |= ImGuiTreeNodeFlags_Selected;
 
@@ -453,18 +660,18 @@ namespace editor {
             ImGui::PushID(static_cast<void*>(&childUUID));
             ImGui::SetNextItemSelectionUserData(static_cast<ImGuiSelectionUserData>(childUUID));
 
+            std::string treeNodeText;
+            treeNodeText += IMGUI_ICON_ENTITY + std::string("  ") + *child -> m_name;
+
             {
-                auto currContext = ImGui::GetCurrentContext();
-                auto style = currContext->Style;
-
-                /// TODO(a.raag): move from hardcode to calculations
-                float TreeNodeFramePaddingY = 6;
-
-                /// TODO(a.raag): Make some ScopedStyleVar
-                ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{ style.FramePadding.x, TreeNodeFramePaddingY });
+                robot2D::ScopedStyleVarVec2 var(ImGuiStyleVar_FramePadding, { 2, 2 });
+                if(!hasItem)
+                    ImGui::PushStyleColor(ImGuiCol_Header, { 0.0, 0.0, 0.0, 0.0 });
+                else
+                    ImGui::PushStyleColor(ImGuiCol_Header, ImGui::GetStyle().Colors[ImGuiCol_HeaderHovered]);
                 /// TODO(a.raag): check correctness of using id as ptr_id
-                childOpen = ImGui::TreeNodeEx(static_cast<void*>(&childUUID), child_node_flags, "%s", child->m_name->c_str());
-                ImGui::PopStyleVar();
+                childOpen = ImGui::TreeNodeEx(static_cast<void*>(&childUUID), child_node_flags, "%s", treeNodeText.c_str());
+                ImGui::PopStyleColor();
             }
 
             /// TODO(a.raag): recursive doNode
