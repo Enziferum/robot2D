@@ -112,8 +112,9 @@ namespace editor {
         std::vector<ChildInfo> children;
         for(const auto& entity: prefabEntities) {
             bool addToScene = true;
-            auto &deserializedEntity = prefab -> entity;
-            entitySerializer -> deserialize(entity, deserializedEntity, addToScene, children);
+            auto& deserializedEntity = prefab -> entity;
+            /// TODO(a.raag): Uncomment when move to SceneEntity
+            // entitySerializer -> deserialize(entity, deserializedEntity, addToScene, children);
         }
 
         return true;

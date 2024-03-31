@@ -37,19 +37,9 @@ source distribution.
 #include "DeletedEntitesRestoreInformation.hpp"
 #include "EditorCamera.hpp"
 #include "SceneEntity.hpp"
+#include "SceneGraph.hpp"
 
 namespace editor {
-
-
-    class SceneGraph {
-    public:
-
-    private:
-        std::list<SceneEntity> m_sceneEntities;
-    };
-
-
-
 
     class Scene: public robot2D::Drawable {
     public:
@@ -79,15 +69,19 @@ namespace editor {
 
         void setRuntimeCamera(bool flag);
 
-        ////////////// Serializer Api //////////////
-        robot2D::ecs::Entity createEntity();
+        //////////////////////// Serializer Api ////////////////////////
+        SceneEntity createEntity();
+        void addAssociatedEntity(SceneEntity&& entity);
         robot2D::ecs::Entity createEmptyEntity();
-        void addAssociatedEntity(robot2D::ecs::Entity entity);
 
-        ////////////// ScenePanel API //////////////
+        /// (a.raag): tmp method for refactor usages
+        void convertEntities();
+        //////////////////////// Serializer Api ////////////////////////
+
+        /////////////////////////// ScenePanel API ///////////////////////////
         void addEmptyEntity();
         robot2D::ecs::Entity addEmptyButton();
-
+        /////////////////////////// ScenePanel API ///////////////////////////
 
 
         void setBefore(robot2D::ecs::Entity source, robot2D::ecs::Entity target);
@@ -98,6 +92,8 @@ namespace editor {
 
 
         robot2D::ecs::Entity getByUUID(UUID uuid);
+        SceneEntity getEntity(UUID uuid) const;
+
 
         bool isRunning() const { return m_running; }
 
@@ -176,5 +172,8 @@ namespace editor {
         std::vector<InsertItem> m_insertItems;
         std::vector<SetItem> m_setItems;
         std::function<void()> m_onDeleteFinishCallback{nullptr};
+
+
+        SceneGraph m_sceneGraph;
     };
 }

@@ -292,7 +292,7 @@ namespace editor {
         m_currentProject -> setStartScene(filename);
 
         // TODO(a.raag): update project's start scene
-        //m_currentProject -> save();
+        // m_currentProject -> save();
         m_router.openScene(m_activeScene, m_currentProject -> getPath());
     }
 

@@ -372,21 +372,20 @@ namespace editor {
     }
 
     bool EntityYAMLSerializer::deserialize(const YAML::detail::iterator_value& iterator,
-                                           robot2D::ecs::Entity& deserializedEntity,
+                                           SceneEntity& deserializedEntity,
                                            bool& addToScene, std::vector<ChildInfo>& children) {
 
         const auto& entity = iterator;
 
-        uint64_t uuid = entity["Entity"].as<uint64_t>();
-        std::string name;
+        /// BASE
+        if(!entity["Entity"] || !entity["TagComponent"]) {
+            return false;
+        }
 
-        auto tagComponent = entity["TagComponent"];
-        if(tagComponent)
-            name = tagComponent["Tag"].as<std::string>();
-
+        auto uuid = entity["Entity"].as<UUID>();
         deserializedEntity.addComponent<IDComponent>().ID = uuid;
         auto& tagData = deserializedEntity.addComponent<TagComponent>();
-        tagData.setTag(name);
+        tagData.setTag(entity["TagComponent"]["Tag"].as<std::string>());
 
         auto cameraComponent = entity["CameraComponent"];
         if(cameraComponent) {
@@ -407,7 +406,7 @@ namespace editor {
 
             if(transformComponent["HasChildren"]) {
                 auto childIDS = transformComponent["ChildIDs"].as<std::vector<UUID>>();
-                ChildPair pair = std::make_pair(UUID(uuid), childIDS);
+                ChildPair pair = std::make_pair(uuid, childIDS);
                 childInfo.childPair = std::move(pair);
             }
             if(transformComponent["isChild"]) {
@@ -453,7 +452,7 @@ namespace editor {
                 auto entityClass = ScriptEngine::getEntityClass(sc.name);
                 if (entityClass)
                 {
-                    const auto& fields = entityClass -> getFields();
+                   /* const auto& fields = entityClass -> getFields();
                     auto& entityFields = ScriptEngine::getScriptFieldMap(deserializedEntity);
 
                     for (auto scriptField : scriptFields)
@@ -464,8 +463,8 @@ namespace editor {
 
                         ScriptFieldInstance& fieldInstance = entityFields[name];
 
-                        // TODO(Yan): turn this assert into Hazelnut log warning
-                        // HZ_CORE_ASSERT(fields.find(name) != fields.end());
+                        // TODO(a.raag): turn this assert into Hazelnut log warning
+                        // RB_CORE_ASSERT(fields.find(name) != fields.end());
 
                         if (fields.find(name) == fields.end())
                             continue;
@@ -491,7 +490,7 @@ namespace editor {
                             READ_SCRIPT_FIELD(Transform, UUID);
                         }
 
-                    }
+                    }*/
                 }
             }
         }
