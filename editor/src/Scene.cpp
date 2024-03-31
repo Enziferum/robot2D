@@ -166,10 +166,15 @@ namespace editor {
         target.draw(m_scene);
     }
 
-    robot2D::ecs::Entity Scene::createEntity() {
+    SceneEntity Scene::createEntity() {
         auto entity = m_scene.createEntity();
-        return entity;
+        return m_sceneGraph.createEntity(std::move(entity));
     }
+
+    void Scene::addAssociatedEntity(SceneEntity&& entity) {
+        m_sceneGraph.addEntity(std::move(entity));
+    }
+
 
     robot2D::ecs::Entity Scene::createEmptyEntity() {
         return m_scene.createEmptyEntity();
@@ -189,9 +194,6 @@ namespace editor {
         m_hasChanges = true;
     }
 
-    void Scene::addAssociatedEntity(robot2D::ecs::Entity entity) {
-        m_sceneEntities.emplace_back(entity);
-    }
 
     void Scene::removeEntity(robot2D::ecs::Entity entity) {
         auto found = std::find_if(m_sceneEntities.begin(),
@@ -288,6 +290,10 @@ namespace editor {
 
     void Scene::setRuntimeCamera(bool flag) {
         m_scene.getSystem<RenderSystem>() -> setRuntimeFlag(flag);
+    }
+
+    SceneEntity Scene::getEntity(UUID uuid) const{
+        return m_sceneGraph.getEntity(uuid);
     }
 
     robot2D::ecs::Entity Scene::getByUUID(UUID uuid) {
@@ -633,6 +639,12 @@ namespace editor {
         return dupEntity;
     }
 
+    void Scene::convertEntities() {
+        auto& wrappedEntities = m_sceneGraph.getEntities();
+        for(auto& wrapEntity: wrappedEntities) {
+            m_sceneEntities.emplace_back(wrapEntity.getWrappedEntity());
+        }
+    }
 
 }
 

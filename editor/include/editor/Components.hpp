@@ -38,6 +38,7 @@ source distribution.
 #include "Uuid.hpp"
 #include "Property.hpp"
 #include "ClassID.hpp"
+#include "SceneEntity.hpp"
 
 namespace editor {
     struct IDComponent

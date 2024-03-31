@@ -5,6 +5,7 @@
 #include <yaml-cpp/yaml.h>
 
 #include <robot2D/Ecs/Entity.hpp>
+#include <editor/SceneEntity.hpp>
 #include <editor/Uuid.hpp>
 
 namespace editor {
@@ -12,7 +13,7 @@ namespace editor {
 
     struct ChildInfo {
         bool isChild{false};
-        robot2D::ecs::Entity self;
+        SceneEntity self;
         UUID parentUUID;
         ChildPair childPair;
 
@@ -36,7 +37,7 @@ namespace editor {
 
 
         bool serialize(YAML::Emitter& out, robot2D::ecs::Entity& entity);
-        bool deserialize(const YAML::detail::iterator_value& iterator, robot2D::ecs::Entity& entity,
+        bool deserialize(const YAML::detail::iterator_value& iterator, SceneEntity& entity,
                          bool& addToScene, std::vector<ChildInfo>& children);
     };
 

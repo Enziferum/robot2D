@@ -120,6 +120,8 @@ namespace editor {
             return false;
         }
         RB_EDITOR_INFO("SceneSerializer finished");
+        scene -> convertEntities();
+
         m_activeScene = scene;
         m_associatedProject = std::move(project);
 

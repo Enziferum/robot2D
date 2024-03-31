@@ -58,8 +58,6 @@ namespace editor {
 
         void removeSelf();
 
-
-
         void setName(std::string* name);
         void setTexture(robot2D::Texture& texture, const robot2D::Color& tintColor);
 
