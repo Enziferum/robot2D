@@ -80,9 +80,7 @@ namespace editor {
         std::aligned_storage<sizeof(T), alignof(T)> m_storage;
     };
 
-    // TODO(a.raag): robot2D::ecs::Entity is not is_standard_layout_v on MSVC
-    // typename = std::enable_if_t<std::is_standard_layout_v<UserDataT>>
-    template<typename UserDataT>
+    template<typename UserDataT, typename = std::enable_if_t<std::is_standard_layout_v<UserDataT>>>
     class TreeItem: public ITreeItem {
     private:
         using TreeItemUserData = std::shared_ptr<UserDataT>;
@@ -91,12 +89,18 @@ namespace editor {
 
         TreeItem(): ITreeItem() { }
         explicit TreeItem(int id): ITreeItem(id) { }
+        TreeItem(const TreeItem& other) = delete;
+        TreeItem& operator=(const TreeItem& other) = delete;
+        TreeItem(TreeItem&& other) = delete;
+        TreeItem& operator=(TreeItem&& other) = delete;
+        ~TreeItem() override = default;
 
         template<typename... Args>
         TreeItem::Ptr addChild(Args&& ... args) {
             auto child = std::make_shared<TreeItem<UserDataT>>(std::forward<Args>(args)...);
             child -> m_id = UUID();
             child -> m_parent = this;
+            child -> m_path.append(m_childrens.size());
             m_childrens.emplace_back(child);
             return child;
         }
@@ -140,8 +144,12 @@ namespace editor {
         using ItemCallback = std::function<void(ITreeItem::Ptr selected)>;
         using ReorderItemCallback = std::function<void(ITreeItem::Ptr source, ITreeItem::Ptr target)>;
         using MultiItemCallback = std::function<void(std::set<ITreeItem::Ptr>&, bool)>;
-
         using Iterator = std::list<ITreeItem::Ptr>::iterator;
+        enum class ReorderDeleteType {
+            First,
+            Last
+        };
+        using InsertItem = std::tuple<Iterator, ITreeItem::Ptr, ReorderDeleteType>;
     public:
         struct RestoreInfo {
             bool isChained;
@@ -169,25 +177,21 @@ namespace editor {
             
             auto treeItem = std::make_shared<TreeItem<T>>(std::forward<Args>(args)...);
             if(!treeItem) {
-                /// error
+                //RB_EDITOR_ERROR("TreeHierarchy: can't allocate TreeItem");
+                return nullptr;
             }
             treeItem -> m_id = UUID();
-            if(!needPending) {
+            treeItem -> m_path.append(m_items.size());
+
+            if(!needPending)
                 m_items.emplace_back(treeItem);
-            }
             else
                 m_additemsBuffer.emplace_back(treeItem);
             return treeItem;
         }
 
-        template<typename T>
-        TreeItem<T>* getItem(UUID id) {
-            auto found = std::find_if(m_items.begin(), m_items.end(), [&id](ITreeItem::Ptr ptr) {
-                return ptr->m_id == id;
-                });
-            if (found == m_items.end())
-                return nullptr;
-            return dynamic_cast<TreeItem<T>*>(*found->get());
+        ITreeItem::Ptr getItem(UUID uuid) {
+            return findByID(uuid);
         }
 
         template<typename T>
@@ -206,7 +210,7 @@ namespace editor {
         bool addOnStopBeChildCallback(ReorderItemCallback&& callback);
         bool addMultiSelectCallback(MultiItemCallback&& callback);
         //////////////////////////////////////// Callbacks ////////////////////////////////////////
-     
+
         void setBefore(ITreeItem::Ptr source, ITreeItem::Ptr target);
         void restoreItem(RestoreInfo&& restoreInfo);
         bool deleteItem(ITreeItem::Ptr treeItem);
@@ -216,35 +220,27 @@ namespace editor {
 
         std::list<ITreeItem::Ptr>& getItems() { return m_items; }
         const std::list<ITreeItem::Ptr>& getItems() const { return m_items; }
+        const std::size_t getItemsValue() const;
 
         void applyChildModification(ITreeItem::Ptr source, ITreeItem::Ptr target);
-
-        const std::size_t getItemsValue() const;
 
 
         void clear();
         void render();
     private:
-        ITreeItem::Ptr findByID(UUID ID);
-        ITreeItem::Ptr findByID(ITreeItem::Ptr Parent, UUID ID);
+        [[nodiscard]] ITreeItem::Ptr findByID(UUID ID) const;
+        [[nodiscard]] ITreeItem::Ptr findByID(ITreeItem::Ptr Parent, UUID ID) const;
 
         void update();
         void renderTree();
         void renderTreeChildren(ITreeItem::Ptr parent);
     private:
+        int m_tree_base_flags = 0;
         std::string m_name;
         std::list<ITreeItem::Ptr> m_items{};
         std::list<ITreeItem::Ptr> m_deletePendingItems{};
         std::list<ITreeItem::Ptr> m_additemsBuffer{};
 
-        enum class ReorderDeleteType {
-            First, Last
-        };
-
-
-        using InsertItem = std::tuple<Iterator, ITreeItem::Ptr, ReorderDeleteType>;
-
-        int m_tree_base_flags = 0;
 
         ItemCallback m_selectCallback;
         ItemCallback m_callback;

@@ -24,9 +24,9 @@ source distribution.
 #include <memory>
 #include <filesystem>
 
-#include <robot2D/Ecs/Entity.hpp>
 #include <robot2D/Graphics/RenderWindow.hpp>
 
+#include <editor/SceneEntity.hpp>
 #include <editor/ScriptInteractor.hpp>
 #include <editor/physics/Box2DPhysicsAdapter.hpp>
 
@@ -51,8 +51,8 @@ namespace editor {
         static void ReloadEngine();
 
         static ScriptInteractor::Ptr getInteractor();
-        static void onCreateEntity(robot2D::ecs::Entity);
-        static void onUpdateEntity(robot2D::ecs::Entity, float delta);
+        static void onCreateEntity(SceneEntity sceneEntity);
+        static void onUpdateEntity(SceneEntity sceneEntity, float delta);
 
         static MonoClassWrapper::Ptr getManagedObject(UUID uuid);
 
@@ -64,21 +64,23 @@ namespace editor {
 
         static ScriptInstance::Ptr getEntityScriptInstance(UUID entityID);
         static MonoClassWrapper::Ptr getEntityClass(const std::string& name);
-        static ScriptFieldMap& getScriptFieldMap(robot2D::ecs::Entity entity);
+        static ScriptFieldMap& getScriptFieldMap(SceneEntity entity);
 
         static void onRuntimeStart(ScriptInteractor::Ptr interactor);
         static void onRuntimeStop();
-        static MonoImage* GetCoreAssemblyImage();
+
         static bool hasEntityClass(const std::string& name);
         static const std::unordered_map<std::string, MonoClassWrapper::Ptr>& getClasses();
-
-        static void SetWindow(robot2D::RenderWindow* window);
-        static robot2D::Window* GetWindow();
 
         static ScriptInstance::Ptr CloneObject(MonoObject* cloneObject);
 
         static IEditorCamera::Ptr GetCamera();
         static void SetCamera(IEditorCamera::Ptr camera);
+
+        static void SetWindow(robot2D::RenderWindow* window);
+        static robot2D::Window* GetWindow();
+        static MonoImage* GetCoreAssemblyImage();
+
     private:
         static bool loadCoreAssembly(const fs::path& );
         static bool loadAppAssembly(const fs::path& );

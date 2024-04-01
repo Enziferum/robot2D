@@ -146,7 +146,8 @@ namespace editor {
     }
 
     void Scene::updateRuntime(float dt) {
-        for(auto& entity: m_sceneEntities) {
+        /// TODO(a.raag): moving to SceneGraph
+/*        for(auto& entity: m_sceneEntities) {
             if(entity.hasComponent<ScriptComponent>())
                 ScriptEngine::onUpdateEntity(entity, dt);
             auto& ts = entity.getComponent<TransformComponent>();
@@ -156,7 +157,7 @@ namespace editor {
                         ScriptEngine::onUpdateEntity(child, dt);
                 }
             }
-        }
+        }*/
 
         m_physicsAdapter -> update(dt);
         m_scene.update(dt);
@@ -216,7 +217,9 @@ namespace editor {
         m_scene.getSystem<RenderSystem>() -> setScene(this);
 
         ScriptEngine::onRuntimeStart(scriptInteractor);
-        for(auto& entity: m_sceneEntities) {
+
+        /// TODO(a.raag): moving to SceneGraph
+/*        for(auto& entity: m_sceneEntities) {
             if(entity.hasComponent<ScriptComponent>() && !entity.hasComponent<PrefabComponent>())
                 ScriptEngine::onCreateEntity(entity);
             auto& ts = entity.getComponent<TransformComponent>();
@@ -232,7 +235,7 @@ namespace editor {
                 // TODO(a.raag) ts.getGlobalBounds();
                 hitbox.m_area = robot2D::FloatRect::create(ts.getPosition(), ts.getScale() + ts.getPosition());
             }
-        }
+        }*/
 
     }
 

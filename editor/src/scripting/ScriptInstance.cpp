@@ -43,7 +43,7 @@ namespace editor {
 
     ScriptInstance::ScriptInstance(ScriptEngineData* data,
                                    MonoClassWrapper::Ptr classWrapper,
-                                   robot2D::ecs::Entity entity):
+                                   SceneEntity entity):
             m_class{std::move(classWrapper)},
             m_entity(std::move(entity)) {
         m_class -> Instantiate(data);

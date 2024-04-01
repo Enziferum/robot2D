@@ -27,19 +27,19 @@ namespace editor {
             SceneManager& sceneManager,
             Project::Ptr project,
             std::string path,
-            EditorLogic* l):
+            EditorLogic* logic):
     ITask{function},
     m_sceneManager{sceneManager},
     m_project{std::move(project)},
-    m_path{path},
-    logic{l}{}
+    m_path{std::move(path)},
+    m_logic{logic}
+    {}
 
 
     void SceneLoadTask::execute()  {
         if(!m_sceneManager.load(m_project, m_path)) {
-        RB_EDITOR_ERROR("Can't Load Scene. Reason: {0}",
-                        errorToString(m_sceneManager.getError()));
-        return;
+            RB_EDITOR_ERROR("Can't Load Scene. Reason: {0}", errorToString(m_sceneManager.getError()));
+            return;
         }
     }
 }

@@ -411,16 +411,8 @@ namespace editor {
 
 
     void ScenePanel::processSelectedEntities(std::vector<ITreeItem::Ptr>&& items) {
-        auto& treeItems = m_treeHierarchy.getItems();
-        for(auto& item: items) {
-            for(auto& treeItem: treeItems) {
-                if(item == treeItem)
-                    m_treeHierarchy.setSelected(treeItem);
-
-                if(treeItem -> hasChildrens())
-                    processSelectedChildren(treeItem, items);
-            }
-        }
+        for(auto& item: items)
+            m_treeHierarchy.setSelected(item);
     }
 
     void ScenePanel::processSelectedChildren(ITreeItem::Ptr parent, std::vector<ITreeItem::Ptr>& items) {
@@ -481,12 +473,10 @@ namespace editor {
                 restoreInfo.target = *found;
 
                 if(!restoreUiInformation.hasItems()) {
-                    if(found == uiItems.begin()) {
+                    if(found == uiItems.begin())
                         restoreInfo.first = true;
-                    }
-                    else {
+                    else
                         restoreInfo.anchor = *prev;
-                    }
                 }
                 else {
                     const auto& lastInfo = restoreUiInformation.getLast();
@@ -495,12 +485,10 @@ namespace editor {
                         restoreInfo.anchor = lastInfo.target;
                     }
                     else {
-                        if(found == uiItems.begin()) {
+                        if(found == uiItems.begin())
                             restoreInfo.first = true;
-                        }
-                        else {
+                        else
                             restoreInfo.anchor = *prev;
-                        }
                     }
                 }
 

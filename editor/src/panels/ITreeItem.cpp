@@ -25,7 +25,6 @@ namespace editor {
 
     ITreeItem::ITreeItem(): m_id() {}
     ITreeItem::ITreeItem(UUID id) : m_id{ id } {}
-
     ITreeItem::~ITreeItem() = default;
 
     void ITreeItem::setName(std::string* name) {
@@ -55,10 +54,11 @@ namespace editor {
     }
 
     void ITreeItem::update() {
-        for (auto delItem : m_deletePendingItems)
-            m_childrens.erase(std::remove_if(m_childrens.begin(), m_childrens.end(), [&delItem](auto item) {
-            return *delItem == *item;
-                }), m_childrens.end());
+        for (auto delItem : m_deletePendingItems) 
+            m_childrens.erase(std::remove_if(m_childrens.begin(), m_childrens.end(),
+                                             [&delItem](auto item) {
+                return *delItem == *item;
+            }), m_childrens.end());
         m_deletePendingItems.clear();
     }
 
