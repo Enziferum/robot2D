@@ -516,7 +516,9 @@ namespace editor {
     void InspectorPanel::processScriptComponent(robot2D::ecs::Entity entity, ScriptComponent& component) {
         auto entityClass = ScriptEngine::getEntityClass(component.name);
         const auto& fields = entityClass -> getFields();
-        auto& entityFields = ScriptEngine::getScriptFieldMap(entity);
+
+        /// TODO(a.raag): moving to sceneGraph
+        auto& entityFields = ScriptEngine::getScriptFieldMap(SceneEntity{std::move(entity)});
 
         for (const auto& [name, field] : fields) {
             bool hasField = (entityFields.find(name) != entityFields.end());

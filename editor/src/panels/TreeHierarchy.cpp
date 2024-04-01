@@ -146,7 +146,7 @@ namespace editor {
         m_target = target;
     }
 
-    ITreeItem::Ptr TreeHierarchy::findByID(UUID ID) {
+    ITreeItem::Ptr TreeHierarchy::findByID(UUID ID) const{
         auto startIter = m_items.begin();
         for(; startIter != m_items.end(); ++startIter) {
             auto start = *startIter;
@@ -162,7 +162,7 @@ namespace editor {
         return nullptr;
     }
 
-    ITreeItem::Ptr TreeHierarchy::findByID(ITreeItem::Ptr parent, UUID ID) {
+    ITreeItem::Ptr TreeHierarchy::findByID(ITreeItem::Ptr parent, UUID ID) const {
         for(auto child: parent -> getChildrens()) {
             if(child -> hasChildrens()) {
                 auto item = findByID(child, ID);

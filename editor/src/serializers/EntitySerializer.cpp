@@ -239,7 +239,8 @@ namespace editor {
 
             if(fields.size() > 0) {
                 out << YAML::Key << "ScriptFields" << YAML::Value;
-                auto& entityFields = ScriptEngine::getScriptFieldMap(entity);
+                /// TODO(a.raag): moving to sceneGraph
+                auto& entityFields = ScriptEngine::getScriptFieldMap(SceneEntity(std::move(entity)));
                 out << YAML::BeginSeq;
                 for (const auto& [name, field] : fields)
                 {

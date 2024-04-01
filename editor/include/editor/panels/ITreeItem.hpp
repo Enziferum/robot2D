@@ -27,10 +27,14 @@ source distribution.
 
 #include <robot2D/Graphics/Texture.hpp>
 #include <robot2D/Graphics/Color.hpp>
+
 #include <editor/Uuid.hpp>
+#include <editor/GraphNodePath.hpp>
 
 namespace editor {
     constexpr std::uint64_t NO_INDEX = std::numeric_limits<uint64_t>::max();
+
+
 
     class ITreeItem {
     public:
@@ -38,6 +42,10 @@ namespace editor {
 
         ITreeItem();
         ITreeItem(UUID id);
+        ITreeItem(const ITreeItem& other) = delete;
+        ITreeItem& operator=(const ITreeItem& other) = delete;
+        ITreeItem(ITreeItem&& other) = delete;
+        ITreeItem& operator=(ITreeItem&& other) = delete;
         virtual ~ITreeItem() = 0;
 
 
@@ -54,7 +62,7 @@ namespace editor {
         void addChild(ITreeItem::Ptr child);
         bool deleteChild(ITreeItem::Ptr item);
         std::vector<ITreeItem::Ptr>& getChildrens() { return m_childrens; }
-
+        const std::size_t getChildValue(std::size_t& size) const;
 
         void removeSelf();
 
@@ -68,12 +76,14 @@ namespace editor {
             return (m_id == other.m_id);
         }
 
-        const std::size_t getChildValue(std::size_t& size) const;
+        const GraphNodePath& getNodePath() const { return m_path; }
     protected:
         void removeChild(ITreeItem* child);
         virtual void* getUserDataInternal() const = 0;
     protected:
         UUID m_id;
+        GraphNodePath m_path;
+
 
         std::string* m_name{nullptr};
         ITreeItem* m_parent{nullptr};

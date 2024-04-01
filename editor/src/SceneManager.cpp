@@ -120,7 +120,7 @@ namespace editor {
             return false;
         }
         RB_EDITOR_INFO("SceneSerializer finished");
-        scene -> convertEntities();
+
 
         m_activeScene = scene;
         m_associatedProject = std::move(project);
@@ -131,7 +131,9 @@ namespace editor {
             for(auto child: ts.getChildren())
                 loadAssetByEntity(child);
         }
-        
+
+
+        scene -> convertEntities();
         return true;
     }
 

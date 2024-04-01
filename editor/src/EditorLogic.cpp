@@ -181,7 +181,7 @@ namespace editor {
         m_presenter.switchState(EditorState::Load);
 
         auto loadLambda = [](const SceneLoadTask& task) {
-            task.logic -> loadSceneCallback();
+            task.getLogic() -> loadSceneCallback();
         };
 
         auto path = project -> getPath();
@@ -210,7 +210,7 @@ namespace editor {
                 }
 
                 auto loadLambda = [](const SceneLoadTask& task) {
-                    task.logic -> loadSceneCallback();
+                    task.getLogic() -> loadSceneCallback();
                 };
 
                 taskQueue -> addAsyncTask<SceneLoadTask>(loadLambda, m_sceneManager,
@@ -220,7 +220,7 @@ namespace editor {
             m_popupConfiguration.onNo = [this, taskQueue, scenePath]() {
                 m_presenter.switchState(EditorState::Load);
                 auto loadLambda = [](const SceneLoadTask& task) {
-                    task.logic -> loadSceneCallback();
+                    task.getLogic() -> loadSceneCallback();
                 };
 
                 taskQueue -> addAsyncTask<SceneLoadTask>(loadLambda, m_sceneManager,
@@ -231,7 +231,7 @@ namespace editor {
         else {
             m_presenter.switchState(EditorState::Load);
             auto loadLambda = [](const SceneLoadTask& task) {
-                task.logic -> loadSceneCallback();
+                task.getLogic() -> loadSceneCallback();
             };
 
             TaskQueue::GetQueue() -> addAsyncTask<SceneLoadTask>(loadLambda, m_sceneManager,
