@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2024
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -47,11 +47,11 @@ namespace robot2D {
         GuiRender& operator=(GuiRender&& other) = delete;
         ~GuiRender();
 
-        void setup();
+        void setup(const std::string& customFontPath = "", std::vector<std::string>&& customIconsPaths = {});
         void render(ImDrawData* drawData);
     private:
         bool setupGL();
-        void setupFonts();
+        void setupFonts(const std::string& customFontPath, std::vector<std::string>&& customIconsPaths);
         void setupRenderState(ImDrawData* draw_data, const robot2D::vec2i& framebufferSize, unsigned int);
     private:
         robot2D::Texture m_fontTexture;

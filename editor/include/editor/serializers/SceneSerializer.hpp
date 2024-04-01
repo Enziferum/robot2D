@@ -29,10 +29,14 @@ namespace editor {
     class Scene;
     class SceneSerializer {
     public:
-        SceneSerializer(std::shared_ptr<Scene>);
+        SceneSerializer(std::shared_ptr<Scene> scene);
+        SceneSerializer(const SceneSerializer& other) = delete;
+        SceneSerializer& operator=(const SceneSerializer& other) = delete;
+        SceneSerializer(SceneSerializer& other) = delete;
+        SceneSerializer& operator=(SceneSerializer&& other) = delete;
         ~SceneSerializer() = default;
 
-        bool serialize(const std::string& path);
+        bool serialize(const std::string& path, const std::string& sceneName = "Unnamed Scene");
         bool deserialize(const std::string& path);
         SceneSerializerError getError() const;
 

@@ -27,24 +27,27 @@ source distribution.
 #include <editor/Task.hpp>
 
 namespace editor {
-
-    class SceneLoadTask: public ITask {
+    /// TODO(a.raag): Move in RB-40 to robot2DAsync library
+    class SceneLoadTask final: public ITask {
     public:
         SceneLoadTask(ITaskFunction::Ptr function,
                       SceneManager& sceneManager,
                       Project::Ptr project,
                       std::string path,
-                      EditorLogic* l);
+                      EditorLogic* logic);
+        SceneLoadTask(const SceneLoadTask& other) = delete;
+        SceneLoadTask& operator=(const SceneLoadTask& other) = delete;
+        SceneLoadTask(SceneLoadTask&& other) = delete;
+        SceneLoadTask& operator=(SceneLoadTask&& other) = delete;
         ~SceneLoadTask() override = default;
 
 
         void execute() override;
-    public:
-        /// TODO(a.raag): private
-        EditorLogic* logic;
+        EditorLogic* getLogic() const { return m_logic;}
     private:
         SceneManager& m_sceneManager;
         Project::Ptr m_project;
         std::string m_path;
+        EditorLogic* m_logic;
     };
 }

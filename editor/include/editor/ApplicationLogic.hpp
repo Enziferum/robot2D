@@ -36,7 +36,12 @@ namespace editor {
 
     class ApplicationLogic {
     public:
-        ApplicationLogic(MessageDispatcher& messageDispatcher);
+        ApplicationLogic() = delete;
+        ApplicationLogic(const ApplicationLogic& other) = delete;
+        ApplicationLogic& operator=(const ApplicationLogic& other) = delete;
+        ApplicationLogic(ApplicationLogic&& other) = delete;
+        ApplicationLogic& operator=(ApplicationLogic&& other) = delete;
+        explicit ApplicationLogic(MessageDispatcher& messageDispatcher);
         ~ApplicationLogic() = default;
 
         void setup(IEditorOpener* editorModule);

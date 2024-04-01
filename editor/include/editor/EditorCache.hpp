@@ -21,6 +21,8 @@ source distribution.
 #pragma once
 
 #include <vector>
+#include <list>
+
 #include "ProjectDescription.hpp"
 #include "Errors.hpp"
 #include "Configuration.hpp"
@@ -50,7 +52,9 @@ namespace editor {
         std::string m_cachePath;
         EditorCacheError m_cacheError;
 
+        using PathPair = std::pair<std::string, std::string>;
         mutable ProjectDescription m_currentDescription;
+
         std::vector<ProjectDescription> m_cacheDescriptions;
         Configuration m_configuration;
     };

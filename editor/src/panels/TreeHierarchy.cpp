@@ -20,57 +20,23 @@ source distribution.
 *********************************************************************/
 
 #include <algorithm>
+#include <set>
 
+#include <robot2D/Config.hpp>
 #include <robot2D/imgui/Api.hpp>
 #include <robot2D/Util/Logger.hpp>
+#include <robot2D/imgui/Util.hpp>
+#include <imgui/ImGui.hpp>
+
 #include <editor/panels/TreeHierarchy.hpp>
-#include "robot2D/imgui/Util.hpp"
-#include "imgui/ImGui.hpp"
+
+#define IMGUI_ICON_ENTITY			u8"\ue000"
 
 namespace editor {
-
-
-    void drawImage(robot2D::Texture& texture, robot2D::vec2f size, robot2D::Color backgroundColor) {
-
-//        ImGuiWindow* window = ImGui::GetCurrentWindow();
-//        const ImVec2 padding = g.Style.FramePadding;
-//        const ImRect bb(window -> DC.CursorPos, window -> DC.CursorPos + image_size + padding * 2.0f);
-//        ItemSize(bb);
-//        if (!ItemAdd(bb, id))
-//            return false;
-//
-//        bool hovered, held;
-//        bool pressed = ButtonBehavior(bb, id, &hovered, &held, flags);
-//
-//        // Render
-//        const ImU32 col = GetColorU32((held && hovered) ? ImGuiCol_ButtonActive : hovered ? ImGuiCol_ButtonHovered : ImGuiCol_Button);
-//        RenderNavHighlight(bb, id);
-//        RenderFrame(bb.Min, bb.Max, col, true, ImClamp((float)ImMin(padding.x, padding.y), 0.0f, g.Style.FrameRounding));
-//        if (bg_col.w > 0.0f)
-//            window->DrawList->AddRectFilled(bb.Min + padding, bb.Max - padding, GetColorU32(bg_col));
-//        window->DrawList->AddImage(texture_id, bb.Min + padding, bb.Max - padding, uv0, uv1, GetColorU32(tint_col));
+    TreeHierarchy::TreeHierarchy(std::string name) : m_name(std::move(name)) {
+        m_tree_base_flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick
+            | ImGuiTreeNodeFlags_SpanAvailWidth;
     }
-
-
-    void drawTexture(robot2D::vec2f size, robot2D::Texture* texture,
-                                    robot2D::Color tintColor) {
-        auto imID = ImGui::convertTextureHandle(texture -> getID());
-        ImGui::ImageButton(imID, size, {0,0}, {1, 1}, -1, ImVec4(1, 1, 1, 0),
-                           ImVec4(1, 1, 1, 1));
-    };
-
-
-
-    bool TreeHierarchy::deleteItem(ITreeItem::Ptr treeItem) {
-        auto found = std::find_if(m_items.begin(), m_items.end(),
-                                  [&treeItem](ITreeItem::Ptr item) {
-                                      return item == treeItem;
-                                  });
-        m_deletePendingItems.emplace_back(*found);
-        m_multiSelection.setQueueDeletion();
-        return true;
-    }
-
 
     bool TreeHierarchy::addOnSelectCallback(ItemCallback&& callback) {
         if(callback)
@@ -113,30 +79,12 @@ namespace editor {
     }
 
     bool TreeHierarchy::addMultiSelectCallback(MultiItemCallback&& callback) {
-        if(callback)
-            m_multiItemCallback = std::move(callback);
-        else
+        if(!callback)
             return false;
         m_multiSelection.setMultiItemCallback(std::move(m_multiItemCallback));
         return true;
     }
 
-    bool TreeHierarchy::addMultiSelectRangeCallback(MultiItemRangeCallback&& callback) {
-        if(callback)
-            m_multiItemRangeCallback = std::move(callback);
-        else
-            return false;
-        m_multiSelection.setMultiItemRangeCallback(std::move(m_multiItemRangeCallback));
-        return true;
-    }
-
-    bool TreeHierarchy::addInsertItemCallback(TreeHierarchy::InsertItemCallback&& callback) {
-        if(callback)
-            m_insertItemCallback = std::move(callback);
-        else
-            return false;
-        return true;
-    }
 
     void TreeHierarchy::setBefore(ITreeItem::Ptr source, ITreeItem::Ptr target) {
         auto sourceIter = std::find_if(m_items.begin(), m_items.end(), [&source](ITreeItem::Ptr item) {
@@ -159,336 +107,46 @@ namespace editor {
         }
     }
 
-    void TreeHierarchy::insertItem(ITreeItem::Ptr source, ITreeItem::Ptr anchor, bool first, bool isChained ) {
+    void TreeHierarchy::restoreItem(TreeHierarchy::RestoreInfo&& restoreInfo) {
 
-        if(first) {
-            m_setItems.push_back(std::make_tuple(m_items.begin(), source, false, nullptr));
+        if(restoreInfo.isFirst) {
+            restoreInfo.m_sourceIterator = m_items.begin();
         }
         else {
 
-            if(!isChained) {
+            if(!restoreInfo.isChained) {
                 auto anchorFound = std::find_if(m_items.begin(), m_items.end(),
-                                                [&anchor](ITreeItem::Ptr item) {
-                    return item -> m_id == anchor -> m_id;
+                                                [&restoreInfo](ITreeItem::Ptr item) {
+                    return item -> m_id == restoreInfo.anchor -> m_id;
                 });
-                m_setItems.push_back(std::make_tuple(anchorFound, source, false, nullptr));
+                restoreInfo.m_sourceIterator = anchorFound;
             }
             else {
-                m_setItems.push_back(std::make_tuple(m_items.end(), source, true, anchor));
+                restoreInfo.m_sourceIterator = m_items.end();
             }
-
         }
 
+        m_restoreItems.push_back(std::move(restoreInfo));
+
     }
+
+    bool TreeHierarchy::deleteItem(ITreeItem::Ptr treeItem) {
+        auto found = std::find_if(m_items.begin(), m_items.end(),
+            [&treeItem](ITreeItem::Ptr item) {
+                return item == treeItem;
+            });
+        m_deletePendingItems.emplace_back(*found);
+        //m_multiSelection.setQueueDeletion();
+        return true;
+    }
+
 
     void TreeHierarchy::applyChildModification(ITreeItem::Ptr source, ITreeItem::Ptr target) {
         m_source = source;
         m_target = target;
     }
 
-    void TreeHierarchy::render() {
-        for(auto item: m_setItems) {
-            auto iter = std::get<0>(item);
-            if(iter == m_items.begin()) {
-                auto insertIter = m_items.insert(iter, std::get<1>(item));
-                if(insertIter != m_items.end() && m_insertItemCallback)
-                    m_insertItemCallback(*insertIter);
-            }
-            else {
-                bool isChained = std::get<2>(item);
-                if(!isChained) {
-                    auto insertIter = m_items.insert(std::next(iter), std::get<1>(item));
-                    if(insertIter != m_items.end() && m_insertItemCallback)
-                        m_insertItemCallback(*insertIter);
-                }
-                else {
-                    auto anchor = std::get<3>(item);
-                    auto prevFound = std::find_if(m_items.begin(), m_items.end(),
-                                                  [&anchor](auto item) {
-                        return item -> m_id == anchor -> m_id;
-                    });
-                    auto insertIter = m_items.insert(std::next(prevFound), std::get<1>(item));
-                    if(insertIter != m_items.end() && m_insertItemCallback)
-                        m_insertItemCallback(*insertIter);
-                }
-            }
-        }
-        m_setItems.clear();
-
-        for(auto item: m_insertItems) {
-            auto source = std::get<1>(item);
-            m_items.insert(std::get<0>(item), source);
-
-            if(std::get<2>(item) == ReorderDeleteType::Last) {
-                auto found = util::find_last_if(m_items.begin(), m_items.end(),
-                                                [&source](ITreeItem::Ptr item) {
-                    return item -> m_id == source->m_id;
-                });
-                m_items.erase(found);
-            }
-            else if(std::get<2>(item) == ReorderDeleteType::First) {
-                auto found = util::find_first_if(m_items.begin(), m_items.end(),
-                                                 [&source](ITreeItem::Ptr item) {
-                    return item -> m_id == source -> m_id;
-                });
-                m_items.erase(found);
-            }
-        }
-        m_insertItems.clear();
-
-        for(auto delItem: m_deletePendingItems) {
-            m_items.erase(std::remove_if(m_items.begin(), m_items.end(), [this, &delItem](ITreeItem::Ptr item) {
-                bool eq = item == delItem;
-                delItem -> isQueryDeletion = false;
-                if(eq && !delItem -> isChild())
-                    m_multiSelection.updateItem(item, false);
-                return eq;
-            }), m_items.end());
-        }
-        m_deletePendingItems.clear();
-
-        for(auto item: m_additemsBuffer) {
-            m_items.emplace_back(item);
-            constexpr bool needAdd = true;
-            m_multiSelection.updateItem(item, needAdd);
-        }
-        m_additemsBuffer.clear();
-
-
-        /// has childModification
-        if(m_source && m_target) {
-            m_source -> m_parent -> update();
-            m_target -> addChild(m_source);
-            m_source = nullptr;
-            m_target = nullptr;
-        }
-
-        renderTree();
-    }
-
-    void TreeHierarchy::renderTree() {
-        static ImGuiMultiSelectFlags flags = ImGuiMultiSelectFlags_None | ImGuiMultiSelectFlags_ClearOnEscape;
-
-        if(ImGui::TreeNodeEx(m_name.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
-
-            ImGuiMultiSelectIO* ms_io = ImGui::BeginMultiSelect(flags);
-            m_multiSelection.applyRequests(ms_io, m_items);
-
-            const bool wantDelete = m_multiSelection.hasQueryDeletion() ||
-                    ( !m_multiSelection.empty() && ImGui::IsWindowFocused() && ImGui::IsKeyPressed(ImGuiKey_Delete));
-            ITreeItem::Ptr item_curr_idx_to_focus = nullptr;
-
-            if(wantDelete)
-                item_curr_idx_to_focus = m_multiSelection.processDeletionPreLoop(ms_io, m_items);
-
-            for(auto item: m_items) {
-                ImGuiTreeNodeFlags node_flags = m_tree_base_flags | ImGuiTreeNodeFlags_FramePadding;
-
-                if(item -> hasChildrens()) {
-                    node_flags |=  ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_DefaultOpen;
-                }
-                else {
-                    node_flags |= ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_Leaf ;
-                }
-
-                if(item -> isQueryDeletion || !item -> m_name)
-                    continue;
-
-                auto hasItem = m_multiSelection.hasItem(item);
-                if(hasItem)
-                    node_flags |= ImGuiTreeNodeFlags_Selected;
-
-                if(item -> m_iconTexture) {
-                    drawTexture({20, 20}, item -> m_iconTexture, item -> m_tintColor);
-                    ImGui::SameLine();
-                }
-
-                auto uuid = item -> m_id;
-                ImGui::PushID(static_cast<void*>(&uuid));
-
-                ImGui::SetNextItemSelectionUserData(static_cast<ImGuiSelectionUserData>(uuid));
-                bool node_open = false;
-
-                const char* itemName = item -> m_name -> c_str();
-
-                {
-                    auto currContext = ImGui::GetCurrentContext();
-                    auto style = currContext -> Style;
-
-                    /// TODO(a.raag): move from hardcode to calculations
-                    float TreeNodeFramePaddingY = 6;
-
-                    /// TODO(a.raag): Make some ScopedStyleVar
-                    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{style.FramePadding.x, TreeNodeFramePaddingY});
-                    /// TODO(a.raag): check correctness of using id as ptr_id
-                    node_open = ImGui::TreeNodeEx(static_cast<void*>(&uuid), node_flags, "%s" , itemName);
-                    ImGui::PopStyleVar();
-                }
-
-
-                if (item_curr_idx_to_focus == item)
-                    ImGui::SetKeyboardFocusHere(-1);
-
-
-                if(ImGui::BeginDragDropSource( )) {
-                    ImGui::SetDragDropPayload(m_playloadIdentifier.c_str(),
-                                              &item -> m_id,
-                                              sizeof(item -> m_id));
-                    ImGui::Text("%s", item -> m_name  -> c_str());
-                    ImGui::EndDragDropSource();
-                }
-
-                if(ImGui::IsMouseReleased(ImGuiMouseButton_Left)
-                        && ImGui::IsItemFocused() && ImGui::IsWindowHovered()) {
-                    m_selectCallback(item);
-                }
-
-                if(!ImGui::IsKeyDown(static_cast<ImGuiKey>(robot2D::key2Int(m_shortCutKey)))) {
-                    if(ImGui::BeginDragDropTarget()) {
-                        auto* payload = ImGui::AcceptDragDropPayload(m_playloadIdentifier.c_str());
-                        if(payload) {
-                            if(payload -> IsDataType(m_playloadIdentifier.c_str())) {
-                                UUID id = *static_cast<UUID*>(payload -> Data);
-#ifdef _WIN32
-                                RB_EDITOR_INFO("Not Child: Got item with ID = {0}", id);
-#else
-                                // TODO(a.raag) fmt don't support UUID Correctly
-#endif
-                                auto found = findByID(id);
-                                if(!found -> isChild() )
-                                    m_reorderCallback( found, item);
-                                else
-                                    m_removeAsChildCallback(found, item);
-                            }
-                        }
-                        ImGui::EndDragDropTarget();
-                    }
-                }
-                else if(ImGui::IsKeyDown(static_cast<ImGuiKey>(robot2D::key2Int(m_shortCutKey)))) {
-                    if(ImGui::BeginDragDropTarget()) {
-                        auto* payload = ImGui::AcceptDragDropPayload(m_playloadIdentifier.c_str());
-                        if(payload) {
-                            if(payload -> IsDataType(m_playloadIdentifier.c_str())) {
-                                UUID id = *static_cast<UUID*>(payload -> Data);
-#ifdef _WIN32
-                                RB_EDITOR_INFO("Not Child: want as make as child item with ID = {0}", id);
-#else
-                                // TODO(a.raag) fmt don't support UUID Correctly
-#endif
-                                m_makeAsChildCallback(findByID(id), item);
-                            }
-                        }
-                        ImGui::EndDragDropTarget();
-                    }
-                }
-
-
-                if(node_open) {
-                    if(item -> hasChildrens())
-                        renderTreeChildren(item);
-
-                    m_callback(item);
-
-                    ImGui::TreePop();
-                }
-
-                ImGui::PopID();
-            }
-
-            ms_io = ImGui::EndMultiSelect();
-            m_multiSelection.applyRequests(ms_io, m_items);
-
-            if(wantDelete) {
-                m_multiSelection.processDeletionPostLoop(ms_io, m_items, item_curr_idx_to_focus);
-            }
-
-            ImGui::TreePop();
-        }
-    }
-
-    void TreeHierarchy::renderTreeChildren(ITreeItem::Ptr parent) {
-        for(auto child: parent -> getChildrens()) {
-            if(!child -> m_name)
-                continue;
-
-            if(child -> m_iconTexture) {
-                drawTexture({20, 20}, child -> m_iconTexture, child -> m_tintColor);
-                ImGui::SameLine();
-            }
-
-            ImGuiTreeNodeFlags child_node_flags = m_tree_base_flags | ImGuiTreeNodeFlags_FramePadding;
-            if(child -> hasChildrens()) {
-                child_node_flags |=  ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_DefaultOpen;
-            }
-            else {
-                child_node_flags |= ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_Leaf ;
-            }
-
-            auto hasItem = m_multiSelection.hasItem(child);
-            if(hasItem)
-                child_node_flags |= ImGuiTreeNodeFlags_Selected;
-
-            auto childUUID = child -> m_id;
-            ImGui::PushID(static_cast<void*>(&childUUID));
-            bool childOpen = false;
-            ImGui::SetNextItemSelectionUserData(static_cast<ImGuiSelectionUserData>(childUUID));
-            {
-                auto currContext = ImGui::GetCurrentContext();
-                auto style = currContext -> Style;
-
-                /// TODO(a.raag): move from hardcode to calculations
-                float TreeNodeFramePaddingY = 6;
-
-                /// TODO(a.raag): Make some ScopedStyleVar
-                ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{style.FramePadding.x, TreeNodeFramePaddingY});
-                /// TODO(a.raag): check correctness of using id as ptr_id
-                childOpen = ImGui::TreeNodeEx(static_cast<void*>(&childUUID), child_node_flags, "%s" , child -> m_name -> c_str());
-                ImGui::PopStyleVar();
-            }
-
-            /// TODO(a.raag): recursive doNode
-            if(ImGui::IsMouseReleased(ImGuiMouseButton_Left)
-               && ImGui::IsItemFocused() && ImGui::IsWindowHovered()) {
-                m_selectCallback(child);
-            }
-
-            if(ImGui::BeginDragDropSource()) {
-                ImGui::SetDragDropPayload(m_playloadIdentifier.c_str(),
-                                          &child -> m_id, sizeof(child -> m_id));
-                ImGui::Text("%s", child -> m_name -> c_str());
-                ImGui::EndDragDropSource();
-            }
-
-
-            if(ImGui::BeginDragDropTarget()) {
-                auto* payload = ImGui::AcceptDragDropPayload(m_playloadIdentifier.c_str());
-                if(payload) {
-                    if(payload -> IsDataType(m_playloadIdentifier.c_str())) {
-                        UUID id = *static_cast<UUID*>(payload -> Data);
-#ifdef _WIN32
-                        RB_EDITOR_INFO("TreeHierachy: Want make as child item with ID = {0}", id);
-#else
-                        // TODO(a.raag) fmt don't support UUID Correctly
-#endif
-                        m_makeAsChildCallback(findByID(id), child);
-                    }
-                }
-                ImGui::EndDragDropTarget();
-            }
-
-            if(childOpen) {
-                if(child -> hasChildrens())
-                    renderTreeChildren(child);
-
-                ImGui::TreePop();
-                m_callback(child);
-            }
-            ImGui::PopID();
-        }
-    }
-
-
-    ITreeItem::Ptr TreeHierarchy::findByID(UUID ID) {
+    ITreeItem::Ptr TreeHierarchy::findByID(UUID ID) const{
         auto startIter = m_items.begin();
         for(; startIter != m_items.end(); ++startIter) {
             auto start = *startIter;
@@ -504,7 +162,7 @@ namespace editor {
         return nullptr;
     }
 
-    ITreeItem::Ptr TreeHierarchy::findByID(ITreeItem::Ptr parent, UUID ID) {
+    ITreeItem::Ptr TreeHierarchy::findByID(ITreeItem::Ptr parent, UUID ID) const {
         for(auto child: parent -> getChildrens()) {
             if(child -> hasChildrens()) {
                 auto item = findByID(child, ID);
@@ -522,13 +180,259 @@ namespace editor {
     }
 
     void TreeHierarchy::setSelected(ITreeItem::Ptr item) {
-        m_multiSelection.updateItem(item, true);
+        m_multiSelection.addItem(item);
     }
 
     void TreeHierarchy::clearSelection() {
-        m_multiSelection.clear();
+        m_multiSelection.clearAll();
     }
 
+    void TreeHierarchy::update() {
+        for (auto& item : m_restoreItems) {
+            auto& iter = item.m_sourceIterator;
+            if (item.isFirst) {
+                m_items.insert(m_items.begin(), item.target);
+            }
+            else {
+                bool isChained = item.isChained;
+                if (!isChained) {
+                    auto insertIter = m_items.insert(std::next(iter), item.target);
+                }
+                else {
+                    auto anchor = item.anchor;
+                    auto prevFound = std::find_if(m_items.begin(), m_items.end(),
+                        [&anchor](auto item) {
+                            return item -> m_id == anchor -> m_id;
+                        });
+                    auto insertIter = m_items.insert(std::next(prevFound), item.target);
+                }
+            }
+        }
+        m_restoreItems.clear();
+
+        for (auto& item : m_insertItems) {
+            auto source = std::get<1>(item);
+            m_items.insert(std::get<0>(item), source);
+
+            if (std::get<2>(item) == ReorderDeleteType::Last) {
+                auto found = util::find_last_if(m_items.begin(), m_items.end(),
+                    [&source](ITreeItem::Ptr item) {
+                        return item -> m_id == source -> m_id;
+                    });
+                m_items.erase(found);
+            }
+            else if (std::get<2>(item) == ReorderDeleteType::First) {
+                auto found = util::find_first_if(m_items.begin(), m_items.end(),
+                    [&source](ITreeItem::Ptr item) {
+                        return item -> m_id == source -> m_id;
+                    });
+                m_items.erase(found);
+            }
+        }
+        m_insertItems.clear();
+
+        for (auto& delItem : m_deletePendingItems) {
+            m_items.erase(std::remove_if(m_items.begin(), m_items.end(),
+                                                [this, &delItem](ITreeItem::Ptr item) {
+                bool eq = item == delItem;
+                delItem -> isQueryDeletion = false;
+                if (eq && !delItem->isChild())
+                    m_multiSelection.removeItem(item);
+                return eq;
+                }), m_items.end());
+        }
+        m_deletePendingItems.clear();
+
+        for (auto& item : m_additemsBuffer) {
+            m_items.emplace_back(item);
+            m_multiSelection.addItem(item);
+        }
+        m_additemsBuffer.clear();
+
+
+        /// has childModification
+        if (m_source && m_target) {
+            m_source -> m_parent-> update();
+            m_target -> addChild(m_source);
+            m_source = nullptr;
+            m_target = nullptr;
+        }
+
+    }
+
+    void TreeHierarchy::render() {
+        update();
+        renderTree();
+    }
+
+
+    void TreeHierarchy::renderTree() {
+        if (ImGui::TreeNodeEx(m_name.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+            m_multiSelection.preUpdate(m_items);
+
+            for (auto& item : m_items) {
+                ImGuiTreeNodeFlags node_flags = m_tree_base_flags | ImGuiTreeNodeFlags_FramePadding
+                                                                            | ImGuiTreeNodeFlags_Framed ;
+
+                if (item -> hasChildrens())
+                    node_flags |= ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_DefaultOpen;
+                else
+                    node_flags |= ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_Leaf;
+
+
+                if (item -> isQueryDeletion || !item -> m_name)
+                    continue;
+
+                auto hasItem = m_multiSelection.hasItem(item);
+                if (hasItem)
+                    node_flags |= ImGuiTreeNodeFlags_Selected;
+
+                bool node_open = false;
+
+                {
+                    std::string treeNodeText;
+                    treeNodeText += IMGUI_ICON_ENTITY + std::string("  ") + *item -> m_name;
+
+                    robot2D::ScopedStyleVarVec2 var(ImGuiStyleVar_FramePadding, { 2, 2 });
+                    if(!hasItem)
+                        ImGui::PushStyleColor(ImGuiCol_Header, { 0.0, 0.0, 0.0, 0.0 });
+                    else
+                        ImGui::PushStyleColor(ImGuiCol_Header, ImGui::GetStyle().Colors[ImGuiCol_HeaderHovered]);
+
+                    node_open = ImGui::TreeNodeEx(treeNodeText.c_str(), node_flags);
+
+                    ImGui::PopStyleColor();
+                }
+
+
+                m_multiSelection.update();
+
+                if(ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
+                    m_multiSelection.markSelected(item);
+                    if(m_multiSelection.isSingleSelect())
+                        m_selectCallback(item);
+                }
+
+                imgui_DragDropSource() {
+                    ImGui::SetDragDropPayload(m_playloadIdentifier.c_str(), &item->m_id, sizeof(item->m_id));
+                    imgui_Text(item -> m_name -> c_str());
+                }
+
+                bool altDown = ImGui::GetIO().KeyAlt;
+
+                if (!ImGui::IsKeyDown(static_cast<ImGuiKey>(robot2D::key2Int(m_shortCutKey)))) {
+                    robot2D::DragDropTarget dragDropTarget{m_playloadIdentifier};
+                    if(auto uuid = dragDropTarget.unpackPayload<UUID>()) {
+#ifdef ROBOT2D_WINDOWS
+                        RB_EDITOR_INFO( "Not Child: Got item with ID = {0}", *uuid );
+#else
+                        // TODO(a.raag) fmt don't support UUID Correctly
+#endif
+                        auto found = findByID(*uuid);
+                        if (!found -> isChild())
+                            m_reorderCallback(found, item);
+                        else
+                            m_removeAsChildCallback(found, item);
+                    }
+                }
+                else if (ImGui::IsKeyDown(static_cast<ImGuiKey>(robot2D::key2Int(m_shortCutKey)))) {
+                    robot2D::DragDropTarget dragDropTarget{m_playloadIdentifier};
+                    if(auto uuid = dragDropTarget.unpackPayload<UUID>()) {
+#ifdef ROBOT2D_WINDOWS
+                        RB_EDITOR_INFO("Not Child: want as make as child item with ID = {0}", *uuid);
+#else
+                        // TODO(a.raag) fmt don't support UUID Correctly
+#endif
+                        m_makeAsChildCallback(findByID(*uuid), item);
+                    }
+                }
+
+                if (node_open) {
+                    if (item -> hasChildrens())
+                        renderTreeChildren(item);
+
+                    m_callback(item);
+                    ImGui::TreePop();
+                }
+            }
+
+            m_multiSelection.postUpdate();
+
+            ImGui::TreePop();
+        }
+    }
+
+    void TreeHierarchy::renderTreeChildren(ITreeItem::Ptr parent) {
+        for (auto child : parent -> getChildrens()) {
+            if (!child -> m_name)
+                continue;
+
+            ImGuiTreeNodeFlags child_node_flags = m_tree_base_flags | ImGuiTreeNodeFlags_FramePadding
+                                                                                    | ImGuiTreeNodeFlags_Framed;
+            if (child -> hasChildrens())
+                child_node_flags |= ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_DefaultOpen;
+            else
+                child_node_flags |= ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_Leaf;
+
+            auto hasItem = m_multiSelection.hasItem(child);
+            if (hasItem)
+                child_node_flags |= ImGuiTreeNodeFlags_Selected;
+
+            bool childOpen = false;
+
+            {
+                std::string treeNodeText;
+                treeNodeText += IMGUI_ICON_ENTITY + std::string("  ") + *child -> m_name;
+
+                robot2D::ScopedStyleVarVec2 var(ImGuiStyleVar_FramePadding, { 2, 2 });
+                if(!hasItem)
+                    ImGui::PushStyleColor(ImGuiCol_Header, { 0.0, 0.0, 0.0, 0.0 });
+                else
+                    ImGui::PushStyleColor(ImGuiCol_Header, ImGui::GetStyle().Colors[ImGuiCol_HeaderHovered]);
+                childOpen = ImGui::TreeNodeEx(treeNodeText.c_str(), child_node_flags);
+                ImGui::PopStyleColor();
+            }
+
+            /// TODO(a.raag): recursive doNode
+            if (ImGui::IsMouseReleased(ImGuiMouseButton_Left)
+                && ImGui::IsItemFocused() && ImGui::IsWindowHovered()) {
+                m_selectCallback(child);
+            }
+
+            imgui_DragDropSource() {
+                ImGui::SetDragDropPayload(m_playloadIdentifier.c_str(), &child->m_id, sizeof(child -> m_id));
+                ImGui::Text("%s", child->m_name->c_str());
+            }
+
+            {
+                robot2D::DragDropTarget dragDropTarget{m_playloadIdentifier};
+                if(auto uuid = dragDropTarget.unpackPayload<UUID>()) {
+#ifdef ROBOT2D_WINDOWS
+                    RB_EDITOR_INFO("TreeHierachy: Want make as child item with ID = {0}", *uuid);
+#else
+                    // TODO(a.raag) fmt don't support UUID Correctly
+#endif
+                    m_makeAsChildCallback(findByID(*uuid), child);
+                }
+            }
+
+            if (childOpen) {
+                if (child -> hasChildrens())
+                    renderTreeChildren(child);
+
+                ImGui::TreePop();
+                m_callback(child);
+            }
+        }
+    }
+
+    const std::size_t TreeHierarchy::getItemsValue() const {
+        std::size_t size = { 0 };
+        for(auto& item: m_items)
+            size += item -> getChildValue(size);
+        size += m_items.size();
+        return size;
+    }
 
 
 }

@@ -36,15 +36,21 @@ source distribution.
 #include "ScriptInteractor.hpp"
 #include "DeletedEntitesRestoreInformation.hpp"
 #include "EditorCamera.hpp"
+#include "SceneEntity.hpp"
+#include "SceneGraph.hpp"
 
 namespace editor {
+
     class Scene: public robot2D::Drawable {
     public:
         using Ptr = std::shared_ptr<Scene>;
         using EntityList = std::list<robot2D::ecs::Entity>;
     public:
-
         Scene(robot2D::MessageBus& messageBus);
+        Scene(const Scene& other) = delete;
+        Scene& operator=(const Scene& other) = delete;
+        Scene(Scene&& other) = delete;
+        Scene& operator=(Scene&& other) = delete;
         ~Scene() override = default;
 
         void createMainCamera();
@@ -63,15 +69,19 @@ namespace editor {
 
         void setRuntimeCamera(bool flag);
 
-        ////////////// Serializer Api //////////////
-        robot2D::ecs::Entity createEntity();
+        //////////////////////// Serializer Api ////////////////////////
+        SceneEntity createEntity();
+        void addAssociatedEntity(SceneEntity&& entity);
         robot2D::ecs::Entity createEmptyEntity();
-        void addAssociatedEntity(robot2D::ecs::Entity entity);
 
-        ////////////// ScenePanel API //////////////
+        /// (a.raag): tmp method for refactor usages
+        void convertEntities();
+        //////////////////////// Serializer Api ////////////////////////
+
+        /////////////////////////// ScenePanel API ///////////////////////////
         void addEmptyEntity();
         robot2D::ecs::Entity addEmptyButton();
-
+        /////////////////////////// ScenePanel API ///////////////////////////
 
 
         void setBefore(robot2D::ecs::Entity source, robot2D::ecs::Entity target);
@@ -82,6 +92,8 @@ namespace editor {
 
 
         robot2D::ecs::Entity getByUUID(UUID uuid);
+        SceneEntity getEntity(UUID uuid) const;
+
 
         bool isRunning() const { return m_running; }
 
@@ -160,5 +172,8 @@ namespace editor {
         std::vector<InsertItem> m_insertItems;
         std::vector<SetItem> m_setItems;
         std::function<void()> m_onDeleteFinishCallback{nullptr};
+
+
+        SceneGraph m_sceneGraph;
     };
 }

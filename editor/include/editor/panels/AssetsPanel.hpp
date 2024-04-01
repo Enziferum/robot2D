@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2023
+(c) Alex Raag 2024
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -62,14 +62,23 @@ namespace editor {
 
     class AssetsPanel: public IPanel, public Observer {
     public:
+        enum class State {
+            Loading,
+            Active
+        };
+    public:
         AssetsPanel(robot2D::MessageBus& messageBus,
                     IUIManager& iuiManager,
                     PrefabManager& prefabManager);
+        AssetsPanel(const AssetsPanel& other) = delete;
+        AssetsPanel& operator=(const AssetsPanel& other) = delete;
+        AssetsPanel(AssetsPanel&& other) = delete;
+        AssetsPanel& operator=(AssetsPanel&& other) = delete;
         ~AssetsPanel() override = default;
 
+        void switchState(State state) { m_state = state; }
         void setAssetsPath(const std::string& path);
         void render() override;
-        void unlock() { m_unlock = true; }
     private:
         void dropFiles(std::vector<std::string>&& path);
         void uiAssetsCreation();
@@ -102,9 +111,9 @@ namespace editor {
         std::vector<AssetItem> m_assetItems;
         std::pair<std::filesystem::path, bool> m_itemEditName;
 
-        bool m_unlock{false};
-        bool m_itemClicked{false};
 
+        State m_state = State::Loading;
+        bool m_itemClicked{false};
         bool m_visible{false};
     };
 }

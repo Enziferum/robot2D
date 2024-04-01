@@ -31,6 +31,10 @@ namespace editor {
         using Ptr = std::shared_ptr<ITask>;
     public:
         explicit ITask(ITaskFunction::Ptr function);
+        ITask(const ITask& other) = delete;
+        ITask& operator=(const ITask& other) = delete;
+        ITask(ITask&& other) = delete;
+        ITask& operator=(ITask&& other) = delete;
         virtual ~ITask() = 0;
 
         virtual void execute() = 0;
@@ -41,6 +45,6 @@ namespace editor {
         friend class TaskQueue;
 
         ITaskFunction::Ptr m_function;
-        TaskID m_taskID{0};
+        TaskID m_taskID{ 0 };
     };
 }

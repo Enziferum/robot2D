@@ -488,7 +488,7 @@ namespace editor {
         mono_jit_cleanup(s_Data -> m_rootDomain);
     }
 
-    void ScriptEngine::onCreateEntity(robot2D::ecs::Entity entity) {
+    void ScriptEngine::onCreateEntity(SceneEntity entity) {
         const auto& sc = entity.getComponent<ScriptComponent>();
         if(hasEntityClass(sc.name)) {
             auto uuid = entity.getComponent<IDComponent>().ID;
@@ -531,8 +531,8 @@ namespace editor {
 
     }
 
-    void ScriptEngine::onUpdateEntity(robot2D::ecs::Entity entity, float delta) {
-        auto uuid = entity.getComponent<IDComponent>().ID;
+    void ScriptEngine::onUpdateEntity(SceneEntity entity, float delta) {
+        auto uuid = entity.getUUID();
         if(s_Data -> m_entityInstances.find(uuid) != s_Data -> m_entityInstances.end()) {
             auto instance = s_Data -> m_entityInstances[uuid];
             instance -> onUpdateInvoke(delta);
@@ -656,8 +656,8 @@ namespace editor {
         return s_Data -> m_entityClasses.at(name);
     }
 
-    ScriptFieldMap& ScriptEngine::getScriptFieldMap(robot2D::ecs::Entity entity) {
-        auto uuid = entity.getComponent<IDComponent>().ID;
+    ScriptFieldMap& ScriptEngine::getScriptFieldMap(SceneEntity entity) {
+        auto uuid = entity.getUUID();
         auto& fields = s_Data -> m_entityScriptFields;
         return s_Data -> m_entityScriptFields[uuid];
     }

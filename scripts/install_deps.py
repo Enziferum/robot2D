@@ -207,8 +207,8 @@ class DepsInstaller:
         parser.add_argument('-m', "--mode", help='Libraries build mode: Debug = 1, Release = 2',
                             type=int, required=True)
         if get_platform() == PlatformType.Windows:
-            parser.add_argument("--wincompiler", type=int, default=2)
-            parser.add_argument("--winvsversion", type=int, default=2)
+            parser.add_argument("--wincompiler", type=int, default=2, help='MinGW = 1, Visual Studio = 2')
+            parser.add_argument("--winvsversion", type=int, default=2, help='Vs 19 = 1, Vs 22 = 2')
         args = parser.parse_args()
         self.__build_mode = BuildMode(args.mode)
         if get_platform() == PlatformType.Windows:

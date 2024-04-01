@@ -68,7 +68,7 @@ namespace editor {
 
             if(entity.hasComponent<TextComponent>()) {
                 auto& text = entity.getComponent<TextComponent>();
-                entity.getComponent<DrawableComponent>().setTexture(text.getTexture());
+                //entity.getComponent<DrawableComponent>().setTexture(text.getTexture());
                 if(text.m_needUpdate) {
                     text.m_needUpdate = false;
                     m_needUpdateText = true;

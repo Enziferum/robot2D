@@ -146,7 +146,8 @@ namespace editor {
     }
 
     void Scene::updateRuntime(float dt) {
-        for(auto& entity: m_sceneEntities) {
+        /// TODO(a.raag): moving to SceneGraph
+/*        for(auto& entity: m_sceneEntities) {
             if(entity.hasComponent<ScriptComponent>())
                 ScriptEngine::onUpdateEntity(entity, dt);
             auto& ts = entity.getComponent<TransformComponent>();
@@ -156,7 +157,7 @@ namespace editor {
                         ScriptEngine::onUpdateEntity(child, dt);
                 }
             }
-        }
+        }*/
 
         m_physicsAdapter -> update(dt);
         m_scene.update(dt);
@@ -166,10 +167,15 @@ namespace editor {
         target.draw(m_scene);
     }
 
-    robot2D::ecs::Entity Scene::createEntity() {
+    SceneEntity Scene::createEntity() {
         auto entity = m_scene.createEntity();
-        return entity;
+        return m_sceneGraph.createEntity(std::move(entity));
     }
+
+    void Scene::addAssociatedEntity(SceneEntity&& entity) {
+        m_sceneGraph.addEntity(std::move(entity));
+    }
+
 
     robot2D::ecs::Entity Scene::createEmptyEntity() {
         return m_scene.createEmptyEntity();
@@ -189,9 +195,6 @@ namespace editor {
         m_hasChanges = true;
     }
 
-    void Scene::addAssociatedEntity(robot2D::ecs::Entity entity) {
-        m_sceneEntities.emplace_back(entity);
-    }
 
     void Scene::removeEntity(robot2D::ecs::Entity entity) {
         auto found = std::find_if(m_sceneEntities.begin(),
@@ -214,7 +217,9 @@ namespace editor {
         m_scene.getSystem<RenderSystem>() -> setScene(this);
 
         ScriptEngine::onRuntimeStart(scriptInteractor);
-        for(auto& entity: m_sceneEntities) {
+
+        /// TODO(a.raag): moving to SceneGraph
+/*        for(auto& entity: m_sceneEntities) {
             if(entity.hasComponent<ScriptComponent>() && !entity.hasComponent<PrefabComponent>())
                 ScriptEngine::onCreateEntity(entity);
             auto& ts = entity.getComponent<TransformComponent>();
@@ -230,7 +235,7 @@ namespace editor {
                 // TODO(a.raag) ts.getGlobalBounds();
                 hitbox.m_area = robot2D::FloatRect::create(ts.getPosition(), ts.getScale() + ts.getPosition());
             }
-        }
+        }*/
 
     }
 
@@ -288,6 +293,10 @@ namespace editor {
 
     void Scene::setRuntimeCamera(bool flag) {
         m_scene.getSystem<RenderSystem>() -> setRuntimeFlag(flag);
+    }
+
+    SceneEntity Scene::getEntity(UUID uuid) const{
+        return m_sceneGraph.getEntity(uuid);
     }
 
     robot2D::ecs::Entity Scene::getByUUID(UUID uuid) {
@@ -633,6 +642,12 @@ namespace editor {
         return dupEntity;
     }
 
+    void Scene::convertEntities() {
+        auto& wrappedEntities = m_sceneGraph.getEntities();
+        for(auto& wrapEntity: wrappedEntities) {
+            m_sceneEntities.emplace_back(wrapEntity.getWrappedEntity());
+        }
+    }
 
 }
 

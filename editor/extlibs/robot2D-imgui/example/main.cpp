@@ -1,8 +1,10 @@
 #include <robot2D/Engine.hpp>
 #include <robot2D/imgui/Gui.hpp>
+#include <robot2D/imgui/Sugar.hpp>
 
 namespace {
     // ImGui ShowDemo
+    bool showDemoWindow = false;
     bool demoWindowOpen = false;
 }
 
@@ -44,15 +46,15 @@ void MyApplication::guiUpdate(float deltaTime) {
 
 void MyApplication::guiRender() {
 
-    /// see Sugar.hpp for more on_## methods
-//    on_Window("") {
-//        onButton("ShowDemoWindow") {
-//            demoWindowOpen = !demoWindowOpen;
-//        }
-//    }
+    /// see Sugar.hpp for more imgui_## methods
+    imgui_Window("Sugar Example") {
+        imgui_Button("ShowDemoWindow") {
+            showDemoWindow = !showDemoWindow;
+        }
+    }
 
-
-    ImGui::ShowDemoWindow(&demoWindowOpen);
+    if(showDemoWindow)
+        ImGui::ShowDemoWindow(&demoWindowOpen);
 }
 
 void MyApplication::render() {

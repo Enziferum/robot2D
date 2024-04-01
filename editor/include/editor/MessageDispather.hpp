@@ -36,7 +36,7 @@ namespace editor {
     public:
         using Ptr = std::unique_ptr<IFunction>;
         virtual ~IFunction() = 0;
-        virtual void execute(const robot2D::Message& message) = 0;
+        virtual void execute(robot2D::Message& message) = 0;
     };
 
     template<typename Callback, typename CallbackFuncArg>
@@ -45,10 +45,18 @@ namespace editor {
         FunctionWrapper(Callback&& callback): m_callback{callback} {}
         ~FunctionWrapper() override = default;
 
-        void execute(const robot2D::Message& message) override {
-            auto& data = message.getData<CallbackFuncArg>();
-            //std::forward<CallbackFuncArg>(data)
-            m_callback(data);
+        void execute(robot2D::Message& message) override {
+            if (message.needUnpack()) {
+                auto data = message.unpack<CallbackFuncArg>();
+                m_callback(data);
+            }
+            else {
+                auto& data = message.getData<CallbackFuncArg>();
+
+                //std::forward<CallbackFuncArg>(data)
+                m_callback(data);
+            }
+            
         }
     private:
         Callback m_callback;
@@ -60,7 +68,7 @@ namespace editor {
         FunctionWrapper(Callback&& callback): m_callback{callback} {}
         ~FunctionWrapper() override = default;
 
-        void execute(const robot2D::Message& message) override {
+        void execute(robot2D::Message& message) override {
             m_callback();
         }
     private:
@@ -88,7 +96,7 @@ namespace editor {
                             IFunction::Ptr>(messageId, std::move(ptr)));
         }
 
-        void process(const robot2D::Message& message);
+        void process(robot2D::Message& message);
     private:
         std::unordered_multimap<robot2D::Message::ID, IFunction::Ptr> m_functions;
     };

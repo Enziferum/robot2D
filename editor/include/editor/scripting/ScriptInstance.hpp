@@ -21,8 +21,7 @@ source distribution.
 
 #pragma once
 #include <memory>
-
-#include <robot2D/Ecs/Entity.hpp>
+#include <editor/SceneEntity.hpp>
 #include "MonoClassWrapper.hpp"
 
 extern "C" {
@@ -41,7 +40,7 @@ namespace editor {
     public:
         using Ptr = std::shared_ptr<ScriptInstance>;
     public:
-        ScriptInstance(ScriptEngineData* data, MonoClassWrapper::Ptr, robot2D::ecs::Entity);
+        ScriptInstance(ScriptEngineData* data, MonoClassWrapper::Ptr, SceneEntity sceneEntity);
         ~ScriptInstance() = default;
 
         MonoClassWrapper::Ptr getClassWrapper() { return m_class; }
@@ -73,7 +72,7 @@ namespace editor {
         void onUpdateInvoke(float dt);
     private:
         MonoClassWrapper::Ptr m_class;
-        robot2D::ecs::Entity m_entity;
+        SceneEntity m_entity;
 
         inline static char s_FieldValueBuffer[64];
     };

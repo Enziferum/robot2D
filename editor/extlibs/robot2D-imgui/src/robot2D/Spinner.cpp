@@ -1,12 +1,57 @@
-#ifdef _WIN32
+/*********************************************************************
+(c) Alex Raag 2024
+https://github.com/Enziferum
+robot2D - Zlib license.
+This software is provided 'as-is', without any express or
+implied warranty. In no event will the authors be held
+liable for any damages arising from the use of this software.
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute
+it freely, subject to the following restrictions:
+1. The origin of this software must not be misrepresented;
+you must not claim that you wrote the original software.
+If you use this software in a product, an acknowledgment
+in the product documentation would be appreciated but
+is not required.
+2. Altered source versions must be plainly marked as such,
+and must not be misrepresented as being the original software.
+3. This notice may not be removed or altered from any
+source distribution.
+*********************************************************************/
+#include <robot2D/Config.hpp>
+#ifdef ROBOT2D_WINDOWS
     #define _USE_MATH_DEFINES
-#endif 
-#include <cmath>
+#endif
 
+#include <cmath>
 #include <robot2D/imgui/Spinner.hpp>
 #include <imgui/imgui_internal.h>
 
 namespace robot2D {
+
+    bool Spinner::begin() {
+        ImVec2 pos, size;
+
+        ImGuiWindow* window = ImGui::GetCurrentWindow();
+        if (window -> SkipItems)
+            return false;
+
+        ImGuiContext* g = ImGui::GetCurrentContext();
+        const ImGuiStyle& style = g -> Style;
+        const ImGuiID id = window -> GetID(m_label.c_str());
+
+        pos = window -> DC.CursorPos;
+        size = ImVec2((m_radius) * 2, (m_radius + style.FramePadding.y) * 2);
+
+        const ImRect bb(pos, ImVec2(pos.x + size.x, pos.y + size.y));
+        ImGui::ItemSize(bb, style.FramePadding.y);
+
+        m_center = bb.GetCenter();
+        if (!ImGui::ItemAdd(bb, id))
+            return false;
+
+        return true;
+    }
 
     void Spinner::draw() {
         if(!begin())
@@ -35,30 +80,6 @@ namespace robot2D {
             window -> DrawList -> PathLineTo(ImVec2(m_center.x + std::cos(a) * m_radius, m_center.y + std::sin(a) * m_radius));
         }
         window -> DrawList-> PathStroke(ImColor(m_color), false, m_thickness);
-    }
-
-    bool Spinner::begin() {
-        ImVec2 pos, size;
-
-        ImGuiWindow* window = ImGui::GetCurrentWindow();
-        if (window -> SkipItems)
-            return false;
-
-        ImGuiContext* g = ImGui::GetCurrentContext();
-        const ImGuiStyle& style = g -> Style;
-        const ImGuiID id = window -> GetID(m_label.c_str());
-
-        pos = window -> DC.CursorPos;
-        size = ImVec2((m_radius) * 2, (m_radius + style.FramePadding.y) * 2);
-
-        const ImRect bb(pos, ImVec2(pos.x + size.x, pos.y + size.y));
-        ImGui::ItemSize(bb, style.FramePadding.y);
-
-        m_center = bb.GetCenter();
-        if (!ImGui::ItemAdd(bb, id))
-            return false;
-
-        return true;
     }
 
 }

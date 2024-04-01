@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2023
+(c) Alex Raag 2024
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -27,31 +27,27 @@ source distribution.
 
 #include <robot2D/Graphics/Texture.hpp>
 #include <robot2D/Graphics/Color.hpp>
+
 #include <editor/Uuid.hpp>
+#include <editor/GraphNodePath.hpp>
 
 namespace editor {
     constexpr std::uint64_t NO_INDEX = std::numeric_limits<uint64_t>::max();
+
+
 
     class ITreeItem {
     public:
         using Ptr = std::shared_ptr<ITreeItem>;
 
-        ITreeItem(): m_id() {}
-        ITreeItem(UUID id): m_id{id} {}
+        ITreeItem();
+        ITreeItem(UUID id);
+        ITreeItem(const ITreeItem& other) = delete;
+        ITreeItem& operator=(const ITreeItem& other) = delete;
+        ITreeItem(ITreeItem&& other) = delete;
+        ITreeItem& operator=(ITreeItem&& other) = delete;
         virtual ~ITreeItem() = 0;
 
-        bool hasChildrens() const { return !m_childrens.empty(); }
-
-        UUID getID() const { return m_id; }
-
-        void setName(std::string* name) {
-            m_name = name;
-        }
-
-        void setTexture(robot2D::Texture& texture, const robot2D::Color& tintColor) {
-            m_iconTexture = &texture;
-            m_tintColor = tintColor;
-        }
 
         /// \brief don't call if user data was set void or you want to call on void type
         template<typename T, typename = std::enable_if_t<!std::is_same_v<std::decay_t<T>, void>>>
@@ -59,47 +55,35 @@ namespace editor {
             return static_cast<T*>(getUserDataInternal());
         }
 
+        UUID getID() const { return m_id; }
+
+        bool hasChildrens() const { return !m_childrens.empty(); }
         bool isChild() const { return m_parent != nullptr; }
-
-        bool deleteChild(ITreeItem::Ptr item) {
-            m_deletePendingItems.emplace_back(item);
-            return true;
-        }
-
-        void addChild(ITreeItem::Ptr child) {
-            child -> m_parent = this;
-            child -> isQueryDeletion = true;
-            m_childrens.emplace_back(child);
-        }
-
-        void removeSelf() {
-            if(!isChild() || !m_parent)
-                return;
-            m_parent -> removeChild(this);
-        }
-
-        void update() {
-            for(auto delItem: m_deletePendingItems)
-                m_childrens.erase(std::remove_if(m_childrens.begin(), m_childrens.end(), [&delItem](auto item) {
-                    return delItem -> m_id == item -> m_id;
-            }), m_childrens.end());
-            m_deletePendingItems.clear();
-        }
-
+        void addChild(ITreeItem::Ptr child);
+        bool deleteChild(ITreeItem::Ptr item);
         std::vector<ITreeItem::Ptr>& getChildrens() { return m_childrens; }
-    protected:
-        void removeChild(ITreeItem* child) {
-            auto found = std::find_if(m_childrens.begin(),
-                                      m_childrens.end(), [&child](ITreeItem::Ptr item) {
-                /// TODO(a.raag): add operator==();
-                return child -> m_id == item -> m_id;
-            });
+        const std::size_t getChildValue(std::size_t& size) const;
 
-            m_deletePendingItems.emplace_back(*found);
+        void removeSelf();
+
+        void setName(std::string* name);
+        void setTexture(robot2D::Texture& texture, const robot2D::Color& tintColor);
+
+
+        void update();
+
+        bool operator==(const ITreeItem& other) {
+            return (m_id == other.m_id);
         }
 
+        const GraphNodePath& getNodePath() const { return m_path; }
+    protected:
+        void removeChild(ITreeItem* child);
         virtual void* getUserDataInternal() const = 0;
+    protected:
         UUID m_id;
+        GraphNodePath m_path;
+
 
         std::string* m_name{nullptr};
         ITreeItem* m_parent{nullptr};
@@ -108,8 +92,8 @@ namespace editor {
 
         friend class TreeHierarchy;
         robot2D::Texture* m_iconTexture{nullptr};
-        robot2D::Color m_tintColor = robot2D::Color::White;
+        robot2D::Color m_tintColor{ robot2D::Color::White };
 
-        bool isQueryDeletion = false;
+        bool isQueryDeletion{ false };
     };
 }

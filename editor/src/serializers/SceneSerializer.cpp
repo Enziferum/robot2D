@@ -59,18 +59,18 @@ namespace editor {
     SceneSerializer::SceneSerializer(Scene::Ptr scene): m_scene(scene) {}
 
 
-
-    bool SceneSerializer::serialize(const std::string& path) {
+    bool SceneSerializer::serialize(const std::string& path, const std::string& sceneName) {
         if(m_scene == nullptr)
             return false;
 
         YAML::Emitter out;
         out << YAML::BeginMap;
-        out << YAML::Key << "Scene" << YAML::Value << "Unnamed Scene";
+        out << YAML::Key << "Scene" << YAML::Value << sceneName;
         out << YAML::Key << "Entities" << YAML::Value << YAML::BeginSeq;
-        EntitySerializer entitySerializer;
+
+        auto entitySerializer = getSerializer<EntityYAMLSerializer>();
         for(auto& entity: m_scene -> getEntities())
-            entitySerializer.serialize(out, entity);
+            entitySerializer -> serialize(out, entity);
         out << YAML::EndSeq;
         out << YAML::EndMap;
 
@@ -116,39 +116,39 @@ namespace editor {
             return false;
 
 
-        EntitySerializer entitySerializer;
+        auto entitySerializer = getSerializer<EntityYAMLSerializer>();
         std::vector<ChildInfo> children;
 
-        for(auto entity: entites) {
+        for(const auto& entity: entites) {
             bool addToScene = true;
 
-            auto deserializedEntity = m_scene -> createEntity();
-            entitySerializer.deserialize(&entity, deserializedEntity, addToScene, children);
+            auto deserializeEntity = m_scene -> createEntity();
+            entitySerializer -> deserialize(entity, deserializeEntity, addToScene, children);
 
             if(addToScene)
-                m_scene -> addAssociatedEntity(deserializedEntity);
+                m_scene -> addAssociatedEntity(std::move(deserializeEntity));
         }
 
         /// TODO(a.raag): Save and Read Scene as Tree
         for(auto& child: children) {
             if(child.isChild) {
-                auto selfUUID = child.self.getComponent<IDComponent>().ID;
+                auto selfUUID = child.self.getUUID();
                 if(child.hasChildren()) {
                     for(auto& item: children) {
                         if(item.isChild && item.parentUUID == selfUUID)
-                            child.self.getComponent<TransformComponent>().addChild(child.self, item.self);
+                            child.self.addChild(item.self);
                     }
                 }
 
                 auto parent = child.self.getComponent<TransformComponent>().getParent();
                 if(!parent) {
-                    auto found = m_scene -> getByUUID(child.parentUUID);
-                    if(found && !found.destroyed())
-                        found.getComponent<TransformComponent>().addChild(found, child.self);
+                    auto found = m_scene -> getEntity(child.parentUUID);
+                    if(found)
+                        found.addChild(child.self);
                     else {
                         for(auto& item: children) {
                             if(item.isChild && item.self.getComponent<IDComponent>().ID == child.parentUUID)
-                                item.self.getComponent<TransformComponent>().addChild(item.self, child.self);
+                                item.self.addChild(child.self);
                         }
                     }
                 }
@@ -156,13 +156,12 @@ namespace editor {
             else {
                 if(child.hasChildren()) {
                     auto& parentUUID = child.childPair.first;
-                    auto self = m_scene -> getByUUID(parentUUID);
+                    auto self = m_scene -> getEntity(parentUUID);
 
                     for(auto& item: children) {
                         if(item.isChild && item.parentUUID == parentUUID)
-                            self.getComponent<TransformComponent>().addChild(self, item.self);
+                            self.addChild(item.self);
                     }
-
                 }
             }
 
