@@ -103,13 +103,13 @@ namespace robot2D::mem {
     template<typename Allocator>
     MemoryManager<Allocator>::MemoryManager()
     {
-        RB_CORE_INFO("Initialize MemoryManager!");
+        //RB_CORE_INFO("Initialize MemoryManager!");
 
         // allocate global memory
         m_GlobalMemory = malloc(MemoryManager::MEMORY_CAPACITY);
         if (m_GlobalMemory != nullptr)
         {
-            RB_CORE_INFO("{0} bytes of memory allocated.", MemoryManager::MEMORY_CAPACITY);
+           // RB_CORE_INFO("{0} bytes of memory allocated.", MemoryManager::MEMORY_CAPACITY);
         }
         else
         {
