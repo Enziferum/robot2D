@@ -26,6 +26,17 @@ source distribution.
 namespace robot2D {
     using MessageBuffer = void*;
 
+    class Message;
+
+    template<typename T>
+    struct MessageFormatter {
+        static T unpack(Message* message) {
+            T msg;
+            msg.unpack(message -> m_buffer);
+            return msg;
+        }
+    };
+
     /**
      * \brief Allow to store Custom Data in 'Message' format and use it with MessageBus.
      */
@@ -45,12 +56,25 @@ namespace robot2D {
         /// Allow to cast Message as your own Format returning from MessageBus
         template<typename T>
         const T& getData() const;
+
+        template<typename T>
+        T unpack() {
+            return MessageFormatter<T>::unpack(this);
+        }
+
+        bool needUnpack() const { return m_needUnpack;  }
     private:
         template<typename Allocator, std::size_t size>
         friend class TMessageBus;
+
+        template<typename T>
+        friend class MessageFormatter;
+
         /// Data of Message
-        MessageBuffer m_buffer;
-        std::size_t m_buffersz;
+        MessageBuffer m_buffer{ nullptr };
+        std::size_t m_buffersz{ 0 };
+
+        bool m_needUnpack{ false };
     };
 
     template<typename T>

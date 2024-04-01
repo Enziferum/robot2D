@@ -64,7 +64,6 @@ namespace editor {
         bool m_leftCtrlPressed = false;
         bool opt_padding = true;
         bool dockspace_open = false;
-        ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
         std::unordered_map<TextureID, std::string> texturePaths = {
                 {TextureID::Logo, "logo.png"},
                 {TextureID::EditButton, "StopButton.png"},
@@ -77,13 +76,13 @@ namespace editor {
     public:
         virtual ~IEditor() = 0;
         virtual void openScene(Scene::Ptr scene, std::string path) = 0;
-        virtual void prepare() = 0;
+        virtual void prepareView() = 0;
 
         virtual void clearSelectionOnUI() = 0;
-        virtual DeletedEntitiesRestoreUIInformation removeEntitiesOnUI(std::vector<robot2D::ecs::Entity>& selectedEntities) = 0;
+        virtual DeletedEntitiesRestoreUIInformation removeEntitiesOnUI(std::vector<ITreeItem::Ptr>&& uiItems) = 0;
         virtual void restoreEntitiesOnUI(DeletedEntitiesRestoreUIInformation& restoreUiInformation) = 0;
 
-        virtual void findSelectedEntitiesOnUI(std::vector<robot2D::ecs::Entity>& entities) = 0;
+        virtual void findSelectedEntitiesOnUI(std::vector<ITreeItem::Ptr>&& item) = 0;
         virtual void showPopup(PopupConfiguration* configuration) = 0;
         virtual void setMainCameraEntity(robot2D::ecs::Entity entity) = 0;
     };
@@ -95,7 +94,7 @@ namespace editor {
         Editor(const Editor&&)=delete;
         Editor& operator=(const Editor&)=delete;
         Editor& operator=(const Editor&&)=delete;
-        ~Editor() = default;
+        ~Editor() override = default;
 
         void setup(robot2D::RenderWindow* window, EditorInteractor* editorInteractor);
         void handleEvents(const robot2D::Event& event);
@@ -105,18 +104,17 @@ namespace editor {
 
         /////////////////////////// IEditor ///////////////////////////
         void openScene(Scene::Ptr scene, std::string path) override;
-        void prepare() override;
+        void prepareView() override;
         void showPopup(editor::PopupConfiguration* configuration) override;
-        void findSelectedEntitiesOnUI(std::vector<robot2D::ecs::Entity>& entities) override;
+        void findSelectedEntitiesOnUI(std::vector<ITreeItem::Ptr>&& items) override;
         void clearSelectionOnUI() override;
-        DeletedEntitiesRestoreUIInformation removeEntitiesOnUI(std::vector<robot2D::ecs::Entity>& selectedEntities) override;
+        DeletedEntitiesRestoreUIInformation removeEntitiesOnUI(std::vector<ITreeItem::Ptr>&& uiItems) override;
         void restoreEntitiesOnUI(DeletedEntitiesRestoreUIInformation& restoreUiInformation) override;
         virtual void setMainCameraEntity(robot2D::ecs::Entity entity) override;
         /////////////////////////// IEditor ///////////////////////////
 
     private:
         void guiRender();
-        void windowFunction();
         void setupBindings();
         void setupShortCuts();
         void setupSpinner();
@@ -147,45 +145,35 @@ namespace editor {
         robot2D::RenderWindow* m_window;
         robot2D::MessageBus& m_messageBus;
         MessageDispatcher m_messageDispather;
+        EditorInteractor* m_interactor{nullptr};
 
         UIManager m_panelManager;
-        Scene::Ptr m_activeScene{nullptr};
         EventBinder m_eventBinder;
-
-        EditorConfiguration m_configuration;
 
         robot2D::FrameBuffer::Ptr m_frameBuffer;
         robot2D::FrameBuffer::Ptr m_gameFrameBuffer;
+        Scene::Ptr m_activeScene{nullptr};
+        IEditorCamera::Ptr m_editorCamera;
+
+        EditorConfiguration m_configuration;
 
         robot2D::ResourceHandler<robot2D::Texture,
                         EditorConfiguration::TextureID> m_textures;
-        robot2D::Color m_sceneClearColor;
-        IEditorCamera::Ptr m_editorCamera;
-        bool m_needPrepare{true};
-        Guizmo2D m_guizmo2D;
 
         ShortCutManager<EditorShortCutType> m_shortcutManager;
         SceneGrid m_sceneGrid;
 
+        Guizmo2D m_guizmo2D;
         CameraManipulator m_cameraManipulator;
         SelectionCollider m_selectionCollider;
         ObjectManipulator m_objectManipulator;
 
         bool m_leftMousePressed{false};
+        bool m_needPrepareView{true};
 
         editor::PopupConfiguration* m_popupConfiguration{nullptr};
         SceneRender m_sceneRender;
         /// TODO(a.raag) move to Editor Logic ?
         PrefabManager m_prefabManager;
-
-
-        EditorInteractor* m_interactor{nullptr};
-
-        enum class Mode {
-            Default,
-            TiledMap
-        } m_mode = Mode::Default;
-
-        robot2D::Sprite m_tileSpritePreview;
     };
 }

@@ -29,6 +29,7 @@ source distribution.
 #include <editor/Messages.hpp>
 #include <editor/PopupManager.hpp>
 #include <editor/FiledialogAdapter.hpp>
+#include <editor/Buffer.hpp>
 
 namespace editor {
 
@@ -47,55 +48,53 @@ namespace editor {
         if(openDeveloperMenu)
             developerMenu();
 
+        ImGui::ShowDemoWindow();
 
-
-        if (ImGui::BeginMenuBar())
-        {
-            if (ImGui::BeginMenu("File"))
+        imgui_MenuBar {
+            imgui_Menu("File")
                 fileMenu();
 
-            if (ImGui::BeginMenu("Edit"))
+            imgui_Menu("Edit")
                 editMenu();
 
-            if (ImGui::BeginMenu("Project"))
+            imgui_Menu("Project")
                 projectMenu();
 
-            if (ImGui::BeginMenu("Plugins"))
+            imgui_Menu("Plugins")
                 pluginsMenu();
 
-            if (ImGui::BeginMenu("Developer")) {
+            imgui_Menu("Developer")
                 ImGui::MenuItem("Show Info", nullptr, &openDeveloperMenu);
-                ImGui::EndMenu();
-            }
 
-            if (ImGui::BeginMenu("Help"))
+            imgui_Menu("Help")
                 helpMenu();
-
-            ImGui::EndMenuBar();
         }
+
     }
 
     void MenuPanel::fileMenu() {
-        if(ImGui::MenuItem("New", "Ctrl+N")) {
+        imgui_MenuItem("New", "Ctrl + N") {
             std::string path;
-            if(!FiledialogAdapter::get() -> selectFolder(path, "Create Robot2D Project")) {
-                ImGui::EndMenu();
+            if(!FiledialogAdapter::get() -> selectFolder(path, "Create Robot2D Project"))
                 return;
-            }
 
             ProjectDescription description;
             description.name = "Project";
             description.path = path;
 
-            auto msg = m_messageBus.postMessage<ProjectMessage>(MessageID::CreateProject);
-            msg -> description = std::move(description);
+            int allocSize = StringBuffer::calcAllocSize(description.name) 
+                                + StringBuffer::calcAllocSize(description.path);
 
-            ImGui::EndMenu();
+            void* rawBuffer = m_messageBus.postMessage(MessageID::CreateProject, allocSize);
+            Buffer buffer{ rawBuffer };
+            pack_message_string(description.name, buffer);
+            pack_message_string(description.path, buffer);
+
             return;
         }
         ImGui::Separator();
 
-        if(ImGui::MenuItem("Open", "Ctrl+O")) {
+        imgui_MenuItem("Open", "Ctrl+O") {
             std::vector<std::string> openPatterns = {"*.robot2D"};
             std::string outputPath;
 
@@ -109,21 +108,22 @@ namespace editor {
                 openPath.remove_filename();
                 auto str = filePath.string();
                 auto found = str.find('.');
-                std::string name = str.substr(0, found);
 
-                auto msg = m_messageBus.postMessage<ProjectMessage>(MessageID::LoadProject);
-                msg -> description.path = openPath.string();
-                msg -> description.name = name;
-                ImGui::EndMenu();
-                return;
-            }
-            else {
-                ImGui::EndMenu();
+                std::string name = str.substr(0, found);
+                std::string path = openPath.string();
+
+                int allocSize = StringBuffer::calcAllocSize(name) + StringBuffer::calcAllocSize(path);
+                void* rawBuffer = m_messageBus.postMessage(MessageID::LoadProject, allocSize);
+
+                Buffer buffer{ rawBuffer };
+                pack_message_string(name, buffer);
+                pack_message_string(path, buffer);
+
                 return;
             }
         }
 
-        if(ImGui::MenuItem("Save", "Ctrl+S")) {
+        imgui_MenuItem("Save", "Ctrl+S") {
             std::string savePath;
             std::vector<std::string> saveFilePatterns = {"*.robot2D"};
 
@@ -133,13 +133,14 @@ namespace editor {
                                                     "",
                                                     saveFilePatterns,
                                                     "Scene")) {
-                auto msg =
-                        m_messageBus.postMessage<MenuProjectMessage>(MessageID::SaveProject);
-                msg -> path = std::move(savePath);
+                int allocSize = StringBuffer::calcAllocSize(savePath);
+                void* rawBuffer = m_messageBus.postMessage(MessageID::SaveProject, allocSize);
+                Buffer buffer{ rawBuffer };
+                pack_message_string(savePath, buffer);
             }
         }
 
-        if(ImGui::MenuItem("Save", "Ctrl+Shift+S")) {
+        imgui_MenuItem("Save", "Ctrl+Shift+S") {
             std::string savePath;
             std::vector<std::string> saveFilePatterns = {"*.scene"};
 
@@ -151,56 +152,52 @@ namespace editor {
                                                      defaultSavePath,
                                                      saveFilePatterns,
                                                      "Scene")){
-                auto msg =
-                        m_messageBus.postMessage<MenuProjectMessage>(MessageID::SaveScene);
-                msg -> path = std::move(savePath);
+
+                int allocSize = StringBuffer::calcAllocSize(savePath);
+                void* rawBuffer = m_messageBus.postMessage(MessageID::SaveScene, allocSize);
+                Buffer buffer{ rawBuffer };
+                pack_message_string(savePath, buffer);
             }
         }
-
-        ImGui::EndMenu();
     }
 
     void MenuPanel::editMenu() {
         bool emptyStack = m_interactor -> getCommandStack().empty();
 
-        if(ImGui::MenuItem("Undo", "Ctrl+Z", false, !emptyStack)) {
+        imgui_MenuItem("Undo", "Ctrl+Z", false, !emptyStack) {
             m_messageBus.postMessage<UndoRedoMessage>(MessageID::Undo);
         }
 
-        if(ImGui::MenuItem("Redo", "Ctrl+Shift+Z", false, false)) {
+        imgui_MenuItem("Redo", "Ctrl+Shift+Z", false, false) {
             m_messageBus.postMessage<UndoRedoMessage>(MessageID::Redo);
         }
-
-        ImGui::EndMenu();
     }
 
     void MenuPanel::projectMenu() {
-        if(ImGui::MenuItem("Generate Project", "Ctrl+G")) {
+        imgui_MenuItem("Generate Project", "Ctrl+G") {
             std::string genPath;
             if(!FiledialogAdapter::get() -> selectFolder(genPath,
                                                          "Generate Robot2D Scripts's project",
                                                          "")) {
-                ImGui::EndMenu();
                 return;
             }
 
-            auto* msg =
-                    m_messageBus.postMessage<GenerateProjectMessage>(MessageID::GenerateProject);
-            msg -> genPath = genPath;
+            int allocSize = StringBuffer::calcAllocSize(genPath);
+            void* rawBuffer = m_messageBus.postMessage(MessageID::GenerateProject, allocSize);
+            Buffer buffer{ rawBuffer };
+            pack_message_string(genPath, buffer);
         }
 
 
-        if(ImGui::MenuItem("Export Project")) {
+        imgui_MenuItem("Export Project") {
             auto* manager = PopupManager::getManager();
             manager -> beginPopup(this);
             m_popupType = PopupType::Export;
         }
-        ImGui::EndMenu();
     }
 
     void MenuPanel::pluginsMenu() {
-
-        if(ImGui::MenuItem("LoadPlugin")) {
+        imgui_MenuItem("LoadPlugin") {
             auto filedialog = FiledialogAdapter::get();
             std::string openFilePath{};
             if(!filedialog -> openFile(openFilePath, "Plugin")) {
@@ -209,48 +206,39 @@ namespace editor {
                 return;
             }
         }
-
-        ImGui::EndMenu();
     }
 
     void MenuPanel::developerMenu() {
-        if (!ImGui::Begin("Debug Info"))
-        {
-            ImGui::End();
-            return;
-        }
-        const auto& commandStack = m_interactor -> getCommandStack();
+        imgui_Window("Developer Info") {
+            const auto& commandStack = m_interactor -> getCommandStack();
 
-        if (ImGui::BeginListBox("CommandsPool"))
-        {
-            int cntr = 1;
-            for (int n = commandStack.size() - 1; n >= 0; --n)
-            {
-                ImGui::Text("%i. %s", cntr, commandStack[n].getName());
-                ++cntr;
+            imgui_ListBox("CommandsPool") {
+                int cntr = 1;
+                for (int n = commandStack.size() - 1; n >= 0; --n)
+                {
+                    ImGui::Text("%i. %s", cntr, commandStack[n].getName());
+                    ++cntr;
+                }
             }
-            ImGui::EndListBox();
         }
-        ImGui::End();
     }
 
-    void MenuPanel::helpMenu() {
-        ImGui::EndMenu();
-    }
+    void MenuPanel::helpMenu() {}
 
     void MenuPanel::showExportProjectModal() {
         ImVec2 center = ImGui::GetMainViewport() -> GetCenter();
         ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
         ImGui::OpenPopup("ExportProject");
 
-        if(ImGui::BeginPopupModal("ExportProject", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        imgui_PopupModal("ExportProject", nullptr, ImGuiWindowFlags_AlwaysAutoResize) {
             ImGui::Text("Export Project");
 
             ImGui::RadioButton("Fullscreen", m_exportOptions.isFullscreen);
 
             std::vector<std::string> scenesNames = {"Main.scene", "Menu.scene"};
             const char* currentSceneName = scenesNames[0].c_str();
-            if (ImGui::BeginCombo("Start Scene", currentSceneName))
+            /// TODO(a.raag): add some macro to remove shadowing
+            imgui_Combo("Start Scene", currentSceneName)
             {
                 for (int i = 0; i < scenesNames.size(); i++)
                 {
@@ -264,11 +252,9 @@ namespace editor {
                     if (isSelected)
                         ImGui::SetItemDefaultFocus();
                 }
-
-                ImGui::EndCombo();
             }
 
-            if(ImGui::Button("Close")) {
+            imgui_Button("Close") {
                 m_popupType = PopupType::None;
                 PopupManager::getManager() -> endPopup();
                 m_exportOptions = {};
@@ -277,7 +263,7 @@ namespace editor {
 
             ImGui::SameLine();
 
-            if(ImGui::Button("Export")) {
+            imgui_Button("Export") {
                 m_popupType = PopupType::None;
                 std::string exportPath;
 
@@ -290,9 +276,6 @@ namespace editor {
                 PopupManager::getManager() -> endPopup();
                 ImGui::CloseCurrentPopup();
             }
-
-
-            ImGui::EndPopup();
         }
     }
 
@@ -309,6 +292,5 @@ namespace editor {
                 break;
         }
     }
-
 
 }

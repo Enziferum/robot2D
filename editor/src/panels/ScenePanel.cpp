@@ -22,10 +22,6 @@ source distribution.
 #include <filesystem>
 
 #include <robot2D/imgui/Api.hpp>
-#include <imgui/imgui.h>
-#include <imgui/imgui_internal.h>
-
-
 #include <editor/panels/ScenePanel.hpp>
 #include <editor/Components.hpp>
 #include <editor/Messages.hpp>
@@ -72,12 +68,12 @@ namespace editor {
         );
 
         m_messageDispatcher.onMessage<EntityDuplication>(
-                EntityDuplicate,
+                MessageID::EntityDuplicate,
                 BIND_CLASS_FN(onEntityDuplicate)
         );
 
         m_messageDispatcher.onMessage<EntityRemovement>(
-                EntityRemove,
+                MessageID::EntityRemove,
                 BIND_CLASS_FN(onEntityRemove)
         );
 
@@ -97,11 +93,11 @@ namespace editor {
 
 
     void ScenePanel::windowFunction() {
-        // Right-click on blank space
-        if (ImGui::BeginPopupContextWindow("ScenePanelEntityCreation",
-                                           m_configuration.rightMouseButton))
-        {
-            if (ImGui::MenuItem("Create Empty Entity")) {
+
+        imgui_PopupContextWindow("ScenePanelEntityCreation",
+                                 m_configuration.rightMouseButton) {
+
+            imgui_MenuItem("Create Entity") {
                 m_interactor -> addEmptyEntity();
                 auto item = m_treeHierarchy.addItem<robot2D::ecs::Entity>();
                 m_selectedEntity = m_interactor -> getEntities().back();
@@ -112,8 +108,8 @@ namespace editor {
                 m_treeHierarchy.setSelected(item);
             }
 
-            if(ImGui::BeginMenu("Create UI Element")) {
-                if(ImGui::MenuItem("Button")) {
+            imgui_Menu("Create UI Elemement") {
+                imgui_MenuItem("Button") {
                     m_selectedEntity = m_interactor -> addButton();
                     auto item = m_treeHierarchy.addItem<robot2D::ecs::Entity>();
                     item -> setName(&m_selectedEntity.getComponent<TagComponent>().getTag());
@@ -122,63 +118,38 @@ namespace editor {
                     m_selectedEntity.addComponent<UIComponent>().treeItem = item;
                     m_treeHierarchy.setSelected(item);
                 }
-                ImGui::EndMenu();
             }
-
-
-            ImGui::EndPopup();
         }
 
         m_treeHierarchy.render();
 
         /// \brief prefab processing
-        if(ImGui::BeginDragDropTarget()) {
-            auto* payload = ImGui::AcceptDragDropPayload(contentPrefabItemID);
-            if(payload) {
-                if(payload -> IsDataType(contentPrefabItemID)) {
-                    const char* data = static_cast<const char*>(payload -> Data);
-                    if(data) {
-                        std::string payloadString = std::string(data, payload->DataSize);
-                        const wchar_t* rawPath = (const wchar_t *) payloadString.c_str();
-                        std::filesystem::path prefabPath = std::filesystem::path("assets") / rawPath;
-                        auto realPrefabPath = combinePath(m_interactor -> getAssociatedProjectPath(),
-                                                          prefabPath.string());
+        {
+            robot2D::DragDropTarget dragDropTarget{ contentPrefabItemID };
+            if(auto&& payloadBuffer = dragDropTarget.unpackPayload2Buffer()) {
+                auto&& path = payloadBuffer.unpack<std::string>();
+                std::filesystem::path prefabPath = std::filesystem::path("assets") / path;
+                auto realPrefabPath = combinePath(m_interactor -> getAssociatedProjectPath(),
+                                                  prefabPath.string());
 
-                        if(auto prefab = m_prefabManager.findPrefab(realPrefabPath)) {
-                            auto item = m_treeHierarchy.addItem<robot2D::ecs::Entity>();
-                            robot2D::ecs::Entity duplicateEntity = m_interactor -> duplicateEmptyEntity(prefab -> entity);
-                            item -> setName(&duplicateEntity.getComponent<TagComponent>().getTag());
-                            item -> setUserData(duplicateEntity);
-                            item -> setTexture(m_iconTextures[TreeItemIcon::Prefab], robot2D::Color::Blue);
-                            duplicateEntity.addComponent<UIComponent>().treeItem = item;
-                            m_treeHierarchy.setSelected(item);
-                        }
-                        else {
-
-                            if(auto prefab = m_prefabManager.loadPrefab(m_interactor,
-                                                                        realPrefabPath)) {
-                                auto item = m_treeHierarchy.addItem<robot2D::ecs::Entity>();
-                                robot2D::ecs::Entity duplicateEntity = m_interactor -> duplicateEmptyEntity(prefab -> entity);
-                                item -> setTexture(m_iconTextures[TreeItemIcon::Prefab], robot2D::Color::Blue);
-                                item -> setName(&duplicateEntity.getComponent<TagComponent>().getTag());
-                                item -> setUserData(duplicateEntity);
-                                duplicateEntity.addComponent<UIComponent>().treeItem = item;
-                                m_treeHierarchy.setSelected(item);
-                            }
-                        }
-
-                    }
+                if(auto prefab = m_prefabManager.loadPrefab(m_interactor, realPrefabPath)) {
+                    auto item = m_treeHierarchy.addItem<robot2D::ecs::Entity>();
+                    robot2D::ecs::Entity duplicateEntity = m_interactor -> duplicateEmptyEntity(prefab -> entity);
+                    item -> setTexture(m_iconTextures[TreeItemIcon::Prefab], robot2D::Color::Blue);
+                    item -> setName(&duplicateEntity.getComponent<TagComponent>().getTag());
+                    item -> setUserData(duplicateEntity);
+                    duplicateEntity.addComponent<UIComponent>().treeItem = item;
+                    m_treeHierarchy.setSelected(item);
                 }
             }
-            ImGui::EndDragDropTarget();
         }
 
         if (ImGui::IsMouseDown(ImGuiMouseButton_Left) && ImGui::IsWindowHovered()) {
             m_selectedEntity = {};
             auto* msg = m_messageBus.postMessage<PanelEntitySelectedMessage>(MessageID::PanelEntitySelected);
             msg -> entity = m_selectedEntity;
-            m_treeHierarchy.clearSelection();
         }
+
     }
 
     void ScenePanel::setupTreeHierarchy() {
@@ -199,50 +170,17 @@ namespace editor {
         m_treeHierarchy.addOnCallback([this](ITreeItem::Ptr item) {
 
             bool deleteSelected = false;
-            if (ImGui::BeginPopupContextItem())
+            if (ImGui::BeginPopupContextItem("TreeHierarchyDeletePopup"))
             {
                 if (ImGui::MenuItem("Delete Entity"))
-                    deleteSelected = false;
+                    deleteSelected = true;
 
                 ImGui::EndPopup();
             }
             // TODO(a.raag): correct deletion from UI
             if(deleteSelected) {
-                if(item -> isChild()) {
-                    auto entity = item -> getUserData<robot2D::ecs::Entity>();
-                    if(entity) {
-                        auto& transform = entity -> getComponent<TransformComponent>();
-                        if(transform.isChild())
-                            transform.removeSelf();
-                        /// delete child command ///
-                    }
-                    item -> removeSelf();
-                }
-                else {
-                    if(item -> hasChildrens()) {
-                        for(auto child: item -> getChildrens()) {
-                            auto entity = child -> getUserData<robot2D::ecs::Entity>();
-                            m_interactor -> removeEntity(std::move(*entity));
-                            /// delete child command ///
-                            item -> deleteChild(child);
-                        }
-                        auto entity = item -> getUserData<robot2D::ecs::Entity>();
-                        m_interactor -> removeEntity(std::move(*entity));
-                        m_treeHierarchy.deleteItem(item);
-                    }
-                    else {
-                        auto entity = item -> getUserData<robot2D::ecs::Entity>();
-                        if(!entity) {
-                            RB_EDITOR_ERROR("Cant in Hierarchy don't have userData");
-                            return;
-                        }
-                        /// delete command ///
-                        m_interactor -> removeEntity(*entity);
-                        m_treeHierarchy.deleteItem(item);
-                    }
-                }
-                m_selectedEntity = {};
-                m_selectedEntityNeedCheckForDelete = true;
+//                const auto& selectedItems = m_treeHierarchy.getSelectedItems();
+//                m_interactor -> removeEntities(selectedItems);
             }
         });
 
@@ -299,6 +237,7 @@ namespace editor {
 
         });
 
+        /// TODO(a.raag): Fix Logic
         m_treeHierarchy.addOnStopBeChildCallback([this](ITreeItem::Ptr source, ITreeItem::Ptr intoTarget) {
             auto entity = GET_ENTITY(source);
             if(!entity || entity -> destroyed()) {
@@ -328,22 +267,11 @@ namespace editor {
             m_treeHierarchy.applyChildModification(source, intoTarget);
         });
 
-        m_treeHierarchy.addMultiSelectCallback([this](std::list<ITreeItem::Ptr> items) {
-            m_interactor -> uiSelectedAllEntities();
+
+        m_treeHierarchy.addMultiSelectCallback([this](std::set<ITreeItem::Ptr>& items, bool allSelected) {
+            m_interactor -> uiSelectedEntities(items, allSelected);
         });
 
-        m_treeHierarchy.addMultiSelectRangeCallback([this](std::vector<ITreeItem::Ptr> items, bool deleted) {
-            RB_EDITOR_INFO("TreeHierarchy: MultiSelect RangeSelect");
-
-            std::vector<robot2D::ecs::Entity> entities;
-            for(auto item: items) {
-                auto entity = GET_ENTITY(item);
-                if(entity)
-                    entities.emplace_back(*entity);
-            }
-
-            m_interactor -> uiSelectedRangeEntities(std::move(entities));
-        });
     }
 
     void ScenePanel::setInteractor(UIInteractor::Ptr interactor) {
@@ -395,38 +323,6 @@ namespace editor {
         }
     }
 
-
-    robot2D::ecs::Entity ScenePanel::getSelectedEntity(int PixelData) {
-
-        for(auto& item: m_treeHierarchy.getItems()) {
-            auto entityPtr = item -> getUserData<robot2D::ecs::Entity>();
-            if(!entityPtr)
-                return {};
-            robot2D::ecs::Entity entity = *entityPtr;
-
-            if(entity.getIndex() == PixelData) {
-                m_selectedEntity = entity;
-                m_treeHierarchy.setSelected(item);
-                return m_selectedEntity;
-            }
-
-            if(item -> hasChildrens()) {
-                for(auto child: item -> getChildrens()) {
-                    entityPtr = child -> getUserData<robot2D::ecs::Entity>();
-                    if(!entityPtr)
-                        return {};
-                    entity = *entityPtr;
-                    if(entity.getIndex() == PixelData) {
-                        m_selectedEntity = entity;
-                        m_treeHierarchy.setSelected(child);
-                        return m_selectedEntity;
-                    }
-                }
-            }
-        }
-        return {};
-    }
-
     robot2D::ecs::Entity ScenePanel::getSelectedEntity() const {
         return m_selectedEntity;
     }
@@ -436,14 +332,17 @@ namespace editor {
     }
 
 
-    void ScenePanel::onEntitySelection(const PanelEntitySelectedMessage& entitySelection) {
+    void ScenePanel::onEntitySelection(const PanelEntitySelectedMessage& message) {
+
+        /// TODO(a.raag): get UUID or ITreeItem::Ptr directly and process whole children tree
+
         for(auto& item: m_treeHierarchy.getItems()) {
             auto entityPtr = item -> getUserData<robot2D::ecs::Entity>();
             if(!entityPtr)
                 return;
             robot2D::ecs::Entity entity = *entityPtr;
 
-            if(entity == entitySelection.entity) {
+            if(entity == message.entity) {
                 m_selectedEntity = entity;
                 m_treeHierarchy.setSelected(item);
             }
@@ -454,7 +353,7 @@ namespace editor {
                     if(!entityPtr)
                         return;
                     entity = *entityPtr;
-                    if(entity == entitySelection.entity) {
+                    if(entity == message.entity) {
                         m_selectedEntity = entity;
                         m_treeHierarchy.setSelected(child);
                     }
@@ -499,8 +398,9 @@ namespace editor {
         }
     }
 
-
     void ScenePanel::onEntityRemove(const EntityRemovement& removement) {
+        /// TODO(a.raag): get UUID or ITreeItem::Ptr directly
+
         for(auto& item: m_treeHierarchy.getItems()) {
             if(item -> getUserData<robot2D::ecs::Entity>() -> getComponent<IDComponent>().ID == removement.entityID) {
                 m_treeHierarchy.deleteItem(item);
@@ -509,109 +409,110 @@ namespace editor {
         }
     }
 
-    void ScenePanel::processSelectedEntities(std::vector<robot2D::ecs::Entity>& entities) {
-        auto& treeItems = m_treeHierarchy.getItems();
-        for(auto& entity: entities) {
-            for(auto& treeItem: treeItems) {
-                auto treeEntity = treeItem -> getUserData<robot2D::ecs::Entity>();
-                if(!treeEntity) {
-                    RB_EDITOR_ERROR("ScenePanel: TreeItem By UUID = {0} don't have Entity");
-                    continue;
-                }
 
-                if(entity == *treeEntity) {
-                    m_treeHierarchy.setSelected(treeItem);
-                }
-
-                if(treeItem -> hasChildrens())
-                    processSelectedChildren(treeItem, entities);
-            }
-        }
+    void ScenePanel::processSelectedEntities(std::vector<ITreeItem::Ptr>&& items) {
+        for(auto& item: items)
+            m_treeHierarchy.setSelected(item);
     }
 
-    void ScenePanel::processSelectedChildren(ITreeItem::Ptr parent, std::vector<robot2D::ecs::Entity>& entities) {
-        for(auto& entity: entities) {
+    void ScenePanel::processSelectedChildren(ITreeItem::Ptr parent, std::vector<ITreeItem::Ptr>& items) {
+        for(auto& item: items) {
             for(auto& childItem: parent -> getChildrens()) {
-                auto treeEntity = childItem -> getUserData<robot2D::ecs::Entity>();
-                if(!treeEntity) {
-                    RB_EDITOR_ERROR("ScenePanel: TreeItem By UUID = {0} don't have Entity");
-                    continue;
-                }
-
-                if(entity == *treeEntity) {
+                if(item == childItem)
                     m_treeHierarchy.setSelected(childItem);
-                }
 
                 if(childItem -> hasChildrens())
-                    processSelectedChildren(childItem, entities);
+                    processSelectedChildren(childItem, items);
             }
         }
     }
 
 
     DeletedEntitiesRestoreUIInformation
-    ScenePanel::removeEntitiesOnUI(std::vector<robot2D::ecs::Entity>& selectedEntities) {
+    ScenePanel::removeEntitiesOnUI(std::vector<ITreeItem::Ptr>&& uiItems) {
         DeletedEntitiesRestoreUIInformation restoreUiInformation;
-        auto& uiItems = m_treeHierarchy.getItems();
+        bool removeAll = uiItems.size() == m_treeHierarchy.getItems().size();
 
-        for(auto entity: selectedEntities) {
-
-            auto found = std::find_if(uiItems.begin(), uiItems.end(),
-                                      [&entity, this](ITreeItem::Ptr item) {
-                auto uiEntity = GET_ENTITY(item);
-                if(!uiEntity -> destroyed() && *uiEntity == entity) {
-                    if(!m_treeHierarchy.deleteItem(item)) {
-                        RB_EDITOR_ERROR("TreeHierarchy can't delete item.", item -> getID());
-                    }
-                    return true;
-                }
-                else
-                    return false;
-            });
-
-            if(found == uiItems.end())
-                continue;
-
-            if(!restoreUiInformation.hasItems()) {
-
-                if(found == uiItems.begin()) {
-                    restoreUiInformation.push(*found, nullptr, true);
-                }
-                else {
-                    auto prev = std::prev(found);
-                    restoreUiInformation.push(*found, *prev, false);
-                }
-
+        if(removeAll) {
+            m_treeHierarchy.getItems();
+            auto& items = m_treeHierarchy.getItems();
+            auto iter = items.begin();
+            {
+                DeletedEntitiesRestoreUIInformation::RestoreInfo restoreInfo;
+                restoreInfo.first = true;
+                restoreInfo.target = *iter;
+                m_treeHierarchy.deleteItem(*iter);
+                restoreUiInformation.push(std::move(restoreInfo));
             }
-            else {
-                auto lastInfo = restoreUiInformation.getLast();
-                if(lastInfo.target == *(std::prev(found))) {
-                    restoreUiInformation.push(*found, lastInfo.target, false, true);
+            if(items.size() > 1) {
+                for(auto it = std::next(iter); it != items.end(); ++it) {
+                    DeletedEntitiesRestoreUIInformation::RestoreInfo restoreInfo;
+                    restoreInfo.isChained = true;
+                    restoreInfo.anchor = *std::prev(it);
+                    restoreInfo.target = *it;
+                    m_treeHierarchy.deleteItem(*it);
+                    restoreUiInformation.push(std::move(restoreInfo));
+                }
+            }
+        }
+        else {
+            for(const auto& item: uiItems) {
+
+                auto found = std::find_if(uiItems.begin(), uiItems.end(),
+                                          [&item](const ITreeItem::Ptr& obj) {
+                    return *item == *obj;
+                });
+
+                if(found == uiItems.end())
+                    continue;
+
+                m_treeHierarchy.deleteItem(*found);
+
+                DeletedEntitiesRestoreUIInformation::RestoreInfo restoreInfo{};
+                const auto& prev = std::prev(found);
+                restoreInfo.target = *found;
+
+                if(!restoreUiInformation.hasItems()) {
+                    if(found == uiItems.begin())
+                        restoreInfo.first = true;
+                    else
+                        restoreInfo.anchor = *prev;
                 }
                 else {
-                    if(found == uiItems.begin()) {
-                        restoreUiInformation.push(*found, nullptr, true);
+                    const auto& lastInfo = restoreUiInformation.getLast();
+                    if(lastInfo.target == *prev) {
+                        restoreInfo.isChained = true;
+                        restoreInfo.anchor = lastInfo.target;
                     }
                     else {
-                        auto prev = std::prev(found);
-                        restoreUiInformation.push(*found, *prev, false);
+                        if(found == uiItems.begin())
+                            restoreInfo.first = true;
+                        else
+                            restoreInfo.anchor = *prev;
                     }
                 }
+
+                restoreUiInformation.push(std::move(restoreInfo));
             }
         }
 
         return restoreUiInformation;
     }
 
-    void ScenePanel::restoreEntitiesOnUI(DeletedEntitiesRestoreUIInformation& restoreUiInformation) {
-        for(auto& item: restoreUiInformation.anchorItems) {
-            m_treeHierarchy.insertItem(item.target, item.anchor, item.first, item.isChained);
+    void ScenePanel::restoreEntitiesOnUI(const DeletedEntitiesRestoreUIInformation& restoreUiInformation) {
+        for(const auto& item: restoreUiInformation.getItems()) {
+            TreeHierarchy::RestoreInfo hierarchyRestoreInfo;
+            hierarchyRestoreInfo.target = item.target;
+            hierarchyRestoreInfo.anchor = item.anchor;
+            hierarchyRestoreInfo.isChained = item.isChained;
+            hierarchyRestoreInfo.isFirst = item.first;
+            m_treeHierarchy.restoreItem(std::move(hierarchyRestoreInfo));
         }
     }
+
 
     void ScenePanel::clearSelection() {
         m_treeHierarchy.clearSelection();
     }
-
 
 }

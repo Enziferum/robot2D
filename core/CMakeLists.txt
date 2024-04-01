@@ -16,6 +16,6 @@ if(RB2D_BUILD_SANDBOX)
     add_subdirectory(sandbox)
 endif()
 
-if(RB2D_BUILD_TESTS)
+if(RB2D_BUILD_CORE_TESTS)
     add_subdirectory(tests)
 endif()

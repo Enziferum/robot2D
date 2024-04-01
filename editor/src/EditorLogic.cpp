@@ -28,7 +28,6 @@ source distribution.
 #include <editor/Components.hpp>
 
 #include <editor/components/ButtonComponent.hpp>
-#include "editor/components/UIHitBox.hpp"
 #include <editor/scripting/ScriptingEngine.hpp>
 
 
@@ -36,8 +35,8 @@ source distribution.
 #include <editor/Components.hpp>
 #include <editor/commands/DuplicateCommand.hpp>
 #include <editor/commands/DeleteEntitiesCommand.hpp>
-#include "editor/commands/PasteCommand.hpp"
-#include "editor/async/ExportTask.hpp"
+#include <editor/commands/PasteCommand.hpp>
+#include <editor/async/ExportTask.hpp>
 
 
 #ifdef ROBOT2D_WINDOWS
@@ -66,7 +65,34 @@ namespace {
     }
 }
 
+namespace {
+    /// (a.raag): Placeholder code for future
+    class MemManager {
+    public:
+        static MemManager* getManager() {
+            static MemManager manager;
+            return &manager;
+        }
+        editor::Buffer allocateMemory(std::size_t memSize);
+
+    };
+
+    template<typename T, typename = std::enable_if_t<std::is_pod_v<T>>>
+    class Array {
+    public:
+        Array(const editor::Buffer& buffer);
+
+        void push_back(const T& value);
+    private:
+        T* m_arr;
+        std::size_t size;
+    };
+
+}
+
+
 namespace editor {
+
     ScriptInteractor::~ScriptInteractor() = default;
 
     EditorLogic::EditorLogic(robot2D::MessageBus& messageBus,
@@ -131,6 +157,10 @@ namespace editor {
         }
     }
 
+    void EditorLogic::destroy() {
+        TaskQueue::GetQueue() -> stop();
+    }
+
     void EditorLogic::createProject(Project::Ptr project) {
         m_currentProject = project;
         if(!m_sceneManager.add(std::move(project))) {
@@ -151,7 +181,7 @@ namespace editor {
         m_presenter.switchState(EditorState::Load);
 
         auto loadLambda = [](const SceneLoadTask& task) {
-            task.logic -> loadSceneCallback();
+            task.getLogic() -> loadSceneCallback();
         };
 
         auto path = project -> getPath();
@@ -180,7 +210,7 @@ namespace editor {
                 }
 
                 auto loadLambda = [](const SceneLoadTask& task) {
-                    task.logic -> loadSceneCallback();
+                    task.getLogic() -> loadSceneCallback();
                 };
 
                 taskQueue -> addAsyncTask<SceneLoadTask>(loadLambda, m_sceneManager,
@@ -190,7 +220,7 @@ namespace editor {
             m_popupConfiguration.onNo = [this, taskQueue, scenePath]() {
                 m_presenter.switchState(EditorState::Load);
                 auto loadLambda = [](const SceneLoadTask& task) {
-                    task.logic -> loadSceneCallback();
+                    task.getLogic() -> loadSceneCallback();
                 };
 
                 taskQueue -> addAsyncTask<SceneLoadTask>(loadLambda, m_sceneManager,
@@ -201,7 +231,7 @@ namespace editor {
         else {
             m_presenter.switchState(EditorState::Load);
             auto loadLambda = [](const SceneLoadTask& task) {
-                task.logic -> loadSceneCallback();
+                task.getLogic() -> loadSceneCallback();
             };
 
             TaskQueue::GetQueue() -> addAsyncTask<SceneLoadTask>(loadLambda, m_sceneManager,
@@ -262,7 +292,7 @@ namespace editor {
         m_currentProject -> setStartScene(filename);
 
         // TODO(a.raag): update project's start scene
-        //m_currentProject -> save();
+        // m_currentProject -> save();
         m_router.openScene(m_activeScene, m_currentProject -> getPath());
     }
 
@@ -301,8 +331,7 @@ namespace editor {
     }
 
 
-    void EditorLogic::pasteChild(robot2D::ecs::Entity parent) {
-    }
+    void EditorLogic::pasteChild(robot2D::ecs::Entity parent) {}
 
 
     void EditorLogic::toolbarPressed(const ToolbarMessage& message) {
@@ -433,28 +462,41 @@ namespace editor {
         m_commandStack.redo();
     }
 
+
     void EditorLogic::findSelectEntities(const robot2D::FloatRect& rect) {
         m_selectedEntities.clear();
 
         for(auto& entity: m_activeScene -> getEntities()) {
             auto& transform = entity.getComponent<TransformComponent>();
-            if(rect.contains(transform.getGlobalBounds())) {
+            if(rect.contains(transform.getGlobalBounds()))
                 m_selectedEntities.emplace_back(entity);
-            }
 
             if(transform.hasChildren())
                 findSelectChildren(rect, entity);
         }
 
-        if(!m_selectedEntities.empty())
-            m_presenter.findSelectedEntitiesOnUI(m_selectedEntities);
+        if(!m_selectedEntities.empty()) {
+            std::vector<ITreeItem::Ptr> selected_items{};
+            selected_items.reserve(m_selectedEntities.size());
 
-        /// TODO(a.raag): add selection command
-        /// m_commandStack.addCommand();
-        /// fill m_selectedEntities //
+            for(auto& entity: m_selectedEntities) {
+                auto& component = entity.getComponent<UIComponent>();
+                selected_items.push_back(component.treeItem);
+            }
+            m_presenter.findSelectedEntitiesOnUI(std::move(selected_items));
+
+            if(m_selectedEntities.size() == 1) {
+                auto* msg=
+                        m_messageBus.postMessage<PanelEntitySelectedMessage>(MessageID::PanelEntityNeedSelect);
+                msg -> entity = m_selectedEntities.back();
+            }
+
+        }
+
+        /// TODO(a.raag): add Selection Command
     }
 
-    void EditorLogic::findSelectChildren(const robot2D::FloatRect &rect, robot2D::ecs::Entity entity) {
+    void EditorLogic::findSelectChildren(const robot2D::FloatRect& rect, robot2D::ecs::Entity entity) {
         auto& transform = entity.getComponent<TransformComponent>();
         for(auto& child: transform.getChildren()) {
             if(!child || child.destroyed())
@@ -469,7 +511,16 @@ namespace editor {
 
     void EditorLogic::removeSelectedEntities() {
         auto restoreInformation = m_activeScene -> removeEntities(m_selectedEntities);
-        auto uiDeletedInformation = m_presenter.removeEntitiesFromUI(m_selectedEntities);
+
+        std::vector<ITreeItem::Ptr> uiItems;
+        uiItems.reserve(m_selectedEntities.size());
+
+        for(auto& entity: m_selectedEntities) {
+            if(entity && !entity.destroyed())
+                uiItems.emplace_back(entity.getComponent<UIComponent>().treeItem);
+        }
+
+        auto uiDeletedInformation = m_presenter.removeEntitiesFromUI(std::move(uiItems));
 
         auto command =
                 m_commandStack.addCommand<DeleteEntitiesCommand>(this, restoreInformation, uiDeletedInformation);
@@ -604,9 +655,6 @@ namespace editor {
         m_presenter.restoreEntitiesOnUI(restoreUiInformation);
     }
 
-    void EditorLogic::destroy() {
-        TaskQueue::GetQueue() -> stop();
-    }
 
     const std::vector<class_id>& EditorLogic::getCommandStack() const {
         return m_commandStack.getCommandStack();
@@ -683,24 +731,19 @@ namespace editor {
         }, exportOptions);
     }
 
-    void EditorLogic::uiSelectedAllEntities() {
+    void EditorLogic::uiSelectedEntities(std::set<ITreeItem::Ptr>& uiItems, bool isAll) {
         m_selectedEntities.clear();
         auto& entities = m_activeScene -> getEntities();
-        std::transform(entities.begin(), entities.end(), m_selectedEntities.begin(),
-                       [](robot2D::ecs::Entity entity) {
-           return entity;
-        });
+
+
+        for(auto& uiItem: uiItems) {
+           // auto& entity = m_activeScene -> getEntity(uiItem -> getSearchPath());
+           // m_selectedEntities.push_back(entity);
+        }
+
+
     }
 
-    void EditorLogic::uiSelectedRangeEntities(std::vector<robot2D::ecs::Entity>&& entities) {
-        m_selectedEntities.clear();
-        for(auto& entity: m_activeScene -> getEntities()) {
-            for(auto item: entities) {
-                if(entity == item)
-                    m_selectedEntities.emplace_back(item);
-            }
-        }
-    }
 
     void EditorLogic::setEditorCamera(IEditorCamera::Ptr editorCamera) {
         m_activeScene -> setEditorCamera(editorCamera);

@@ -19,10 +19,15 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
+#include <robot2D/imgui/Api.hpp>
 #include <editor/UIManager.hpp>
 #include <editor/panels/ScenePanel.hpp>
 
 namespace editor {
+
+    namespace  {
+        constexpr ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
+    }
 
     IUIManager::~IUIManager() = default;
 
@@ -35,22 +40,53 @@ namespace editor {
     }
 
     void UIManager::render() {
+        renderBaseCanvas();
+    }
+
+    void UIManager::renderBaseCanvas() {
+        ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
+        window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse
+                        | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
+        window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+
+        const ImGuiViewport* viewport = ImGui::GetMainViewport();
+        ImGui::SetNextWindowPos(viewport -> WorkPos);
+        ImGui::SetNextWindowSize(viewport -> WorkSize);
+        ImGui::SetNextWindowViewport(viewport -> ID);
+        robot2D::WindowOptions dockWindowOptions{};
+
+        {
+            // TODO(a.raag): Scoped StyleVars
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.F);
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.F);
+
+            if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
+                window_flags |= ImGuiWindowFlags_NoBackground;
+
+
+            dockWindowOptions.flagsMask = window_flags;
+            dockWindowOptions.name = "Scene";
+            ImGui::PopStyleVar(2);
+        }
+
+
+        robot2D::createWindow(dockWindowOptions, BIND_CLASS_FN(canvasWindowFunction));
+    }
+
+    void UIManager::canvasWindowFunction() {
+        ImGuiIO& io = ImGui::GetIO();
+        if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
+        {
+            ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
+            ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f),
+                             dockspace_flags);
+        }
+
         for(auto& panel: m_panels)
             panel -> render();
     }
 
-    void UIManager::dockingCanvas() {
-
-    }
-
-    void UIManager::blockEvents(bool flag) {
-       // m_gui.blockEvents(flag);
-    }
-
-    robot2D::ecs::Entity UIManager::getSelectedEntity(int PixelData) {
-        return getPanel<ScenePanel>().getSelectedEntity(PixelData);
-    }
-
+    void UIManager::blockEvents(bool flag) {}
 
     robot2D::ecs::Entity UIManager::getSelectedEntity() {
         return getPanel<ScenePanel>().getSelectedEntity();
@@ -59,4 +95,5 @@ namespace editor {
     robot2D::ecs::Entity UIManager::getTreeItem(editor::UUID uuid) {
         return getPanel<ScenePanel>().getTreeItem(uuid);
     }
+
 }

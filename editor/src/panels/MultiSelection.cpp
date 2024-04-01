@@ -19,145 +19,141 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
+#include <imgui/imgui.h>
 #include <editor/panels/MultiSelection.hpp>
 
 namespace editor {
 
+    void MultiSelection::preUpdate(std::list<ITreeItem::Ptr>& items) {
 
-    MultiSelection::MultiSelection() {}
-
-    void MultiSelection::addItem(ITreeItem::Ptr node) {
-        if(m_storage.addItem(node))
-            m_size++;
-    }
-
-    void MultiSelection::updateItem(ITreeItem::Ptr node, bool needAdd) {
-        if (needAdd)
-            addItem(node);
-        else
-            removeItem(node);
-    }
-
-    void MultiSelection::removeItem(ITreeItem::Ptr node) {
-        if(m_storage.removeItem(node))
-            m_size--;
-    }
-
-    bool MultiSelection::hasItem(ITreeItem::Ptr node) const {
-        if(!node)
-            return false;
-
-        return m_storage.hasItem(node);
-    }
-
-    void MultiSelection::clear() {
-        m_queueDeletion = false;
-        m_storage.clear();
-        m_size = 0;
-    }
-
-    void MultiSelection::applyRequests(ImGuiMultiSelectIO* multiSelectIo, std::list<ITreeItem::Ptr>& items) {
-
-        for(auto& request: multiSelectIo -> Requests) {
-            if (request.Type == ImGuiSelectionRequestType_Clear)
-                clear();
-            if (request.Type == ImGuiSelectionRequestType_SelectAll)
-            {
-                m_storage.reserve(static_cast<int>(items.size()));
-                for(auto& item: items)
-                    addItem(item);
-
-                m_multiItemCallback(items);
+        switch(m_currentState) {
+            case State::Clear:
+                m_selectedItems.clear();
+                break;
+            case State::SingleSelect: {
+                if(!m_preSelectedItems.empty())
+                    m_selectedItems.clear();
+                for(auto& item: m_preSelectedItems)
+                    m_selectedItems.insert(item);
+                break;
             }
-            if (request.Type == ImGuiSelectionRequestType_SetRange) {
-                std::vector<ITreeItem::Ptr> rangeItems{};
+            case State::MultiSelect: {
+                for(auto& item: m_preSelectedItems)
+                    m_selectedItems.insert(item);
+                bool selectedAll = false;
+                if(m_callback)
+                    m_callback(m_selectedItems, selectedAll);
+                break;
+            }
+            case State::MultiAllSelect: {
+                for(auto& item: items)
+                    m_selectedItems.insert(item);
 
-                auto firstFound = std::find_if(items.begin(), items.end(),
-                                               [&request](const ITreeItem::Ptr& ptr) {
-                                                   return ptr -> getID() == static_cast<UUID>(request.RangeFirstItem);
-                                               });
-
-                auto lastFound = std::find_if(items.begin(), items.end(),
-                                              [&request](const ITreeItem::Ptr& ptr) {
-                                                  return ptr -> getID() == static_cast<UUID>(request.RangeLastItem);
-                                              });
-
-                if(lastFound != items.end()) {
-                    for(; firstFound != lastFound; ++firstFound) {
-                        updateItem(*firstFound, request.RangeSelected);
-                        rangeItems.push_back(*firstFound);
-                    }
-                    updateItem(*lastFound, request.RangeSelected);
-                    rangeItems.push_back(*lastFound);
+                bool selectedAll = true;
+                if(m_callback)
+                    m_callback(m_selectedItems, selectedAll);
+                break;
+            }
+            case State::RangeSelect: {
+                if(m_selectedItems.empty() && !m_preSelectedItems.empty())
+                {
+                    m_selectedItems.insert(*m_preSelectedItems.begin());
+                    break;
                 }
-                else if(firstFound != items.end())
-                    updateItem(*firstFound, request.RangeSelected);
+                else if(m_preSelectedItems.size() == 1 && m_selectedItems.size() == 1) {
+                    std::vector<ITreeItem::Ptr> rangeItems;
+                    rangeItems.push_back(*m_selectedItems.begin());
+                    rangeItems.push_back(*m_preSelectedItems.begin());
+
+                    auto firstFound = std::find_if(items.begin(), items.end(),
+                                                   [&rangeItems](const ITreeItem::Ptr& ptr) {
+                                                       return *ptr == *rangeItems[0];
+                                                   });
+
+                    auto lastFound = std::find_if(items.begin(), items.end(),
+                                                  [&rangeItems](const ITreeItem::Ptr& ptr) {
+                                                      return *ptr == *rangeItems[1];
+                                                  });
+
+                    if(firstFound != items.end() && lastFound != items.end()) {
+                        for(; firstFound != lastFound; ++firstFound)
+                            m_selectedItems.insert(*firstFound);
+                        m_selectedItems.insert(*lastFound);
 
 
-                if(request.RangeFirstItem != request.RangeLastItem)
-                    m_multiRangeItemCallback(rangeItems, request.RangeSelected);
+                        bool selectedAll = false;
+                        if(m_callback)
+                            m_callback(m_selectedItems, selectedAll);
+                    }
+
+                }
+
+                break;
             }
         }
 
-    }
-
-    ITreeItem::Ptr MultiSelection::processDeletionPreLoop(ImGuiMultiSelectIO* ms_io, std::list<ITreeItem::Ptr>& items) {
-        return nullptr;
-        m_queueDeletion = false;
-
-        // If focused item is not selected...
-//
-//        UUID focusedUUID = static_cast<UUID>(ms_io -> NavIdItem); // Index of currently focused item
-//        auto focusedItem = std::find_if(items.begin(), items.end(),
-//                                        [&focusedUUID](ITreeItem::Ptr item) {
-//                                            return focusedUUID == item -> getID();
-//                                        });
-//        if (ms_io -> NavIdSelected == false)  // This is merely a shortcut, == Contains(adapter->IndexToStorage(items, focused_idx))
-//        {
-//            ms_io -> RangeSrcReset = true;    // Request to recover RangeSrc from NavId next frame. Would be ok to reset even when NavIdSelected==true, but it would take an extra frame to recover RangeSrc when deleting a selected item.
-//            if(focusedItem != items.end())
-//                return *focusedItem;  // Request to focus same item after deletion.
-//            return nullptr;
-//        }
-//
-//        if(focusedItem == items.end() || (focusedItem + 1) == items.end())
-//            return nullptr;
-//
-//        // If focused item is selected: land on first unselected item after focused item.
-//        for(auto idx = focusedItem + 1; idx != items.end(); ++idx)
-//            if(!hasItem(*idx))
-//                return (*idx);
-//
-//        // If focused item is selected: otherwise return last unselected item before focused item.
-//        for(auto idx = focusedItem - 1; idx >= items.begin(); --idx)
-//            if(!hasItem(*idx))
-//                return (*idx);
-
-        return nullptr;
-    }
-
-    void MultiSelection::processDeletionPostLoop(ImGuiMultiSelectIO* ms_io, std::list<ITreeItem::Ptr>& items,
-                                                 ITreeItem::Ptr item_curr_idx_to_select) {
-        return;
-        // Rewrite item list (delete items) + convert old selection index (before deletion) to new selection index (after selection).
-        // If NavId was not part of selection, we will stay on same item.
-//        std::vector<ITreeItem::Ptr> newItems;
-//        newItems.reserve(items.size() - m_size);
-//        ITreeItem::Ptr item_next_idx_to_select = nullptr;
-//        for(auto& item: items) {
-//            if (!hasItem(item))
-//                newItems.push_back(item);
-//            if (item_curr_idx_to_select == item)
-//                item_next_idx_to_select = *(items.end() - 1);
-//        }
-//
-//        items.swap(newItems);
-//
-//        // Update selection
-//        clear();
-//        if (item_next_idx_to_select != nullptr && ms_io->NavIdSelected)
-//            addItem(item_next_idx_to_select);
+        m_preSelectedItems.clear();
     }
 
 
+    void MultiSelection::update() {
+        m_ControlDown = ImGui::GetIO().KeyCtrl;
+        m_ShiftDown = ImGui::GetIO().KeyShift;
+
+        if(m_ControlDown && !m_ShiftDown && ImGui::IsKeyDown(ImGuiKey_A))
+            m_currentState = State::MultiAllSelect;
+        else if(!m_ControlDown && m_ShiftDown)
+            m_currentState = State::RangeSelect;
+        else if(m_ControlDown && !m_ShiftDown)
+            m_currentState = State::MultiSelect;
+        else if(!m_ControlDown && !m_ShiftDown)
+            m_currentState = State::SingleSelect;
+    }
+
+    void MultiSelection::postUpdate() {
+        bool needClear = false;
+        if(ImGui::IsMouseClicked(ImGuiMouseButton_Left) && ImGui::IsWindowHovered()
+           && !m_selectedItems.empty() && !(m_currentState == State::MultiSelect
+                                            || m_currentState == State::RangeSelect))
+            needClear = true;
+
+        if(ImGui::IsKeyPressed(ImGuiKey_Escape) || needClear)
+            m_currentState = State::Clear;
+    }
+
+    void MultiSelection::markSelected(ITreeItem::Ptr item) {
+
+        switch(m_currentState) {
+            case State::Clear:
+            case State::MultiAllSelect:
+                break;
+            case State::RangeSelect: {
+
+                if(m_preSelectedItems.size() < m_rangeMaxItems)
+                    m_preSelectedItems.insert(item);
+                break;
+            }
+            case State::MultiSelect: {
+                m_preSelectedItems.insert(item);
+                break;
+            }
+            case State::SingleSelect: {
+                m_preSelectedItems.insert(item);
+                break;
+            }
+        }
+    }
+
+    void MultiSelection::clearAll() {
+        m_preSelectedItems.clear();
+        m_selectedItems.clear();
+    }
+
+    void MultiSelection::addItem(ITreeItem::Ptr item) {
+        m_selectedItems.insert(item);
+    }
+
+    void MultiSelection::removeItem(ITreeItem::Ptr item) {
+        m_selectedItems.erase(item);
+    }
 }

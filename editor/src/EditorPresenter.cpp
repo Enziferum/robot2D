@@ -10,7 +10,7 @@ namespace editor {
     }
 
     void EditorPresenter::prepareView() {
-        m_editor -> prepare();
+        m_editor -> prepareView();
     }
 
     void EditorPresenter::restoreEntitiesOnUI(DeletedEntitiesRestoreUIInformation &restoreUiInformation) {
@@ -18,12 +18,12 @@ namespace editor {
     }
 
     DeletedEntitiesRestoreUIInformation
-    EditorPresenter::removeEntitiesFromUI(std::vector<robot2D::ecs::Entity> removingEntities) {
-        return m_editor -> removeEntitiesOnUI(removingEntities);
+    EditorPresenter::removeEntitiesFromUI(std::vector<ITreeItem::Ptr>&& uiItems) {
+        return m_editor -> removeEntitiesOnUI(std::move(uiItems));
     }
 
-    void EditorPresenter::findSelectedEntitiesOnUI(std::vector<robot2D::ecs::Entity>& selectedEntities) {
-        m_editor -> findSelectedEntitiesOnUI(selectedEntities);
+    void EditorPresenter::findSelectedEntitiesOnUI(std::vector<ITreeItem::Ptr>&& items) {
+        m_editor -> findSelectedEntitiesOnUI(std::move(items));
     }
 
     void EditorPresenter::clearSelectionOnUI() {

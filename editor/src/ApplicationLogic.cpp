@@ -22,6 +22,7 @@ source distribution.
 #include <robot2D/Util/Logger.hpp>
 #include <editor/ApplicationLogic.hpp>
 #include <editor/scripting/ScriptingEngine.hpp>
+#include <editor/Exception.hpp>
 
 namespace editor {
     ApplicationLogic::ApplicationLogic(MessageDispatcher& messageDispatcher):
@@ -47,7 +48,7 @@ namespace editor {
             else {
                 RB_EDITOR_ERROR("Error to parse Editor Cache, description := {0}",
                                 errorToString(m_editorCache.getError()));
-                return;
+                RB2D_EXCEPTION("Editor's cache parse error");
             }
         }
 
@@ -83,7 +84,7 @@ namespace editor {
             if(!m_projectManager.load(projectDescription)) {
                 RB_EDITOR_ERROR("ProjectManager can't load Project := {0}",
                                 errorToString(m_projectManager.getError()));
-                return;
+                RB2D_EXCEPTION("Project loading");
             }
             auto project = m_projectManager.getCurrentProject();
             m_editorOpener -> loadProject(project);
@@ -102,30 +103,19 @@ namespace editor {
 
     void ApplicationLogic::createProjectInternal(const ProjectMessage& projectDescription) {
         if(!m_editorCache.addProject(projectDescription.description)) {
-            RB_EDITOR_ERROR("Can't add Project to Cache := {0}",
+            RB_EDITOR_ERROR("Can't create project to Cache := {0}",
                             errorToString(m_editorCache.getError()));
-            return;
+            RB2D_EXCEPTION("Editor Cache Error");
         }
 
         if(!m_projectManager.add(projectDescription.description)) {
-            RB_EDITOR_ERROR("Can't create Project := {0}",
+            RB_EDITOR_ERROR("Can't create project := {0}",
                             errorToString(m_projectManager.getError()));
-            return;
+            RB2D_EXCEPTION("ProjectManager Error");
         }
 
         auto project = m_projectManager.getCurrentProject();
-
-        std::filesystem::path scriptModulePath{ project -> getPath()};
-        scriptModulePath.append("assets\\scripts\\bin");
-        scriptModulePath.append(project -> getName());
-#ifdef ROBOT2D_WINDOWS
-        scriptModulePath += ".dll";
-#endif
-        /// TODO(a.raag) load somewhere else in real
-        ScriptEngine::InitAppRuntime(scriptModulePath);
-
         m_editorOpener -> createProject(project);
-        // m_window -> setResizable(true);
         m_state = AppState::Editor;
     }
 
@@ -133,28 +123,30 @@ namespace editor {
         if(!m_editorCache.addProject(projectDescription.description)) {
             RB_EDITOR_ERROR("Can't add Project to Cache := {0}",
                             errorToString(m_editorCache.getError()));
-            return;
+            RB2D_EXCEPTION("Editor Cache Error");
         }
 
         if(!m_projectManager.load(projectDescription.description)) {
-            RB_EDITOR_ERROR("Can't create Project := {0}",
+            RB_EDITOR_ERROR("Can't load Project := {0}",
                             errorToString(m_projectManager.getError()));
-            return;
+            RB2D_EXCEPTION("ProjectManager Error");
         }
 
         auto project = m_projectManager.getCurrentProject();
 
-        std::filesystem::path scriptModulePath{ project -> getPath()};
-        scriptModulePath.append("assets\\scripts\\bin");
-        scriptModulePath.append(project -> getName());
-#ifdef ROBOT2D_WINDOWS
-        scriptModulePath += ".dll";
-#endif
-        /// TODO(a.raag) load somewhere else in real
-        ScriptEngine::InitAppRuntime(scriptModulePath);
+        {
+            std::filesystem::path scriptModulePath{ project -> getPath()};
+            scriptModulePath.append("assets\\scripts\\bin");
+            scriptModulePath.append(project -> getName());
+            scriptModulePath += ".dll";
+
+            if(exists(scriptModulePath))
+                ScriptEngine::InitAppRuntime(scriptModulePath);
+            else
+                RB_EDITOR_WARN("Haven't found Scripting DLL by {0}", scriptModulePath.string());
+        }
 
         m_editorOpener -> loadProject(project);
-        // m_window -> setResizable(true);
         m_state = AppState::Editor;
     }
 
@@ -173,29 +165,29 @@ namespace editor {
         if(!m_editorCache.loadProject(projectDescription.description)) {
             RB_EDITOR_ERROR("Cache can't load Project := {0}",
                             errorToString(m_editorCache.getError()));
-            return;
+            RB2D_EXCEPTION("Editor Cache Error");
         }
 
         if(!m_projectManager.load(projectDescription.description)) {
             RB_EDITOR_ERROR("ProjectManager can't load Project := {0}",
                             errorToString(m_projectManager.getError()));
-            return;
+            RB2D_EXCEPTION("ProjectManager Error");
         }
 
         m_state = AppState::Editor;
-        //m_window -> setResizable(true);
         auto project = m_projectManager.getCurrentProject();
 
-        std::filesystem::path scriptModulePath{ project -> getPath()};
-        scriptModulePath.append("assets/scripts/bin");
-        scriptModulePath.append(project -> getName());
-        scriptModulePath += ".dll";
+        {
+            std::filesystem::path scriptModulePath{ project -> getPath()};
+            scriptModulePath.append("assets/scripts/bin");
+            scriptModulePath.append(project -> getName());
+            scriptModulePath += ".dll";
 
-        if(exists(scriptModulePath)) {
-            RB_EDITOR_INFO("Found project's script dll by path: {0}", scriptModulePath.string());
-            ScriptEngine::InitAppRuntime(scriptModulePath);
+            if(exists(scriptModulePath))
+                ScriptEngine::InitAppRuntime(scriptModulePath);
+            else
+                RB_EDITOR_WARN("Haven't found Scripting DLL by {0}", scriptModulePath.string());
         }
-
 
         m_editorOpener -> loadProject(project);
     }
@@ -206,17 +198,15 @@ namespace editor {
         if(!m_editorCache.removeProject(projectDescription.description)) {
             RB_EDITOR_ERROR("EditorCache can't delete Project := {0}",
                             errorToString(m_editorCache.getError()));
-            return;
+            RB2D_EXCEPTION("Editor Cache Error");
         }
 
         if(!m_projectManager.remove(projectDescription.description)) {
             RB_EDITOR_ERROR("ProjectManager can't delete Project := {0}",
                             errorToString(m_projectManager.getError()));
-            return;
+            RB2D_EXCEPTION("ProjectManager Error");
         }
     }
-
-
 
 } // namespace editor
 

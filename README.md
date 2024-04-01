@@ -2,7 +2,6 @@
 
 <img align="right" src="https://github.com/Enziferum/robot2D/blob/dev/logo/logo.png" alt="logo" width="128"/>
 
-\
 Windows / Linux: ![Build Status](https://github.com/Enziferum/robot2D/actions/workflows/ci.yml/badge.svg) \
 MacOS: Temporary not supported due to OpenGL max version 4.1 \
 \

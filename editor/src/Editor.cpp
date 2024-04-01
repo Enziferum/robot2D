@@ -20,7 +20,6 @@ source distribution.
 *********************************************************************/
 
 #include <stdexcept>
-#include <chrono>
 #include <utility>
 
 #include <robot2D/imgui/Gui.hpp>
@@ -50,9 +49,6 @@ source distribution.
 
 namespace editor {
 
-
-    namespace fs = std::filesystem;
-
     namespace {
         robot2D::Spinner g_spinner;
     }
@@ -77,11 +73,9 @@ namespace editor {
 
         m_eventBinder.bindEvent(robot2D::Event::KeyPressed, BIND_CLASS_FN(onKeyPressed));
         m_eventBinder.bindEvent(robot2D::Event::KeyReleased, BIND_CLASS_FN(onKeyReleased));
-        m_eventBinder.bindEvent(robot2D::Event::Resized,
-                             [this](const robot2D::Event& evt) {
-                                 RB_EDITOR_INFO("New Size = {0} and {1}", evt.size.widht, evt.size.heigth);
-                                 m_frameBuffer -> Resize({evt.size.widht,evt.size.heigth});
-                             });
+        m_eventBinder.bindEvent(robot2D::Event::Resized, [this](const robot2D::Event& evt) {
+            m_frameBuffer -> Resize({evt.size.widht,evt.size.heigth});
+        });
         m_eventBinder.bindEvent(robot2D::Event::MousePressed, BIND_CLASS_FN(onMousePressed));
         m_eventBinder.bindEvent(robot2D::Event::MouseReleased, BIND_CLASS_FN(onMouseReleased));
         m_eventBinder.bindEvent(robot2D::Event::MouseMoved, BIND_CLASS_FN(onMouseMoved));
@@ -92,7 +86,6 @@ namespace editor {
             msg -> entity = entity;
         });
     }
-
 
     void Editor::setupShortCuts() {
         ShortCut guizmoMove{robot2D::Key::LEFT_SHIFT, robot2D::Key::W};
@@ -132,7 +125,6 @@ namespace editor {
             mousePos = m_editorCamera -> convertPixelToCoords(mousePos);
             m_interactor -> duplicateEntity(mousePos, m_panelManager.getSelectedEntity());
         });
-        // TODO(a.raag): clone Entity possibility
         m_shortcutManager.bind(std::make_pair(EditorShortCutType::Duplicate, duplicateEntity));
 
 
@@ -140,43 +132,7 @@ namespace editor {
         undoCommand.setCallback([this]() {
             m_interactor -> undoCommand();
         });
-        // TODO(a.raag): clone Entity possibility
         m_shortcutManager.bind(std::make_pair(EditorShortCutType::Undo, undoCommand));
-    }
-
-
-    void Editor::prepare() {
-        auto windowSize = m_window -> getSize();
-
-        robot2D::FrameBufferSpecification frameBufferSpecification;
-        frameBufferSpecification.attachments = {
-                robot2D::FrameBufferTextureFormat::RGBA8,
-                robot2D::FrameBufferTextureFormat::RED_INTEGER,
-                robot2D::FrameBufferTextureFormat::Depth
-        };
-        frameBufferSpecification.size = windowSize.as<int>();
-
-        m_frameBuffer = robot2D::FrameBuffer::Create(frameBufferSpecification);
-        m_gameFrameBuffer = robot2D::FrameBuffer::Create(frameBufferSpecification);
-        m_window -> setView({{0, 0}, windowSize.as<float>()});
-
-        m_editorCamera -> setFrameBuffer(m_frameBuffer);
-        m_guizmo2D.setCamera(m_editorCamera);
-        m_cameraManipulator.setCamera(m_editorCamera);
-        m_editorCamera -> setViewportSize(windowSize.as<float>());
-
-        applyStyle(EditorStyle::UE4);
-        m_needPrepare = false;
-#ifdef ROBOT2D_LINUX
-        m_window -> setResizable(true);
-        m_window -> setSize({2560, 1920});
-#else
-        m_window -> setMaximazed(true);
-#endif
-        auto& viewportPanel = m_panelManager.getPanel<ViewportPanel>();
-        viewportPanel.set(m_frameBuffer);
-
-        m_panelManager.getPanel<GameViewport>().setFrameBuffer(m_gameFrameBuffer);
     }
 
     void Editor::setupSpinner() {
@@ -230,6 +186,7 @@ namespace editor {
         m_sceneRender.setup();
     }
 
+
     void Editor::handleEvents(const robot2D::Event& event) {
         if(event.type == robot2D::Event::LostFocus) {
             m_state = State::LostFocus;
@@ -255,7 +212,8 @@ namespace editor {
     }
 
     void Editor::handleMessages(const robot2D::Message& message) {
-        m_messageDispather.process(message);
+        robot2D::Message* msg = const_cast<robot2D::Message*>(&message);
+        m_messageDispather.process(*msg);
     }
 
     void Editor::update(float dt) {
@@ -310,16 +268,11 @@ namespace editor {
         if(m_objectManipulator.isShown())
             m_window -> draw(m_objectManipulator);
 
-        if(m_mode == Mode::TiledMap) {
-            m_window -> draw(m_tileSpritePreview);
-        }
-
         m_window -> afterRender();
 
         if(m_configuration.useGUI) {
-            if(m_frameBuffer) {
+            if(m_frameBuffer)
                 m_frameBuffer -> unBind();
-            }
 
             m_gameFrameBuffer -> Bind();
             const auto& clearColor = m_panelManager.getPanel<UtilPanel>().getColor();
@@ -337,40 +290,6 @@ namespace editor {
     }
 
     void Editor::guiRender() {
-        ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
-        window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse
-                | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
-        window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
-
-        const ImGuiViewport* viewport = ImGui::GetMainViewport();
-        ImGui::SetNextWindowPos(viewport -> WorkPos);
-        ImGui::SetNextWindowSize(viewport -> WorkSize);
-        ImGui::SetNextWindowViewport(viewport -> ID);
-
-        // TODO(a.raag): Scoped StyleVars
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.F);
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.F);
-
-        if (m_configuration.dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
-            window_flags |= ImGuiWindowFlags_NoBackground;
-
-        robot2D::WindowOptions dockWindowOptions{};
-        dockWindowOptions.flagsMask = window_flags;
-        dockWindowOptions.name = "Scene";
-        ImGui::PopStyleVar(2);
-
-        robot2D::createWindow(dockWindowOptions, BIND_CLASS_FN(windowFunction));
-    }
-
-    void Editor::windowFunction() {
-        ImGuiIO& io = ImGui::GetIO();
-        if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
-        {
-            ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
-            ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f),
-                             m_configuration.dockspace_flags);
-        }
-
         auto stats = m_window -> getStats();
         m_panelManager.getPanel<UtilPanel>().setRenderStats(std::move(stats));
         m_panelManager.render();
@@ -394,12 +313,48 @@ namespace editor {
                 ImGui::EndPopup();
             }
         }
-
     }
 
+
+    void Editor::prepareView() {
+        auto windowSize = m_window -> getSize();
+
+        robot2D::FrameBufferSpecification frameBufferSpecification;
+        frameBufferSpecification.attachments = {
+                robot2D::FrameBufferTextureFormat::RGBA8,
+                robot2D::FrameBufferTextureFormat::RED_INTEGER,
+                robot2D::FrameBufferTextureFormat::Depth
+        };
+        frameBufferSpecification.size = windowSize.as<int>();
+
+        m_frameBuffer = robot2D::FrameBuffer::Create(frameBufferSpecification);
+        m_gameFrameBuffer = robot2D::FrameBuffer::Create(frameBufferSpecification);
+        m_window -> setView({{0, 0}, windowSize.as<float>()});
+
+        m_editorCamera -> setFrameBuffer(m_frameBuffer);
+        m_guizmo2D.setCamera(m_editorCamera);
+        m_cameraManipulator.setCamera(m_editorCamera);
+        m_editorCamera -> setViewportSize(windowSize.as<float>());
+
+        applyStyle(EditorStyle::UE4);
+
+#ifdef ROBOT2D_LINUX
+        m_window -> setResizable(true);
+        m_window -> setSize({2560, 1920});
+#else
+        m_window -> setMaximazed(true);
+#endif
+        auto& viewportPanel = m_panelManager.getPanel<ViewportPanel>();
+        viewportPanel.setFramebuffer(m_frameBuffer);
+
+        m_panelManager.getPanel<GameViewport>().setFrameBuffer(m_gameFrameBuffer);
+        m_needPrepareView = false;
+    }
+
+
     void Editor::openScene(Scene::Ptr scene, std::string path) {
-        if(m_needPrepare)
-            prepare();
+        if(m_needPrepareView)
+            prepareView();
 
         m_activeScene = std::move(scene);
         auto& scenePanel = m_panelManager.getPanel<ScenePanel>();
@@ -409,12 +364,12 @@ namespace editor {
         inspectorPanel.setInteractor(m_interactor);
 
         auto& viewportPanel = m_panelManager.getPanel<ViewportPanel>();
-        viewportPanel.set(m_frameBuffer);
+        viewportPanel.setFramebuffer(m_frameBuffer);
 
         auto assetsPath = combinePath(path, "assets");
         auto& assetsPanel = m_panelManager.getPanel<AssetsPanel>();
         assetsPanel.setAssetsPath(assetsPath);
-        assetsPanel.unlock();
+        assetsPanel.switchState(AssetsPanel::State::Active);
 
         m_interactor -> setEditorCamera(m_editorCamera);
     }
@@ -431,12 +386,6 @@ namespace editor {
         if(event.key.code == robot2D::Key::LEFT_CONTROL)
             m_configuration.m_leftCtrlPressed = false;
         
-    }
-
-    void Editor::showPopup(PopupConfiguration* configuration) {
-        m_popupConfiguration = configuration;
-        auto* manager = PopupManager::getManager();
-        manager -> beginPopup(this);
     }
 
 
@@ -474,19 +423,19 @@ namespace editor {
         }
     }
 
-    
-    void Editor::findSelectedEntitiesOnUI(std::vector<robot2D::ecs::Entity>& entities) {
-        auto& scenePanel = m_panelManager.getPanel<ScenePanel>();
-        scenePanel.processSelectedEntities(entities);
 
-        auto& inspectorPanel = m_panelManager.getPanel<InspectorPanel>();
-        inspectorPanel.setSelected(entities.back());
+    void Editor::findSelectedEntitiesOnUI(std::vector<ITreeItem::Ptr>&& items) {
+        auto& scenePanel = m_panelManager.getPanel<ScenePanel>();
+        scenePanel.processSelectedEntities(std::move(items));
+
+        // auto& inspectorPanel = m_panelManager.getPanel<InspectorPanel>();
+        // inspectorPanel.setSelected(entities.back());
     }
 
     DeletedEntitiesRestoreUIInformation
-    Editor::removeEntitiesOnUI(std::vector<robot2D::ecs::Entity>& selectedEntities) {
+    Editor::removeEntitiesOnUI(std::vector<ITreeItem::Ptr>&& uiItems) {
         auto& panel = m_panelManager.getPanel<ScenePanel>();
-        return panel.removeEntitiesOnUI(selectedEntities);
+        return panel.removeEntitiesOnUI(std::move(uiItems));
     }
 
     void Editor::restoreEntitiesOnUI(DeletedEntitiesRestoreUIInformation& restoreUiInformation) {
@@ -500,6 +449,18 @@ namespace editor {
 
         auto& inspectorPanel = m_panelManager.getPanel<InspectorPanel>();
         inspectorPanel.clearSelection();
+    }
+
+
+    void Editor::setMainCameraEntity(robot2D::ecs::Entity entity) {
+        m_cameraManipulator.setManipulatedEntity(entity);
+    }
+
+
+    void Editor::showPopup(PopupConfiguration* configuration) {
+        m_popupConfiguration = configuration;
+        auto* manager = PopupManager::getManager();
+        manager -> beginPopup(this);
     }
 
     void Editor::onPopupRender() {
@@ -537,10 +498,6 @@ namespace editor {
 
             ImGui::EndPopup();
         }
-    }
-
-    void Editor::setMainCameraEntity(robot2D::ecs::Entity entity) {
-        m_cameraManipulator.setManipulatedEntity(entity);
     }
 
 }

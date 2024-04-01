@@ -27,9 +27,7 @@ namespace {
             m_entityRemoveCallCount++;
         }
 
-        void onMessage(const robot2D::Message& message) override {
-
-        }
+        void onMessage(const robot2D::Message& message) override {}
 
         int m_entityAddCallCount = 0;
         int m_entityRemoveCallCount = 0;

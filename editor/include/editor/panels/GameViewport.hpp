@@ -28,6 +28,10 @@ namespace editor {
     class GameViewport final: public IPanel {
     public:
         GameViewport(robot2D::MessageBus& messageBus);
+        GameViewport(const GameViewport& other) = delete;
+        GameViewport& operator=(const GameViewport& other) = delete;
+        GameViewport(GameViewport&& other) = delete;
+        GameViewport& operator=(GameViewport&& other) = delete;
         ~GameViewport() override = default;
 
         void setFrameBuffer(robot2D::FrameBuffer::Ptr frameBuffer) { m_frameBuffer = frameBuffer; }
@@ -36,7 +40,7 @@ namespace editor {
         void windowFunction();
     private:
         robot2D::MessageBus& m_messageBus;
-        robot2D::FrameBuffer::Ptr m_frameBuffer;
+        robot2D::FrameBuffer::Ptr m_frameBuffer{ nullptr };
         robot2D::vec2u  m_ViewportSize{};
     };
 }

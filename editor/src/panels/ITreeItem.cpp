@@ -23,5 +23,65 @@ source distribution.
 
 namespace editor {
 
+    ITreeItem::ITreeItem(): m_id() {}
+    ITreeItem::ITreeItem(UUID id) : m_id{ id } {}
     ITreeItem::~ITreeItem() = default;
+
+    void ITreeItem::setName(std::string* name) {
+        m_name = name;
+    }
+
+    void ITreeItem::setTexture(robot2D::Texture& texture, const robot2D::Color& tintColor) {
+        m_iconTexture = &texture;
+        m_tintColor = tintColor;
+    }
+
+    bool ITreeItem::deleteChild(ITreeItem::Ptr item) {
+        m_deletePendingItems.emplace_back(item);
+        return true;
+    }
+
+    void ITreeItem::addChild(ITreeItem::Ptr child) {
+        child -> m_parent = this;
+        child -> isQueryDeletion = true;
+        m_childrens.emplace_back(child);
+    }
+
+    void ITreeItem::removeSelf() {
+        if (!isChild() || !m_parent)
+            return;
+        m_parent->removeChild(this);
+    }
+
+    void ITreeItem::update() {
+        for (auto delItem : m_deletePendingItems) 
+            m_childrens.erase(std::remove_if(m_childrens.begin(), m_childrens.end(),
+                                             [&delItem](auto item) {
+                return *delItem == *item;
+            }), m_childrens.end());
+        m_deletePendingItems.clear();
+    }
+
+    void ITreeItem::removeChild(ITreeItem* child) {
+        auto found = std::find_if(m_childrens.begin(),
+            m_childrens.end(), [&child](ITreeItem::Ptr item) {
+                return *child == *item;
+            });
+
+        m_deletePendingItems.emplace_back(*found);
+    }
+
+    /// -
+    ///  - -
+    ///  -- -
+
+    const std::size_t ITreeItem::getChildValue(std::size_t& size) const {
+        if(hasChildrens()) {
+            for(auto& child: m_childrens)
+                size += child -> getChildValue(size);
+            return size;
+        }
+        size += m_childrens.size();
+        return size;
+    }
 }

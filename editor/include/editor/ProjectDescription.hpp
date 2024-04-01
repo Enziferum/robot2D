@@ -24,9 +24,9 @@ source distribution.
 
 namespace editor {
     struct ProjectDescription {
-        ProjectDescription(): name{""}, path{""} {}
+        ProjectDescription() = default;
         ProjectDescription(const ProjectDescription&) = default;
-        ProjectDescription& operator= (const ProjectDescription&) = default;
+        ProjectDescription& operator= (const ProjectDescription& other) = default;
         ~ProjectDescription() = default;
 
 

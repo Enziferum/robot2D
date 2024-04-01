@@ -55,8 +55,8 @@ namespace editor {
         out << YAML::Key << "PrefabUUID" << YAML::Value << prefab -> prefabUUID;
         out << YAML::Key << "Entities" << YAML::Value << YAML::BeginSeq;
 
-        EntitySerializer entitySerializer;
-        entitySerializer.serialize(out, prefab -> entity);
+        auto entitySerializer = getSerializer<EntityYAMLSerializer>();
+        entitySerializer -> serialize(out, prefab -> entity);
 
         out << YAML::EndSeq;
         out << YAML::EndMap;
@@ -103,16 +103,18 @@ namespace editor {
 
         auto prefabEntities = data["Entities"];
 
-        EntitySerializer entitySerializer;
+        auto entitySerializer = getSerializer<EntityYAMLSerializer>();
 
         /// TODO(a.raag): special deserialze for prefab
-        if(prefabEntities) {
-            std::vector<ChildInfo> children;
-            for(auto entity: prefabEntities) {
-                bool addToScene = true;
-                auto &deserializedEntity = prefab -> entity;
-                entitySerializer.deserialize(&entity, deserializedEntity, addToScene, children);
-            }
+        if(!prefabEntities)
+            return false;
+
+        std::vector<ChildInfo> children;
+        for(const auto& entity: prefabEntities) {
+            bool addToScene = true;
+            auto& deserializedEntity = prefab -> entity;
+            /// TODO(a.raag): Uncomment when move to SceneEntity
+            // entitySerializer -> deserialize(entity, deserializedEntity, addToScene, children);
         }
 
         return true;

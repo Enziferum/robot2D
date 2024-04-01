@@ -22,10 +22,9 @@ source distribution.
 #include <editor/Task.hpp>
 
 namespace editor {
-    ITask::ITask(ITaskFunction::Ptr function):
-            m_function{function} {}
+    ITask::ITask(ITaskFunction::Ptr function): m_function{std::move(function)} {}
 
-    ITask::~ITask() {}
+    ITask::~ITask() = default;
 
     void ITask::call() {
         if(!m_function)

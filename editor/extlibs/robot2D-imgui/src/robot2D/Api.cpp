@@ -1,11 +1,30 @@
+/*********************************************************************
+(c) Alex Raag 2024
+https://github.com/Enziferum
+robot2D - Zlib license.
+This software is provided 'as-is', without any express or
+implied warranty. In no event will the authors be held
+liable for any damages arising from the use of this software.
+Permission is granted to anyone to use this software for any purpose,
+including commercial applications, and to alter it and redistribute
+it freely, subject to the following restrictions:
+1. The origin of this software must not be misrepresented;
+you must not claim that you wrote the original software.
+If you use this software in a product, an acknowledgment
+in the product documentation would be appreciated but
+is not required.
+2. Altered source versions must be plainly marked as such,
+and must not be misrepresented as being the original software.
+3. This notice may not be removed or altered from any
+source distribution.
+*********************************************************************/
+
 #include <imgui/imgui.h>
 
 #include <robot2D/imgui/Api.hpp>
 #include <robot2D/imgui/Util.hpp>
 
 namespace robot2D {
-
-
 
     void createWindow(const WindowOptions& windowOptions, std::function<void()>&& callback) {
         windowOptions.enable();
@@ -18,36 +37,6 @@ namespace robot2D {
         windowOptions.disable();
     }
 
-    void DrawImage(robot2D::Sprite& sprite, const robot2D::vec2f& size) {
-        const robot2D::Texture* sprTexture = sprite.getTexture();
-        if(!sprTexture || size == robot2D::vec2f{})
-            return;
-        const robot2D::Texture& texture = *sprTexture;
-		auto texSize = texture.getSize();
-        robot2D::vec2f textureSize = texSize.as<float>();
-        auto textureRect = sprite.getLocalBounds();
-
-        auto imID = ImGui::convertTextureHandle(texture.getID());
-        ImVec2 uv0(textureRect.lx / textureSize.x, textureRect.ly / textureSize.y);
-        ImVec2 uv1((textureRect.lx + textureRect.width) / textureSize.x,
-                   (textureRect.ly + textureRect.height) / textureSize.y);
-        ImGui::Image(imID, ImVec2(size.x, size.y), uv0, uv1);
-    }
-
-    void DrawAnimatedImage(robot2D::Sprite& sprite, const robot2D::vec2f& size) {
-        const robot2D::Texture* sprTexture = sprite.getTexture();
-        if(!sprTexture || size == robot2D::vec2f{})
-            return;
-        const robot2D::Texture& texture = *sprTexture;
-        robot2D::vec2f textureSize;// = { texture.getSize().x, texture.getSize().y };
-        auto textureRect = sprite.getTextureRect();
-
-        auto imID = ImGui::convertTextureHandle(texture.getID());
-        ImVec2 uv0(textureRect.lx / textureSize.x, textureRect.ly / textureSize.y);
-        ImVec2 uv1((textureRect.lx + textureRect.width) / textureSize.x,
-                   (textureRect.ly + textureRect.height) / textureSize.y);
-        ImGui::Image(imID, ImVec2(size.x, size.y), uv0, uv1);
-    }
 
     void RenderFrameBuffer(const robot2D::FrameBuffer::Ptr& frameBuffer, const robot2D::vec2f& size) {
         auto imID = ImGui::convertTextureHandle(frameBuffer -> getFrameBufferRenderID());
@@ -59,8 +48,6 @@ namespace robot2D {
         return ImGui::ImageButton(imID, ImVec2(size.x, size.y), {0, 0},
                                   {1,1}, 0);
     }
-
-
 
     struct InputTextCallback_UserData
     {
@@ -110,5 +97,38 @@ namespace robot2D {
                 &cb_user_data
         );
     }
+
+
+    void DrawImage(robot2D::Sprite& sprite, const robot2D::vec2f& size) {
+        const robot2D::Texture* sprTexture = sprite.getTexture();
+        if(!sprTexture || size == robot2D::vec2f{})
+            return;
+        const robot2D::Texture& texture = *sprTexture;
+        auto texSize = texture.getSize();
+        robot2D::vec2f textureSize = texSize.as<float>();
+        auto textureRect = sprite.getLocalBounds();
+
+        auto imID = ImGui::convertTextureHandle(texture.getID());
+        ImVec2 uv0(textureRect.lx / textureSize.x, textureRect.ly / textureSize.y);
+        ImVec2 uv1((textureRect.lx + textureRect.width) / textureSize.x,
+                   (textureRect.ly + textureRect.height) / textureSize.y);
+        ImGui::Image(imID, ImVec2(size.x, size.y), uv0, uv1);
+    }
+
+    void DrawAnimatedImage(robot2D::Sprite& sprite, const robot2D::vec2f& size) {
+        const robot2D::Texture* sprTexture = sprite.getTexture();
+        if(!sprTexture || size == robot2D::vec2f{})
+            return;
+        const robot2D::Texture& texture = *sprTexture;
+        robot2D::vec2f textureSize;// = { texture.getSize().x, texture.getSize().y };
+        auto textureRect = sprite.getTextureRect();
+
+        auto imID = ImGui::convertTextureHandle(texture.getID());
+        ImVec2 uv0(textureRect.lx / textureSize.x, textureRect.ly / textureSize.y);
+        ImVec2 uv1((textureRect.lx + textureRect.width) / textureSize.x,
+                   (textureRect.ly + textureRect.height) / textureSize.y);
+        ImGui::Image(imID, ImVec2(size.x, size.y), uv0, uv1);
+    }
+
 
 } // namespace robot2D
