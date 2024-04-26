@@ -21,6 +21,8 @@ source distribution.
 
 #pragma once
 
+#include<list>
+
 #include <robot2D/Core/MessageBus.hpp>
 #include <robot2D/Util/ResourceHandler.hpp>
 #include <robot2D/Graphics/Texture.hpp>
@@ -33,6 +35,7 @@ source distribution.
 #include "TreeHierarchy.hpp"
 #include <editor/UIInteractor.hpp>
 #include <editor/DeletedEntitesRestoreInformation.hpp>
+#include <editor/SceneEntity.hpp>
 
 namespace editor {
 
@@ -54,15 +57,15 @@ namespace editor {
         void setInteractor(UIInteractor::Ptr interactor);
         void render() override;
 
-        robot2D::ecs::Entity getSelectedEntity() const;
-        robot2D::ecs::Entity getTreeItem(UUID uuid);
+        SceneEntity getSelectedEntity() const;
+        SceneEntity getTreeItem(UUID uuid);
 
         void clearSelection();
 
         void processSelectedEntities(std::vector<ITreeItem::Ptr>&& items);
 
         DeletedEntitiesRestoreUIInformation
-        removeEntitiesOnUI(std::vector<ITreeItem::Ptr>&& uiItems);
+        removeEntitiesOnUI(std::list<ITreeItem::Ptr>&& uiItems);
         void restoreEntitiesOnUI(const DeletedEntitiesRestoreUIInformation& restoreUiInformation);
     private:
         void windowFunction();
@@ -71,10 +74,10 @@ namespace editor {
         void onEntityDuplicate(const EntityDuplication& duplication);
         void onEntityRemove(const EntityRemovement& removement);
 
-        void entityDuplicateChild(robot2D::ecs::Entity parentEntity, ITreeItem::Ptr parentItem);
+        void entityDuplicateChild(SceneEntity parentEntity, ITreeItem::Ptr parentItem);
 
         void setupTreeHierarchy();
-        void setStartChildEntity(robot2D::ecs::Entity entity, ITreeItem::Ptr parent);
+        void setStartChildEntity(SceneEntity entity, ITreeItem::Ptr parent);
         void processSelectedChildren(ITreeItem::Ptr parent, std::vector<ITreeItem::Ptr>& items);
     private:
         robot2D::MessageBus& m_messageBus;
@@ -83,7 +86,7 @@ namespace editor {
 
         UIInteractor::Ptr m_interactor;
 
-        robot2D::ecs::Entity m_selectedEntity;
+        SceneEntity m_selectedEntity;
         ScenePanelConfiguration m_configuration;
         TreeHierarchy m_treeHierarchy;
 

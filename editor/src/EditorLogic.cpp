@@ -106,6 +106,7 @@ namespace editor {
     m_sceneManager{messageBus},
     m_activeScene{nullptr}
     {
+
         m_messageDispatcher.onMessage<MenuProjectMessage>(MessageID::SaveScene, BIND_CLASS_FN(saveScene));
         m_messageDispatcher.onMessage<ToolbarMessage>(MessageID::ToolbarPressed, BIND_CLASS_FN(toolbarPressed));
         m_messageDispatcher.onMessage<OpenSceneMessage>(MessageID::OpenScene, BIND_CLASS_FN(openScene));
@@ -132,8 +133,7 @@ namespace editor {
         });
 
 
-        m_messageDispatcher.onMessage<GenerateProjectMessage>(MessageID::GenerateProject,
-                                                              BIND_CLASS_FN(generateProject));
+        m_messageDispatcher.onMessage<GenerateProjectMessage>(MessageID::GenerateProject, BIND_CLASS_FN(generateProject));
     }
 
 
@@ -283,9 +283,8 @@ namespace editor {
                 }
             }
 
-            auto& ts = entity.getComponent<TransformComponent>();
-            for(auto child: ts.getChildren())
-                loadAssetsByEntity(child);
+            for (auto child : entity.getChildren())
+                loadAssetsByEntity(SceneEntity(std::move(child)));
         }
 
         auto filename = std::filesystem::path{m_activeScene -> getPath()}.filename().string();
@@ -303,22 +302,22 @@ namespace editor {
     }
 
     void EditorLogic::pasterFromBuffer() {
-        std::vector<robot2D::ecs::Entity> copiedEntities{};
+        std::vector<SceneEntity> copiedEntities{};
         int counter = 0;
 
         struct PasteInfo {
             bool isParentPasted{false};
-            robot2D::ecs::Entity entity;
+            SceneEntity entity;
         };
 
-        for(auto& copy: m_copyEntities) {
+        for(auto copy: m_copyEntities) {
             auto& transform = copy.getComponent<TransformComponent>();
             auto copiedEntity = m_activeScene -> duplicateEntity(transform.getPosition(), copy);
 
             if(transform.hasChildren())
                 pasteChild(copy);
 
-            copiedEntities.emplace_back(copiedEntity);
+            copiedEntities.emplace_back(SceneEntity(std::move(copiedEntity)));
         }
 
         auto command = m_commandStack.addCommand<PasteCommand>(m_messageBus, copiedEntities, this);
@@ -331,7 +330,7 @@ namespace editor {
     }
 
 
-    void EditorLogic::pasteChild(robot2D::ecs::Entity parent) {}
+    void EditorLogic::pasteChild(SceneEntity parent) {}
 
 
     void EditorLogic::toolbarPressed(const ToolbarMessage& message) {
@@ -345,7 +344,7 @@ namespace editor {
         }
     }
 
-    void EditorLogic::loadAssetsByEntity(robot2D::ecs::Entity entity) {
+    void EditorLogic::loadAssetsByEntity(SceneEntity entity) {
         if(entity.hasComponent<ButtonComponent>()) {
             auto& btnComp = entity.getComponent<ButtonComponent>();
             if(!btnComp.onClickCallback) {
@@ -435,9 +434,18 @@ namespace editor {
         m_observers.emplace_back(observer);
     }
 
-    void EditorLogic::duplicateEntity(robot2D::vec2f mousePos, robot2D::ecs::Entity entity) {
-        auto dupEntity = m_activeScene -> duplicateEntity(mousePos, entity);
-        m_commandStack.addCommand<DuplicateCommand>(m_messageBus, m_activeScene, dupEntity);
+    void EditorLogic::duplicateEntity(robot2D::vec2f mousePos) {
+
+        std::vector<SceneEntity> duplicatedEntities;
+        duplicatedEntities.reserve(m_selectedEntities.size());
+
+        /// TODO(a.raag): calculate offset for entites
+        for (auto& entity : m_selectedEntities) {
+            auto dupEntity = m_activeScene -> duplicateEntity(mousePos, entity);
+            // duplicatedEntities.emplace_back(entity);
+        }
+        /// TODO(a.raag): update DuplicateCommand to support several entities 
+        // m_commandStack.addCommand<DuplicateCommand>(m_messageBus, m_activeScene, dupEntity);
     }
 
     void EditorLogic::addPrefabEntity(const PrefabLoadMessage& message) {
@@ -486,8 +494,7 @@ namespace editor {
             m_presenter.findSelectedEntitiesOnUI(std::move(selected_items));
 
             if(m_selectedEntities.size() == 1) {
-                auto* msg=
-                        m_messageBus.postMessage<PanelEntitySelectedMessage>(MessageID::PanelEntityNeedSelect);
+                auto* msg = m_messageBus.postMessage<PanelEntitySelectedMessage>(MessageID::PanelEntityNeedSelect);
                 msg -> entity = m_selectedEntities.back();
             }
 
@@ -496,27 +503,25 @@ namespace editor {
         /// TODO(a.raag): add Selection Command
     }
 
-    void EditorLogic::findSelectChildren(const robot2D::FloatRect& rect, robot2D::ecs::Entity entity) {
-        auto& transform = entity.getComponent<TransformComponent>();
-        for(auto& child: transform.getChildren()) {
+    void EditorLogic::findSelectChildren(const robot2D::FloatRect& rect, SceneEntity entity) {
+        for(auto child: entity.getChildren()) {
             if(!child || child.destroyed())
                 continue;
             auto& childTransform = child.getComponent<TransformComponent>();
             if(rect.contains(childTransform.getGlobalBounds()))
-                m_selectedEntities.emplace_back(child);
+                m_selectedEntities.emplace_back(SceneEntity(std::move(child)));
             if(childTransform.hasChildren())
-                findSelectChildren(rect, child);
+                findSelectChildren(rect, SceneEntity(std::move(child)));
         }
     }
 
     void EditorLogic::removeSelectedEntities() {
         auto restoreInformation = m_activeScene -> removeEntities(m_selectedEntities);
 
-        std::vector<ITreeItem::Ptr> uiItems;
-        uiItems.reserve(m_selectedEntities.size());
+        std::list<ITreeItem::Ptr> uiItems;
 
         for(auto& entity: m_selectedEntities) {
-            if(entity && !entity.destroyed())
+            if(entity)
                 uiItems.emplace_back(entity.getComponent<UIComponent>().treeItem);
         }
 
@@ -531,7 +536,7 @@ namespace editor {
         m_selectedEntities.clear();
     }
 
-    robot2D::ecs::Entity EditorLogic::getByUUID(std::uint64_t uuid) {
+    SceneEntity EditorLogic::getByUUID(std::uint64_t uuid) {
         return m_activeScene -> getByUUID(UUID(uuid));
     }
 
@@ -541,7 +546,7 @@ namespace editor {
 
     //////////////////////////////////////// UIInteractor ////////////////////////////////////////
 
-    std::vector<robot2D::ecs::Entity>& EditorLogic::getSelectedEntities()  {
+    std::vector<SceneEntity>& EditorLogic::getSelectedEntities()  {
         return m_selectedEntities;
     }
 
@@ -549,11 +554,11 @@ namespace editor {
         return m_activeScene -> getAssociatedProjectPath();
     }
 
-    std::list<robot2D::ecs::Entity> EditorLogic::getEntities() const {
+    std::list<SceneEntity> EditorLogic::getEntities() const {
         return m_activeScene -> getEntities();
     }
 
-    void EditorLogic::removeEntity(robot2D::ecs::Entity entity) {
+    void EditorLogic::removeEntity(SceneEntity entity) {
         m_activeScene -> removeEntity(entity);
     }
 
@@ -561,23 +566,23 @@ namespace editor {
         m_activeScene -> addEmptyEntity();
     }
 
-    robot2D::ecs::Entity EditorLogic::addButton() {
+    SceneEntity EditorLogic::addButton() {
         return m_activeScene -> addEmptyButton();
     }
 
-    robot2D::ecs::Entity EditorLogic::createEmptyEntity() {
+    SceneEntity EditorLogic::createEmptyEntity() {
         return m_activeScene -> createEmptyEntity();
     }
 
-    robot2D::ecs::Entity EditorLogic::duplicateEmptyEntity(robot2D::ecs::Entity entity) {
+    SceneEntity EditorLogic::duplicateEmptyEntity(SceneEntity entity) {
         return m_activeScene -> duplicateEmptyEntity(entity);
     }
 
-    void EditorLogic::setBefore(robot2D::ecs::Entity sourceEntity, robot2D::ecs::Entity target) {
+    void EditorLogic::setBefore(SceneEntity sourceEntity, SceneEntity target) {
         m_activeScene -> setBefore(sourceEntity, target);
     }
 
-    void EditorLogic::removeEntityChild(robot2D::ecs::Entity entity) {
+    void EditorLogic::removeEntityChild(SceneEntity entity) {
         m_activeScene -> removeEntityChild(entity);
     }
 
@@ -587,7 +592,7 @@ namespace editor {
         return m_activeScene -> isRunning();
     }
 
-    robot2D::ecs::Entity EditorLogic::getByUUID(UUID uuid) {
+    SceneEntity EditorLogic::getByUUID(UUID uuid) {
         return m_activeScene -> getByUUID(uuid);
     }
 
@@ -595,11 +600,11 @@ namespace editor {
         m_activeScene -> registerOnDeleteFinish(std::move(callback));
     }
 
-    robot2D::ecs::Entity EditorLogic::getSelectedEntity(int graphicsEntityID) {
+    SceneEntity EditorLogic::getSelectedEntity(int graphicsEntityID) {
         m_selectedEntities.clear();
         auto entities = m_activeScene -> getEntities();
         for(auto& entity: entities) {
-            if(entity.getIndex() == graphicsEntityID) {
+            if(entity.getWrappedEntity().getIndex() == graphicsEntityID) {
                 m_selectedEntities.emplace_back(entity);
                 auto* msg =
                         m_messageBus.postMessage<PanelEntitySelectedMessage>(MessageID::PanelEntityNeedSelect);
@@ -610,8 +615,8 @@ namespace editor {
 
             auto& tx = entity.getComponent<TransformComponent>();
             if(tx.hasChildren()) {
-                robot2D::ecs::Entity childEntity = getSelectedEntityChild(entity, graphicsEntityID);
-                if(childEntity && !childEntity.destroyed()) {
+                SceneEntity childEntity = getSelectedEntityChild(entity, graphicsEntityID);
+                if(childEntity) {
                     return childEntity;
                 }
             }
@@ -624,24 +629,24 @@ namespace editor {
     }
 
 
-    robot2D::ecs::Entity EditorLogic::getSelectedEntityChild(robot2D::ecs::Entity parent, int graphicsEntityID) {
-        auto& tx = parent.getComponent<TransformComponent>();
-        for(auto& child: tx.getChildren()) {
+    SceneEntity EditorLogic::getSelectedEntityChild(SceneEntity parent, int graphicsEntityID) {
+        for(auto child: parent.getChildren()) {
             if(!child || child.destroyed())
                 continue;
             if(child.getIndex() == graphicsEntityID) {
-                m_selectedEntities.emplace_back(child);
+                m_selectedEntities.emplace_back(SceneEntity(std::move(child)));
                 auto* msg =
                         m_messageBus.postMessage<PanelEntitySelectedMessage>(MessageID::PanelEntityNeedSelect);
-                msg -> entity = child;
-                return child;
+                auto resultEntity = SceneEntity(std::move(child));
+                msg -> entity = resultEntity;
+                return resultEntity;
             }
 
             auto& childTransform = child.getComponent<TransformComponent>();
             if(childTransform.hasChildren())
-                return getSelectedEntityChild(child, graphicsEntityID);
+                return getSelectedEntityChild(SceneEntity(std::move(child)), graphicsEntityID);
         }
-        return robot2D::ecs::Entity{};
+        return SceneEntity{};
     }
 
 
@@ -682,8 +687,8 @@ namespace editor {
     }
 
     void EditorLogic::prefabModificated(const PrefabAssetModificatedMessage& message) {
-        constexpr auto processModification = [](robot2D::ecs::Entity prefabEntity,
-                robot2D::ecs::Entity modificateEntity) {
+        constexpr auto processModification = [](SceneEntity prefabEntity,
+                SceneEntity modificateEntity) {
             if(prefabEntity.hasComponent<DrawableComponent>()
                     && modificateEntity.hasComponent<DrawableComponent>()) {
                 auto& modificateDrawable = modificateEntity.getComponent<DrawableComponent>();
@@ -701,13 +706,12 @@ namespace editor {
                     processModification(message.prefabEntity, entity);
                 }
             }
-            if(entity.getComponent<TransformComponent>().hasChildren()) {
-                for(auto child: entity.getComponent<TransformComponent>().getChildren()) {
+            if(entity.hasChildren()) {
+                for(auto child: entity.getChildren()) {
                     if(child.hasComponent<PrefabComponent>()) {
                         auto& prefabComponent = child.getComponent<PrefabComponent>();
-                        if(prefabComponent.prefabUUID == message.prefabUUID) {
-                            processModification(message.prefabEntity, child);
-                        }
+                        if(prefabComponent.prefabUUID == message.prefabUUID)
+                            processModification(message.prefabEntity, SceneEntity(std::move(child)));
                     }
                 }
             }
@@ -719,7 +723,7 @@ namespace editor {
         return cameraComponent.getPosition();
     }
 
-    void EditorLogic::setMainCamera(robot2D::ecs::Entity cameraEntity) {
+    void EditorLogic::setMainCamera(SceneEntity cameraEntity) {
         m_selectedEntities.clear();
         m_selectedEntities.emplace_back(cameraEntity);
     }
@@ -777,7 +781,7 @@ namespace editor {
         }
     }
 
-    robot2D::ecs::Entity EditorLogic::duplicateRuntime(robot2D::ecs::Entity entity, robot2D::vec2f position) {
+    SceneEntity EditorLogic::duplicateRuntime(SceneEntity entity, robot2D::vec2f position) {
         return m_activeScene -> duplicateRuntime(entity, position);
     }
 
@@ -798,7 +802,7 @@ namespace editor {
         RB_EDITOR_INFO("EditorLogic: command to generate robot2D's script's project {0}", genCmd);
 
         /// TODO(a.raag): GenerateProjectTask + Popup
-        auto f= std::async([genCmd](){
+        auto f = std::async([genCmd](){
             if(std::system(genCmd.c_str())) {
                 /// nice
             }

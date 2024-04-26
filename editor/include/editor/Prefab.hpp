@@ -22,7 +22,7 @@ source distribution.
 #pragma once
 #include <memory>
 #include <string>
-#include <robot2D/Ecs/Entity.hpp>
+#include <editor/SceneEntity.hpp>
 #include "Uuid.hpp"
 
 namespace editor {
@@ -31,7 +31,7 @@ namespace editor {
     public:
         using Ptr = std::shared_ptr<Prefab>;
         std::string localPath;
-        robot2D::ecs::Entity entity;
+        SceneEntity entity;
         UUID prefabUUID;
     };
 }

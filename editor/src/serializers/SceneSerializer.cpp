@@ -147,7 +147,7 @@ namespace editor {
                         found.addChild(child.self);
                     else {
                         for(auto& item: children) {
-                            if(item.isChild && item.self.getComponent<IDComponent>().ID == child.parentUUID)
+                            if(item.isChild && item.self.getUUID() == child.parentUUID)
                                 item.self.addChild(child.self);
                         }
                     }

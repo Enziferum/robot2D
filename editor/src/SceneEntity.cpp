@@ -10,6 +10,10 @@ namespace editor {
         return (left.m_entity == right.m_entity) && (left.getUUID() == right.getUUID());
     }
 
+    bool operator!=(const SceneEntity& left, const SceneEntity& right) {
+        return !(left == right);
+    }
+
     UUID SceneEntity::getUUID() const {
         auto& idComponent = m_entity.getComponent<IDComponent>();
         return idComponent.ID;

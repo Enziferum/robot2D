@@ -99,7 +99,7 @@ namespace editor {
 
             imgui_MenuItem("Create Entity") {
                 m_interactor -> addEmptyEntity();
-                auto item = m_treeHierarchy.addItem<robot2D::ecs::Entity>();
+                auto item = m_treeHierarchy.addItem<SceneEntity>();
                 m_selectedEntity = m_interactor -> getEntities().back();
                 item -> setName(&m_interactor -> getEntities().back().getComponent<TagComponent>().getTag());
                 item -> setUserData(m_selectedEntity);
@@ -111,7 +111,7 @@ namespace editor {
             imgui_Menu("Create UI Elemement") {
                 imgui_MenuItem("Button") {
                     m_selectedEntity = m_interactor -> addButton();
-                    auto item = m_treeHierarchy.addItem<robot2D::ecs::Entity>();
+                    auto item = m_treeHierarchy.addItem<SceneEntity>();
                     item -> setName(&m_selectedEntity.getComponent<TagComponent>().getTag());
                     item -> setUserData(m_selectedEntity);
                     item -> setTexture(m_iconTextures[TreeItemIcon::Default], robot2D::Color::White);
@@ -133,8 +133,8 @@ namespace editor {
                                                   prefabPath.string());
 
                 if(auto prefab = m_prefabManager.loadPrefab(m_interactor, realPrefabPath)) {
-                    auto item = m_treeHierarchy.addItem<robot2D::ecs::Entity>();
-                    robot2D::ecs::Entity duplicateEntity = m_interactor -> duplicateEmptyEntity(prefab -> entity);
+                    auto item = m_treeHierarchy.addItem<SceneEntity>();
+                    SceneEntity duplicateEntity = m_interactor -> duplicateEmptyEntity(prefab -> entity);
                     item -> setTexture(m_iconTextures[TreeItemIcon::Prefab], robot2D::Color::Blue);
                     item -> setName(&duplicateEntity.getComponent<TagComponent>().getTag());
                     item -> setUserData(duplicateEntity);
@@ -155,7 +155,7 @@ namespace editor {
     void ScenePanel::setupTreeHierarchy() {
 
         m_treeHierarchy.addOnSelectCallback([this](ITreeItem::Ptr selectedItem) {
-            auto entity = selectedItem -> getUserData<robot2D::ecs::Entity>();
+            auto entity = selectedItem -> getUserData<SceneEntity>();
             if(entity) {
                 m_selectedEntity = *entity;
                 auto* msg =
@@ -185,7 +185,7 @@ namespace editor {
         });
 
         m_treeHierarchy.addOnReorderCallback([this](ITreeItem::Ptr source, ITreeItem::Ptr target){
-            auto sourceEntity = source -> getUserData<robot2D::ecs::Entity>();
+            auto sourceEntity = source -> getUserData<SceneEntity>();
             if(!sourceEntity) {
                 RB_EDITOR_ERROR("Can't item in Hierarchy don't have userData");
                 return;
@@ -196,20 +196,20 @@ namespace editor {
                 drawable.setReorderZBuffer(true);
             }
 
-            m_interactor -> setBefore(*sourceEntity, *target -> getUserData<robot2D::ecs::Entity>());
+            m_interactor -> setBefore(*sourceEntity, *target -> getUserData<SceneEntity>());
             m_treeHierarchy.setBefore(source, target);
         });
 
         m_treeHierarchy.addOnMakeChildCallback([this](ITreeItem::Ptr source, ITreeItem::Ptr intoTarget) {
             RB_EDITOR_WARN("m_treeHierarchy.addOnMakeChildCallback");
-            auto entity = intoTarget -> getUserData<robot2D::ecs::Entity>();
+            auto entity = intoTarget -> getUserData<SceneEntity>();
             if(!entity) {
                 RB_EDITOR_ERROR("Can't item in Hierarchy don't have userData");
                 return;
             }
             auto& transform = entity -> getComponent<TransformComponent>();
 
-            auto sourceEntity = source -> getUserData<robot2D::ecs::Entity>();
+            auto sourceEntity = source -> getUserData<SceneEntity>();
             if(!sourceEntity) {
                 RB_EDITOR_ERROR("ScenePanel: Can't item in Hierarchy don't have userData");
                 return;
@@ -225,11 +225,11 @@ namespace editor {
                 const bool needRemoveFromScene = false;
                 sourceTransform.removeSelf(needRemoveFromScene);
                 source -> removeSelf();
-                transform.addChild(*entity, *sourceEntity);
+                entity -> addChild(*sourceEntity);
                 m_treeHierarchy.applyChildModification(source, intoTarget);
             }
             else {
-                transform.addChild(*entity, *sourceEntity);
+                entity -> addChild(*sourceEntity);
                 m_interactor -> removeEntityChild(*sourceEntity);
                 m_treeHierarchy.deleteItem(source);
                 intoTarget -> addChild(source);
@@ -288,7 +288,7 @@ namespace editor {
 
 
         for(auto entity: m_interactor -> getEntities()) {
-            auto item = m_treeHierarchy.addItem<robot2D::ecs::Entity>();
+            auto item = m_treeHierarchy.addItem<SceneEntity>();
             item -> setName(&entity.getComponent<TagComponent>().getTag());
             item -> setUserData(entity);
             if(entity.hasComponent<PrefabComponent>())
@@ -304,13 +304,13 @@ namespace editor {
 
     }
 
-    void ScenePanel::setStartChildEntity(robot2D::ecs::Entity entity, ITreeItem::Ptr parent) {
+    void ScenePanel::setStartChildEntity(SceneEntity entity, ITreeItem::Ptr parent) {
         auto& parentTransform = entity.getComponent<TransformComponent>();
-        if(auto item = std::dynamic_pointer_cast<TreeItem<robot2D::ecs::Entity>>(parent)) {
+        if(auto item = std::dynamic_pointer_cast<TreeItem<SceneEntity>>(parent)) {
             for(auto& child: parentTransform.getChildren()) {
                 auto childItem = item -> addChild();
                 childItem -> setName(&child.getComponent<TagComponent>().getTag());
-                childItem -> setUserData(child);
+                childItem -> setUserData(SceneEntity(std::move(child)));
                 if(child.hasComponent<PrefabComponent>())
                     childItem -> setTexture(m_iconTextures[TreeItemIcon::Prefab], robot2D::Color::Blue);
                 else
@@ -318,17 +318,17 @@ namespace editor {
                 child.addComponent<UIComponent>().treeItem = childItem;
                 auto& childTransform = child.getComponent<TransformComponent>();
                 if(childTransform.hasChildren())
-                    setStartChildEntity(child, childItem);
+                    setStartChildEntity(SceneEntity(std::move(child)), childItem);
             }
         }
     }
 
-    robot2D::ecs::Entity ScenePanel::getSelectedEntity() const {
+    SceneEntity ScenePanel::getSelectedEntity() const {
         return m_selectedEntity;
     }
 
-    robot2D::ecs::Entity ScenePanel::getTreeItem(UUID uuid) {
-        return *m_treeHierarchy.getDataByItem<robot2D::ecs::Entity>(uuid);
+    SceneEntity ScenePanel::getTreeItem(UUID uuid) {
+        return *m_treeHierarchy.getDataByItem<SceneEntity>(uuid);
     }
 
 
@@ -337,10 +337,10 @@ namespace editor {
         /// TODO(a.raag): get UUID or ITreeItem::Ptr directly and process whole children tree
 
         for(auto& item: m_treeHierarchy.getItems()) {
-            auto entityPtr = item -> getUserData<robot2D::ecs::Entity>();
+            auto entityPtr = item -> getUserData<SceneEntity>();
             if(!entityPtr)
                 return;
-            robot2D::ecs::Entity entity = *entityPtr;
+            SceneEntity entity = *entityPtr;
 
             if(entity == message.entity) {
                 m_selectedEntity = entity;
@@ -349,7 +349,7 @@ namespace editor {
 
             if(item -> hasChildrens()) {
                 for(auto child: item -> getChildrens()) {
-                    entityPtr = child -> getUserData<robot2D::ecs::Entity>();
+                    entityPtr = child -> getUserData<SceneEntity>();
                     if(!entityPtr)
                         return;
                     entity = *entityPtr;
@@ -364,7 +364,7 @@ namespace editor {
 
     void ScenePanel::onEntityDuplicate(const EntityDuplication& duplication) {
         auto entity = m_interactor -> getByUUID(duplication.entityID);
-        auto item = m_treeHierarchy.addItem<robot2D::ecs::Entity>();
+        auto item = m_treeHierarchy.addItem<SceneEntity>();
         item -> setName(&entity.getComponent<TagComponent>().getTag());
         item -> setUserData(entity);
         if(entity.hasComponent<PrefabComponent>())
@@ -379,13 +379,13 @@ namespace editor {
         }
     }
 
-    void ScenePanel::entityDuplicateChild(robot2D::ecs::Entity parentEntity, ITreeItem::Ptr parentItem) {
+    void ScenePanel::entityDuplicateChild(SceneEntity parentEntity, ITreeItem::Ptr parentItem) {
         auto& transform = parentEntity.getComponent<TransformComponent>();
-        if(auto item = std::dynamic_pointer_cast<TreeItem<robot2D::ecs::Entity>>(parentItem)) {
+        if(auto item = std::dynamic_pointer_cast<TreeItem<SceneEntity>>(parentItem)) {
             for (auto &child: transform.getChildren()) {
                 auto childItem = item -> addChild();
                 childItem -> setName(&child.getComponent<TagComponent>().getTag());
-                childItem -> setUserData(child);
+                childItem -> setUserData(SceneEntity(std::move(child)));
                 if (child.hasComponent<PrefabComponent>())
                     childItem->setTexture(m_iconTextures[TreeItemIcon::Prefab], robot2D::Color::Blue);
                 else
@@ -393,7 +393,7 @@ namespace editor {
                 child.addComponent<UIComponent>().treeItem = childItem;
 
                 if(child.getComponent<TransformComponent>().hasChildren())
-                    entityDuplicateChild(child, childItem);
+                    entityDuplicateChild(SceneEntity(std::move(child)), childItem);
             }
         }
     }
@@ -429,7 +429,7 @@ namespace editor {
 
 
     DeletedEntitiesRestoreUIInformation
-    ScenePanel::removeEntitiesOnUI(std::vector<ITreeItem::Ptr>&& uiItems) {
+    ScenePanel::removeEntitiesOnUI(std::list<ITreeItem::Ptr>&& uiItems) {
         DeletedEntitiesRestoreUIInformation restoreUiInformation;
         bool removeAll = uiItems.size() == m_treeHierarchy.getItems().size();
 
@@ -469,18 +469,17 @@ namespace editor {
                 m_treeHierarchy.deleteItem(*found);
 
                 DeletedEntitiesRestoreUIInformation::RestoreInfo restoreInfo{};
-                const auto& prev = std::prev(found);
                 restoreInfo.target = *found;
 
                 if(!restoreUiInformation.hasItems()) {
                     if(found == uiItems.begin())
                         restoreInfo.first = true;
                     else
-                        restoreInfo.anchor = *prev;
+                        restoreInfo.anchor = *std::prev(found);
                 }
                 else {
                     const auto& lastInfo = restoreUiInformation.getLast();
-                    if(lastInfo.target == *prev) {
+                    if(lastInfo.target == *std::prev(found)) {
                         restoreInfo.isChained = true;
                         restoreInfo.anchor = lastInfo.target;
                     }
@@ -488,7 +487,7 @@ namespace editor {
                         if(found == uiItems.begin())
                             restoreInfo.first = true;
                         else
-                            restoreInfo.anchor = *prev;
+                            restoreInfo.anchor = *std::prev(found);
                     }
                 }
 

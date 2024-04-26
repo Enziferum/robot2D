@@ -82,29 +82,8 @@ namespace editor {
     }
 
 
-
-    bool SceneManager::load(Project::Ptr&& project) {
-        Scene::Ptr scene = std::make_shared<Scene>(m_messageBus);
-        if(scene == nullptr) {
-            m_error = SceneManagerError::MemoryAlloc;
-            return false;
-        }
-
-        //scene -> setPath(path);
-
-        SceneSerializer serializer(scene);
-        if(!serializer.deserialize(scene -> getPath())) {
-            m_error = SceneManagerError::SceneDeserialize;
-            return false;
-        }
-        RB_EDITOR_INFO("SceneSerializer finished");
-
-        m_activeScene = scene;
-        m_associatedProject = std::move(project);
-        return true;
-    }
-
     bool SceneManager::load(const Project::Ptr project, std::string path ) {
+
         Scene::Ptr scene = std::make_shared<Scene>(m_messageBus);
         if(scene == nullptr) {
             m_error = SceneManagerError::MemoryAlloc;
@@ -129,11 +108,9 @@ namespace editor {
             loadAssetByEntity(entity);
             auto& ts = entity.getComponent<TransformComponent>();
             for(auto child: ts.getChildren())
-                loadAssetByEntity(child);
+                loadAssetByEntity(SceneEntity(std::move(child)));
         }
 
-
-        scene -> convertEntities();
         return true;
     }
 
@@ -169,7 +146,7 @@ namespace editor {
         return m_associatedProject;
     }
 
-    void SceneManager::loadAssetByEntity(robot2D::ecs::Entity entity) {
+    void SceneManager::loadAssetByEntity(SceneEntity& entity) {
         if(entity.hasComponent<DrawableComponent>()) {
             auto& drawable = entity.getComponent<DrawableComponent>();
             auto& localTexturePath = drawable.getTexturePath();

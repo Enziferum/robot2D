@@ -22,7 +22,7 @@ source distribution.
 #pragma once
 #include <string>
 #include <robot2D/Core/Message.hpp>
-#include <robot2D/Ecs/Entity.hpp>
+#include <editor/SceneEntity.hpp>
 
 #include "Buffer.hpp"
 #include "Uuid.hpp"
@@ -169,7 +169,7 @@ namespace editor {
     };
 
     struct PanelEntitySelectedMessage {
-        robot2D::ecs::Entity entity;
+        SceneEntity entity;
 
         void unpack(void* rawBuffer) {}
     };
@@ -198,7 +198,7 @@ namespace editor {
 
     struct PrefabAssetModificatedMessage {
         UUID prefabUUID;
-        robot2D::ecs::Entity prefabEntity;
+        SceneEntity prefabEntity;
 
         void unpack(void* rawBuffer) {}
     };
@@ -211,7 +211,7 @@ namespace editor {
     };
 
     struct AnimationPlayMessage {
-        robot2D::ecs::Entity entity;
+        SceneEntity entity;
         enum class Mode: int {
             Play = 0,
             Stop = 1

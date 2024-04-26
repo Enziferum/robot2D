@@ -24,7 +24,7 @@ source distribution.
 #include <algorithm>
 #include <cassert>
 
-#include <robot2D/Ecs/Entity.hpp>
+#include <editor/SceneEntity.hpp>
 #include <robot2D/imgui/Gui.hpp>
 #include "panels/IPanel.hpp"
 
@@ -36,8 +36,8 @@ namespace editor {
     public:
         virtual ~IUIManager() = 0;
         virtual void blockEvents(bool flag) = 0;
-        virtual robot2D::ecs::Entity getSelectedEntity()  = 0;
-        virtual robot2D::ecs::Entity getTreeItem(UUID uuid)  = 0;
+        virtual SceneEntity getSelectedEntity()  = 0;
+        virtual SceneEntity getTreeItem(UUID uuid)  = 0;
     };
 
     class UIManager final: public IUIManager {
@@ -59,8 +59,8 @@ namespace editor {
         void render();
 
         void blockEvents(bool flag) override;
-        robot2D::ecs::Entity getSelectedEntity() override;
-        robot2D::ecs::Entity getTreeItem(editor::UUID uuid) override;
+        SceneEntity getSelectedEntity() override;
+        SceneEntity getTreeItem(editor::UUID uuid) override;
     private:
         void renderBaseCanvas();
         void canvasWindowFunction();

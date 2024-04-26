@@ -24,22 +24,22 @@ source distribution.
 #include <string>
 #include <editor/Task.hpp>
 #include <robot2D/Graphics/Font.hpp>
-#include <robot2D/Ecs/Entity.hpp>
+#include <editor/SceneEntity.hpp>
 
 namespace editor {
     class FontLoadTask: public ITask {
     public:
         FontLoadTask(ITaskFunction::Ptr function,
                         const std::string& path,
-                      robot2D::ecs::Entity entity);
+                      SceneEntity entity);
         ~FontLoadTask() override = default;
 
         void execute() override;
         const robot2D::Font& getFont() const { return m_font; }
-        robot2D::ecs::Entity getEntity() const { return std::move(m_entity); }
+        SceneEntity getEntity() const { return std::move(m_entity); }
     private:
         std::string m_fontPath;
-        robot2D::ecs::Entity m_entity;
+        SceneEntity m_entity;
         robot2D::Font m_font;
     };
 }

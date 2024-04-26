@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 #include <unordered_map>
-#include <robot2D/Ecs/Entity.hpp>
+#include <editor/SceneEntity.hpp>
 
 #include "Prefab.hpp"
 #include "Uuid.hpp"
@@ -14,7 +14,7 @@ namespace editor {
         PrefabManager() = default;
         ~PrefabManager() = default;
 
-        bool addPrefab(robot2D::ecs::Entity entity, const std::string& directoryPath);
+        bool addPrefab(SceneEntity entity, const std::string& directoryPath);
         Prefab::Ptr loadPrefab(UIInteractor::Ptr interactor, const std::string& path);
         bool hasPrefab(UUID prefabID) const;
         bool hasPrefab(std::string localPath) const;

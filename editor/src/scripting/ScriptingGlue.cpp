@@ -77,7 +77,7 @@ namespace editor {
 
     #define RB_ADD_INTERNAL_CALL(Name) mono_add_internal_call("robot2D.InternalCalls::" #Name, (void*)Name)
 
-    static std::unordered_map<MonoType*, std::function<bool(robot2D::ecs::Entity)>> s_EntityHasComponentFuncs;
+    static std::unordered_map<MonoType*, std::function<bool(SceneEntity)>> s_EntityHasComponentFuncs;
 
     template<typename T>
     std::string combineTypeName(std::string namespaceName = "robot2D") {
@@ -99,7 +99,7 @@ namespace editor {
     {
         auto interactor = ScriptEngine::getInteractor();
         RB_CORE_ASSERT(interactor);
-        robot2D::ecs::Entity entity = interactor -> getByUUID(entityID);
+        SceneEntity entity = interactor -> getByUUID(entityID);
         RB_CORE_ASSERT(entity);
 
         MonoType* managedType = mono_reflection_type_get_type(componentType);
@@ -114,7 +114,7 @@ namespace editor {
     {
         auto interactor = ScriptEngine::getInteractor();
         RB_CORE_ASSERT(interactor);
-        robot2D::ecs::Entity entity = interactor -> getByUUID(entityID);
+        SceneEntity entity = interactor -> getByUUID(entityID);
         RB_CORE_ASSERT(entity);
 
         *outTranslation = entity.getComponent<TransformComponent>().getPosition();
@@ -124,7 +124,7 @@ namespace editor {
     {
         auto interactor = ScriptEngine::getInteractor();
         RB_CORE_ASSERT(interactor);
-        robot2D::ecs::Entity entity = interactor -> getByUUID(entityID);
+        SceneEntity entity = interactor -> getByUUID(entityID);
         RB_CORE_ASSERT(entity);
 
         entity.getComponent<TransformComponent>().setPosition(*translation);
@@ -143,21 +143,20 @@ namespace editor {
     {
         auto interactor = ScriptEngine::getInteractor();
         RB_CORE_ASSERT(interactor);
-        robot2D::ecs::Entity entity = interactor -> getByUUID(entityID);
+        SceneEntity entity = interactor -> getByUUID(entityID);
         RB_CORE_ASSERT(entity);
 
-        robot2D::ecs::Entity childEntity = interactor -> getByUUID(child);
+        SceneEntity childEntity = interactor -> getByUUID(child);
         RB_CORE_ASSERT(childEntity);
 
-        auto& ts = entity.getComponent<TransformComponent>();
-        ts.addChild(entity, childEntity);
+        entity.addChild(childEntity);
     }
 
     static void Rigidbody2DComponent_ApplyLinearImpulse(UUID entityID, robot2D::vec2f* impulse, robot2D::vec2f* point, bool wake)
     {
         auto interactor = ScriptEngine::getInteractor();
         RB_CORE_ASSERT(interactor);
-        robot2D::ecs::Entity entity = interactor -> getByUUID(entityID);
+        SceneEntity entity = interactor -> getByUUID(entityID);
         RB_CORE_ASSERT(entity);
 
 
@@ -170,7 +169,7 @@ namespace editor {
     {
         auto interactor = ScriptEngine::getInteractor();
         RB_CORE_ASSERT(interactor);
-        robot2D::ecs::Entity entity = interactor -> getByUUID(entityID);
+        SceneEntity entity = interactor -> getByUUID(entityID);
         RB_CORE_ASSERT(entity);
 
 
@@ -183,7 +182,7 @@ namespace editor {
     {
         auto interactor = ScriptEngine::getInteractor();
         RB_CORE_ASSERT(interactor);
-        robot2D::ecs::Entity entity = interactor -> getByUUID(entityID);
+        SceneEntity entity = interactor -> getByUUID(entityID);
         RB_CORE_ASSERT(entity);
 
 
@@ -198,7 +197,7 @@ namespace editor {
     {
         auto interactor = ScriptEngine::getInteractor();
         RB_CORE_ASSERT(interactor);
-        robot2D::ecs::Entity entity = interactor -> getByUUID(entityID);
+        SceneEntity entity = interactor -> getByUUID(entityID);
         RB_CORE_ASSERT(entity);
 
         auto& rb2d = entity.getComponent<Physics2DComponent>();
@@ -210,7 +209,7 @@ namespace editor {
     {
         auto interactor = ScriptEngine::getInteractor();
         RB_CORE_ASSERT(interactor);
-        robot2D::ecs::Entity entity = interactor -> getByUUID(entityID);
+        SceneEntity entity = interactor -> getByUUID(entityID);
         RB_CORE_ASSERT(entity);
 
 
@@ -223,7 +222,7 @@ namespace editor {
     {
         auto interactor = ScriptEngine::getInteractor();
         RB_CORE_ASSERT(interactor);
-        robot2D::ecs::Entity entity = interactor -> getByUUID(entityID);
+        SceneEntity entity = interactor -> getByUUID(entityID);
         RB_CORE_ASSERT(entity);
 
         auto& rb2d = entity.getComponent<Physics2DComponent>();
@@ -234,7 +233,7 @@ namespace editor {
     static void RigidBody2DComponent_AddForce(UUID entityID, robot2D::vec2f* force) {
         auto interactor = ScriptEngine::getInteractor();
         RB_CORE_ASSERT(interactor);
-        robot2D::ecs::Entity entity = interactor -> getByUUID(entityID);
+        SceneEntity entity = interactor -> getByUUID(entityID);
         RB_CORE_ASSERT(entity);
 
         auto& rb2d = entity.getComponent<Physics2DComponent>();
@@ -245,7 +244,7 @@ namespace editor {
     static void CameraComponent_SetPosition(UUID entityID, robot2D::vec2f* position) {
         auto interactor = ScriptEngine::getInteractor();
         RB_CORE_ASSERT(interactor);
-        robot2D::ecs::Entity entity = interactor -> getByUUID(entityID);
+        SceneEntity entity = interactor -> getByUUID(entityID);
         RB_CORE_ASSERT(entity);
 
         auto& cameraComponent = entity.getComponent<CameraComponent>();
@@ -256,7 +255,7 @@ namespace editor {
     static void CameraComponent_GetSize(UUID entityID, robot2D::vec2f* size) {
         auto interactor = ScriptEngine::getInteractor();
         RB_CORE_ASSERT(interactor);
-        robot2D::ecs::Entity entity = interactor -> getByUUID(entityID);
+        SceneEntity entity = interactor -> getByUUID(entityID);
         RB_CORE_ASSERT(entity);
 
         auto& cameraComponent = entity.getComponent<CameraComponent>();
@@ -266,7 +265,7 @@ namespace editor {
     static void CameraComponent_SetSize(UUID entityID, robot2D::vec2f* size) {
         auto interactor = ScriptEngine::getInteractor();
         RB_CORE_ASSERT(interactor);
-        robot2D::ecs::Entity entity = interactor -> getByUUID(entityID);
+        SceneEntity entity = interactor -> getByUUID(entityID);
         RB_CORE_ASSERT(entity);
 
         auto& cameraComponent = entity.getComponent<CameraComponent>();
@@ -276,7 +275,7 @@ namespace editor {
     static void DrawableComponent_Flip(UUID entityID) {
         auto interactor = ScriptEngine::getInteractor();
         RB_CORE_ASSERT(interactor);
-        robot2D::ecs::Entity entity = interactor -> getByUUID(entityID);
+        SceneEntity entity = interactor -> getByUUID(entityID);
         RB_CORE_ASSERT(entity);
 
         auto& drawable = entity.getComponent<DrawableComponent>();
@@ -287,14 +286,14 @@ namespace editor {
     static void AnimationComponent_Play(UUID entityID, MonoString* name) {
         auto interactor = ScriptEngine::getInteractor();
         RB_CORE_ASSERT(interactor);
-        robot2D::ecs::Entity entity = interactor -> getByUUID(entityID);
+        SceneEntity entity = interactor -> getByUUID(entityID);
         RB_CORE_ASSERT(entity);
     }
 
     static void AnimationComponent_Stop(UUID entityID, MonoString* name) {
         auto interactor = ScriptEngine::getInteractor();
         RB_CORE_ASSERT(interactor);
-        robot2D::ecs::Entity entity = interactor -> getByUUID(entityID);
+        SceneEntity entity = interactor -> getByUUID(entityID);
         RB_CORE_ASSERT(entity);
     }
 
@@ -379,7 +378,7 @@ namespace editor {
             RB_CORE_ERROR("ScriptingGlue: Could not find component type {0}", managedTypename);
             return;
         }
-        s_EntityHasComponentFuncs[managedType] = [](robot2D::ecs::Entity entity) {
+        s_EntityHasComponentFuncs[managedType] = [](SceneEntity entity) {
             return entity.hasComponent<Component>();
         };
     }

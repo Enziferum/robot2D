@@ -150,7 +150,7 @@ namespace editor {
     }
 
 
-    void SerializeEntity(YAML::Emitter& out, robot2D::ecs::Entity entity) {
+    void SerializeEntity(YAML::Emitter& out, SceneEntity entity) {
         out << YAML::BeginMap;
         out << YAML::Key << "Entity" << YAML::Value << entity.getComponent<IDComponent>().ID;
 
@@ -358,16 +358,15 @@ namespace editor {
         out << YAML::EndMap;
 
         if(needSerializeChildren) {
-            auto& ts = entity.getComponent<TransformComponent>();
-            for(auto& child: ts.getChildren())
-                SerializeEntity(out, child);
+            for(auto child: entity.getChildren())
+                SerializeEntity(out, SceneEntity(std::move(child)));
         }
 
     }
 
     IEntitySerializer::~IEntitySerializer() noexcept = default;
 
-    bool EntityYAMLSerializer::serialize(YAML::Emitter& out, robot2D::ecs::Entity &entity) {
+    bool EntityYAMLSerializer::serialize(YAML::Emitter& out, const SceneEntity& entity) {
         SerializeEntity(out, entity);
         return true;
     }

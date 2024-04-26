@@ -70,8 +70,8 @@ namespace editor {
     }
 
 
-    Scene::EntityList& Scene::getEntities() {
-        return m_sceneEntities;
+    std::list<SceneEntity>& Scene::getEntities() {
+        return m_sceneGraph.getEntities();
     }
 
     const Scene::EntityList& Scene::getEntities() const {
@@ -177,8 +177,8 @@ namespace editor {
     }
 
 
-    robot2D::ecs::Entity Scene::createEmptyEntity() {
-        return m_scene.createEmptyEntity();
+    SceneEntity Scene::createEmptyEntity() {
+        return SceneEntity(std::move(m_scene.createEmptyEntity()));
     }
 
     void Scene::addEmptyEntity() {
@@ -196,8 +196,8 @@ namespace editor {
     }
 
 
-    void Scene::removeEntity(robot2D::ecs::Entity entity) {
-        auto found = std::find_if(m_sceneEntities.begin(),
+    void Scene::removeEntity(SceneEntity entity) {
+   /*     auto found = std::find_if(m_sceneEntities.begin(),
                                   m_sceneEntities.end(),
                                   [&entity](robot2D::ecs::Entity ent) {
             return ent.getIndex() == entity.getIndex();
@@ -205,7 +205,7 @@ namespace editor {
         if(found == m_sceneEntities.end())
             return;
         m_deletePendingBuffer.emplace_back(*found);
-        m_hasChanges = true;
+        m_hasChanges = true;*/
     }
 
 
@@ -283,11 +283,7 @@ namespace editor {
 
 
 
-    void Scene::removeEntityChild(robot2D::ecs::Entity entity) {
-        m_sceneEntities.erase(std::remove_if(m_sceneEntities.begin(), m_sceneEntities.end(),
-                                             [&entity](robot2D::ecs::Entity child) {
-            return entity.getIndex() == child.getIndex();
-        }), m_sceneEntities.end());
+    void Scene::removeEntityChild(SceneEntity entity) {
         m_hasChanges = true;
     }
 
@@ -339,35 +335,18 @@ namespace editor {
     }
 
 
-    void Scene::setBefore(robot2D::ecs::Entity source, robot2D::ecs::Entity target) {
-        m_hasChanges = true;
-
-        m_scene.getSystem<RenderSystem>() -> setBefore(source, target);
-
-        auto sourceIter = std::find_if(m_sceneEntities.begin(), m_sceneEntities.end(),
-                                       [&source](robot2D::ecs::Entity item) {
-            return item.getIndex() == source.getIndex();
-        });
-
-        auto targetIter = std::find_if(m_sceneEntities.begin(), m_sceneEntities.end(),
-                                       [&target](robot2D::ecs::Entity item) {
-            return item.getIndex() == target.getIndex();
-        });
-
-        auto sourceOldDistance = std::distance(m_sceneEntities.begin(), sourceIter);
-        auto targetOldDistance = std::distance(m_sceneEntities.begin(), targetIter);
-
-        if(sourceOldDistance > targetOldDistance) {
-            /// insert before remove last
-            m_insertItems.push_back(std::make_tuple(targetIter, source, ReorderDeleteType::Last));
+    void Scene::setBefore(SceneEntity source, SceneEntity target) {
+        if (m_sceneGraph.setBefore(source, target)) {
+            m_scene.getSystem<RenderSystem>() -> setBefore(source.getWrappedEntity(), target.getWrappedEntity());
+            m_hasChanges = true;
+            // return true;
         }
-        else if (sourceOldDistance < targetOldDistance) {
-            m_insertItems.push_back(std::make_tuple(targetIter, source, ReorderDeleteType::First));
-        }
+
+        // return false;
     }
 
-    robot2D::ecs::Entity Scene::duplicateEntity(robot2D::vec2f mousePos, robot2D::ecs::Entity entity) {
-        auto dupEntity = m_scene.duplicateEntity(entity);
+    SceneEntity Scene::duplicateEntity(robot2D::vec2f mousePos, SceneEntity entity) {
+        auto dupEntity = m_scene.duplicateEntity(entity.getWrappedEntity());
         std::string name = entity.getComponent<TagComponent>().getTag();
         name += "(Clone)";
         dupEntity.getComponent<IDComponent>().ID = UUID();
@@ -379,34 +358,37 @@ namespace editor {
         m_sceneEntities.emplace_back(dupEntity);
         m_hasChanges = true;
 
-        if(entity.getComponent<TransformComponent>().hasChildren())
-            duplicateEntityChild(dupEntity, entity);
+        if(entity.hasChildren())
+            duplicateEntityChild(SceneEntity{std::move(dupEntity)}, entity);
 
         dupEntity.getComponent<TransformComponent>().setPosition(mousePos);
-        return dupEntity;
+        return SceneEntity(std::move(dupEntity));
     }
 
-    void Scene::duplicateEntityChild(robot2D::ecs::Entity parent, robot2D::ecs::Entity dupEntity) {
+    void Scene::duplicateEntityChild(SceneEntity parent, SceneEntity dupEntity) {
         auto& parentTransform = dupEntity.getComponent<TransformComponent>();
         auto& dupParentTransform = parent.getComponent<TransformComponent>();
         dupParentTransform.clearChildren();
-        for(auto& child: parentTransform.getChildren()) {
-            auto dupChild = m_scene.duplicateEntity(child);
-            dupParentTransform.addChild(parent, dupChild);
-            if(child.getComponent<TransformComponent>().hasChildren())
-                duplicateEntityChild(dupChild, child);
-        }
+
+
+
+        //for(auto& child: parentTransform.getChildren()) {
+        //    auto dupChild = m_scene.duplicateEntity(child);
+        //    dupParentTransform.addChild(parent, dupChild);
+        //    if(child.getComponent<TransformComponent>().hasChildren())
+        //        duplicateEntityChild(dupChild, child);
+        //}
     }
 
-    robot2D::ecs::Entity Scene::duplicateEmptyEntity(robot2D::ecs::Entity entity) {
-        auto dupEntity = m_scene.duplicateEntity(entity);
+    SceneEntity Scene::duplicateEmptyEntity(SceneEntity entity) {
+        auto dupEntity = m_scene.duplicateEntity(entity.getWrappedEntity());
         dupEntity.getComponent<IDComponent>().ID = UUID();
         m_sceneEntities.emplace_back(dupEntity);
         return dupEntity;
     }
 
-    void Scene::removeDuplicate(robot2D::ecs::Entity entity) {
-        if(entity.getComponent<TransformComponent>().isChild()) {
+    void Scene::removeDuplicate(SceneEntity entity) {
+    /*    if(entity.getComponent<TransformComponent>().isChild()) {
 
         }
         else {
@@ -419,75 +401,75 @@ namespace editor {
                 return;
             m_deletePendingBuffer.emplace_back(*found);
             m_hasChanges = true;
-        }
+        }*/
 
-        m_scene.removeEntity(entity);
+        m_scene.removeEntity(entity.getWrappedEntity());
     }
 
-    DeletedEntitiesRestoreInformation Scene::removeEntities(std::vector<robot2D::ecs::Entity>& removingEntities) {
+    DeletedEntitiesRestoreInformation Scene::removeEntities(std::vector<SceneEntity>& removingEntities) {
         DeletedEntitiesRestoreInformation restoreInformation;
-        std::vector<RemoveEntityInfo> removeInfos{removingEntities.size()};
-        std::transform(removingEntities.begin(), removingEntities.end(), removeInfos.begin(),
-                       [](robot2D::ecs::Entity entity) {
-           return RemoveEntityInfo{entity};
-        });
-        using FoundIterator = std::list<robot2D::ecs::Entity>::iterator;
+       // std::vector<RemoveEntityInfo> removeInfos{removingEntities.size()};
+       // std::transform(removingEntities.begin(), removingEntities.end(), removeInfos.begin(),
+       //                [](robot2D::ecs::Entity entity) {
+       //    return RemoveEntityInfo{entity};
+       // });
+       // using FoundIterator = std::list<robot2D::ecs::Entity>::iterator;
 
-        m_deletePendingBuffer.clear();
-        for(auto item: removeInfos) {
-            FoundIterator found = m_sceneEntities.begin();
+       // m_deletePendingBuffer.clear();
+       // for(auto item: removeInfos) {
+       //     FoundIterator found = m_sceneEntities.begin();
 
-            bool isParentDel = false;
-            for(; found != m_sceneEntities.end(); ++found) {
-                auto iterEntity = *found;
-                auto& transform = iterEntity.getComponent<TransformComponent>();
+       //     bool isParentDel = false;
+       //     for(; found != m_sceneEntities.end(); ++found) {
+       //         auto iterEntity = *found;
+       //         auto& transform = iterEntity.getComponent<TransformComponent>();
 
-                if(iterEntity == item.entity) {
-                    item.isDeleted = true;
-                    isParentDel = true;
-                    iterEntity.getComponent<UIComponent>().setName(nullptr);
-                }
+       //         if(iterEntity == item.entity) {
+       //             item.isDeleted = true;
+       //             isParentDel = true;
+       //             iterEntity.getComponent<UIComponent>().setName(nullptr);
+       //         }
 
-                if(transform.hasChildren())
-                    removeChildEntities(restoreInformation, removeInfos, iterEntity, isParentDel);
+       //         if(transform.hasChildren())
+       //             removeChildEntities(restoreInformation, removeInfos, iterEntity, isParentDel);
 
-                if(iterEntity == item.entity) {
-                    break;
-                }
-            }
+       //         if(iterEntity == item.entity) {
+       //             break;
+       //         }
+       //     }
 
-            if(found == m_sceneEntities.end())
-                continue;
+       //     if(found == m_sceneEntities.end())
+       //         continue;
 
-            m_deletePendingBuffer.push_back(item.entity);
+       //     m_deletePendingBuffer.push_back(item.entity);
 
-            if(!restoreInformation.hasItems()) {
-                if(found == m_sceneEntities.begin()) {
-                    restoreInformation.push(robot2D::ecs::Entity{}, item.entity,
-                                            true, false, false);
-                }
-                else {
-                    auto prev = std::prev(found);
-                    restoreInformation.push(*prev, item.entity,
-                                            false, false, false);
-                }
-           }
-            else {
-               auto lastInfo = restoreInformation.getLast();
-               if(lastInfo.entity == *(std::prev(found))) {
-                   restoreInformation.push(lastInfo.entity, *found, false, true, false);
-               }
-               else {
-                   if(found == m_sceneEntities.begin()) {
-                       restoreInformation.push(robot2D::ecs::Entity{}, *found, true, false, false);
-                   }
-                   else {
-                       auto prev = std::prev(found);
-                       restoreInformation.push(*prev, *found, false, false, false);
-                   }
-               }
-           }
-       }
+       //     if(!restoreInformation.hasItems()) {
+       //         if(found == m_sceneEntities.begin()) {
+       //             restoreInformation.push(robot2D::ecs::Entity{}, item.entity,
+       //                                     true, false, false);
+       //         }
+       //         else {
+       //             auto prev = std::prev(found);
+       //             restoreInformation.push(*prev, item.entity,
+       //                                     false, false, false);
+       //         }
+       //    }
+       //     else {
+       //        auto lastInfo = restoreInformation.getLast();
+       //        if(lastInfo.entity == *(std::prev(found))) {
+       //            restoreInformation.push(lastInfo.entity, *found, false, true, false);
+       //        }
+       //        else {
+       //            if(found == m_sceneEntities.begin()) {
+       //                restoreInformation.push(robot2D::ecs::Entity{}, *found, true, false, false);
+       //            }
+       //            else {
+       //                auto prev = std::prev(found);
+       //                restoreInformation.push(*prev, *found, false, false, false);
+       //            }
+       //        }
+       //    }
+       //}
 
         return restoreInformation;
     }
@@ -513,14 +495,14 @@ namespace editor {
                     removeChildEntities(information, removingEntities, child, isParentDel);
 
                 if(child == item.entity) {
-                    information.push(parent, child, false, true, true);
+                    //information.push(parent, child, false, true, true);
                     item.isDeleted = true;
                     child.getComponent<UIComponent>().setName(nullptr);
                     m_scene.removeEntity(child);
                 }
 
                 if(isParentDel && !item.isDeleted) {
-                    information.push(parent, child, false, true, true);
+                    //information.push(parent, child, false, true, true);
                     child.getComponent<UIComponent>().setName(nullptr);
                     m_scene.removeEntity(child);
                 }
@@ -531,7 +513,7 @@ namespace editor {
     }
 
     void Scene::restoreEntities(DeletedEntitiesRestoreInformation& restoreInformation) {
-        std::vector<std::pair<robot2D::ecs::Entity, robot2D::ecs::Entity>> childBuffer;
+       /* std::vector<std::pair<robot2D::ecs::Entity, robot2D::ecs::Entity>> childBuffer;
 
         for(auto& info: restoreInformation.getInfos()) {
 
@@ -590,11 +572,11 @@ namespace editor {
             auto child = childPair.second;
 
             parent.getComponent<TransformComponent>().addChild(parent, child);
-        }
+        }*/
 
     }
 
-    robot2D::ecs::Entity Scene::addEmptyButton() {
+    SceneEntity Scene::addEmptyButton() {
         auto entity = m_scene.createEntity();
         auto& transform = entity.addComponent<TransformComponent>();
         entity.addComponent<IDComponent>(UUID());
@@ -620,7 +602,7 @@ namespace editor {
         m_scene.getSystem<UISystem>() -> setCamera(m_editorCamera);
     }
 
-    void Scene::registerUICallback(robot2D::ecs::Entity uiEntity) {
+    void Scene::registerUICallback(SceneEntity uiEntity) {
         uiEntity.addComponent<UIHitbox>().callbackIDs[UIHitbox::CallbackID::MouseDown] =
                 m_scene.getSystem<UISystem>() -> addMousePressedCallback([](robot2D::ecs::Entity entity, std::uint64_t){
                     auto& btnComp = entity.getComponent<ButtonComponent>();
@@ -630,15 +612,15 @@ namespace editor {
                 });
     }
 
-    robot2D::ecs::Entity Scene::duplicateRuntime(robot2D::ecs::Entity entity, robot2D::vec2f position) {
+    SceneEntity Scene::duplicateRuntime(SceneEntity entity, robot2D::vec2f position) {
 
-        auto dupEntity = m_scene.duplicateEntity(entity);
+        auto dupEntity = m_scene.duplicateEntity(entity.getWrappedEntity());
         dupEntity.getComponent<TagComponent>().setTag("RuntimeClone");
         dupEntity.getComponent<IDComponent>().ID = UUID();
         dupEntity.getComponent<TransformComponent>().setPosition(position);
         m_sceneEntities.emplace_back(dupEntity);
 
-        m_physicsAdapter -> addRuntime(entity);
+        // m_physicsAdapter -> addRuntime(entity);
         return dupEntity;
     }
 

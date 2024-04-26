@@ -75,6 +75,17 @@ namespace editor {
                                                       return *ptr == *rangeItems[1];
                                                   });
 
+                    /// TODO(a.raag): swap first and last if last < first
+
+                    auto firstGraphPath = (*firstFound)->getNodePath();
+                    auto lastGraphPath = (*lastFound)->getNodePath();
+
+                    if (!firstGraphPath.isSameLevel(lastGraphPath))
+                        break;
+
+                    if((*firstFound) > (*lastFound))
+                        std::swap(firstFound, lastFound);
+
                     if(firstFound != items.end() && lastFound != items.end()) {
                         for(; firstFound != lastFound; ++firstFound)
                             m_selectedItems.insert(*firstFound);

@@ -86,7 +86,7 @@ namespace editor {
 
 
             if(m_movieSprite.getGlobalBounds().contains(pressedPoint)) {
-                m_buttonCallback(m_manipulatedEntity);
+               // m_buttonCallback(m_manipulatedEntity);
             }
 
             int index = 0;
