@@ -88,11 +88,11 @@ namespace editor {
 
     void UIManager::blockEvents(bool flag) {}
 
-    robot2D::ecs::Entity UIManager::getSelectedEntity() {
+    SceneEntity UIManager::getSelectedEntity() {
         return getPanel<ScenePanel>().getSelectedEntity();
     }
 
-    robot2D::ecs::Entity UIManager::getTreeItem(editor::UUID uuid) {
+    SceneEntity UIManager::getTreeItem(editor::UUID uuid) {
         return getPanel<ScenePanel>().getTreeItem(uuid);
     }
 

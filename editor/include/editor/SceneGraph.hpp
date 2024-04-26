@@ -20,7 +20,10 @@ namespace editor {
         void addEntity(SceneEntity&& sceneEntity);
         SceneEntity getEntity(UUID uuid) const;
 
+        bool setBefore(const SceneEntity& source, const SceneEntity& target);
+
         const std::list<SceneEntity>& getEntities() const { return m_sceneEntities; }
+        std::list<SceneEntity>& getEntities() { return m_sceneEntities; }
     private:
         SceneEntity getEntityChild(SceneEntity& parent, UUID uuid) const;
     private:

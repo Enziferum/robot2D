@@ -1,6 +1,8 @@
 #pragma once
+#include <list>
 #include <vector>
-#include <robot2D/Ecs/Entity.hpp>
+
+#include <editor/SceneEntity.hpp>
 #include <editor/panels/ITreeItem.hpp>
 
 #include "EditorState.hpp"
@@ -24,9 +26,9 @@ namespace editor {
 
         void showPopup(PopupConfiguration* popupConfiguration);
 
-        DeletedEntitiesRestoreUIInformation removeEntitiesFromUI(std::vector<ITreeItem::Ptr>&& uiItems);
+        DeletedEntitiesRestoreUIInformation removeEntitiesFromUI(std::list<ITreeItem::Ptr>&& uiItems);
         void restoreEntitiesOnUI(DeletedEntitiesRestoreUIInformation& restoreUiInformation);
-        void setMainCameraEntity(robot2D::ecs::Entity entity);
+        void setMainCameraEntity(SceneEntity entity);
     private:
         IEditor* m_editor;
         EditorState m_state{EditorState::Edit};

@@ -26,7 +26,7 @@ namespace editor {
 
     FontLoadTask::FontLoadTask(ITaskFunction::Ptr function,
                                const std::string& path,
-                               robot2D::ecs::Entity entity):
+                               SceneEntity entity):
     ITask(function),
     m_fontPath{path},
     m_entity(entity)

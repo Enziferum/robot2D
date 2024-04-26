@@ -31,6 +31,7 @@ source distribution.
 #include <editor/UIInteractor.hpp>
 #include <editor/MessageDispather.hpp>
 #include <editor/Messages.hpp>
+#include <editor/SceneEntity.hpp>
 
 #include "editor/async/AnimationTextureSliceTask.hpp"
 #include "IPanel.hpp"
@@ -130,7 +131,7 @@ namespace editor {
         Animation* m_currentAnimation{nullptr};
         bool m_needShowSlicePreview{false};
         std::string m_loadTexturePath;
-        robot2D::ecs::Entity m_animationEntity;
+        SceneEntity m_animationEntity;
 
         enum class PlayMode: int {
             Play = 0,

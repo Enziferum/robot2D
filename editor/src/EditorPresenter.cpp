@@ -18,7 +18,7 @@ namespace editor {
     }
 
     DeletedEntitiesRestoreUIInformation
-    EditorPresenter::removeEntitiesFromUI(std::vector<ITreeItem::Ptr>&& uiItems) {
+    EditorPresenter::removeEntitiesFromUI(std::list<ITreeItem::Ptr>&& uiItems) {
         return m_editor -> removeEntitiesOnUI(std::move(uiItems));
     }
 
@@ -34,7 +34,7 @@ namespace editor {
         m_editor -> showPopup(popupConfiguration);
     }
 
-    void EditorPresenter::setMainCameraEntity(robot2D::ecs::Entity entity) {
+    void EditorPresenter::setMainCameraEntity(SceneEntity entity) {
         m_editor -> setMainCameraEntity(entity);
     }
 } // namespace editor

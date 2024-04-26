@@ -55,7 +55,7 @@ namespace editor {
 
         void createMainCamera();
 
-        EntityList& getEntities();
+        std::list<SceneEntity>& getEntities();
         const EntityList& getEntities() const;
 
         void registerOnDeleteFinish(std::function<void()>&& callback);
@@ -72,7 +72,7 @@ namespace editor {
         //////////////////////// Serializer Api ////////////////////////
         SceneEntity createEntity();
         void addAssociatedEntity(SceneEntity&& entity);
-        robot2D::ecs::Entity createEmptyEntity();
+        SceneEntity createEmptyEntity();
 
         /// (a.raag): tmp method for refactor usages
         void convertEntities();
@@ -80,14 +80,14 @@ namespace editor {
 
         /////////////////////////// ScenePanel API ///////////////////////////
         void addEmptyEntity();
-        robot2D::ecs::Entity addEmptyButton();
+        SceneEntity addEmptyButton();
         /////////////////////////// ScenePanel API ///////////////////////////
 
 
-        void setBefore(robot2D::ecs::Entity source, robot2D::ecs::Entity target);
-        void removeEntity(robot2D::ecs::Entity entity);
-        void removeEntityChild(robot2D::ecs::Entity entity);
-        DeletedEntitiesRestoreInformation removeEntities(std::vector<robot2D::ecs::Entity>& removingEntities);
+        void setBefore(SceneEntity source, SceneEntity target);
+        void removeEntity(SceneEntity entity);
+        void removeEntityChild(SceneEntity entity);
+        DeletedEntitiesRestoreInformation removeEntities(std::vector<SceneEntity>& removingEntities);
         void restoreEntities(DeletedEntitiesRestoreInformation& restoreInformation);
 
 
@@ -105,12 +105,12 @@ namespace editor {
         }
 
         [[maybe_unused]]
-        robot2D::ecs::Entity
-        duplicateEntity(robot2D::vec2f mousePos, robot2D::ecs::Entity entity);
-        robot2D::ecs::Entity duplicateEmptyEntity(robot2D::ecs::Entity entity);
+        SceneEntity
+        duplicateEntity(robot2D::vec2f mousePos, SceneEntity entity);
+        SceneEntity duplicateEmptyEntity(SceneEntity entity);
 
         [[maybe_unused]]
-        robot2D::ecs::Entity duplicateRuntime(robot2D::ecs::Entity entity, robot2D::vec2f position);
+        SceneEntity duplicateRuntime(SceneEntity entity, robot2D::vec2f position);
 
         const std::string& getPath() const {return m_path;}
         std::string& getPath()  {return m_path;}
@@ -132,14 +132,14 @@ namespace editor {
         void onPhysics2DRun();
         void onPhysics2DStop();
 
-        void removeDuplicate(robot2D::ecs::Entity entity);
+        void removeDuplicate(SceneEntity entity);
         void removeChildEntities(DeletedEntitiesRestoreInformation& information,
                                  std::vector<RemoveEntityInfo>& removingEntities,
                                  robot2D::ecs::Entity parent, bool isParentDel = false);
 
-        void duplicateEntityChild(robot2D::ecs::Entity parent, robot2D::ecs::Entity dupEntity);
+        void duplicateEntityChild(SceneEntity parent, SceneEntity dupEntity);
 
-        void registerUICallback(robot2D::ecs::Entity uiEntity);
+        void registerUICallback(SceneEntity uiEntity);
     private:
         friend class EditorLogic;
         friend class DuplicateCommand;

@@ -26,7 +26,7 @@ source distribution.
 
 namespace editor {
 
-    ImageLoadTask::ImageLoadTask(ITaskFunction::Ptr function, const std::string& path, robot2D::ecs::Entity entity):
+    ImageLoadTask::ImageLoadTask(ITaskFunction::Ptr function, const std::string& path, SceneEntity entity):
     ITask(function),
     m_imagePath{path},
     m_entity(std::move(entity))

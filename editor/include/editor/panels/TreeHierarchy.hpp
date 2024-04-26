@@ -101,6 +101,7 @@ namespace editor {
             child -> m_id = UUID();
             child -> m_parent = this;
             child -> m_path.append(m_childrens.size());
+            child -> m_internalID = m_childrens.size();
             m_childrens.emplace_back(child);
             return child;
         }
@@ -182,6 +183,7 @@ namespace editor {
             }
             treeItem -> m_id = UUID();
             treeItem -> m_path.append(m_items.size());
+            treeItem -> m_internalID = m_items.size();
 
             if(!needPending)
                 m_items.emplace_back(treeItem);

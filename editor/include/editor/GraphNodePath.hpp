@@ -19,6 +19,7 @@ namespace editor {
         }
 
         void update() {}
+        bool isSameLevel(const GraphNodePath& other) const { return m_indices.size() == other.m_indices.size(); }
     private:
         std::deque<GraphNodeIndex> m_indices;
     };

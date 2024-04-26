@@ -70,7 +70,7 @@ namespace editor {
         void pasterFromBuffer() override;
         void undoCommand() override;
         void redoCommand() override;
-        void duplicateEntity(robot2D::vec2f mousePos, robot2D::ecs::Entity entity) override;
+        void duplicateEntity(robot2D::vec2f mousePos) override;
         void removeSelectedEntities() override;
         /// TODO(a.raag): Rename to PopupObservers for correct understanding
         void addObserver(Observer::Ptr observer) override;
@@ -81,7 +81,7 @@ namespace editor {
 
         void closeCurrentProject(std::function<void()>&& resultCallback);
         robot2D::vec2f getMainCameraPosition() const override;
-        void setMainCamera(robot2D::ecs::Entity cameraEntity) override;
+        void setMainCamera(SceneEntity cameraEntity) override;
         void setEditorCamera(IEditorCamera::Ptr editorCamera) override;
         //////////////////////////////////////// EditorInteractor ////////////////////////////////////////
 
@@ -90,22 +90,22 @@ namespace editor {
         void loadProject(Project::Ptr project);
 
         //////////////////////////////////////// UIInteractor ////////////////////////////////////////
-        robot2D::ecs::Entity getSelectedEntity(int graphicsEntityID)  override;
-        std::vector<robot2D::ecs::Entity>& getSelectedEntities()  override;
+        SceneEntity getSelectedEntity(int graphicsEntityID)  override;
+        std::vector<SceneEntity>& getSelectedEntities()  override;
         std::string getAssociatedProjectPath() const override;
-        std::list<robot2D::ecs::Entity> getEntities() const override;
-        void removeEntity(robot2D::ecs::Entity entity) override;
+        std::list<SceneEntity> getEntities() const override;
+        void removeEntity(SceneEntity entity) override;
         void addEmptyEntity() override;
-        robot2D::ecs::Entity addButton() override;
+        SceneEntity addButton() override;
 
-        robot2D::ecs::Entity createEmptyEntity() override;
+        SceneEntity createEmptyEntity() override;
         /// \brief using when need create entity on scene, but don't want to notify someone
-        robot2D::ecs::Entity duplicateEmptyEntity(robot2D::ecs::Entity entity) override;
+        SceneEntity duplicateEmptyEntity(SceneEntity entity) override;
 
-        void setBefore(robot2D::ecs::Entity sourceEntity, robot2D::ecs::Entity target) override;
-        void removeEntityChild(robot2D::ecs::Entity entity) override;
+        void setBefore(SceneEntity sourceEntity, SceneEntity target) override;
+        void removeEntityChild(SceneEntity entity) override;
         bool isRunning() const override;
-        robot2D::ecs::Entity getByUUID(UUID uuid) override;
+        SceneEntity getByUUID(UUID uuid) override;
         void registerOnDeleteFinish(std::function<void()>&& callback) override;
         void restoreDeletedEntities(DeletedEntitiesRestoreInformation& restoreInformation,
                                     DeletedEntitiesRestoreUIInformation& restoreUiInformation) override;
@@ -117,17 +117,18 @@ namespace editor {
         //////////////////////////////////////// UIInteractor ////////////////////////////////////////
 
         //////////////////// ScriptInteractor ////////////////////
-        robot2D::ecs::Entity getByUUID(std::uint64_t uuid) override;
+        SceneEntity getByUUID(std::uint64_t uuid) override;
         bool loadSceneRuntime(std::string &&name) override;
         void loadSceneAsyncRuntime(std::string &&name) override;
         void exitEngineRuntime() override;
-        robot2D::ecs::Entity duplicateRuntime(robot2D::ecs::Entity entity, robot2D::vec2f position) override;
+        SceneEntity duplicateRuntime(SceneEntity entity, robot2D::vec2f position) override;
         //////////////////// ScriptInteractor ////////////////////
 
         void destroy();
     private:
         void loadSceneCallback();
-        void loadAssetsByEntity(robot2D::ecs::Entity entity);
+        void loadAssetsByEntity(SceneEntity entity);
+
         void saveScene(const MenuProjectMessage& message);
         void toolbarPressed(const ToolbarMessage& message);
         void openScene(const OpenSceneMessage& message);
@@ -139,10 +140,10 @@ namespace editor {
         void onBeginPopup() override;
         void onEndPopup() override;
 
-        void findSelectChildren(const robot2D::FloatRect& rect, robot2D::ecs::Entity child);
-        robot2D::ecs::Entity getSelectedEntityChild(robot2D::ecs::Entity parent, int graphicsEntityID);
+        void findSelectChildren(const robot2D::FloatRect& rect, SceneEntity child);
+        SceneEntity getSelectedEntityChild(SceneEntity parent, int graphicsEntityID);
 
-        void pasteChild(robot2D::ecs::Entity parent);
+        void pasteChild(SceneEntity parent);
     private:
         robot2D::MessageBus& m_messageBus;
         MessageDispatcher& m_messageDispatcher;
@@ -157,10 +158,10 @@ namespace editor {
         std::vector<Observer::Ptr> m_observers;
         PopupConfiguration m_popupConfiguration;
 
-        std::vector<robot2D::ecs::Entity> m_selectedEntities;
-        std::vector<robot2D::ecs::Entity> m_copyEntities;
+        std::vector<SceneEntity> m_selectedEntities;
+        std::vector<SceneEntity> m_copyEntities;
 
-        robot2D::ecs::Entity m_mainCameraEntity;
+        SceneEntity m_mainCameraEntity;
         std::function<void()> m_closeResultProjectCallback{nullptr};
     };
 }

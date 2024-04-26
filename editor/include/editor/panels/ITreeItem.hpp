@@ -76,6 +76,15 @@ namespace editor {
             return (m_id == other.m_id);
         }
 
+        bool operator < (const ITreeItem& other) {
+            return m_internalID < other.m_internalID;
+        }
+        
+        bool operator > (const ITreeItem& other) {
+            return m_internalID >= other.m_internalID;
+        }
+
+
         const GraphNodePath& getNodePath() const { return m_path; }
     protected:
         void removeChild(ITreeItem* child);
@@ -84,6 +93,8 @@ namespace editor {
         UUID m_id;
         GraphNodePath m_path;
 
+        /// \brief 
+        int m_internalID{ 0 };
 
         std::string* m_name{nullptr};
         ITreeItem* m_parent{nullptr};

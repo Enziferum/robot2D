@@ -185,8 +185,7 @@ namespace editor {
         std::string playButton = m_mode == PlayMode::Play ? textButtonImages[2] : textButtonImages[3];
         if(renderButton(playButton, draw_list,
                         {m_canvas_pos.x + startButtonOffsetX, m_canvas_pos.y + xButtonOffset}, &outButtonWidth)) {
-            if(m_interactor -> isRunning() || !m_currentAnimation ||
-                !m_animationEntity || m_animationEntity.destroyed())
+            if(m_interactor -> isRunning() || !m_currentAnimation || !m_animationEntity)
                 return;
 
             auto* msg =
@@ -265,7 +264,7 @@ namespace editor {
                 if (ImGui::Button("Add New")) {
                     auto* dialogAdapter = FiledialogAdapter::get();
 
-                    if (!m_animationEntity || m_animationEntity.destroyed()) {
+                    if (!m_animationEntity) {
                         ///// TODO(a.raag): no-op
                     }
 

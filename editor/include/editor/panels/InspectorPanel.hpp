@@ -32,6 +32,7 @@ source distribution.
 #include <editor/Messages.hpp>
 #include <editor/UIManager.hpp>
 #include <editor/Components.hpp>
+#include <editor/SceneEntity.hpp>
 
 #include "IPanel.hpp"
 #include "editor/components/ButtonComponent.hpp"
@@ -49,41 +50,41 @@ namespace editor {
         ~InspectorPanel() override = default;
 
         void setInteractor(UIInteractor::Ptr interactor);
-        void setSelected(robot2D::ecs::Entity entity);
+        void setSelected(SceneEntity entity);
 
         void render() override;
         void clearSelection();
     private:
         void drawAssetBase();
-        void drawComponentsBase(robot2D::ecs::Entity entity);
-        void drawComponents(robot2D::ecs::Entity entity);
-        void drawUIComponents(robot2D::ecs::Entity);
+        void drawComponentsBase(SceneEntity entity);
+        void drawComponents(SceneEntity entity);
+        void drawUIComponents(SceneEntity entity);
         
-        void drawTransformComponent(robot2D::ecs::Entity, TransformComponent& component);
-        void drawCameraComponent(robot2D::ecs::Entity, CameraComponent& component);
-        void drawDrawableComponent(robot2D::ecs::Entity, DrawableComponent& component);
-        void drawPhysics2DComponent(robot2D::ecs::Entity, Physics2DComponent& component);
-        void drawCollider2DComponent(robot2D::ecs::Entity, Collider2DComponent& component);
-        void drawTextComponent(robot2D::ecs::Entity, TextComponent& component);
-        void drawAnimationComponent(robot2D::ecs::Entity, AnimationComponent& component);
-        void drawScriptComponent(robot2D::ecs::Entity, ScriptComponent& component);
-        void processScriptComponent(robot2D::ecs::Entity, ScriptComponent& component);
+        void drawTransformComponent(SceneEntity, TransformComponent& component);
+        void drawCameraComponent(SceneEntity, CameraComponent& component);
+        void drawDrawableComponent(SceneEntity, DrawableComponent& component);
+        void drawPhysics2DComponent(SceneEntity, Physics2DComponent& component);
+        void drawCollider2DComponent(SceneEntity, Collider2DComponent& component);
+        void drawTextComponent(SceneEntity, TextComponent& component);
+        void drawAnimationComponent(SceneEntity, AnimationComponent& component);
+        void drawScriptComponent(SceneEntity, ScriptComponent& component);
+        void processScriptComponent(SceneEntity, ScriptComponent& component);
 
-        void drawUIButtonComponent(robot2D::ecs::Entity, ButtonComponent& component);
+        void drawUIButtonComponent(SceneEntity, ButtonComponent& component);
 
         void onPrefabAssetSelected(const PrefabAssetPressedMessage& message);
         void onPanelEntityNeedSelect(const PanelEntitySelectedMessage& message);
         void onPanelEntitySelected(const PanelEntitySelectedMessage& message);
 
-        static void onLoadImage(const robot2D::Image& image, robot2D::ecs::Entity entity);
-        static void onLoadFont(const robot2D::Font& font, robot2D::ecs::Entity entity);
+        static void onLoadImage(const robot2D::Image& image, SceneEntity entity);
+        static void onLoadFont(const robot2D::Font& font, SceneEntity entity);
     private:
         MessageDispatcher& m_messageDispatcher;
         PrefabManager& m_prefabManager;
         robot2D::MessageBus& m_messageBus;
         IUIManager& m_uiManager;
         UIInteractor::Ptr m_interactor{nullptr};
-        robot2D::ecs::Entity m_selectedEntity;
+        SceneEntity m_selectedEntity;
 
         enum class InspectType {
             EditorEntity,

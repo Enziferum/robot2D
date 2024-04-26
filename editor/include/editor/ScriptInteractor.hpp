@@ -1,6 +1,6 @@
 #pragma once
 #include <memory>
-#include <robot2D/Ecs/Entity.hpp>
+#include <editor/SceneEntity.hpp>
 
 namespace editor {
 
@@ -9,12 +9,12 @@ namespace editor {
         using Ptr = ScriptInteractor*;
 
         virtual ~ScriptInteractor() = 0;
-        virtual robot2D::ecs::Entity getByUUID(std::uint64_t entityID) = 0;
+        virtual SceneEntity getByUUID(std::uint64_t entityID) = 0;
 
         virtual bool loadSceneRuntime(std::string&& name) = 0;
         virtual void loadSceneAsyncRuntime(std::string&& name) = 0;
         virtual void exitEngineRuntime() = 0;
-        virtual robot2D::ecs::Entity duplicateRuntime(robot2D::ecs::Entity entity,
+        virtual SceneEntity duplicateRuntime(SceneEntity entity,
                                                       robot2D::vec2f position = robot2D::vec2f{}) = 0;
     };
 

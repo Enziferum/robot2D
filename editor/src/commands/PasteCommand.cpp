@@ -31,7 +31,7 @@ namespace editor {
 
 
     PasteCommand::PasteCommand(robot2D::MessageBus& messageBus,
-                               std::vector<robot2D::ecs::Entity> entities,
+                               std::vector<SceneEntity> entities,
                                UIInteractor::Ptr interactor):
                                m_messageBus{messageBus},
                                m_entities(entities),
@@ -44,7 +44,7 @@ namespace editor {
 
     void PasteCommand::undo() {
         for(auto ent: m_entities) {
-            if(!ent && ent.destroyed())
+            if(!ent)
                 continue;
             if(m_interactor)
                 m_interactor -> removeEntity(ent);

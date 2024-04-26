@@ -32,13 +32,15 @@ namespace editor {
     class SceneManager {
     public:
         SceneManager(robot2D::MessageBus& messageBus);
+        SceneManager(const SceneManager& other) = delete;
+        SceneManager& operator=(const SceneManager& other) = delete;
+        SceneManager(SceneManager&& other) = delete;
+        SceneManager& operator=(SceneManager&& other) = delete;
         ~SceneManager() = default;
 
         bool add(Project::Ptr&& project);
         bool add(Project::Ptr&& project, const std::string& path);
 
-
-        bool load(Project::Ptr&& project);
         bool load(const Project::Ptr project, std::string path = "");
         bool remove();
         bool save(Scene::Ptr&& scene);
@@ -47,7 +49,7 @@ namespace editor {
         Scene::Ptr getActiveScene() const;
         const SceneManagerError& getError() const;
     private:
-        void loadAssetByEntity(robot2D::ecs::Entity entity);
+        void loadAssetByEntity(SceneEntity& entity);
     private:
         robot2D::MessageBus& m_messageBus;
         Project::Ptr m_associatedProject;

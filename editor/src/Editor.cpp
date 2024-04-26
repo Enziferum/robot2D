@@ -80,7 +80,7 @@ namespace editor {
         m_eventBinder.bindEvent(robot2D::Event::MouseReleased, BIND_CLASS_FN(onMouseReleased));
         m_eventBinder.bindEvent(robot2D::Event::MouseMoved, BIND_CLASS_FN(onMouseMoved));
 
-        m_cameraManipulator.setButtonCallback([this](robot2D::ecs::Entity entity) {
+        m_cameraManipulator.setButtonCallback([this](SceneEntity entity) {
             m_interactor -> setMainCamera(entity);
             auto* msg = m_messageBus.postMessage<PanelEntitySelectedMessage>(MessageID::PanelEntitySelected);
             msg -> entity = entity;
@@ -123,7 +123,7 @@ namespace editor {
         duplicateEntity.setCallback([this]() {
             auto mousePos = m_window -> getMousePos();
             mousePos = m_editorCamera -> convertPixelToCoords(mousePos);
-            m_interactor -> duplicateEntity(mousePos, m_panelManager.getSelectedEntity());
+            m_interactor -> duplicateEntity(mousePos);
         });
         m_shortcutManager.bind(std::make_pair(EditorShortCutType::Duplicate, duplicateEntity));
 
@@ -433,7 +433,7 @@ namespace editor {
     }
 
     DeletedEntitiesRestoreUIInformation
-    Editor::removeEntitiesOnUI(std::vector<ITreeItem::Ptr>&& uiItems) {
+    Editor::removeEntitiesOnUI(std::list<ITreeItem::Ptr>&& uiItems) {
         auto& panel = m_panelManager.getPanel<ScenePanel>();
         return panel.removeEntitiesOnUI(std::move(uiItems));
     }
@@ -452,7 +452,7 @@ namespace editor {
     }
 
 
-    void Editor::setMainCameraEntity(robot2D::ecs::Entity entity) {
+    void Editor::setMainCameraEntity(SceneEntity entity) {
         m_cameraManipulator.setManipulatedEntity(entity);
     }
 

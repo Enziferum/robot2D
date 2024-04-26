@@ -4,7 +4,7 @@ project(robot2D)
 set(CMAKE_CXX_STANDARD 17)
 
 if(MSVC)
-    add_definitions(/MP2)
+    add_definitions(/MP)
 endif()
 
 if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})

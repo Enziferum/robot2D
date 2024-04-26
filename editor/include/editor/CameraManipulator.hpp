@@ -25,7 +25,6 @@ source distribution.
 #include <functional>
 
 #include <robot2D/Core/MessageBus.hpp>
-#include <robot2D/Ecs/Entity.hpp>
 #include <robot2D/Graphics/Drawable.hpp>
 #include <robot2D/Graphics/RenderTarget.hpp>
 #include <robot2D/Graphics/Sprite.hpp>
@@ -35,6 +34,7 @@ source distribution.
 #include "EventBinder.hpp"
 #include "EditorCamera.hpp"
 #include "Components.hpp"
+#include "SceneEntity.hpp"
 
 namespace editor {
 
@@ -43,6 +43,10 @@ namespace editor {
         using ButtonCallback = std::function<void(robot2D::ecs::Entity)>;
 
         CameraManipulator(robot2D::MessageBus& messageBus);
+        CameraManipulator(const CameraManipulator& other) = delete;
+        CameraManipulator& operator=(const CameraManipulator& other) = delete;
+        CameraManipulator(CameraManipulator&& other) = delete;
+        CameraManipulator& operator=(CameraManipulator&& other) = delete;
         ~CameraManipulator() override = default;
 
         enum class State {
@@ -64,9 +68,10 @@ namespace editor {
             m_buttonCallback = std::move(buttonCallback);
         }
 
-        void setManipulatedEntity(robot2D::ecs::Entity entity) {
+        void setManipulatedEntity(SceneEntity entity) {
             m_manipulatedEntity = entity;
         }
+
         void setCamera(IEditorCamera::Ptr camera) { m_camera = camera; }
 
         void setPosition(const robot2D::vec2f& position) {
@@ -145,7 +150,7 @@ namespace editor {
     private:
         robot2D::MessageBus& m_messageBus;
         robot2D::Sprite m_movieSprite;
-        robot2D::ecs::Entity m_manipulatedEntity;
+        SceneEntity m_manipulatedEntity;
 
         robot2D::FloatRect m_aabb{};
         EventBinder m_eventBinder;

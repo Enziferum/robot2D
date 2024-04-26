@@ -50,4 +50,37 @@ namespace editor {
     }
 
 
+    bool SceneGraph::setBefore(const SceneEntity& source, const SceneEntity& target) {
+
+        /// 1. if level not equal don't do
+
+        // const auto& parent = source.getParent();
+        
+
+
+
+        //auto sourceIter = std::find_if(m_sceneEntities.begin(), m_sceneEntities.end(),
+        //    [&source](robot2D::ecs::Entity item) {
+        //        return item.getIndex() == source.getIndex();
+        //    });
+
+        //auto targetIter = std::find_if(m_sceneEntities.begin(), m_sceneEntities.end(),
+        //    [&target](robot2D::ecs::Entity item) {
+        //        return item.getIndex() == target.getIndex();
+        //    });
+
+        //auto sourceOldDistance = std::distance(m_sceneEntities.begin(), sourceIter);
+        //auto targetOldDistance = std::distance(m_sceneEntities.begin(), targetIter);
+
+        //if (sourceOldDistance > targetOldDistance) {
+        //    /// insert before remove last
+        //    m_insertItems.push_back(std::make_tuple(targetIter, source, ReorderDeleteType::Last));
+        //}
+        //else if (sourceOldDistance < targetOldDistance) {
+        //    m_insertItems.push_back(std::make_tuple(targetIter, source, ReorderDeleteType::First));
+        //}
+
+        return true;
+    }
+
 } // namespace editor

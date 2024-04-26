@@ -14,7 +14,7 @@ namespace editor {
         constexpr char* prefabExtension = ".prefab";
     }
 
-    bool PrefabManager::addPrefab(robot2D::ecs::Entity entity, const std::string& directoryPath) {
+    bool PrefabManager::addPrefab(SceneEntity entity, const std::string& directoryPath) {
         const auto& uuid = entity.getComponent<IDComponent>().ID;
         const auto& name = entity.getComponent<TagComponent>().getTag();
         std::string filePath = name + prefabExtension;

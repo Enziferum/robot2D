@@ -30,6 +30,7 @@ namespace editor {
         void removeComponent();
 
         friend bool operator==(const SceneEntity& left, const SceneEntity& right);
+        friend bool operator!=(const SceneEntity& left, const SceneEntity& right);
         explicit operator bool() const noexcept {
             if(!m_entity)
                 return false;
@@ -44,7 +45,10 @@ namespace editor {
 
         robot2D::ecs::Entity getWrappedEntity() const { return m_entity; }
         const std::vector<robot2D::ecs::Entity>& getChildren() const;
+
+        // const SceneEntity& getParent() const { return m_parent; }
     private:
+        // SceneEntity m_parent{};
         robot2D::ecs::Entity m_entity;
     };
 

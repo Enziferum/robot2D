@@ -40,9 +40,9 @@ source distribution.
 namespace editor {
 
     template<typename T, typename UIFunction>
-    static void drawComponent(const std::string& name, robot2D::ecs::Entity& entity, UIFunction uiFunction)
+    static void drawComponent(const std::string& name, SceneEntity& entity, UIFunction uiFunction)
     {
-        if(!entity || entity.destroyed() || !entity.hasComponent<T>())
+        if(!entity || !entity.hasComponent<T>())
             return;
 
         static const ImGuiTreeNodeFlags treeNodeFlags = ImGuiTreeNodeFlags_DefaultOpen
@@ -126,7 +126,7 @@ namespace editor {
         m_interactor = interactor;
     }
 
-    void InspectorPanel::setSelected(robot2D::ecs::Entity entity) {
+    void InspectorPanel::setSelected(SceneEntity entity) {
         m_selectedEntity = entity;
     }
 
@@ -139,8 +139,8 @@ namespace editor {
                 m_prefabHasModification = false;
                 auto* msg =
                     m_messageBus.postMessage<PrefabAssetModificatedMessage>(MessageID::PrefabAssetModificated);
-                msg->prefabUUID = prefabComponent.prefabUUID;
-                msg->prefabEntity = m_selectedEntity;
+                msg -> prefabUUID = prefabComponent.prefabUUID;
+                msg -> prefabEntity = m_selectedEntity;
             }
         }
         m_selectedEntity = {};
@@ -152,7 +152,7 @@ namespace editor {
         propertiesWindowOptions.name = "Inspector";
 
         robot2D::createWindow(propertiesWindowOptions, [this]{
-            if(m_selectedEntity && !m_selectedEntity.destroyed() && m_inspectType == InspectType::EditorEntity)
+            if(m_selectedEntity && m_inspectType == InspectType::EditorEntity)
                 drawComponentsBase(m_selectedEntity);
             else if(m_inspectType != InspectType::EditorEntity)
                 drawAssetBase();
@@ -175,9 +175,9 @@ namespace editor {
         }
     }
 
-    void InspectorPanel::drawComponentsBase(robot2D::ecs::Entity entity) {
+    void InspectorPanel::drawComponentsBase(SceneEntity entity) {
         if(m_inspectType == InspectType::EditorEntity) {
-            if(!entity.hasComponent<TagComponent>() || entity.destroyed())
+            if(!entity.hasComponent<TagComponent>())
                 return;
 
             auto tag = entity.getComponent<TagComponent>().getTag();
@@ -193,7 +193,7 @@ namespace editor {
             ImGui::Text("UUID: %llu", entity.getComponent<IDComponent>().ID);
         }
         else {
-            if(!entity.hasComponent<PrefabComponent>() || entity.destroyed())
+            if(!entity.hasComponent<PrefabComponent>())
                 return;
             ImGui::Text("Prefab UUID: %llu", entity.getComponent<PrefabComponent>().prefabUUID);
         }
@@ -280,7 +280,7 @@ namespace editor {
         drawUIComponents(entity);
     }
 
-    void InspectorPanel::drawComponents(robot2D::ecs::Entity entity) {
+    void InspectorPanel::drawComponents(SceneEntity entity) {
         drawComponent<TransformComponent>("Transform", entity, BIND_CLASS_FN(drawTransformComponent));
         drawComponent<CameraComponent>("Camera", entity, BIND_CLASS_FN(drawCameraComponent));
         drawComponent<DrawableComponent>("Drawable", entity, BIND_CLASS_FN(drawDrawableComponent));
@@ -292,7 +292,7 @@ namespace editor {
     }
 
 
-    void InspectorPanel::drawTransformComponent([[maybe_unused]] robot2D::ecs::Entity entity, TransformComponent& component) {
+    void InspectorPanel::drawTransformComponent([[maybe_unused]] SceneEntity entity, TransformComponent& component) {
         robot2D::vec2f lastPosition = component.getPosition();
         robot2D::vec2f lastScale = component.getScale();
         float lastRotation = component.getRotate();
@@ -308,7 +308,7 @@ namespace editor {
 
     }
     
-    void InspectorPanel::drawCameraComponent([[maybe_unused]] robot2D::ecs::Entity entity, CameraComponent& component) {
+    void InspectorPanel::drawCameraComponent([[maybe_unused]] SceneEntity entity, CameraComponent& component) {
         auto& camera = component.camera;
         ImGui::Checkbox("Primary", &component.isPrimary);
         float orthoSize = component.orthoSize;
@@ -334,7 +334,7 @@ namespace editor {
         }
     }
     
-    void InspectorPanel::drawDrawableComponent(robot2D::ecs::Entity entity, DrawableComponent& component) {
+    void InspectorPanel::drawDrawableComponent(SceneEntity entity, DrawableComponent& component) {
         auto color = component.getColor().toGL();
         auto p_color = reinterpret_cast<float*>(&color);
         ImGui::ColorEdit4("Color", p_color);
@@ -391,7 +391,7 @@ namespace editor {
 
     }
 
-    void InspectorPanel::drawTextComponent(robot2D::ecs::Entity entity, TextComponent& component) {
+    void InspectorPanel::drawTextComponent(SceneEntity entity, TextComponent& component) {
         ImGui::Button("Font", ImVec2(100.0f, 0.0f));
 
         {
@@ -414,7 +414,7 @@ namespace editor {
         }
     }
 
-    void InspectorPanel::drawPhysics2DComponent([[maybe_unused]] robot2D::ecs::Entity entity, Physics2DComponent& component) {
+    void InspectorPanel::drawPhysics2DComponent([[maybe_unused]] SceneEntity entity, Physics2DComponent& component) {
         const char* bodyTypeStrings[] = { "Static", "Dynamic", "Kinematic" };
         const char* currentBodyTypeString = bodyTypeStrings[(int)component.type];
         imgui_Combo("Body Type", currentBodyTypeString) {
@@ -435,7 +435,7 @@ namespace editor {
         ImGui::Checkbox("Fixed Rotation", &component.fixedRotation);
     }
     
-    void InspectorPanel::drawCollider2DComponent([[maybe_unused]] robot2D::ecs::Entity entity, Collider2DComponent& component) {
+    void InspectorPanel::drawCollider2DComponent([[maybe_unused]] SceneEntity entity, Collider2DComponent& component) {
         float offset[2] = { component.offset.x, component.offset.y };
         float size[2] = { component.size.x, component.size.y };
         ImGui::DragFloat2("Offset", offset);
@@ -448,11 +448,11 @@ namespace editor {
         component.size = { size[0], size[1] };
     }
 
-    void InspectorPanel::drawAnimationComponent(robot2D::ecs::Entity, AnimationComponent& component) {
+    void InspectorPanel::drawAnimationComponent(SceneEntity, AnimationComponent& component) {
         auto* animationManager = AnimationManager::getManager();
     }
 
-    void InspectorPanel::drawScriptComponent(robot2D::ecs::Entity entity, ScriptComponent& component) {
+    void InspectorPanel::drawScriptComponent(SceneEntity entity, ScriptComponent& component) {
         std::string currItem = component.name; // Here we store our selection data as an index.
         bool hasScriptClass = ScriptEngine::hasEntityClass(component.name);
 
@@ -513,7 +513,7 @@ namespace editor {
         }
     }
 
-    void InspectorPanel::processScriptComponent(robot2D::ecs::Entity entity, ScriptComponent& component) {
+    void InspectorPanel::processScriptComponent(SceneEntity entity, ScriptComponent& component) {
         auto entityClass = ScriptEngine::getEntityClass(component.name);
         const auto& fields = entityClass -> getFields();
 
@@ -611,7 +611,7 @@ namespace editor {
                             if(!prefab)
                                 break;
 
-                            robot2D::ecs::Entity duplicateEntity =
+                            SceneEntity duplicateEntity =
                                     m_interactor -> duplicateEmptyEntity(prefab -> entity);
                             if (duplicateEntity && duplicateEntity != entity) {
                                 if(hasField)
@@ -630,11 +630,11 @@ namespace editor {
         }
     }
 
-    void InspectorPanel::drawUIComponents(robot2D::ecs::Entity entity) {
+    void InspectorPanel::drawUIComponents(SceneEntity entity) {
         drawComponent<ButtonComponent>("Button", entity, BIND_CLASS_FN(drawUIButtonComponent));
     }
 
-    void InspectorPanel::drawUIButtonComponent([[maybe_unused]] robot2D::ecs::Entity entity, ButtonComponent& component) {
+    void InspectorPanel::drawUIButtonComponent([[maybe_unused]] SceneEntity entity, ButtonComponent& component) {
         ImGui::Text("OnClick");
         std::string resultText = "No Object";
         if (component.hasEntity()) {
@@ -685,8 +685,8 @@ namespace editor {
     }
 
 
-    void InspectorPanel::onLoadImage(const robot2D::Image& image, robot2D::ecs::Entity entity) {
-        if(entity.destroyed()) {
+    void InspectorPanel::onLoadImage(const robot2D::Image& image, SceneEntity entity) {
+        if(!entity) {
             RB_EDITOR_WARN("Can't attach texture to Entity, because it's already destroyed");
             return;
         }
@@ -702,8 +702,8 @@ namespace editor {
             entity.getComponent<DrawableComponent>().setTexture(*texture);
     }
 
-    void InspectorPanel::onLoadFont(const robot2D::Font& font, robot2D::ecs::Entity entity) {
-        if(entity.destroyed()) {
+    void InspectorPanel::onLoadFont(const robot2D::Font& font, SceneEntity entity) {
+        if(!entity) {
             RB_EDITOR_WARN("Can't attach texture to Entity, because it's already destroyed");
             return;
         }

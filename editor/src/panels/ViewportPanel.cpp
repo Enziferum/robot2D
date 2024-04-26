@@ -161,7 +161,7 @@ namespace editor {
 
             if(selectedEntities.size() == 1) {
                 auto& selectedEntity = selectedEntities[0];
-                if(selectedEntity && !selectedEntity.destroyed()) {
+                if(selectedEntity) {
                     // Editor camera
                     const robot2D::mat4& cameraProjection = m_editorCamera -> getProjectionMatrix();
                     robot2D::mat4 cameraView = m_editorCamera -> getViewMatrix();
@@ -191,7 +191,7 @@ namespace editor {
             else if(selectedEntities.size() > 1) {
                 std::vector<TransformComponent*> moveTfs;
                 for(auto& entity: selectedEntities) {
-                   if(entity && !entity.destroyed()) {
+                   if(entity) {
                        auto &tc = entity.getComponent<TransformComponent>();
                        moveTfs.emplace_back(&tc);
                    }

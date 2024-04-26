@@ -1,6 +1,6 @@
 #pragma once
 #include <vector>
-#include <robot2D/Ecs/Entity.hpp>
+#include <editor/SceneEntity.hpp>
 #include <editor/panels/TreeHierarchy.hpp>
 
 namespace editor {
@@ -10,8 +10,8 @@ namespace editor {
             bool first;
             bool isChained;
             bool child;
-            robot2D::ecs::Entity anchorEntity;
-            robot2D::ecs::Entity entity;
+            SceneEntity anchorEntity;
+            SceneEntity entity;
         };
 
         /// TODO(a.raag): correct valid statement
@@ -22,8 +22,8 @@ namespace editor {
 
         std::vector<RestoreInfo>& getInfos() { return anchorEntitiesUuids; }
 
-        void push(robot2D::ecs::Entity anchorEntity,
-                  robot2D::ecs::Entity entity, bool first, bool isChained, bool child) {
+        void push(SceneEntity anchorEntity,
+                  SceneEntity entity, bool first, bool isChained, bool child) {
             RestoreInfo info{first, isChained, child, anchorEntity, entity};
             anchorEntitiesUuids.emplace_back(info);
         }
