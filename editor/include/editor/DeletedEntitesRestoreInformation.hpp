@@ -7,28 +7,30 @@ namespace editor {
 
     struct DeletedEntitiesRestoreInformation {
         struct RestoreInfo {
-            bool first;
-            bool isChained;
-            bool child;
+            bool first { false };
+            bool isChained{ false };
+            bool child{ false };
             SceneEntity anchorEntity;
             SceneEntity entity;
         };
 
         /// TODO(a.raag): correct valid statement
         bool valid() const { return true; }
-        bool hasItems() const { return !anchorEntitiesUuids.empty(); }
+        bool hasItems() const { return !m_anchorEntitiesUuids.empty(); }
 
-        RestoreInfo& getLast() { return anchorEntitiesUuids.back(); }
+        RestoreInfo& getLast() { return m_anchorEntitiesUuids.back(); }
 
-        std::vector<RestoreInfo>& getInfos() { return anchorEntitiesUuids; }
+        std::vector<RestoreInfo>& getInfos() { return m_anchorEntitiesUuids; }
 
         void push(SceneEntity anchorEntity,
                   SceneEntity entity, bool first, bool isChained, bool child) {
             RestoreInfo info{first, isChained, child, anchorEntity, entity};
-            anchorEntitiesUuids.emplace_back(info);
+            m_anchorEntitiesUuids.emplace_back(info);
         }
+
+        void push(RestoreInfo&& restoreInfo) { m_anchorEntitiesUuids.emplace_back(std::move(restoreInfo)); }
     private:
-        std::vector<RestoreInfo> anchorEntitiesUuids;
+        std::vector<RestoreInfo> m_anchorEntitiesUuids;
     };
 
     class DeletedEntitiesRestoreUIInformation {

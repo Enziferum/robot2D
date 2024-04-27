@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2023
+(c) Alex Raag 2024
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -27,11 +27,15 @@ source distribution.
 #include <editor/SceneEntity.hpp>
 
 namespace editor {
-    class FontLoadTask: public ITask {
+    class FontLoadTask final: public ITask {
     public:
         FontLoadTask(ITaskFunction::Ptr function,
                         const std::string& path,
                       SceneEntity entity);
+        FontLoadTask(const FontLoadTask& other) = delete;
+        FontLoadTask& operator=(const FontLoadTask& other) = delete;
+        FontLoadTask(FontLoadTask&& other) = delete;
+        FontLoadTask& operator=(FontLoadTask&& other) = delete;
         ~FontLoadTask() override = default;
 
         void execute() override;
@@ -42,4 +46,4 @@ namespace editor {
         SceneEntity m_entity;
         robot2D::Font m_font;
     };
-}
+} // namespace editor
