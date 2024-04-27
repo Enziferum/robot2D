@@ -44,9 +44,12 @@ namespace editor {
 
 
 
-    AnimationTextureSliceTask::AnimationTextureSliceTask(editor::ITaskFunction::Ptr function,
-                                                         const std::string& fileName, const std::string& filePath):
-        ITask(function), m_fileName{fileName}, m_filePath{filePath} {
+    AnimationTextureSliceTask::AnimationTextureSliceTask(
+        editor::ITaskFunction::Ptr function,
+        const std::string& fileName, 
+        const std::string& filePath):
+        ITask(function), m_fileName{fileName}, m_filePath{filePath} 
+    {
 
     }
 
@@ -78,4 +81,4 @@ namespace editor {
             m_frameRects.emplace_back(frame);
     }
 
-}
+} // namespace editor

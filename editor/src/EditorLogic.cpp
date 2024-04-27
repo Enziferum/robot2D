@@ -122,7 +122,7 @@ namespace editor {
                                                                      BIND_CLASS_FN(prefabModificated));
 
         m_messageDispatcher.onMessage<AnimationPlayMessage>(MessageID::AnimationPlay,
-                                                            [](const AnimationPlayMessage& message){
+                                                            [](const AnimationPlayMessage& message) {
             auto entity = message.entity;
             auto& animator = entity.getComponent<AnimatorComponent>();
             auto& animationComponent = entity.getComponent<AnimationComponent>();
@@ -262,6 +262,7 @@ namespace editor {
 
         for(auto& entity: m_activeScene -> getEntities()) {
             loadAssetsByEntity(entity);
+
             if(entity.hasComponent<CameraComponent>()) {
                 auto& cameraComponent = entity.getComponent<CameraComponent>();
                 if(cameraComponent.isPrimary) {

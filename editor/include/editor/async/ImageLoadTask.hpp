@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2023
+(c) Alex Raag 2024
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -29,8 +29,13 @@ source distribution.
 namespace editor {
     class ImageLoadTask: public ITask {
     public:
-        ImageLoadTask(ITaskFunction::Ptr function, const std::string& path,
+        ImageLoadTask(ITaskFunction::Ptr function, 
+            const std::string& path,
             SceneEntity entity);
+        ImageLoadTask(const ImageLoadTask& other) = delete;
+        ImageLoadTask& operator=(const ImageLoadTask& other) = delete;
+        ImageLoadTask(ImageLoadTask&& other) = delete;
+        ImageLoadTask& operator=(ImageLoadTask&& other) = delete;
         ~ImageLoadTask() override = default;
 
         void execute() override;

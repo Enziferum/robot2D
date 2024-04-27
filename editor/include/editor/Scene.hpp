@@ -41,7 +41,7 @@ source distribution.
 
 namespace editor {
 
-    class Scene: public robot2D::Drawable {
+    class Scene : public robot2D::Drawable {
     public:
         using Ptr = std::shared_ptr<Scene>;
         using EntityList = std::list<robot2D::ecs::Entity>;
@@ -90,7 +90,7 @@ namespace editor {
         DeletedEntitiesRestoreInformation removeEntities(std::vector<SceneEntity>& removingEntities);
         void restoreEntities(DeletedEntitiesRestoreInformation& restoreInformation);
 
-
+        [[depricated]]
         robot2D::ecs::Entity getByUUID(UUID uuid);
         SceneEntity getEntity(UUID uuid) const;
 
@@ -123,7 +123,7 @@ namespace editor {
 
     private:
         struct RemoveEntityInfo {
-            robot2D::ecs::Entity entity;
+            SceneEntity entity;
             bool isDeleted{false};
         };
 
@@ -135,7 +135,7 @@ namespace editor {
         void removeDuplicate(SceneEntity entity);
         void removeChildEntities(DeletedEntitiesRestoreInformation& information,
                                  std::vector<RemoveEntityInfo>& removingEntities,
-                                 robot2D::ecs::Entity parent, bool isParentDel = false);
+                                 const SceneEntity& parent, bool isParentDel = false);
 
         void duplicateEntityChild(SceneEntity parent, SceneEntity dupEntity);
 
@@ -165,11 +165,10 @@ namespace editor {
             First, Last
         };
 
-        using Iterator = EntityList::iterator;
+        using Iterator = std::list<SceneEntity>::iterator;
         using InsertItem = std::tuple<Iterator, robot2D::ecs::Entity, ReorderDeleteType>;
-        using SetItem = std::tuple<Iterator, robot2D::ecs::Entity, bool, robot2D::ecs::Entity>;
+        using SetItem = std::tuple<Iterator, SceneEntity, bool, SceneEntity>;
 
-        std::vector<InsertItem> m_insertItems;
         std::vector<SetItem> m_setItems;
         std::function<void()> m_onDeleteFinishCallback{nullptr};
 

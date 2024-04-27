@@ -4,6 +4,22 @@
 
 namespace editor {
 
+    void SceneGraph::updateSelf(robot2D::ecs::Scene& ecsScene) {
+        m_deletePendingEntities.swap(m_deletePendingBuffer);
+        for (auto& entity : m_deletePendingEntities) {
+            for (auto child : entity.getChildren())
+                child.removeSelf();
+
+            m_sceneEntities.erase(std::remove_if(m_sceneEntities.begin(), m_sceneEntities.end(),
+                [&entity](const SceneEntity& item) {
+                    return item == entity;
+                }), m_sceneEntities.end());
+
+            ecsScene.removeEntity(entity.getWrappedEntity());
+        }
+        m_deletePendingEntities.clear();
+    }
+
     SceneEntity SceneGraph::createEntity(robot2D::ecs::Entity&& entity) {
         return SceneEntity{std::move(entity)};
     }
@@ -82,5 +98,12 @@ namespace editor {
 
         return true;
     }
+
+
+    void SceneGraph::removeEntity(const SceneEntity& entity) {
+        m_deletePendingBuffer.push_back(entity);
+    }
+
+
 
 } // namespace editor
