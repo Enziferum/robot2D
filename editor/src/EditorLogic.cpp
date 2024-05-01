@@ -133,7 +133,8 @@ namespace editor {
         });
 
 
-        m_messageDispatcher.onMessage<GenerateProjectMessage>(MessageID::GenerateProject, BIND_CLASS_FN(generateProject));
+        m_messageDispatcher.onMessage<GenerateProjectMessage>(MessageID::GenerateProject,
+                                                              BIND_CLASS_FN(generateProject));
     }
 
 
@@ -443,10 +444,10 @@ namespace editor {
         /// TODO(a.raag): calculate offset for entites
         for (auto& entity : m_selectedEntities) {
             auto dupEntity = m_activeScene -> duplicateEntity(mousePos, entity);
-            // duplicatedEntities.emplace_back(entity);
+            duplicatedEntities.emplace_back(dupEntity);
         }
-        /// TODO(a.raag): update DuplicateCommand to support several entities 
-        // m_commandStack.addCommand<DuplicateCommand>(m_messageBus, m_activeScene, dupEntity);
+
+        m_commandStack.addCommand<DuplicateCommand>(m_messageBus, m_activeScene, duplicatedEntities);
     }
 
     void EditorLogic::addPrefabEntity(const PrefabLoadMessage& message) {
@@ -480,7 +481,7 @@ namespace editor {
             if(rect.contains(transform.getGlobalBounds()))
                 m_selectedEntities.emplace_back(entity);
 
-            if(transform.hasChildren())
+            if(entity.hasChildren())
                 findSelectChildren(rect, entity);
         }
 
@@ -506,13 +507,13 @@ namespace editor {
 
     void EditorLogic::findSelectChildren(const robot2D::FloatRect& rect, SceneEntity entity) {
         for(auto child: entity.getChildren()) {
-            if(!child || child.destroyed())
+            if(!child)
                 continue;
             auto& childTransform = child.getComponent<TransformComponent>();
             if(rect.contains(childTransform.getGlobalBounds()))
-                m_selectedEntities.emplace_back(SceneEntity(std::move(child)));
-            if(childTransform.hasChildren())
-                findSelectChildren(rect, SceneEntity(std::move(child)));
+                m_selectedEntities.emplace_back(child);
+            if(child.hasChildren())
+                findSelectChildren(rect, child);
         }
     }
 
@@ -535,10 +536,6 @@ namespace editor {
         }
 
         m_selectedEntities.clear();
-    }
-
-    SceneEntity EditorLogic::getByUUID(std::uint64_t uuid) {
-        return m_activeScene -> getByUUID(UUID(uuid));
     }
 
     EditorState EditorLogic::getState() const {
@@ -593,14 +590,6 @@ namespace editor {
         return m_activeScene -> isRunning();
     }
 
-    SceneEntity EditorLogic::getByUUID(UUID uuid) {
-        return m_activeScene -> getByUUID(uuid);
-    }
-
-    void EditorLogic::registerOnDeleteFinish(std::function<void()>&& callback) {
-        m_activeScene -> registerOnDeleteFinish(std::move(callback));
-    }
-
     SceneEntity EditorLogic::getSelectedEntity(int graphicsEntityID) {
         m_selectedEntities.clear();
         auto entities = m_activeScene -> getEntities();
@@ -613,13 +602,10 @@ namespace editor {
                 return entity;
             }
 
-
-            auto& tx = entity.getComponent<TransformComponent>();
-            if(tx.hasChildren()) {
+            if(entity.hasChildren()) {
                 SceneEntity childEntity = getSelectedEntityChild(entity, graphicsEntityID);
-                if(childEntity) {
+                if(childEntity)
                     return childEntity;
-                }
             }
         }
 
@@ -632,10 +618,10 @@ namespace editor {
 
     SceneEntity EditorLogic::getSelectedEntityChild(SceneEntity parent, int graphicsEntityID) {
         for(auto child: parent.getChildren()) {
-            if(!child || child.destroyed())
+            if(!child)
                 continue;
-            if(child.getIndex() == graphicsEntityID) {
-                m_selectedEntities.emplace_back(SceneEntity(std::move(child)));
+            if(child.getWrappedEntity().getIndex() == graphicsEntityID) {
+                m_selectedEntities.emplace_back(child);
                 auto* msg =
                         m_messageBus.postMessage<PanelEntitySelectedMessage>(MessageID::PanelEntityNeedSelect);
                 auto resultEntity = SceneEntity(std::move(child));
@@ -643,9 +629,8 @@ namespace editor {
                 return resultEntity;
             }
 
-            auto& childTransform = child.getComponent<TransformComponent>();
-            if(childTransform.hasChildren())
-                return getSelectedEntityChild(SceneEntity(std::move(child)), graphicsEntityID);
+            if(child.hasChildren())
+                return getSelectedEntityChild(child, graphicsEntityID);
         }
         return SceneEntity{};
     }
@@ -749,6 +734,13 @@ namespace editor {
 
     }
 
+    SceneEntity EditorLogic::getEntity(UUID uuid) {
+        return m_activeScene -> getEntity(uuid);
+    }
+
+    SceneEntity EditorLogic::getEntity(std::uint64_t uuid) {
+        return m_activeScene -> getEntity(UUID(uuid));
+    }
 
     void EditorLogic::setEditorCamera(IEditorCamera::Ptr editorCamera) {
         m_activeScene -> setEditorCamera(editorCamera);

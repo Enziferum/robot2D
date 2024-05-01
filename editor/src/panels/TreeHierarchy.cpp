@@ -324,7 +324,7 @@ namespace editor {
                     robot2D::DragDropTarget dragDropTarget{m_playloadIdentifier};
                     if(auto uuid = dragDropTarget.unpackPayload<UUID>()) {
 #ifdef ROBOT2D_WINDOWS
-                        RB_EDITOR_INFO( "Not Child: Got item with ID = {0}", *uuid );
+                       // RB_EDITOR_INFO( "Not Child: Got item with ID = {0}", *uuid );
 #else
                         // TODO(a.raag) fmt don't support UUID Correctly
 #endif
@@ -339,7 +339,7 @@ namespace editor {
                     robot2D::DragDropTarget dragDropTarget{m_playloadIdentifier};
                     if(auto uuid = dragDropTarget.unpackPayload<UUID>()) {
 #ifdef ROBOT2D_WINDOWS
-                        RB_EDITOR_INFO("Not Child: want as make as child item with ID = {0}", *uuid);
+                     //   RB_EDITOR_INFO("Not Child: want as make as child item with ID = {0}", *uuid);
 #else
                         // TODO(a.raag) fmt don't support UUID Correctly
 #endif
@@ -408,7 +408,7 @@ namespace editor {
                 robot2D::DragDropTarget dragDropTarget{m_playloadIdentifier};
                 if(auto uuid = dragDropTarget.unpackPayload<UUID>()) {
 #ifdef ROBOT2D_WINDOWS
-                    RB_EDITOR_INFO("TreeHierachy: Want make as child item with ID = {0}", *uuid);
+                  //  RB_EDITOR_INFO("TreeHierachy: Want make as child item with ID = {0}", *uuid);
 #else
                     // TODO(a.raag) fmt don't support UUID Correctly
 #endif

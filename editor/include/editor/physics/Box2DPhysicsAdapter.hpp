@@ -29,6 +29,10 @@ namespace editor {
     class Box2DPhysicsAdapter final: public IPhysics2DAdapter, b2ContactListener {
     public:
         Box2DPhysicsAdapter() = default;
+        Box2DPhysicsAdapter(const Box2DPhysicsAdapter& other) = delete;
+        Box2DPhysicsAdapter& operator=(const Box2DPhysicsAdapter& other) = delete;
+        Box2DPhysicsAdapter(Box2DPhysicsAdapter&& other) = delete;
+        Box2DPhysicsAdapter& operator=(Box2DPhysicsAdapter&& other) = delete;
         ~Box2DPhysicsAdapter() override = default;
 
         /// box2d API
@@ -41,16 +45,16 @@ namespace editor {
         void update(float dt) override;
         void start(editorEntityList& entityList) override;
         void stop() override;
-        void addRuntime(robot2D::ecs::Entity entity) override;
+        void addRuntime(SceneEntity entity) override;
         void registerCallback(PhysicsCallbackType callbackType, editor::PhysicsCallback&& callback) override {
             m_callbacks[callbackType] = std::move(callback);
         }
     private:
-        void addEntity(robot2D::ecs::Entity entity);
-        void updateEntity(robot2D::ecs::Entity entity);
+        void addEntity(SceneEntity entity);
+        void updateEntity(SceneEntity entity);
     private:
         std::unique_ptr<b2World> m_physicsWorld{nullptr};
-        std::list<robot2D::ecs::Entity> m_entityList;
+        std::list<SceneEntity> m_entityList;
         std::unordered_map<PhysicsCallbackType, PhysicsCallback> m_callbacks;
     };
 }

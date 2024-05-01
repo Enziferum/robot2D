@@ -137,8 +137,8 @@ namespace editor {
             updateEntity(entity);
     }
 
-    void Box2DPhysicsAdapter::updateEntity(robot2D::ecs::Entity entity) {
-        if(!entity || entity.destroyed())
+    void Box2DPhysicsAdapter::updateEntity(SceneEntity entity) {
+        if(!entity)
             return;
 
         auto& transform = entity.getComponent<TransformComponent>();
@@ -168,8 +168,8 @@ namespace editor {
 
     }
 
-    void Box2DPhysicsAdapter::addEntity(robot2D::ecs::Entity entity) {
-        if(!entity || entity.destroyed())
+    void Box2DPhysicsAdapter::addEntity(SceneEntity entity) {
+        if(!entity)
             return;
 
         auto& transform = entity.getComponent<TransformComponent>();
@@ -234,7 +234,7 @@ namespace editor {
         m_physicsWorld.reset();
     }
 
-    void Box2DPhysicsAdapter::addRuntime(robot2D::ecs::Entity entity) {
+    void Box2DPhysicsAdapter::addRuntime(SceneEntity entity) {
         addEntity(entity);
     }
 

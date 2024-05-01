@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2023
+(c) Alex Raag 2024
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -33,6 +33,10 @@ namespace editor {
     class TextSystem: public robot2D::ecs::System {
     public:
         TextSystem(robot2D::MessageBus& messageBus);
+        TextSystem(const TextSystem& other) = delete;
+        TextSystem& operator=(const TextSystem& other) = delete;
+        TextSystem(TextSystem&& other) = delete;
+        TextSystem& operator=(TextSystem&& other) = delete;
         ~TextSystem() override = default;
 
         void update(float dt);

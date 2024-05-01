@@ -6,6 +6,8 @@ namespace editor {
 
     SceneEntity::SceneEntity(robot2D::ecs::Entity&& entity): m_entity{std::move(entity)} {}
 
+    SceneEntity::SceneEntity(const robot2D::ecs::Entity& entity): m_entity(entity) {}
+
     bool operator==(const SceneEntity& left, const SceneEntity& right) {
         return (left.m_entity == right.m_entity) && (left.getUUID() == right.getUUID());
     }
@@ -21,15 +23,17 @@ namespace editor {
 
     void SceneEntity::addChild(const SceneEntity& sceneEntity) {
         auto& transformComponent = m_entity.getComponent<TransformComponent>();
-        transformComponent.addChild(m_entity, sceneEntity.m_entity);
+        transformComponent.addChild(SceneEntity(m_entity), sceneEntity);
     }
 
     bool SceneEntity::hasChildren() const {
         return m_entity.getComponent<TransformComponent>().hasChildren();
     }
 
-    const std::vector<robot2D::ecs::Entity>& SceneEntity::getChildren() const {
+    const std::vector<SceneEntity>& SceneEntity::getChildren() const {
         return m_entity.getComponent<TransformComponent>().getChildren();
     }
+
+
 
 } // namespace editor

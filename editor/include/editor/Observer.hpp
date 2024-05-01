@@ -1,5 +1,5 @@
-/*********************************************************************
-(c) Alex Raag 2023
+/********************************************************************
+(c) Alex Raag 2024
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -36,4 +36,4 @@ namespace editor {
     private:
         std::function<void(std::vector<std::string>&&)> m_callback;
     };
-}
+} // namespace editor

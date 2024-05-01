@@ -33,6 +33,10 @@ namespace editor {
     class RenderSystem: public robot2D::ecs::System, public robot2D::Drawable {
     public:
         RenderSystem(robot2D::MessageBus& messageBus);
+        RenderSystem(const RenderSystem& other) = delete;
+        RenderSystem& operator=(const RenderSystem& other) = delete;
+        RenderSystem(RenderSystem&& other) = delete;
+        RenderSystem& operator=(RenderSystem&& other) = delete;
         ~RenderSystem() override = default;
 
         void setBefore(robot2D::ecs::Entity source, robot2D::ecs::Entity target);
@@ -43,8 +47,9 @@ namespace editor {
         void draw(robot2D::RenderTarget& target, robot2D::RenderStates states) const override;
     private:
         bool m_needUpdateZBuffer;
-        Scene* m_activeScene{nullptr};
         bool m_runtimeFlag{false};
+
+        Scene* m_activeScene{nullptr};
         robot2D::FrameBuffer::Ptr m_frameBuffer{nullptr};
 
         enum class ReorderDeleteType {

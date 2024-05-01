@@ -27,6 +27,10 @@ namespace editor {
     class CopyCommand final: public ICommand {
     private:
         CopyCommand();
+        CopyCommand(const CopyCommand& other) = delete;
+        CopyCommand& operator=(const CopyCommand& other) = delete;
+        CopyCommand(CopyCommand&& other) = delete;
+        CopyCommand& operator=(CopyCommand&& other) = delete;
         ~CopyCommand() override = default;
 
         void undo() override;

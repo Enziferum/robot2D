@@ -23,7 +23,10 @@ namespace editor {
             if(event.mouse.btn == mouse2int(robot2D::Mouse::MouseMiddle))
                 m_mouseDownEvents.emplace_back(Flags::MiddleMouse);
 
-            m_eventPosition = m_editorCamera -> convertPixelToCoords({ static_cast<float>(event.mouse.x), static_cast<float>(event.mouse.y)}).as<int>();
+            m_eventPosition = m_editorCamera -> convertPixelToCoords( { 
+                static_cast<float>(event.mouse.x), 
+                static_cast<float>(event.mouse.y)}
+            ).as<int>();
         }
 
         if(event.type == robot2D::Event::MouseReleased) {

@@ -29,6 +29,7 @@ source distribution.
 #include "robot2D/Graphics/Color.hpp"
 
 namespace editor {
+
     struct ColorPoint {
         bool opaque;
         robot2D::vec2i pos;
@@ -44,7 +45,13 @@ namespace editor {
     class SpriteCutter {
     public:
         using colorPoint = std::pair<robot2D::Color, robot2D::vec2i>;
+    public:
+
         SpriteCutter() = default;
+        SpriteCutter(const SpriteCutter& other) = default;
+        SpriteCutter& operator=(const SpriteCutter& other) = default;
+        SpriteCutter(SpriteCutter&& other) = default;
+        SpriteCutter& operator=(SpriteCutter&& other) = default;
         ~SpriteCutter() = default;
 
         std::vector<robot2D::IntRect> cutFrames(const robot2D::UIntRect& clipRegion, robot2D::Image& image,

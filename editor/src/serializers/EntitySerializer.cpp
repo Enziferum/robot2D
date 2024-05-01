@@ -183,12 +183,12 @@ namespace editor {
             out << YAML::Key << "Size" << YAML::Value << ts.getScale();
             out << YAML::Key << "Rotation" << YAML::Value << ts.getRotate();
 
-            if(ts.hasChildren()) {
+            if(entity.hasChildren()) {
                 std::vector<UUID> childIds;
 
                 for(auto& child: ts.getChildren()) {
-                    if(child && !child.destroyed())
-                        childIds.emplace_back(child.getComponent<IDComponent>().ID);
+                    if(child)
+                        childIds.emplace_back(child.getUUID());
                 }
 
                 if(!childIds.empty()) {

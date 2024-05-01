@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2023
+(c) Alex Raag 2024
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -28,9 +28,6 @@ source distribution.
 #include "Macro.hpp"
 
 namespace editor {
-
-
-
 
     class IFunction {
     public:
@@ -100,4 +97,5 @@ namespace editor {
     private:
         std::unordered_multimap<robot2D::Message::ID, IFunction::Ptr> m_functions;
     };
-}
+
+} // namespace editor

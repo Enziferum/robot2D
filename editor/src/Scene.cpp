@@ -65,8 +65,7 @@ namespace editor {
         entity.addComponent<DrawableComponent>();
 
         auto& cameraComponent = entity.addComponent<CameraComponent>();
-
-        m_sceneEntities.emplace_back(entity);
+        m_sceneGraph.addEntity(SceneEntity{ std::move(entity) });
     }
 
 
@@ -74,8 +73,8 @@ namespace editor {
         return m_sceneGraph.getEntities();
     }
 
-    const Scene::EntityList& Scene::getEntities() const {
-        return m_sceneEntities;
+    const std::list<SceneEntity>& Scene::getEntities() const {
+        return m_sceneGraph.getEntities();
     }
 
     void Scene::handleEventsRuntime(const robot2D::Event& event) {
@@ -90,8 +89,12 @@ namespace editor {
             if(iter == sceneEntities.begin())
                 sceneEntities.insert(iter, std::get<1>(item));
             bool isChained = std::get<2>(item);
-            if(!isChained)
-                sceneEntities.insert(std::next(iter), std::get<1>(item));
+            if (!isChained) {
+                if(iter != sceneEntities.end())
+                    sceneEntities.insert(std::next(iter), std::get<1>(item));
+                else
+                    sceneEntities.insert(iter, std::get<1>(item));
+            }
             else {
                 auto anchor = std::get<3>(item);
                 auto prevFound = std::find_if(sceneEntities.begin(), sceneEntities.end(),
@@ -112,11 +115,10 @@ namespace editor {
         for(auto& entity: m_sceneGraph.getEntities()) {
             if(entity.hasComponent<ScriptComponent>())
                 ScriptEngine::onUpdateEntity(entity, dt);
-            auto& ts = entity.getComponent<TransformComponent>();
-            if(ts.hasChildren()) {
-                for(auto& child: ts.getChildren()) {
+            if(entity.hasChildren()) {
+                for(const auto& child: entity.getChildren()) {
                     if(child.hasComponent<ScriptComponent>())
-                        ScriptEngine::onUpdateEntity(SceneEntity(std::move(child)), dt);
+                        ScriptEngine::onUpdateEntity(child, dt);
                 }
             }
         }
@@ -177,23 +179,22 @@ namespace editor {
         onPhysics2DRun();
 
         m_scene.getSystem<RenderSystem>() -> setScene(this);
-
         ScriptEngine::onRuntimeStart(scriptInteractor);
 
         /// TODO(a.raag): moving to SceneGraph
         for(auto& entity: m_sceneGraph.getEntities()) {
             if(entity.hasComponent<ScriptComponent>() && !entity.hasComponent<PrefabComponent>())
                 ScriptEngine::onCreateEntity(entity);
-            auto& ts = entity.getComponent<TransformComponent>();
-            if(ts.hasChildren()) {
-                for(auto& child: ts.getChildren()) {
+            if(entity.hasChildren()) {
+                for(const auto& child: entity.getChildren()) {
                     if(child.hasComponent<ScriptComponent>())
-                        ScriptEngine::onCreateEntity(SceneEntity(std::move(child)));
+                        ScriptEngine::onCreateEntity(child);
                 }
             }
 
             if(entity.hasComponent<ButtonComponent>()) {
                 auto& hitbox = entity.getComponent<UIHitbox>();
+                auto& ts = entity.getComponent<TransformComponent>();
                 // TODO(a.raag) ts.getGlobalBounds();
                 hitbox.m_area = robot2D::FloatRect::create(ts.getPosition(), ts.getScale() + ts.getPosition());
             }
@@ -213,7 +214,7 @@ namespace editor {
 
     void Scene::onPhysics2DRun() {
         m_physicsAdapter = getPhysics2DAdapter(PhysicsAdapterType::Box2D);
-        m_physicsAdapter -> start(m_sceneEntities);
+        m_physicsAdapter -> start(m_sceneGraph.getEntities());
 
 
         m_physicsAdapter -> registerCallback(PhysicsCallbackType::Enter,
@@ -257,49 +258,11 @@ namespace editor {
         return m_sceneGraph.getEntity(uuid);
     }
 
-    robot2D::ecs::Entity Scene::getByUUID(UUID uuid) {
-        auto start = m_sceneEntities.begin();
-        for(; start != m_sceneEntities.end(); ++start) {
-
-            auto entity = *start;
-            if(entity.getComponent<TransformComponent>().hasChildren()) {
-                auto childEntity = getByUUID(entity, uuid);
-                if(childEntity && !childEntity.destroyed())
-                    return childEntity;
-            }
-            if(entity.getComponent<IDComponent>().ID == uuid)
-                return entity;
-        }
-
-        return robot2D::ecs::Entity{};
-    }
-
-    robot2D::ecs::Entity Scene::getByUUID(robot2D::ecs::Entity parent, UUID uuid) {
-        auto& transform = parent.getComponent<TransformComponent>();
-        for(auto& child: transform.getChildren()) {
-            if(!child || child.destroyed())
-                continue;
-
-            if(child.getComponent<TransformComponent>().hasChildren()) {
-                auto childEntity = getByUUID(child, uuid);
-                if(childEntity && !childEntity.destroyed())
-                    return childEntity;
-            }
-
-            if(child.getComponent<IDComponent>().ID == uuid)
-                return child;
-        }
-        return robot2D::ecs::Entity{};
-    }
-
-    void Scene::registerOnDeleteFinish(std::function<void()>&& callback) {
-        m_onDeleteFinishCallback = std::move(callback);
-    }
-
 
     void Scene::setBefore(SceneEntity source, SceneEntity target) {
         if (m_sceneGraph.setBefore(source, target)) {
-            m_scene.getSystem<RenderSystem>() -> setBefore(source.getWrappedEntity(), target.getWrappedEntity());
+            m_scene.getSystem<RenderSystem>() -> setBefore(source.getWrappedEntity(),
+                                                           target.getWrappedEntity());
             m_hasChanges = true;
             // return true;
         }
@@ -317,7 +280,8 @@ namespace editor {
         auto* msg = m_messageBus.postMessage<EntityDuplication>(MessageID::EntityDuplicate);
         msg -> entityID = dupEntity.getComponent<IDComponent>().ID;
 
-        m_sceneEntities.emplace_back(dupEntity);
+        /// add or create ???
+        // m_sceneGraph.emplace_back(dupEntity);
         m_hasChanges = true;
 
         if(entity.hasChildren())
@@ -345,27 +309,14 @@ namespace editor {
     SceneEntity Scene::duplicateEmptyEntity(SceneEntity entity) {
         auto dupEntity = m_scene.duplicateEntity(entity.getWrappedEntity());
         dupEntity.getComponent<IDComponent>().ID = UUID();
-        m_sceneEntities.emplace_back(dupEntity);
-        return dupEntity;
+ 
+        /// TODO(a.raag): create or add ??
+        return m_sceneGraph.createEntity(std::move(dupEntity));
     }
 
     void Scene::removeDuplicate(SceneEntity entity) {
-    /*    if(entity.getComponent<TransformComponent>().isChild()) {
-
-        }
-        else {
-            auto found = std::find_if(m_sceneEntities.begin(),
-                                      m_sceneEntities.end(),
-                                      [&entity](robot2D::ecs::Entity ent) {
-                                          return ent.getIndex() == entity.getIndex();
-                                      });
-            if(found == m_sceneEntities.end())
-                return;
-            m_deletePendingBuffer.emplace_back(*found);
-            m_hasChanges = true;
-        }*/
-
-        m_scene.removeEntity(entity.getWrappedEntity());
+        m_hasChanges = true;
+        m_sceneGraph.removeEntity(entity);
     }
 
     DeletedEntitiesRestoreInformation Scene::removeEntities(std::vector<SceneEntity>& removingEntities) {
@@ -381,7 +332,6 @@ namespace editor {
         using FoundIterator = std::list<SceneEntity>::const_iterator;
 
 
-        m_deletePendingBuffer.clear();
         const auto& sceneEntities = m_sceneGraph.getEntities();
 
         for(auto& item: removeInfos) {
@@ -441,7 +391,7 @@ namespace editor {
                        restoreInfo.entity = *found;
                    }
                }
-           }
+            }
 
             restoreInformation.push(std::move(restoreInfo));
         }
@@ -493,12 +443,10 @@ namespace editor {
         for(auto& info: restoreInformation.getInfos()) {
 
             if(info.child) {
-                if(info.anchorEntity) {
+                if(info.anchorEntity)
                     info.anchorEntity.addChild(info.entity);
-                }
-                else {
-                    childBuffer.emplace_back(std::make_pair(info.anchorEntity, info.entity));
-                }
+                else
+                    childBuffer.emplace_back(info.anchorEntity, info.entity);
 
                 m_scene.restoreEntity(info.entity.getWrappedEntity());
                 info.entity.getComponent<UIComponent>().setName(&info.entity.getComponent<TagComponent>().getTag());
@@ -514,7 +462,8 @@ namespace editor {
                 else {
                     if(!info.isChained) {
                         if(!m_scene.restoreEntity(info.entity.getWrappedEntity())) {
-                            RB_EDITOR_ERROR("EditorScene: Can't Restore entity with index {0}", info.entity.getWrappedEntity().getIndex());
+                            RB_EDITOR_ERROR("EditorScene: Can't Restore entity with index {0}",
+                                            info.entity.getWrappedEntity().getIndex());
                         }
                         info.entity.getComponent<UIComponent>().setName(&info.entity.getComponent<TagComponent>().getTag());
                         auto anchorFound = std::find_if(sceneEntities.begin(),
@@ -526,7 +475,8 @@ namespace editor {
                     }
                     else {
                         if(!m_scene.restoreEntity(info.entity.getWrappedEntity())) {
-                            RB_EDITOR_ERROR("EditorScene: Can't Restore entity with index {0}", info.entity.getWrappedEntity().getIndex());
+                            RB_EDITOR_ERROR("EditorScene: Can't Restore entity with index {0}",
+                                            info.entity.getWrappedEntity().getIndex());
                         };
                         info.entity.getComponent<UIComponent>().setName(&info.entity.getComponent<TagComponent>().getTag());
                         bool isChained = true;
@@ -560,8 +510,8 @@ namespace editor {
                         btnComp.onClickCallback(btnComp.scriptEntity, btnComp.clickMethodName);
                 });
 
-        m_sceneEntities.emplace_back(entity);
-        return entity;
+       
+        return m_sceneGraph.createEntity(std::move(entity));
     }
 
     void Scene::setEditorCamera(IEditorCamera::Ptr editorCamera) {
@@ -585,18 +535,12 @@ namespace editor {
         dupEntity.getComponent<TagComponent>().setTag("RuntimeClone");
         dupEntity.getComponent<IDComponent>().ID = UUID();
         dupEntity.getComponent<TransformComponent>().setPosition(position);
-        m_sceneEntities.emplace_back(dupEntity);
+        
+        /// TODO(a.raag): add to runtime ???
+        /// m_sceneEntities.emplace_back(dupEntity);
 
         m_physicsAdapter -> addRuntime(entity.getWrappedEntity());
         return dupEntity;
     }
-
-    void Scene::convertEntities() {
-        auto& wrappedEntities = m_sceneGraph.getEntities();
-        for(auto& wrapEntity: wrappedEntities) {
-            m_sceneEntities.emplace_back(wrapEntity.getWrappedEntity());
-        }
-    }
-
 }
 

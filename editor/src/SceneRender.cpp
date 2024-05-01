@@ -178,8 +178,8 @@ namespace editor {
             }
 
             std::vector<robot2D::ecs::Entity> childV;
-            for(auto& child: ent.getComponent<TransformComponent>().getChildren())
-                childV.emplace_back(child);
+//            for(auto& child: ent.getComponent<TransformComponent>().getChildren())
+//                childV.emplace_back(child);
             if(!childV.empty())
                 render(target, childV);
         }

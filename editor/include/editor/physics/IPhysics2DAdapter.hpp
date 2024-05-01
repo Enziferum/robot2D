@@ -23,11 +23,11 @@ source distribution.
 #include <memory>
 #include <list>
 #include <functional>
-#include <robot2D/Ecs/Entity.hpp>
+#include <editor/SceneEntity.hpp>
 #include <editor/Uuid.hpp>
 
 namespace editor {
-    using editorEntityList = std::list<robot2D::ecs::Entity>;
+    using editorEntityList = std::list<SceneEntity>;
 
     enum class PhysicsAdapterType {
         Box2D
@@ -57,7 +57,7 @@ namespace editor {
 
         virtual void start(editorEntityList& entityList) = 0;
         virtual void stop() = 0;
-        virtual void addRuntime(robot2D::ecs::Entity entity) = 0;
+        virtual void addRuntime(SceneEntity entity) = 0;
         virtual void registerCallback(PhysicsCallbackType callbackType, PhysicsCallback&& callback) = 0;
     };
 

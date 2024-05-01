@@ -29,6 +29,7 @@ source distribution.
 #include "EditorCache.hpp"
 
 namespace editor {
+
     struct ProjectInspectorConfiguration {
         const ImVec2 createButtonSize = ImVec2(200.F, 50.F);
         const float textOffset = 10.F;
@@ -49,6 +50,10 @@ namespace editor {
         };
     public:
         ProjectInspector(robot2D::MessageBus& messageBus);
+        ProjectInspector(const ProjectInspector& other) = delete;
+        ProjectInspector& operator=(const ProjectInspector& other) = delete;
+        ProjectInspector(ProjectInspector&& other) = delete;
+        ProjectInspector& operator=(ProjectInspector&& other) = delete;
         ~ProjectInspector() = default;
 
         void setup(robot2D::RenderWindow* window,
@@ -69,4 +74,4 @@ namespace editor {
         std::string m_projectName;
         std::string m_projectPath;
     };
-}
+} // namespace editor

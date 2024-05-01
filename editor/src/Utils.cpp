@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2023
+(c) Alex Raag 2024
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -27,4 +27,5 @@ namespace editor {
         robot2D::vec2u objectHalfSize = {objectSize.x / 2, objectSize.y / 2};
         return {normalCenter.x - objectHalfSize.x, normalCenter.y - objectHalfSize.y};
     }
-}
+
+} // namespace editor

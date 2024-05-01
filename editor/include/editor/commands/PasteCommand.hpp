@@ -32,6 +32,10 @@ namespace editor {
         PasteCommand(robot2D::MessageBus& messageBus,
                      std::vector<SceneEntity> entities,
                      UIInteractor::Ptr);
+        PasteCommand(const PasteCommand& other) = delete;
+        PasteCommand& operator=(const PasteCommand& other) = delete;
+        PasteCommand(PasteCommand&& other) = delete;
+        PasteCommand& operator=(PasteCommand&& other) = delete;
         ~PasteCommand() override = default;
 
         DECLARE_CLASS_ID(PasteCommand)

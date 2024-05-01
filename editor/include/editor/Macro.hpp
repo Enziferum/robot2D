@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2023
+(c) Alex Raag 2024
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -26,4 +26,4 @@ namespace editor {
     #define BIND_CLASS_FN(fn)[this](auto&&... args) -> decltype(auto) { \
             return this -> fn(std::forward<decltype(args)>(args)...);      \
     }
-}
+} // namespace editor

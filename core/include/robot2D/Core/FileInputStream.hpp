@@ -23,6 +23,7 @@ source distribution.
 
 #include <memory>
 #include <fstream>
+#include <cstdint>
 
 namespace robot2D {
 
