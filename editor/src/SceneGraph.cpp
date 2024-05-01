@@ -7,8 +7,8 @@ namespace editor {
     void SceneGraph::updateSelf(robot2D::ecs::Scene& ecsScene) {
         m_deletePendingEntities.swap(m_deletePendingBuffer);
         for (auto& entity : m_deletePendingEntities) {
-            for (auto child : entity.getChildren())
-                child.removeSelf();
+//            for (auto child : entity.getChildren())
+//                child.removeSelf();
 
             m_sceneEntities.erase(std::remove_if(m_sceneEntities.begin(), m_sceneEntities.end(),
                 [&entity](const SceneEntity& item) {

@@ -48,4 +48,5 @@ namespace editor {
         ProjectManagerError m_error;
         Configuration m_configuration;
     };
-}
+
+} // namespace editor

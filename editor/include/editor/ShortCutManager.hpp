@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2023
+(c) Alex Raag 2024
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -31,10 +31,17 @@ namespace editor {
     class ShortCut {
     public:
         ShortCut() = default;
+        ShortCut(const ShortCut& other) = default;
+        ShortCut& operator=(const ShortCut& other) = default;
+        ShortCut(ShortCut&& other) = default;
+        ShortCut& operator=(ShortCut&& other) = default;
+
         ShortCut(const std::initializer_list<robot2D::Key>& keys) {
             for(auto& key: keys)
                 m_keys[key] = false;
         }
+
+        ~ShortCut() = default;
 
         void setCallback(std::function<void()>&& callback) {
             m_callback = std::move(callback);
@@ -90,6 +97,10 @@ namespace editor {
     class ShortCutManager {
     public:
         ShortCutManager() = default;
+        ShortCutManager(const ShortCutManager& other) = delete;
+        ShortCutManager& operator=(const ShortCutManager& other) = delete;
+        ShortCutManager(ShortCutManager&& other) = delete;
+        ShortCutManager& operator=(ShortCutManager&& other) = delete;
         ~ShortCutManager() = default;
 
         void handleEvents(const robot2D::Event& event) {

@@ -19,6 +19,7 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
+#include <cstdint>
 #include <editor/AnimationManager.hpp>
 
 namespace editor {

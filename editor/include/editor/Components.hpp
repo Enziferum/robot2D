@@ -22,6 +22,7 @@ source distribution.
 #pragma once
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 #include <robot2D/Graphics/Transformable.hpp>
 #include <robot2D/Graphics/Texture.hpp>
@@ -35,12 +36,14 @@ source distribution.
 
 #include "editor/panels/ITreeItem.hpp"
 #include <editor/Animation.hpp>
+#include "SceneEntity.hpp"
 #include "Uuid.hpp"
 #include "Property.hpp"
 #include "ClassID.hpp"
 #include "SceneEntity.hpp"
 
 namespace editor {
+
     struct IDComponent
     {
         IDComponent() = default;
@@ -61,8 +64,8 @@ namespace editor {
         void setPosition(const robot2D::vec2f& pos, bool needUpdateChild);
         void setPosition(const robot2D::vec2f& pos) override;
 
-        void addChild(robot2D::ecs::Entity parent, robot2D::ecs::Entity child);
-        void removeChild(robot2D::ecs::Entity, bool removeFromScene = true);
+        void addChild(SceneEntity parent, SceneEntity child);
+        void removeChild(SceneEntity entity, bool removeFromScene = true);
         void clearChildren() { m_children.clear(); }
         bool hasChildren() const;
 
@@ -76,25 +79,25 @@ namespace editor {
             return getTransform().transformRect(getLocalBounds());
         }
 
-        std::vector<robot2D::ecs::Entity>& getChildren() {
+        std::vector<SceneEntity>& getChildren() {
             return m_children;
         }
 
-        const std::vector<robot2D::ecs::Entity>& getChildren() const {
+        const std::vector<SceneEntity>& getChildren() const {
             return m_children;
         }
 
-        bool isChild() const { return ( (m_parent && !m_parent.destroyed()) && m_childID != -1); }
+        bool isChild() const { return m_parent && m_childID != -1; }
 
         void removeSelf(bool removeFromScene = true);
 
-        robot2D::ecs::Entity getParent() { return m_parent; }
+        SceneEntity getParent() { return m_parent; }
     private:
         void removeChild(int childID, bool removeFromScene);
     private:
         int m_childID = -1;
-        std::vector<robot2D::ecs::Entity> m_children;
-        robot2D::ecs::Entity m_parent;
+        std::vector<SceneEntity> m_children;
+        SceneEntity m_parent;
     };
 
     // TODO: @a.raag add Rotation

@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2023
+(c) Alex Raag 2024
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -32,7 +32,7 @@ namespace editor {
         robot2D::vec2f pos;
         robot2D::vec2f texCoord;
 
-        GridVertex():pos{}, texCoord{}{}
+        GridVertex() = default;
         GridVertex(robot2D::vec2f p, robot2D::vec2f t):pos{p}, texCoord{t}{};
     };
 

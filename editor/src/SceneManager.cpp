@@ -107,8 +107,8 @@ namespace editor {
         for(auto& entity: m_activeScene -> getEntities()) {
             loadAssetByEntity(entity);
             auto& ts = entity.getComponent<TransformComponent>();
-            for(auto child: ts.getChildren())
-                loadAssetByEntity(SceneEntity(std::move(child)));
+//            for(auto child: ts.getChildren())
+//                loadAssetByEntity(SceneEntity(std::move(child)));
         }
 
         return true;

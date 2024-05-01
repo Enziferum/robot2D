@@ -22,6 +22,7 @@ source distribution.
 #include <fstream>
 #include <vector>
 #include <string>
+#include <cstdint>
 
 namespace robot2D {
     namespace io {

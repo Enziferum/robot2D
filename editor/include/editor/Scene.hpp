@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2023
+(c) Alex Raag 2024
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -56,9 +56,7 @@ namespace editor {
         void createMainCamera();
 
         std::list<SceneEntity>& getEntities();
-        const EntityList& getEntities() const;
-
-        void registerOnDeleteFinish(std::function<void()>&& callback);
+        const std::list<SceneEntity>& getEntities() const;
 
         void handleEventsRuntime(const robot2D::Event& event);
         void update(float dt);
@@ -74,8 +72,6 @@ namespace editor {
         void addAssociatedEntity(SceneEntity&& entity);
         SceneEntity createEmptyEntity();
 
-        /// (a.raag): tmp method for refactor usages
-        void convertEntities();
         //////////////////////// Serializer Api ////////////////////////
 
         /////////////////////////// ScenePanel API ///////////////////////////
@@ -90,14 +86,11 @@ namespace editor {
         DeletedEntitiesRestoreInformation removeEntities(std::vector<SceneEntity>& removingEntities);
         void restoreEntities(DeletedEntitiesRestoreInformation& restoreInformation);
 
-        [[depricated]]
-        robot2D::ecs::Entity getByUUID(UUID uuid);
         SceneEntity getEntity(UUID uuid) const;
-
 
         bool isRunning() const { return m_running; }
 
-        void setPath(const std::string& path) {m_path = path;}
+        void setPath(const std::string& path) { m_path = path; }
         void setAssociatedProjectPath(const std::string& path) { m_associatedProjectPath = path;}
 
         const std::string& getAssociatedProjectPath() const {
@@ -127,7 +120,6 @@ namespace editor {
             bool isDeleted{false};
         };
 
-        robot2D::ecs::Entity getByUUID(robot2D::ecs::Entity, UUID uuid);
         void initScene();
         void onPhysics2DRun();
         void onPhysics2DStop();
@@ -146,12 +138,9 @@ namespace editor {
 
         robot2D::ecs::Scene m_scene;
         robot2D::ecs::Scene m_CloneScene;
+
         IEditorCamera::Ptr m_editorCamera{nullptr};
-
-        EntityList m_sceneEntities;
-        robot2D::ecs::EntityList m_deletePendingEntities;
-        robot2D::ecs::EntityList m_deletePendingBuffer;
-
+        IPhysics2DAdapter::Ptr m_physicsAdapter{ nullptr };
 
         robot2D::MessageBus& m_messageBus;
         std::string m_path;
@@ -159,20 +148,10 @@ namespace editor {
         bool m_running = false;
         bool m_hasChanges{false};
 
-        IPhysics2DAdapter::Ptr m_physicsAdapter{nullptr};
-
-        enum class ReorderDeleteType {
-            First, Last
-        };
-
-        using Iterator = std::list<SceneEntity>::iterator;
-        using InsertItem = std::tuple<Iterator, robot2D::ecs::Entity, ReorderDeleteType>;
+        using Iterator = std::list<SceneEntity>::iterator;   
         using SetItem = std::tuple<Iterator, SceneEntity, bool, SceneEntity>;
-
         std::vector<SetItem> m_setItems;
-        std::function<void()> m_onDeleteFinishCallback{nullptr};
-
 
         SceneGraph m_sceneGraph;
     };
-}
+} // namespace editor

@@ -30,6 +30,10 @@ namespace editor {
     class ObjectManipulator: public robot2D::Drawable {
     public:
         ObjectManipulator();
+        ObjectManipulator(const ObjectManipulator& other) = delete;
+        ObjectManipulator& operator=(const ObjectManipulator& other) = delete;
+        ObjectManipulator(ObjectManipulator&& other) = delete;
+        ObjectManipulator& operator=(ObjectManipulator&& other) = delete;
         ~ObjectManipulator() override = default;
 
         void handleEvents(const robot2D::Event& event);
@@ -50,4 +54,5 @@ namespace editor {
 
         bool m_shown{false};
     };
-}
+
+} // namespace editor

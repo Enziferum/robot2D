@@ -23,6 +23,7 @@ source distribution.
 
 #include <string>
 #include <vector>
+#include <cstdint>
 #include <robot2D/Core/Vector2.hpp>
 
 namespace robot2D {

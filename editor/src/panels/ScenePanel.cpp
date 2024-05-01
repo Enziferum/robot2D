@@ -146,7 +146,8 @@ namespace editor {
 
         if (ImGui::IsMouseDown(ImGuiMouseButton_Left) && ImGui::IsWindowHovered()) {
             m_selectedEntity = {};
-            auto* msg = m_messageBus.postMessage<PanelEntitySelectedMessage>(MessageID::PanelEntitySelected);
+            auto* msg=
+                    m_messageBus.postMessage<PanelEntitySelectedMessage>(MessageID::PanelEntitySelected);
             msg -> entity = m_selectedEntity;
         }
 
@@ -256,7 +257,7 @@ namespace editor {
                 return;
             }
 
-            targetEntity -> getComponent<TransformComponent>().addChild(*targetEntity, *entity);
+           // targetEntity -> getComponent<TransformComponent>().addChild(*targetEntity, *entity);
 
             if(intoTarget -> isChild())
                 intoTarget -> addChild(source);
@@ -278,11 +279,6 @@ namespace editor {
         if(interactor == nullptr)
             return;
         m_interactor = interactor;
-
-        m_interactor -> registerOnDeleteFinish([this]() {
-           m_selectedEntityNeedCheckForDelete = false;
-        });
-
         m_selectedEntity = {};
         m_treeHierarchy.clear();
 
@@ -363,7 +359,7 @@ namespace editor {
     }
 
     void ScenePanel::onEntityDuplicate(const EntityDuplication& duplication) {
-        auto entity = m_interactor -> getByUUID(duplication.entityID);
+        auto entity = m_interactor -> getEntity(duplication.entityID);
         auto item = m_treeHierarchy.addItem<SceneEntity>();
         item -> setName(&entity.getComponent<TagComponent>().getTag());
         item -> setUserData(entity);

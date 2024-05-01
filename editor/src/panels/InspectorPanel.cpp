@@ -561,7 +561,7 @@ namespace editor {
                     std::string resultButtonText = "None";
                     if(hasField) {
                         auto uuid = scriptField.getValue<UUID>();
-                        auto preEntity = m_interactor -> getByUUID(uuid);
+                        auto preEntity = m_interactor -> getEntity(uuid);
                         if (preEntity)
                             resultButtonText = preEntity.getComponent<TagComponent>().getTag();
                     }
@@ -588,7 +588,7 @@ namespace editor {
                     std::string resultButtonText = "None";
                     if(hasField) {
                         auto uuid = scriptField.getValue<UUID>();
-                        auto preEntity = m_interactor -> getByUUID(uuid);
+                        auto preEntity = m_interactor -> getEntity(uuid);
                         if (preEntity)
                             resultButtonText = preEntity.getComponent<TagComponent>().getTag();
                     }
@@ -638,7 +638,7 @@ namespace editor {
         ImGui::Text("OnClick");
         std::string resultText = "No Object";
         if (component.hasEntity()) {
-            auto preEntity = m_interactor -> getByUUID(component.scriptEntity);
+            auto preEntity = m_interactor -> getEntity(component.scriptEntity);
 
             if (preEntity)
                 resultText = preEntity.template getComponent<TagComponent>().getTag();
@@ -659,7 +659,7 @@ namespace editor {
             return;
 
         auto klasses = ScriptEngine::getClasses();
-        auto scriptEntity = m_interactor -> getByUUID(component.scriptEntity);
+        auto scriptEntity = m_interactor -> getEntity(component.scriptEntity);
         MonoClassWrapper::Ptr klass = klasses[scriptEntity.template getComponent<ScriptComponent>().name];
 
         std::string preview = component.clickMethodName.empty() ? "No Function" : component.clickMethodName;

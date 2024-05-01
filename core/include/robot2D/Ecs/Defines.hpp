@@ -21,6 +21,7 @@ source distribution.
 
 #pragma once
 #include <typeindex>
+#include <cstdint>
 
 namespace robot2D::ecs {
     // max components per Entity

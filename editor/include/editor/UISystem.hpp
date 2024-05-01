@@ -21,6 +21,10 @@ namespace editor {
 
 
         UISystem(robot2D::MessageBus&);
+        UISystem(const UISystem& other) = delete;
+        UISystem& operator=(const UISystem& other) = delete;
+        UISystem(UISystem&& other) = delete;
+        UISystem& operator=(UISystem&& other) = delete;
         ~UISystem() override = default;
 
         void handleEvents(const robot2D::Event& event);

@@ -105,8 +105,7 @@ namespace editor {
         void setBefore(SceneEntity sourceEntity, SceneEntity target) override;
         void removeEntityChild(SceneEntity entity) override;
         bool isRunning() const override;
-        SceneEntity getByUUID(UUID uuid) override;
-        void registerOnDeleteFinish(std::function<void()>&& callback) override;
+        SceneEntity getEntity(UUID uuid) override;
         void restoreDeletedEntities(DeletedEntitiesRestoreInformation& restoreInformation,
                                     DeletedEntitiesRestoreUIInformation& restoreUiInformation) override;
 
@@ -117,7 +116,7 @@ namespace editor {
         //////////////////////////////////////// UIInteractor ////////////////////////////////////////
 
         //////////////////// ScriptInteractor ////////////////////
-        SceneEntity getByUUID(std::uint64_t uuid) override;
+        SceneEntity getEntity(std::uint64_t uuid) override;
         bool loadSceneRuntime(std::string &&name) override;
         void loadSceneAsyncRuntime(std::string &&name) override;
         void exitEngineRuntime() override;

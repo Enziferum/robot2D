@@ -25,6 +25,7 @@ source distribution.
 
 
 namespace editor {
+
     const class_id& DrawableComponent::id() noexcept {
         static const class_id id{"DrawableComponent"};
         return id;
@@ -54,7 +55,6 @@ namespace editor {
         static const class_id id{"RigidBody2D"};
         return id;
     }
-
 
     const class_id& AnimatorComponent::id() noexcept {
         static const class_id id{"Animator"};
@@ -146,7 +146,7 @@ namespace editor {
 
     void SceneCamera::SetViewportSize(uint32_t width, uint32_t height)
     {
-       // HZ_CORE_ASSERT(width > 0 && height > 0);
+       // RB_CORE_ASSERT(width > 0 && height > 0);
         m_AspectRatio = (float)width / (float)height;
         RecalculateProjection();
     }
@@ -174,7 +174,7 @@ namespace editor {
 
     void TransformComponent::setPosition(const robot2D::vec2f& pos) {
         for(auto child: m_children) {
-            if(!child || child.destroyed())
+            if(!child)
                 continue;
             auto& transform = child.getComponent<TransformComponent>();
             robot2D::vec2f offset = m_pos - child.getComponent<TransformComponent>().getPosition();
@@ -187,13 +187,14 @@ namespace editor {
         return !m_children.empty();
     }
 
-    void TransformComponent::addChild(robot2D::ecs::Entity parent, robot2D::ecs::Entity entity) {
-        auto found = std::find_if(m_children.begin(),
-                                  m_children.end(), [&entity](const robot2D::ecs::Entity& ent) {
+    void TransformComponent::addChild(SceneEntity parent, SceneEntity entity) {
+        auto found = std::find_if(m_children.begin(), m_children.end(),
+                                  [&entity](const SceneEntity& ent) {
             return entity == ent;
         });
+
         if(found == m_children.end()) {
-            entity.getComponent<TransformComponent>().m_childID = entity.getIndex();
+            entity.getComponent<TransformComponent>().m_childID = entity.getWrappedEntity().getIndex();
             entity.getComponent<TransformComponent>().m_parent = parent;
             m_children.emplace_back(entity);
         }
@@ -207,9 +208,9 @@ namespace editor {
             m_parent.getComponent<TransformComponent>().removeChild(m_childID, removeFromScene);
     }
 
-    void TransformComponent::removeChild(robot2D::ecs::Entity entity, bool removeFromScene ) {
-        auto found = std::remove_if(m_children.begin(),
-                                    m_children.end(), [&entity](const robot2D::ecs::Entity& ent) {
+    void TransformComponent::removeChild(SceneEntity entity, bool removeFromScene ) {
+        auto found = std::remove_if(m_children.begin(), m_children.end(),
+                                    [&entity](const SceneEntity& ent) {
             return entity == ent;
         });
 
@@ -217,14 +218,14 @@ namespace editor {
             return;
 
         if(removeFromScene)
-            found -> removeSelf();
+            found -> getWrappedEntity().removeSelf();
         m_children.erase(found, m_children.end());
     }
 
     void TransformComponent::removeChild(int childID, bool removeFromScene) {
-        auto found = std::find_if(m_children.begin(),
-                                  m_children.end(), [&childID](robot2D::ecs::Entity entity) {
-            return entity.getIndex() == childID;
+        auto found = std::find_if(m_children.begin(), m_children.end(),
+                                  [&childID](SceneEntity entity) {
+            return entity.getWrappedEntity().getIndex() == childID;
         });
         if(found == m_children.end())
             return;
