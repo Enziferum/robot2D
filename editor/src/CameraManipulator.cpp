@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2023
+(c) Alex Raag 2024
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -77,6 +77,11 @@ namespace editor {
         m_eventBinder.handleEvents(event);
     }
 
+    void CameraManipulator::update(robot2D::vec2f mousePos, float dt) {
+        if(m_manipulatedEntity)
+            setPosition(m_manipulatedEntity.getComponent<TransformComponent>().getPosition());
+        recalculateRect(mousePos, dt);
+    }
 
     void CameraManipulator::onMousePressed(const robot2D::Event& event) {
         if(event.type == robot2D::Event::MousePressed) {
@@ -183,6 +188,24 @@ namespace editor {
             m_cameraView.zoom(factor);
         }
 
+    }
+
+    void CameraManipulator::setPosition(const robot2D::vec2f& position) {
+        auto frame = getRect();
+
+        robot2D::vec2f colliderPosition = {
+                position.x - frame.width / 2.f,
+                position.y - frame.height / 2.f,
+        };
+
+        m_aabb.lx = colliderPosition.x;
+        m_aabb.ly = colliderPosition.y;
+
+        auto rect = m_cameraView.getRectangle();
+        m_cameraView.setCenter({position.x, position.y});
+
+        robot2D::vec2f midPoint = { m_aabb.lx + m_aabb.width / 2.f, m_aabb.ly + m_aabb.height / 2.f};
+        m_movieSprite.setPosition({midPoint.x - 10, midPoint.y - 10});
     }
 
 

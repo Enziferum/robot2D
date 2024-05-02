@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2023
+(c) Alex Raag 2024
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -42,27 +42,28 @@ namespace editor {
     public:
         using ButtonCallback = std::function<void(robot2D::ecs::Entity)>;
 
-        CameraManipulator(robot2D::MessageBus& messageBus);
+        enum class State {
+            Default,
+            Selected,
+            Moving
+        } state = State::Default;
+    public:
+
+        explicit CameraManipulator(robot2D::MessageBus& messageBus);
         CameraManipulator(const CameraManipulator& other) = delete;
         CameraManipulator& operator=(const CameraManipulator& other) = delete;
         CameraManipulator(CameraManipulator&& other) = delete;
         CameraManipulator& operator=(CameraManipulator&& other) = delete;
         ~CameraManipulator() override = default;
 
-        enum class State {
-            Default,
-            Selected,
-            Moving
-        } state = State::Default;
-
         void handleEvents(const robot2D::Event& event);
 
-        void update(robot2D::vec2f mousePos, float dt) {
-            //  if(m_needRecalculate)
-            if(m_manipulatedEntity)
-                setPosition(m_manipulatedEntity.getComponent<TransformComponent>().getPosition());
-            recalculateRect(mousePos, dt);
-        }
+        void update(robot2D::vec2f mousePos, float dt) ;
+
+        void setPosition(const robot2D::vec2f& position);
+
+        void setSize(float size);
+
 
         void setButtonCallback(ButtonCallback&& buttonCallback) {
             m_buttonCallback = std::move(buttonCallback);
@@ -74,27 +75,8 @@ namespace editor {
 
         void setCamera(IEditorCamera::Ptr camera) { m_camera = camera; }
 
-        void setPosition(const robot2D::vec2f& position) {
-            auto frame = getRect();
 
-            robot2D::vec2f colliderPosition = {
-                    position.x - frame.width / 2.f,
-                    position.y - frame.height / 2.f,
-            };
 
-            m_aabb.lx = colliderPosition.x;
-            m_aabb.ly = colliderPosition.y;
-
-            auto rect = m_cameraView.getRectangle();
-            m_cameraView.setCenter({position.x, position.y});
-
-            robot2D::vec2f midPoint = { m_aabb.lx + m_aabb.width / 2.f, m_aabb.ly + m_aabb.height / 2.f};
-            m_movieSprite.setPosition({midPoint.x - 10, midPoint.y - 10});
-        }
-
-        robot2D::vec2f getPosition() const {
-            return {m_aabb.lx, m_aabb.ly};
-        }
 
         void setSize(const robot2D::vec2f& size) {
             m_aabb.width = size.x;
@@ -108,8 +90,13 @@ namespace editor {
             m_aabb.height = size.y;
         }
 
+
         void setRect(const robot2D::FloatRect& rect) {
             m_aabb = rect;
+        }
+
+        robot2D::vec2f getPosition() const {
+            return {m_aabb.lx, m_aabb.ly};
         }
 
         const robot2D::FloatRect& getRect() const {
@@ -131,11 +118,9 @@ namespace editor {
         void setIsShownDots(bool flag) { m_showDots = flag; }
 
         const float& getSize() const { return m_size; }
-        void setSize(float size);
 
         bool isActive() const { return m_leftMousePressed &&
                     (m_buttonPressed || (m_selectedQuad != -1 && m_pressedPoint != robot2D::vec2f{})); }
-
 
         void draw(robot2D::RenderTarget& target, robot2D::RenderStates states) const override;
     public:
@@ -149,18 +134,23 @@ namespace editor {
         void recalculateRect(robot2D::vec2f mousePos, float newSize);
     private:
         robot2D::MessageBus& m_messageBus;
-        robot2D::Sprite m_movieSprite;
-        SceneEntity m_manipulatedEntity;
-
-        robot2D::FloatRect m_aabb{};
         EventBinder m_eventBinder;
+        SceneEntity m_manipulatedEntity;
+        IEditorCamera::Ptr m_camera{nullptr};
+
+        robot2D::View m_cameraView;
+        robot2D::Sprite m_movieSprite;
+        robot2D::FloatRect m_aabb{};
+
+        ButtonCallback m_buttonCallback;
+
         mutable std::array<Quad, 4> moveQ;
         mutable std::array<Quad, 4> moveWalls;
 
         bool m_leftMousePressed{false};
         bool m_buttonPressed{false};
-
         bool m_showDots{false};
+        bool m_needRecalculate{ false };
 
         float m_size = 1.f;
         float m_lastSize = 1.f;
@@ -175,11 +165,6 @@ namespace editor {
         };
 
         int m_selectedQuad = static_cast<int>(SelectQuad::None);
-        IEditorCamera::Ptr m_camera{nullptr};
-        bool m_needRecalculate{false};
-        ButtonCallback m_buttonCallback;
-
-        robot2D::View m_cameraView;
     };
 
 }

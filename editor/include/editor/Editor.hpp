@@ -48,7 +48,6 @@ source distribution.
 #include "SceneGrid.hpp"
 #include "CameraManipulator.hpp"
 #include "PopupConfiguration.hpp"
-#include "SceneRender.hpp"
 #include "SelectionCollider.hpp"
 #include "DeletedEntitesRestoreInformation.hpp"
 
@@ -172,7 +171,6 @@ namespace editor {
         bool m_needPrepareView{true};
 
         editor::PopupConfiguration* m_popupConfiguration{nullptr};
-        SceneRender m_sceneRender;
         /// TODO(a.raag) move to Editor Logic ?
         PrefabManager m_prefabManager;
     };

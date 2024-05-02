@@ -31,12 +31,16 @@ namespace editor {
     public:
         AnimationTextureSliceTask(ITaskFunction::Ptr function,
                                   const std::string& fileName, const std::string& filePath);
+        AnimationTextureSliceTask(const AnimationTextureSliceTask& other) = delete;
+        AnimationTextureSliceTask& operator=(const AnimationTextureSliceTask& other) = delete;
+        AnimationTextureSliceTask(AnimationTextureSliceTask&& other) = delete;
+        AnimationTextureSliceTask& operator=(AnimationTextureSliceTask&& other) = delete;
         ~AnimationTextureSliceTask() override = default;
 
         void execute() override;
-        const std::string& getFileName() const { return m_fileName;}
-        const std::string& getFilePath() const { return m_filePath;}
-        const std::vector<robot2D::IntRect>& getRects() const { return m_frameRects; }
+        [[nodiscard]] const std::string& getFileName() const { return m_fileName; }
+        [[nodiscard]] const std::string& getFilePath() const { return m_filePath; }
+        [[nodiscard]] const std::vector<robot2D::IntRect>& getRects() const { return m_frameRects; }
     private:
         std::vector<robot2D::IntRect> m_frameRects;
         SpriteCutter m_sheetCutter;
