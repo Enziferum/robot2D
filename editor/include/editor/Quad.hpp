@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2023
+(c) Alex Raag 2024
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -25,7 +25,14 @@ source distribution.
 #include <robot2D/Graphics/Texture.hpp>
 
 namespace editor {
-    struct Quad: public robot2D::Drawable {
+    class Quad: public robot2D::Drawable {
+    public:
+        Quad() = default;
+        Quad(const Quad& other) = default;
+        Quad& operator=(const Quad& other) = default;
+        Quad(Quad&& other) = default;
+        Quad& operator=(Quad&& other) = default;
+        ~Quad() = default;
 
         bool contains(const robot2D::vec2f& point) const {
             return getFrame().contains(point);
@@ -37,12 +44,14 @@ namespace editor {
 
         [[nodiscard]]
         robot2D::FloatRect getFrame() const;
+
         void draw(robot2D::RenderTarget& target,
                   robot2D::RenderStates states) const override;
 
-        robot2D::vec2f position;
-        robot2D::vec2f size;
-        robot2D::Color color;
+    // private:
+        robot2D::vec2f position { };
+        robot2D::vec2f size { };
+        robot2D::Color color { };
         robot2D::Texture* texture{nullptr};
     };
 }

@@ -140,7 +140,6 @@ namespace editor {
         }
 
         std::unordered_map<std::string, MonoMethod*>& getRegisterMethods()  { return m_registerMethods; }
-
         MonoObject* getInstance() const { return m_instance; }
 
         bool hasMethod(const std::string& name) const { return m_registerMethods.find(name) != m_registerMethods.end(); }
