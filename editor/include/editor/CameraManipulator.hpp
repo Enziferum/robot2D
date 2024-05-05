@@ -75,13 +75,11 @@ namespace editor {
 
         void setCamera(IEditorCamera::Ptr camera) { m_camera = camera; }
 
-
-
-
         void setSize(const robot2D::vec2f& size) {
             m_aabb.width = size.x;
             m_aabb.height = size.y;
         }
+
 
         void setRect(const robot2D::vec2f& topLeft, const robot2D::vec2f& size) {
             m_aabb.lx = topLeft.x;
@@ -89,8 +87,6 @@ namespace editor {
             m_aabb.width = size.x;
             m_aabb.height = size.y;
         }
-
-
         void setRect(const robot2D::FloatRect& rect) {
             m_aabb = rect;
         }

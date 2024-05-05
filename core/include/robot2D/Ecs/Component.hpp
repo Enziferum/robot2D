@@ -46,6 +46,9 @@ namespace robot2D::ecs {
             return getIDFromIndex(id);
         }
 
+        bool cloneSelf(ComponentManager& cloneManager);
+        bool clearSelf();
+
         ID getIDFromIndex(const UniqueType& uniqueType);
     private:
         std::vector<UniqueType> m_indices;

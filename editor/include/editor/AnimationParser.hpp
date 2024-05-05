@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2023
+(c) Alex Raag 2024
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -30,6 +30,10 @@ namespace editor {
     class AnimationParser {
     public:
         AnimationParser();
+        AnimationParser(const AnimationParser& other) = delete;
+        AnimationParser& operator=(const AnimationParser& other) = delete;
+        AnimationParser(AnimationParser&& other) = delete;
+        AnimationParser& operator=(AnimationParser&& other) = delete;
         ~AnimationParser() = default;
 
         bool loadFromFile(const std::string& path, Animation* animation);

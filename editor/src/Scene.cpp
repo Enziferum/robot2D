@@ -206,9 +206,6 @@ namespace editor {
         m_running = false;
         onPhysics2DStop();
         ScriptEngine::onRuntimeStop();
-
-        m_scene.restoreFromClone(m_CloneScene);
-        m_CloneScene.clearAll();
     }
 
     void Scene::onPhysics2DRun() {

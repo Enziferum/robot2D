@@ -44,7 +44,7 @@ namespace robot2D::ecs {
 
         bool fitsRequirements(Bitmask bitmask);
         bool addEntity(Entity entity);
-        bool hasEntity(Entity entityId);
+        bool hasEntity(Entity entity);
         bool removeEntity(Entity entityId);
         Bitmask getSystemMask() const { return m_mask; }
 

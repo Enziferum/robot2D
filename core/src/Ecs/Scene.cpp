@@ -24,7 +24,7 @@ source distribution.
 
 namespace robot2D::ecs {
 
-    Scene::Scene(robot2D::MessageBus& messageBus, const bool& useSystems):
+    Scene::Scene(robot2D::MessageBus& messageBus, bool useSystems):
     m_messageBus(messageBus),
     m_componentManager(),
     m_entityManager(m_componentManager, this),
@@ -35,8 +35,8 @@ namespace robot2D::ecs {
         Entity entity = m_entityManager.createEntity();
         if(!m_useSystems)
             return entity;
-        m_addPending.emplace_back(entity);
-        return m_addPending.back();
+        m_addBuffer.push_back(entity);
+        return entity;
     }
 
 
@@ -50,12 +50,16 @@ namespace robot2D::ecs {
         auto duplicated = m_entityManager.duplicateEntity(entity);
         if(!m_useSystems)
             return entity;
-        m_addPending.emplace_back(duplicated);
-        return m_addPending.back();
+        m_addBuffer.push_back(duplicated);
+        return duplicated;
+    }
+
+    void Scene::addEntity(robot2D::ecs::Entity entity) {
+        m_addBuffer.push_back(entity);
     }
 
     void Scene::removeEntity(Entity entity) {
-        m_deletePendingBuffer.emplace_back(entity);
+        m_deleteBuffer.push_back(entity);
         m_entityManager.markDestroyed(entity);
     }
 
@@ -64,18 +68,20 @@ namespace robot2D::ecs {
     }
 
     void Scene::update(float dt) {
-        m_deletePending.swap(m_deletePendingBuffer);
-        for(auto& entity: m_deletePending) {
+        m_deleteBuffer.update();
+        m_addBuffer.update();
+
+        for(const auto& entity: m_deleteBuffer.getData()) {
             if(m_useSystems)
                 m_systemManager.removeEntity(entity);
             m_entityManager.removeEntity(entity);
         }
-        m_deletePending.clear();
+        m_deleteBuffer.clear();
 
-        for(auto& entity: m_addPending)
+        for(const auto& entity: m_addBuffer.getData())
             m_systemManager.addEntity(entity);
 
-        m_addPending.clear();
+        m_addBuffer.clear();
         if(m_useSystems)
             m_systemManager.update(dt);
     }
@@ -85,9 +91,6 @@ namespace robot2D::ecs {
             target.draw(*drawable);
     }
 
-    void Scene::addEntity(robot2D::ecs::Entity entity) {
-        m_addPending.emplace_back(entity);
-    }
 
     bool Scene::restoreEntity(Entity entity) {
         bool result = m_entityManager.restoreEntity(entity);
@@ -97,22 +100,38 @@ namespace robot2D::ecs {
     }
 
     bool Scene::cloneSelf(Scene& cloneScene, bool cloneSystems) {
-        bool result = m_entityManager.cloneSelf(cloneScene.m_entityManager);
+        bool result = m_componentManager.cloneSelf(cloneScene.m_componentManager);
+        if(!result)
+            return false;
+        result = m_entityManager.cloneSelf(cloneScene.m_entityManager);
+        if(!result)
+            return false;
+        if(cloneSystems) {
+            // result = m_systemManager.cloneSelf(cloneScene.m_systemManager);
+            if(!result)
+                return false;
+        }
 
         return true;
     }
 
-    bool Scene::restoreFromClone(const Scene& clone) {
-        m_entityManager.clear();
+    bool Scene::clearSelf() {
+        bool result = m_componentManager.clearSelf();
+        if(!result)
+            return false;
 
+        result = m_entityManager.clearSelf();
+        if(!result)
+            return false;
+
+/*        if(m_useSystems) {
+            result = m_systemManager.clearSelf();
+            if(!result)
+                return false;
+        }*/
 
         return true;
     }
-
-    bool Scene::clearAll() {
-        return true;
-    }
-
 
 }
 
