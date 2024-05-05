@@ -42,6 +42,11 @@ namespace robot2D::ecs {
     class EntityManager {
     public:
         EntityManager(ComponentManager& componentManager, Scene* scene);
+        EntityManager() = delete;
+        EntityManager(const EntityManager& other) = delete;
+        EntityManager& operator=(const EntityManager& other) = delete;
+        EntityManager(EntityManager&& other) = delete;
+        EntityManager& operator=(EntityManager&& other) = delete;
         ~EntityManager() = default;
 
         Entity createEntity(bool needAddToScene = true);
@@ -87,8 +92,11 @@ namespace robot2D::ecs {
 
         void addEntityToScene(robot2D::ecs::Entity);
 
+        /// \brief deep copy. IMPORTANT: copies only valid ( not destroyed entities and components ).
+        /// also it means components must be copyable!!!
         bool cloneSelf(EntityManager& cloneManager);
-        void clear();
+
+        bool clearSelf();
     private:
         friend class Scene;
 
@@ -100,8 +108,8 @@ namespace robot2D::ecs {
         std::vector<IContainer::Ptr> m_componentContainersDeleteBuffer;
 
 
-        std::vector<bool> m_destroyFlags;
-        Scene* m_ownerScene{nullptr};
+        std::unordered_map<EntityID, bool> m_destroyFlags;
+        Scene* m_ownerScene{ nullptr };
     };
 
     template<typename T>

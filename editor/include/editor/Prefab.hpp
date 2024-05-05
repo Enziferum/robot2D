@@ -27,12 +27,30 @@ source distribution.
 
 namespace editor {
 
-    class Prefab {
+    class Prefab final {
     public:
         using Ptr = std::shared_ptr<Prefab>;
+    public:
 
-        std::string localPath;
-        SceneEntity entity;
-        UUID prefabUUID;
+        Prefab() = default;
+        Prefab(const std::string& path, const SceneEntity& prefabEntity, UUID uuid) { }
+        Prefab(const Prefab& other) = delete;
+        Prefab& operator=(const Prefab& other) = delete;
+        Prefab(Prefab&& other) = delete;
+        Prefab& operator=(Prefab&& other) = delete;
+        ~Prefab() = default;
+
+        void setEntity(const SceneEntity& entity) { }
+        void setPath(const std::string& path) { }
+        void addUUID() { }
+
+        const SceneEntity& getEntity() const { return m_entity; }
+        const std::string& getPath() const { return m_path; }
+        const UUID& getUUID() const { return m_uuid; }
+    private:
+        std::string m_path;
+        SceneEntity m_entity;
+        UUID m_uuid;
     };
+
 } // namespace editor

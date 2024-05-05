@@ -19,8 +19,10 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 #pragma once
+
 #include <functional>
 #include "Macro.hpp"
+
 namespace editor {
 
 #define PROPERTY_GET(name) auto get_##name(const decltype(name)::Type& value)

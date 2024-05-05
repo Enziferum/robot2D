@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2023
+(c) Alex Raag 2024
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -25,6 +25,7 @@ source distribution.
 #include <memory>
 #include <cassert>
 #include <type_traits>
+#include <functional>
 
 #include "Defines.hpp"
 #include "Component.hpp"
@@ -35,6 +36,7 @@ namespace robot2D::ecs {
     class IContainer {
     public:
         using Ptr = std::shared_ptr<IContainer>;
+        using CloneFilterFunction = std::function<bool(EntityID)>;
     public:
         IContainer(ComponentManager::ID id): m_containerID{id} {}
         virtual ~IContainer() = default;
@@ -48,6 +50,8 @@ namespace robot2D::ecs {
         virtual IContainer::Ptr cloneEmpty() = 0;
         /// \brief Clone Component From One Container to Other
         virtual bool cloneTo(IContainer::Ptr target, EntityID fromEntity) = 0;
+
+        virtual bool cloneSelf(IContainer::Ptr cloneContainer, const CloneFilterFunction& filterFunction) = 0;
 
         ComponentManager::ID getID() const { return m_containerID; }
     protected:
@@ -80,12 +84,10 @@ namespace robot2D::ecs {
         }
 
         T& operator[](std::size_t index) {
-            // assert(index < m_components.size() && "Component Container index > size()");
             return m_components[index];
         }
 
         const T& operator[](std::size_t index) const {
-            // assert(index < m_components.size() && "Component Container index > size()");
             return m_components[index];
         }
 
@@ -136,6 +138,20 @@ namespace robot2D::ecs {
             }
             else
                 return false;
+        }
+
+        bool cloneSelf(IContainer::Ptr cloneContainer, const CloneFilterFunction& filterFunction) override {
+            if(auto targetCloneContainer = std::dynamic_pointer_cast<ComponentContainer<T>>(cloneContainer)) {
+
+                for(const auto& [key, value]: m_components) {
+                    if(filterFunction(key))
+                        continue;
+                    targetCloneContainer -> m_components[key] = value;
+                }
+
+                return true;
+            }
+            return false;
         }
     private:
         void cloneComponent(EntityID fromEntity, T component) {

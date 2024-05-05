@@ -603,16 +603,16 @@ namespace editor {
 
                             /// TODO(a.raag): findPrefab remove when test loadPrefab Correctness
                             Prefab::Ptr prefab { nullptr };
-                            if(auto findPrefab = m_prefabManager.findPrefab(realPrefabPath))
-                                prefab = findPrefab;
-                            else if(auto loadPrefab = m_prefabManager.loadPrefab(m_interactor, realPrefabPath))
-                                prefab = loadPrefab;
+//                            if(auto findPrefab = m_prefabManager.findPrefab(realPrefabPath))
+//                                prefab = findPrefab;
+//                            else if(auto loadPrefab = m_prefabManager.loadPrefab(m_interactor, realPrefabPath))
+//                                prefab = loadPrefab;
 
                             if(!prefab)
                                 break;
 
-                            SceneEntity duplicateEntity =
-                                    m_interactor -> duplicateEmptyEntity(prefab -> entity);
+                            SceneEntity duplicateEntity; // =
+                                  //  m_interactor -> duplicateEmptyEntity(prefab -> entity);
                             if (duplicateEntity && duplicateEntity != entity) {
                                 if(hasField)
                                     scriptField.setValue(duplicateEntity.getComponent<IDComponent>().ID);
@@ -732,7 +732,7 @@ namespace editor {
             RB_EDITOR_ERROR("InspectorPanel: Can't load prefab by path {0}", fullPath);
         }
         else {
-            m_selectedEntity = prefab -> entity;
+           // m_selectedEntity = prefab -> entity;
         }
     }
 

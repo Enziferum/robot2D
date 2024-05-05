@@ -33,18 +33,15 @@ namespace robot2D::ecs {
 
     class ROBOT2D_EXPORT_API Entity {
     public:
-        Entity(EntityID index = 0);
-        Entity(const Entity& other);
-        Entity& operator=(const Entity& other);
-        Entity(Entity&& other);
+        Entity() = default;
+        Entity(const Entity& other) = default;
+        Entity& operator=(const Entity& other) = default;
+        Entity(Entity&& other) = default;
         Entity& operator=(Entity&& other) = default;
         ~Entity() = default;
 
         template<typename T>
         bool hasComponent() const;
-
-        template<typename T, typename ...Args>
-        T& addComponent(Args&& ... args);
 
         template<typename T>
         T& getComponent();
@@ -52,12 +49,13 @@ namespace robot2D::ecs {
         template<typename T>
         const T& getComponent() const;
 
+        template<typename T, typename ...Args>
+        T& addComponent(Args&& ... args);
+
         template<typename T>
         void removeComponent();
 
-        [[nodiscard]]
-        const EntityID& getIndex() const { return m_id; }
-        EntityID getIndex() { return m_id; }
+        EntityID getIndex() const { return m_id; }
 
         [[nodiscard]]
         Bitmask getComponentMask() const;
@@ -78,8 +76,8 @@ namespace robot2D::ecs {
         Entity(EntityManager* entityManager, const EntityID& id);
         EntityManager* m_entityManager{ nullptr };
 
-        EntityID m_id{std::numeric_limits<EntityID>::max()};
-        bool m_needAddToScene{true};
+        EntityID m_id{ std::numeric_limits<EntityID>::max() };
+        bool m_needAddToScene{ true };
     };
 
 }

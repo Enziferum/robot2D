@@ -42,8 +42,6 @@ namespace robot2D::ecs {
 
     Entity EntityManager::createEntity(bool needAddToScene) {
         Entity entity{this, m_entityCounter};
-        if(m_entityCounter >= m_destroyFlags.size())
-            m_destroyFlags.resize(m_destroyFlags.size() + 1000);
         m_entityCounter++;
         entity.m_needAddToScene = needAddToScene;
         return entity;
@@ -57,22 +55,22 @@ namespace robot2D::ecs {
 
     bool EntityManager::removeEntity(Entity entity) {
         for(auto& container: m_componentContainers) {
-            if(container) {
-                const auto componentID = container -> getID();
-                Bitmask bitmask;
-                bitmask.turnOnBit(componentID);
-                auto entityMask = entity.getComponentMask();
-                if(!bitmask.matches(entityMask, bitmask.getBitset()))
-                    continue;
-                if(m_componentContainersDeleteBuffer[componentID] == nullptr) {
-                    m_componentContainersDeleteBuffer[componentID] = container -> cloneEmpty();
-                }
-                if (!container->
-                        cloneTo(m_componentContainersDeleteBuffer[componentID], entity.getIndex())) {
-                    RB_CORE_ERROR("EntityManager: Can't clone component, index = {0}", entity.getIndex());
-                }
-                container -> removeEntity(entity.getIndex());
+            if(!container)
+                continue;
+            const auto componentID = container -> getID();
+            Bitmask bitmask;
+            bitmask.turnOnBit(componentID);
+            auto entityMask = entity.getComponentMask();
+
+            if(!bitmask.matches(entityMask, bitmask.getBitset()))
+                continue;
+            if(m_componentContainersDeleteBuffer[componentID] == nullptr) {
+                m_componentContainersDeleteBuffer[componentID] = container -> cloneEmpty();
             }
+            if (!container -> cloneTo(m_componentContainersDeleteBuffer[componentID], entity.getIndex())) {
+                RB_CORE_ERROR("EntityManager: Can't clone component, index = {0}", entity.getIndex());
+            }
+            container -> removeEntity(entity.getIndex());
         }
 
         bool maskDeleted = static_cast<bool>(m_componentMasks.erase(entity.getIndex()));
@@ -86,6 +84,7 @@ namespace robot2D::ecs {
     }
 
     void EntityManager::markDestroyed(Entity entity) {
+        RB_ASSERT(entity.m_id < m_destroyFlags.size(), "(EntityManager::markDestroyed): index out of range")
         m_destroyFlags[entity.m_id] = true;
     }
 
@@ -115,18 +114,17 @@ namespace robot2D::ecs {
 
     bool EntityManager::restoreEntity(Entity entity) {
         for(auto& container: m_componentContainersDeleteBuffer) {
-            if(container) {
-                const auto componentID = container -> getID();
-                if(!container -> hasEntity(entity.getIndex()))
-                    continue;
-                if (!container ->
-                        cloneTo(m_componentContainers[componentID], entity.getIndex())) {
-                    RB_CORE_ERROR("EntityManager: Can't clone component, index = {0}", entity.getIndex());
-                    return false;
-                }
-                m_componentMasks[entity.getIndex()].turnOnBit(componentID);
-                container -> removeEntity(entity.getIndex());
+            if(!container)
+                continue;
+            const auto componentID = container -> getID();
+            if(!container -> hasEntity(entity.getIndex()))
+                continue;
+            if (!container -> cloneTo(m_componentContainers[componentID], entity.getIndex())) {
+                RB_CORE_ERROR("EntityManager: Can't clone component, index = {0}", entity.getIndex());
+                return false;
             }
+            m_componentMasks[entity.getIndex()].turnOnBit(componentID);
+            container -> removeEntity(entity.getIndex());
         }
 
         if(entity.getIndex() < m_destroyFlags.size())
@@ -137,12 +135,50 @@ namespace robot2D::ecs {
         return true;
     }
 
-    void EntityManager::clear() {
-        // no - op
+    bool EntityManager::cloneSelf(EntityManager& cloneManager) {
+
+        /// \brief return true if id in destroyFlags else false
+        const auto filterEntityFunction = [this](EntityID id) {
+            return (m_destroyFlags.find(id) != m_destroyFlags.end());
+        };
+
+        /// \brief Clone ComponentContainers: deep copy of containers and copy only not destroyed entities
+        {
+            int index = -1;
+            auto& componentContainers = cloneManager.m_componentContainers;
+            for(auto& container: m_componentContainers) {
+                ++index;
+                if(!container)
+                    continue;
+
+                if(!componentContainers[index])
+                    componentContainers[index] = container -> cloneEmpty();
+
+                if(!container -> cloneSelf(componentContainers[index], filterEntityFunction))
+                    return false;
+            }
+        }
+
+        {
+            auto& componentMasks = cloneManager.m_componentMasks;
+            for(const auto& [key, value]: m_componentMasks) {
+                if(filterEntityFunction(key))
+                    continue;
+                componentMasks[key] = value;
+            }
+        }
+
+
+        /// FixMe(a.raag): entity is invalid because original scene can have destroyed entities
+        return true;
     }
 
-    bool EntityManager::cloneSelf(EntityManager& cloneManager) {
-        // no - op
+    bool EntityManager::clearSelf() {
+        m_entityCounter = 0;
+        m_destroyFlags.clear();
+        m_componentContainers.clear();
+        m_componentContainersDeleteBuffer.clear();
+        m_componentMasks.clear();
         return true;
     }
 

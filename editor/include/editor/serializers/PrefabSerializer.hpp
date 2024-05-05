@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2023
+(c) Alex Raag 2024
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -20,14 +20,19 @@ source distribution.
 *********************************************************************/
 
 #pragma once
-#include "yaml-cpp/yaml.h"
-#include "robot2D/Ecs/Entity.hpp"
-#include "editor/Prefab.hpp"
+
+#include <editor/Prefab.hpp>
 
 namespace editor {
+
+
     class PrefabSerializer {
     public:
         PrefabSerializer();
+        PrefabSerializer(const PrefabSerializer& other) = delete;
+        PrefabSerializer& operator=(const PrefabSerializer& other) = delete;
+        PrefabSerializer(PrefabSerializer&& other) = delete;
+        PrefabSerializer& operator=(PrefabSerializer&& other) = delete;
         ~PrefabSerializer() = default;
 
         bool serialize(Prefab::Ptr prefab, const std::string& path);
@@ -35,4 +40,5 @@ namespace editor {
     private:
         Prefab::Ptr m_prefab;
     };
+
 }

@@ -24,30 +24,11 @@ source distribution.
 
 namespace robot2D::ecs {
 
-    Entity::Entity(EntityID entityId): m_entityManager(nullptr), m_id(entityId){}
     Entity::Entity(EntityManager* entityManager, const EntityID& id):
-    m_entityManager(entityManager),
-    m_id(id){}
+            m_entityManager(entityManager),
+            m_id(id){}
 
-    Entity::Entity(const Entity& other):
-        m_entityManager{other.m_entityManager},
-        m_id{other.m_id},
-        m_needAddToScene{other.m_needAddToScene}{}
 
-    Entity::Entity(Entity&& other):
-        m_entityManager{std::move(other.m_entityManager)},
-        m_id{std::move(other.m_id)},
-        m_needAddToScene{other.m_needAddToScene}
-    {}
-
-    Entity& Entity::operator=(const Entity& other) {
-        if(this == &other)
-            return *this;
-        m_entityManager = other.m_entityManager;
-        m_id = other.m_id;
-        m_needAddToScene = other.m_needAddToScene;
-        return *this;
-    }
 
     bool operator==(const Entity& left, const Entity& right) {
         return (left.m_id == right.m_id);

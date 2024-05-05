@@ -31,10 +31,33 @@ source distribution.
 
 namespace robot2D::ecs {
 
+    /// TODO(a.raag): some SFINAE Rules for this class and add some functionality
+    template<typename Container>
+    class DoubleBuffer {
+    public:
+        using T = typename Container::value_type;
+    public:
+        DoubleBuffer() = default;
+        DoubleBuffer(const DoubleBuffer& other) = delete;
+        DoubleBuffer& operator=(const DoubleBuffer& other) = delete;
+        DoubleBuffer(DoubleBuffer&& other) = delete;
+        DoubleBuffer& operator=(DoubleBuffer&& other) = delete;
+        ~DoubleBuffer() = default;
+
+        void push_back(const T& value) { m_containerBuffer.push_back(value); }
+        void update() { m_container.swap(m_containerBuffer); }
+        void clear() { m_container.clear(); }
+        const Container& getData() const { return m_container; }
+    private:
+        Container m_container;
+        Container m_containerBuffer;
+    };
+
+
     /// \brief Ecs Manager as well, entities adding to Scene
     class ROBOT2D_EXPORT_API Scene: public robot2D::Drawable {
     public:
-        Scene(robot2D::MessageBus& messageBus, const bool& useSystems = true);
+        Scene(robot2D::MessageBus& messageBus, bool useSystems = true);
         Scene(const Scene&) = delete;
         Scene(Scene&&) = delete;
         Scene& operator=(const Scene&) = delete;
@@ -43,9 +66,8 @@ namespace robot2D::ecs {
 
         bool cloneSelf(Scene& clone, bool cloneSystems = false);
 
-        bool restoreFromClone(const Scene& clone);
-
-        bool clearAll();
+        /// \brief usefull for clone if want reuse clone
+        bool clearSelf();
 
         Entity createEntity();
         /// \brief Allocate Entity, but not add it systems. Useful for buffer
@@ -81,11 +103,11 @@ namespace robot2D::ecs {
         EntityManager m_entityManager;
         SystemManager m_systemManager;
 
-        std::vector<Entity> m_addPending;
-        std::vector<Entity> m_deletePending;
-        std::vector<Entity> m_deletePendingBuffer;
-        std::vector<robot2D::Drawable*> m_drawables;
+        using EntityContainer = std::vector<Entity>;
+        DoubleBuffer<EntityContainer> m_addBuffer;
+        DoubleBuffer<EntityContainer> m_deleteBuffer;
 
+        std::vector<robot2D::Drawable*> m_drawables;
         bool m_useSystems;
     };
 

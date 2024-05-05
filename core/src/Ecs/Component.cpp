@@ -39,4 +39,14 @@ namespace robot2D::ecs {
         return std::distance(m_indices.begin(), found);
     }
 
+    bool ComponentManager::cloneSelf(ComponentManager& cloneManager) {
+        cloneManager.m_indices = m_indices;
+        return true;
+    }
+
+    bool ComponentManager::clearSelf() {
+        m_indices.clear();
+        return true;
+    }
+
 }

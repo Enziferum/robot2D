@@ -48,8 +48,10 @@ namespace editor {
         bool savePrefab(UUID uuid);
 
         Prefab::Ptr findPrefab(UUID prefabID);
-        Prefab::Ptr findPrefab(std::string localPath);
+
         bool deletePrefab(UUID prefabID);
+    private:
+        Prefab::Ptr findPrefab(const std::string& path);
     private:
         std::unordered_map<UUID, Prefab::Ptr> m_prefabs;
     };
