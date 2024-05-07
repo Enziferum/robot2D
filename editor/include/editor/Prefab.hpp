@@ -33,17 +33,19 @@ namespace editor {
     public:
 
         Prefab() = default;
-        Prefab(const std::string& path, const SceneEntity& prefabEntity, UUID uuid) { }
+        Prefab(const std::string& path, const SceneEntity& prefabEntity, UUID uuid);
         Prefab(const Prefab& other) = delete;
         Prefab& operator=(const Prefab& other) = delete;
         Prefab(Prefab&& other) = delete;
         Prefab& operator=(Prefab&& other) = delete;
         ~Prefab() = default;
 
-        void setEntity(const SceneEntity& entity) { }
-        void setPath(const std::string& path) { }
-        void addUUID() { }
+        void setEntity(const SceneEntity& entity);
+        void setPath(const std::string& path);
+        void setUUID(UUID uuid);
+        void addUUID();
 
+        SceneEntity& getEntity() { return m_entity; }
         const SceneEntity& getEntity() const { return m_entity; }
         const std::string& getPath() const { return m_path; }
         const UUID& getUUID() const { return m_uuid; }

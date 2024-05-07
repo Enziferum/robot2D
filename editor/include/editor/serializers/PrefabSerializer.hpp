@@ -35,8 +35,8 @@ namespace editor {
         PrefabSerializer& operator=(PrefabSerializer&& other) = delete;
         ~PrefabSerializer() = default;
 
-        bool serialize(Prefab::Ptr prefab, const std::string& path);
-        bool deserialize(Prefab::Ptr prefab, const std::string& path);
+        bool serialize(Prefab::Ptr prefab);
+        bool deserialize(Prefab::Ptr prefab);
     private:
         Prefab::Ptr m_prefab;
     };

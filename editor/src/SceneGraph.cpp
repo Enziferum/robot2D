@@ -25,7 +25,9 @@ source distribution.
 
 namespace editor {
 
-    void SceneGraph::updateSelf(robot2D::ecs::Scene& ecsScene) {
+    SceneGraph::SceneGraph(robot2D::MessageBus& messageBus): m_scene{messageBus} {}
+
+    void SceneGraph::update(float dt) {
         m_deletePendingEntities.swap(m_deletePendingBuffer);
         for (auto& entity : m_deletePendingEntities) {
 //            for (auto child : entity.getChildren())
@@ -36,7 +38,7 @@ namespace editor {
                     return item == entity;
                 }), m_sceneEntities.end());
 
-            ecsScene.removeEntity(entity.getWrappedEntity());
+            m_scene.removeEntity(entity.getWrappedEntity());
         }
         m_deletePendingEntities.clear();
     }
@@ -125,6 +127,9 @@ namespace editor {
         m_deletePendingBuffer.push_back(entity);
     }
 
+    bool SceneGraph::cloneSelf(SceneGraph& cloneGraph) {
+        return false;
+    }
 
 
 } // namespace editor

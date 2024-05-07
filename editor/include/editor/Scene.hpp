@@ -44,7 +44,6 @@ namespace editor {
     class Scene : public robot2D::Drawable {
     public:
         using Ptr = std::shared_ptr<Scene>;
-        using EntityList = std::list<robot2D::ecs::Entity>;
     public:
         Scene(robot2D::MessageBus& messageBus);
         Scene(const Scene& other) = delete;
@@ -135,9 +134,10 @@ namespace editor {
     private:
         friend class EditorLogic;
         friend class DuplicateCommand;
+        SceneGraph m_sceneGraph;
+        SceneGraph m_runtimeSceneGraph;
 
         robot2D::ecs::Scene m_scene;
-        robot2D::ecs::Scene m_CloneScene;
 
         IEditorCamera::Ptr m_editorCamera{nullptr};
         IPhysics2DAdapter::Ptr m_physicsAdapter{ nullptr };
@@ -151,7 +151,5 @@ namespace editor {
         using Iterator = std::list<SceneEntity>::iterator;   
         using SetItem = std::tuple<Iterator, SceneEntity, bool, SceneEntity>;
         std::vector<SetItem> m_setItems;
-
-        SceneGraph m_sceneGraph;
     };
 } // namespace editor

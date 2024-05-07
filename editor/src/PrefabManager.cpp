@@ -44,7 +44,7 @@ namespace editor {
         m_prefabs[uuid] = std::make_shared<Prefab>(fullPath, entity, UUID());
 
         PrefabSerializer serializer;
-        return  serializer.serialize(m_prefabs[uuid], fullPath);
+        return serializer.serialize(m_prefabs[uuid]);
     }
 
     Prefab::Ptr PrefabManager::loadPrefab(UIInteractor::Ptr interactor, const std::string& path) {
@@ -59,7 +59,7 @@ namespace editor {
         prefab -> setPath(path);
 
         PrefabSerializer serializer;
-        bool ok = serializer.deserialize(prefab, path);
+        bool ok = serializer.deserialize(prefab);
         if(!ok) {
             RB_EDITOR_ERROR("PrefabManager: can't load prefab");
             return nullptr;
@@ -67,24 +67,20 @@ namespace editor {
 
         prefab -> addUUID();
 
-        auto& entity = prefab -> getEntity();
-       // prefab -> entity.addComponent<PrefabComponent>().prefabUUID = prefab -> prefabUUID;
+        auto uuid = prefab -> getUUID();
+        m_prefabs[uuid] = prefab;
 
-       // auto uuid = prefab -> prefabUUID;
-       // m_prefabs[uuid] = prefab;
-
-        return nullptr;
-        // return m_prefabs[uuid];
+        return m_prefabs[uuid];
     }
 
     Prefab::Ptr PrefabManager::findPrefab(UUID prefabID) {
         return nullptr;
     }
 
-    Prefab::Ptr PrefabManager::findPrefab(const std::string& localPath) {
+    Prefab::Ptr PrefabManager::findPrefab(const std::string& path) {
         for(auto& prefab: m_prefabs) {
-           // if(prefab.second -> localPath == localPath)
-             //   return prefab.second;
+           if(prefab.second -> getPath() == path)
+             return prefab.second;
         }
 
         return nullptr;
@@ -97,11 +93,10 @@ namespace editor {
     bool PrefabManager::savePrefab(Prefab::Ptr prefab) {
         if(!prefab)
             return false;
-        // const auto& uuid = prefab -> entity.getComponent<IDComponent>().ID;
+        const auto& uuid = prefab -> getUUID();
 
         PrefabSerializer serializer;
-        // return serializer.serialize(m_prefabs[uuid], prefab -> localPath);;
-        return true;
+        return serializer.serialize(m_prefabs[uuid]);
     }
 
     bool PrefabManager::savePrefab(UUID uuid) {
@@ -109,8 +104,7 @@ namespace editor {
             return false;
 
         PrefabSerializer serializer;
-        // return serializer.serialize(m_prefabs[uuid], m_prefabs[uuid] -> localPath);
-        return true;
+        return serializer.serialize(m_prefabs[uuid]);
     }
 
 
