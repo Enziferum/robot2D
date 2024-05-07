@@ -22,6 +22,7 @@ source distribution.
 #pragma once
 #include <list>
 
+#include <robot2D/Ecs/Scene.hpp>
 #include <robot2D/Ecs/Entity.hpp>
 #include <robot2D/Ecs/Scene.hpp>
 #include "SceneEntity.hpp"
@@ -30,15 +31,18 @@ namespace editor {
 
 
     class SceneGraph {
+    private:
+        using EntityContainer = std::vector<SceneEntity>;
     public:
-        SceneGraph() = default;
+        SceneGraph(robot2D::MessageBus& messageBus);
         ~SceneGraph() = default;
         SceneGraph(const SceneGraph& other) = delete;
         SceneGraph& operator=(const SceneGraph& other) = delete;
         SceneGraph(SceneGraph&& other) = delete;
         SceneGraph& operator=(SceneGraph&& other) = delete;
 
-        void updateSelf(robot2D::ecs::Scene& ecsScene);
+        bool cloneSelf(SceneGraph& cloneGraph);
+        void update(float dt);
 
         SceneEntity createEntity(robot2D::ecs::Entity&& entity);
         void addEntity(SceneEntity&& sceneEntity);
@@ -55,7 +59,11 @@ namespace editor {
     private:
         SceneEntity getEntityChild(SceneEntity& parent, UUID uuid) const;
     private:
+        robot2D::ecs::Scene m_scene;
+
         std::list<SceneEntity> m_sceneEntities;
+
+
 
         /// <summary>
         ///  double buffer pattern for removing 

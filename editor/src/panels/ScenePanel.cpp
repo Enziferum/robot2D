@@ -134,7 +134,7 @@ namespace editor {
 
                 if(auto prefab = m_prefabManager.loadPrefab(m_interactor, realPrefabPath)) {
                     auto item = m_treeHierarchy.addItem<SceneEntity>();
-                    SceneEntity duplicateEntity; // = m_interactor -> duplicateEmptyEntity(prefab -> entity);
+                    SceneEntity duplicateEntity = m_interactor -> duplicateEmptyEntity(prefab -> getEntity());
                     item -> setTexture(m_iconTextures[TreeItemIcon::Prefab], robot2D::Color::Blue);
                     item -> setName(&duplicateEntity.getComponent<TagComponent>().getTag());
                     item -> setUserData(duplicateEntity);

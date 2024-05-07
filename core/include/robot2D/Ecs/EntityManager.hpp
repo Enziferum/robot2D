@@ -102,13 +102,13 @@ namespace robot2D::ecs {
 
         EntityID m_entityCounter;
         ComponentManager& m_componentManager;
-        std::unordered_map<EntityID, Bitmask> m_componentMasks;
 
         std::vector<IContainer::Ptr> m_componentContainers;
         std::vector<IContainer::Ptr> m_componentContainersDeleteBuffer;
 
-
         std::unordered_map<EntityID, bool> m_destroyFlags;
+        std::unordered_map<EntityID, Bitmask> m_componentMasks;
+
         Scene* m_ownerScene{ nullptr };
     };
 

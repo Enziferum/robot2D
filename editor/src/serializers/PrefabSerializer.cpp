@@ -48,11 +48,11 @@ namespace YAML {
 namespace editor {
     PrefabSerializer::PrefabSerializer() = default;
 
-    bool PrefabSerializer::serialize(editor::Prefab::Ptr prefab, const std::string& path) {
+    bool PrefabSerializer::serialize(editor::Prefab::Ptr prefab) {
         YAML::Emitter out;
         out << YAML::BeginMap;
-        // out << YAML::Key << "Prefab" << YAML::Value << prefab -> entity.getComponent<TagComponent>().getTag();
-       // out << YAML::Key << "PrefabUUID" << YAML::Value << prefab -> prefabUUID;
+        out << YAML::Key << "Prefab" << YAML::Value << prefab -> getEntity().getComponent<TagComponent>().getTag();
+        out << YAML::Key << "PrefabUUID" << YAML::Value << prefab -> getUUID();
         out << YAML::Key << "Entities" << YAML::Value << YAML::BeginSeq;
 
         auto entitySerializer = getSerializer<EntityYAMLSerializer>();
@@ -61,7 +61,7 @@ namespace editor {
         out << YAML::EndSeq;
         out << YAML::EndMap;
 
-        std::ofstream ofstream(path);
+        std::ofstream ofstream(prefab -> getPath());
         if(!ofstream.is_open()) {
            // m_error = SceneSerializerError::NoFileOpen;
             return false;
@@ -73,10 +73,10 @@ namespace editor {
         return true;
     }
 
-    bool PrefabSerializer::deserialize(Prefab::Ptr prefab, const std::string& path) {
+    bool PrefabSerializer::deserialize(Prefab::Ptr prefab) {
         YAML::Node data;
         try {
-            std::ifstream ifstream(path);
+            std::ifstream ifstream(prefab -> getPath());
             if(!ifstream.is_open()) {
                // m_error = SceneSerializerError::NoFileOpen;
                 return false;
@@ -99,7 +99,7 @@ namespace editor {
 
         std::string prefabName = data["Prefab"].as<std::string>();
         uint64_t uuid = data["PrefabUUID"].as<uint64_t>();
-       //  prefab -> prefabUUID = uuid;
+        prefab -> setUUID(uuid);
 
         auto prefabEntities = data["Entities"];
 
@@ -112,9 +112,8 @@ namespace editor {
         std::vector<ChildInfo> children;
         for(const auto& entity: prefabEntities) {
             bool addToScene = true;
-           // auto& deserializedEntity = prefab -> entity;
-            /// TODO(a.raag): Uncomment when move to SceneEntity
-            // entitySerializer -> deserialize(entity, deserializedEntity, addToScene, children);
+            auto& deserializedEntity = prefab -> getEntity();
+            entitySerializer -> deserialize(entity, deserializedEntity, addToScene, children);
         }
 
         return true;

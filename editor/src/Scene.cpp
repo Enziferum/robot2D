@@ -38,8 +38,9 @@ source distribution.
 namespace editor {
 
     Scene::Scene(robot2D::MessageBus& messageBus):
+    m_sceneGraph(messageBus),
+    m_runtimeSceneGraph(messageBus),
     m_scene(messageBus),
-    m_CloneScene(messageBus),
     m_messageBus{messageBus}
     {
         initScene();
@@ -105,7 +106,7 @@ namespace editor {
         }
 
         m_setItems.clear();
-        m_sceneGraph.updateSelf(m_scene);
+        m_sceneGraph.update(dt);
         m_scene.update(dt);
     }
 
@@ -174,14 +175,14 @@ namespace editor {
 
     void Scene::onRuntimeStart(ScriptInteractor::Ptr scriptInteractor) {
         m_running = true;
-        m_scene.cloneSelf(m_CloneScene);
+        m_sceneGraph.cloneSelf(m_runtimeSceneGraph);
         onPhysics2DRun();
 
         m_scene.getSystem<RenderSystem>() -> setScene(this);
         ScriptEngine::onRuntimeStart(scriptInteractor);
 
         /// TODO(a.raag): moving to SceneGraph
-        for(auto& entity: m_sceneGraph.getEntities()) {
+        for(auto& entity: m_runtimeSceneGraph.getEntities()) {
             if(entity.hasComponent<ScriptComponent>() && !entity.hasComponent<PrefabComponent>())
                 ScriptEngine::onCreateEntity(entity);
             if(entity.hasChildren()) {
