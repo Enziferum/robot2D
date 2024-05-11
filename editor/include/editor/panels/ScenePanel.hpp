@@ -55,30 +55,34 @@ namespace editor {
         ~ScenePanel() override = default;
 
         void setInteractor(UIInteractor::Ptr interactor);
-        void render() override;
 
         SceneEntity getSelectedEntity() const;
         SceneEntity getTreeItem(UUID uuid);
 
+        void processSelectedEntities(std::vector<ITreeItem::Ptr>&& items);
         void clearSelection();
 
-        void processSelectedEntities(std::vector<ITreeItem::Ptr>&& items);
-
-        DeletedEntitiesRestoreUIInformation
-        removeEntitiesOnUI(std::list<ITreeItem::Ptr>&& uiItems);
+        DeletedEntitiesRestoreUIInformation removeEntitiesOnUI(std::list<ITreeItem::Ptr>&& uiItems);
         void restoreEntitiesOnUI(const DeletedEntitiesRestoreUIInformation& restoreUiInformation);
+
+        void render() override;
     private:
         void windowFunction();
 
         void onEntitySelection(const PanelEntitySelectedMessage& entitySelection);
         void onEntityDuplicate(const EntityDuplication& duplication);
-        void onEntityRemove(const EntityRemovement& removement);
-
         void entityDuplicateChild(SceneEntity parentEntity, ITreeItem::Ptr parentItem);
 
         void setupTreeHierarchy();
         void setStartChildEntity(SceneEntity entity, ITreeItem::Ptr parent);
         void processSelectedChildren(ITreeItem::Ptr parent, std::vector<ITreeItem::Ptr>& items);
+
+
+        void onSelectUIItem(ITreeItem::Ptr item);
+        void onReorderUIItems(ITreeItem::Ptr source, ITreeItem::Ptr target);
+        void onMakeChildUIItems(ITreeItem::Ptr source, ITreeItem::Ptr target);
+        void onRemoveChildUIItems(ITreeItem::Ptr source, ITreeItem::Ptr target);
+        void onMultiSelect(std::set<ITreeItem::Ptr>& items, bool allSelected);
     private:
         robot2D::MessageBus& m_messageBus;
         MessageDispatcher& m_messageDispatcher;
@@ -89,13 +93,5 @@ namespace editor {
         SceneEntity m_selectedEntity;
         ScenePanelConfiguration m_configuration;
         TreeHierarchy m_treeHierarchy;
-
-        bool m_selectedEntityNeedCheckForDelete{false};
-
-        enum class TreeItemIcon {
-            Default,
-            Prefab
-        };
-        robot2D::ResourceHandler<robot2D::Texture, TreeItemIcon> m_iconTextures;
     };
 }

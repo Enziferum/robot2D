@@ -19,6 +19,7 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
+#include <algorithm>
 #include <editor/panels/ITreeItem.hpp>
 
 namespace editor {
@@ -50,7 +51,7 @@ namespace editor {
     void ITreeItem::removeSelf() {
         if (!isChild() || !m_parent)
             return;
-        m_parent->removeChild(this);
+        m_parent -> removeChild(this);
     }
 
     void ITreeItem::update() {

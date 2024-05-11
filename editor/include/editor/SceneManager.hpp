@@ -21,6 +21,7 @@ source distribution.
 #pragma once
 
 #include <unordered_map>
+#include <functional>
 #include <vector>
 #include <robot2D/Core/MessageBus.hpp>
 
@@ -31,7 +32,9 @@ source distribution.
 namespace editor {
     class SceneManager {
     public:
-        SceneManager(robot2D::MessageBus& messageBus);
+        using SceneLoadCallback = std::function<void(Scene::Ptr)>;
+    public:
+        explicit SceneManager(robot2D::MessageBus& messageBus);
         SceneManager(const SceneManager& other) = delete;
         SceneManager& operator=(const SceneManager& other) = delete;
         SceneManager(SceneManager&& other) = delete;
@@ -41,15 +44,14 @@ namespace editor {
         bool add(Project::Ptr&& project);
         bool add(Project::Ptr&& project, const std::string& path);
 
-        bool load(const Project::Ptr project, std::string path = "");
+
+        void loadSceneAsync(Project::Ptr associatedProject, std::string path, SceneLoadCallback&& callback);
         bool remove();
         bool save(Scene::Ptr&& scene);
 
         Project::Ptr getAssociatedProject() const;
         Scene::Ptr getActiveScene() const;
         const SceneManagerError& getError() const;
-    private:
-        void loadAssetByEntity(SceneEntity& entity);
     private:
         robot2D::MessageBus& m_messageBus;
         Project::Ptr m_associatedProject;

@@ -102,11 +102,8 @@ namespace editor {
             my = viewportSize.y - my;
 
             if( !m_guizmo2D.isActive() && !m_CameraCollider.isActive() ) {
-                m_frameBuffer -> Bind();
-                int graphicsEntityID = m_frameBuffer -> readPixel(frameBufferAttachmentIndex,
-                                                                  { static_cast<int>(mx), static_cast<int>(my) });
-                m_frameBuffer -> unBind();
-                m_uiInteractor -> getSelectedEntity(graphicsEntityID);
+                robot2D::vec2i mousePos = { static_cast<int>(mx), static_cast<int>(my) };
+                m_uiInteractor -> findEntity(mousePos);
             }
         }
     }
@@ -304,7 +301,8 @@ namespace editor {
             imgui_Window("##InstrumentBar", &p_open, window_flags) {
                 auto contentSize = ImGui::GetContentRegionAvail();
 
-                robot2D::ScopedStyleColor scopedStyleColor(ImGuiCol_Button, robot2D::Color(255.f, 255.f, 255.f, 127.f));
+                robot2D::ScopedStyleColor scopedStyleColor(ImGuiCol_Button,
+                                                           robot2D::Color(255.f, 255.f, 255.f, 127.f));
                 ImGui::SetCursorPosX((contentSize.x - buttonSize.x) / 2.F);
                 if(robot2D::ImageButton(m_icons[IconType::Move], { buttonSize.x, buttonSize.y })) {
                     auto* msg = m_messageBus.postMessage<InstrumentMessage>(MessageID::InstrumentPressed);

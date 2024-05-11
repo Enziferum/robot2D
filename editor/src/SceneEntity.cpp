@@ -55,6 +55,14 @@ namespace editor {
         return m_entity.getComponent<TransformComponent>().getChildren();
     }
 
+    robot2D::FloatRect SceneEntity::calculateRect() const {
+        const auto& tx = m_entity.getComponent<TransformComponent>();
+        return { tx.getPosition(), tx.getScale() };
+    }
+
+    std::vector<SceneEntity> &SceneEntity::getChildren() {
+        return m_entity.getComponent<TransformComponent>().getChildren();
+    }
 
 
 } // namespace editor

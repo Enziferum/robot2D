@@ -23,6 +23,7 @@ source distribution.
 
 #include <vector>
 #include <robot2D/Ecs/Entity.hpp>
+#include <robot2D/Graphics/Rect.hpp>
 #include "Uuid.hpp"
 
 namespace editor {
@@ -30,8 +31,8 @@ namespace editor {
     public:
         SceneEntity() = default;
 
-        SceneEntity(robot2D::ecs::Entity&& entity);
-        SceneEntity(const robot2D::ecs::Entity& entity);
+        explicit SceneEntity(robot2D::ecs::Entity&& entity);
+        explicit SceneEntity(const robot2D::ecs::Entity& entity);
         SceneEntity(const SceneEntity& other) = default;
         SceneEntity& operator=(const SceneEntity& other) = default;
         SceneEntity(SceneEntity&& other) = default;
@@ -69,8 +70,12 @@ namespace editor {
 
         robot2D::ecs::Entity getWrappedEntity() const { return m_entity; }
         const std::vector<SceneEntity>& getChildren() const;
+        std::vector<SceneEntity>& getChildren();
 
         const SceneEntity& getParent() const { return *m_parent; }
+
+        /// \brief usefull for QuadTree insertion
+        robot2D::FloatRect calculateRect() const;
     private:
         robot2D::ecs::Entity m_entity;
         SceneEntity* m_parent { nullptr };

@@ -21,33 +21,32 @@ source distribution.
 
 #pragma once
 #include <string>
+#include <functional>
 
-#include <editor/SceneManager.hpp>
-#include <editor/EditorLogic.hpp>
+#include <editor/Scene.hpp>
 #include <editor/Task.hpp>
 
 namespace editor {
-    /// TODO(a.raag): Move in RB-40 to robot2DAsync library
     class SceneLoadTask final: public ITask {
     public:
-        SceneLoadTask(ITaskFunction::Ptr function,
-                      SceneManager& sceneManager,
-                      Project::Ptr project,
-                      std::string path,
-                      EditorLogic* logic);
+        using SceneLoadChainCallback = std::function<void(Scene::Ptr)>;
+    public:
+        SceneLoadTask(ITaskFunction::Ptr function, Scene::Ptr scene, SceneLoadChainCallback&& callback);
         SceneLoadTask(const SceneLoadTask& other) = delete;
         SceneLoadTask& operator=(const SceneLoadTask& other) = delete;
         SceneLoadTask(SceneLoadTask&& other) = delete;
         SceneLoadTask& operator=(SceneLoadTask&& other) = delete;
         ~SceneLoadTask() override = default;
 
-
         void execute() override;
-        EditorLogic* getLogic() const { return m_logic;}
+        Scene::Ptr getScene() const { return m_scene; }
+        SceneLoadChainCallback getChainCallback() const { return m_chainCallback; }
     private:
-        SceneManager& m_sceneManager;
-        Project::Ptr m_project;
-        std::string m_path;
-        EditorLogic* m_logic;
+        void loadAssets();
+        void loadAssets(SceneEntity& entity);
+    private:
+        Scene::Ptr m_scene;
+        SceneLoadChainCallback m_chainCallback;
     };
+
 } // namespace editor

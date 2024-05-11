@@ -31,6 +31,10 @@ namespace editor {
     class ProjectSerializer {
     public:
         ProjectSerializer(std::shared_ptr<Project> project);
+        ProjectSerializer(const ProjectSerializer& other) = delete;
+        ProjectSerializer& operator=(const ProjectSerializer& other) = delete;
+        ProjectSerializer(ProjectSerializer&& other) = delete;
+        ProjectSerializer& operator=(ProjectSerializer&& other) = delete;
         ~ProjectSerializer() = default;
 
         bool serialize(const std::string& path);

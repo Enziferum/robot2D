@@ -151,11 +151,13 @@ namespace editor {
     }
 
     void RenderSystem::setBefore(robot2D::ecs::Entity source, robot2D::ecs::Entity target) {
-        auto sourceIter = std::find_if(m_entities.begin(), m_entities.end(), [&source](robot2D::ecs::Entity item) {
+        auto sourceIter = std::find_if(m_entities.begin(), m_entities.end(),
+                                       [&source](robot2D::ecs::Entity item) {
             return item.getIndex() == source.getIndex();
         });
 
-        auto targetIter = std::find_if(m_entities.begin(), m_entities.end(), [&target](robot2D::ecs::Entity item) {
+        auto targetIter = std::find_if(m_entities.begin(), m_entities.end(),
+                                       [&target](robot2D::ecs::Entity item) {
             return item.getIndex() == target.getIndex();
         });
 

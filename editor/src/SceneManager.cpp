@@ -23,12 +23,11 @@ source distribution.
 #include <robot2D/Util/Logger.hpp>
 
 #include <editor/SceneManager.hpp>
-#include <editor/FileApi.hpp>
 #include <editor/serializers/SceneSerializer.hpp>
-#include <editor/Components.hpp>
-#include <editor/ResouceManager.hpp>
-#include <editor/AnimationParser.hpp>
+#include <editor/FileApi.hpp>
 
+#include <editor/TaskQueue.hpp>
+#include <editor/async/SceneLoadTask.hpp>
 
 namespace editor {
     namespace {
@@ -81,37 +80,26 @@ namespace editor {
         return true;
     }
 
-
-    bool SceneManager::load(const Project::Ptr project, std::string path ) {
-
+    void SceneManager::loadSceneAsync(Project::Ptr project, std::string path, SceneLoadCallback&& callback) {
         Scene::Ptr scene = std::make_shared<Scene>(m_messageBus);
         if(scene == nullptr) {
             m_error = SceneManagerError::MemoryAlloc;
-            return false;
+            return;
         }
 
         scene -> setPath(path);
         scene -> setAssociatedProjectPath(project -> getPath());
-
-        SceneSerializer serializer(scene);
-        if(!serializer.deserialize(scene -> getPath())) {
-            m_error = SceneManagerError::SceneDeserialize;
-            return false;
-        }
-        RB_EDITOR_INFO("SceneSerializer finished");
-
-
-        m_activeScene = scene;
         m_associatedProject = std::move(project);
 
-        for(auto& entity: m_activeScene -> getEntities()) {
-            loadAssetByEntity(entity);
-            auto& ts = entity.getComponent<TransformComponent>();
-//            for(auto child: ts.getChildren())
-//                loadAssetByEntity(SceneEntity(std::move(child)));
-        }
+        auto loadCallback = [this](const SceneLoadTask& task) {
+            auto&& chainCallback = task.getChainCallback();
+            auto scene = task.getScene();
+            m_activeScene = scene;
+            chainCallback(m_activeScene);
+        };
 
-        return true;
+        auto taskQueue = TaskQueue::GetQueue();
+        taskQueue -> addAsyncTask<SceneLoadTask>(std::move(loadCallback), scene, std::move(callback));
     }
 
     bool SceneManager::remove() {
@@ -146,74 +134,4 @@ namespace editor {
         return m_associatedProject;
     }
 
-    void SceneManager::loadAssetByEntity(SceneEntity& entity) {
-        if(entity.hasComponent<DrawableComponent>()) {
-            auto& drawable = entity.getComponent<DrawableComponent>();
-            auto& localTexturePath = drawable.getTexturePath();
-            if(!localTexturePath.empty()) {
-                fs::path texturePath{localTexturePath};
-                auto id = texturePath.filename().string();
-                auto image = ResourceManager::getManager() -> addImage(id);
-                if(image) {
-                    auto absolutePath = combinePath(m_activeScene -> getAssociatedProjectPath(), texturePath.string());
-                    if(!image -> loadFromFile(absolutePath)) {
-                        RB_EDITOR_WARN("Can't load image by path {0}", absolutePath);
-                        // TODO(a.raag): make error
-                    }
-                }
-            }
-        }
-        if(entity.hasComponent<TextComponent>()) {
-            auto& text = entity.getComponent<TextComponent>();
-            auto& localFontPath = text.getFontPath();
-            if(!localFontPath.empty()) {
-                fs::path fontPath{localFontPath};
-                auto id = fontPath.filename().string();
-                auto font = ResourceManager::getManager() -> addFont(id);
-                if(font) {
-                    auto absolutePath = combinePath(m_activeScene -> getAssociatedProjectPath(), fontPath.string());
-                    if(!font -> loadFromFile(absolutePath)) {
-                        RB_EDITOR_WARN("Can't load image by path {0}", absolutePath);
-                        // TODO(a.raag): make error
-                    }
-                }
-            }
-        }
-        if(entity.hasComponent<AnimationComponent>()) {
-            auto resourceManager = ResourceManager::getManager();
-            if(!resourceManager)
-                return;
-
-            auto& animationPaths = resourceManager
-                                    -> getAnimationsPathToLoad(entity.getComponent<IDComponent>().ID);
-            AnimationParser animationParser;
-            for(auto& localAnimationPath: animationPaths) {
-                fs::path animationPath{localAnimationPath};
-                auto id = animationPath.filename().string();
-                auto animation = resourceManager -> addAnimation(entity.getComponent<IDComponent>().ID, id);
-                if(!animation)
-                    continue;
-                auto absolutePath = combinePath(m_activeScene -> getAssociatedProjectPath(),
-                                                animationPath.string());
-                if(!animationParser.loadFromFile(absolutePath, animation)) {
-                    RB_EDITOR_WARN("Can't load animation by path {0}", absolutePath);
-                }
-                animation -> filePath = absolutePath;
-
-                auto localImagePath = animation -> texturePath;
-                fs::path imagePath{localImagePath};
-                auto imageId = imagePath.filename().string();
-                auto* image = resourceManager -> addImage(imageId);
-                if(!image)
-                    continue;
-                auto absoluteImagePath =
-                        combinePath(m_activeScene -> getAssociatedProjectPath(), imagePath.string());
-
-                if(!image -> loadFromFile(absoluteImagePath)) {
-                    RB_EDITOR_WARN("Can't load animation' image by path {0}", absoluteImagePath);
-                }
-            }
-
-        }
-    }
 }

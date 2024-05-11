@@ -35,6 +35,10 @@ namespace editor {
     class TaskFunction: public ITaskFunction {
     public:
         TaskFunction(Func&& func): m_func{std::forward<Func>(func)} {}
+        TaskFunction(const TaskFunction& other) = delete;
+        TaskFunction& operator=(const TaskFunction& other) = delete;
+        TaskFunction(TaskFunction&& other) = delete;
+        TaskFunction& operator=(TaskFunction&& other) = delete;
         ~TaskFunction() override = default;
 
         void execute(void* buffer) override {
@@ -43,7 +47,8 @@ namespace editor {
                 return;
             }
             const T* funcData = static_cast<T*>(buffer);
-            m_func(*funcData);
+            if(funcData)
+                m_func(*funcData);
         }
     private:
         Func m_func;

@@ -43,7 +43,7 @@ namespace editor {
         virtual ~UIInteractor() = 0;
 
         virtual std::vector<SceneEntity>& getSelectedEntities()  = 0;
-        virtual SceneEntity getSelectedEntity(int graphicsEntityID) = 0;
+        virtual SceneEntity findEntity(const robot2D::vec2i& mousePos) = 0;
 
         virtual void restoreDeletedEntities(DeletedEntitiesRestoreInformation& restoreInformation,
                                             DeletedEntitiesRestoreUIInformation& restoreUiInformation) = 0;

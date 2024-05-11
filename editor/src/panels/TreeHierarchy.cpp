@@ -33,6 +33,7 @@ source distribution.
 #define IMGUI_ICON_ENTITY			u8"\ue000"
 
 namespace editor {
+
     TreeHierarchy::TreeHierarchy(std::string name) : m_name(std::move(name)) {
         m_tree_base_flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick
             | ImGuiTreeNodeFlags_SpanAvailWidth;
@@ -86,7 +87,19 @@ namespace editor {
     }
 
 
+
     void TreeHierarchy::setBefore(ITreeItem::Ptr source, ITreeItem::Ptr target) {
+        /*using Iterator = std::list<ITreeItem::Ptr>::iterator;
+
+        auto findLambda = [](const std::list<ITreeItem::Ptr>& l,
+                    ITreeItem::Ptr item){
+            return std::find_if(l.begin(), l.end(), [&item](ITreeItem::Ptr i){
+                return *item == *i;
+            });
+        };
+
+        */
+
         auto sourceIter = std::find_if(m_items.begin(), m_items.end(), [&source](ITreeItem::Ptr item) {
             return item -> m_id == source -> m_id;
         });
@@ -142,11 +155,11 @@ namespace editor {
 
 
     void TreeHierarchy::applyChildModification(ITreeItem::Ptr source, ITreeItem::Ptr target) {
-        m_source = source;
-        m_target = target;
+        m_source = std::move(source);
+        m_target = std::move(source);
     }
 
-    ITreeItem::Ptr TreeHierarchy::findByID(UUID ID) const{
+    ITreeItem::Ptr TreeHierarchy::findByID(UUID ID) const {
         auto startIter = m_items.begin();
         for(; startIter != m_items.end(); ++startIter) {
             auto start = *startIter;
@@ -236,7 +249,7 @@ namespace editor {
                                                 [this, &delItem](ITreeItem::Ptr item) {
                 bool eq = item == delItem;
                 delItem -> isQueryDeletion = false;
-                if (eq && !delItem->isChild())
+                if (eq && !delItem -> isChild())
                     m_multiSelection.removeItem(item);
                 return eq;
                 }), m_items.end());
@@ -252,8 +265,13 @@ namespace editor {
 
         /// has childModification
         if (m_source && m_target) {
-            m_source -> m_parent-> update();
-            m_target -> addChild(m_source);
+            if(m_source -> m_parent)
+                m_source -> m_parent -> update();
+
+            auto found = std::find(m_items.begin(), m_items.end(), m_target);
+            if(found != m_items.end())
+                m_items.insert(found, m_source);
+
             m_source = nullptr;
             m_target = nullptr;
         }

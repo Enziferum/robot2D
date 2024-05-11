@@ -37,6 +37,7 @@ source distribution.
 #include "EditorInteractor.hpp"
 #include "EditorPresenter.hpp"
 #include "EditorRouter.hpp"
+#include "QuadTree.hpp"
 
 namespace editor {
 
@@ -90,7 +91,7 @@ namespace editor {
         void loadProject(Project::Ptr project);
 
         //////////////////////////////////////// UIInteractor ////////////////////////////////////////
-        SceneEntity getSelectedEntity(int graphicsEntityID)  override;
+        SceneEntity findEntity(const robot2D::vec2i& mousePos)  override;
         std::vector<SceneEntity>& getSelectedEntities()  override;
         std::string getAssociatedProjectPath() const override;
         std::list<SceneEntity> getEntities() const override;
@@ -125,8 +126,8 @@ namespace editor {
 
         void destroy();
     private:
-        void loadSceneCallback();
-        void loadAssetsByEntity(SceneEntity entity);
+        void loadSceneCallback(Scene::Ptr loadedScene);
+        void processEntity(SceneEntity entity);
 
         void saveScene(const MenuProjectMessage& message);
         void toolbarPressed(const ToolbarMessage& message);
@@ -138,9 +139,6 @@ namespace editor {
 
         void onBeginPopup() override;
         void onEndPopup() override;
-
-        void findSelectChildren(const robot2D::FloatRect& rect, SceneEntity child);
-        SceneEntity getSelectedEntityChild(SceneEntity parent, int graphicsEntityID);
 
         void pasteChild(SceneEntity parent);
     private:
@@ -162,5 +160,7 @@ namespace editor {
 
         SceneEntity m_mainCameraEntity;
         std::function<void()> m_closeResultProjectCallback{nullptr};
+
+        QuadTreeContainer<SceneEntity> m_quadTree;
     };
 }

@@ -80,11 +80,11 @@ namespace editor {
         m_eventBinder.bindEvent(robot2D::Event::MouseReleased, BIND_CLASS_FN(onMouseReleased));
         m_eventBinder.bindEvent(robot2D::Event::MouseMoved, BIND_CLASS_FN(onMouseMoved));
 
-        m_cameraManipulator.setButtonCallback([this](SceneEntity entity) {
+  /*      m_cameraManipulator.setButtonCallback([this](SceneEntity entity) {
             m_interactor -> setMainCamera(entity);
             auto* msg = m_messageBus.postMessage<PanelEntitySelectedMessage>(MessageID::PanelEntitySelected);
             msg -> entity = entity;
-        });
+        });*/
     }
 
     void Editor::setupShortCuts() {
@@ -404,7 +404,9 @@ namespace editor {
         if(event.mouse.btn == robot2D::mouse2int(robot2D::Mouse::MouseLeft)
                         && !m_interactor -> hasSelectedEntities() && !m_guizmo2D.isActive() && viewportPanel.isActive()) {
             m_leftMousePressed = true;
-            auto mousePos = m_editorCamera -> convertPixelToCoords({static_cast<float>(event.mouse.x), static_cast<float>(event.mouse.y)});
+            auto mousePos = m_editorCamera -> convertPixelToCoords(
+                {static_cast<float>(event.mouse.x), static_cast<float>(event.mouse.y)
+            });
             m_selectionCollider.setPosition(mousePos);
             m_selectionCollider.setIsShown(true);
         }
@@ -427,8 +429,9 @@ namespace editor {
         auto& scenePanel = m_panelManager.getPanel<ScenePanel>();
         scenePanel.processSelectedEntities(std::move(items));
 
-        // auto& inspectorPanel = m_panelManager.getPanel<InspectorPanel>();
-        // inspectorPanel.setSelected(entities.back());
+        auto& inspectorPanel = m_panelManager.getPanel<InspectorPanel>();
+        /// TODO(a.raag): if has more than 1 entity ??
+        //inspectorPanel.setSelected(entities.back());
     }
 
     DeletedEntitiesRestoreUIInformation

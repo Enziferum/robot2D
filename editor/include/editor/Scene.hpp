@@ -74,7 +74,7 @@ namespace editor {
         //////////////////////// Serializer Api ////////////////////////
 
         /////////////////////////// ScenePanel API ///////////////////////////
-        void addEmptyEntity();
+        SceneEntity addEmptyEntity();
         SceneEntity addEmptyButton();
         /////////////////////////// ScenePanel API ///////////////////////////
 

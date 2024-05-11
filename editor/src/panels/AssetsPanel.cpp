@@ -81,7 +81,7 @@ namespace editor {
             }
         }
 
-
+/*
         bool BeginDrapDropTargetWindow(const char* payload_type)
         {
             using namespace ImGui;
@@ -139,7 +139,7 @@ namespace editor {
             if(!payload || !payload -> IsDataType(m_id.c_str()))
                 return nullptr;
             return static_cast<T*>(payload -> Data);
-        }
+        }*/
     }
 
 
@@ -192,7 +192,7 @@ namespace editor {
                 tableCount = 1;
 
             if(is_directory(m_currentPath) && is_empty(m_currentPath)) {
-                DragDropTarget dragDropTarget{treeNodeItemID};
+                robot2D::DragDropTarget dragDropTarget{treeNodeItemID};
                 if(auto uuid = dragDropTarget.unpackPayload<UUID>()) {
                     auto entity = m_uiManager.getTreeItem(*uuid);
                     if(entity) {
@@ -296,7 +296,7 @@ namespace editor {
     void AssetsPanel::processDragDrop(const std::filesystem::directory_entry& directoryEntry,
                                       std::filesystem::path& relativePath) {
         {
-            DragDropTarget dragDropTarget{treeNodeItemID};
+            robot2D::DragDropTarget dragDropTarget{treeNodeItemID};
             if(auto* uuid = dragDropTarget.unpackPayload<UUID>()) {
                 auto entity = m_uiManager.getTreeItem(*uuid);
                 if(entity) {
