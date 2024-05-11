@@ -104,7 +104,8 @@ namespace robot2D::ecs {
         SystemManager m_systemManager;
 
         using EntityContainer = std::vector<Entity>;
-        DoubleBuffer<EntityContainer> m_addBuffer;
+        ///DoubleBuffer<EntityContainer> m_addBuffer;
+        EntityContainer m_addBuffer;
         DoubleBuffer<EntityContainer> m_deleteBuffer;
 
         std::vector<robot2D::Drawable*> m_drawables;

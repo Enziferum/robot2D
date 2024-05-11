@@ -154,6 +154,7 @@ namespace robot2D {
         return intersects(other, overlap);
     }
 
+
     template<typename T>
     bool Rect<T>::intersects(const Rect<T>& other, Rect<T>& overlap) const {
         T minX = std::min(lx, static_cast<T>(lx + width));

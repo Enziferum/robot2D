@@ -69,7 +69,7 @@ namespace robot2D::ecs {
 
     void Scene::update(float dt) {
         m_deleteBuffer.update();
-        m_addBuffer.update();
+        // m_addBuffer.update();
 
         for(const auto& entity: m_deleteBuffer.getData()) {
             if(m_useSystems)
@@ -78,7 +78,7 @@ namespace robot2D::ecs {
         }
         m_deleteBuffer.clear();
 
-        for(const auto& entity: m_addBuffer.getData())
+        for(const auto& entity: m_addBuffer)
             m_systemManager.addEntity(entity);
 
         m_addBuffer.clear();

@@ -49,7 +49,7 @@ namespace robot2D::ecs {
         EntityManager& operator=(EntityManager&& other) = delete;
         ~EntityManager() = default;
 
-        Entity createEntity(bool needAddToScene = true);
+        Entity createEntity(bool needAddToScene = false);
 
         template<typename T>
         void addComponent(Entity entity, T component);
