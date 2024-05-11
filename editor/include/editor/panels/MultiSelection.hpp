@@ -40,6 +40,8 @@ namespace editor {
 
 
         bool hasItem(ITreeItem::Ptr item) const {
+            if(m_selectedItems.empty())
+                return false;
             return std::find_if(m_selectedItems.begin(), m_selectedItems.end(), [&item](ITreeItem::Ptr obj) {
                 return *item == *obj;
             }) != m_selectedItems.end();

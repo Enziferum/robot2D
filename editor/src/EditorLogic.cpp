@@ -150,6 +150,8 @@ namespace editor {
                 break;
             case EditorState::Edit: {
                 for(auto& entity: m_selectedEntities) {
+                    if(!entity)
+                        continue;
                     auto& tx = entity.getComponent<TransformComponent>();
                     if(tx.m_hasModification) {
                         if(entity.hasComponent<QuadTreeComponent>()) {
@@ -694,7 +696,7 @@ namespace editor {
     }
 
     void EditorLogic::uiSelectedEntities(std::set<ITreeItem::Ptr>& uiItems, bool isAll) {
-        m_selectedEntities.clear();
+        //m_selectedEntities.clear();
         auto& entities = m_activeScene -> getEntities();
 
 
@@ -702,7 +704,6 @@ namespace editor {
            // auto& entity = m_activeScene -> getEntity(uiItem -> getSearchPath());
            // m_selectedEntities.push_back(entity);
         }
-
 
     }
 

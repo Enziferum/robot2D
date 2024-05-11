@@ -42,7 +42,7 @@ namespace robot2D::ecs {
 
     Entity EntityManager::createEntity(bool needAddToScene) {
         Entity entity{this, m_entityCounter};
-        m_entityCounter++;
+        m_destroyFlags[m_entityCounter++] = false;
         entity.m_needAddToScene = needAddToScene;
         return entity;
     }
@@ -78,8 +78,8 @@ namespace robot2D::ecs {
     }
 
     bool EntityManager::entityDestroyed(Entity entity) {
-        if(entity.m_id >= m_destroyFlags.size())
-            return true;
+/*        if(entity.m_id >= m_destroyFlags.size())
+            return true;*/
         return m_destroyFlags[entity.m_id];
     }
 
