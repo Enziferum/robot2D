@@ -164,6 +164,7 @@ namespace editor {
     }
 
     void TransformComponent::setPosition(const robot2D::vec2f& pos, bool needUpdateChild) {
+        m_hasModification = true;
         if(needUpdateChild)
             setPosition(pos);
         else {
@@ -181,6 +182,7 @@ namespace editor {
             transform.setPosition(pos - offset);
         }
         Transformable::setPosition(pos);
+        m_hasModification = true;
     }
 
     bool TransformComponent::hasChildren() const {
@@ -232,6 +234,10 @@ namespace editor {
         removeChild(*found, removeFromScene);
     }
 
+    void TransformComponent::setScale(const robot2D::vec2f& factor) {
+        Transformable::setScale(factor);
+        m_hasModification = true;
+    }
 
 
     TextComponent::TextComponent():

@@ -19,6 +19,7 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
+#include <algorithm>
 #include <imgui/imgui.h>
 #include <editor/panels/MultiSelection.hpp>
 

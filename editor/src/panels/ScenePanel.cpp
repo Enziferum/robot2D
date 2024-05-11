@@ -34,8 +34,8 @@ source distribution.
 
 namespace editor {
 
-    #define GET_ENTITY_UUID(item) item -> getUserData<robot2D::ecs::Entity>() -> getComponent<IDComponent>().ID;
-    #define GET_ENTITY(item) item -> template getUserData<robot2D::ecs::Entity>()
+    #define GET_ENTITY_UUID(item) item -> getUserData<SceneEntity>() -> getUUID();
+    #define GET_ENTITY(item) item -> template getUserData<SceneEntity>()
 
 
 
@@ -52,16 +52,6 @@ namespace editor {
     m_treeHierarchy("MainScene")
     {
 
-        if(!m_iconTextures.loadFromFile(TreeItemIcon::Default, "res/icons/entity.png")) {
-            RB_EDITOR_ERROR("ScenePanel: Can't load TreeItemIcon::Default");
-            /// TODO(a.raag) throw error
-        }
-
-        if(!m_iconTextures.loadFromFile(TreeItemIcon::Prefab, "res/icons/entity.png")) {
-            RB_EDITOR_ERROR("ScenePanel: Can't load TreeItemIcon::Prefab");
-            /// TODO(a.raag) throw error
-        }
-
         m_messageDispatcher.onMessage<PanelEntitySelectedMessage>(
                 MessageID::PanelEntityNeedSelect,
                 BIND_CLASS_FN(onEntitySelection)
@@ -70,11 +60,6 @@ namespace editor {
         m_messageDispatcher.onMessage<EntityDuplication>(
                 MessageID::EntityDuplicate,
                 BIND_CLASS_FN(onEntityDuplicate)
-        );
-
-        m_messageDispatcher.onMessage<EntityRemovement>(
-                MessageID::EntityRemove,
-                BIND_CLASS_FN(onEntityRemove)
         );
 
         setupTreeHierarchy();
@@ -101,9 +86,8 @@ namespace editor {
                 m_interactor -> addEmptyEntity();
                 auto item = m_treeHierarchy.addItem<SceneEntity>();
                 m_selectedEntity = m_interactor -> getEntities().back();
-                item -> setName(&m_interactor -> getEntities().back().getComponent<TagComponent>().getTag());
+                item -> setName(&m_selectedEntity.getComponent<TagComponent>().getTag());
                 item -> setUserData(m_selectedEntity);
-                item -> setTexture(m_iconTextures[TreeItemIcon::Default], robot2D::Color::White);
                 m_selectedEntity.addComponent<UIComponent>().treeItem = item;
                 m_treeHierarchy.setSelected(item);
             }
@@ -114,7 +98,6 @@ namespace editor {
                     auto item = m_treeHierarchy.addItem<SceneEntity>();
                     item -> setName(&m_selectedEntity.getComponent<TagComponent>().getTag());
                     item -> setUserData(m_selectedEntity);
-                    item -> setTexture(m_iconTextures[TreeItemIcon::Default], robot2D::Color::White);
                     m_selectedEntity.addComponent<UIComponent>().treeItem = item;
                     m_treeHierarchy.setSelected(item);
                 }
@@ -135,7 +118,6 @@ namespace editor {
                 if(auto prefab = m_prefabManager.loadPrefab(m_interactor, realPrefabPath)) {
                     auto item = m_treeHierarchy.addItem<SceneEntity>();
                     SceneEntity duplicateEntity = m_interactor -> duplicateEmptyEntity(prefab -> getEntity());
-                    item -> setTexture(m_iconTextures[TreeItemIcon::Prefab], robot2D::Color::Blue);
                     item -> setName(&duplicateEntity.getComponent<TagComponent>().getTag());
                     item -> setUserData(duplicateEntity);
                     duplicateEntity.addComponent<UIComponent>().treeItem = item;
@@ -154,19 +136,11 @@ namespace editor {
     }
 
     void ScenePanel::setupTreeHierarchy() {
-
-        m_treeHierarchy.addOnSelectCallback([this](ITreeItem::Ptr selectedItem) {
-            auto entity = selectedItem -> getUserData<SceneEntity>();
-            if(entity) {
-                m_selectedEntity = *entity;
-                auto* msg =
-                        m_messageBus.postMessage<PanelEntitySelectedMessage>(MessageID::PanelEntitySelected);
-                msg -> entity = m_selectedEntity;
-            }
-            else {
-                RB_EDITOR_ERROR("Selected item in Hierarchy don't have userData");
-            }
-        });
+        m_treeHierarchy.addOnSelectCallback(BIND_CLASS_FN(onSelectUIItem));
+        m_treeHierarchy.addOnReorderCallback(BIND_CLASS_FN(onReorderUIItems));
+        m_treeHierarchy.addOnMakeChildCallback(BIND_CLASS_FN(onMakeChildUIItems));
+        m_treeHierarchy.addOnStopBeChildCallback(BIND_CLASS_FN(onRemoveChildUIItems));
+        m_treeHierarchy.addMultiSelectCallback(BIND_CLASS_FN(onMultiSelect));
 
         m_treeHierarchy.addOnCallback([this](ITreeItem::Ptr item) {
 
@@ -184,95 +158,6 @@ namespace editor {
 //                m_interactor -> removeEntities(selectedItems);
             }
         });
-
-        m_treeHierarchy.addOnReorderCallback([this](ITreeItem::Ptr source, ITreeItem::Ptr target){
-            auto sourceEntity = source -> getUserData<SceneEntity>();
-            if(!sourceEntity) {
-                RB_EDITOR_ERROR("Can't item in Hierarchy don't have userData");
-                return;
-            }
-
-            if(sourceEntity -> hasComponent<DrawableComponent>()) {
-                auto& drawable = sourceEntity -> getComponent<DrawableComponent>();
-                drawable.setReorderZBuffer(true);
-            }
-
-            m_interactor -> setBefore(*sourceEntity, *target -> getUserData<SceneEntity>());
-            m_treeHierarchy.setBefore(source, target);
-        });
-
-        m_treeHierarchy.addOnMakeChildCallback([this](ITreeItem::Ptr source, ITreeItem::Ptr intoTarget) {
-            RB_EDITOR_WARN("m_treeHierarchy.addOnMakeChildCallback");
-            auto entity = intoTarget -> getUserData<SceneEntity>();
-            if(!entity) {
-                RB_EDITOR_ERROR("Can't item in Hierarchy don't have userData");
-                return;
-            }
-            auto& transform = entity -> getComponent<TransformComponent>();
-
-            auto sourceEntity = source -> getUserData<SceneEntity>();
-            if(!sourceEntity) {
-                RB_EDITOR_ERROR("ScenePanel: Can't item in Hierarchy don't have userData");
-                return;
-            }
-
-            if(sourceEntity -> hasComponent<DrawableComponent>()) {
-                auto& sprite = sourceEntity -> getComponent<DrawableComponent>();
-                sprite.setReorderZBuffer(true);
-            }
-
-            if(source -> isChild()) {
-                auto& sourceTransform = sourceEntity -> getComponent<TransformComponent>();
-                const bool needRemoveFromScene = false;
-                sourceTransform.removeSelf(needRemoveFromScene);
-                source -> removeSelf();
-                entity -> addChild(*sourceEntity);
-                m_treeHierarchy.applyChildModification(source, intoTarget);
-            }
-            else {
-                entity -> addChild(*sourceEntity);
-                m_interactor -> removeEntityChild(*sourceEntity);
-                m_treeHierarchy.deleteItem(source);
-                intoTarget -> addChild(source);
-            }
-
-        });
-
-        /// TODO(a.raag): Fix Logic
-        m_treeHierarchy.addOnStopBeChildCallback([this](ITreeItem::Ptr source, ITreeItem::Ptr intoTarget) {
-            auto entity = GET_ENTITY(source);
-            if(!entity || entity -> destroyed()) {
-                RB_EDITOR_ERROR("");
-                return;
-            }
-
-            auto& ts = entity -> getComponent<TransformComponent>();
-            bool needRemoveFromScene = false;
-            ts.removeSelf(needRemoveFromScene);
-            source -> removeSelf();
-
-            auto targetEntity = GET_ENTITY(intoTarget);
-            if(!targetEntity || targetEntity -> destroyed()) {
-                RB_EDITOR_ERROR("");
-                return;
-            }
-
-           // targetEntity -> getComponent<TransformComponent>().addChild(*targetEntity, *entity);
-
-            if(intoTarget -> isChild())
-                intoTarget -> addChild(source);
-            else {
-                ///
-            }
-
-            m_treeHierarchy.applyChildModification(source, intoTarget);
-        });
-
-
-        m_treeHierarchy.addMultiSelectCallback([this](std::set<ITreeItem::Ptr>& items, bool allSelected) {
-            m_interactor -> uiSelectedEntities(items, allSelected);
-        });
-
     }
 
     void ScenePanel::setInteractor(UIInteractor::Ptr interactor) {
@@ -287,10 +172,6 @@ namespace editor {
             auto item = m_treeHierarchy.addItem<SceneEntity>();
             item -> setName(&entity.getComponent<TagComponent>().getTag());
             item -> setUserData(entity);
-            if(entity.hasComponent<PrefabComponent>())
-                item -> setTexture(m_iconTextures[TreeItemIcon::Prefab], robot2D::Color::Blue);
-            else
-                item -> setTexture(m_iconTextures[TreeItemIcon::Default], robot2D::Color::White);
             entity.addComponent<UIComponent>().treeItem = item;
 
             auto& transform = entity.getComponent<TransformComponent>();
@@ -300,21 +181,18 @@ namespace editor {
 
     }
 
-    void ScenePanel::setStartChildEntity(SceneEntity entity, ITreeItem::Ptr parent) {
-        auto& parentTransform = entity.getComponent<TransformComponent>();
+    void ScenePanel::setStartChildEntity(SceneEntity parentEntity, ITreeItem::Ptr parent) {
+        auto& parentTransform = parentEntity.getComponent<TransformComponent>();
+
         if(auto item = std::dynamic_pointer_cast<TreeItem<SceneEntity>>(parent)) {
             for(auto& child: parentTransform.getChildren()) {
                 auto childItem = item -> addChild();
                 childItem -> setName(&child.getComponent<TagComponent>().getTag());
-                childItem -> setUserData(SceneEntity(std::move(child)));
-                if(child.hasComponent<PrefabComponent>())
-                    childItem -> setTexture(m_iconTextures[TreeItemIcon::Prefab], robot2D::Color::Blue);
-                else
-                    childItem -> setTexture(m_iconTextures[TreeItemIcon::Default], robot2D::Color::White);
+                childItem -> setUserData(child);
                 child.addComponent<UIComponent>().treeItem = childItem;
                 auto& childTransform = child.getComponent<TransformComponent>();
                 if(childTransform.hasChildren())
-                    setStartChildEntity(SceneEntity(std::move(child)), childItem);
+                    setStartChildEntity(child, childItem);
             }
         }
     }
@@ -344,7 +222,8 @@ namespace editor {
             }
 
             if(item -> hasChildrens()) {
-                for(auto child: item -> getChildrens()) {
+               /// TODO(a.raag): graph traverse
+                /* for(auto child: item -> getChildrens()) {
                     entityPtr = child -> getUserData<SceneEntity>();
                     if(!entityPtr)
                         return;
@@ -353,7 +232,7 @@ namespace editor {
                         m_selectedEntity = entity;
                         m_treeHierarchy.setSelected(child);
                     }
-                }
+                }*/
             }
         }
     }
@@ -363,10 +242,6 @@ namespace editor {
         auto item = m_treeHierarchy.addItem<SceneEntity>();
         item -> setName(&entity.getComponent<TagComponent>().getTag());
         item -> setUserData(entity);
-        if(entity.hasComponent<PrefabComponent>())
-            item -> setTexture(m_iconTextures[TreeItemIcon::Prefab], robot2D::Color::Blue);
-        else
-            item -> setTexture(m_iconTextures[TreeItemIcon::Default], robot2D::Color::White);
         entity.addComponent<UIComponent>().treeItem = item;
 
         auto& transform = entity.getComponent<TransformComponent>();
@@ -381,30 +256,14 @@ namespace editor {
             for (auto &child: transform.getChildren()) {
                 auto childItem = item -> addChild();
                 childItem -> setName(&child.getComponent<TagComponent>().getTag());
-                childItem -> setUserData(SceneEntity(std::move(child)));
-                if (child.hasComponent<PrefabComponent>())
-                    childItem->setTexture(m_iconTextures[TreeItemIcon::Prefab], robot2D::Color::Blue);
-                else
-                    childItem->setTexture(m_iconTextures[TreeItemIcon::Default], robot2D::Color::White);
+                childItem -> setUserData(child);
                 child.addComponent<UIComponent>().treeItem = childItem;
 
                 if(child.getComponent<TransformComponent>().hasChildren())
-                    entityDuplicateChild(SceneEntity(std::move(child)), childItem);
+                    entityDuplicateChild(child, childItem);
             }
         }
     }
-
-    void ScenePanel::onEntityRemove(const EntityRemovement& removement) {
-        /// TODO(a.raag): get UUID or ITreeItem::Ptr directly
-
-        for(auto& item: m_treeHierarchy.getItems()) {
-            if(item -> getUserData<robot2D::ecs::Entity>() -> getComponent<IDComponent>().ID == removement.entityID) {
-                m_treeHierarchy.deleteItem(item);
-                return;
-            }
-        }
-    }
-
 
     void ScenePanel::processSelectedEntities(std::vector<ITreeItem::Ptr>&& items) {
         for(auto& item: items)
@@ -508,6 +367,97 @@ namespace editor {
 
     void ScenePanel::clearSelection() {
         m_treeHierarchy.clearSelection();
+    }
+
+    void ScenePanel::onSelectUIItem(ITreeItem::Ptr item) {
+        auto entity = item -> getUserData<SceneEntity>();
+        if(entity) {
+            m_selectedEntity = *entity;
+            auto* msg =
+                    m_messageBus.postMessage<PanelEntitySelectedMessage>(MessageID::PanelEntitySelected);
+            msg -> entity = m_selectedEntity;
+        }
+        else {
+            RB_EDITOR_ERROR("Selected item in Hierarchy don't have userData");
+        }
+    }
+
+    void ScenePanel::onReorderUIItems(ITreeItem::Ptr source, ITreeItem::Ptr target) {
+        auto sourceEntity = source -> getUserData<SceneEntity>();
+        if(!sourceEntity) {
+            RB_EDITOR_ERROR("Can't item in Hierarchy don't have userData");
+            return;
+        }
+
+        if(sourceEntity -> hasComponent<DrawableComponent>()) {
+            auto& drawable = sourceEntity -> getComponent<DrawableComponent>();
+            drawable.setReorderZBuffer(true);
+        }
+
+        m_interactor -> setBefore(*sourceEntity, *target -> getUserData<SceneEntity>());
+        m_treeHierarchy.setBefore(source, target);
+    }
+
+    void ScenePanel::onMakeChildUIItems(ITreeItem::Ptr source, ITreeItem::Ptr intoTarget) {
+        RB_EDITOR_WARN("m_treeHierarchy.addOnMakeChildCallback");
+        auto entity = intoTarget -> getUserData<SceneEntity>();
+        if(!entity) {
+            RB_EDITOR_ERROR("Can't item in Hierarchy don't have userData");
+            return;
+        }
+
+        auto sourceEntity = source -> getUserData<SceneEntity>();
+        if(!sourceEntity) {
+            RB_EDITOR_ERROR("ScenePanel: Can't item in Hierarchy don't have userData");
+            return;
+        }
+
+        if(sourceEntity -> hasComponent<DrawableComponent>()) {
+            auto& sprite = sourceEntity -> getComponent<DrawableComponent>();
+            sprite.setReorderZBuffer(true);
+        }
+
+        if(source -> isChild()) {
+            auto& sourceTransform = sourceEntity -> getComponent<TransformComponent>();
+            const bool needRemoveFromScene = false;
+            sourceTransform.removeSelf(needRemoveFromScene);
+            source -> removeSelf();
+            entity -> addChild(*sourceEntity);
+            m_treeHierarchy.applyChildModification(source, intoTarget);
+        }
+        else {
+            entity -> addChild(*sourceEntity);
+            m_interactor -> removeEntityChild(*sourceEntity);
+            m_treeHierarchy.deleteItem(source);
+            intoTarget -> addChild(source);
+        }
+
+    }
+
+    void ScenePanel::onRemoveChildUIItems(ITreeItem::Ptr source, ITreeItem::Ptr intoTarget) {
+        auto entity = GET_ENTITY(source);
+        if(!entity) {
+            RB_EDITOR_ERROR("ScenePanel: Bad unpack entity");
+            return;
+        }
+
+        auto targetEntity = GET_ENTITY(intoTarget);
+        if(!targetEntity) {
+            RB_EDITOR_ERROR("ScenePanel: Bad unpack entity");
+            return;
+        }
+
+        auto& ts = entity -> getComponent<TransformComponent>();
+        constexpr bool needRemoveFromScene = false;
+        ts.removeSelf(needRemoveFromScene);
+        source -> removeSelf();
+
+        m_interactor -> setBefore(*entity, *targetEntity);
+        m_treeHierarchy.applyChildModification(source, intoTarget);
+    }
+
+    void ScenePanel::onMultiSelect(std::set<ITreeItem::Ptr>& items, bool allSelected) {
+        m_interactor -> uiSelectedEntities(items, allSelected);
     }
 
 }

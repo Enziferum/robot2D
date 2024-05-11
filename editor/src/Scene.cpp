@@ -65,7 +65,7 @@ namespace editor {
         entity.addComponent<DrawableComponent>();
 
         auto& cameraComponent = entity.addComponent<CameraComponent>();
-        m_sceneGraph.addEntity(SceneEntity{ std::move(entity) });
+        m_sceneGraph.addEntity(SceneEntity{ entity });
     }
 
 
@@ -145,7 +145,7 @@ namespace editor {
         return SceneEntity(std::move(m_scene.createEmptyEntity()));
     }
 
-    void Scene::addEmptyEntity() {
+    SceneEntity Scene::addEmptyEntity() {
         auto entity = m_scene.createEntity();
         entity.addComponent<IDComponent>(UUID());
         entity.addComponent<TagComponent>();
@@ -155,8 +155,10 @@ namespace editor {
         transform.setScale({ 20.F, 20.F });
         entity.addComponent<DrawableComponent>();
 
-        m_sceneGraph.addEntity(SceneEntity{ std::move(entity) });
+        m_sceneGraph.addEntity(SceneEntity{ entity });
         m_hasChanges = true;
+        auto sceneEntity = m_sceneGraph.getEntities().back();
+        return sceneEntity;
     }
 
 
@@ -535,8 +537,8 @@ namespace editor {
         /// TODO(a.raag): add to runtime ???
         /// m_sceneEntities.emplace_back(dupEntity);
 
-        m_physicsAdapter -> addRuntime(entity.getWrappedEntity());
-        return dupEntity;
+//        m_physicsAdapter -> addRuntime(entity.getWrappedEntity());
+//        return dupEntity;
     }
 }
 

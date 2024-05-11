@@ -301,6 +301,8 @@ namespace editor {
         ui::drawVec2Control("Scale", component.getScale(), 1.0f);
         ui::drawVec1Control("Rotation", component.getRotate(), 0.f);
         component.setRotate(component.getRotate());
+        component.setPosition(component.getPosition());
+        component.setScale(component.getScale());
 
         if (lastPosition != component.getPosition() || lastScale != component.getScale() ||
             lastRotation != component.getRotate())

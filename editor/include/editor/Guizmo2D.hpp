@@ -124,6 +124,10 @@ namespace editor {
 
     public:
         Guizmo2D();
+        Guizmo2D(const Guizmo2D& other) = delete;
+        Guizmo2D& operator=(const Guizmo2D& other) = delete;
+        Guizmo2D(Guizmo2D&& other) = delete;
+        Guizmo2D& operator=(Guizmo2D&& other) = delete;
         ~Guizmo2D() override = default;
 
         void handleEvents(const robot2D::Event& event);

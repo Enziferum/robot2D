@@ -41,7 +41,7 @@ namespace editor {
         virtual bool deserialize(const std::string& path) = 0;
     };
 
-    ISceneDeserializer::~ISceneDeserializer() {}
+    ISceneDeserializer::~ISceneDeserializer() = default;
 
 
     class YamlSceneDeserializer: public ISceneDeserializer {
@@ -62,6 +62,8 @@ namespace editor {
     bool SceneSerializer::serialize(const std::string& path, const std::string& sceneName) {
         if(m_scene == nullptr)
             return false;
+
+
 
         YAML::Emitter out;
         out << YAML::BeginMap;

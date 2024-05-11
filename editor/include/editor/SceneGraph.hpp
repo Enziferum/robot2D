@@ -34,7 +34,7 @@ namespace editor {
     private:
         using EntityContainer = std::vector<SceneEntity>;
     public:
-        SceneGraph(robot2D::MessageBus& messageBus);
+        explicit SceneGraph(robot2D::MessageBus& messageBus);
         ~SceneGraph() = default;
         SceneGraph(const SceneGraph& other) = delete;
         SceneGraph& operator=(const SceneGraph& other) = delete;

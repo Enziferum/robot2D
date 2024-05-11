@@ -41,6 +41,7 @@ source distribution.
 #include "Property.hpp"
 #include "ClassID.hpp"
 #include "SceneEntity.hpp"
+#include "QuadTree.hpp"
 
 namespace editor {
 
@@ -63,6 +64,8 @@ namespace editor {
         ~TransformComponent() override = default;
         void setPosition(const robot2D::vec2f& pos, bool needUpdateChild);
         void setPosition(const robot2D::vec2f& pos) override;
+
+        void setScale(const robot2D::vec2f &factor) override;
 
         void addChild(SceneEntity parent, SceneEntity child);
         void removeChild(SceneEntity entity, bool removeFromScene = true);
@@ -92,12 +95,16 @@ namespace editor {
         void removeSelf(bool removeFromScene = true);
 
         SceneEntity getParent() { return m_parent; }
+
+        bool m_hasModification { false };
     private:
         void removeChild(int childID, bool removeFromScene);
     private:
         int m_childID = -1;
         std::vector<SceneEntity> m_children;
         SceneEntity m_parent;
+
+
     };
 
     // TODO: @a.raag add Rotation
@@ -400,6 +407,12 @@ namespace editor {
         float m_currentFrameTime{0.f};
         std::uint32_t m_frameID{0};
         std::string m_animationName;
+    };
+
+
+    struct QuadTreeComponent {
+        using Iterator = typename QuadTreeContainer<SceneEntity>::ContainerIterator;
+        Iterator iterator;
     };
 
 }

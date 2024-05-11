@@ -46,7 +46,7 @@ namespace editor {
         template<typename T, typename ... Args, typename Callback>
         TaskID addAsyncTask(Callback&& callback, Args&& ...args) {
 
-        auto function = std::make_shared<TaskFunction<T, Callback>>(std::forward<Callback>(callback));
+            auto function = std::make_shared<TaskFunction<T, Callback>>(std::forward<Callback>(callback));
             if(!function) {
                 //TODO: add logging
                 return -1;

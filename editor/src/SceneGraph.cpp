@@ -41,10 +41,12 @@ namespace editor {
             m_scene.removeEntity(entity.getWrappedEntity());
         }
         m_deletePendingEntities.clear();
+
+
     }
 
     SceneEntity SceneGraph::createEntity(robot2D::ecs::Entity&& entity) {
-        return SceneEntity{std::move(entity)};
+        return SceneEntity{ entity };
     }
 
     void SceneGraph::addEntity(SceneEntity&& sceneEntity) {
