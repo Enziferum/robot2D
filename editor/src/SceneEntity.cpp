@@ -19,9 +19,10 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
+#include <robot2D/Ecs/EntityManager.hpp>
 #include <editor/SceneEntity.hpp>
 #include <editor/Components.hpp>
-#include <robot2D/Ecs/EntityManager.hpp>
+#include <editor/SceneGraph.hpp>
 
 namespace editor {
 
@@ -42,16 +43,19 @@ namespace editor {
         return idComponent.ID;
     }
 
-    void SceneEntity::addChild(const SceneEntity& sceneEntity) {
+    void SceneEntity::addChild(SceneEntity& sceneEntity) {
+        sceneEntity.m_parent = this;
+        m_graph -> addEntityInternal(sceneEntity);
+
         auto& transformComponent = m_entity.getComponent<TransformComponent>();
-        transformComponent.addChild(SceneEntity(m_entity), sceneEntity);
+        transformComponent.addChild(*this, sceneEntity);
     }
 
     bool SceneEntity::hasChildren() const {
         return m_entity.getComponent<TransformComponent>().hasChildren();
     }
 
-    const std::vector<SceneEntity>& SceneEntity::getChildren() const {
+    const std::list<SceneEntity>& SceneEntity::getChildren() const {
         return m_entity.getComponent<TransformComponent>().getChildren();
     }
 
@@ -60,7 +64,7 @@ namespace editor {
         return { tx.getPosition(), tx.getScale() };
     }
 
-    std::vector<SceneEntity> &SceneEntity::getChildren() {
+    std::list<SceneEntity>& SceneEntity::getChildren() {
         return m_entity.getComponent<TransformComponent>().getChildren();
     }
 

@@ -254,6 +254,16 @@ namespace editor {
         std::vector<InsertItem> m_insertItems;
         std::vector<RestoreInfo> m_restoreItems;
 
+        using ConstIterator = std::list<ITreeItem::Ptr>::const_iterator;
+
+        struct {
+            ConstIterator targetIterator;
+            ConstIterator sourceIterator;
+            ITreeItem::Ptr source { nullptr };
+            ITreeItem* sourceParent { nullptr };
+            bool hasValues { false };
+        } m_reorderInfo;
+
 
         robot2D::Key m_shortCutKey{robot2D::Key::Q};
         std::string m_playloadIdentifier = "TreeNodeItem";
@@ -261,6 +271,9 @@ namespace editor {
 
         ITreeItem::Ptr m_source{nullptr};
         ITreeItem::Ptr m_target{nullptr};
+
+
+        std::function<ConstIterator(const std::list<ITreeItem::Ptr>& list, ITreeItem::Ptr item)> m_listFinderLambda;
     };
 
 

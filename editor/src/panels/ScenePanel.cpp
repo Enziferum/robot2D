@@ -394,8 +394,8 @@ namespace editor {
             drawable.setReorderZBuffer(true);
         }
 
-        m_interactor -> setBefore(*sourceEntity, *target -> getUserData<SceneEntity>());
-        m_treeHierarchy.setBefore(source, target);
+        if(m_interactor -> setBefore(*sourceEntity,GET_ENTITY(*target)))
+            m_treeHierarchy.setBefore(source, target);
     }
 
     void ScenePanel::onMakeChildUIItems(ITreeItem::Ptr source, ITreeItem::Ptr intoTarget) {

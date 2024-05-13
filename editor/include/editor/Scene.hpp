@@ -44,8 +44,10 @@ namespace editor {
     class Scene : public robot2D::Drawable {
     public:
         using Ptr = std::shared_ptr<Scene>;
+        using TraverseFunction = std::function<void(SceneEntity&)>;
+
     public:
-        Scene(robot2D::MessageBus& messageBus);
+        explicit Scene(robot2D::MessageBus& messageBus);
         Scene(const Scene& other) = delete;
         Scene& operator=(const Scene& other) = delete;
         Scene(Scene&& other) = delete;
@@ -79,7 +81,7 @@ namespace editor {
         /////////////////////////// ScenePanel API ///////////////////////////
 
 
-        void setBefore(SceneEntity source, SceneEntity target);
+        bool setBefore(SceneEntity source, SceneEntity target);
         void removeEntity(SceneEntity entity);
         void removeEntityChild(SceneEntity entity);
         DeletedEntitiesRestoreInformation removeEntities(std::vector<SceneEntity>& removingEntities);
@@ -97,8 +99,8 @@ namespace editor {
         }
 
         [[maybe_unused]]
-        SceneEntity
-        duplicateEntity(robot2D::vec2f mousePos, SceneEntity entity);
+        SceneEntity duplicateEntity(robot2D::vec2f mousePos, SceneEntity entity);
+        [[maybe_unused]]
         SceneEntity duplicateEmptyEntity(SceneEntity entity);
 
         [[maybe_unused]]
@@ -110,9 +112,12 @@ namespace editor {
         void setEditorCamera(EditorCamera::Ptr editorCamera);
 
         bool hasChanges() const { return m_hasChanges; }
+
+        /// \brief use for simple traverse inside Scene and don't think how SceneGraph works by outside caller.
+        void traverseGraph(TraverseFunction&& traverseFunction);
     protected:
         void draw(robot2D::RenderTarget& target, robot2D::RenderStates states) const override;
-
+        void traverseGraphChildren(TraverseFunction& traverseFunction, SceneEntity parent);
     private:
         struct RemoveEntityInfo {
             SceneEntity entity;
@@ -136,6 +141,7 @@ namespace editor {
         friend class DuplicateCommand;
         SceneGraph m_sceneGraph;
         SceneGraph m_runtimeSceneGraph;
+        std::vector<SceneEntity> m_scriptRuntimeContainer;
 
         robot2D::ecs::Scene m_scene;
 

@@ -50,13 +50,13 @@ namespace editor {
 
 
         virtual std::string getAssociatedProjectPath() const = 0;
-        virtual std::list<SceneEntity> getEntities() const = 0;
+        virtual const std::list<SceneEntity>& getEntities() const = 0;
         virtual void removeEntity(SceneEntity entity) = 0;
         virtual void addEmptyEntity() = 0;
         virtual SceneEntity addButton() = 0;
         virtual SceneEntity createEmptyEntity() = 0;
         virtual SceneEntity duplicateEmptyEntity(SceneEntity entity) = 0;
-        virtual void setBefore(SceneEntity sourceEntity, SceneEntity target) = 0;
+        virtual bool setBefore(SceneEntity sourceEntity, SceneEntity target) = 0;
         virtual void removeEntityChild(SceneEntity entity) = 0;
         virtual bool isRunning() const = 0;
         virtual SceneEntity getEntity(UUID uuid) = 0;

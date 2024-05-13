@@ -433,12 +433,10 @@ namespace editor {
     }
 
     void EditorLogic::duplicateEntity(robot2D::vec2f mousePos) {
-
         std::vector<SceneEntity> duplicatedEntities;
         duplicatedEntities.reserve(m_selectedEntities.size());
 
-        /// TODO(a.raag): calculate offset for entites
-        for (auto& entity : m_selectedEntities) {
+        for (const auto& entity : m_selectedEntities) {
             auto dupEntity = m_activeScene -> duplicateEntity(mousePos, entity);
             duplicatedEntities.emplace_back(dupEntity);
         }
@@ -527,7 +525,7 @@ namespace editor {
         return m_activeScene -> getAssociatedProjectPath();
     }
 
-    std::list<SceneEntity> EditorLogic::getEntities() const {
+    const std::list<SceneEntity>& EditorLogic::getEntities() const {
         return m_activeScene -> getEntities();
     }
 
@@ -544,7 +542,11 @@ namespace editor {
     }
 
     SceneEntity EditorLogic::addButton() {
-        return m_activeScene -> addEmptyButton();
+        auto entity = m_activeScene -> addEmptyButton();
+        auto rect = entity.calculateRect();
+        auto treeIterator = m_quadTree.insert(entity, rect);
+        entity.addComponent<QuadTreeComponent>().iterator = treeIterator;
+        return entity;
     }
 
     SceneEntity EditorLogic::createEmptyEntity() {
@@ -555,8 +557,8 @@ namespace editor {
         return m_activeScene -> duplicateEmptyEntity(entity);
     }
 
-    void EditorLogic::setBefore(SceneEntity sourceEntity, SceneEntity target) {
-        m_activeScene -> setBefore(sourceEntity, target);
+    bool EditorLogic::setBefore(SceneEntity sourceEntity, SceneEntity target) {
+        return m_activeScene -> setBefore(sourceEntity, target);
     }
 
     void EditorLogic::removeEntityChild(SceneEntity entity) {
@@ -658,24 +660,14 @@ namespace editor {
             }
         };
 
-        auto& entities = m_activeScene -> getEntities();
-        for(auto entity: entities) {
-            if(entity.hasComponent<PrefabComponent>()) {
-                auto& prefabComponent = entity.getComponent<PrefabComponent>();
+        m_activeScene -> traverseGraph(std::move([&processModification, message](SceneEntity& sceneEntity) {
+            if(sceneEntity.hasComponent<PrefabComponent>()) {
+                auto& prefabComponent = sceneEntity.getComponent<PrefabComponent>();
                 if(prefabComponent.prefabUUID == message.prefabUUID) {
-                    processModification(message.prefabEntity, entity);
+                    processModification(message.prefabEntity, sceneEntity);
                 }
             }
-            if(entity.hasChildren()) {
-                for(auto child: entity.getChildren()) {
-                    if(child.hasComponent<PrefabComponent>()) {
-                        auto& prefabComponent = child.getComponent<PrefabComponent>();
-                        if(prefabComponent.prefabUUID == message.prefabUUID)
-                            processModification(message.prefabEntity, SceneEntity(std::move(child)));
-                    }
-                }
-            }
-        }
+        }));
     }
 
     robot2D::vec2f EditorLogic::getMainCameraPosition() const {
@@ -696,15 +688,13 @@ namespace editor {
     }
 
     void EditorLogic::uiSelectedEntities(std::set<ITreeItem::Ptr>& uiItems, bool isAll) {
-        //m_selectedEntities.clear();
-        auto& entities = m_activeScene -> getEntities();
-
+        m_selectedEntities.clear();
 
         for(auto& uiItem: uiItems) {
-           // auto& entity = m_activeScene -> getEntity(uiItem -> getSearchPath());
-           // m_selectedEntities.push_back(entity);
+           auto* entity = uiItem -> getUserData<SceneEntity>();
+           if(entity && *entity)
+               m_selectedEntities.push_back(*entity);
         }
-
     }
 
     SceneEntity EditorLogic::getEntity(UUID uuid) {
