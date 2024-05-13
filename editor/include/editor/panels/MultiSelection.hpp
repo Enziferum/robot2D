@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2023
+(c) Alex Raag 2024
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -30,7 +30,7 @@ namespace editor {
     class MultiSelection {
     public:
         using MultiItemCallback = std::function<void(std::set<ITreeItem::Ptr>&, bool)>;
-
+    public:
         MultiSelection() = default;
         MultiSelection(const MultiSelection& other) = delete;
         MultiSelection& operator=(const MultiSelection& other) = delete;
@@ -42,7 +42,8 @@ namespace editor {
         bool hasItem(ITreeItem::Ptr item) const {
             if(m_selectedItems.empty())
                 return false;
-            return std::find_if(m_selectedItems.begin(), m_selectedItems.end(), [&item](ITreeItem::Ptr obj) {
+            return std::find_if(m_selectedItems.begin(), m_selectedItems.end(),
+                                [&item](ITreeItem::Ptr obj) {
                 return *item == *obj;
             }) != m_selectedItems.end();
         }
@@ -50,6 +51,7 @@ namespace editor {
         void setMultiItemCallback(MultiItemCallback&& callback) { m_callback = std::move(callback); }
 
         void preUpdate(std::list<ITreeItem::Ptr>& items);
+        void preUpdateChildren(std::list<ITreeItem::Ptr>& items);
         void update();
         void postUpdate();
         /// \brief Using only due to Hierarchy process, to outside update use AddItem() / removeItem()
@@ -74,7 +76,6 @@ namespace editor {
 
         State m_lastState = State::SingleSelect;
         State m_currentState = State::SingleSelect;
-
 
         std::set<ITreeItem::Ptr> m_preSelectedItems;
         std::set<ITreeItem::Ptr> m_selectedItems;

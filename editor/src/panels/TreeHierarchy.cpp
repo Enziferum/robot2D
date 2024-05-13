@@ -37,6 +37,13 @@ namespace editor {
     TreeHierarchy::TreeHierarchy(std::string name) : m_name(std::move(name)) {
         m_tree_base_flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick
             | ImGuiTreeNodeFlags_SpanAvailWidth;
+
+        m_listFinderLambda = [](const std::list<ITreeItem::Ptr>& list, ITreeItem::Ptr item) {
+            return std::find_if(list.begin(), list.end(), [&item](ITreeItem::Ptr i){
+                return *item == *i;
+            });
+        };
+
     }
 
     bool TreeHierarchy::addOnSelectCallback(ItemCallback&& callback) {
@@ -89,35 +96,24 @@ namespace editor {
 
 
     void TreeHierarchy::setBefore(ITreeItem::Ptr source, ITreeItem::Ptr target) {
-        /*using Iterator = std::list<ITreeItem::Ptr>::iterator;
 
-        auto findLambda = [](const std::list<ITreeItem::Ptr>& l,
-                    ITreeItem::Ptr item){
-            return std::find_if(l.begin(), l.end(), [&item](ITreeItem::Ptr i){
-                return *item == *i;
-            });
-        };
-
-        */
-
-        auto sourceIter = std::find_if(m_items.begin(), m_items.end(), [&source](ITreeItem::Ptr item) {
-            return item -> m_id == source -> m_id;
-        });
-
-        auto targetIter = std::find_if(m_items.begin(), m_items.end(), [&target](ITreeItem::Ptr item) {
-            return item -> m_id == target -> m_id;
-        });
-
-        auto sourceOldDistance = std::distance(m_items.begin(), sourceIter);
-        auto targetOldDistance = std::distance(m_items.begin(), targetIter);
-
-        if(sourceOldDistance > targetOldDistance) {
-            /// insert before remove last
-            m_insertItems.push_back(std::make_tuple(targetIter, source, ReorderDeleteType::Last));
+        if(source -> isChild() && target -> isChild() ) {
+            if(source -> m_parent == target -> m_parent) {
+                const auto& children = source -> m_parent -> m_childrens;
+                m_reorderInfo.targetIterator = m_listFinderLambda(children, target);
+                m_reorderInfo.sourceIterator = m_listFinderLambda(children, source);
+                m_reorderInfo.source = source;
+                m_reorderInfo.hasValues = true;
+                m_reorderInfo.sourceParent = source -> m_parent;
+            }
         }
-        else if (sourceOldDistance < targetOldDistance) {
-            m_insertItems.push_back(std::make_tuple(targetIter, source, ReorderDeleteType::First));
+        else if(!source -> isChild() && !target -> isChild()) {
+            m_reorderInfo.targetIterator = m_listFinderLambda(m_items, target);
+            m_reorderInfo.sourceIterator = m_listFinderLambda(m_items, source);
+            m_reorderInfo.source = source;
+            m_reorderInfo.hasValues = true;
         }
+
     }
 
     void TreeHierarchy::restoreItem(TreeHierarchy::RestoreInfo&& restoreInfo) {
@@ -243,6 +239,19 @@ namespace editor {
             }
         }
         m_insertItems.clear();
+
+        if(m_reorderInfo.hasValues) {
+            if(m_reorderInfo.sourceParent) {
+                auto& children = m_reorderInfo.sourceParent -> m_childrens;
+                children.insert(m_reorderInfo.targetIterator, m_reorderInfo.source);
+                children.erase(m_reorderInfo.sourceIterator);
+            }
+            else {
+                m_items.insert(m_reorderInfo.targetIterator, m_reorderInfo.source);
+                m_items.erase(m_reorderInfo.sourceIterator);
+            }
+            m_reorderInfo.hasValues = false;
+        }
 
         for (auto& delItem : m_deletePendingItems) {
             m_items.erase(std::remove_if(m_items.begin(), m_items.end(),
@@ -381,6 +390,8 @@ namespace editor {
     }
 
     void TreeHierarchy::renderTreeChildren(ITreeItem::Ptr parent) {
+        // m_multiSelection.preUpdateChildren(parent -> getChildrens());
+
         for (auto child : parent -> getChildrens()) {
             if (!child -> m_name)
                 continue;
@@ -411,10 +422,10 @@ namespace editor {
                 ImGui::PopStyleColor();
             }
 
-            /// TODO(a.raag): recursive doNode
-            if (ImGui::IsMouseReleased(ImGuiMouseButton_Left)
-                && ImGui::IsItemFocused() && ImGui::IsWindowHovered()) {
-                m_selectCallback(child);
+            if(ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
+                m_multiSelection.markSelected(child);
+                if(m_multiSelection.isSingleSelect())
+                    m_selectCallback(child);
             }
 
             imgui_DragDropSource() {

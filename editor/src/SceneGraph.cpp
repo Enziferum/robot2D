@@ -18,6 +18,7 @@ and must not be misrepresented as being the original software.
 3. This notice may not be removed or altered from any
 source distribution.
 *********************************************************************/
+#include <algorithm>
 
 #include <editor/SceneGraph.hpp>
 #include <editor/Components.hpp>
@@ -42,86 +43,88 @@ namespace editor {
         }
         m_deletePendingEntities.clear();
 
-
+        if(m_reorderInfo.hasValues) {
+            if(m_reorderInfo.childParent) {
+                auto& childList = m_reorderInfo.childParent -> getChildren();
+                childList.insert(m_reorderInfo.targetIterator, m_reorderInfo.sceneEntity);
+                childList.erase(m_reorderInfo.sourceIterator);
+            }
+            else {
+                m_sceneEntities.insert(m_reorderInfo.targetIterator, m_reorderInfo.sceneEntity);
+                m_sceneEntities.erase(m_reorderInfo.sourceIterator);
+            }
+            m_reorderInfo.hasValues = false;
+        }
     }
 
     SceneEntity SceneGraph::createEntity(robot2D::ecs::Entity&& entity) {
-        return SceneEntity{ entity };
+        auto sceneEntity = SceneEntity{ std::move(entity) };
+        sceneEntity.m_graph = this;
+        return sceneEntity;
     }
 
-    void SceneGraph::addEntity(SceneEntity&& sceneEntity) {
-        m_sceneEntities.emplace_back(sceneEntity);
+    void SceneGraph::addEntity(SceneEntity sceneEntity) {
+        auto back = m_sceneEntities.emplace_back(sceneEntity);
+        m_AllSceneEntitiesMap[sceneEntity.getUUID()] = back;
     }
 
     SceneEntity SceneGraph::getEntity(UUID uuid) const {
-        auto start = m_sceneEntities.begin();
-        for(; start != m_sceneEntities.end(); ++start) {
-            auto entity = *start;
-            if(entity.getUUID() == uuid)
-                return entity;
-
-            if(entity.hasChildren()) {
-                auto childEntity = getEntityChild(entity, uuid);
-                if(childEntity)
-                    return childEntity;
-            }
-        }
-
-        return {};
-    }
-
-    SceneEntity SceneGraph::getEntityChild(SceneEntity& parent, UUID uuid) const {
-        for(auto& child: parent.getChildren()) {
-            if(child.getComponent<IDComponent>().ID == uuid) {
-                auto sceneChild = child;
-                return SceneEntity(std::move(sceneChild));
-            }
-
-            auto& tx = child.getComponent<TransformComponent>();
-            if(tx.hasChildren()) {
-                auto sceneChild = child;
-                auto childParent = SceneEntity(std::move(sceneChild));
-                auto childEntity = getEntityChild(childParent, uuid);
-                if(childEntity)
-                    return childEntity;
-            }
+        if(m_AllSceneEntitiesMap.find(uuid) != m_AllSceneEntitiesMap.end()) {
+            auto pSceneEntity = m_AllSceneEntitiesMap.at(uuid);
+            if(pSceneEntity)
+                return pSceneEntity;
         }
 
         return {};
     }
 
 
-    bool SceneGraph::setBefore(const SceneEntity& source, const SceneEntity& target) {
+    bool SceneGraph::setBefore(SceneEntity& source, SceneEntity& target) {
+        if(source.isChild() && target.isChild()) {
+            if(source.getParent() == target.getParent()) {
+                auto* parent = source.getParent();
+                const auto& childEntities = parent -> getChildren();
 
-        /// 1. if level not equal don't do
+                auto sourceIter = std::find_if(childEntities.begin(), childEntities.end(),
+                                               [&source](const SceneEntity& item) {
+                                                   return item == source;
+                                               });
 
-        // const auto& parent = source.getParent();
-        
+                auto targetIter = std::find_if(childEntities.begin(), childEntities.end(),
+                                               [&target](const SceneEntity& item) {
+                    return item == target;
+                });
+
+                m_reorderInfo.targetIterator = targetIter;
+                m_reorderInfo.sourceIterator = sourceIter;
+                m_reorderInfo.sceneEntity = source;
+                m_reorderInfo.hasValues = true;
+                m_reorderInfo.childParent = parent;
+                return true;
+            }
+        }
+        else if(!source.isChild() && !target.isChild()) {
+            auto sourceIter =
+                    std::find_if(m_sceneEntities.begin(), m_sceneEntities.end(),
+                [&source](const SceneEntity& item) {
+                    return item == source;
+                });
+
+            auto targetIter =
+                    std::find_if(m_sceneEntities.begin(), m_sceneEntities.end(),
+                                 [&target](const SceneEntity& item) {
+                return item == target;
+            });
 
 
+            m_reorderInfo.targetIterator = targetIter;
+            m_reorderInfo.sourceIterator = sourceIter;
+            m_reorderInfo.sceneEntity = source;
+            m_reorderInfo.hasValues = true;
+            return true;
+        }
 
-        //auto sourceIter = std::find_if(m_sceneEntities.begin(), m_sceneEntities.end(),
-        //    [&source](robot2D::ecs::Entity item) {
-        //        return item.getIndex() == source.getIndex();
-        //    });
-
-        //auto targetIter = std::find_if(m_sceneEntities.begin(), m_sceneEntities.end(),
-        //    [&target](robot2D::ecs::Entity item) {
-        //        return item.getIndex() == target.getIndex();
-        //    });
-
-        //auto sourceOldDistance = std::distance(m_sceneEntities.begin(), sourceIter);
-        //auto targetOldDistance = std::distance(m_sceneEntities.begin(), targetIter);
-
-        //if (sourceOldDistance > targetOldDistance) {
-        //    /// insert before remove last
-        //    m_insertItems.push_back(std::make_tuple(targetIter, source, ReorderDeleteType::Last));
-        //}
-        //else if (sourceOldDistance < targetOldDistance) {
-        //    m_insertItems.push_back(std::make_tuple(targetIter, source, ReorderDeleteType::First));
-        //}
-
-        return true;
+        return false;
     }
 
 
@@ -131,6 +134,12 @@ namespace editor {
 
     bool SceneGraph::cloneSelf(SceneGraph& cloneGraph) {
         return false;
+    }
+
+    void SceneGraph::addEntityInternal(SceneEntity sceneEntity) {
+        if(!sceneEntity.hasComponent<IDComponent>())
+            return;
+        m_AllSceneEntitiesMap[sceneEntity.getUUID()] = sceneEntity;
     }
 
 

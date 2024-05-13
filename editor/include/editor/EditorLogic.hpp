@@ -94,7 +94,7 @@ namespace editor {
         SceneEntity findEntity(const robot2D::vec2i& mousePos)  override;
         std::vector<SceneEntity>& getSelectedEntities()  override;
         std::string getAssociatedProjectPath() const override;
-        std::list<SceneEntity> getEntities() const override;
+        const std::list<SceneEntity>& getEntities() const override;
         void removeEntity(SceneEntity entity) override;
         void addEmptyEntity() override;
         SceneEntity addButton() override;
@@ -103,7 +103,7 @@ namespace editor {
         /// \brief using when need create entity on scene, but don't want to notify someone
         SceneEntity duplicateEmptyEntity(SceneEntity entity) override;
 
-        void setBefore(SceneEntity sourceEntity, SceneEntity target) override;
+        bool setBefore(SceneEntity sourceEntity, SceneEntity target) override;
         void removeEntityChild(SceneEntity entity) override;
         bool isRunning() const override;
         SceneEntity getEntity(UUID uuid) override;

@@ -23,6 +23,7 @@ source distribution.
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <list>
 
 #include <robot2D/Graphics/Transformable.hpp>
 #include <robot2D/Graphics/Texture.hpp>
@@ -82,11 +83,11 @@ namespace editor {
             return getTransform().transformRect(getLocalBounds());
         }
 
-        std::vector<SceneEntity>& getChildren() {
+        std::list<SceneEntity>& getChildren() {
             return m_children;
         }
 
-        const std::vector<SceneEntity>& getChildren() const {
+        const std::list<SceneEntity>& getChildren() const {
             return m_children;
         }
 
@@ -101,7 +102,7 @@ namespace editor {
         void removeChild(int childID, bool removeFromScene);
     private:
         int m_childID = -1;
-        std::vector<SceneEntity> m_children;
+        std::list<SceneEntity> m_children;
         SceneEntity m_parent;
 
 

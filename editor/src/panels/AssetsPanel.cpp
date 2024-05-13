@@ -281,8 +281,6 @@ namespace editor {
 
             }
 
-
-
             if(ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !anyItemIsHovered) {
                 m_itemEditName.second = false;
                 m_itemClicked = false;

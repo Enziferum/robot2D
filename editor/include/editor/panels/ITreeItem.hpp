@@ -21,6 +21,7 @@ source distribution.
 
 #pragma once
 #include <vector>
+#include <list>
 #include <string>
 #include <memory>
 #include <limits>
@@ -41,7 +42,7 @@ namespace editor {
         using Ptr = std::shared_ptr<ITreeItem>;
 
         ITreeItem();
-        ITreeItem(UUID id);
+        explicit ITreeItem(UUID id);
         ITreeItem(const ITreeItem& other) = delete;
         ITreeItem& operator=(const ITreeItem& other) = delete;
         ITreeItem(ITreeItem&& other) = delete;
@@ -61,7 +62,7 @@ namespace editor {
         bool isChild() const { return m_parent != nullptr; }
         void addChild(ITreeItem::Ptr child);
         bool deleteChild(ITreeItem::Ptr item);
-        std::vector<ITreeItem::Ptr>& getChildrens() { return m_childrens; }
+        std::list<ITreeItem::Ptr>& getChildrens() { return m_childrens; }
         const std::size_t getChildValue(std::size_t& size) const;
 
         void removeSelf();
@@ -98,7 +99,7 @@ namespace editor {
 
         std::string* m_name{nullptr};
         ITreeItem* m_parent{nullptr};
-        std::vector<ITreeItem::Ptr> m_childrens;
+        std::list<ITreeItem::Ptr> m_childrens;
         std::vector<ITreeItem::Ptr> m_deletePendingItems{};
 
         friend class TreeHierarchy;

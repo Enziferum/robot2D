@@ -78,8 +78,8 @@ namespace editor {
 
                     /// TODO(a.raag): swap first and last if last < first
 
-                    auto firstGraphPath = (*firstFound)->getNodePath();
-                    auto lastGraphPath = (*lastFound)->getNodePath();
+                    auto firstGraphPath = (*firstFound) -> getNodePath();
+                    auto lastGraphPath = (*lastFound) -> getNodePath();
 
                     if (!firstGraphPath.isSameLevel(lastGraphPath))
                         break;
@@ -107,6 +107,10 @@ namespace editor {
         m_preSelectedItems.clear();
     }
 
+
+    void MultiSelection::preUpdateChildren(std::list<ITreeItem::Ptr> &items) {
+
+    }
 
     void MultiSelection::update() {
         m_ControlDown = ImGui::GetIO().KeyCtrl;
@@ -168,4 +172,5 @@ namespace editor {
     void MultiSelection::removeItem(ITreeItem::Ptr item) {
         m_selectedItems.erase(item);
     }
+
 }

@@ -16,7 +16,7 @@ namespace editor {
         DuplicateCommand& operator=(const DuplicateCommand& other) = delete;
         DuplicateCommand(DuplicateCommand&& other) = delete;
         DuplicateCommand& operator=(DuplicateCommand&& other) = delete;
-        ~DuplicateCommand() = default;
+        ~DuplicateCommand() override = default;
 
         void undo() override;
         void redo() override;

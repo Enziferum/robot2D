@@ -22,11 +22,13 @@ source distribution.
 #pragma once
 
 #include <vector>
+#include <list>
 #include <robot2D/Ecs/Entity.hpp>
 #include <robot2D/Graphics/Rect.hpp>
 #include "Uuid.hpp"
 
 namespace editor {
+    class SceneGraph;
     class SceneEntity {
     public:
         SceneEntity() = default;
@@ -62,23 +64,30 @@ namespace editor {
             return !m_entity.destroyed();
         }
 
-        void addChild(const SceneEntity& sceneEntity);
+        void addChild(SceneEntity& sceneEntity);
         [[nodiscard]]
         UUID getUUID() const;
 
         bool hasChildren() const;
 
         robot2D::ecs::Entity getWrappedEntity() const { return m_entity; }
-        const std::vector<SceneEntity>& getChildren() const;
-        std::vector<SceneEntity>& getChildren();
+        const std::list<SceneEntity>& getChildren() const;
+        std::list<SceneEntity>& getChildren();
+
 
         const SceneEntity& getParent() const { return *m_parent; }
+        SceneEntity* getParent() { return m_parent; }
 
         /// \brief usefull for QuadTree insertion
         robot2D::FloatRect calculateRect() const;
+
+        bool isChild() const { return m_parent != nullptr; }
     private:
+        friend class SceneGraph;
+
         robot2D::ecs::Entity m_entity;
         SceneEntity* m_parent { nullptr };
+        SceneGraph* m_graph { nullptr };
     };
 
     template<typename T>
