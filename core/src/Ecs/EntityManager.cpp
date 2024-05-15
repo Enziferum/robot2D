@@ -84,7 +84,6 @@ namespace robot2D::ecs {
     }
 
     void EntityManager::markDestroyed(Entity entity) {
-        RB_ASSERT(entity.m_id < m_destroyFlags.size(), "(EntityManager::markDestroyed): index out of range")
         m_destroyFlags[entity.m_id] = true;
     }
 

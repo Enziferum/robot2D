@@ -33,9 +33,8 @@ namespace robot2D::ecs {
         m_scene{scene} {}
 
     void SystemManager::removeEntity(Entity entity) {
-        for(auto& system: m_systems) {
+        for(auto& system: m_systems)
             system -> removeEntity(entity);
-        }
     }
 
     void SystemManager::handleMessage(const robot2D::Message& message) {

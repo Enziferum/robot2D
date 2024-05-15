@@ -31,6 +31,7 @@ source distribution.
 
 #include <editor/FileApi.hpp>
 #include <editor/DragDropIDS.hpp>
+#include <robot2D/Core/Assert.hpp>
 
 namespace editor {
 
@@ -51,11 +52,6 @@ namespace editor {
     m_configuration{},
     m_treeHierarchy("MainScene")
     {
-
-        m_messageDispatcher.onMessage<PanelEntitySelectedMessage>(
-                MessageID::PanelEntityNeedSelect,
-                BIND_CLASS_FN(onEntitySelection)
-        );
 
         m_messageDispatcher.onMessage<EntityDuplication>(
                 MessageID::EntityDuplicate,
@@ -145,17 +141,17 @@ namespace editor {
         m_treeHierarchy.addOnCallback([this](ITreeItem::Ptr item) {
 
             bool deleteSelected = false;
-            if (ImGui::BeginPopupContextItem("TreeHierarchyDeletePopup"))
+            if (ImGui::BeginPopupContextItem("##TreeHierarchyDeletePopup"))
             {
                 if (ImGui::MenuItem("Delete Entity"))
                     deleteSelected = true;
 
                 ImGui::EndPopup();
             }
-            // TODO(a.raag): correct deletion from UI
+
             if(deleteSelected) {
-//                const auto& selectedItems = m_treeHierarchy.getSelectedItems();
-//                m_interactor -> removeEntities(selectedItems);
+                // const auto& selectedItems = m_treeHierarchy.getSelectedItems();
+                // m_interactor -> removeEntities(selectedItems);
             }
         });
     }
@@ -197,45 +193,13 @@ namespace editor {
         }
     }
 
-    SceneEntity ScenePanel::getSelectedEntity() const {
-        return m_selectedEntity;
-    }
 
     SceneEntity ScenePanel::getTreeItem(UUID uuid) {
-        return *m_treeHierarchy.getDataByItem<SceneEntity>(uuid);
+        auto entity = m_treeHierarchy.getDataByItem<SceneEntity>(uuid);
+        RB_ASSERT(entity, "ScenePanel::getTreeItem: tree' item don't have valid entity");
+        return *entity;
     }
 
-
-    void ScenePanel::onEntitySelection(const PanelEntitySelectedMessage& message) {
-
-        /// TODO(a.raag): get UUID or ITreeItem::Ptr directly and process whole children tree
-
-        for(auto& item: m_treeHierarchy.getItems()) {
-            auto entityPtr = item -> getUserData<SceneEntity>();
-            if(!entityPtr)
-                return;
-            SceneEntity entity = *entityPtr;
-
-            if(entity == message.entity) {
-                m_selectedEntity = entity;
-                m_treeHierarchy.setSelected(item);
-            }
-
-            if(item -> hasChildrens()) {
-               /// TODO(a.raag): graph traverse
-                /* for(auto child: item -> getChildrens()) {
-                    entityPtr = child -> getUserData<SceneEntity>();
-                    if(!entityPtr)
-                        return;
-                    entity = *entityPtr;
-                    if(entity == message.entity) {
-                        m_selectedEntity = entity;
-                        m_treeHierarchy.setSelected(child);
-                    }
-                }*/
-            }
-        }
-    }
 
     void ScenePanel::onEntityDuplicate(const EntityDuplication& duplication) {
         auto entity = m_interactor -> getEntity(duplication.entityID);
@@ -270,23 +234,11 @@ namespace editor {
             m_treeHierarchy.setSelected(item);
     }
 
-    void ScenePanel::processSelectedChildren(ITreeItem::Ptr parent, std::vector<ITreeItem::Ptr>& items) {
-        for(auto& item: items) {
-            for(auto& childItem: parent -> getChildrens()) {
-                if(item == childItem)
-                    m_treeHierarchy.setSelected(childItem);
-
-                if(childItem -> hasChildrens())
-                    processSelectedChildren(childItem, items);
-            }
-        }
-    }
-
-
     DeletedEntitiesRestoreUIInformation
     ScenePanel::removeEntitiesOnUI(std::list<ITreeItem::Ptr>&& uiItems) {
         DeletedEntitiesRestoreUIInformation restoreUiInformation;
-        bool removeAll = uiItems.size() == m_treeHierarchy.getItems().size();
+        auto& treeItems = m_treeHierarchy.getItems();
+        bool removeAll = uiItems.size() == treeItems.size();
 
         if(removeAll) {
             m_treeHierarchy.getItems();
@@ -313,7 +265,7 @@ namespace editor {
         else {
             for(const auto& item: uiItems) {
 
-                auto found = std::find_if(uiItems.begin(), uiItems.end(),
+                auto found = std::find_if(treeItems.begin(), treeItems.end(),
                                           [&item](const ITreeItem::Ptr& obj) {
                     return *item == *obj;
                 });
@@ -327,7 +279,7 @@ namespace editor {
                 restoreInfo.target = *found;
 
                 if(!restoreUiInformation.hasItems()) {
-                    if(found == uiItems.begin())
+                    if(found == treeItems.begin())
                         restoreInfo.first = true;
                     else
                         restoreInfo.anchor = *std::prev(found);
@@ -339,7 +291,7 @@ namespace editor {
                         restoreInfo.anchor = lastInfo.target;
                     }
                     else {
-                        if(found == uiItems.begin())
+                        if(found == treeItems.begin())
                             restoreInfo.first = true;
                         else
                             restoreInfo.anchor = *std::prev(found);

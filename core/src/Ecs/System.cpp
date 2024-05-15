@@ -61,8 +61,8 @@ namespace robot2D::ecs {
 
     bool System::removeEntity(Entity entity) {
         auto found = std::find_if(m_entities.begin(), m_entities.end(),
-                               [&entity](const Entity& id) {
-            return entity == id;
+                               [&entity](const Entity& containerEntity) {
+            return entity == containerEntity;
         });
 
         if(found == m_entities.end())
