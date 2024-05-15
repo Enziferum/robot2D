@@ -22,6 +22,7 @@ source distribution.
 #pragma once
 #include <list>
 #include <unordered_map>
+#include <functional>
 
 #include <robot2D/Ecs/Scene.hpp>
 #include <robot2D/Ecs/Entity.hpp>
@@ -40,6 +41,7 @@ namespace editor {
     class SceneGraph {
     private:
         using EntityContainer = std::vector<SceneEntity>;
+        using TraverseFunction = std::function<void(SceneEntity&)>;
     public:
         explicit SceneGraph(robot2D::MessageBus& messageBus);
         ~SceneGraph() = default;
@@ -49,7 +51,7 @@ namespace editor {
         SceneGraph& operator=(SceneGraph&& other) = delete;
 
         bool cloneSelf(SceneGraph& cloneGraph);
-        void update(float dt);
+        void update(float dt, robot2D::ecs::Scene& ecsScene);
 
         SceneEntity createEntity(robot2D::ecs::Entity&& entity);
         void addEntity(SceneEntity sceneEntity);
@@ -76,10 +78,12 @@ namespace editor {
 
         }
 
+        void traverseGraph(TraverseFunction&& traverseFunction);
     private:
         void addEntityInternal(SceneEntity sceneEntity);
-        template<typename Component, typename Container>
+        void traverseGraphChildren(TraverseFunction& traverseFunction, SceneEntity parent);
 
+        template<typename Component, typename Container>
         void filterEntitiesChildren(Container& container, const SceneEntity& parent) {
             for(auto& entity: parent.getChildren()) {
                 if(entity.hasComponent<Component>())

@@ -88,10 +88,6 @@ namespace editor {
 
     void UIManager::blockEvents(bool flag) {}
 
-    SceneEntity UIManager::getSelectedEntity() {
-        return getPanel<ScenePanel>().getSelectedEntity();
-    }
-
     SceneEntity UIManager::getTreeItem(editor::UUID uuid) {
         return getPanel<ScenePanel>().getTreeItem(uuid);
     }

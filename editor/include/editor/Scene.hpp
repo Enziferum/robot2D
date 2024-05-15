@@ -117,7 +117,6 @@ namespace editor {
         void traverseGraph(TraverseFunction&& traverseFunction);
     protected:
         void draw(robot2D::RenderTarget& target, robot2D::RenderStates states) const override;
-        void traverseGraphChildren(TraverseFunction& traverseFunction, SceneEntity parent);
     private:
         struct RemoveEntityInfo {
             SceneEntity entity;
@@ -156,6 +155,14 @@ namespace editor {
 
         using Iterator = std::list<SceneEntity>::iterator;   
         using SetItem = std::tuple<Iterator, SceneEntity, bool, SceneEntity>;
-        std::vector<SetItem> m_setItems;
+
+        struct RestoreData {
+            bool isChained{ false };
+            Iterator anchorIterator;
+            SceneEntity anchorEntity {};
+            SceneEntity sourceEntity;
+        };
+
+        std::vector<RestoreData> m_restoreItems;
     };
 } // namespace editor

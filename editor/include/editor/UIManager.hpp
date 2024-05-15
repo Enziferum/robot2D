@@ -36,7 +36,6 @@ namespace editor {
     public:
         virtual ~IUIManager() = 0;
         virtual void blockEvents(bool flag) = 0;
-        virtual SceneEntity getSelectedEntity()  = 0;
         virtual SceneEntity getTreeItem(UUID uuid)  = 0;
     };
 
@@ -59,7 +58,6 @@ namespace editor {
         void render();
 
         void blockEvents(bool flag) override;
-        SceneEntity getSelectedEntity() override;
         SceneEntity getTreeItem(editor::UUID uuid) override;
     private:
         void renderBaseCanvas();

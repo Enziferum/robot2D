@@ -28,18 +28,17 @@ namespace editor {
 
     SceneGraph::SceneGraph(robot2D::MessageBus& messageBus): m_scene{messageBus} {}
 
-    void SceneGraph::update(float dt) {
+    void SceneGraph::update(float dt, robot2D::ecs::Scene& ecsScene) {
         m_deletePendingEntities.swap(m_deletePendingBuffer);
         for (auto& entity : m_deletePendingEntities) {
-//            for (auto child : entity.getChildren())
-//                child.removeSelf();
+            for (auto child : entity.getChildren())
+                child.getWrappedEntity().removeSelf();
 
             m_sceneEntities.erase(std::remove_if(m_sceneEntities.begin(), m_sceneEntities.end(),
                 [&entity](const SceneEntity& item) {
                     return item == entity;
                 }), m_sceneEntities.end());
-
-            m_scene.removeEntity(entity.getWrappedEntity());
+            ecsScene.removeEntity(entity.getWrappedEntity());
         }
         m_deletePendingEntities.clear();
 
@@ -140,6 +139,26 @@ namespace editor {
         if(!sceneEntity.hasComponent<IDComponent>())
             return;
         m_AllSceneEntitiesMap[sceneEntity.getUUID()] = sceneEntity;
+    }
+
+    void SceneGraph::traverseGraph(TraverseFunction&& traverseFunction) {
+        for(auto& entity: m_sceneEntities) {
+            if(!entity)
+                continue;
+            traverseFunction(entity);
+            if(entity.hasChildren())
+                traverseGraphChildren(traverseFunction, entity);
+        }
+    }
+
+    void SceneGraph::traverseGraphChildren(TraverseFunction& traverseFunction, SceneEntity parent) {
+        for(auto& entity: parent.getChildren()) {
+            if(!entity)
+                continue;
+            traverseFunction(entity);
+            if(entity.hasChildren())
+                traverseGraphChildren(traverseFunction, entity);
+        }
     }
 
 

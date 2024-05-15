@@ -55,8 +55,6 @@ namespace editor {
         ~ScenePanel() override = default;
 
         void setInteractor(UIInteractor::Ptr interactor);
-
-        SceneEntity getSelectedEntity() const;
         SceneEntity getTreeItem(UUID uuid);
 
         void processSelectedEntities(std::vector<ITreeItem::Ptr>&& items);
@@ -69,14 +67,11 @@ namespace editor {
     private:
         void windowFunction();
 
-        void onEntitySelection(const PanelEntitySelectedMessage& entitySelection);
         void onEntityDuplicate(const EntityDuplication& duplication);
         void entityDuplicateChild(SceneEntity parentEntity, ITreeItem::Ptr parentItem);
 
         void setupTreeHierarchy();
         void setStartChildEntity(SceneEntity entity, ITreeItem::Ptr parent);
-        void processSelectedChildren(ITreeItem::Ptr parent, std::vector<ITreeItem::Ptr>& items);
-
 
         void onSelectUIItem(ITreeItem::Ptr item);
         void onReorderUIItems(ITreeItem::Ptr source, ITreeItem::Ptr target);
@@ -88,7 +83,7 @@ namespace editor {
         MessageDispatcher& m_messageDispatcher;
         PrefabManager& m_prefabManager;
 
-        UIInteractor::Ptr m_interactor;
+        UIInteractor::Ptr m_interactor { nullptr };
 
         SceneEntity m_selectedEntity;
         ScenePanelConfiguration m_configuration;

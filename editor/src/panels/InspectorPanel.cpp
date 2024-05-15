@@ -739,8 +739,8 @@ namespace editor {
                 m_prefabHasModification = false;
                 auto* msg =
                     m_messageBus.postMessage<PrefabAssetModificatedMessage>(MessageID::PrefabAssetModificated);
-                msg->prefabUUID = prefabComponent.prefabUUID;
-                msg->prefabEntity = m_selectedEntity;
+                msg -> prefabUUID = prefabComponent.prefabUUID;
+                msg -> prefabEntity = m_selectedEntity;
             }
         }
 
@@ -756,13 +756,11 @@ namespace editor {
                 m_prefabHasModification = false;
                 auto* msg =
                     m_messageBus.postMessage<PrefabAssetModificatedMessage>(MessageID::PrefabAssetModificated);
-                msg->prefabUUID = prefabComponent.prefabUUID;
-                msg->prefabEntity = m_selectedEntity;
+                msg -> prefabUUID = prefabComponent.prefabUUID;
+                msg -> prefabEntity = m_selectedEntity;
             }
         }
         m_inspectType = InspectType::EditorEntity;
         m_selectedEntity = message.entity;
     }
-
-
 }

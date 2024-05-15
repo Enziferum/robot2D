@@ -18,6 +18,7 @@ and must not be misrepresented as being the original software.
 3. This notice may not be removed or altered from any
 source distribution.
 *********************************************************************/
+#include <optional>
 #include <robot2D/Graphics/RenderTarget.hpp>
 
 #include <editor/Scene.hpp>
@@ -42,6 +43,18 @@ namespace editor {
         constexpr robot2D::vec2f defaultSize = {20.f, 20.f};
     }
 
+    template<typename Container, typename T>
+    std::optional<typename Container::iterator> find(Container& container, const T& item) {
+        auto found = std::find_if(std::begin(container), std::end(container), [&item](const T& containerItem) {
+            return item == containerItem;
+        });
+
+        if(found != std::end(container))
+            return found;
+
+        return std::nullopt;
+    }
+
     Scene::Scene(robot2D::MessageBus &messageBus) :
             m_sceneGraph(messageBus),
             m_runtimeSceneGraph(messageBus),
@@ -63,13 +76,13 @@ namespace editor {
         entity.addComponent<IDComponent>(UUID());
         entity.addComponent<TagComponent>().setTag("MainCamera");
 
-        auto &transform = entity.addComponent<TransformComponent>();
+        auto& transform = entity.addComponent<TransformComponent>();
         transform.setPosition(defaultPosition);
         transform.setScale(defaultSize);
         entity.addComponent<DrawableComponent>();
 
-        auto &cameraComponent = entity.addComponent<CameraComponent>();
-        m_sceneGraph.addEntity(SceneEntity{entity});
+        auto& cameraComponent = entity.addComponent<CameraComponent>();
+        m_sceneGraph.addEntity(SceneEntity{ entity });
     }
 
 
@@ -77,47 +90,42 @@ namespace editor {
         return m_sceneGraph.getEntities();
     }
 
-    const std::list<SceneEntity> &Scene::getEntities() const {
+    const std::list<SceneEntity>& Scene::getEntities() const {
         return m_sceneGraph.getEntities();
     }
 
-    void Scene::handleEventsRuntime(const robot2D::Event &event) {
-        m_scene.getSystem<UISystem>()->handleEvents(event);
+    void Scene::handleEventsRuntime(const robot2D::Event& event) {
+        m_scene.getSystem<UISystem>() -> handleEvents(event);
     }
 
 
     void Scene::update(float dt) {
-        auto &sceneEntities = m_sceneGraph.getEntities();
-        for (auto &item: m_setItems) {
-            auto iter = std::get<0>(item);
-            if (iter == sceneEntities.begin())
-                sceneEntities.insert(iter, std::get<1>(item));
-            bool isChained = std::get<2>(item);
-            if (!isChained) {
-                if (iter != sceneEntities.end())
-                    sceneEntities.insert(std::next(iter), std::get<1>(item));
+        auto& sceneEntities = m_sceneGraph.getEntities();
+        for (const auto& restoreData: m_restoreItems) {
+            if (restoreData.anchorIterator == sceneEntities.begin())
+                sceneEntities.insert(restoreData.anchorIterator, restoreData.sourceEntity);
+            if (!restoreData.isChained) {
+                if (restoreData.anchorIterator != sceneEntities.end())
+                    sceneEntities.insert(std::next(restoreData.anchorIterator), restoreData.sourceEntity);
                 else
-                    sceneEntities.insert(iter, std::get<1>(item));
+                    sceneEntities.insert(restoreData.anchorIterator, restoreData.sourceEntity);
             } else {
-                auto anchor = std::get<3>(item);
-                auto prevFound = std::find_if(sceneEntities.begin(), sceneEntities.end(),
-                                              [&anchor](auto item) {
-                                                  return item == anchor;
-                                              });
-                sceneEntities.insert(std::next(prevFound), std::get<1>(item));
+                auto prevFound = find(sceneEntities, restoreData.anchorEntity);
+                if(prevFound)
+                    sceneEntities.insert(std::next(*prevFound), restoreData.sourceEntity);
             }
         }
 
-        m_setItems.clear();
-        m_sceneGraph.update(dt);
+        m_restoreItems.clear();
+        m_sceneGraph.update(dt, m_scene);
         m_scene.update(dt);
     }
 
     void Scene::updateRuntime(float dt) {
-        for (const auto &entity: m_scriptRuntimeContainer)
+        for (const auto& entity: m_scriptRuntimeContainer)
             ScriptEngine::onUpdateEntity(entity, dt);
 
-        m_physicsAdapter->update(dt);
+        m_physicsAdapter -> update(dt);
         m_scene.update(dt);
     }
 
@@ -130,14 +138,15 @@ namespace editor {
         return m_sceneGraph.createEntity(std::move(entity));
     }
 
-    void Scene::addAssociatedEntity(SceneEntity &&entity) {
-        m_sceneGraph.addEntity(std::move(entity));
-    }
-
-
     SceneEntity Scene::createEmptyEntity() {
         return SceneEntity(std::move(m_scene.createEmptyEntity()));
     }
+
+    void Scene::addAssociatedEntity(SceneEntity &&entity) {
+        m_sceneGraph.addEntity(std::move(entity));
+        m_hasChanges = true;
+    }
+
 
     SceneEntity Scene::addEmptyEntity() {
         auto entity = m_scene.createEntity();
@@ -183,18 +192,15 @@ namespace editor {
             ScriptEngine::onCreateEntity(entity);
 
 
-        /// TODO(a.raag): moving to SceneGraph
-        for (auto& entity: m_runtimeSceneGraph.getEntities()) {
-
-            if (entity.hasComponent<ButtonComponent>()) {
-                auto &hitbox = entity.getComponent<UIHitbox>();
-                auto &ts = entity.getComponent<TransformComponent>();
+        m_runtimeSceneGraph.traverseGraph(std::move([](SceneEntity& sceneEntity) {
+            if (sceneEntity.hasComponent<ButtonComponent>()) {
+                auto& hitbox = sceneEntity.getComponent<UIHitbox>();
+                auto& ts = sceneEntity.getComponent<TransformComponent>();
                 // TODO(a.raag) ts.getGlobalBounds();
                 hitbox.m_area = robot2D::FloatRect::create(ts.getPosition(),
                                                            ts.getScale() + ts.getPosition());
             }
-        }
-
+        }));
     }
 
     void Scene::onRuntimeStop() {
@@ -206,25 +212,25 @@ namespace editor {
 
     void Scene::onPhysics2DRun() {
         m_physicsAdapter = getPhysics2DAdapter(PhysicsAdapterType::Box2D);
-        m_physicsAdapter->start(m_sceneGraph.getEntities());
+        m_physicsAdapter -> start(m_sceneGraph.getEntities());
 
 
-        m_physicsAdapter->registerCallback(PhysicsCallbackType::Enter,
+        m_physicsAdapter -> registerCallback(PhysicsCallbackType::Enter,
                                            [](const Physics2DContact &contact) {
                                                ScriptEngine::onCollision2DBegin(contact);
                                            });
 
-        m_physicsAdapter->registerCallback(PhysicsCallbackType::Exit,
+        m_physicsAdapter -> registerCallback(PhysicsCallbackType::Exit,
                                            [](const Physics2DContact &contact) {
                                                ScriptEngine::onCollision2DEnd(contact);
                                            });
 
-        m_physicsAdapter->registerCallback(PhysicsCallbackType::EnterTrigger,
+        m_physicsAdapter -> registerCallback(PhysicsCallbackType::EnterTrigger,
                                            [](const Physics2DContact &contact) {
                                                ScriptEngine::onCollision2DBeginTrigger(contact);
                                            });
 
-        m_physicsAdapter->registerCallback(PhysicsCallbackType::ExitTrigger,
+        m_physicsAdapter -> registerCallback(PhysicsCallbackType::ExitTrigger,
                                            [](const Physics2DContact &contact) {
                                                ScriptEngine::onCollision2DEndTrigger(contact);
                                            });
@@ -252,7 +258,7 @@ namespace editor {
 
     bool Scene::setBefore(SceneEntity source, SceneEntity target) {
         if (m_sceneGraph.setBefore(source, target)) {
-            m_scene.getSystem<RenderSystem>()->setBefore(source.getWrappedEntity(),
+            m_scene.getSystem<RenderSystem>() -> setBefore(source.getWrappedEntity(),
                                                          target.getWrappedEntity());
             m_hasChanges = true;
             return true;
@@ -268,8 +274,9 @@ namespace editor {
         dupEntity.getComponent<IDComponent>().ID = UUID();
         dupEntity.getComponent<TagComponent>().setTag(name);
 
-        auto *msg = m_messageBus.postMessage<EntityDuplication>(MessageID::EntityDuplicate);
-        msg->entityID = dupEntity.getComponent<IDComponent>().ID;
+        auto* msg =
+                m_messageBus.postMessage<EntityDuplication>(MessageID::EntityDuplicate);
+        msg -> entityID = dupEntity.getComponent<IDComponent>().ID;
 
         /// add or create ???
         // m_sceneGraph.emplace_back(dupEntity);
@@ -278,23 +285,20 @@ namespace editor {
         if (entity.hasChildren())
             duplicateEntityChild(SceneEntity{std::move(dupEntity)}, entity);
 
-        // dupEntity.getComponent<TransformComponent>().setPosition(mousePos);
         return SceneEntity(std::move(dupEntity));
     }
 
     void Scene::duplicateEntityChild(SceneEntity parent, SceneEntity dupEntity) {
-        auto &parentTransform = dupEntity.getComponent<TransformComponent>();
-        auto &dupParentTransform = parent.getComponent<TransformComponent>();
+        auto& parentTransform = dupEntity.getComponent<TransformComponent>();
+        auto& dupParentTransform = parent.getComponent<TransformComponent>();
         dupParentTransform.clearChildren();
 
-
-
-        //for(auto& child: parentTransform.getChildren()) {
-        //    auto dupChild = m_scene.duplicateEntity(child);
-        //    dupParentTransform.addChild(parent, dupChild);
-        //    if(child.getComponent<TransformComponent>().hasChildren())
-        //        duplicateEntityChild(dupChild, child);
-        //}
+        for(auto& child: parentTransform.getChildren()) {
+            auto dupChild = m_scene.duplicateEntity(child.getWrappedEntity());
+            dupParentTransform.addChild(parent, dupChild);
+            if(child.getComponent<TransformComponent>().hasChildren())
+                duplicateEntityChild(dupChild, child);
+        }
     }
 
     SceneEntity Scene::duplicateEmptyEntity(SceneEntity entity) {
@@ -311,9 +315,8 @@ namespace editor {
     }
 
 
-    DeletedEntitiesRestoreInformation Scene::removeEntities(std::vector<SceneEntity> &removingEntities) {
+    DeletedEntitiesRestoreInformation Scene::removeEntities(std::vector<SceneEntity>& removingEntities) {
         DeletedEntitiesRestoreInformation restoreInformation;
-
         using RestoreInfo = DeletedEntitiesRestoreInformation::RestoreInfo;
 
         std::vector<RemoveEntityInfo> removeInfos{removingEntities.size()};
@@ -322,25 +325,22 @@ namespace editor {
                            return RemoveEntityInfo{entity};
                        });
         using FoundIterator = std::list<SceneEntity>::const_iterator;
+        const auto& sceneEntities = m_sceneGraph.getEntities();
 
-
-        const auto &sceneEntities = m_sceneGraph.getEntities();
-
-        for (auto &item: removeInfos) {
+        for (auto& item: removeInfos) {
             FoundIterator found = sceneEntities.begin();
 
             bool isParentDel = false;
             for (; found != sceneEntities.end(); ++found) {
                 auto iterEntity = *found;
-                auto &transform = iterEntity.getComponent<TransformComponent>();
-
                 if (iterEntity == item.entity) {
                     item.isDeleted = true;
                     isParentDel = true;
-                    iterEntity.getComponent<UIComponent>().setName(nullptr);
+                    if(iterEntity.hasComponent<UIComponent>())
+                        iterEntity.getComponent<UIComponent>().setName(nullptr);
                 }
 
-                if (transform.hasChildren())
+                if (iterEntity.hasChildren())
                     removeChildEntities(restoreInformation, removeInfos, iterEntity, isParentDel);
 
                 if (iterEntity == item.entity) {
@@ -393,12 +393,11 @@ namespace editor {
                                     const SceneEntity &parent,
                                     bool isParentDel) {
 
-        for (auto &item: removingEntities) {
-            for (auto c: parent.getChildren()) {
-                SceneEntity child{std::move(c)};
+        for (auto& item: removingEntities) {
+            for (auto child: parent.getChildren()) {
                 if (!child)
                     continue;
-                auto &childTransform = child.getComponent<TransformComponent>();
+                auto& childTransform = child.getComponent<TransformComponent>();
 
                 if (child == item.entity)
                     isParentDel = true;
@@ -424,57 +423,51 @@ namespace editor {
 
     }
 
-    void Scene::restoreEntities(DeletedEntitiesRestoreInformation &restoreInformation) {
+    void Scene::restoreEntities(DeletedEntitiesRestoreInformation& restoreInformation) {
         using EntityPair = std::pair<SceneEntity, SceneEntity>;
         std::vector<EntityPair> childBuffer;
+        childBuffer.reserve(restoreInformation.getInfos().size());
+        auto& sceneEntities = m_sceneGraph.getEntities();
 
-        for (auto &info: restoreInformation.getInfos()) {
+        for (auto& info: restoreInformation.getInfos()) {
+            if (!m_scene.restoreEntity(info.entity.getWrappedEntity())) {
+                RB_EDITOR_ERROR("EditorScene: Can't Restore entity with index {0}",
+                                info.entity.getWrappedEntity().getIndex());
+                return;
+            }
+            auto& tag = info.entity.getComponent<TagComponent>().getTag();
+            info.entity.getComponent<UIComponent>().setName(&tag);
+
             if (info.child) {
                 if (info.anchorEntity)
                     info.anchorEntity.addChild(info.entity);
                 else
                     childBuffer.emplace_back(info.anchorEntity, info.entity);
 
-                m_scene.restoreEntity(info.entity.getWrappedEntity());
-                info.entity.getComponent<UIComponent>().setName(&info.entity.getComponent<TagComponent>().getTag());
             } else {
-                auto &sceneEntities = m_sceneGraph.getEntities();
+
+                RestoreData restoreData;
+                restoreData.sourceEntity = info.entity;
+
                 if (info.first) {
-                    m_scene.restoreEntity(info.entity.getWrappedEntity());
-                    info.entity.getComponent<UIComponent>().setName(&info.entity.getComponent<TagComponent>().getTag());
-                    bool isChained = false;
-                    m_setItems.emplace_back(sceneEntities.begin(), info.entity, isChained, SceneEntity{});
+                    restoreData.anchorIterator = sceneEntities.begin();
                 } else {
                     if (!info.isChained) {
-                        if (!m_scene.restoreEntity(info.entity.getWrappedEntity())) {
-                            RB_EDITOR_ERROR("EditorScene: Can't Restore entity with index {0}",
-                                            info.entity.getWrappedEntity().getIndex());
-                        }
-                        info.entity.getComponent<UIComponent>().setName(
-                                &info.entity.getComponent<TagComponent>().getTag());
-                        auto anchorFound = std::find_if(sceneEntities.begin(),
-                                                        sceneEntities.end(), [&info](auto item) {
-                                    return item == info.anchorEntity;
-                                });
-                        bool isChained = false;
-                        m_setItems.emplace_back(anchorFound, info.entity, isChained, SceneEntity{});
+                        auto anchorFound = find(sceneEntities, info.anchorEntity);
+                        if(anchorFound)
+                            restoreData.anchorIterator = *anchorFound;
                     } else {
-                        if (!m_scene.restoreEntity(info.entity.getWrappedEntity())) {
-                            RB_EDITOR_ERROR("EditorScene: Can't Restore entity with index {0}",
-                                            info.entity.getWrappedEntity().getIndex());
-                        };
-                        info.entity.getComponent<UIComponent>().setName(
-                                &info.entity.getComponent<TagComponent>().getTag());
-                        bool isChained = true;
-                        m_setItems.emplace_back(sceneEntities.end(), info.entity, isChained, info.anchorEntity);
+                        restoreData.isChained = true;
+                        restoreData.anchorIterator = sceneEntities.end();
+                        restoreData.anchorEntity = info.anchorEntity;
                     }
                 }
 
+                m_restoreItems.emplace_back(restoreData);
             }
-
         }
 
-        for (auto &[parent, child]: childBuffer)
+        for (auto& [parent, child]: childBuffer)
             parent.addChild(child);
 
     }
@@ -535,23 +528,8 @@ namespace editor {
     }
 
     void Scene::traverseGraph(TraverseFunction&& traverseFunction) {
-        for(auto& entity: m_sceneGraph.getEntities()) {
-            if(!entity)
-                continue;
-            traverseFunction(entity);
-            if(entity.hasChildren())
-                traverseGraphChildren(traverseFunction, entity);
-        }
+        m_sceneGraph.traverseGraph(std::move(traverseFunction));
     }
 
-    void Scene::traverseGraphChildren(TraverseFunction& traverseFunction, SceneEntity parent) {
-        for(auto& entity: parent.getChildren()) {
-            if(!entity)
-                continue;
-            traverseFunction(entity);
-            if(entity.hasChildren())
-                traverseGraphChildren(traverseFunction, entity);
-        }
-    }
 
 }
