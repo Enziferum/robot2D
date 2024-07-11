@@ -24,15 +24,20 @@ source distribution.
 #include <editor/EditorCamera.hpp>
 
 #include "IScriptingEngineService.hpp"
+#include "MonoClassWrapper.hpp"
+
 namespace editor {
 
-    class ScriptingEngineInternalService: virtual public  IScriptingEngineService {
+    class ScriptingEngineInternalService: virtual public IScriptingEngineService {
     public:
         using Ptr = ScriptingEngineService*;
     public:
         virtual ~ScriptingEngineInternalService() = 0;
         virtual robot2D::Window* GetWindow() = 0;
         virtual IEditorCamera::Ptr GetCamera() = 0;
+
+        virtual MonoImage* GetCoreAssemblyImage() = 0;
+        virtual MonoClassWrapper::Ptr getManagedObject(UUID uuid) = 0;
     };
 
 } // namespace editor

@@ -79,7 +79,7 @@ namespace editor {
 
     using ScriptFieldMap = std::unordered_map<std::string, ScriptFieldInstance>;
 
-
+    class IScriptInteractorFrom;
     class ScriptEngineData {
     public:
         ScriptEngineData();
@@ -120,7 +120,7 @@ namespace editor {
         bool m_assemblyReloadPending = false;
 
         std::vector<std::string> m_entityClassesNames;
-        IScriptInteractorFrom::Ptr interactor;
+        std::shared_ptr<IScriptInteractorFrom> interactor;
         robot2D::Window* window;
         IEditorCamera::Ptr camera;
     };

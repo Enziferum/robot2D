@@ -498,13 +498,13 @@ namespace editor {
                                                              s_Data -> m_entityClasses[sc.name], entity);
             s_Data -> m_entityInstances[uuid] = instance;
 
-            if(m_interactor -> hasField(uuid)) {
+/*            if(m_interactor -> hasField(uuid)) {
                 const auto& fields = m_interactor -> getFields(uuid);
                 for(const auto& [name, field]: fields) {
                     auto scriptFieldType = util::convert2Script(field.type);
 
                 }
-            }
+            }*/
 
 
             if(s_Data -> hasEntityFields(uuid)) {
@@ -658,7 +658,7 @@ namespace editor {
     }
 
 
-    ScriptInteractor::Ptr ScriptEngine::getInteractor() {
+    IScriptInteractorFrom::Ptr ScriptEngine::getInteractor() {
         return s_Data -> interactor;
     }
 
@@ -700,7 +700,7 @@ namespace editor {
         return s_Data -> m_entityInstances[entityId] -> getClassWrapper();
     }
 
-    const std::unordered_map<std::string, MonoClassWrapper::Ptr>& ScriptEngine::getClasses() {
+    const std::unordered_map<std::string, MonoClassWrapper::Ptr>& ScriptEngine::getClasses() const {
         return s_Data -> getClasses();
     }
 

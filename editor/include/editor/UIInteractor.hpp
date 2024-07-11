@@ -26,6 +26,8 @@ source distribution.
 #include <string>
 #include <set>
 #include <functional>
+#include <memory>
+
 #include <editor/SceneEntity.hpp>
 
 #include <editor/panels/ITreeItem.hpp>
@@ -33,10 +35,10 @@ source distribution.
 #include "DeletedEntitesRestoreInformation.hpp"
 #include "CommandStack.hpp"
 #include "ExportOptions.hpp"
-#include "ScriptInteractor.hpp"
+
 
 namespace editor {
-
+    class IScriptInteractorFrom;
     class UIInteractor {
     public:
         using Ptr = UIInteractor*;
@@ -65,7 +67,7 @@ namespace editor {
 
         virtual void exportProject(const ExportOptions& exportOptions) = 0;
         virtual const std::vector<class_id>& getCommandStack() const = 0;
-        virtual IScriptInteractorFrom::Ptr getScriptInteractor() = 0;
+        virtual std::shared_ptr<IScriptInteractorFrom> getScriptInteractor() const = 0;
     };
 
 } // namespace editor

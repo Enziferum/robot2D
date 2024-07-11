@@ -67,7 +67,7 @@ namespace editor {
         EditorRouter m_router;
         EditorPresenter m_presenter;
         std::shared_ptr<EditorLogic> m_interactor;
-        IScriptInteractor::Ptr m_scriptInteractor;
+        IScriptInteractorFrom::Ptr m_scriptInteractor;
         MessageDispatcher& m_messageDispatcher;
     };
 

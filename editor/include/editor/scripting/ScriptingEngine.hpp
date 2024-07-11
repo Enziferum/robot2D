@@ -55,7 +55,7 @@ namespace editor {
         MonoImage* image;
     };
 
-    class ScriptEngine: public ScriptingEngineService, ScriptingEngineInternalService {
+    class ScriptEngine: public ScriptingEngineService, public ScriptingEngineInternalService {
     public:
         ScriptEngine() = default;
         ScriptEngine(const ScriptEngine& other) = delete;
@@ -71,12 +71,12 @@ namespace editor {
         void Shutdown();
         void ReloadEngine();
 
-        void SetCamera(IEditorCamera::Ptr camera);
         void SetWindow(robot2D::RenderWindow* window);
         //////////////////////////// Base Functions ///////////////////////
 
         /////////////////////////// ScriptingEngineService ///////////////////
-        void onCreateEntity(SceneEntity sceneEntity);
+        void SetCamera(IEditorCamera::Ptr camera) override;
+        void onCreateEntity(SceneEntity sceneEntity) override;
         void onUpdateEntity(SceneEntity sceneEntity, float delta);
 
         void onCollision2DBegin(const Physics2DContact& contact);
@@ -93,14 +93,14 @@ namespace editor {
         ScriptFieldMap& getScriptFieldMap(SceneEntity entity);
 
         bool hasEntityClass(const std::string& name);
-        const std::unordered_map<std::string, MonoClassWrapper::Ptr>& getClasses();
+        const std::unordered_map<std::string, MonoClassWrapper::Ptr>& getClasses() const;
         /////////////////////////// ScriptingEngineService ///////////////////
 
         /////////////////// Scripting Glue ////////////////////////////////
         MonoImage* GetCoreAssemblyImage();
         MonoClassWrapper::Ptr getManagedObject(UUID uuid);
 
-        ScriptInteractor::Ptr getInteractor();
+        IScriptInteractorFrom::Ptr getInteractor();
         robot2D::Window* GetWindow() override;
         IEditorCamera::Ptr GetCamera() override;
         /////////////////// Scripting Glue ////////////////////////////////

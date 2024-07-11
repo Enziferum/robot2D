@@ -347,10 +347,9 @@ namespace editor {
                 m_activeScene -> registerUICallback(entity);
 
                 btnComp.onClickCallback = [this](UUID scriptUUID, const std::string& methodName) {
-                    m_scriptInteractor;
-                    auto instance = ScriptEngine::getEntityScriptInstance(scriptUUID);
-                    if(instance)
-                        instance -> getClassWrapper() -> callMethod(methodName);
+                    auto ptr = m_scriptInteractor.lock();
+                    if(ptr)
+                        ptr -> callScriptMethod(scriptUUID, methodName);
                 };
             }
         }
@@ -725,6 +724,13 @@ namespace editor {
                 /// TODO(a.raag): ShowError
             }
         });
+    }
+
+    std::shared_ptr<IScriptInteractorFrom> EditorLogic::getScriptInteractor() const {
+        auto ptr = m_scriptInteractor.lock();
+        if(ptr)
+            return ptr;
+        return nullptr;
     }
 
     //////////////////////////////////////// UIInteractor ////////////////////////////////////////

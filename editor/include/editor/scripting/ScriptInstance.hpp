@@ -20,6 +20,7 @@ source distribution.
 *********************************************************************/
 
 #pragma once
+
 #include <memory>
 #include <editor/SceneEntity.hpp>
 #include "MonoClassWrapper.hpp"

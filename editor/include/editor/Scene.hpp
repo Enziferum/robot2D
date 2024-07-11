@@ -64,7 +64,7 @@ namespace editor {
         void update(float dt);
         void updateRuntime(float dt);
 
-        void onRuntimeStart(ScriptInteractor::Ptr scriptInteractor);
+        void onRuntimeStart(IScriptInteractorFrom::Ptr scriptInteractor);
         void onRuntimeStop();
 
         void setRuntimeCamera(bool flag);

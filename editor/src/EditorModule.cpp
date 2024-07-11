@@ -43,6 +43,7 @@ namespace editor {
 
         EditorInteractor::WeakPtr weakEditorInteractor = m_interactor;
         m_scriptInteractor = std::make_shared<ScriptInteractor>(weakEditorInteractor, scriptingEngine);
+
         m_interactor -> setup(m_scriptInteractor);
     }
 
