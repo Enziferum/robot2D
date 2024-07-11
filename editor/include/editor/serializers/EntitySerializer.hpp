@@ -6,6 +6,7 @@
 
 #include <editor/SceneEntity.hpp>
 #include <editor/Uuid.hpp>
+#include <editor/scripting/ScriptingEngineService.hpp>
 
 namespace editor {
     using ChildPair = std::pair<UUID, std::vector<UUID>>;
@@ -35,9 +36,12 @@ namespace editor {
         ~EntityYAMLSerializer() noexcept override  = default;
 
 
-        bool serialize(YAML::Emitter& out, const SceneEntity& entity);
-        bool deserialize(const YAML::detail::iterator_value& iterator, SceneEntity& entity,
-                         bool& addToScene, std::vector<ChildInfo>& children);
+        bool serialize(YAML::Emitter& out, const SceneEntity& entity, IScriptInteractorFrom::Ptr scriptingEngine);
+        bool deserialize(const YAML::detail::iterator_value& iterator,
+                         SceneEntity& entity,
+                         bool& addToScene,
+                         std::vector<ChildInfo>& children,
+                         IScriptInteractorFrom::Ptr scriptingEngine);
     };
 
 

@@ -80,7 +80,7 @@ namespace editor {
         void setAssetsPath(const std::string& path);
         void render() override;
     private:
-        void dropFiles(std::vector<std::string>&& path);
+        void dropFiles(const std::vector<std::string>& paths);
         void uiAssetsCreation();
         void processAssets();
         /// \brief in panel drag and out of panel

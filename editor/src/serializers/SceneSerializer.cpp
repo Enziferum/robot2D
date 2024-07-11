@@ -59,7 +59,8 @@ namespace editor {
     SceneSerializer::SceneSerializer(Scene::Ptr scene): m_scene(scene) {}
 
 
-    bool SceneSerializer::serialize(const std::string& path, const std::string& sceneName) {
+    bool SceneSerializer::serialize(const std::string& path, const std::string& sceneName,
+                                    IScriptInteractorFrom::Ptr scriptingEngine) {
         if(m_scene == nullptr)
             return false;
 
@@ -72,7 +73,7 @@ namespace editor {
 
         auto entitySerializer = getSerializer<EntityYAMLSerializer>();
         for(auto& entity: m_scene -> getEntities())
-            entitySerializer -> serialize(out, entity);
+            entitySerializer -> serialize(out, entity, scriptingEngine);
         out << YAML::EndSeq;
         out << YAML::EndMap;
 
@@ -88,7 +89,7 @@ namespace editor {
         return true;
     }
 
-    bool SceneSerializer::deserialize(const std::string& path) {
+    bool SceneSerializer::deserialize(const std::string& path, IScriptInteractorFrom::Ptr scriptingEngine) {
         YAML::Node data;
         try {
             std::ifstream ifstream(path);
@@ -125,7 +126,7 @@ namespace editor {
             bool addToScene = true;
 
             auto deserializeEntity = m_scene -> createEntity();
-            entitySerializer -> deserialize(entity, deserializeEntity, addToScene, children);
+            entitySerializer -> deserialize(entity, deserializeEntity, addToScene, children, scriptingEngine);
 
             if(addToScene)
                 m_scene -> addAssociatedEntity(std::move(deserializeEntity));

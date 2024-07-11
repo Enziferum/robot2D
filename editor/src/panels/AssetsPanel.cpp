@@ -406,7 +406,7 @@ namespace editor {
         }
     }
 
-    void AssetsPanel::dropFiles(std::vector<std::string>&& paths) {
+    void AssetsPanel::dropFiles(const std::vector<std::string>& paths) {
         if(!m_visible)
             return;
 

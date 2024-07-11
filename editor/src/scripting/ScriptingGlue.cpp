@@ -97,7 +97,8 @@ namespace editor {
 
     static bool Entity_HasComponent(UUID entityID, MonoReflectionType* componentType)
     {
-        auto interactor = ScriptEngine::getInteractor();
+        auto service = ScriptGlue::getService();
+        auto interactor = service -> getInteractor();
         RB_CORE_ASSERT(interactor);
         SceneEntity entity = interactor -> getEntity(entityID);
         RB_CORE_ASSERT(entity);
@@ -112,7 +113,8 @@ namespace editor {
 
     static void TransformComponent_GetTranslation(UUID entityID, robot2D::vec2f* outTranslation)
     {
-        auto interactor = ScriptEngine::getInteractor();
+        auto service = ScriptGlue::getService();
+        auto interactor = service -> getInteractor();
         RB_CORE_ASSERT(interactor);
         SceneEntity entity = interactor -> getEntity(entityID);
         RB_CORE_ASSERT(entity);
@@ -122,7 +124,8 @@ namespace editor {
 
     static void TransformComponent_SetTranslation(UUID entityID, robot2D::vec2f* translation)
     {
-        auto interactor = ScriptEngine::getInteractor();
+        auto service = ScriptGlue::getService();
+        auto interactor = service -> getInteractor();
         RB_CORE_ASSERT(interactor);
         SceneEntity entity = interactor -> getEntity(entityID);
         RB_CORE_ASSERT(entity);
@@ -141,7 +144,8 @@ namespace editor {
 
     static void TransformComponent_AddChild(UUID entityID, UUID child)
     {
-        auto interactor = ScriptEngine::getInteractor();
+        auto service = ScriptGlue::getService();
+        auto interactor = service -> getInteractor();
         RB_CORE_ASSERT(interactor);
         SceneEntity entity = interactor -> getEntity(entityID);
         RB_CORE_ASSERT(entity);
@@ -154,7 +158,8 @@ namespace editor {
 
     static void Rigidbody2DComponent_ApplyLinearImpulse(UUID entityID, robot2D::vec2f* impulse, robot2D::vec2f* point, bool wake)
     {
-        auto interactor = ScriptEngine::getInteractor();
+        auto service = ScriptGlue::getService();
+        auto interactor = service -> getInteractor();
         RB_CORE_ASSERT(interactor);
         SceneEntity entity = interactor -> getEntity(entityID);
         RB_CORE_ASSERT(entity);
@@ -167,7 +172,8 @@ namespace editor {
 
     static void Rigidbody2DComponent_ApplyLinearImpulseToCenter(UUID entityID, robot2D::vec2f* impulse, bool wake)
     {
-        auto interactor = ScriptEngine::getInteractor();
+        auto service = ScriptGlue::getService();
+        auto interactor = service -> getInteractor();
         RB_CORE_ASSERT(interactor);
         SceneEntity entity = interactor -> getEntity(entityID);
         RB_CORE_ASSERT(entity);
@@ -180,7 +186,8 @@ namespace editor {
 
     static void Rigidbody2DComponent_GetLinearVelocity(UUID entityID,  robot2D::vec2f* outLinearVelocity)
     {
-        auto interactor = ScriptEngine::getInteractor();
+        auto service = ScriptGlue::getService();
+        auto interactor = service -> getInteractor();
         RB_CORE_ASSERT(interactor);
         SceneEntity entity = interactor -> getEntity(entityID);
         RB_CORE_ASSERT(entity);
@@ -195,7 +202,8 @@ namespace editor {
 
     static void Rigidbody2DComponent_SetLinearVelocity(UUID entityID, robot2D::vec2f* velocity)
     {
-        auto interactor = ScriptEngine::getInteractor();
+        auto service = ScriptGlue::getService();
+        auto interactor = service -> getInteractor();
         RB_CORE_ASSERT(interactor);
         SceneEntity entity = interactor -> getEntity(entityID);
         RB_CORE_ASSERT(entity);
@@ -207,7 +215,8 @@ namespace editor {
 
     static Physics2DComponent::BodyType Rigidbody2DComponent_GetType(UUID entityID)
     {
-        auto interactor = ScriptEngine::getInteractor();
+        auto service = ScriptGlue::getService();
+        auto interactor = service -> getInteractor();
         RB_CORE_ASSERT(interactor);
         SceneEntity entity = interactor -> getEntity(entityID);
         RB_CORE_ASSERT(entity);
@@ -220,7 +229,8 @@ namespace editor {
 
     static void Rigidbody2DComponent_SetType(UUID entityID, Physics2DComponent::BodyType bodyType)
     {
-        auto interactor = ScriptEngine::getInteractor();
+        auto service = ScriptGlue::getService();
+        auto interactor = service -> getInteractor();
         RB_CORE_ASSERT(interactor);
         SceneEntity entity = interactor -> getEntity(entityID);
         RB_CORE_ASSERT(entity);
@@ -231,7 +241,8 @@ namespace editor {
     }
 
     static void RigidBody2DComponent_AddForce(UUID entityID, robot2D::vec2f* force) {
-        auto interactor = ScriptEngine::getInteractor();
+        auto service = ScriptGlue::getService();
+        auto interactor = service -> getInteractor();
         RB_CORE_ASSERT(interactor);
         SceneEntity entity = interactor -> getEntity(entityID);
         RB_CORE_ASSERT(entity);
@@ -242,7 +253,8 @@ namespace editor {
     }
 
     static void CameraComponent_SetPosition(UUID entityID, robot2D::vec2f* position) {
-        auto interactor = ScriptEngine::getInteractor();
+        auto service = ScriptGlue::getService();
+        auto interactor = service -> getInteractor();
         RB_CORE_ASSERT(interactor);
         SceneEntity entity = interactor -> getEntity(entityID);
         RB_CORE_ASSERT(entity);
@@ -253,7 +265,8 @@ namespace editor {
     }
 
     static void CameraComponent_GetSize(UUID entityID, robot2D::vec2f* size) {
-        auto interactor = ScriptEngine::getInteractor();
+        auto service = ScriptGlue::getService();
+        auto interactor = service -> getInteractor();
         RB_CORE_ASSERT(interactor);
         SceneEntity entity = interactor -> getEntity(entityID);
         RB_CORE_ASSERT(entity);
@@ -263,7 +276,8 @@ namespace editor {
     }
 
     static void CameraComponent_SetSize(UUID entityID, robot2D::vec2f* size) {
-        auto interactor = ScriptEngine::getInteractor();
+        auto service = ScriptGlue::getService();
+        auto interactor = service -> getInteractor();
         RB_CORE_ASSERT(interactor);
         SceneEntity entity = interactor -> getEntity(entityID);
         RB_CORE_ASSERT(entity);
@@ -273,7 +287,8 @@ namespace editor {
     }
 
     static void DrawableComponent_Flip(UUID entityID) {
-        auto interactor = ScriptEngine::getInteractor();
+        auto service = ScriptGlue::getService();
+        auto interactor = service -> getInteractor();
         RB_CORE_ASSERT(interactor);
         SceneEntity entity = interactor -> getEntity(entityID);
         RB_CORE_ASSERT(entity);
@@ -284,14 +299,16 @@ namespace editor {
 
 
     static void AnimationComponent_Play(UUID entityID, MonoString* name) {
-        auto interactor = ScriptEngine::getInteractor();
+        auto service = ScriptGlue::getService();
+        auto interactor = service -> getInteractor();
         RB_CORE_ASSERT(interactor);
         SceneEntity entity = interactor -> getEntity(entityID);
         RB_CORE_ASSERT(entity);
     }
 
     static void AnimationComponent_Stop(UUID entityID, MonoString* name) {
-        auto interactor = ScriptEngine::getInteractor();
+        auto service = ScriptGlue::getService();
+        auto interactor = service -> getInteractor();
         RB_CORE_ASSERT(interactor);
         SceneEntity entity = interactor -> getEntity(entityID);
         RB_CORE_ASSERT(entity);
@@ -308,8 +325,9 @@ namespace editor {
     }
 
     static void Input_GetMousePosition(robot2D::vec2f* position) {
-        auto* window = ScriptEngine::GetWindow();
-        auto camera = ScriptEngine::GetCamera();
+        auto service = ScriptGlue::getService();
+        auto* window = service -> GetWindow();
+        auto camera = service -> GetCamera();
 
         auto mousePos = window -> getMousePos();
         mousePos = camera -> convertPixelToCoords(mousePos);
@@ -317,13 +335,15 @@ namespace editor {
     }
 
     static void Input_SetMousePosition(robot2D::vec2f* position) {
-        auto* window = ScriptEngine::GetWindow();
+        auto service = ScriptGlue::getService();
+        auto* window = service -> GetWindow();
         window -> setMousePos(*position);
     }
 
     static bool SceneManager_LoadScene(MonoString* name) {
         auto cppString = Utils::MonoStringToString(name);
-        auto interactor = ScriptEngine::getInteractor();
+        auto service = ScriptGlue::getService();
+        auto interactor = service -> getInteractor();
         RB_CORE_ASSERT(interactor);
 
         return interactor -> loadSceneRuntime(std::move(cppString));
@@ -331,19 +351,22 @@ namespace editor {
 
     static void SceneManager_LoadSceneAsync(MonoString* name) {
         auto cppString = Utils::MonoStringToString(name);
-        auto interactor = ScriptEngine::getInteractor();
+        auto service = ScriptGlue::getService();
+        auto interactor = service -> getInteractor();
         RB_CORE_ASSERT(interactor);
         interactor -> loadSceneAsyncRuntime(std::move(cppString));
     }
 
     static void Engine_Exit() {
-        auto interactor = ScriptEngine::getInteractor();
+        auto service = ScriptGlue::getService();
+        auto interactor = service -> getInteractor();
         RB_CORE_ASSERT(interactor);
         interactor -> exitEngineRuntime();
     }
 
     static void Object_Instantiate(UUID uuid) {
-        auto interactor = ScriptEngine::getInteractor();
+        auto service = ScriptGlue::getService();
+        auto interactor = service -> getInteractor();
         RB_CORE_ASSERT(interactor);
         auto entity = interactor -> getEntity(uuid);
         RB_CORE_ASSERT(entity);
@@ -352,25 +375,27 @@ namespace editor {
     }
 
     static void Object_Instantiate_WithPos(UUID uuid, robot2D::vec2f* position) {
-        auto interactor = ScriptEngine::getInteractor();
+        auto service = ScriptGlue::getService();
+        auto interactor = service -> getInteractor();
         RB_CORE_ASSERT(interactor);
         auto entity = interactor -> getEntity(uuid);
         RB_CORE_ASSERT(entity);
 
         robot2D::vec2f dupPosition = *position;
         auto dupEntity = interactor -> duplicateRuntime(entity, dupPosition);
-        ScriptEngine::onCreateEntity(dupEntity);
+        service -> onCreateEntity(dupEntity);
     }
 
-    static MonoObject* GetScriptInstance(UUID entityID) {
-        return ScriptEngine::getManagedObject(entityID) -> getInstance();
+    static MonoObject* GetScriptInstance(UUID uuid) {
+        auto service = ScriptGlue::getService();
+        return service -> getManagedObject(uuid) -> getInstance();
     }
 
     template<typename Component>
-    static void RegisterComponent() {
+    static void RegisterComponent(ScriptingEngineInternalService* service) {
         std::string managedTypename = combineTypeName<Component>();
         MonoType* managedType = mono_reflection_type_from_name(managedTypename.data(),
-                                                               ScriptEngine::GetCoreAssemblyImage());
+                                                               service -> GetCoreAssemblyImage());
         if (!managedType)
         {
             RB_CORE_ERROR("ScriptingGlue: Could not find component type {0}", managedTypename);
@@ -381,17 +406,25 @@ namespace editor {
         };
     }
 
+    void ScriptGlue::setService(ScriptingEngineInternalService* service) {
+        m_service = service;
+    }
+
+    ScriptingEngineInternalService* ScriptGlue::getService() {
+        return m_service;
+    }
+
 
     void ScriptGlue::registerComponents()
     {
         s_EntityHasComponentFuncs.clear();
-        RegisterComponent<TransformComponent>();
-        RegisterComponent<Physics2DComponent>();
-        RegisterComponent<Collider2DComponent>();
-        RegisterComponent<CameraComponent>();
-        RegisterComponent<TextComponent>();
-        RegisterComponent<DrawableComponent>();
-        RegisterComponent<AnimatorComponent>();
+        RegisterComponent<TransformComponent>(m_service);
+        RegisterComponent<Physics2DComponent>(m_service);
+        RegisterComponent<Collider2DComponent>(m_service);
+        RegisterComponent<CameraComponent>(m_service);
+        RegisterComponent<TextComponent>(m_service);
+        RegisterComponent<DrawableComponent>(m_service);
+        RegisterComponent<AnimatorComponent>(m_service);
     }
 
     void ScriptGlue::registerFunctions()
@@ -425,5 +458,6 @@ namespace editor {
         RB_ADD_INTERNAL_CALL(Object_Instantiate);
         RB_ADD_INTERNAL_CALL(Object_Instantiate_WithPos);
     }
+
 
 } // namespace editor

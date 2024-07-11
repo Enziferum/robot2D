@@ -33,6 +33,7 @@ source distribution.
 #include "DeletedEntitesRestoreInformation.hpp"
 #include "CommandStack.hpp"
 #include "ExportOptions.hpp"
+#include "ScriptInteractor.hpp"
 
 namespace editor {
 
@@ -51,7 +52,6 @@ namespace editor {
 
         virtual std::string getAssociatedProjectPath() const = 0;
         virtual const std::list<SceneEntity>& getEntities() const = 0;
-        virtual void removeEntity(SceneEntity entity) = 0;
         virtual void addEmptyEntity() = 0;
         virtual SceneEntity addButton() = 0;
         virtual SceneEntity createEmptyEntity() = 0;
@@ -65,6 +65,7 @@ namespace editor {
 
         virtual void exportProject(const ExportOptions& exportOptions) = 0;
         virtual const std::vector<class_id>& getCommandStack() const = 0;
+        virtual IScriptInteractorFrom::Ptr getScriptInteractor() = 0;
     };
 
 } // namespace editor

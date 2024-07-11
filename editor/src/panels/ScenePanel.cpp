@@ -217,7 +217,7 @@ namespace editor {
     void ScenePanel::entityDuplicateChild(SceneEntity parentEntity, ITreeItem::Ptr parentItem) {
         auto& transform = parentEntity.getComponent<TransformComponent>();
         if(auto item = std::dynamic_pointer_cast<TreeItem<SceneEntity>>(parentItem)) {
-            for (auto &child: transform.getChildren()) {
+            for (auto& child: transform.getChildren()) {
                 auto childItem = item -> addChild();
                 childItem -> setName(&child.getComponent<TagComponent>().getTag());
                 childItem -> setUserData(child);

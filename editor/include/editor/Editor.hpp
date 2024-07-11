@@ -173,5 +173,7 @@ namespace editor {
         editor::PopupConfiguration* m_popupConfiguration{nullptr};
         /// TODO(a.raag) move to Editor Logic ?
         PrefabManager m_prefabManager;
+
+        std::vector<Observer::Ptr> m_observers;
     };
 }

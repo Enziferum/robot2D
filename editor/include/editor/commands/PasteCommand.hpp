@@ -23,15 +23,15 @@ source distribution.
 #include <vector>
 #include <robot2D/Core/MessageBus.hpp>
 #include <editor/SceneEntity.hpp>
-#include <editor/UIInteractor.hpp>
+#include <editor/EditorInteractor.hpp>
 #include "ICommand.hpp"
 
 namespace editor {
     class PasteCommand final: public ICommand {
     public:
         PasteCommand(robot2D::MessageBus& messageBus,
-                     std::vector<SceneEntity> entities,
-                     UIInteractor::Ptr);
+                     std::vector<SceneEntity>&& entities,
+                     EditorInteractor::Ptr interactor);
         PasteCommand(const PasteCommand& other) = delete;
         PasteCommand& operator=(const PasteCommand& other) = delete;
         PasteCommand(PasteCommand&& other) = delete;
@@ -43,6 +43,6 @@ namespace editor {
     private:
         robot2D::MessageBus& m_messageBus;
         std::vector<SceneEntity> m_entities;
-        UIInteractor::Ptr m_interactor;
+        EditorInteractor::Ptr m_interactor;
     };
 } // namespace editor

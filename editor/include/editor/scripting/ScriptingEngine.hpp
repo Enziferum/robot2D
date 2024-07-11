@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2023
+(c) Alex Raag 2024
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -33,6 +33,9 @@ source distribution.
 #include "MonoClassWrapper.hpp"
 #include "ScriptInstance.hpp"
 #include "ScriptEngineData.hpp"
+#include "ScriptingGlue.hpp"
+#include "ScriptingEngineService.hpp"
+#include "ScriptingEngineInternalService.hpp"
 
 namespace editor {
     namespace fs = std::filesystem;
@@ -42,51 +45,72 @@ namespace editor {
         ScriptFieldType ScriptFieldTypeFromString(std::string_view fieldType);
     }
 
-    class ScriptEngine {
+    class MonoImageWrapper {
     public:
-        static void Init();
-        static void InitAppRuntime(const fs::path& filePath);
+        MonoImageWrapper();
+        ~MonoImageWrapper() = default;
 
-        static void Shutdown();
-        static void ReloadEngine();
-
-        static ScriptInteractor::Ptr getInteractor();
-        static void onCreateEntity(SceneEntity sceneEntity);
-        static void onUpdateEntity(SceneEntity sceneEntity, float delta);
-
-        static MonoClassWrapper::Ptr getManagedObject(UUID uuid);
-
-        static void onCollision2DBegin(const Physics2DContact& contact);
-        static void onCollision2DEnd(const Physics2DContact& contact);
-
-        static void onCollision2DBeginTrigger(const Physics2DContact& contact);
-        static void onCollision2DEndTrigger(const Physics2DContact& contact);
-
-        static ScriptInstance::Ptr getEntityScriptInstance(UUID entityID);
-        static MonoClassWrapper::Ptr getEntityClass(const std::string& name);
-        static ScriptFieldMap& getScriptFieldMap(SceneEntity entity);
-
-        static void onRuntimeStart(ScriptInteractor::Ptr interactor);
-        static void onRuntimeStop();
-
-        static bool hasEntityClass(const std::string& name);
-        static const std::unordered_map<std::string, MonoClassWrapper::Ptr>& getClasses();
-
-        static ScriptInstance::Ptr CloneObject(MonoObject* cloneObject);
-
-        static IEditorCamera::Ptr GetCamera();
-        static void SetCamera(IEditorCamera::Ptr camera);
-
-        static void SetWindow(robot2D::RenderWindow* window);
-        static robot2D::Window* GetWindow();
-        static MonoImage* GetCoreAssemblyImage();
 
     private:
-        static bool loadCoreAssembly(const fs::path& );
-        static bool loadAppAssembly(const fs::path& );
+        MonoImage* image;
+    };
+
+    class ScriptEngine: public ScriptingEngineService, ScriptingEngineInternalService {
+    public:
+        ScriptEngine() = default;
+        ScriptEngine(const ScriptEngine& other) = delete;
+        ScriptEngine& operator=(const ScriptEngine& other) = delete;
+        ScriptEngine(ScriptEngine&& other) = delete;
+        ScriptEngine& operator=(ScriptEngine&& other) = delete;
+        ~ScriptEngine() override = default;
+
+        //////////////////////////// Base Functions ///////////////////////
+        void Init(const std::string& engineDLLPath);
+        void runtimeInit(const std::string& filePath) override;
+
+        void Shutdown();
+        void ReloadEngine();
+
+        void SetCamera(IEditorCamera::Ptr camera);
+        void SetWindow(robot2D::RenderWindow* window);
+        //////////////////////////// Base Functions ///////////////////////
+
+        /////////////////////////// ScriptingEngineService ///////////////////
+        void onCreateEntity(SceneEntity sceneEntity);
+        void onUpdateEntity(SceneEntity sceneEntity, float delta);
+
+        void onCollision2DBegin(const Physics2DContact& contact);
+        void onCollision2DEnd(const Physics2DContact& contact);
+
+        void onCollision2DBeginTrigger(const Physics2DContact& contact);
+        void onCollision2DEndTrigger(const Physics2DContact& contact);
+
+        void onRuntimeStart(IScriptInteractorFrom::Ptr interactor);
+        void onRuntimeStop();
+
+        ScriptInstance::Ptr getEntityScriptInstance(UUID entityID);
+        MonoClassWrapper::Ptr getEntityClass(const std::string& name);
+        ScriptFieldMap& getScriptFieldMap(SceneEntity entity);
+
+        bool hasEntityClass(const std::string& name);
+        const std::unordered_map<std::string, MonoClassWrapper::Ptr>& getClasses();
+        /////////////////////////// ScriptingEngineService ///////////////////
+
+        /////////////////// Scripting Glue ////////////////////////////////
+        MonoImage* GetCoreAssemblyImage();
+        MonoClassWrapper::Ptr getManagedObject(UUID uuid);
+
+        ScriptInteractor::Ptr getInteractor();
+        robot2D::Window* GetWindow() override;
+        IEditorCamera::Ptr GetCamera() override;
+        /////////////////// Scripting Glue ////////////////////////////////
     private:
-        static void InitMono();
-        static void ShutdownMono();
-        static void LoadAssemblyClasses();
+        ScriptInstance::Ptr CloneObject(MonoObject* cloneObject);
+        bool loadCoreAssembly(const fs::path& );
+        bool loadAppAssembly(const fs::path& );
+
+        void InitMono();
+        void ShutdownMono();
+        void LoadAssemblyClasses();
     };
 }

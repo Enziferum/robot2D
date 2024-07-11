@@ -25,6 +25,7 @@ source distribution.
 #include <vector>
 #include <robot2D/Core/MessageBus.hpp>
 
+#include <editor/scripting/ScriptingEngineService.hpp>
 #include "Scene.hpp"
 #include "Errors.hpp"
 #include "Project.hpp"
@@ -41,13 +42,14 @@ namespace editor {
         SceneManager& operator=(SceneManager&& other) = delete;
         ~SceneManager() = default;
 
-        bool add(Project::Ptr&& project);
-        bool add(Project::Ptr&& project, const std::string& path);
+        bool add(Project::Ptr&& project, IScriptInteractorFrom::WeakPtr scriptingEngine);
+        bool add(Project::Ptr&& project, const std::string& path, IScriptInteractorFrom::WeakPtr scriptingEngine);
 
 
-        void loadSceneAsync(Project::Ptr associatedProject, std::string path, SceneLoadCallback&& callback);
+        void loadSceneAsync(Project::Ptr associatedProject, std::string path, SceneLoadCallback&& callback,
+                            IScriptInteractorFrom::WeakPtr scriptingEngine);
         bool remove();
-        bool save(Scene::Ptr&& scene);
+        bool save(Scene::Ptr&& scene, IScriptInteractorFrom::WeakPtr scriptingEngine);
 
         Project::Ptr getAssociatedProject() const;
         Scene::Ptr getActiveScene() const;

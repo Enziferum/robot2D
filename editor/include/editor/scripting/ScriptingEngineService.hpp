@@ -1,4 +1,4 @@
-/********************************************************************
+/*********************************************************************
 (c) Alex Raag 2024
 https://github.com/Enziferum
 robot2D - Zlib license.
@@ -20,21 +20,28 @@ source distribution.
 *********************************************************************/
 
 #pragma once
-#include <functional>
-#include <vector>
 #include <string>
+#include <unordered_map>
 #include <memory>
 
-namespace editor {
-    class Observer {
-    public:
-        using Ptr = Observer*;
-        using ObserverCallback = std::function<void(const std::vector<std::string>&)>;
-        virtual ~Observer() = 0;
+#include "IScriptingEngineService.hpp"
+#include "MonoClassWrapper.hpp"
+#include "ScriptInstance.hpp"
 
-        void addObserverCallback(ObserverCallback&& callback);
-        void notify(const std::vector<std::string>& paths);
-    private:
-        ObserverCallback m_callback;
+namespace editor {
+
+    class ScriptingEngineService: virtual public IScriptingEngineService {
+    public:
+        using Ptr = ScriptingEngineService*;
+    public:
+        virtual ~ScriptingEngineService() = 0;
+        virtual void runtimeInit(const std::string& runtimeDllPath) = 0;
+
+        virtual ScriptInstance::Ptr getEntityScriptInstance(UUID entityID);
+        virtual MonoClassWrapper::Ptr getEntityClass(const std::string& name);
+
+        virtual bool hasEntityClass(const std::string& name);
+        virtual const std::unordered_map<std::string, MonoClassWrapper::Ptr>& getClasses();
     };
-} // namespace editor
+
+}

@@ -31,20 +31,28 @@ namespace editor {
     : m_editor{messageBus, gui},
       m_router{&m_editor},
       m_presenter{&m_editor},
-      m_interactor{messageBus, messageDispatcher, m_presenter, m_router}
-    {}
+      m_interactor{new EditorLogic(messageBus, messageDispatcher, m_presenter, m_router)},
+      m_messageDispatcher{messageDispatcher}
+    {
+        m_messageDispatcher.onMessage<ToolbarMessage>(MessageID::ToolbarPressed,
+                                                      BIND_CLASS_FN(onSwitchRuntimeState));
+    }
 
-    void EditorModule::setup(robot2D::RenderWindow* window) {
-        m_editor.setup(window, &m_interactor);
-        m_interactor.setView(&m_editor);
+    void EditorModule::setup(robot2D::RenderWindow* window, ScriptingEngineService::Ptr scriptingEngine) {
+        m_editor.setup(window, m_interactor.get());
+
+        EditorInteractor::WeakPtr weakEditorInteractor = m_interactor;
+        m_scriptInteractor = std::make_shared<ScriptInteractor>(weakEditorInteractor, scriptingEngine);
+        m_interactor -> setup(m_scriptInteractor);
     }
 
     void EditorModule::handleEvents(const robot2D::Event& event) {
         m_editor.handleEvents(event);
     }
 
-    void EditorModule::handleMessages(const robot2D::Message &message) {
+    void EditorModule::handleMessages(const robot2D::Message& message) {
         m_editor.handleMessages(message);
+        ////
     }
 
     void EditorModule::update(float dt) {
@@ -57,19 +65,23 @@ namespace editor {
 
 
     void EditorModule::createProject(Project::Ptr project) {
-        m_interactor.createProject(project);
+        m_interactor -> createProject(project);
     }
 
     void EditorModule::loadProject(Project::Ptr project) {
-        m_interactor.loadProject(project);
+        m_interactor -> loadProject(project);
     }
 
     void EditorModule::destroy() {
-        m_interactor.destroy();
+        m_interactor -> destroy();
     }
 
     void EditorModule::closeCurrentProject(std::function<void()>&& resultCallback) {
-        m_interactor.closeCurrentProject(std::move(resultCallback));
+        m_interactor -> closeCurrentProject(std::move(resultCallback));
+    }
+
+    void EditorModule::onSwitchRuntimeState(const ToolbarMessage& toolbarMessage) {
+        m_interactor -> switchRuntimeState(toolbarMessage.type);
     }
 
 } // namespace editor

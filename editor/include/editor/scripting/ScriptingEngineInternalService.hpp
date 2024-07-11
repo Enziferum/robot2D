@@ -1,4 +1,4 @@
-/********************************************************************
+/*********************************************************************
 (c) Alex Raag 2024
 https://github.com/Enziferum
 robot2D - Zlib license.
@@ -20,21 +20,19 @@ source distribution.
 *********************************************************************/
 
 #pragma once
-#include <functional>
-#include <vector>
-#include <string>
-#include <memory>
+#include <robot2D/Core/Window.hpp>
+#include <editor/EditorCamera.hpp>
 
+#include "IScriptingEngineService.hpp"
 namespace editor {
-    class Observer {
-    public:
-        using Ptr = Observer*;
-        using ObserverCallback = std::function<void(const std::vector<std::string>&)>;
-        virtual ~Observer() = 0;
 
-        void addObserverCallback(ObserverCallback&& callback);
-        void notify(const std::vector<std::string>& paths);
-    private:
-        ObserverCallback m_callback;
+    class ScriptingEngineInternalService: virtual public  IScriptingEngineService {
+    public:
+        using Ptr = ScriptingEngineService*;
+    public:
+        virtual ~ScriptingEngineInternalService() = 0;
+        virtual robot2D::Window* GetWindow() = 0;
+        virtual IEditorCamera::Ptr GetCamera() = 0;
     };
+
 } // namespace editor
