@@ -24,12 +24,15 @@ source distribution.
 #include <unordered_map>
 #include <memory>
 
+#include <editor/EditorCamera.hpp>
 #include "IScriptingEngineService.hpp"
 #include "MonoClassWrapper.hpp"
 #include "ScriptInstance.hpp"
+#include "ScriptEngineData.hpp"
 
 namespace editor {
 
+    class IScriptingEngineService;
     class ScriptingEngineService: virtual public IScriptingEngineService {
     public:
         using Ptr = ScriptingEngineService*;
@@ -37,11 +40,12 @@ namespace editor {
         virtual ~ScriptingEngineService() = 0;
         virtual void runtimeInit(const std::string& runtimeDllPath) = 0;
 
-        virtual ScriptInstance::Ptr getEntityScriptInstance(UUID entityID);
-        virtual MonoClassWrapper::Ptr getEntityClass(const std::string& name);
+        virtual ScriptInstance::Ptr getEntityScriptInstance(UUID entityID) = 0;
+        virtual MonoClassWrapper::Ptr getEntityClass(const std::string& name) = 0;
 
-        virtual bool hasEntityClass(const std::string& name);
-        virtual const std::unordered_map<std::string, MonoClassWrapper::Ptr>& getClasses();
+        virtual bool hasEntityClass(const std::string& name) = 0;
+        virtual const std::unordered_map<std::string, MonoClassWrapper::Ptr>& getClasses() const = 0;
+        virtual void SetCamera(IEditorCamera::Ptr camera) = 0;
     };
 
-}
+} // namespace editor

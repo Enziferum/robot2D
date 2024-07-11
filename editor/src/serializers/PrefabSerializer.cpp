@@ -113,7 +113,9 @@ namespace editor {
         for(const auto& entity: prefabEntities) {
             bool addToScene = true;
             auto& deserializedEntity = prefab -> getEntity();
-            entitySerializer -> deserialize(entity, deserializedEntity, addToScene, children);
+            //auto scriptInteractor =
+            /// TODO(a.raag): need ScriptInteractor;
+            entitySerializer -> deserialize(entity, deserializedEntity, addToScene, children, nullptr);
         }
 
         return true;

@@ -22,6 +22,7 @@ source distribution.
 #include <stdexcept>
 #include <utility>
 
+#include <robot2D/Core/Assert.hpp>
 #include <robot2D/imgui/Gui.hpp>
 #include <robot2D/imgui/Api.hpp>
 
@@ -160,7 +161,12 @@ namespace editor {
         }
 
         m_editorCamera = std::make_shared<EditorCamera2D>();
-        ScriptEngine::SetCamera(m_editorCamera);
+        auto scriptInteractor = editorInteractor -> getScriptInteractor();
+
+        /// TODO(a.raag): assert with FILENAME LINE
+        assert(scriptInteractor && "scriptInteractor must be valid");
+        scriptInteractor -> setEditorCamera(m_editorCamera);
+
 
 
         m_panelManager.addPanel<ScenePanel>(m_messageBus, m_messageDispather, m_prefabManager);

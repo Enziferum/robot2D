@@ -122,8 +122,8 @@ namespace editor {
     }
 
     void Scene::updateRuntime(float dt) {
-        for (const auto& entity: m_scriptRuntimeContainer)
-            ScriptEngine::onUpdateEntity(entity, dt);
+      /*  for (const auto& entity: m_scriptRuntimeContainer)
+            ScriptEngine::onUpdateEntity(entity, dt);*/
 
         m_physicsAdapter -> update(dt);
         m_scene.update(dt);
@@ -164,18 +164,18 @@ namespace editor {
         return sceneEntity;
     }
 
-    void Scene::onRuntimeStart(ScriptInteractor::Ptr scriptInteractor) {
+    void Scene::onRuntimeStart(IScriptInteractorFrom::Ptr scriptInteractor) {
         m_running = true;
         m_sceneGraph.cloneSelf(m_runtimeSceneGraph);
         onPhysics2DRun();
 
         m_scene.getSystem<RenderSystem>() -> setScene(this);
-        ScriptEngine::onRuntimeStart(scriptInteractor);
+        //ScriptEngine::onRuntimeStart(scriptInteractor);
 
         m_scriptRuntimeContainer.clear();
         m_runtimeSceneGraph.filterEntities<ScriptComponent>(m_scriptRuntimeContainer);
-        for (const auto& entity: m_scriptRuntimeContainer)
-            ScriptEngine::onCreateEntity(entity);
+//        for (const auto& entity: m_scriptRuntimeContainer)
+//            ScriptEngine::onCreateEntity(entity);
 
 
         m_runtimeSceneGraph.traverseGraph(std::move([](SceneEntity& sceneEntity) {
@@ -193,7 +193,7 @@ namespace editor {
         m_scene.getSystem<RenderSystem>() -> setScene(nullptr);
         m_running = false;
         onPhysics2DStop();
-        ScriptEngine::onRuntimeStop();
+       // ScriptEngine::onRuntimeStop();
     }
 
     void Scene::onPhysics2DRun() {
@@ -201,7 +201,7 @@ namespace editor {
         m_physicsAdapter -> start(m_sceneGraph.getEntities());
 
 
-        m_physicsAdapter -> registerCallback(PhysicsCallbackType::Enter,
+/*        m_physicsAdapter -> registerCallback(PhysicsCallbackType::Enter,
                                            [](const Physics2DContact& contact) {
                                                ScriptEngine::onCollision2DBegin(contact);
                                            });
@@ -219,7 +219,7 @@ namespace editor {
         m_physicsAdapter -> registerCallback(PhysicsCallbackType::ExitTrigger,
                                            [](const Physics2DContact &contact) {
                                                ScriptEngine::onCollision2DEndTrigger(contact);
-                                           });
+                                           });*/
 
     }
 

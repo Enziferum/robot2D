@@ -41,7 +41,7 @@ namespace editor {
                          SceneEntity& entity,
                          bool& addToScene,
                          std::vector<ChildInfo>& children,
-                         IScriptInteractorFrom::Ptr scriptingEngine);
+                         IScriptInteractorFrom::Ptr scriptInteractor);
     };
 
 

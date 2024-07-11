@@ -113,6 +113,8 @@ namespace editor {
 
         const std::vector<class_id>& getCommandStack() const override;
         void exportProject(const ExportOptions& exportOptions) override;
+
+        std::shared_ptr<IScriptInteractorFrom> getScriptInteractor() const override;
         //////////////////////////////////////// UIInteractor ////////////////////////////////////////
     private:
         void loadSceneCallback(Scene::Ptr loadedScene);

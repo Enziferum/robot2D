@@ -32,7 +32,7 @@ source distribution.
 namespace editor {
 
     namespace {
-        constexpr char* prefabExtension = ".prefab";
+        const char* prefabExtension = ".prefab";
     }
 
     bool PrefabManager::addPrefab(SceneEntity entity, const std::string& directoryPath) {
@@ -59,6 +59,7 @@ namespace editor {
         prefab -> setPath(path);
 
         PrefabSerializer serializer;
+        auto scriptInteractor = interactor -> getScriptInteractor();
         bool ok = serializer.deserialize(prefab);
         if(!ok) {
             RB_EDITOR_ERROR("PrefabManager: can't load prefab");

@@ -1,17 +1,18 @@
 #pragma once
-#include "editor/ScriptInteractor.hpp"
+#include <memory>
+#include <editor/SceneEntity.hpp>
 
 namespace editor {
-
+    class IScriptInteractor;
     class IScriptingEngineService {
     public:
         virtual ~IScriptingEngineService() = 0;
 
-
+        virtual void onCreateEntity(SceneEntity sceneEntity) = 0;
         void setScriptInteractor();
-        IScriptInteractor::Ptr getInteractor() const;
+        std::shared_ptr<IScriptInteractor> getInteractor() const;
     protected:
-        IScriptInteractor::Ptr m_interactor;
+        std::shared_ptr<IScriptInteractor> m_interactor;
     };
 
 } // namespace editor
