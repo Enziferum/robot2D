@@ -269,7 +269,7 @@ namespace editor {
                     iconType = IconType::Play;
                 if(robot2D::ImageButton(m_icons[iconType], { buttonSize.x, buttonSize.y })) {
                     auto* msg = m_messageBus.postMessage<ToolbarMessage>(MessageID::ToolbarPressed);
-                    msg -> pressedType = m_uiInteractor -> isRunning() ? 0 : 1;
+                    msg -> type = static_cast<ToolbarMessage::Type>(m_uiInteractor -> isRunning() ? 0 : 1);
                 }
             }
         }

@@ -454,13 +454,20 @@ namespace editor {
         auto* animationManager = AnimationManager::getManager();
     }
 
+
+
+
     void InspectorPanel::drawScriptComponent(SceneEntity entity, ScriptComponent& component) {
         std::string currItem = component.name; // Here we store our selection data as an index.
-        bool hasScriptClass = ScriptEngine::hasEntityClass(component.name);
+        auto scriptInteractor = m_interactor -> getScriptInteractor();
+        if(!scriptInteractor)
+            return;
+        bool hasScriptClass = currItem.empty() ? false : scriptInteractor -> hasEntityClass(component.name);
 
         {
             if(!hasScriptClass)
-                robot2D::ScopedStyleColor{ImGuiCol_Text, robot2D::Color::fromGL(0.9f, 0.2f, 0.3f, 1.0f)};
+                robot2D::ScopedStyleColor{ImGuiCol_Text,
+                                          robot2D::Color::fromGL(0.9f, 0.2f, 0.3f, 1.0f)};
             ImGui::Selectable(currItem.empty() ? "FindClass" : currItem.c_str());
         }
 
@@ -468,12 +475,12 @@ namespace editor {
             ImGui::OpenPopup("Find Script Class");
 
         imgui_PopupContextItem("Find Script Class") {
-            auto classes = ScriptEngine::getClasses();
+            auto classes = scriptInteractor -> getClassesNames();
             constexpr float filterWidth = 180.f;
             ImGuiTextFilter textFilter;
             textFilter.Draw("Classes", filterWidth);
             imgui_ListBox("##ListBox") {
-                for (const auto& [name, Class] : classes) {
+                for (const auto& name: classes) {
                     if (!textFilter.PassFilter(name.c_str()))
                         continue;
                     const bool is_selected = (name == currItem);
@@ -481,6 +488,7 @@ namespace editor {
                     if (ImGui::IsItemClicked()) {
                         currItem = name;
                         component.name = currItem;
+                        scriptInteractor -> setScriptClass(name, entity.getUUID());
                     }
                 }
             }
@@ -488,12 +496,14 @@ namespace editor {
 
         bool isSceneRunning = m_interactor -> isRunning();
 
+        /// ui -> interactor(business logic) -> scripting engine( service )
+
         if (isSceneRunning) {
-            auto scriptInstance =
+/*            auto scriptInstance =
                 ScriptEngine::getEntityScriptInstance(entity.getComponent<IDComponent>().ID);
             if(!scriptInstance)
                 return;
-            const auto& fields = scriptInstance->getClassWrapper()->getFields();
+            const auto& fields = scriptInstance -> getClassWrapper() -> getFields();
             for (const auto& [name, field] : fields)
             {
                 switch(field.Type) {
@@ -505,7 +515,7 @@ namespace editor {
                             scriptInstance -> setFieldValue(name, data);
                     }
                 }
-            }
+            }*/
         }
         else {
             if (!hasScriptClass)
@@ -516,42 +526,36 @@ namespace editor {
     }
 
     void InspectorPanel::processScriptComponent(SceneEntity entity, ScriptComponent& component) {
-        auto entityClass = ScriptEngine::getEntityClass(component.name);
-        const auto& fields = entityClass -> getFields();
+        auto scriptInteractor = m_interactor -> getScriptInteractor();
+        if(!scriptInteractor)
+            return;
 
-        /// TODO(a.raag): moving to sceneGraph
-        auto& entityFields = ScriptEngine::getScriptFieldMap(SceneEntity{std::move(entity)});
+        auto& fieldMap = scriptInteractor -> getFields(entity.getUUID());
 
-        for (const auto& [name, field] : fields) {
-            bool hasField = (entityFields.find(name) != entityFields.end());
-            ScriptFieldInstance& scriptField = entityFields.at(name);
-
-            switch(field.Type) {
+        for (auto& [name, field] : fieldMap) {
+            bool hasField = (fieldMap.find(name) != fieldMap.end());
+            switch(field.getType()) {
                 default:
                     break;
-                case ScriptFieldType::Float: {
+                case FieldType::Float: {
                     if(hasField) {
-                        float data = scriptField.getValue<float>();
-                        if (ImGui::DragFloat(name.c_str(), &data))
-                            scriptField.setValue(data);
+                        float* data = field.getValue<float>();
+                        if (ImGui::DragFloat(name.c_str(), data))
+                            field.setValue(data);
                     }
                     else {
                         float data = 0.0f;
                         if (ImGui::DragFloat(name.c_str(), &data))
-                        {
-                            ScriptFieldInstance& fieldInstance = entityFields[name];
-                            fieldInstance.Field = field;
-                            fieldInstance.setValue(data);
-                        }
+                            field.setValue(data);
                     }
 
                     break;
                 }
-                case ScriptFieldType::Int: {
+                case FieldType::Int: {
                     if(hasField) {
-                        int data = scriptField.getValue<int>();
-                        if (ImGui::DragInt(name.c_str(), &data))
-                            scriptField.setValue(data);
+                        int* data = field.getValue<int>();
+                        if (ImGui::DragInt(name.c_str(), data))
+                            field.setValue(&data);
                     }
                     else {
                         /// TODO(a.raag): add logic
@@ -559,10 +563,10 @@ namespace editor {
 
                     break;
                 }
-                case ScriptFieldType::Transform: {
+                case FieldType::Transform: {
                     std::string resultButtonText = "None";
                     if(hasField) {
-                        auto uuid = scriptField.getValue<UUID>();
+                        auto uuid = *field.getValue<UUID>();
                         auto preEntity = m_interactor -> getEntity(uuid);
                         if (preEntity)
                             resultButtonText = preEntity.getComponent<TagComponent>().getTag();
@@ -574,22 +578,16 @@ namespace editor {
                         if(auto uuid = dragDropTarget.unpackPayload<UUID>()) {
                             auto payloadEntity = m_uiManager.getTreeItem(*uuid);
                             if (payloadEntity && payloadEntity != entity) {
-                                if(hasField)
-                                    scriptField.setValue(payloadEntity.getComponent<IDComponent>().ID);
-                                else {
-                                    ScriptFieldInstance& fieldInstance = entityFields[name];
-                                    fieldInstance.Field = field;
-                                    fieldInstance.setValue(payloadEntity.getComponent<IDComponent>().ID);
-                                }
+                                field.setValue(payloadEntity.getUUID());
                             }
                         }
                     }
                     break;
                 }
-                case ScriptFieldType::Entity: {
+                case FieldType::Entity: {
                     std::string resultButtonText = "None";
                     if(hasField) {
-                        auto uuid = scriptField.getValue<UUID>();
+                        auto uuid = *field.getValue<UUID>();
                         auto preEntity = m_interactor -> getEntity(uuid);
                         if (preEntity)
                             resultButtonText = preEntity.getComponent<TagComponent>().getTag();
@@ -600,7 +598,7 @@ namespace editor {
                         if(auto&& payloadBuffer = dragDropTarget.unpackPayload2Buffer()) {
                             auto&& path = payloadBuffer.unpack<std::string>();
                             std::filesystem::path prefabPath = std::filesystem::path("assets") / path;
-                            auto realPrefabPath = combinePath(m_interactor->getAssociatedProjectPath(),
+                            auto realPrefabPath = combinePath(m_interactor -> getAssociatedProjectPath(),
                                                               prefabPath.string());
 
                             Prefab::Ptr prefab = m_prefabManager.loadPrefab(m_interactor, realPrefabPath);
@@ -609,13 +607,7 @@ namespace editor {
 
                             SceneEntity duplicateEntity = m_interactor -> duplicateEmptyEntity(prefab -> getEntity());
                             if (duplicateEntity && duplicateEntity != entity) {
-                                if(hasField)
-                                    scriptField.setValue(duplicateEntity.getComponent<IDComponent>().ID);
-                                else {
-                                    ScriptFieldInstance& fieldInstance = entityFields[name];
-                                    fieldInstance.Field = field;
-                                    scriptField.setValue(duplicateEntity.getComponent<IDComponent>().ID);
-                                }
+                                field.setValue(duplicateEntity.getUUID());
                             }
                         }
                     }
@@ -653,7 +645,7 @@ namespace editor {
         if (!component.hasEntity())
             return;
 
-        auto klasses = ScriptEngine::getClasses();
+/*        auto klasses = ScriptEngine::getClasses();
         auto scriptEntity = m_interactor -> getEntity(component.scriptEntity);
         MonoClassWrapper::Ptr klass = klasses[scriptEntity.template getComponent<ScriptComponent>().name];
 
@@ -675,7 +667,7 @@ namespace editor {
                 if (is_selected)
                     ImGui::SetItemDefaultFocus();
             }
-        }
+        }*/
 
     }
 

@@ -27,6 +27,7 @@ source distribution.
 #include "Messages.hpp"
 #include "ProjectManager.hpp"
 #include "EditorAssembly.hpp"
+#include <editor/scripting/ScriptingEngineService.hpp>
 
 namespace editor {
     enum class AppState {
@@ -44,7 +45,7 @@ namespace editor {
         explicit ApplicationLogic(MessageDispatcher& messageDispatcher);
         ~ApplicationLogic() = default;
 
-        void setup(IEditorOpener* editorModule);
+        void setup(IEditorOpener* editorModule, ScriptingEngineService::Ptr);
         const AppState& getState() const { return m_state; }
         const EditorCache& getCache() const { return m_editorCache; }
     private:
@@ -61,5 +62,6 @@ namespace editor {
         ProjectManager m_projectManager;
         AppState m_state;
         IEditorOpener* m_editorOpener{nullptr};
+        ScriptingEngineService::Ptr m_scriptingEngineService { nullptr };
     };
 }

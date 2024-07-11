@@ -120,7 +120,7 @@ namespace editor {
         bool m_assemblyReloadPending = false;
 
         std::vector<std::string> m_entityClassesNames;
-        ScriptInteractor::Ptr interactor;
+        IScriptInteractorFrom::Ptr interactor;
         robot2D::Window* window;
         IEditorCamera::Ptr camera;
     };

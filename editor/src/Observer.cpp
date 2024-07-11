@@ -23,12 +23,12 @@ source distribution.
 namespace editor {
     Observer::~Observer() = default;
 
-    void Observer::addObserverCallback(std::function<void(std::vector<std::string> &&)>&& callback) {
+    void Observer::addObserverCallback(Observer::ObserverCallback&& callback) {
         m_callback = std::move(callback);
     }
 
-    void Observer::notify(std::vector<std::string>&& paths) {
+    void Observer::notify(const std::vector<std::string>& paths) {
         if(m_callback)
-            m_callback(std::move(paths));
+            m_callback(paths);
     }
 }

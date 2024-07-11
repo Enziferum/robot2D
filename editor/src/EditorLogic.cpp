@@ -91,9 +91,6 @@ namespace {
 
 
 namespace editor {
-
-    ScriptInteractor::~ScriptInteractor() = default;
-
     EditorLogic::EditorLogic(robot2D::MessageBus& messageBus,
                              MessageDispatcher& messageDispatcher,
                              EditorPresenter& presenter,
@@ -107,7 +104,6 @@ namespace editor {
     {
 
         m_messageDispatcher.onMessage<MenuProjectMessage>(MessageID::SaveScene, BIND_CLASS_FN(saveScene));
-        m_messageDispatcher.onMessage<ToolbarMessage>(MessageID::ToolbarPressed, BIND_CLASS_FN(toolbarPressed));
         m_messageDispatcher.onMessage<OpenSceneMessage>(MessageID::OpenScene, BIND_CLASS_FN(openScene));
         m_messageDispatcher.onMessage<CreateSceneMessage>(MessageID::CreateScene, BIND_CLASS_FN(createScene));
         m_messageDispatcher.onMessage<PrefabLoadMessage>(MessageID::PrefabLoad, BIND_CLASS_FN(addPrefabEntity));
@@ -173,13 +169,18 @@ namespace editor {
         }
     }
 
+    void EditorLogic::setup(IScriptInteractorFrom::WeakPtr scriptInteractor) {
+        m_scriptInteractor = scriptInteractor;
+        PopupManager::getManager() -> addObserver(this);
+    }
+
     void EditorLogic::destroy() {
         TaskQueue::GetQueue() -> stop();
     }
 
     void EditorLogic::createProject(Project::Ptr project) {
         m_currentProject = project;
-        if(!m_sceneManager.add(std::move(project))) {
+        if(!m_sceneManager.add(std::move(project), m_scriptInteractor)) {
             RB_EDITOR_ERROR("Can't Create Scene. Reason: {0}",
                             errorToString(m_sceneManager.getError()));
             return;
@@ -206,7 +207,8 @@ namespace editor {
         auto scenePath = combinePath(path, appendPath);
 
         m_presenter.prepareView();
-        m_sceneManager.loadSceneAsync(project, scenePath, BIND_CLASS_FN(loadSceneCallback));
+        m_sceneManager.loadSceneAsync(project, scenePath,
+                                      BIND_CLASS_FN(loadSceneCallback), m_scriptInteractor);
     }
 
     /// TODO(a.raag): if scene don't have entities create main camera ???
@@ -226,23 +228,26 @@ namespace editor {
                     RB_EDITOR_ERROR("EditorLogic: can't save scene");
                 }
 
-                m_sceneManager.loadSceneAsync(m_currentProject, scenePath, BIND_CLASS_FN(loadSceneCallback));
+                m_sceneManager.loadSceneAsync(m_currentProject, scenePath,
+                                              BIND_CLASS_FN(loadSceneCallback), m_scriptInteractor);
             };
 
             m_popupConfiguration.onNo = [this, taskQueue, scenePath]() {
                 m_presenter.switchState(EditorState::Load);
-                m_sceneManager.loadSceneAsync(m_currentProject, scenePath, BIND_CLASS_FN(loadSceneCallback));
+                m_sceneManager.loadSceneAsync(m_currentProject, scenePath,
+                                              BIND_CLASS_FN(loadSceneCallback), m_scriptInteractor);
             };
             m_presenter.showPopup(&m_popupConfiguration);
         }
         else {
             m_presenter.switchState(EditorState::Load);
-            m_sceneManager.loadSceneAsync(m_currentProject, scenePath, BIND_CLASS_FN(loadSceneCallback));
+            m_sceneManager.loadSceneAsync(m_currentProject, scenePath,
+                                          BIND_CLASS_FN(loadSceneCallback), m_scriptInteractor);
         }
     }
 
     void EditorLogic::createScene(const CreateSceneMessage& message) {
-        if(!m_sceneManager.add(std::move(m_currentProject), message.path)) {
+        if(!m_sceneManager.add(std::move(m_currentProject), message.path, m_scriptInteractor)) {
             RB_EDITOR_ERROR("Can't Create Scene. Reason: {0}",
                             errorToString(m_sceneManager.getError()));
             return;
@@ -250,11 +255,11 @@ namespace editor {
     }
 
     void EditorLogic::saveScene(const MenuProjectMessage& message) {
-        m_sceneManager.save(std::move(m_activeScene));
+        m_sceneManager.save(std::move(m_activeScene), m_scriptInteractor);
     }
 
     bool EditorLogic::saveScene() {
-        return m_sceneManager.save(std::move(m_activeScene));
+        return m_sceneManager.save(std::move(m_activeScene), m_scriptInteractor);
     }
 
     void EditorLogic::loadSceneCallback(Scene::Ptr loadedScene) {
@@ -298,35 +303,32 @@ namespace editor {
             SceneEntity entity;
         };
 
+        /// child, child -> ???
+
         for(auto copy: m_copyEntities) {
             auto& transform = copy.getComponent<TransformComponent>();
             auto copiedEntity = m_activeScene -> duplicateEntity(transform.getPosition(), copy);
-
-            if(transform.hasChildren())
-                pasteChild(copy);
-
             copiedEntities.emplace_back(copiedEntity);
+            /// ?
+            // m_selectedEntities.emplace_back(copiedEntity);
         }
 
-        auto command = m_commandStack.addCommand<PasteCommand>(m_messageBus, copiedEntities, this);
+        auto command = m_commandStack.addCommand<PasteCommand>(m_messageBus, std::move(copiedEntities), this);
         if(!command) {
             RB_EDITOR_ERROR("EditorLogic: Can't Create PasteCommand");
         }
-
-        /// m_selectedEntities = copiedEntities;
-        /// ui create
     }
 
 
     void EditorLogic::pasteChild(SceneEntity parent) {}
 
 
-    void EditorLogic::toolbarPressed(const ToolbarMessage& message) {
-        if(message.pressedType == 1) {
+    void EditorLogic::switchRuntimeState(const ToolbarMessage::Type& type) {
+        if(type == ToolbarMessage::Type::Start) {
             m_presenter.switchState(EditorState::Run);
-            m_activeScene -> onRuntimeStart(this);
+            // m_activeScene -> onRuntimeStart();
         }
-        else if(message.pressedType == 0) {
+        else if(type == ToolbarMessage::Type::Stop) {
             m_activeScene -> onRuntimeStop();
             m_presenter.switchState(EditorState::Edit);
         }
@@ -344,7 +346,8 @@ namespace editor {
             if(!btnComp.onClickCallback) {
                 m_activeScene -> registerUICallback(entity);
 
-                btnComp.onClickCallback = [](UUID scriptUUID, const std::string& methodName) {
+                btnComp.onClickCallback = [this](UUID scriptUUID, const std::string& methodName) {
+                    m_scriptInteractor;
                     auto instance = ScriptEngine::getEntityScriptInstance(scriptUUID);
                     if(instance)
                         instance -> getClassWrapper() -> callMethod(methodName);
@@ -420,15 +423,6 @@ namespace editor {
         }
     }
 
-    void EditorLogic::notifyObservers(std::vector<std::string>&& paths) {
-        for(auto& observer: m_observers)
-            observer -> notify(std::move(paths));
-    }
-
-    void EditorLogic::addObserver(Observer::Ptr observer) {
-        m_observers.emplace_back(observer);
-    }
-
     void EditorLogic::duplicateEntity(robot2D::vec2f mousePos) {
         std::vector<SceneEntity> duplicatedEntities;
         duplicatedEntities.reserve(m_selectedEntities.size());
@@ -488,11 +482,12 @@ namespace editor {
         /// TODO(a.raag): add Selection Command
     }
 
-    void EditorLogic::removeSelectedEntities() {
-        auto restoreInformation = m_activeScene -> removeEntities(m_selectedEntities);
+
+    void EditorLogic::removeEntities(std::vector<SceneEntity>& entities, bool clearContainer) {
+        auto restoreInformation = m_activeScene -> removeEntities(entities);
 
         std::list<ITreeItem::Ptr> uiItems;
-        for(const auto& entity: m_selectedEntities) {
+        for(const auto& entity: entities) {
             if(entity)
                 uiItems.emplace_back(entity.getComponent<UIComponent>().treeItem);
         }
@@ -505,7 +500,15 @@ namespace editor {
             RB_EDITOR_ERROR("EditorLogic: Can't Create DeleteCommand");
         }
 
-        m_selectedEntities.clear();
+        if(clearContainer)
+            entities.clear();
+    }
+
+
+
+    void EditorLogic::removeSelectedEntities() {
+        constexpr bool clearContainer = true;
+        removeEntities(m_selectedEntities, clearContainer);
     }
 
     EditorState EditorLogic::getState() const {
@@ -525,11 +528,6 @@ namespace editor {
     const std::list<SceneEntity>& EditorLogic::getEntities() const {
         return m_activeScene -> getEntities();
     }
-
-    void EditorLogic::removeEntity(SceneEntity entity) {
-        m_activeScene -> removeEntity(entity);
-    }
-
 
     void EditorLogic::addEmptyEntity() {
         auto entity = m_activeScene -> addEmptyEntity();
@@ -698,44 +696,8 @@ namespace editor {
         return m_activeScene -> getEntity(uuid);
     }
 
-    SceneEntity EditorLogic::getEntity(std::uint64_t uuid) {
-        return m_activeScene -> getEntity(UUID(uuid));
-    }
-
     void EditorLogic::setEditorCamera(IEditorCamera::Ptr editorCamera) {
         m_activeScene -> setEditorCamera(editorCamera);
-    }
-
-    bool EditorLogic::loadSceneRuntime(std::string&& name) {
-        RB_EDITOR_WARN("EditorLogic::loadSceneRuntime Not Implemented Method, Want Load Scene by Name {0}", name);
-        /*
-         * Steps: TODO(a.raag)
-         *  - LoadScene
-         *  - Recreate Physics, ScriptEngine
-         *  - Update UI
-         *  - Command Stack ??
-         */
-
-        return true;
-    }
-
-    void EditorLogic::loadSceneAsyncRuntime(std::string&& name) {
-        RB_EDITOR_WARN("EditorLogic::loadSceneRuntime Not Implemented Method, Want Load Scene by Name {0}", name);
-        // TODO(a.raag): work on algorithm in future
-    }
-
-    void EditorLogic::exitEngineRuntime() {
-        /// TODO(a.raag): check param some where
-        constexpr bool insideEngine = true;
-        if(insideEngine) {
-            /// TODO(a.raag): if runtime scene != default Scene reload defaultScene
-            m_activeScene -> onRuntimeStop();
-            m_presenter.switchState(EditorState::Edit);
-        }
-    }
-
-    SceneEntity EditorLogic::duplicateRuntime(SceneEntity entity, robot2D::vec2f position) {
-        return m_activeScene -> duplicateRuntime(entity, position);
     }
 
     void EditorLogic::generateProject(const GenerateProjectMessage& message) {
@@ -764,7 +726,6 @@ namespace editor {
             }
         });
     }
-
 
     //////////////////////////////////////// UIInteractor ////////////////////////////////////////
 

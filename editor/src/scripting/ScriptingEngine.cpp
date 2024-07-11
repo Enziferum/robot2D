@@ -249,8 +249,8 @@ namespace editor {
     };
 
     std::unordered_map<std::string, MethodSignature> engineRegisteredMethods = {
-            { "onCollision2DEnter", { { ScriptFieldType::Collision2D } } },
-            { "onCollision2DExit", { { ScriptFieldType::Collision2D } } },
+            { "onCollision2DEnter", {  ScriptFieldType::Collision2D  } },
+            { "onCollision2DExit", {  ScriptFieldType::Collision2D  } },
     };
 
     class ScriptEngineReloadTask: public ITask {
@@ -270,22 +270,24 @@ namespace editor {
 
             TaskQueue::GetQueue() -> addAsyncTask<ScriptEngineReloadTask>([](const ScriptEngineReloadTask& task) {
                 s_Data -> resetFilewatcher() ;
-                ScriptEngine::ReloadEngine();
+                // ScriptEngine::ReloadEngine();
             });
         }
 
 
     }
 
+    ScriptingEngineService::~ScriptingEngineService() = default;
+    ScriptingEngineInternalService::~ScriptingEngineInternalService() = default;
 
 
-    void ScriptEngine::Init() {
+    void ScriptEngine::Init(const std::string& engineDLLPath) {
         s_Data = new ScriptEngineData();
 
         InitMono();
         ScriptGlue::registerFunctions();
 
-        std::string coreLibPath = "res/script/robot2D_ScriptCore";
+        std::string coreLibPath = engineDLLPath;
 #ifdef ROBOT2D_WINDOWS
         coreLibPath += ".dll";
 #else
@@ -300,8 +302,8 @@ namespace editor {
 
     }
 
-    void ScriptEngine::InitAppRuntime(const fs::path& filePath) {
-        bool status = loadAppAssembly(filePath.string());
+    void ScriptEngine::runtimeInit(const std::string& filePath) {
+        bool status = loadAppAssembly(filePath);
         if(!status) {
             RB_EDITOR_ERROR("ScriptingEngine: Can't load Application's Script Library");
             return;
@@ -309,8 +311,8 @@ namespace editor {
 
         LoadAssemblyClasses();
         ScriptGlue::registerComponents();
-        s_Data -> m_entityClass = std::make_shared<MonoClassWrapper>(s_Data,
-                                                                     "robot2D", "Entity", true);
+        s_Data -> m_entityClass = std::make_shared<MonoClassWrapper>(s_Data,"robot2D",
+                                                                     "Entity", true);
         s_Data -> m_entityClass -> registerMethod(".ctor", 1);
         s_Data -> m_entityClass -> registerMethod("setComponentField", 2);
         s_Data -> m_entityClass -> registerMethod("setEntityField", 2);
@@ -496,6 +498,14 @@ namespace editor {
                                                              s_Data -> m_entityClasses[sc.name], entity);
             s_Data -> m_entityInstances[uuid] = instance;
 
+            if(m_interactor -> hasField(uuid)) {
+                const auto& fields = m_interactor -> getFields(uuid);
+                for(const auto& [name, field]: fields) {
+                    auto scriptFieldType = util::convert2Script(field.type);
+
+                }
+            }
+
 
             if(s_Data -> hasEntityFields(uuid)) {
                 const auto& fields = s_Data -> m_entityScriptFields.at(uuid);
@@ -505,8 +515,8 @@ namespace editor {
                         auto klass = instance -> getClassWrapper();
                         auto regMethods = s_Data -> m_entityClass -> getRegisterMethods();
                         if(regMethods.find("setComponentField") != regMethods.end()) {
-                            auto MonoString = mono_string_new(s_Data->m_appDomain, field.Field.Name.c_str());
-                            void* storage[2] = { (void*)(MonoString), (void*)(field.m_Buffer)};
+                            auto MonoString = mono_string_new(s_Data -> m_appDomain, field.Field.Name.c_str());
+                            void* storage[2] = { (void*)(MonoString), (void*)(field.m_Buffer) };
                             mono_runtime_invoke(regMethods["setComponentField"],
                                                 klass -> getInstance(), storage, nullptr);
                         }
@@ -542,7 +552,7 @@ namespace editor {
         }
     }
 
-    void ScriptEngine::onRuntimeStart(ScriptInteractor::Ptr interactor) {
+    void ScriptEngine::onRuntimeStart(IScriptInteractorFrom::Ptr interactor) {
         s_Data -> interactor = interactor;
     }
 
@@ -682,8 +692,8 @@ namespace editor {
 
         // Retrieve and instantiate class
         s_Data -> m_entityClass.reset();
-        s_Data -> m_entityClass = std::make_shared<MonoClassWrapper>(s_Data,
-                                                                     "robot2D", "Entity", true);
+        s_Data -> m_entityClass = std::make_shared<MonoClassWrapper>(s_Data,"robot2D",
+                                                                     "Entity", true);
     }
 
     MonoClassWrapper::Ptr ScriptEngine::getManagedObject(UUID entityId) {
@@ -715,7 +725,7 @@ namespace editor {
         auto className = mono_class_get_name(klass);
         std::string s{className};
 
-        for(auto [name, klass]: s_Data -> m_entityClasses) {
+        for(const auto& [name, klass]: s_Data -> m_entityClasses) {
             if(s == name) {
 
             }

@@ -29,11 +29,12 @@ namespace editor {
     class Observer {
     public:
         using Ptr = Observer*;
+        using ObserverCallback = std::function<void(const std::vector<std::string>&)>;
         virtual ~Observer() = 0;
 
-        void addObserverCallback(std::function<void(std::vector<std::string>&&)>&& callback);
-        void notify(std::vector<std::string>&& paths);
+        void addObserverCallback(ObserverCallback&& callback);
+        void notify(const std::vector<std::string>& paths);
     private:
-        std::function<void(std::vector<std::string>&&)> m_callback;
+        ObserverCallback m_callback;
     };
 } // namespace editor

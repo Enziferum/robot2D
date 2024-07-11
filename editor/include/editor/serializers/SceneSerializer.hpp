@@ -23,6 +23,7 @@ source distribution.
 
 #include <memory>
 #include "editor/Errors.hpp"
+#include <editor/ScriptInteractor.hpp>
 
 namespace editor {
 
@@ -36,8 +37,9 @@ namespace editor {
         SceneSerializer& operator=(SceneSerializer&& other) = delete;
         ~SceneSerializer() = default;
 
-        bool serialize(const std::string& path, const std::string& sceneName = "Unnamed Scene");
-        bool deserialize(const std::string& path);
+        bool serialize(const std::string& path, const std::string& sceneName,
+                       IScriptInteractorFrom::Ptr scriptingEngine);
+        bool deserialize(const std::string& path, IScriptInteractorFrom::Ptr scriptingEngine);
         SceneSerializerError getError() const;
 
     private:

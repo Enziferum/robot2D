@@ -33,8 +33,8 @@ source distribution.
 #include "EditorLogic.hpp"
 #include "TaskQueue.hpp"
 #include "EventBinder.hpp"
-
 #include "EditorAssembly.hpp"
+#include <editor/scripting/ScriptingEngine.hpp>
 
 namespace editor {
 
@@ -64,6 +64,7 @@ namespace editor {
         ApplicationConfiguration m_appConfiguration;
         MessageDispatcher m_messageDispatcher;
         ApplicationLogic m_logic;
+        ScriptEngine m_scriptingEngine;
 
         robot2D::MessageBus m_messageBus;
         robot2D::Gui m_guiWrapper;

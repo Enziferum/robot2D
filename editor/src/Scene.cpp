@@ -164,31 +164,17 @@ namespace editor {
         return sceneEntity;
     }
 
-
-    void Scene::removeEntity(SceneEntity entity) {
-        /*     auto found = std::find_if(m_sceneEntities.begin(),
-                                       m_sceneEntities.end(),
-                                       [&entity](robot2D::ecs::Entity ent) {
-                 return ent.getIndex() == entity.getIndex();
-             });
-             if(found == m_sceneEntities.end())
-                 return;
-             m_deletePendingBuffer.emplace_back(*found);
-             m_hasChanges = true;*/
-    }
-
-
     void Scene::onRuntimeStart(ScriptInteractor::Ptr scriptInteractor) {
         m_running = true;
         m_sceneGraph.cloneSelf(m_runtimeSceneGraph);
         onPhysics2DRun();
 
-        m_scene.getSystem<RenderSystem>()->setScene(this);
+        m_scene.getSystem<RenderSystem>() -> setScene(this);
         ScriptEngine::onRuntimeStart(scriptInteractor);
 
         m_scriptRuntimeContainer.clear();
         m_runtimeSceneGraph.filterEntities<ScriptComponent>(m_scriptRuntimeContainer);
-        for (const auto &entity: m_scriptRuntimeContainer)
+        for (const auto& entity: m_scriptRuntimeContainer)
             ScriptEngine::onCreateEntity(entity);
 
 
@@ -204,7 +190,7 @@ namespace editor {
     }
 
     void Scene::onRuntimeStop() {
-        m_scene.getSystem<RenderSystem>()->setScene(nullptr);
+        m_scene.getSystem<RenderSystem>() -> setScene(nullptr);
         m_running = false;
         onPhysics2DStop();
         ScriptEngine::onRuntimeStop();
@@ -216,17 +202,17 @@ namespace editor {
 
 
         m_physicsAdapter -> registerCallback(PhysicsCallbackType::Enter,
-                                           [](const Physics2DContact &contact) {
+                                           [](const Physics2DContact& contact) {
                                                ScriptEngine::onCollision2DBegin(contact);
                                            });
 
         m_physicsAdapter -> registerCallback(PhysicsCallbackType::Exit,
-                                           [](const Physics2DContact &contact) {
+                                           [](const Physics2DContact& contact) {
                                                ScriptEngine::onCollision2DEnd(contact);
                                            });
 
         m_physicsAdapter -> registerCallback(PhysicsCallbackType::EnterTrigger,
-                                           [](const Physics2DContact &contact) {
+                                           [](const Physics2DContact& contact) {
                                                ScriptEngine::onCollision2DBeginTrigger(contact);
                                            });
 
@@ -277,15 +263,21 @@ namespace editor {
         auto* msg =
                 m_messageBus.postMessage<EntityDuplication>(MessageID::EntityDuplicate);
         msg -> entityID = dupEntity.getComponent<IDComponent>().ID;
-
-        /// add or create ???
-        // m_sceneGraph.emplace_back(dupEntity);
         m_hasChanges = true;
 
-        if (entity.hasChildren())
-            duplicateEntityChild(SceneEntity{std::move(dupEntity)}, entity);
+        SceneEntity duplicateSceneEntity{std::move(dupEntity)};
+        if(entity.isChild()) {
+            auto parent = entity.getParent();
+            parent -> addChild(duplicateSceneEntity);
+        }
+        else {
+            m_sceneGraph.addEntity(duplicateSceneEntity);
+        }
 
-        return SceneEntity(std::move(dupEntity));
+        if (entity.hasChildren())
+            duplicateEntityChild(duplicateSceneEntity, entity);
+
+        return duplicateSceneEntity;
     }
 
     void Scene::duplicateEntityChild(SceneEntity parent, SceneEntity dupEntity) {
@@ -295,9 +287,9 @@ namespace editor {
 
         for(auto& child: parentTransform.getChildren()) {
             auto dupChild = m_scene.duplicateEntity(child.getWrappedEntity());
-            dupParentTransform.addChild(parent, dupChild);
-            if(child.getComponent<TransformComponent>().hasChildren())
-                duplicateEntityChild(dupChild, child);
+            //dupParentTransform.addChild(parent, dupChild);
+           // if(child.getComponent<TransformComponent>().hasChildren())
+              //  duplicateEntityChild(dupChild, child);
         }
     }
 
@@ -520,7 +512,7 @@ namespace editor {
 
         if (entity.isChild()) {
             auto parent = entity.getParent();
-            parent->addChild(sceneEntity);
+            parent -> addChild(sceneEntity);
         } else
             m_runtimeSceneGraph.addEntity(sceneEntity);
 

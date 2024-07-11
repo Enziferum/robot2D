@@ -31,6 +31,7 @@ source distribution.
 #include <robot2D/Graphics/Drawable.hpp>
 
 #include <editor/UIInteractor.hpp>
+
 #include "Components.hpp"
 #include "physics/IPhysics2DAdapter.hpp"
 #include "ScriptInteractor.hpp"
@@ -82,7 +83,6 @@ namespace editor {
 
 
         bool setBefore(SceneEntity source, SceneEntity target);
-        void removeEntity(SceneEntity entity);
         void removeEntityChild(SceneEntity entity);
         DeletedEntitiesRestoreInformation removeEntities(std::vector<SceneEntity>& removingEntities);
         void restoreEntities(DeletedEntitiesRestoreInformation& restoreInformation);

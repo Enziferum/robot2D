@@ -43,7 +43,7 @@ namespace editor {
             m_error{SceneManagerError::None}
             {}
 
-    bool SceneManager::add(Project::Ptr&& project) {
+    bool SceneManager::add(Project::Ptr&& project, IScriptInteractorFrom::WeakPtr scriptingEngine) {
         Scene::Ptr scene = std::make_shared<Scene>(m_messageBus);
         if(scene == nullptr) {
             m_error = SceneManagerError::MemoryAlloc;
@@ -56,8 +56,13 @@ namespace editor {
         auto scenePath = combinePath(path, appendPath);
         m_activeScene -> setPath(scenePath);
 
+        auto interactor = scriptingEngine.lock();
+        if(!interactor)
+            return false;
+
+        std::string sceneName = "Unnamed Scene";
         SceneSerializer serializer(m_activeScene);
-        if(!serializer.serialize(m_activeScene -> getPath())) {
+        if(!serializer.serialize(m_activeScene -> getPath(), sceneName, interactor)) {
             m_error = SceneManagerError::SceneSerialize;
             return false;
         }
@@ -66,21 +71,26 @@ namespace editor {
     }
 
 
-    bool SceneManager::add(Project::Ptr&& project, const std::string& path) {
+    bool SceneManager::add(Project::Ptr&& project, const std::string& path, IScriptInteractorFrom::WeakPtr scriptingEngine) {
         Scene::Ptr scene = std::make_shared<Scene>(m_messageBus);
         if(scene == nullptr) {
             m_error = SceneManagerError::MemoryAlloc;
             return false;
         }
         SceneSerializer serializer(scene);
-        if(!serializer.serialize(path)) {
+        std::string sceneName = "Unnamed Scene";
+        auto interactor = scriptingEngine.lock();
+        if(!interactor)
+            return false;
+        if(!serializer.serialize(path, sceneName, interactor)) {
             m_error = SceneManagerError::SceneSerialize;
             return false;
         }
         return true;
     }
 
-    void SceneManager::loadSceneAsync(Project::Ptr project, std::string path, SceneLoadCallback&& callback) {
+    void SceneManager::loadSceneAsync(Project::Ptr project, std::string path, SceneLoadCallback&& callback,
+                                      IScriptInteractorFrom::WeakPtr scriptInteractorFrom) {
         Scene::Ptr scene = std::make_shared<Scene>(m_messageBus);
         if(scene == nullptr) {
             m_error = SceneManagerError::MemoryAlloc;
@@ -99,7 +109,8 @@ namespace editor {
         };
 
         auto taskQueue = TaskQueue::GetQueue();
-        taskQueue -> addAsyncTask<SceneLoadTask>(std::move(loadCallback), scene, std::move(callback));
+        taskQueue -> addAsyncTask<SceneLoadTask>(std::move(loadCallback), scene,
+                                                 scriptInteractorFrom, std::move(callback));
     }
 
     bool SceneManager::remove() {
@@ -117,12 +128,17 @@ namespace editor {
         return m_error;
     }
 
-    bool SceneManager::save(Scene::Ptr&& scene) {
+    bool SceneManager::save(Scene::Ptr&& scene, IScriptInteractorFrom::WeakPtr scriptingEngine) {
         if(scene == nullptr)
             return false;
 
         SceneSerializer serializer{scene};
-        if(!serializer.serialize(scene-> getPath())) {
+        std::string sceneName = "Unnamed Scene";
+        auto interactor = scriptingEngine.lock();
+        if(!interactor)
+            return false;
+
+        if(!serializer.serialize(scene-> getPath(), sceneName, interactor)) {
             m_error = SceneManagerError::SceneSerialize;
             return false;
         }

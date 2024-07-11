@@ -55,8 +55,9 @@ namespace editor {
 
 
         //////////// Load C# Mono ////////////
-        ScriptEngine::Init();
-        ScriptEngine::SetWindow(m_window);
+        std::string scriptingEngineDLLPath = "res/script/robot2D_ScriptCore";
+        m_scriptingEngine.Init(scriptingEngineDLLPath);
+        m_scriptingEngine.SetWindow(m_window);
         //////////// Load C# Mono ////////////
 
         m_editorModule = EditorAssembly::createEditorModule(m_window,
@@ -67,8 +68,8 @@ namespace editor {
         if(!m_editorModule)
             RB2D_EXCEPTION("Can't initialize editorModule");
 
-        m_logic.setup( m_editorModule.get());
-        m_editorModule -> setup(m_window);
+        m_logic.setup( m_editorModule.get(), &m_scriptingEngine);
+        m_editorModule -> setup(m_window, &m_scriptingEngine);
 
 
         if(m_logic.getState() == AppState::ProjectInspector) {
@@ -88,7 +89,8 @@ namespace editor {
             RB_EDITOR_INFO("Editor's window new size = {0} and {1}", evt.size.widht, evt.size.heigth);
             m_window -> resize({static_cast<int>(evt.size.widht),
                                 static_cast<int>(evt.size.heigth)});
-            m_window -> setView({{0, 0}, {static_cast<float>(evt.size.widht), static_cast<float>(evt.size.heigth)}});
+            m_window -> setView({{0, 0}, {static_cast<float>(evt.size.widht),
+                                          static_cast<float>(evt.size.heigth)}});
         });
     }
 
@@ -132,7 +134,7 @@ namespace editor {
     }
 
     void Application::destroy() {
-        ScriptEngine::Shutdown();
+        m_scriptingEngine.Shutdown();
         m_editorModule -> destroy();
     }
 

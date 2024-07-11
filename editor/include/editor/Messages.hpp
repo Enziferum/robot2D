@@ -117,8 +117,12 @@ namespace editor {
     };
 
     struct ToolbarMessage {
-        int pressedType;
+        enum class Type: int {
+            Start = 1,
+            Stop = 0
+        };
 
+        Type type;
         void unpack(void* rawBuffer) {}
     };
 

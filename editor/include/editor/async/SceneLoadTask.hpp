@@ -25,13 +25,16 @@ source distribution.
 
 #include <editor/Scene.hpp>
 #include <editor/Task.hpp>
+#include <editor/ScriptInteractor.hpp>
 
 namespace editor {
     class SceneLoadTask final: public ITask {
     public:
         using SceneLoadChainCallback = std::function<void(Scene::Ptr)>;
     public:
-        SceneLoadTask(ITaskFunction::Ptr function, Scene::Ptr scene, SceneLoadChainCallback&& callback);
+        SceneLoadTask(ITaskFunction::Ptr function, Scene::Ptr scene,
+                      IScriptInteractorFrom::WeakPtr scriptInteractorFrom,
+                      SceneLoadChainCallback&& callback);
         SceneLoadTask(const SceneLoadTask& other) = delete;
         SceneLoadTask& operator=(const SceneLoadTask& other) = delete;
         SceneLoadTask(SceneLoadTask&& other) = delete;
@@ -47,6 +50,7 @@ namespace editor {
     private:
         Scene::Ptr m_scene;
         SceneLoadChainCallback m_chainCallback;
+        IScriptInteractorFrom::WeakPtr m_scriptInteractorFrom;
     };
 
 } // namespace editor

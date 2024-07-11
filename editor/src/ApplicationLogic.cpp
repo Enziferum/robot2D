@@ -33,13 +33,14 @@ namespace editor {
     m_state{AppState::ProjectInspector}
     {}
 
-    void ApplicationLogic::setup(IEditorOpener* editorModule) {
+    void ApplicationLogic::setup(IEditorOpener* editorModule, ScriptingEngineService::Ptr scriptingEngine) {
         auto [hasKey, version] = m_configuration.getValue(ConfigurationKey::Version);
         if(hasKey) {
             RB_EDITOR_WARN("Editor's Current Version {0}.", version);
         }
 
         m_editorOpener = editorModule;
+        m_scriptingEngineService = scriptingEngine;
 
         auto [status, result] = m_configuration.getValue(ConfigurationKey::CachePath);
 
@@ -141,7 +142,7 @@ namespace editor {
             scriptModulePath += ".dll";
 
             if(exists(scriptModulePath))
-                ScriptEngine::InitAppRuntime(scriptModulePath);
+                m_scriptingEngineService -> runtimeInit(scriptModulePath.string());
             else
                 RB_EDITOR_WARN("Haven't found Scripting DLL by {0}", scriptModulePath.string());
         }
@@ -184,7 +185,7 @@ namespace editor {
             scriptModulePath += ".dll";
 
             if(exists(scriptModulePath))
-                ScriptEngine::InitAppRuntime(scriptModulePath);
+                m_scriptingEngineService -> runtimeInit(scriptModulePath.string());
             else
                 RB_EDITOR_WARN("Haven't found Scripting DLL by {0}", scriptModulePath.string());
         }

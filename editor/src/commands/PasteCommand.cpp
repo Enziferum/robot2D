@@ -31,25 +31,21 @@ namespace editor {
 
 
     PasteCommand::PasteCommand(robot2D::MessageBus& messageBus,
-                               std::vector<SceneEntity> entities,
-                               UIInteractor::Ptr interactor):
+                               std::vector<SceneEntity>&& entities,
+                               EditorInteractor::Ptr interactor):
                                m_messageBus{messageBus},
                                m_entities(entities),
                                m_interactor{interactor}
-                               {
+    {
 
     }
 
 
 
     void PasteCommand::undo() {
-        for(auto ent: m_entities) {
-            if(!ent)
-                continue;
-            if(m_interactor)
-                m_interactor -> removeEntity(ent);
-            auto* msg = m_messageBus.postMessage<EntityRemovement>(MessageID::EntityRemove);
-            msg -> entityID = ent.getComponent<IDComponent>().ID;
-        }
+        if(m_entities.empty())
+            return;
+        constexpr bool clearContainer = true;
+        m_interactor -> removeEntities(m_entities, clearContainer);
     }
 } // namespace editor

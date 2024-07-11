@@ -66,10 +66,11 @@ namespace editor {
 
     void Editor::setupBindings() {
         auto dropCallback = [this](std::vector<std::string>&& paths) {
-            m_interactor -> notifyObservers(std::move(paths));
+            for(auto& observer: m_observers)
+                observer -> notify(paths);
         };
         m_window -> addDropCallback(std::move(dropCallback));
-        m_interactor -> addObserver(&m_panelManager.getPanel<AssetsPanel>());
+        m_observers.emplace_back(&m_panelManager.getPanel<AssetsPanel>());
 
         m_eventBinder.bindEvent(robot2D::Event::KeyPressed, BIND_CLASS_FN(onKeyPressed));
         m_eventBinder.bindEvent(robot2D::Event::KeyReleased, BIND_CLASS_FN(onKeyReleased));

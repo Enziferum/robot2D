@@ -21,6 +21,7 @@ source distribution.
 
 #pragma once
 #include <vector>
+#include <editor/scripting/ScriptingEngineService.hpp>
 
 #include "Project.hpp"
 #include "SceneManager.hpp"
@@ -41,10 +42,7 @@ source distribution.
 
 namespace editor {
 
-    class IEditor;
-
-
-    class EditorLogic: public EditorInteractor, public ScriptInteractor, public PopupObserver {
+    class EditorLogic: public EditorInteractor, public PopupObserver {
     public:
         EditorLogic(robot2D::MessageBus& messageBus,
                     MessageDispatcher& messageDispatcher,
@@ -58,24 +56,28 @@ namespace editor {
         EditorLogic& operator=(EditorLogic&& other) = delete;
         ~EditorLogic() override = default;
 
-        void setView(IEditor* iEditor) {
-            PopupManager::getManager() -> addObserver(this);
-        }
+        void setup(IScriptInteractorFrom::WeakPtr scriptInteractor);
+        void destroy();
+
+        void createProject(Project::Ptr project);
+        void loadProject(Project::Ptr project);
+
+
 
         //////////////////////////////////////// EditorInteractor ////////////////////////////////////////
-        void handleEventsRuntime(const robot2D::Event &event) override;
+        void handleEventsRuntime(const robot2D::Event& event) override;
         void update(float dt) override;
-        void findSelectEntities(const robot2D::FloatRect& rect) override;
         bool hasSelectedEntities() const override;
+        void findSelectEntities(const robot2D::FloatRect& rect) override;
         void copyToBuffer() override;
         void pasterFromBuffer() override;
         void undoCommand() override;
         void redoCommand() override;
         void duplicateEntity(robot2D::vec2f mousePos) override;
         void removeSelectedEntities() override;
-        /// TODO(a.raag): Rename to PopupObservers for correct understanding
-        void addObserver(Observer::Ptr observer) override;
-        void notifyObservers(std::vector<std::string>&& paths) override;
+        void removeEntities(std::vector<SceneEntity>& entities, bool clearContainer) override;
+
+
         EditorState getState() const override;
         /// \brief Save Scene by Shortcut.
         bool saveScene() override;
@@ -87,15 +89,11 @@ namespace editor {
         //////////////////////////////////////// EditorInteractor ////////////////////////////////////////
 
 
-        void createProject(Project::Ptr project);
-        void loadProject(Project::Ptr project);
-
         //////////////////////////////////////// UIInteractor ////////////////////////////////////////
         SceneEntity findEntity(const robot2D::vec2i& mousePos)  override;
         std::vector<SceneEntity>& getSelectedEntities()  override;
         std::string getAssociatedProjectPath() const override;
         const std::list<SceneEntity>& getEntities() const override;
-        void removeEntity(SceneEntity entity) override;
         void addEmptyEntity() override;
         SceneEntity addButton() override;
 
@@ -107,6 +105,7 @@ namespace editor {
         void removeEntityChild(SceneEntity entity) override;
         bool isRunning() const override;
         SceneEntity getEntity(UUID uuid) override;
+
         void restoreDeletedEntities(DeletedEntitiesRestoreInformation& restoreInformation,
                                     DeletedEntitiesRestoreUIInformation& restoreUiInformation) override;
 
@@ -115,22 +114,15 @@ namespace editor {
         const std::vector<class_id>& getCommandStack() const override;
         void exportProject(const ExportOptions& exportOptions) override;
         //////////////////////////////////////// UIInteractor ////////////////////////////////////////
-
-        //////////////////// ScriptInteractor ////////////////////
-        SceneEntity getEntity(std::uint64_t uuid) override;
-        bool loadSceneRuntime(std::string &&name) override;
-        void loadSceneAsyncRuntime(std::string &&name) override;
-        void exitEngineRuntime() override;
-        SceneEntity duplicateRuntime(SceneEntity entity, robot2D::vec2f position) override;
-        //////////////////// ScriptInteractor ////////////////////
-
-        void destroy();
     private:
         void loadSceneCallback(Scene::Ptr loadedScene);
         void processEntity(SceneEntity entity);
 
+        friend class EditorModule;
+        void switchRuntimeState(const ToolbarMessage::Type& messageType);
+
         void saveScene(const MenuProjectMessage& message);
-        void toolbarPressed(const ToolbarMessage& message);
+
         void openScene(const OpenSceneMessage& message);
         void createScene(const CreateSceneMessage& message);
         void addPrefabEntity(const PrefabLoadMessage& message);
@@ -147,12 +139,12 @@ namespace editor {
         EditorPresenter& m_presenter;
         EditorRouter& m_router;
         CommandStack m_commandStack;
+        IScriptInteractorFrom::WeakPtr m_scriptInteractor;
 
         Project::Ptr m_currentProject;
         SceneManager m_sceneManager;
         Scene::Ptr m_activeScene;
 
-        std::vector<Observer::Ptr> m_observers;
         PopupConfiguration m_popupConfiguration;
 
         std::vector<SceneEntity> m_selectedEntities;

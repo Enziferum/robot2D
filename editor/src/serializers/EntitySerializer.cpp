@@ -118,14 +118,14 @@ namespace editor {
 
 #define WRITE_SCRIPT_FIELD(FieldType, Type)           \
 			case ScriptFieldType::FieldType:          \
-				out << scriptField.getValue<Type>();  \
+				out << field.getValue<Type>();  \
 				break
 
 #define READ_SCRIPT_FIELD(FieldType, Type)             \
 	case ScriptFieldType::FieldType:                   \
 	{                                                  \
 		Type data = scriptField["Data"].as<Type>();    \
-		fieldInstance.setValue(data);                  \
+		field.setValue(data);                  \
 		break;                                         \
 	}
 
@@ -171,7 +171,7 @@ namespace editor {
     }
 
 
-    void SerializeEntity(YAML::Emitter& out, SceneEntity entity) {
+    void SerializeEntity(YAML::Emitter& out, SceneEntity entity, IScriptInteractorFrom::Ptr scriptInteractor) {
         out << YAML::BeginMap;
         out << YAML::Key << "Entity" << YAML::Value << entity.getComponent<IDComponent>().ID;
 
@@ -255,26 +255,19 @@ namespace editor {
             out << YAML::BeginMap;
             out << YAML::Key << "ClassName" << YAML::Value << scriptComponent.name;
 
-            auto entityClass = ScriptEngine::getEntityClass(scriptComponent.name);
-            const auto& fields = entityClass -> getFields();
-
-            if(fields.size() > 0) {
+            const auto& fields = scriptInteractor -> getFields(entity.getUUID());
+            if(!fields.empty()) {
                 out << YAML::Key << "ScriptFields" << YAML::Value;
-                /// TODO(a.raag): moving to sceneGraph
-                auto& entityFields = ScriptEngine::getScriptFieldMap(SceneEntity(std::move(entity)));
                 out << YAML::BeginSeq;
                 for (const auto& [name, field] : fields)
                 {
-                    if (entityFields.find(name) == entityFields.end())
-                        continue;
-
+                    auto scriptType = util::convert2Script(field.getType());
                     out << YAML::BeginMap; // ScriptField
                     out << YAML::Key << "Name" << YAML::Value << name;
-                    out << YAML::Key << "Type" << YAML::Value << util::ScriptFieldTypeToString(field.Type);
+                    out << YAML::Key << "Type" << YAML::Value << util::ScriptFieldTypeToString(scriptType);
                     out << YAML::Key << "Data" << YAML::Value;
-                    ScriptFieldInstance& scriptField = entityFields.at(name);
 
-                    switch (field.Type)
+                    switch (scriptType)
                     {
                         WRITE_SCRIPT_FIELD(Float,   float     );
                         WRITE_SCRIPT_FIELD(Double,  double    );
@@ -294,6 +287,7 @@ namespace editor {
                     out << YAML::EndMap; // ScriptFields
                 }
                 out << YAML::EndSeq;
+
             }
             out << YAML::EndMap; // ScriptComponent
         }
@@ -380,21 +374,24 @@ namespace editor {
 
         if(needSerializeChildren) {
             for(auto child: entity.getChildren())
-                SerializeEntity(out, SceneEntity(std::move(child)));
+                SerializeEntity(out, SceneEntity(std::move(child)), scriptInteractor);
         }
 
     }
 
     IEntitySerializer::~IEntitySerializer() noexcept = default;
 
-    bool EntityYAMLSerializer::serialize(YAML::Emitter& out, const SceneEntity& entity) {
-        SerializeEntity(out, entity);
+    bool EntityYAMLSerializer::serialize(YAML::Emitter& out, const SceneEntity& entity,
+                                         IScriptInteractorFrom::Ptr scriptInteractor) {
+        SerializeEntity(out, entity, scriptInteractor);
         return true;
     }
 
     bool EntityYAMLSerializer::deserialize(const YAML::detail::iterator_value& iterator,
                                            SceneEntity& deserializedEntity,
-                                           bool& addToScene, std::vector<ChildInfo>& children) {
+                                           bool& addToScene,
+                                           std::vector<ChildInfo>& children,
+                                           IScriptInteractorFrom::Ptr scriptInteractor) {
 
         const auto& entity = iterator;
 
@@ -465,53 +462,46 @@ namespace editor {
         auto scriptComponent = entity["ScriptComponent"];
         if(scriptComponent) {
             auto& sc = deserializedEntity.addComponent<ScriptComponent>();
+            if(!scriptComponent["ClassName"]) {
+                /// TODO(a.raag) skip
+            }
             sc.name = scriptComponent["ClassName"].as<std::string>();
 
             auto scriptFields = scriptComponent["ScriptFields"];
             if (scriptFields)
             {
-                auto entityClass = ScriptEngine::getEntityClass(sc.name);
-                if (entityClass)
-                {
-                   /* const auto& fields = entityClass -> getFields();
-                    auto& entityFields = ScriptEngine::getScriptFieldMap(deserializedEntity);
+                auto& fields = scriptInteractor -> getFields(uuid);
+                for(const auto& scriptField: scriptFields) {
+                    std::string name = scriptField["Name"].as<std::string>();
+                    std::string typeString = scriptField["Type"].as<std::string>();
+                    ScriptFieldType type = util::ScriptFieldTypeFromString(typeString);
 
-                    for (auto scriptField : scriptFields)
+                    Field field;
+                    field.setName(name);
+                    field.setType(util::convertFromScript(type));
+                    fields[name] = field;
+
+                    if(!scriptField["Data"])
+                        continue;
+                    switch (type)
                     {
-                        std::string name = scriptField["Name"].as<std::string>();
-                        std::string typeString = scriptField["Type"].as<std::string>();
-                        ScriptFieldType type = util::ScriptFieldTypeFromString(typeString);
-
-                        ScriptFieldInstance& fieldInstance = entityFields[name];
-
-                        // TODO(a.raag): turn this assert into Hazelnut log warning
-                        // RB_CORE_ASSERT(fields.find(name) != fields.end());
-
-                        if (fields.find(name) == fields.end())
-                            continue;
-
-                        fieldInstance.Field = fields.at(name);
-                        if(!scriptField["Data"])
-                            continue;
-                        switch (type)
-                        {
-                            READ_SCRIPT_FIELD(Float, float);
-                            READ_SCRIPT_FIELD(Double, double);
-                            READ_SCRIPT_FIELD(Bool, bool);
-                            READ_SCRIPT_FIELD(Char, char);
-                            READ_SCRIPT_FIELD(Byte, int8_t);
-                            READ_SCRIPT_FIELD(Short, int16_t);
-                            READ_SCRIPT_FIELD(Int, int32_t);
-                            READ_SCRIPT_FIELD(Long, int64_t);
-                            READ_SCRIPT_FIELD(UByte, uint8_t);
-                            READ_SCRIPT_FIELD(UShort, uint16_t);
-                            READ_SCRIPT_FIELD(UInt, uint32_t);
-                            READ_SCRIPT_FIELD(ULong, uint64_t);
-                            READ_SCRIPT_FIELD(Vector2, robot2D::vec2f);
-                            READ_SCRIPT_FIELD(Transform, UUID);
-                        }
-
-                    }*/
+                        default:
+                            break;
+                        READ_SCRIPT_FIELD(Float, float);
+                        READ_SCRIPT_FIELD(Double, double);
+                        READ_SCRIPT_FIELD(Bool, bool);
+                        READ_SCRIPT_FIELD(Char, char);
+                        READ_SCRIPT_FIELD(Byte, int8_t);
+                        READ_SCRIPT_FIELD(Short, int16_t);
+                        READ_SCRIPT_FIELD(Int, int32_t);
+                        READ_SCRIPT_FIELD(Long, int64_t);
+                        READ_SCRIPT_FIELD(UByte, uint8_t);
+                        READ_SCRIPT_FIELD(UShort, uint16_t);
+                        READ_SCRIPT_FIELD(UInt, uint32_t);
+                        READ_SCRIPT_FIELD(ULong, uint64_t);
+                        READ_SCRIPT_FIELD(Vector2, robot2D::vec2f);
+                        READ_SCRIPT_FIELD(Transform, UUID);
+                    }
                 }
             }
         }
