@@ -96,10 +96,15 @@ namespace editor {
         std::vector<std::string> result;
         result.reserve(classes.size());
 
-        std::transform(classes.begin(), classes.end(), result.begin(),
+        /*std::transform(classes.cbegin(), classes.cend(), result.begin(),
                        [](const auto& elem) {
             return elem.first;
-        });
+        });*/
+
+        for(const auto& [name, wrapper]: classes) {
+            result.push_back(name);
+        }
+
 
         return result;
     }

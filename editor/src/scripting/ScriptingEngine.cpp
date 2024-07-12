@@ -285,6 +285,7 @@ namespace editor {
         s_Data = new ScriptEngineData();
 
         InitMono();
+        ScriptGlue::setService(this);
         ScriptGlue::registerFunctions();
 
         std::string coreLibPath = engineDLLPath;

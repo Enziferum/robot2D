@@ -170,7 +170,7 @@ namespace editor {
 
 
         m_panelManager.addPanel<ScenePanel>(m_messageBus, m_messageDispather, m_prefabManager);
-        m_panelManager.addPanel<AssetsPanel>(m_messageBus, m_panelManager, m_prefabManager);
+        m_panelManager.addPanel<AssetsPanel>(m_messageBus, m_interactor, m_panelManager, m_prefabManager);
         m_panelManager.addPanel<InspectorPanel>(m_messageDispather, m_messageBus, m_prefabManager, m_panelManager);
         m_panelManager.addPanel<UtilPanel>(m_editorCamera);
         m_panelManager.addPanel<MenuPanel>(m_messageBus, m_interactor);
@@ -438,7 +438,9 @@ namespace editor {
 
         auto& inspectorPanel = m_panelManager.getPanel<InspectorPanel>();
         /// TODO(a.raag): if has more than 1 entity ??
-        //inspectorPanel.setSelected(entities.back());
+        auto item = items.back();
+        auto* entity = item -> getUserData<SceneEntity>();
+        inspectorPanel.setSelected(*entity);
     }
 
     DeletedEntitiesRestoreUIInformation

@@ -26,6 +26,8 @@ namespace editor {
         virtual ~IEntitySerializer() noexcept = 0;
     };
 
+
+
     class EntityYAMLSerializer final: public IEntitySerializer {
     public:
         EntityYAMLSerializer() = default;
@@ -36,12 +38,15 @@ namespace editor {
         ~EntityYAMLSerializer() noexcept override  = default;
 
 
-        bool serialize(YAML::Emitter& out, const SceneEntity& entity, IScriptInteractorFrom::Ptr scriptingEngine);
+        bool serialize(YAML::Emitter& out, const SceneEntity& entity, IScriptInteractorFrom::Ptr scriptInteractor);
         bool deserialize(const YAML::detail::iterator_value& iterator,
                          SceneEntity& entity,
                          bool& addToScene,
                          std::vector<ChildInfo>& children,
                          IScriptInteractorFrom::Ptr scriptInteractor);
+
+    private:
+
     };
 
 

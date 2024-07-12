@@ -144,9 +144,12 @@ namespace editor {
 
 
     AssetsPanel::AssetsPanel(robot2D::MessageBus& messageBus,
-                             IUIManager& iuiManager, PrefabManager& prefabManager):
+                             UIInteractor::Ptr uiInteractor,
+                             IUIManager& iuiManager,
+                             PrefabManager& prefabManager):
     IPanel(UniqueType(typeid(AssetsPanel))),
     m_messageBus{messageBus},
+    m_interactor{uiInteractor},
     m_uiManager(iuiManager),
     m_prefabManager{prefabManager},
     m_currentPath(""),
@@ -197,7 +200,7 @@ namespace editor {
                     auto entity = m_uiManager.getTreeItem(*uuid);
                     if(entity) {
                         auto path = fs::relative(m_currentPath);
-                        bool ok = m_prefabManager.addPrefab(entity, path.string());
+                        bool ok = m_prefabManager.addPrefab(m_interactor, entity, path.string());
                         if(!ok) {
                             RB_EDITOR_ERROR("AssetPanel: Can't add prefab by path: {0}", path.string());
                         }
@@ -299,7 +302,10 @@ namespace editor {
                 auto entity = m_uiManager.getTreeItem(*uuid);
                 if(entity) {
                     auto path = fs::relative(m_assetsPath);
-                    bool success = m_prefabManager.addPrefab(entity, path.string());
+
+
+
+                    bool success = m_prefabManager.addPrefab(m_interactor, entity, path.string());
                     if(!success)
                         RB_EDITOR_ERROR("AssetPanel: Can't add prefab by path: {0}", path.string());
                 }
@@ -311,8 +317,8 @@ namespace editor {
             if(!directoryEntry.is_directory()) {
                 auto extension = relativePath.extension();
 #ifdef ROBOT2D_WINDOWS
-                const wchar_t* itemPath = relativePath.c_str();
-                auto len  = (wcslen(itemPath) + 1) * sizeof(wchar_t );
+                const char* itemPath = relativePath.string().c_str(); /// ImGui::SetDragDropPayload copy buffer, so it's ok.
+                auto len = (strlen(itemPath) + 1) * sizeof(char);
 #else
                 const char* itemPath = relativePath.c_str();
                 auto len = (strlen(itemPath) + 1) * sizeof(char);

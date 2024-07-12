@@ -27,6 +27,7 @@ source distribution.
 #include <editor/Observer.hpp>
 #include <editor/UIManager.hpp>
 #include <editor/PrefabManager.hpp>
+#include <editor/UIInteractor.hpp>
 
 #include "IPanel.hpp"
 
@@ -68,6 +69,7 @@ namespace editor {
         };
     public:
         AssetsPanel(robot2D::MessageBus& messageBus,
+                    UIInteractor::Ptr uiInteractor,
                     IUIManager& iuiManager,
                     PrefabManager& prefabManager);
         AssetsPanel(const AssetsPanel& other) = delete;
@@ -99,6 +101,7 @@ namespace editor {
         };
     private:
         robot2D::MessageBus& m_messageBus;
+        UIInteractor::Ptr m_interactor;
         IUIManager& m_uiManager;
         PrefabManager& m_prefabManager;
 

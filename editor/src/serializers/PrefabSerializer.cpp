@@ -48,7 +48,7 @@ namespace YAML {
 namespace editor {
     PrefabSerializer::PrefabSerializer() = default;
 
-    bool PrefabSerializer::serialize(editor::Prefab::Ptr prefab) {
+    bool PrefabSerializer::serialize(editor::Prefab::Ptr prefab, IScriptInteractorFrom::Ptr scriptInteractor) {
         YAML::Emitter out;
         out << YAML::BeginMap;
         out << YAML::Key << "Prefab" << YAML::Value << prefab -> getEntity().getComponent<TagComponent>().getTag();
@@ -56,7 +56,10 @@ namespace editor {
         out << YAML::Key << "Entities" << YAML::Value << YAML::BeginSeq;
 
         auto entitySerializer = getSerializer<EntityYAMLSerializer>();
-       // entitySerializer -> serialize(out, prefab -> entity);
+        if(!entitySerializer -> serialize(out, prefab -> getEntity(), scriptInteractor)) {
+            /// TODO(a.raag): print error or display it 
+            return false;
+        }
 
         out << YAML::EndSeq;
         out << YAML::EndMap;
@@ -73,7 +76,7 @@ namespace editor {
         return true;
     }
 
-    bool PrefabSerializer::deserialize(Prefab::Ptr prefab) {
+    bool PrefabSerializer::deserialize(Prefab::Ptr prefab, IScriptInteractorFrom::Ptr scriptInteractor) {
         YAML::Node data;
         try {
             std::ifstream ifstream(prefab -> getPath());
@@ -113,9 +116,14 @@ namespace editor {
         for(const auto& entity: prefabEntities) {
             bool addToScene = true;
             auto& deserializedEntity = prefab -> getEntity();
-            //auto scriptInteractor =
-            /// TODO(a.raag): need ScriptInteractor;
-            entitySerializer -> deserialize(entity, deserializedEntity, addToScene, children, nullptr);
+
+            bool status = entitySerializer -> deserialize(entity, deserializedEntity,
+                                            addToScene, children, scriptInteractor);
+
+            if(!status) {
+                /// TODO(a.raag): print error or display it
+                return false;
+            }
         }
 
         return true;

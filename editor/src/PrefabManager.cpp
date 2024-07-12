@@ -35,7 +35,7 @@ namespace editor {
         const char* prefabExtension = ".prefab";
     }
 
-    bool PrefabManager::addPrefab(SceneEntity entity, const std::string& directoryPath) {
+    bool PrefabManager::addPrefab(UIInteractor::Ptr interactor, SceneEntity entity, const std::string& directoryPath) {
         const auto& uuid = entity.getComponent<IDComponent>().ID;
         const auto& name = entity.getComponent<TagComponent>().getTag();
         std::string filePath = name + prefabExtension;
@@ -43,8 +43,11 @@ namespace editor {
 
         m_prefabs[uuid] = std::make_shared<Prefab>(fullPath, entity, UUID());
 
+        auto scriptInteractor = interactor -> getScriptInteractor();
+        if(!scriptInteractor)
+            return false;
         PrefabSerializer serializer;
-        return serializer.serialize(m_prefabs[uuid]);
+        return serializer.serialize(m_prefabs[uuid], scriptInteractor);
     }
 
     Prefab::Ptr PrefabManager::loadPrefab(UIInteractor::Ptr interactor, const std::string& path) {
@@ -60,7 +63,7 @@ namespace editor {
 
         PrefabSerializer serializer;
         auto scriptInteractor = interactor -> getScriptInteractor();
-        bool ok = serializer.deserialize(prefab);
+        bool ok = serializer.deserialize(prefab, scriptInteractor);
         if(!ok) {
             RB_EDITOR_ERROR("PrefabManager: can't load prefab");
             return nullptr;
@@ -91,21 +94,27 @@ namespace editor {
         return true;
     }
 
-    bool PrefabManager::savePrefab(Prefab::Ptr prefab) {
+    bool PrefabManager::savePrefab(UIInteractor::Ptr interactor, Prefab::Ptr prefab) {
         if(!prefab)
             return false;
         const auto& uuid = prefab -> getUUID();
 
+        auto scriptInteractor = interactor -> getScriptInteractor();
+        if(!scriptInteractor)
+            return false;
         PrefabSerializer serializer;
-        return serializer.serialize(m_prefabs[uuid]);
+        return serializer.serialize(m_prefabs[uuid], scriptInteractor);
     }
 
-    bool PrefabManager::savePrefab(UUID uuid) {
+    bool PrefabManager::savePrefab(UIInteractor::Ptr interactor, UUID uuid) {
         if(m_prefabs.find(uuid) == m_prefabs.end())
             return false;
 
         PrefabSerializer serializer;
-        return serializer.serialize(m_prefabs[uuid]);
+        auto scriptInteractor = interactor -> getScriptInteractor();
+        if(!scriptInteractor)
+            return false;
+        return serializer.serialize(m_prefabs[uuid], scriptInteractor);
     }
 
 
