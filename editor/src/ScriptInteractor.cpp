@@ -78,6 +78,11 @@ namespace editor {
         }
     }
 
+
+    bool ScriptInteractor::hasFields(UUID uuid) const {
+        return (m_fields.find(uuid) != m_fields.end());
+    }
+
     IScriptInteractorFrom::FieldMap& ScriptInteractor::getFields(UUID uuid) {
         return m_fields[uuid];
     }
@@ -107,6 +112,10 @@ namespace editor {
 
     void ScriptInteractor::setEditorCamera(EditorCamera::Ptr editorCamera) {
         m_scriptingEngine -> SetCamera(editorCamera);
+    }
+
+    ScriptingEngineService* ScriptInteractor::getScriptingEngine() const {
+        return m_scriptingEngine;
     }
 
 } // namespace editor

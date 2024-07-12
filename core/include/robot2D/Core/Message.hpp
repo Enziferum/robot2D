@@ -32,7 +32,7 @@ namespace robot2D {
     struct MessageFormatter {
         static T unpack(Message* message) {
             T msg;
-            //msg.unpack(message -> m_buffer);
+            msg.unpack(message -> m_buffer);
             return msg;
         }
     };

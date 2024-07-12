@@ -5,8 +5,8 @@ namespace editor {
     IScriptingEngineService::~IScriptingEngineService() = default;
 
 
-    void IScriptingEngineService::setScriptInteractor() {
-
+    void IScriptingEngineService::setScriptInteractor(std::shared_ptr<IScriptInteractor> interactor) {
+        m_interactor = interactor;
     }
 
     std::shared_ptr<IScriptInteractor> IScriptingEngineService::getInteractor() const {

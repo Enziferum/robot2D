@@ -25,6 +25,8 @@ source distribution.
 #include <memory>
 
 #include <editor/EditorCamera.hpp>
+#include <editor/physics/IPhysics2DAdapter.hpp>
+
 #include "IScriptingEngineService.hpp"
 #include "MonoClassWrapper.hpp"
 #include "ScriptInstance.hpp"
@@ -32,6 +34,7 @@ source distribution.
 
 namespace editor {
 
+    class IScriptInteractorFrom;
     class IScriptingEngineService;
     class ScriptingEngineService: virtual public IScriptingEngineService {
     public:
@@ -46,6 +49,17 @@ namespace editor {
         virtual bool hasEntityClass(const std::string& name) = 0;
         virtual const std::unordered_map<std::string, MonoClassWrapper::Ptr>& getClasses() const = 0;
         virtual void SetCamera(IEditorCamera::Ptr camera) = 0;
+
+        virtual void onUpdateEntity(SceneEntity sceneEntity, float delta) = 0;
+
+        virtual void onCollision2DBegin(const Physics2DContact& contact) = 0;
+        virtual void onCollision2DEnd(const Physics2DContact& contact) = 0;
+
+        virtual void onCollision2DBeginTrigger(const Physics2DContact& contact) = 0;
+        virtual void onCollision2DEndTrigger(const Physics2DContact& contact) = 0;
+
+        virtual void onRuntimeStart(std::shared_ptr<IScriptInteractorFrom> interactor) = 0;
+        virtual void onRuntimeStop() = 0;
     };
 
 } // namespace editor

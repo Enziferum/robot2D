@@ -77,16 +77,16 @@ namespace editor {
         /////////////////////////// ScriptingEngineService ///////////////////
         void SetCamera(IEditorCamera::Ptr camera) override;
         void onCreateEntity(SceneEntity sceneEntity) override;
-        void onUpdateEntity(SceneEntity sceneEntity, float delta);
+        void onUpdateEntity(SceneEntity sceneEntity, float delta) override;
 
-        void onCollision2DBegin(const Physics2DContact& contact);
-        void onCollision2DEnd(const Physics2DContact& contact);
+        void onCollision2DBegin(const Physics2DContact& contact) override;
+        void onCollision2DEnd(const Physics2DContact& contact) override;
 
-        void onCollision2DBeginTrigger(const Physics2DContact& contact);
-        void onCollision2DEndTrigger(const Physics2DContact& contact);
+        void onCollision2DBeginTrigger(const Physics2DContact& contact) override;
+        void onCollision2DEndTrigger(const Physics2DContact& contact) override;
 
-        void onRuntimeStart(IScriptInteractorFrom::Ptr interactor);
-        void onRuntimeStop();
+        void onRuntimeStart(IScriptInteractorFrom::Ptr interactor) override;
+        void onRuntimeStop() override;
 
         ScriptInstance::Ptr getEntityScriptInstance(UUID entityID);
         MonoClassWrapper::Ptr getEntityClass(const std::string& name);
@@ -97,12 +97,12 @@ namespace editor {
         /////////////////////////// ScriptingEngineService ///////////////////
 
         /////////////////// Scripting Glue ////////////////////////////////
-        MonoImage* GetCoreAssemblyImage();
-        MonoClassWrapper::Ptr getManagedObject(UUID uuid);
+        MonoImage* GetCoreAssemblyImage() const;
+        MonoClassWrapper::Ptr getManagedObject(UUID uuid) const;
 
         IScriptInteractorFrom::Ptr getInteractor();
-        robot2D::Window* GetWindow() override;
-        IEditorCamera::Ptr GetCamera() override;
+        robot2D::Window* GetWindow() const override;
+        IEditorCamera::Ptr GetCamera() const override;
         /////////////////// Scripting Glue ////////////////////////////////
     private:
         ScriptInstance::Ptr CloneObject(MonoObject* cloneObject);
