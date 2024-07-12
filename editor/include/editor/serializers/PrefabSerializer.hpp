@@ -22,6 +22,7 @@ source distribution.
 #pragma once
 
 #include <editor/Prefab.hpp>
+#include <editor/ScriptInteractor.hpp>
 
 namespace editor {
 
@@ -35,8 +36,8 @@ namespace editor {
         PrefabSerializer& operator=(PrefabSerializer&& other) = delete;
         ~PrefabSerializer() = default;
 
-        bool serialize(Prefab::Ptr prefab);
-        bool deserialize(Prefab::Ptr prefab);
+        bool serialize(Prefab::Ptr prefab, IScriptInteractorFrom::Ptr scriptInteractor);
+        bool deserialize(Prefab::Ptr prefab, IScriptInteractorFrom::Ptr scriptInteractor);
     private:
         Prefab::Ptr m_prefab;
     };

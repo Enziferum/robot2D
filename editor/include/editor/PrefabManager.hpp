@@ -39,13 +39,13 @@ namespace editor {
         PrefabManager& operator=(PrefabManager&& other) = delete;
         ~PrefabManager() = default;
 
-        bool addPrefab(SceneEntity entity, const std::string& directoryPath);
+        bool addPrefab(UIInteractor::Ptr interactor, SceneEntity entity, const std::string& directoryPath);
         Prefab::Ptr loadPrefab(UIInteractor::Ptr interactor, const std::string& path);
         bool hasPrefab(UUID prefabID) const;
         bool hasPrefab(std::string localPath) const;
 
-        bool savePrefab(Prefab::Ptr prefab);
-        bool savePrefab(UUID uuid);
+        bool savePrefab(UIInteractor::Ptr interactor, Prefab::Ptr prefab);
+        bool savePrefab(UIInteractor::Ptr interactor, UUID uuid);
 
         Prefab::Ptr findPrefab(UUID prefabID);
 

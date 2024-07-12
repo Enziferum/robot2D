@@ -387,6 +387,11 @@ namespace editor {
         return true;
     }
 
+    /// TODO(a.raag) Stringify Enum
+    enum class YamlNode {
+
+    };
+
     bool EntityYAMLSerializer::deserialize(const YAML::detail::iterator_value& iterator,
                                            SceneEntity& deserializedEntity,
                                            bool& addToScene,

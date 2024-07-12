@@ -135,7 +135,7 @@ namespace editor {
         if (m_inspectType == InspectType::AssetPrefab && m_prefabHasModification) {
             if (m_selectedEntity.hasComponent<PrefabComponent>()) {
                 auto& prefabComponent = m_selectedEntity.getComponent<PrefabComponent>();
-                m_prefabManager.savePrefab(prefabComponent.prefabUUID);
+                m_prefabManager.savePrefab(m_interactor, prefabComponent.prefabUUID);
                 m_prefabHasModification = false;
                 auto* msg =
                     m_messageBus.postMessage<PrefabAssetModificatedMessage>(MessageID::PrefabAssetModificated);
@@ -727,7 +727,7 @@ namespace editor {
         if (m_inspectType == InspectType::AssetPrefab && m_prefabHasModification) {
             if (m_selectedEntity.hasComponent<PrefabComponent>()) {
                 auto& prefabComponent = m_selectedEntity.getComponent<PrefabComponent>();
-                m_prefabManager.savePrefab(prefabComponent.prefabUUID);
+                m_prefabManager.savePrefab(m_interactor, prefabComponent.prefabUUID);
                 m_prefabHasModification = false;
                 auto* msg =
                     m_messageBus.postMessage<PrefabAssetModificatedMessage>(MessageID::PrefabAssetModificated);
@@ -744,7 +744,7 @@ namespace editor {
         if (m_inspectType == InspectType::AssetPrefab && m_prefabHasModification) {
             if (m_selectedEntity.hasComponent<PrefabComponent>()) {
                 auto& prefabComponent = m_selectedEntity.getComponent<PrefabComponent>();
-                m_prefabManager.savePrefab(prefabComponent.prefabUUID);
+                m_prefabManager.savePrefab(m_interactor, prefabComponent.prefabUUID);
                 m_prefabHasModification = false;
                 auto* msg =
                     m_messageBus.postMessage<PrefabAssetModificatedMessage>(MessageID::PrefabAssetModificated);
