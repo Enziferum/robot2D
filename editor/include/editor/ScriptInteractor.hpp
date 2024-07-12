@@ -74,6 +74,8 @@ namespace editor {
 
         void setName(const std::string& name) { m_name = name; }
         const std::string& getName() const { return m_name;  }
+
+        const std::uint8_t* getBuffer() const { return &m_buffer[0]; }
     private:
         std::string m_name;
         FieldType m_type;
@@ -81,6 +83,7 @@ namespace editor {
     };
 
     //// \brief Using for getting info from ScriptingEngine
+    class ScriptingEngineService;
     class IScriptInteractorFrom {
     public:
         using FieldMap = std::unordered_map<std::string, Field>;
@@ -90,10 +93,12 @@ namespace editor {
 
         virtual bool hasEntityClass(const std::string& name) const = 0;
         virtual void setScriptClass(std::string name, UUID uuid) = 0;
+        virtual bool hasFields(UUID uuid) const = 0;
         virtual FieldMap& getFields(UUID uuid) = 0;
         virtual std::vector<std::string> getClassesNames() const = 0;
         virtual void callScriptMethod(UUID uuid, const std::string& methodName) = 0;
         virtual void setEditorCamera(EditorCamera::Ptr editorCamera) = 0;
+        virtual ScriptingEngineService* getScriptingEngine() const = 0;
     };
 
     //// \brief Using for getting info to ScriptingEngine
@@ -131,11 +136,13 @@ namespace editor {
 
         //////////////////////////////////////////////// IScriptInteractorFrom ////////////////////////////////////////////////
         void setScriptClass(std::string name, UUID uuid) override;
+        bool hasFields(UUID uuid) const override;
         FieldMap& getFields(UUID uuid) override;
         bool hasEntityClass(const std::string& name) const override;
         std::vector<std::string> getClassesNames() const override;
         void callScriptMethod(UUID uuid, const std::string& methodName) override;
         void setEditorCamera(EditorCamera::Ptr editorCamera) override;
+        ScriptingEngineService* getScriptingEngine() const override;
         //////////////////////////////////////////////// IScriptInteractorFrom ////////////////////////////////////////////////
     private:
         EditorInteractor::WeakPtr m_editorInteractor;

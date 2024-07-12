@@ -39,12 +39,15 @@ namespace editor {
     }
 
     void EditorModule::setup(robot2D::RenderWindow* window, ScriptingEngineService::Ptr scriptingEngine) {
-        m_editor.setup(window, m_interactor.get());
-
         EditorInteractor::WeakPtr weakEditorInteractor = m_interactor;
         m_scriptInteractor = std::make_shared<ScriptInteractor>(weakEditorInteractor, scriptingEngine);
+        if(!m_scriptInteractor) {
+            /// TODO(a.raag): Error
+        }
+        scriptingEngine -> setScriptInteractor(m_scriptInteractor);
 
         m_interactor -> setup(m_scriptInteractor);
+        m_editor.setup(window, m_interactor.get());
     }
 
     void EditorModule::handleEvents(const robot2D::Event& event) {

@@ -9,7 +9,7 @@ namespace editor {
         virtual ~IScriptingEngineService() = 0;
 
         virtual void onCreateEntity(SceneEntity sceneEntity) = 0;
-        void setScriptInteractor();
+        void setScriptInteractor(std::shared_ptr<IScriptInteractor> interactor);
         std::shared_ptr<IScriptInteractor> getInteractor() const;
     protected:
         std::shared_ptr<IScriptInteractor> m_interactor;

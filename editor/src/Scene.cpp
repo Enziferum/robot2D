@@ -121,9 +121,13 @@ namespace editor {
         m_scene.update(dt);
     }
 
-    void Scene::updateRuntime(float dt) {
-      /*  for (const auto& entity: m_scriptRuntimeContainer)
-            ScriptEngine::onUpdateEntity(entity, dt);*/
+    void Scene::updateRuntime(float dt, IScriptInteractorFrom::Ptr scriptInteractor) {
+        auto scriptingEngine = scriptInteractor -> getScriptingEngine();
+        if(!scriptingEngine)
+            return;
+
+        for (const auto& entity: m_scriptRuntimeContainer)
+            scriptingEngine -> onUpdateEntity(entity, dt);
 
         m_physicsAdapter -> update(dt);
         m_scene.update(dt);
@@ -167,15 +171,19 @@ namespace editor {
     void Scene::onRuntimeStart(IScriptInteractorFrom::Ptr scriptInteractor) {
         m_running = true;
         m_sceneGraph.cloneSelf(m_runtimeSceneGraph);
-        onPhysics2DRun();
+        onPhysics2DRun(scriptInteractor);
 
         m_scene.getSystem<RenderSystem>() -> setScene(this);
-        //ScriptEngine::onRuntimeStart(scriptInteractor);
+        auto scriptingEngine = scriptInteractor -> getScriptingEngine();
+        if(!scriptingEngine)
+            return;
+
+        scriptingEngine -> onRuntimeStart(scriptInteractor);
 
         m_scriptRuntimeContainer.clear();
         m_runtimeSceneGraph.filterEntities<ScriptComponent>(m_scriptRuntimeContainer);
-//        for (const auto& entity: m_scriptRuntimeContainer)
-//            ScriptEngine::onCreateEntity(entity);
+        for (const auto& entity: m_scriptRuntimeContainer)
+            scriptingEngine -> onCreateEntity(entity);
 
 
         m_runtimeSceneGraph.traverseGraph(std::move([](SceneEntity& sceneEntity) {
@@ -189,42 +197,46 @@ namespace editor {
         }));
     }
 
-    void Scene::onRuntimeStop() {
+    void Scene::onRuntimeStop(IScriptInteractorFrom::Ptr scriptInteractor) {
         m_scene.getSystem<RenderSystem>() -> setScene(nullptr);
         m_running = false;
         onPhysics2DStop();
-       // ScriptEngine::onRuntimeStop();
+        auto scriptingEngine = scriptInteractor -> getScriptingEngine();
+        if(!scriptingEngine)
+            return;
+        scriptingEngine -> onRuntimeStop();
     }
 
-    void Scene::onPhysics2DRun() {
+    void Scene::onPhysics2DRun(IScriptInteractorFrom::Ptr scriptInteractor) {
         m_physicsAdapter = getPhysics2DAdapter(PhysicsAdapterType::Box2D);
         m_physicsAdapter -> start(m_sceneGraph.getEntities());
+        auto scriptingEngine = scriptInteractor -> getScriptingEngine();
+        if(!scriptingEngine)
+            return;
 
-
-/*        m_physicsAdapter -> registerCallback(PhysicsCallbackType::Enter,
-                                           [](const Physics2DContact& contact) {
-                                               ScriptEngine::onCollision2DBegin(contact);
+        m_physicsAdapter -> registerCallback(PhysicsCallbackType::Enter,
+                                           [scriptingEngine](const Physics2DContact& contact) {
+                                               scriptingEngine -> onCollision2DBegin(contact);
                                            });
 
         m_physicsAdapter -> registerCallback(PhysicsCallbackType::Exit,
-                                           [](const Physics2DContact& contact) {
-                                               ScriptEngine::onCollision2DEnd(contact);
+                                           [scriptingEngine](const Physics2DContact& contact) {
+                                               scriptingEngine -> onCollision2DEnd(contact);
                                            });
 
         m_physicsAdapter -> registerCallback(PhysicsCallbackType::EnterTrigger,
-                                           [](const Physics2DContact& contact) {
-                                               ScriptEngine::onCollision2DBeginTrigger(contact);
+                                           [scriptingEngine](const Physics2DContact& contact) {
+                                               scriptingEngine -> onCollision2DBeginTrigger(contact);
                                            });
 
         m_physicsAdapter -> registerCallback(PhysicsCallbackType::ExitTrigger,
-                                           [](const Physics2DContact &contact) {
-                                               ScriptEngine::onCollision2DEndTrigger(contact);
-                                           });*/
-
+                                           [scriptingEngine](const Physics2DContact& contact) {
+                                               scriptingEngine -> onCollision2DEndTrigger(contact);
+                                           });
     }
 
     void Scene::onPhysics2DStop() {
-        m_physicsAdapter->stop();
+        m_physicsAdapter -> stop();
         m_physicsAdapter.reset();
     }
 
@@ -475,12 +487,11 @@ namespace editor {
 
         entity.addComponent<ButtonComponent>();
         entity.addComponent<UIHitbox>().callbackIDs[UIHitbox::CallbackID::MouseDown] =
-                m_scene.getSystem<UISystem>()->addMousePressedCallback([](robot2D::ecs::Entity entity, std::uint64_t) {
-                    auto &btnComp = entity.getComponent<ButtonComponent>();
-                    if (btnComp.hasEntity()
-                        && btnComp.onClickCallback && !btnComp.clickMethodName.empty())
-                        btnComp.onClickCallback(btnComp.scriptEntity, btnComp.clickMethodName);
-                });
+            m_scene.getSystem<UISystem>() -> addMousePressedCallback([](robot2D::ecs::Entity entity, std::uint64_t) {
+                auto& btnComp = entity.getComponent<ButtonComponent>();
+                if (btnComp.hasEntity() && btnComp.onClickCallback && !btnComp.clickMethodName.empty())
+                    btnComp.onClickCallback(btnComp.scriptEntity, btnComp.clickMethodName);
+            });
 
 
         return m_sceneGraph.createEntity(std::move(entity));
@@ -488,17 +499,17 @@ namespace editor {
 
     void Scene::setEditorCamera(IEditorCamera::Ptr editorCamera) {
         m_editorCamera = editorCamera;
-        m_scene.getSystem<UISystem>()->setCamera(m_editorCamera);
+        m_scene.getSystem<UISystem>() -> setCamera(m_editorCamera);
     }
 
     void Scene::registerUICallback(SceneEntity uiEntity) {
         uiEntity.addComponent<UIHitbox>().callbackIDs[UIHitbox::CallbackID::MouseDown] =
-                m_scene.getSystem<UISystem>()->addMousePressedCallback([](robot2D::ecs::Entity entity, std::uint64_t) {
-                    auto &btnComp = entity.getComponent<ButtonComponent>();
-                    if (btnComp.hasEntity()
-                        && btnComp.onClickCallback && !btnComp.clickMethodName.empty())
-                        btnComp.onClickCallback(btnComp.scriptEntity, btnComp.clickMethodName);
-                });
+            m_scene.getSystem<UISystem>() -> addMousePressedCallback([](robot2D::ecs::Entity entity, std::uint64_t) {
+                auto& btnComp = entity.getComponent<ButtonComponent>();
+                if (btnComp.hasEntity()
+                    && btnComp.onClickCallback && !btnComp.clickMethodName.empty())
+                    btnComp.onClickCallback(btnComp.scriptEntity, btnComp.clickMethodName);
+            });
     }
 
     SceneEntity Scene::duplicateRuntime(SceneEntity entity, robot2D::vec2f position) {
@@ -508,7 +519,7 @@ namespace editor {
         dupEntity.getComponent<IDComponent>().ID = UUID();
         dupEntity.getComponent<TransformComponent>().setPosition(position);
         auto sceneEntity = SceneEntity{dupEntity};
-        m_physicsAdapter->addRuntime(sceneEntity);
+        m_physicsAdapter -> addRuntime(sceneEntity);
 
         if (entity.isChild()) {
             auto parent = entity.getParent();

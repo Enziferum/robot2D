@@ -33,11 +33,11 @@ namespace editor {
         using Ptr = ScriptingEngineService*;
     public:
         virtual ~ScriptingEngineInternalService() = 0;
-        virtual robot2D::Window* GetWindow() = 0;
-        virtual IEditorCamera::Ptr GetCamera() = 0;
+        virtual robot2D::Window* GetWindow() const = 0;
+        virtual IEditorCamera::Ptr GetCamera() const = 0;
 
-        virtual MonoImage* GetCoreAssemblyImage() = 0;
-        virtual MonoClassWrapper::Ptr getManagedObject(UUID uuid) = 0;
+        virtual MonoImage* GetCoreAssemblyImage() const = 0;
+        virtual MonoClassWrapper::Ptr getManagedObject(UUID uuid) const = 0;
     };
 
 } // namespace editor

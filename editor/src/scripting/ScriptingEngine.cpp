@@ -498,13 +498,35 @@ namespace editor {
                                                              s_Data -> m_entityClasses[sc.name], entity);
             s_Data -> m_entityInstances[uuid] = instance;
 
-/*            if(m_interactor -> hasField(uuid)) {
-                const auto& fields = m_interactor -> getFields(uuid);
+            auto& interactor = s_Data -> interactor;
+            if(interactor -> hasFields(uuid)) {
+                const auto& fields = interactor -> getFields(uuid);
                 for(const auto& [name, field]: fields) {
-                    auto scriptFieldType = util::convert2Script(field.type);
-
+                    auto scriptFieldType = util::convert2Script(field.getType());
+                    if(scriptFieldType == ScriptFieldType::Transform) {
+                        auto klass = instance -> getClassWrapper();
+                        auto regMethods = s_Data -> m_entityClass -> getRegisterMethods();
+                        if(regMethods.find("setComponentField") != regMethods.end()) {
+                            auto MonoString = mono_string_new(s_Data -> m_appDomain, field.getName().c_str());
+                            void* storage[2] = { (void*)(MonoString), (void*)(field.getBuffer()) };
+                            mono_runtime_invoke(regMethods["setComponentField"],
+                                                klass -> getInstance(), storage, nullptr);
+                        }
+                    }
+                    else if(scriptFieldType == ScriptFieldType::Entity) {
+                        auto klass = instance -> getClassWrapper();
+                        auto regMethods = s_Data -> m_entityClass -> getRegisterMethods();
+                        if(regMethods.find("setEntityField") != regMethods.end()) {
+                            auto MonoString = mono_string_new(s_Data -> m_appDomain, field.getName().c_str());
+                            void* storage[2] = { (void*)(MonoString), (void*)(field.getBuffer())};
+                            mono_runtime_invoke(regMethods["setEntityField"],
+                                                klass -> getInstance(), storage, nullptr);
+                        }
+                    }
+                    else
+                        instance -> setFieldValueInternal(name, field.getBuffer());
                 }
-            }*/
+            }
 
 
             if(s_Data -> hasEntityFields(uuid)) {
@@ -649,7 +671,7 @@ namespace editor {
         }
     }
 
-    MonoImage* ScriptEngine::GetCoreAssemblyImage() {
+    MonoImage* ScriptEngine::GetCoreAssemblyImage() const{
         return s_Data -> m_coreAssemblyImage;
     }
 
@@ -696,7 +718,7 @@ namespace editor {
                                                                      "Entity", true);
     }
 
-    MonoClassWrapper::Ptr ScriptEngine::getManagedObject(UUID entityId) {
+    MonoClassWrapper::Ptr ScriptEngine::getManagedObject(UUID entityId) const {
         return s_Data -> m_entityInstances[entityId] -> getClassWrapper();
     }
 
@@ -708,11 +730,11 @@ namespace editor {
         s_Data -> window = window;
     }
 
-    robot2D::Window* ScriptEngine::GetWindow() {
+    robot2D::Window* ScriptEngine::GetWindow() const {
         return s_Data -> window;
     }
 
-    IEditorCamera::Ptr ScriptEngine::GetCamera() {
+    IEditorCamera::Ptr ScriptEngine::GetCamera() const {
         return s_Data -> camera;
     }
 

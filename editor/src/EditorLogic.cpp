@@ -161,9 +161,11 @@ namespace editor {
                 break;
             }
 
-            case EditorState::Run:
-                m_activeScene -> updateRuntime(dt);
+            case EditorState::Run: {
+                auto ptr = m_scriptInteractor.lock();
+                m_activeScene -> updateRuntime(dt, ptr);
                 break;
+            }
             default:
                 break;
         }
@@ -324,12 +326,14 @@ namespace editor {
 
 
     void EditorLogic::switchRuntimeState(const ToolbarMessage::Type& type) {
+        auto ptr = m_scriptInteractor.lock();
+
         if(type == ToolbarMessage::Type::Start) {
             m_presenter.switchState(EditorState::Run);
-            // m_activeScene -> onRuntimeStart();
+            m_activeScene -> onRuntimeStart(ptr);
         }
         else if(type == ToolbarMessage::Type::Stop) {
-            m_activeScene -> onRuntimeStop();
+            m_activeScene -> onRuntimeStop(ptr);
             m_presenter.switchState(EditorState::Edit);
         }
     }

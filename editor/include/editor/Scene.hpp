@@ -62,10 +62,10 @@ namespace editor {
 
         void handleEventsRuntime(const robot2D::Event& event);
         void update(float dt);
-        void updateRuntime(float dt);
+        void updateRuntime(float dt, IScriptInteractorFrom::Ptr scriptInteractor);
 
         void onRuntimeStart(IScriptInteractorFrom::Ptr scriptInteractor);
-        void onRuntimeStop();
+        void onRuntimeStop(IScriptInteractorFrom::Ptr scriptInteractor);
 
         void setRuntimeCamera(bool flag);
 
@@ -124,7 +124,7 @@ namespace editor {
         };
 
         void initScene();
-        void onPhysics2DRun();
+        void onPhysics2DRun(IScriptInteractorFrom::Ptr scriptInteractor);
         void onPhysics2DStop();
 
         void removeDuplicate(SceneEntity entity);
