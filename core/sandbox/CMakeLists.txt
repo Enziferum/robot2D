@@ -37,7 +37,7 @@ if(UNIX)
     find_package(OpenGL REQUIRED)
     set(LIBS OpenGL::GL ${CMAKE_DL_LIBS})
 endif()
-set(LIBS robot2D ${LIBS})
+set(LIBS robot2D-core ${LIBS})
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 

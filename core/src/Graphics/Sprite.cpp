@@ -32,7 +32,6 @@ namespace robot2D {
         m_textureRect = textureRect;
         m_texture = &texture;
         auto size = texture.getSize();
-      //  setSize(size.as<float>());
 
         if(!m_texture && (textureRect == IntRect())){
             m_textureRect = IntRect(0, 0, size.x, size.y);
@@ -48,11 +47,17 @@ namespace robot2D {
     FloatRect Sprite::getLocalBounds() const {
         float w = std::abs(m_size.x);
         float h = std::abs(m_size.y);
-        return {0.f, 0.f, w, h};
+        auto origin = getOrigin();
+        if(origin == robot2D::vec2f{})
+            return {0.f, 0.f, w, h};
+        /// TODO(a.raag) Make calcs
+        float xCoof = 2.f;
+        float yCoff = 2.f;
+        return {-w / xCoof, -h / yCoff, w, h};
     }
 
     FloatRect Sprite::getGlobalBounds() const {;
-        return getTransform().transformRect(getLocalBounds());
+        return getTransformNoScale().transformRect(getLocalBounds());
     }
 
     void Sprite::setScale(const vec2f& factor) {
@@ -78,11 +83,8 @@ namespace robot2D {
     void Sprite::draw(RenderTarget& target, RenderStates states) const {
         if(!m_texture)
             return;
-        auto t = getTransform();
-        if(m_size != robot2D::vec2f{})
-            t = t.scale(m_size);
 
-        states.transform *= t;
+        states.transform *= getTransform();
         states.texture = m_texture;
         states.color = m_color;
 
@@ -121,6 +123,11 @@ namespace robot2D {
 
     const IntRect& Sprite::getTextureRect() const {
         return m_textureRect;
+    }
+
+    void Sprite::setSize(const vec2f& size) {
+        m_textureRect = IntRect (0, 0, size.x, size.y);
+        Transformable::setSize(size);
     }
 
 }

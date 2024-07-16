@@ -161,6 +161,11 @@ namespace robot2D {
             m_transform = Transform( a * cosine, a * sine,   a * tx + c,
                                      -b * sine,   b * cosine, b * ty + d,
                                      0.f,        0.f,        1.f);
+
+
+/*            m_transform = Transform( a, 0.f,   -a * m_center.x,
+                                     0.f,   b, -b * m_center.y,
+                                     0.f,   0.f,        1.f);*/
             needTransformUpdate = false;
         }
         return m_transform;

@@ -257,7 +257,7 @@ namespace editor {
             imgui_MenuItem("Text") {
                 if (!m_selectedEntity.hasComponent<TextComponent>()) {
                     m_selectedEntity.addComponent<TextComponent>();
-                    m_selectedEntity.getComponent<TransformComponent>().setScale({1.f, 1.f});
+                    m_selectedEntity.getComponent<TransformComponent>().setSize({1.f, 1.f});
                 }
                 else
                     RB_EDITOR_WARN("This entity already has the Text Component!");
@@ -294,17 +294,20 @@ namespace editor {
 
     void InspectorPanel::drawTransformComponent([[maybe_unused]] SceneEntity entity, TransformComponent& component) {
         robot2D::vec2f lastPosition = component.getPosition();
-        robot2D::vec2f lastScale = component.getScale();
+        robot2D::vec2f lastSize = component.getSize();
         float lastRotation = component.getRotate();
 
+        component.getScale();
+
         ui::drawVec2Control("Translation", component.getPosition());
-        ui::drawVec2Control("Scale", component.getScale(), 1.0f);
+        ui::drawVec2Control("Size", component.getSize(), 1.0f);
+        ui::drawVec2Control("Origin", component.getOrigin(), 0.f, 100.f, 0.f, 1.f);
         ui::drawVec1Control("Rotation", component.getRotate(), 0.f);
         component.setRotate(component.getRotate());
         component.setPosition(component.getPosition());
-        component.setScale(component.getScale());
+        component.setSize(component.getSize());
 
-        if (lastPosition != component.getPosition() || lastScale != component.getScale() ||
+        if (lastPosition != component.getPosition() || lastSize != component.getSize() ||
             lastRotation != component.getRotate())
             m_prefabHasModification = true;
 
@@ -340,7 +343,7 @@ namespace editor {
         auto color = component.getColor().toGL();
         auto p_color = reinterpret_cast<float*>(&color);
         ImGui::ColorEdit4("Color", p_color);
-
+        ImGui::Checkbox("Draw BoundingBox", &component.drawBoundingBox());
         if (component.isUtil)
             return;
 

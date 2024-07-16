@@ -27,3 +27,6 @@ if(RB2D_INSTALL_CORE)
     include(cmake/InstallCore.cmake)
 endif ()
 
+if(RB2D_BUILD_CORE_SANDBOX)
+    add_subdirectory(sandbox)
+endif ()

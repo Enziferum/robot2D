@@ -62,7 +62,7 @@ namespace editor::ui {
     }
 
     void drawVec2Control(const std::string& label, robot2D::vec2f& values,
-                                float resetValue, float columnWidth)
+                                float resetValue, float columnWidth, float min, float max)
     {
         ImGuiIO& io = ImGui::GetIO();
         auto boldFont = io.Fonts -> Fonts[0];
@@ -90,7 +90,7 @@ namespace editor::ui {
         ImGui::PopStyleColor(3);
 
         ImGui::SameLine();
-        ImGui::DragFloat("##X", &values.x, 0.1f, 0.0f, 0.0f, "%.2f");
+        ImGui::DragFloat("##X", &values.x, 0.1f, min, max, "%.2f");
         ImGui::PopItemWidth();
         ImGui::SameLine();
 

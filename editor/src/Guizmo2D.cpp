@@ -34,6 +34,10 @@ source distribution.
 #include <editor/EditorResourceManager.hpp>
 
 namespace editor {
+    namespace {
+        robot2D::vec2f rotateSize = { 50.f, 50.f};
+    }
+
     DebugDrawable::~DebugDrawable() =  default;
 
 
@@ -122,9 +126,15 @@ namespace editor {
         if(!m_isShown)
             return;
 
-        target.draw(m_xAxisManipulator);
-        target.draw(m_yAxisManipulator);
-        target.draw(m_XYAxisManipulator);
+        if(m_operation != Operation::Rotate) {
+            target.draw(m_xAxisManipulator);
+            target.draw(m_yAxisManipulator);
+            target.draw(m_XYAxisManipulator);
+        }
+        else {
+            target.draw(m_rotateSprite);
+        }
+
     }
 
     void Guizmo2D::processMouseMoved(robot2D::Event event) {
@@ -186,8 +196,8 @@ namespace editor {
                     float diff = moveVector.x - m_manipulatorLastPos.x;
                     m_manipulatorLastPos.x += diff;
                     for(auto transform: m_manipulateds) {
-                        auto size = transform -> getScale();
-                        transform -> setScale( {size.x + diff, size.y} );
+                        auto size = transform -> getSize();
+                        transform -> setSize( {size.x + diff, size.y} );
                     }
                     m_xAxisManipulator.moveX(diff);
                     m_yAxisManipulator.moveX(diff);
@@ -198,8 +208,8 @@ namespace editor {
                     float diff = moveVector.y - m_manipulatorLastPos.y;
                     m_manipulatorLastPos.y += diff;
                     for(auto transform: m_manipulateds) {
-                        auto size = transform -> getScale();
-                        transform -> setScale( {size.x, size.y + diff} );
+                        auto size = transform -> getSize();
+                        transform -> setSize( {size.x, size.y + diff} );
                     }
                     m_xAxisManipulator.moveY(diff);
                     m_yAxisManipulator.moveY(diff);
@@ -209,8 +219,8 @@ namespace editor {
                 else if(m_XYAxisManipulator.active()) {
                     robot2D::vec2f diff = moveVector - m_manipulatorLastPos;
                     for(auto transform: m_manipulateds) {
-                        auto size = transform -> getScale();
-                        transform -> setScale( size + diff );
+                        auto size = transform -> getSize();
+                        transform -> setSize( size + diff );
                     }
                     m_manipulatorLastPos += diff;
                     m_xAxisManipulator.moveX(diff.x);
@@ -222,8 +232,19 @@ namespace editor {
                 }
                 break;
             }
-            case Operation::Rotate:
+            case Operation::Rotate: {
+                robot2D::vec2f diff = moveVector - m_manipulatorLastPos;
+                m_manipulatorLastPos += diff;
+                float diffAngle = 1.f;
+                if(diff.y < 0)
+                    diffAngle = -1.f;
+
+                for(auto& transform: m_manipulateds) {
+                    auto lastRotate = transform -> getRotation();
+                    transform -> setRotate(lastRotate + diffAngle);
+                }
                 break;
+            }
         }
     }
 
@@ -231,10 +252,11 @@ namespace editor {
         if(event.mouse.btn == robot2D::mouse2int(robot2D::Mouse::MouseLeft)) {
             robot2D::vec2f mousePoint{static_cast<float>(event.mouse.x), static_cast<float>(event.mouse.y)};
             mousePoint = m_camera -> convertPixelToCoords(mousePoint);
-            m_leftMousePressed = true;
+            auto bounds = m_rotateSprite.getGlobalBounds();
             if(m_xAxisManipulator.isPressed(mousePoint)
                 || m_yAxisManipulator.isPressed(mousePoint)
-                || m_XYAxisManipulator.isPressed(mousePoint)) {
+                || m_XYAxisManipulator.isPressed(mousePoint) || bounds.contains(mousePoint)) {
+                m_leftMousePressed = true;
                 m_manipulatorLastPos = mousePoint;
                 m_isCollide = true;
             }
@@ -263,46 +285,48 @@ namespace editor {
         auto m_manipulated = m_manipulateds[0];
 
         const auto& position = m_manipulated -> getPosition();
-        auto size = transformable -> getScale();
+        auto size = transformable -> getSize();
         const auto& rotation = m_manipulated -> getRotate();
 
-        if(rotation == 0) {
+        if(m_operation != Operation::Rotate) {
+            if(rotation == 0) {
 
-            auto middle = robot2D::vec2f { position.x + size.x / 2,
-                                           position.y + size.y / 2};
+                auto middle = robot2D::vec2f { position.x + size.x / 2,
+                                               position.y + size.y / 2};
 
-            auto xSize = m_xAxisManipulator.getSize();
-            auto ySize = m_yAxisManipulator.getSize();
-            auto xySize = m_XYAxisManipulator.getSize();
+                auto xSize = m_xAxisManipulator.getSize();
+                auto ySize = m_yAxisManipulator.getSize();
+                auto xySize = m_XYAxisManipulator.getSize();
 
-            constexpr float xyOffset = 3.f;
+                constexpr float xyOffset = 3.f;
 
-            m_xAxisManipulator.setPosition({middle.x, middle.y + xSize.y / 2.f});
-            m_yAxisManipulator.setPosition({middle.x + ySize.x / 2.F, middle.y});
-            m_XYAxisManipulator.setPosition(robot2D::vec2f{middle.x + xyOffset, middle.y - xySize.y - xyOffset});
+                m_xAxisManipulator.setPosition({middle.x, middle.y + xSize.y / 2.f});
+                m_yAxisManipulator.setPosition({middle.x + ySize.x / 2.F, middle.y});
+                m_XYAxisManipulator.setPosition(robot2D::vec2f{middle.x + xyOffset, middle.y - xySize.y - xyOffset});
+            }
+            else {
+                auto bounds = transformable -> getGlobalBounds();
+
+                auto xSize = m_xAxisManipulator.getSize();
+                auto ySize = m_yAxisManipulator.getSize();
+                auto xySize = m_XYAxisManipulator.getSize();
+
+                constexpr float xyOffset = 3.f;
+
+                auto middle = bounds.centerPoint();
+
+                m_xAxisManipulator.setPosition( {middle.x, middle.y + xSize.y / 2.f} );
+                m_yAxisManipulator.setPosition( {middle.x + ySize.x / 2.F, middle.y} );
+                m_XYAxisManipulator.setPosition( {middle.x + xyOffset, middle.y - xySize.y - xyOffset} );
+            }
         }
         else {
-            constexpr auto degreesToRadians = [](float degrees) {
-                return degrees * (M_PI / 180);
-            };
-
-            const auto radianAngle = degreesToRadians(rotation);
-
-            /// TODO(a.raag): more correct math calculation
-
-            auto middle = robot2D::vec2f { static_cast<float>(position.x + (size.x / 2) * std::cos(radianAngle)),
-                                           static_cast<float>(position.y + (size.x / 2 ) * std::sin(radianAngle) - (size.y / 2)) };
-
-            auto xSize = m_xAxisManipulator.getSize();
-            auto ySize = m_yAxisManipulator.getSize();
-            auto xySize = m_XYAxisManipulator.getSize();
-
-            constexpr float xyOffset = 3.f;
-
-            m_xAxisManipulator.setPosition( {middle.x, middle.y + xSize.y / 2.f} );
-            m_yAxisManipulator.setPosition( {middle.x + ySize.x / 2.F, middle.y} );
-            m_XYAxisManipulator.setPosition( {middle.x + xyOffset, middle.y - xySize.y - xyOffset} );
+            auto bounds = transformable -> getGlobalBounds();
+            auto middle = bounds.centerPoint();
+            auto size = m_rotateSprite.getSize();
+            m_rotateSprite.setPosition({middle.x, middle.y - size.y / 2.f});
         }
+
 
     }
 
@@ -341,8 +365,13 @@ namespace editor {
     void Guizmo2D::setOperationType(Guizmo2D::Operation type) {
         m_operation = type;
         switch(m_operation) {
-            case Operation::Rotate:
+            case Operation::Rotate: {
+                m_rotateSprite.setSize(rotateSize);
+                auto size = m_manipulatorRotateTexture.getSize();
+                m_rotateSprite.setTexture(m_manipulatorRotateTexture,
+                                          robot2D::IntRect{0, 0, (int)size.x, (int)size.y});
                 return;
+            }
             case Operation::Move: {
                 auto& xSprite = m_xAxisManipulator.m_sprite;
                 xSprite.setRotate(270);
@@ -375,13 +404,22 @@ namespace editor {
         auto resourceManager = EditorResourceManager::getManager();
         if(!resourceManager -> hasTexture(EditorResourceID::Manipulator)) {
             if(!resourceManager -> loadFromFile(EditorResourceID::Manipulator, "gizmos.png")) {
-                RB_EDITOR_ERROR("Guizmo2D: Can't load manipulator's texture");
+                RB_EDITOR_ERROR("Gizmo2D: Can't load manipulator's texture");
+                /// TODO(a.raag): throw error
+            }
+        }
+
+        if(!resourceManager -> hasTexture(EditorResourceID::ManipulatorRotate)) {
+            if(!resourceManager -> loadFromFile(EditorResourceID::ManipulatorRotate, "rotate.png")) {
+                RB_EDITOR_ERROR("Gizmo2D: Can't load manipulator's rotate texture");
                 /// TODO(a.raag): throw error
             }
         }
 
 
+
         m_manipulatorTexture = resourceManager -> getTexture(EditorResourceID::Manipulator);
+        m_manipulatorRotateTexture = resourceManager -> getTexture(EditorResourceID::ManipulatorRotate);
         m_camera = camera;
         setOperationType(m_operation);
     }

@@ -45,6 +45,7 @@ namespace robot2D {
 
         virtual void setOrigin(const vec2f& origin);
         vec2f& getOrigin();
+        const vec2f& getOrigin() const { return m_origin; }
 
         /// Set size for Entity. Scale will be automaticly calculated.
         virtual void setSize(const vec2f& size);
@@ -61,6 +62,7 @@ namespace robot2D {
         /// Set internal rotation angle.
         virtual void setRotate(const float& angle);
         float& getRotate();
+        const float& getRotation() const { return m_rotation; }
 
         /// Change position by value.
         void move(const vec2f& offset);
@@ -73,6 +75,7 @@ namespace robot2D {
 
         /// Calculate actual Transform after manipulations.
         const Transform& getTransform() const;
+        Transform getTransformNoScale() const;
     protected:
          mutable vec2f m_pos;
          vec2f m_origin;

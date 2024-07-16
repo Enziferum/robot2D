@@ -4,6 +4,7 @@
 #include <array>
 #include <memory>
 #include <list>
+#include <cmath>
 
 #include <robot2D/Graphics/Rect.hpp>
 
@@ -27,6 +28,8 @@ namespace editor {
     };
 
 
+    robot2D::vec2f rotatePoint(float angle, robot2D::vec2f point, robot2D::vec2f center_of_rotation);
+
     template<typename T>
     class QuadTree {
     private:
@@ -46,6 +49,8 @@ namespace editor {
         QuadTreeItemLocation<T> insert(const T& object, const robot2D::FloatRect& objectRect);
         std::list<T> search(const robot2D::FloatRect& rect) const;
         void search(const robot2D::FloatRect& rect, std::list<T>& items) const;
+        void search(const robot2D::vec2f& point, std::list<T>& items) const;
+
 
         void items(std::list<T>& listItems) const
         {
@@ -155,6 +160,56 @@ namespace editor {
         }
     }
 
+    template<typename T>
+    void QuadTree<T>::search(const robot2D::vec2f& point, std::list<T>& items) const {
+        constexpr auto getRect = [](const robot2D::vec2f& point) {
+            return robot2D::FloatRect{point.x, point.y, 1, 1};
+        };
+
+        for (const auto& p : m_objects)
+        {
+            const auto& rect = p.first;
+            if(!rect.isRotated()) {
+                auto&& pointRect = getRect(point);
+                if (pointRect.intersects(rect))
+                    items.push_back(p.second);
+            }
+            else {
+                auto pointRect = getRect(rotatePoint(rect.getRotateAngle(), point,
+                                                       rect.centerPoint()));
+                if (pointRect.intersects(rect))
+                    items.push_back(p.second);
+            }
+        }
+
+        // Second, recurse through children and see if they can
+        // add to the list
+        for (int i = 0; i < 4; i++)
+        {
+            if (m_childrenTrees[i])
+            {
+                // If child is entirely contained within area, recursively
+                // add all of its children, no need to check boundaries
+                const auto& rect = m_childrenRects[i];
+                if(!rect.isRotated()) {
+                    auto&& pointRect = getRect(point);
+                    if (pointRect.contains(rect))
+                        m_childrenTrees[i] -> items(items);
+                    else if(rect.intersects(pointRect))
+                        m_childrenTrees[i] -> search(point, items);
+                }
+                else {
+                    auto pointRect = getRect(rotatePoint(rect.getRotateAngle(), point,
+                                                           rect.centerPoint()));
+                    if (pointRect.contains(rect))
+                        m_childrenTrees[i] -> items(items);
+                    else if(rect.intersects(pointRect))
+                        m_childrenTrees[i] -> search(point, items);
+                }
+            }
+        }
+    }
+
 
     template<typename T>
     void QuadTree<T>::clearAll() {
@@ -217,6 +272,13 @@ namespace editor {
         {
             std::list<ContainerIterator> searchItems;
             m_tree.search(rect, searchItems);
+            return searchItems;
+        }
+
+        std::list<ContainerIterator> search(const robot2D::vec2f& point) const
+        {
+            std::list<ContainerIterator> searchItems;
+            m_tree.search(point, searchItems);
             return searchItems;
         }
 

@@ -134,6 +134,7 @@ namespace editor {
         enum class EditorShortCutType {
             GizmoMove,
             GizmoScale,
+            GizmoRotate,
             SaveScene,
             Copy,
             Duplicate,

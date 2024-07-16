@@ -53,7 +53,6 @@ namespace robot2D {
         template<typename U>
         Rect<T>& operator=(const Rect<U>& other);
 
-
         ~Rect() = default;
 
 
@@ -83,6 +82,10 @@ namespace robot2D {
                               const Vector2<T>& point3,
                               const Vector2<T>& point4);
 
+        Vector2<T> centerPoint() const {
+            return { lx + width / 2, ly + height / 2 };
+        }
+
         /// {lx, ly}
         Vector2<T> topPoint() const {
             return {lx, ly};
@@ -109,12 +112,25 @@ namespace robot2D {
             return m_area;
         }
 
+        bool isRotated() const {
+            return m_rotateAngle != 0.f;
+        }
+
+        void setRotateAngle(float angle) {
+            m_rotateAngle = angle;
+        }
+
+        const float& getRotateAngle() const {
+            return m_rotateAngle;
+        }
+
         T lx;
         T ly;
         T width;
         T height;
     private:
         mutable T m_area{0};
+        float m_rotateAngle { 0.f };
     };
 
     template<typename T>
@@ -130,12 +146,12 @@ namespace robot2D {
 
     template<typename T>
     Rect<T>::Rect(const Rect& other):
-    lx(other.lx), ly(other.ly), width(other.width), height(other.height), m_area{other.m_area} {}
+    lx(other.lx), ly(other.ly), width(other.width), height(other.height), m_area{other.m_area}, m_rotateAngle{other.m_rotateAngle} {}
 
     template<typename T>
     template<typename U>
     Rect<T>::Rect(const Rect<U>& other): lx{other.lx}, ly{other.ly}, width{other.width},
-    height{other.height}, m_area{other.m_area} {}
+    height{other.height}, m_area{other.m_area}, m_rotateAngle{other.m_rotateAngle} {}
 
     template<typename T>
     bool Rect<T>::contains(const Vector2<T>& point) const  {
@@ -195,6 +211,7 @@ namespace robot2D {
         width = other.width;
         height = other.height;
         m_area = other.m_area;
+        m_rotateAngle = other.m_rotateAngle;
 
         return *this;
     }
@@ -207,6 +224,7 @@ namespace robot2D {
         width = static_cast<T>(other.width);
         height = static_cast<T>(other.height);
         m_area = static_cast<T>(other.m_area);
+        m_rotateAngle = other.m_rotateAngle;
         return *this;
     }
 
@@ -236,16 +254,16 @@ namespace robot2D {
         std::array<robot2D::Vector2<T>, 4> points = {point1, point2, point3, point4};
 
         for(int i = 0; i < 3; ++i) {
-            if(points[i].x > points[i + 1])
+            if(points[i].x > points[i + 1].x)
                 topPoint.x = points[i + 1].x;
-            if(points[i].y > points[i + 1])
+            if(points[i].y > points[i + 1].y)
                 topPoint.y = points[i + 1].y;
         }
 
         for(int i = 0; i < 3; ++i) {
-            if(points[i].x < points[i + 1])
+            if(points[i].x < points[i + 1].x)
                 botPoint.x = points[i + 1].x;
-            if(points[i].y < points[i + 1])
+            if(points[i].y < points[i + 1].y)
                 botPoint.y = points[i + 1].y;
         }
 

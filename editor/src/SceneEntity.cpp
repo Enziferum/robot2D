@@ -61,7 +61,24 @@ namespace editor {
 
     robot2D::FloatRect SceneEntity::calculateRect() const {
         const auto& tx = m_entity.getComponent<TransformComponent>();
-        return { tx.getPosition(), tx.getScale() };
+        if(tx.getRotation() != 0.f)
+            return getBoundingBox();
+
+        robot2D::FloatRect rect;
+        auto pos = tx.getPosition();
+        auto size = tx.getSize();
+        auto origin = tx.getOrigin();
+        rect.lx = pos.x - size.x * origin.x;
+        rect.ly = pos.y - size.y * origin.y;
+        rect.width = size.x;
+        rect.height = size.y;
+        rect.setRotateAngle(tx.getRotation());
+        return rect;
+    }
+
+    robot2D::FloatRect SceneEntity::getBoundingBox() const {
+        const auto& tx = m_entity.getComponent<TransformComponent>();
+        return tx.getGlobalBounds();
     }
 
     std::list<SceneEntity>& SceneEntity::getChildren() {
