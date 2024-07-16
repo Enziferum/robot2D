@@ -28,13 +28,15 @@ namespace robot2D{
         m_pos(0, 0),
         m_origin(0, 0),
         m_scale_factor(1, 1),
+        m_size{1, 1},
         m_rotation(0.f),
         m_transform(),
-        m_update_transform(false){
+        m_update_transform(false)
+    {
 
     }
 
-    Transformable::~Transformable() {}
+    Transformable::~Transformable() = default;
 
     void Transformable::setPosition(const vec2f& pos) {
         m_pos = pos;
@@ -46,7 +48,12 @@ namespace robot2D{
     }
 
     void Transformable::setOrigin(const vec2f& origin) {
-        m_origin = origin;
+        vec2f tmp = origin;
+        if(origin.x > 1.f)
+            tmp.x = tmp.x / m_size.x;
+        if(origin.y > 1.f)
+            tmp.y = origin.y / m_size.y;
+        m_origin = tmp;
         m_update_transform = true;
     }
 
@@ -63,7 +70,7 @@ namespace robot2D{
         return m_scale_factor;
     }
 
-    void Transformable::setRotate(const float &angle) {
+    void Transformable::setRotate(const float& angle) {
 
         m_rotation = static_cast<float>(fmod(angle, 360));
         if(m_rotation < 0 )
@@ -93,10 +100,10 @@ namespace robot2D{
             float angle  = -m_rotation * 3.141592654f / 180.f;
             float cosine = static_cast<float>(std::cos(angle));
             float sine   = static_cast<float>(std::sin(angle));
-            float sxc    = m_scale_factor.x  * cosine;
-            float syc    = m_scale_factor.y  * cosine;
-            float sxs    = m_scale_factor.x  * sine;
-            float sys    = m_scale_factor.y  * sine;
+            float sxc    = m_size.x  * cosine;
+            float syc    = m_size.y  * cosine;
+            float sxs    = m_size.x  * sine;
+            float sys    = m_size.y  * sine;
             float tx     = -m_origin.x * sxc - m_origin.y * sys + m_pos.x;
             float ty     =  m_origin.x * sxs - m_origin.y * syc + m_pos.y;
 
@@ -107,6 +114,26 @@ namespace robot2D{
         }
         return m_transform;
     }
+
+
+    Transform Transformable::getTransformNoScale() const {
+        float angle  = -m_rotation * 3.141592654f / 180.f;
+        float cosine = static_cast<float>(std::cos(angle));
+        float sine   = static_cast<float>(std::sin(angle));
+        float sxc    = m_scale_factor.x  * cosine;
+        float syc    = m_scale_factor.y  * cosine;
+        float sxs    = m_scale_factor.x  * sine;
+        float sys    = m_scale_factor.y  * sine;
+        float tx     = -m_origin.x * sxc - m_origin.y * sys + m_pos.x;
+        float ty     =  m_origin.x * sxs - m_origin.y * syc + m_pos.y;
+
+        auto transform = Transform( sxc, sys, tx,
+                                 -sxs, syc, ty,
+                                 0.f, 0.f, 1.f);
+
+        return transform;
+    }
+
 
     void Transformable::setSize(const vec2f& size) {
         setSize(size.x, size.y);

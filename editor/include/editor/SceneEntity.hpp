@@ -80,6 +80,7 @@ namespace editor {
 
         /// \brief usefull for QuadTree insertion
         robot2D::FloatRect calculateRect() const;
+        robot2D::FloatRect getBoundingBox() const;
 
         bool isChild() const { return m_parent != nullptr; }
     private:

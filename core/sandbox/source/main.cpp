@@ -18,7 +18,7 @@ and must not be misrepresented as being the original software.
 3. This notice may not be removed or altered from any
 source distribution.
 *********************************************************************/
-
+#include <algorithm>
 #include <robot2D/Engine.hpp>
 #include <sandbox/Sandbox.hpp>
 
@@ -135,6 +135,7 @@ int main() {
     robot2D::EngineConfiguration engineConfiguration{};
     engineConfiguration.windowTitle = "Sandbox";
     engineConfiguration.windowSize = { 1920, 1080 };
+    engineConfiguration.windowContext.renderApi = robot2D::WindowContext::RenderApi::OpenGL4_5;
     //return run();
     ROBOT2D_RUN_ENGINE(Sandbox, engineConfiguration);
 }

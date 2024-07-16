@@ -65,22 +65,19 @@ namespace editor {
         ~TransformComponent() override = default;
         void setPosition(const robot2D::vec2f& pos, bool needUpdateChild);
         void setPosition(const robot2D::vec2f& pos) override;
+        void setScale(const robot2D::vec2f& factor) override;
+        void setSize(const robot2D::vec2f& factor) override;
 
-        void setScale(const robot2D::vec2f &factor) override;
 
         void addChild(SceneEntity parent, SceneEntity child);
         void removeChild(SceneEntity entity, bool removeFromScene = true);
         void clearChildren() { m_children.clear(); }
         bool hasChildren() const;
 
-        robot2D::FloatRect getLocalBounds() const {
-            float w = std::abs(m_size.x);
-            float h = std::abs(m_size.y);
-            return {0.f, 0.f, w, h};
-        }
+        robot2D::FloatRect getLocalBounds() const;
 
         robot2D::FloatRect getGlobalBounds() const {
-            return getTransform().transformRect(getLocalBounds());
+            return getTransformNoScale().transformRect(getLocalBounds());
         }
 
         std::list<SceneEntity>& getChildren() {
@@ -190,6 +187,9 @@ namespace editor {
         bool isUtil{false};
 
         void FlipTexture();
+
+        bool& drawBoundingBox()  { return m_drawBbox; }
+        const bool& drawBoundingBox() const  { return m_drawBbox; }
     private:
         friend class RenderSystem;
         friend class SceneRender;
@@ -203,7 +203,7 @@ namespace editor {
         robot2D::Color m_color;
         bool m_needUpdateZbuffer{false};
         std::string m_texturePath{""};
-
+        bool m_drawBbox { false };
     };
 
 

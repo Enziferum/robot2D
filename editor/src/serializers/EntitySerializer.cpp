@@ -201,8 +201,9 @@ namespace editor {
             out << YAML::BeginMap;
             auto& ts = entity.getComponent<TransformComponent>();
             out << YAML::Key << "Position" << YAML::Value << ts.getPosition();
-            out << YAML::Key << "Size" << YAML::Value << ts.getScale();
+            out << YAML::Key << "Size" << YAML::Value << ts.getSize();
             out << YAML::Key << "Rotation" << YAML::Value << ts.getRotate();
+            out << YAML::Key << "Origin" << YAML::Value << ts.getOrigin();
 
             if(entity.hasChildren()) {
                 std::vector<UUID> childIds;
@@ -232,7 +233,7 @@ namespace editor {
             out << YAML::BeginMap;
             auto& ts = entity.getComponent<Transform3DComponent>();
             out << YAML::Key << "Position" << YAML::Value << ts.getPosition();
-            out << YAML::Key << "Size" << YAML::Value << ts.getScale();
+            //out << YAML::Key << "Size" << YAML::Value << ts.getSize();
             // TODO: @a.raag add rotation
             out << YAML::Key << "Rotation" << YAML::Value << 0.F;
             out << YAML::EndMap;
@@ -423,8 +424,10 @@ namespace editor {
         if(transformComponent) {
             auto& transform = deserializedEntity.addComponent<TransformComponent>();
             transform.setPosition(transformComponent["Position"].as<robot2D::vec2f>());
-            transform.setScale(transformComponent["Size"].as<robot2D::vec2f>());
+            transform.setSize(transformComponent["Size"].as<robot2D::vec2f>());
             transform.setRotate(transformComponent["Rotation"].as<float>());
+            if(transformComponent["Origin"])
+                transform.setOrigin(transformComponent["Origin"].as<robot2D::vec2f>());
             ChildInfo childInfo;
 
             if(transformComponent["HasChildren"]) {

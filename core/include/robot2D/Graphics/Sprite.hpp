@@ -37,7 +37,7 @@ namespace robot2D {
     class ROBOT2D_EXPORT_API Sprite: public Transformable, public Drawable{
     public:
         Sprite();
-        ~Sprite()override = default;
+        ~Sprite() override = default;
 
         /// \brief set custom color to your sprite
         void setColor(const Color& color);
@@ -47,6 +47,8 @@ namespace robot2D {
 
         /// \brief allow to set Size/Scale of object
         void setScale(const vec2f& factor) override;
+        void setSize(const vec2f& size) override;
+
 
         /// \brief set texture data to our Sprite flyweight
         void setTexture(const Texture&, const IntRect& textureRect = IntRect());

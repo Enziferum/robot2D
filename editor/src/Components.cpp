@@ -239,6 +239,23 @@ namespace editor {
         m_hasModification = true;
     }
 
+    void TransformComponent::setSize(const robot2D::vec2f& factor) {
+        Transformable::setSize(factor);
+        m_hasModification = true;
+    }
+
+    robot2D::FloatRect TransformComponent::getLocalBounds() const {
+        float w = std::abs(m_size.x);
+        float h = std::abs(m_size.y);
+        auto origin = getOrigin();
+        if(origin == robot2D::vec2f{})
+            return {0.f, 0.f, w, h};
+        /// TODO(a.raag) Make calcs
+        float xCoof = 2.f;
+        float yCoff = 2.f;
+        return {-w / xCoof, -h / yCoff, w, h};
+    }
+
 
     TextComponent::TextComponent():
             m_text{""},

@@ -206,8 +206,8 @@ namespace editor {
                 b2PolygonShape polygonShape;
 
                 auto center  = robot2D::vec2f {
-                        pixel_to_meters<float>(transform.getScale().x) / 2.F,
-                        pixel_to_meters<float>(transform.getScale().y) / 2.F
+                        pixel_to_meters<float>(transform.getSize().x) / 2.F,
+                        pixel_to_meters<float>(transform.getSize().y) / 2.F
                 };
 
                 polygonShape.SetAsBox(center.x, center.y, {center.x, center.y}, 0);

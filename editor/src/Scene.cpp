@@ -78,7 +78,7 @@ namespace editor {
 
         auto& transform = entity.addComponent<TransformComponent>();
         transform.setPosition(defaultPosition);
-        transform.setScale(defaultSize);
+        transform.setSize(defaultSize);
         entity.addComponent<DrawableComponent>();
 
         auto& cameraComponent = entity.addComponent<CameraComponent>();
@@ -159,7 +159,7 @@ namespace editor {
 
         auto &transform = entity.addComponent<TransformComponent>();
         transform.setPosition(defaultPosition);
-        transform.setScale(defaultSize);
+        transform.setSize(defaultSize);
         entity.addComponent<DrawableComponent>();
 
         m_sceneGraph.addEntity(SceneEntity{entity});
@@ -192,7 +192,7 @@ namespace editor {
                 auto& ts = sceneEntity.getComponent<TransformComponent>();
                 // TODO(a.raag) ts.getGlobalBounds();
                 hitbox.m_area = robot2D::FloatRect::create(ts.getPosition(),
-                                                           ts.getScale() + ts.getPosition());
+                                                           ts.getSize() + ts.getPosition());
             }
         }));
     }
@@ -483,7 +483,7 @@ namespace editor {
         entity.addComponent<TagComponent>();
 
         transform.setPosition(defaultPosition);
-        transform.setScale(defaultSize);
+        transform.setSize(defaultSize);
 
         entity.addComponent<ButtonComponent>();
         entity.addComponent<UIHitbox>().callbackIDs[UIHitbox::CallbackID::MouseDown] =

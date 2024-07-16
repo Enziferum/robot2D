@@ -26,6 +26,7 @@ source distribution.
 namespace editor {
     enum class EditorResourceID {
         Manipulator,
+        ManipulatorRotate,
         Movie
     };
 

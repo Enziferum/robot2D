@@ -164,9 +164,11 @@ namespace editor {
         Manipulator m_xAxisManipulator;
         Manipulator m_yAxisManipulator;
         Manipulator m_XYAxisManipulator;
+        robot2D::Sprite m_rotateSprite;
 
         robot2D::vec2f m_manipulatorLastPos;
         robot2D::Texture m_manipulatorTexture;
+        robot2D::Texture m_manipulatorRotateTexture;
 
         enum class TextureType {
             FreeMove, Move, Scale

@@ -102,6 +102,12 @@ namespace editor {
         });
         m_shortcutManager.bind(std::make_pair(EditorShortCutType::GizmoScale, guizmoScale));
 
+        ShortCut guizmoRotate{robot2D::Key::LEFT_SHIFT, robot2D::Key::R};
+        guizmoRotate.setCallback([this]() {
+            m_guizmo2D.setOperationType(Guizmo2D::Operation::Rotate);
+        });
+        m_shortcutManager.bind(std::make_pair(EditorShortCutType::GizmoRotate, guizmoRotate));
+
         ShortCut saveScene{robot2D::Key::LEFT_CONTROL, robot2D::Key::S};
         saveScene.setCallback([this]() {
             m_interactor -> saveScene();
