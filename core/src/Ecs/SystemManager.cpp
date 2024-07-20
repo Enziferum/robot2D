@@ -56,4 +56,26 @@ namespace robot2D::ecs {
         }
     }
 
+    bool SystemManager::cloneSelf(Scene* cloneScene, SystemManager& clone, const std::vector<Entity>& newEntities) {
+        for(auto& system: m_systems) {
+            auto clonedSystem = system -> cloneSelf(cloneScene, newEntities);
+            if(auto drawable = std::dynamic_pointer_cast<robot2D::Drawable>(clonedSystem)) {
+                cloneScene -> m_drawables.emplace_back(drawable.get());
+            }
+
+            if(!clonedSystem)
+                continue;
+            clone.m_systems.emplace_back(clonedSystem);
+        }
+
+        return true;
+    }
+
+    bool SystemManager::clearSelf() {
+        for(auto& system: m_systems)
+            system.reset();
+        m_systems.clear();
+        return true;
+    }
+
 }

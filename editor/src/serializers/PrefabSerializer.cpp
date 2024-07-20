@@ -57,7 +57,7 @@ namespace editor {
 
         auto entitySerializer = getSerializer<EntityYAMLSerializer>();
         if(!entitySerializer -> serialize(out, prefab -> getEntity(), scriptInteractor)) {
-            /// TODO(a.raag): print error or display it 
+            m_error = PrefabError::BadSerialization;
             return false;
         }
 
@@ -66,7 +66,7 @@ namespace editor {
 
         std::ofstream ofstream(prefab -> getPath());
         if(!ofstream.is_open()) {
-           // m_error = SceneSerializerError::NoFileOpen;
+            m_error = PrefabError::NoFileOpen;
             return false;
         }
 
@@ -81,7 +81,7 @@ namespace editor {
         try {
             std::ifstream ifstream(prefab -> getPath());
             if(!ifstream.is_open()) {
-               // m_error = SceneSerializerError::NoFileOpen;
+                m_error = PrefabError::NoFileOpen;
                 return false;
             }
 
@@ -96,7 +96,6 @@ namespace editor {
         }
 
         if(!data["Prefab"]) {
-          //  m_error = SceneSerializerError::NotSceneTag;
             return false;
         }
 
@@ -121,11 +120,15 @@ namespace editor {
                                             addToScene, children, scriptInteractor);
 
             if(!status) {
-                /// TODO(a.raag): print error or display it
+                m_error = PrefabError::BadDeSerialization;
                 return false;
             }
         }
 
         return true;
+    }
+
+    PrefabError PrefabSerializer::getError() const {
+        return m_error;
     }
 }

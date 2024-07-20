@@ -99,15 +99,15 @@ namespace robot2D::ecs {
         return result;
     }
 
-    bool Scene::cloneSelf(Scene& cloneScene, bool cloneSystems) {
+    bool Scene::cloneSelf(Scene& cloneScene, std::vector<Entity>& newArray, bool cloneSystems) {
         bool result = m_componentManager.cloneSelf(cloneScene.m_componentManager);
         if(!result)
             return false;
-        result = m_entityManager.cloneSelf(cloneScene.m_entityManager);
+        result = m_entityManager.cloneSelf(cloneScene.m_entityManager, newArray);
         if(!result)
             return false;
         if(cloneSystems) {
-            // result = m_systemManager.cloneSelf(cloneScene.m_systemManager);
+            result = m_systemManager.cloneSelf(&cloneScene, cloneScene.m_systemManager, newArray);
             if(!result)
                 return false;
         }
@@ -124,11 +124,11 @@ namespace robot2D::ecs {
         if(!result)
             return false;
 
-/*        if(m_useSystems) {
+        if(m_useSystems) {
             result = m_systemManager.clearSelf();
             if(!result)
                 return false;
-        }*/
+        }
 
         return true;
     }

@@ -87,4 +87,16 @@ namespace robot2D::ecs {
         }
         m_pendingTypes.clear();
     }
+
+    bool System::cloneBase(System::Ptr clonedSystem, Scene* scene, const std::vector<Entity>& newEntities) {
+        for(const auto& entity: newEntities) {
+            auto mask = entity.getComponentMask();
+            if(fitsRequirements(mask))
+                clonedSystem -> addEntity(entity);
+        }
+
+        clonedSystem -> m_mask = m_mask;
+        clonedSystem -> m_scene = scene;
+        return true;
+    }
 }

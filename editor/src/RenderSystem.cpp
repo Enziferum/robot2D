@@ -259,4 +259,14 @@ namespace editor {
         }
     }
 
+    robot2D::ecs::System::Ptr RenderSystem::cloneSelf(robot2D::ecs::Scene* scene, const std::vector<robot2D::ecs::Entity>& newEntities) {
+        auto cloneSystem = std::make_shared<RenderSystem>(m_messageBus);
+        if(!cloneBase(cloneSystem, scene, newEntities))
+            return nullptr;
+        cloneSystem -> m_needUpdateZBuffer = m_needUpdateZBuffer;
+        cloneSystem -> m_runtimeFlag;
+        cloneSystem -> m_cameraView = m_cameraView;
+        return cloneSystem;
+    }
+
 }

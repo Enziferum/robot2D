@@ -94,7 +94,7 @@ namespace robot2D::ecs {
 
         /// \brief deep copy. IMPORTANT: copies only valid ( not destroyed entities and components ).
         /// also it means components must be copyable!!!
-        bool cloneSelf(EntityManager& cloneManager);
+        bool cloneSelf(EntityManager& cloneManager, std::vector<Entity>& newArray);
 
         bool clearSelf();
     private:

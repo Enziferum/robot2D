@@ -59,6 +59,9 @@ namespace robot2D::ecs {
 
         void handleMessage(const robot2D::Message& message);
         void update(float dt);
+
+        bool cloneSelf(Scene* cloneScene, SystemManager& clone, const std::vector<Entity>& newEntities);
+        bool clearSelf();
     private:
         robot2D::MessageBus& m_messageBus;
         std::vector<System::Ptr> m_systems;

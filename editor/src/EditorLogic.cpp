@@ -329,8 +329,8 @@ namespace editor {
         auto ptr = m_scriptInteractor.lock();
 
         if(type == ToolbarMessage::Type::Start) {
-            m_presenter.switchState(EditorState::Run);
             m_activeScene -> onRuntimeStart(ptr);
+            m_presenter.switchState(EditorState::Run);
         }
         else if(type == ToolbarMessage::Type::Stop) {
             m_activeScene -> onRuntimeStop(ptr);

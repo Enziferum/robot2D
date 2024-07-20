@@ -65,6 +65,9 @@ namespace robot2D::ecs {
         Scene* getScene();
 
         const Scene* getScene() const { return m_scene; }
+
+        bool cloneBase(Ptr clone, Scene* scene, const std::vector<Entity>& newEntities);
+        virtual Ptr cloneSelf(Scene* scene, const std::vector<Entity>& newEntities) { return nullptr; }
     protected:
         UniqueType m_systemId;
         EntityList m_entities;

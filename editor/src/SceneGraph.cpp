@@ -132,6 +132,11 @@ namespace editor {
     }
 
     bool SceneGraph::cloneSelf(SceneGraph& cloneGraph) {
+        //constexpr bool cloneSystems = true;
+        //cloneGraph.m_scene.cloneSelf(m_scene, cloneSystems);
+        cloneGraph.m_sceneEntities = m_sceneEntities;
+        cloneGraph.m_AllSceneEntitiesMap = m_AllSceneEntitiesMap;
+
         return false;
     }
 

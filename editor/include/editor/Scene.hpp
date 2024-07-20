@@ -142,7 +142,10 @@ namespace editor {
         SceneGraph m_runtimeSceneGraph;
         std::vector<SceneEntity> m_scriptRuntimeContainer;
 
+        std::vector<robot2D::ecs::Entity> m_runtimeClonedArray;
+
         robot2D::ecs::Scene m_scene;
+        robot2D::ecs::Scene m_runtimeScene;
 
         IEditorCamera::Ptr m_editorCamera{nullptr};
         IPhysics2DAdapter::Ptr m_physicsAdapter{ nullptr };

@@ -134,12 +134,25 @@ namespace robot2D::ecs {
         return true;
     }
 
-    bool EntityManager::cloneSelf(EntityManager& cloneManager) {
+    bool EntityManager::cloneSelf(EntityManager& cloneManager, std::vector<Entity>& newArray) {
 
         /// \brief return true if id in destroyFlags else false
         const auto filterEntityFunction = [this](EntityID id) {
-            return (m_destroyFlags.find(id) != m_destroyFlags.end());
+            auto found = m_destroyFlags.find(id);
+            if(found == m_destroyFlags.end())
+                return false;
+            return found -> second;
         };
+
+        for(const auto& [key, value]: m_destroyFlags) {
+            if(value)
+                continue;
+            Entity newEntity{&cloneManager, key};
+            newArray.emplace_back(newEntity);
+        }
+
+        std::sort(newArray.begin(), newArray.end());
+        
 
         /// \brief Clone ComponentContainers: deep copy of containers and copy only not destroyed entities
         {
@@ -161,12 +174,13 @@ namespace robot2D::ecs {
         {
             auto& componentMasks = cloneManager.m_componentMasks;
             for(const auto& [key, value]: m_componentMasks) {
-                if(filterEntityFunction(key))
+                bool willFiltered = filterEntityFunction(key);
+                if(willFiltered)
                     continue;
                 componentMasks[key] = value;
             }
         }
-
+        cloneManager.m_entityCounter = m_entityCounter;
 
         /// FixMe(a.raag): entity is invalid because original scene can have destroyed entities
         return true;
@@ -175,7 +189,12 @@ namespace robot2D::ecs {
     bool EntityManager::clearSelf() {
         m_entityCounter = 0;
         m_destroyFlags.clear();
-        m_componentContainers.clear();
+
+        for(auto container: m_componentContainers) {
+            container.reset();
+            container = nullptr;
+        }
+        //m_componentContainers.clear();
         m_componentContainersDeleteBuffer.clear();
         m_componentMasks.clear();
         return true;
