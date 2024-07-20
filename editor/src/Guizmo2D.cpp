@@ -273,9 +273,6 @@ namespace editor {
     }
 
 
-
-
-
     void Guizmo2D::setManipulated(TransformComponent* transformable) {
         m_manipulateds.clear();
         if(!transformable)

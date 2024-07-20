@@ -1,5 +1,6 @@
 #include <editor/ScriptInteractor.hpp>
 #include <editor/scripting/ScriptingEngineService.hpp>
+#include <editor/EditorInteractor.hpp>
 
 namespace editor {
 
@@ -45,7 +46,10 @@ namespace editor {
                                        m_editorInteractor{editorInteractor}, m_scriptingEngine{scriptingEngine} {}
 
     SceneEntity ScriptInteractor::getEntity(std::uint64_t entityID) {
-
+        auto interactor = m_editorInteractor.lock();
+        if(!interactor)
+            return {};
+        return interactor -> getEntity(UUID{entityID});
     }
 
     void ScriptInteractor::loadSceneAsyncRuntime(std::string&& name) {

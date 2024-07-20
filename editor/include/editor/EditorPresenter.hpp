@@ -15,6 +15,10 @@ namespace editor {
     class EditorPresenter {
     public:
         EditorPresenter(IEditor* editor);
+        EditorPresenter(const EditorPresenter& other) = delete;
+        EditorPresenter& operator=(const EditorPresenter& other) = delete;
+        EditorPresenter(EditorPresenter&& other) = delete;
+        EditorPresenter& operator=(EditorPresenter&& other) = delete;
         ~EditorPresenter() = default;
 
         void findSelectedEntitiesOnUI(std::vector<ITreeItem::Ptr>&& selectedEntities);

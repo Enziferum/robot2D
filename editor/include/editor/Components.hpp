@@ -101,8 +101,6 @@ namespace editor {
         int m_childID = -1;
         std::list<SceneEntity> m_children;
         SceneEntity m_parent;
-
-
     };
 
     // TODO: @a.raag add Rotation

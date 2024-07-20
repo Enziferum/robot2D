@@ -64,7 +64,7 @@ namespace robot2D::ecs {
         Scene& operator=(Scene&&) = delete;
         ~Scene() = default;
 
-        bool cloneSelf(Scene& clone, bool cloneSystems = false);
+        bool cloneSelf(Scene& clone, std::vector<Entity>& newArray, bool cloneSystems = false);
 
         /// \brief usefull for clone if want reuse clone
         bool clearSelf();
@@ -98,6 +98,7 @@ namespace robot2D::ecs {
 
         void draw(robot2D::RenderTarget& target, robot2D::RenderStates states) const override;
     private:
+        friend class SystemManager;
         robot2D::MessageBus& m_messageBus;
         ComponentManager m_componentManager;
         EntityManager m_entityManager;

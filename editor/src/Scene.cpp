@@ -59,6 +59,7 @@ namespace editor {
             m_sceneGraph(messageBus),
             m_runtimeSceneGraph(messageBus),
             m_scene(messageBus),
+            m_runtimeScene{messageBus},
             m_messageBus{messageBus} {
         initScene();
     }
@@ -86,7 +87,7 @@ namespace editor {
     }
 
 
-    std::list<SceneEntity> &Scene::getEntities() {
+    std::list<SceneEntity>& Scene::getEntities() {
         return m_sceneGraph.getEntities();
     }
 
@@ -130,10 +131,14 @@ namespace editor {
             scriptingEngine -> onUpdateEntity(entity, dt);
 
         m_physicsAdapter -> update(dt);
-        m_scene.update(dt);
+        m_runtimeScene.update(dt);
     }
 
     void Scene::draw(robot2D::RenderTarget &target, robot2D::RenderStates states) const {
+        if(m_running) {
+            target.draw(m_runtimeScene);
+            return;
+        }
         target.draw(m_scene);
     }
 
@@ -170,10 +175,11 @@ namespace editor {
 
     void Scene::onRuntimeStart(IScriptInteractorFrom::Ptr scriptInteractor) {
         m_running = true;
+        m_scene.cloneSelf(m_runtimeScene, m_runtimeClonedArray, true);
         m_sceneGraph.cloneSelf(m_runtimeSceneGraph);
         onPhysics2DRun(scriptInteractor);
 
-        m_scene.getSystem<RenderSystem>() -> setScene(this);
+        m_runtimeScene.getSystem<RenderSystem>() -> setScene(this);
         auto scriptingEngine = scriptInteractor -> getScriptingEngine();
         if(!scriptingEngine)
             return;
@@ -198,18 +204,25 @@ namespace editor {
     }
 
     void Scene::onRuntimeStop(IScriptInteractorFrom::Ptr scriptInteractor) {
-        m_scene.getSystem<RenderSystem>() -> setScene(nullptr);
+        m_runtimeScene.getSystem<RenderSystem>() -> setScene(nullptr);
         m_running = false;
         onPhysics2DStop();
         auto scriptingEngine = scriptInteractor -> getScriptingEngine();
         if(!scriptingEngine)
             return;
         scriptingEngine -> onRuntimeStop();
+        m_runtimeClonedArray.clear();
+        m_runtimeScene.clearSelf();
     }
 
     void Scene::onPhysics2DRun(IScriptInteractorFrom::Ptr scriptInteractor) {
         m_physicsAdapter = getPhysics2DAdapter(PhysicsAdapterType::Box2D);
-        m_physicsAdapter -> start(m_sceneGraph.getEntities());
+
+        std::list<SceneEntity> listPhysics;
+        for(const auto& ecsEntity: m_runtimeClonedArray)
+            listPhysics.push_back(SceneEntity{ecsEntity});
+
+        m_physicsAdapter -> start(listPhysics);
         auto scriptingEngine = scriptInteractor -> getScriptingEngine();
         if(!scriptingEngine)
             return;
@@ -250,6 +263,8 @@ namespace editor {
     }
 
     SceneEntity Scene::getEntity(UUID uuid) const {
+        if(m_running)
+            return m_runtimeSceneGraph.getEntity(uuid);
         return m_sceneGraph.getEntity(uuid);
     }
 

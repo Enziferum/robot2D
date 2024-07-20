@@ -46,6 +46,8 @@ namespace editor {
         void update(float dt) override;
         void draw(robot2D::RenderTarget& target, robot2D::RenderStates states) const override;
     private:
+        Ptr cloneSelf(robot2D::ecs::Scene*, const std::vector<robot2D::ecs::Entity>& newEntities) override;
+    private:
         bool m_needUpdateZBuffer;
         bool m_runtimeFlag{false};
 
