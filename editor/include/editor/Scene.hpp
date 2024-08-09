@@ -143,6 +143,7 @@ namespace editor {
         std::vector<SceneEntity> m_scriptRuntimeContainer;
 
         std::vector<robot2D::ecs::Entity> m_runtimeClonedArray;
+        std::list<SceneEntity> m_listPhysics;
 
         robot2D::ecs::Scene m_scene;
         robot2D::ecs::Scene m_runtimeScene;

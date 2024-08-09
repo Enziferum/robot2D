@@ -94,6 +94,7 @@ namespace editor {
         }
     private:
         friend class SceneEntity;
+        friend class Scene;
         robot2D::ecs::Scene m_scene;
 
         std::list<SceneEntity> m_sceneEntities;

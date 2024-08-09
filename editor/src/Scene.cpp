@@ -176,7 +176,13 @@ namespace editor {
     void Scene::onRuntimeStart(IScriptInteractorFrom::Ptr scriptInteractor) {
         m_running = true;
         m_scene.cloneSelf(m_runtimeScene, m_runtimeClonedArray, true);
-        m_sceneGraph.cloneSelf(m_runtimeSceneGraph);
+        //m_sceneGraph.cloneSelf(m_runtimeSceneGraph);
+        m_runtimeSceneGraph.m_AllSceneEntitiesMap.clear();
+        for(const auto& entity: m_runtimeClonedArray) {
+            SceneEntity newSceneEntity{entity};
+            m_runtimeSceneGraph.m_AllSceneEntitiesMap[newSceneEntity.getUUID()] = newSceneEntity;
+        }
+
         onPhysics2DRun(scriptInteractor);
 
         m_runtimeScene.getSystem<RenderSystem>() -> setScene(this);
@@ -217,12 +223,12 @@ namespace editor {
 
     void Scene::onPhysics2DRun(IScriptInteractorFrom::Ptr scriptInteractor) {
         m_physicsAdapter = getPhysics2DAdapter(PhysicsAdapterType::Box2D);
+        m_listPhysics.clear();
 
-        std::list<SceneEntity> listPhysics;
         for(const auto& ecsEntity: m_runtimeClonedArray)
-            listPhysics.push_back(SceneEntity{ecsEntity});
+            m_listPhysics.push_back(SceneEntity{ecsEntity});
 
-        m_physicsAdapter -> start(listPhysics);
+        m_physicsAdapter -> start(m_listPhysics);
         auto scriptingEngine = scriptInteractor -> getScriptingEngine();
         if(!scriptingEngine)
             return;
@@ -259,7 +265,10 @@ namespace editor {
     }
 
     void Scene::setRuntimeCamera(bool flag) {
-        m_scene.getSystem<RenderSystem>()->setRuntimeFlag(flag);
+        if(!m_running)
+            m_scene.getSystem<RenderSystem>() -> setRuntimeFlag(flag);
+        else
+            m_runtimeScene.getSystem<RenderSystem>() -> setRuntimeFlag(flag);
     }
 
     SceneEntity Scene::getEntity(UUID uuid) const {
