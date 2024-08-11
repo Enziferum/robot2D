@@ -176,11 +176,16 @@ namespace editor {
     void Scene::onRuntimeStart(IScriptInteractorFrom::Ptr scriptInteractor) {
         m_running = true;
         m_scene.cloneSelf(m_runtimeScene, m_runtimeClonedArray, true);
-        //m_sceneGraph.cloneSelf(m_runtimeSceneGraph);
+
+
+
         m_runtimeSceneGraph.m_AllSceneEntitiesMap.clear();
+        m_scriptRuntimeContainer.clear();
         for(const auto& entity: m_runtimeClonedArray) {
             SceneEntity newSceneEntity{entity};
             m_runtimeSceneGraph.m_AllSceneEntitiesMap[newSceneEntity.getUUID()] = newSceneEntity;
+            if(entity.hasComponent<ScriptComponent>())
+                m_scriptRuntimeContainer.push_back(newSceneEntity);
         }
 
         onPhysics2DRun(scriptInteractor);
@@ -192,8 +197,8 @@ namespace editor {
 
         scriptingEngine -> onRuntimeStart(scriptInteractor);
 
-        m_scriptRuntimeContainer.clear();
-        m_runtimeSceneGraph.filterEntities<ScriptComponent>(m_scriptRuntimeContainer);
+
+      /*  m_runtimeSceneGraph.filterEntities<ScriptComponent>(m_scriptRuntimeContainer);*/
         for (const auto& entity: m_scriptRuntimeContainer)
             scriptingEngine -> onCreateEntity(entity);
 
