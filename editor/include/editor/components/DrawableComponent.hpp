@@ -19,21 +19,9 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
-#include <editor/panels/IPanel.hpp>
+
+#pragma once
 
 namespace editor {
-    IPanel::IPanel(UniqueType uniqueType): m_id(uniqueType) {}
 
-    IPanel::~IPanel() = default;
-
-    void IPanel::update(float dt) {}
-
-    PanelState IPanel::getState() const {
-        return m_state;
-    }
-    
-    void IPanel::setState(const PanelState& panelState) {
-        m_state = panelState;
-    }
-
-}
+} // namespace editor

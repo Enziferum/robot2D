@@ -34,6 +34,28 @@ source distribution.
 
 namespace editor {
 
+
+    void renderFrame(const std::string& labelText, ImGuiWindow* window, const ImVec2& pos) {
+
+        ImGuiContext& g = *GImGui;
+        const ImGuiStyle& style = g.Style;
+        const ImVec2 label_size = ImGui::CalcTextSize(labelText.c_str(), nullptr, false);
+        robot2D::vec2f padding = {1.f, 1.f};
+        // We vertically grow up to current line height up the typical widget height.
+        const float frame_height = ImMax(ImMin(window->DC.CurrLineSize.y, g.FontSize + style.FramePadding.y * 2), label_size.y + padding.y * 2);
+        const bool span_all_columns = false;//(flags & ImGuiTreeNodeFlags_SpanAllColumns) != 0 && (g.CurrentTable != NULL);
+        ImRect frame_bb;
+        frame_bb.Min.x = pos.x; //span_all_columns ? window->ParentWorkRect.Min.x : (flags & ImGuiTreeNodeFlags_SpanFullWidth) ? window->WorkRect.Min.x : window->DC.CursorPos.x;
+        frame_bb.Min.y = pos.y;
+        frame_bb.Max.x = span_all_columns ? window->ParentWorkRect.Max.x : window->WorkRect.Max.x;
+        frame_bb.Max.y = pos.y + frame_height;
+        //ImU32 bg_col = ImGui::ColorConvertFloat4ToU32({0.5, 0.4, 0.3, 0.5});
+        ImU32 bg_col = ImGui::ColorConvertFloat4ToU32({0.4f, 0.4f, 0.4f, 0.5f});
+        window->DrawList->AddRectFilled(frame_bb.Min, frame_bb.Max, bg_col, 0.f);
+        //ImGui::RenderFrame(frame_bb.Min, frame_bb.Max, bg_col, true, style.FrameRounding);
+    }
+
+
     TreeHierarchy::TreeHierarchy(std::string name) : m_name(std::move(name)) {
         m_tree_base_flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick
             | ImGuiTreeNodeFlags_SpanAvailWidth;
@@ -292,10 +314,22 @@ namespace editor {
         renderTree();
     }
 
-
     void TreeHierarchy::renderTree() {
+        ImGui::Button("Button1");
+        ImGui::SameLine();
+        ImGui::Button("Button2");
+        ImGui::SameLine();
+        ImGui::Button("Button3");
+
+
+
+        ImGuiWindow* window = ImGui::GetCurrentWindow();
+        auto pos = window->DC.CursorPos;
+        renderFrame(m_name, window, pos);
         if (ImGui::TreeNodeEx(m_name.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+
             m_multiSelection.preUpdate(m_items);
+
 
             for (auto& item : m_items) {
                 ImGuiTreeNodeFlags node_flags = m_tree_base_flags | ImGuiTreeNodeFlags_FramePadding

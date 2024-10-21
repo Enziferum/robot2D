@@ -3,6 +3,10 @@
 #include <limits>
 #include <string>
 #include <array>
+#include <typeindex>
+#include <unordered_map>
+#include <vector>
+#include <memory>
 
 namespace editor {
 
@@ -48,20 +52,6 @@ namespace editor {
             return { m_buffer.data() };
         }
 
-
-/*
-        template<size_t End> constexpr auto prefix() const {
-            return substring<0, End>();
-        }
-        template<size_t Begin> constexpr auto suffix() const {
-            return substring<Begin, Size - 1>();
-        }
-
-        template<size_t Index> constexpr auto split() const {
-            return std::make_pair(prefix<Index>(), suffix<Index + 1>());
-        }
-*/
-
         constexpr std::array<const char, Size>& getBuffer() const { return m_buffer; }
 
         std::array<const char, Size> m_buffer;
@@ -94,47 +84,86 @@ namespace editor {
         return os;
     }
 
-    template<std::size_t RetSize, std::size_t InSize>
+    class enum_classes_holder {
+
+    public:
+        template<typename EnumT, std::size_t InSize>
+        static void registerEnum(const std::array<std::string, InSize>& buffer) {
+            Value value;
+            for (const auto& val : buffer)
+                value.push_back(&val);
+            Key key = typeid(EnumT);
+            m_enumValues[key] = value;
+        }
+
+        template<typename EnumT>
+        static std::string get_string(int index) {
+            Key key = typeid(EnumT);
+            const auto& value = m_enumValues.at(key);
+            return *value[index];
+        }
+
+    private:
+        using Key = std::type_index;
+        using Value = std::vector<const std::string*>;
+
+        static inline std::unordered_map<Key, Value> m_enumValues;
+    };
+
+
+    template<typename EnumT, std::size_t RetSize, std::size_t InSize>
     constexpr std::array<std::string, RetSize> unpack_enum_string(const static_string<InSize>& enum_str) {
         std::array<std::string, RetSize> result;
         std::size_t arr_index = 0;
 
         int index = 0;
-        while(arr_index < RetSize - 1) {
-            const std::size_t comma = enum_str.find(',', index);
-            {
-                char buff[comma];
+        while (arr_index < RetSize ) {
+            if (arr_index == RetSize - 1) {
                 int offset = arr_index == 0 ? 0 : 1;
-                for(int i = 0; i < comma - index - offset ; ++i)
-                    buff[i] = enum_str.m_buffer[index + i + offset];
-                result[arr_index] = buff;
+
+                auto len = InSize - index - offset;
+                std::unique_ptr<char[]> buffer = std::make_unique<char[]>(len + 1);
+
+                for (int i = 0; i < len; ++i)
+                    buffer[i] = enum_str.m_buffer[index + i + offset];
+                buffer[len] = '\0';
+                result[arr_index] = std::string{ buffer.get() };
+                break;
             }
-            ++arr_index;
-            index = comma + 1;
-            if(arr_index == RetSize - 1) {
-                char buff[comma];
-                int offset = arr_index == 0 ? 0 : 1;
-                for(int i = 0; i < InSize - index - offset ; ++i)
-                    buff[i] = enum_str.m_buffer[index + i + offset];
-                result[arr_index] = buff;
+            else {
+                const std::size_t comma = enum_str.find(',', index);
+                {
+                    int offset = arr_index == 0 ? 0 : 1;
+                    auto len = comma - index - offset;
+                    std::unique_ptr<char[]> buffer = std::make_unique<char[]>(len + 1);
+
+                    for (int i = 0; i < len; ++i)
+                        buffer[i] = enum_str.m_buffer[index + i + offset];
+                    buffer[len] = '\0';
+                    result[arr_index] = std::string{ buffer.get() };
+                }
+                ++arr_index;
+                index = comma + 1;
             }
         }
+
+        enum_classes_holder::registerEnum<EnumT, RetSize>(result);
 
         return result;
     }
 
-#define DECLARE_ENUM(T, Values...) \
-    enum class T { Values };                          \
+#define DECLARE_ENUM(T, ...) \
+    enum class T { __VA_ARGS__ };                          \
     struct enum_##T##_holder { \
         static std::string get_string(int index) { return SelfName + "::" + m_arr[index]; }                            \
     private:                      \
         static inline const std::string SelfName = #T;                           \
-        static constexpr auto enum_buffer = make_static_string(#Values);                                    \
+        static constexpr auto enum_buffer = make_static_string(#__VA_ARGS__);                                    \
         static constexpr std::size_t enum_size = (enum_buffer.count(',', 0) + 1);                     \
         static inline std::array<std::string, enum_size> m_arr         \
-            = unpack_enum_string<enum_size>(enum_buffer); \
+            = unpack_enum_string<T, enum_size>(enum_buffer); \
     };
 
-#define ENUM2STR(T, value) enum_##T##_holder::get_string(static_cast<std::underlying_type_t<T>>(value))
+#define ENUM2STR(value) enum_classes_holder::get_string<std::decay_t<decltype(value)>>(static_cast<std::underlying_type_t<std::decay_t<decltype(value)>>>(value))
 
 } // namespace editor
