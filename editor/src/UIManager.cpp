@@ -78,15 +78,56 @@ namespace editor {
         ImGuiIO& io = ImGui::GetIO();
         if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
         {
-            ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
-            ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f),
-                             dockspace_flags);
+            ImGuiID dockspace_id = ImGui::GetID("Robot2D_Dockspace");
+            ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f),dockspace_flags);
 
-            
+            static bool once = false;
+            if(!once) {
+                createLayout();
+                once = true;
+            }
+
         }
 
         for(auto& panel: m_panels)
             panel -> render();
+    }
+
+    void UIManager::createLayout() {
+        ImGuiID dockspace_id = ImGui::GetID("Robot2D_Dockspace");
+        ImGui::DockBuilderRemoveNode(dockspace_id);
+        ImGui::DockBuilderAddNode(dockspace_id, dockspace_flags);
+        const ImGuiViewport* viewport = ImGui::GetMainViewport();
+        ImGui::DockBuilderSetNodeSize(dockspace_id, viewport -> Size);
+
+        float startXSize = 400;
+
+        auto treeNode = ImGui::DockBuilderAddNode();
+        ImGui::DockBuilderSetNodeSize(treeNode, {startXSize, viewport -> Size.y});
+
+        treeNode = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Left, 0.1f, nullptr, &dockspace_id);
+
+        auto stats_id = ImGui::GetID("stats_id");
+        auto tree_id = ImGui::DockBuilderSplitNode(treeNode, ImGuiDir_Up, 0.6f, nullptr, &stats_id);
+        ImGui::DockBuilderDockWindow("ScenePanel", tree_id);
+        ImGui::DockBuilderDockWindow("Utils", stats_id);
+
+        auto canvasNode = ImGui::DockBuilderAddNode();
+        ImGui::DockBuilderSetNodeSize(treeNode, {viewport -> Size.x - startXSize, viewport -> Size.y});
+        canvasNode = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Left, 0.8f, nullptr, &dockspace_id);
+
+        auto assets_id = ImGui::GetID("assets_id");
+        auto viewport_id = ImGui::DockBuilderSplitNode(canvasNode, ImGuiDir_Up, 0.6f, nullptr, &assets_id);
+        ImGui::DockBuilderDockWindow("Viewport", viewport_id);
+        ImGui::DockBuilderDockWindow("Game", viewport_id);
+
+        ImGui::DockBuilderDockWindow("Assets", assets_id);
+        ImGui::DockBuilderDockWindow("Animation", assets_id);
+        ImGui::DockBuilderDockWindow("Dear ImGui Demo", assets_id);
+
+        auto inspector_id = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Right, 0.1f, nullptr, &dockspace_id);
+        ImGui::DockBuilderDockWindow("Inspector", inspector_id);
+        ImGui::DockBuilderFinish(dockspace_id);
     }
 
     void UIManager::blockEvents(bool flag) {}

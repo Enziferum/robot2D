@@ -40,7 +40,7 @@ namespace editor {
     }
 
     void UtilPanel::render() {
-        ImGui::Begin("Statistics ");
+        ImGui::Begin("Utils");
 
         // TODO(a.raag) need apply graphics styles
 
