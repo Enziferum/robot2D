@@ -48,6 +48,8 @@ namespace editor {
         UIManager& operator=(UIManager&&) = delete;
         ~UIManager() override = default;
 
+
+
         template<typename T, typename ...Args>
         T& addPanel(Args&& ...args);
 
@@ -62,6 +64,8 @@ namespace editor {
     private:
         void renderBaseCanvas();
         void canvasWindowFunction();
+
+        void createLayout();
     private:
         robot2D::Gui& m_gui;
         std::vector<IPanel::Ptr> m_panels;

@@ -28,6 +28,8 @@ source distribution.
 #include <editor/PopupManager.hpp>
 #include <editor/Exception.hpp>
 
+#include <imgui/imgui.h>
+
 namespace editor {
     Application::Application():
             robot2D::Application(),
@@ -51,6 +53,9 @@ namespace editor {
                     "res/icons/message.png"
             };
             m_guiWrapper.setup(*m_window, customFontPath, std::move(customFontPaths));
+
+
+
         }
 
 
