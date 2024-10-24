@@ -28,9 +28,23 @@ source distribution.
 #include <editor/PopupManager.hpp>
 #include <editor/Exception.hpp>
 
+#include <editor/FileApi.hpp>
 #include <imgui/imgui.h>
 
 namespace editor {
+
+    namespace {
+        const std::string defaultConfigPath = "res/robot2D.ini";
+    }
+
+    void createDefaultSettings(const std::string& path) {
+
+    }
+
+    bool readConfig(const std::string& path) {
+        return false;
+    }
+
     Application::Application():
             robot2D::Application(),
             m_appConfiguration{},
@@ -46,6 +60,17 @@ namespace editor {
             iconImage.loadFromFile(m_appConfiguration.logoPath);
             m_window -> setIcon(std::move(iconImage));
         }
+
+
+        if(!hasFile(defaultConfigPath)) {
+            createDefaultSettings(defaultConfigPath);
+        }
+
+
+        if(!readConfig(defaultConfigPath)) {
+            return;
+        }
+
 
         {
             std::string customFontPath = "res/fonts/SourceSansPro-Regular.ttf";

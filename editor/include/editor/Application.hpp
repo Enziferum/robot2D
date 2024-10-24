@@ -27,11 +27,7 @@ source distribution.
 
 #include "ApplicationLogic.hpp"
 #include "ProjectInspector.hpp"
-#include "ProjectManager.hpp"
 #include "MessageDispather.hpp"
-#include "Editor.hpp"
-#include "EditorLogic.hpp"
-#include "TaskQueue.hpp"
 #include "EventBinder.hpp"
 #include "EditorAssembly.hpp"
 #include <editor/scripting/ScriptingEngine.hpp>
