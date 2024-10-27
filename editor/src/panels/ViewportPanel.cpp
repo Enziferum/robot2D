@@ -32,6 +32,8 @@ source distribution.
 #include <editor/DragDropIDS.hpp>
 #include <editor/Buffer.hpp>
 
+#include "../IconsFontsAwesome5.hpp"
+
 namespace editor {
     namespace {
         std::string iconPath = "res/icons";
@@ -74,7 +76,7 @@ namespace editor {
             {}
         };
         m_windowOptions.flagsMask = ImGuiWindowFlags_NoScrollbar;
-        m_windowOptions.name = "Viewport";
+        m_windowOptions.name = ICON_FA_ETHERNET + std::string{" Viewport"};
 
         for(const auto& [type, name]: iconNames) {
             std::filesystem::path path{iconPath};

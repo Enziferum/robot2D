@@ -149,10 +149,32 @@ namespace editor {
                 colors[ImGuiCol_NavHighlight]           = ImVec4(0.60f, 0.60f, 0.60f, 1.00f);
                 colors[ImGuiCol_NavWindowingHighlight]  = ImVec4(1.00f, 1.00f, 1.00f, 0.70f);
                 colors[ImGuiCol_Tab]                    = ImVec4(0.14f, 0.14f, 0.14f, 1.00f);
+                //colors[ImGuiCol_Tab]                    = ImVec4(0.51f, 0.36f, 0.15f, 1.00f);
                 colors[ImGuiCol_TabHovered]             = ImVec4(0.14f, 0.14f, 0.14f, 1.00f);
+                colors[ImGuiCol_TabHovered]             = ImVec4(0.51f, 0.36f, 0.15f, 1.00f);
                 colors[ImGuiCol_TabActive]              = ImVec4(0.14f, 0.14f, 0.14f, 1.00f);
+                colors[ImGuiCol_TabActive]              = ImVec4(0.51f, 0.36f, 0.15f, 1.00f);
                 colors[ImGuiCol_TabUnfocused]           = ImVec4(0.14f, 0.14f, 0.14f, 1.00f);
+                colors[ImGuiCol_TabUnfocused]           = ImVec4(0.51f, 0.36f, 0.15f, 1.00f);
                 colors[ImGuiCol_TabUnfocusedActive]     = ImVec4(0.14f, 0.14f, 0.14f, 1.00f);
+                colors[ImGuiCol_TabUnfocusedActive]     = ImVec4(0.51f, 0.36f, 0.15f, 1.00f);
+
+                style->FramePadding = ImVec2(4, 2);
+                style->ItemSpacing = ImVec2(10, 2);
+                style->IndentSpacing = 12;
+                style->ScrollbarSize = 10;
+
+                style->WindowRounding = 4;
+                style->FrameRounding = 4;
+                style->PopupRounding = 4;
+                style->ScrollbarRounding = 6;
+                style->GrabRounding = 4;
+                style->TabRounding = 4;
+
+                style->WindowTitleAlign = ImVec2(1.0f, 0.5f);
+                style->WindowMenuButtonPosition = ImGuiDir_Right;
+
+                style->DisplaySafeAreaPadding = ImVec2(4, 4);
 
                 break;
             }

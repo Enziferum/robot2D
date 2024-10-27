@@ -37,6 +37,8 @@ source distribution.
 #include <editor/async/FontLoadTask.hpp>
 #include <editor/AnimationManager.hpp>
 
+#include "../IconsFontsAwesome5.hpp"
+
 namespace editor {
 
     template<typename T, typename UIFunction>
@@ -149,7 +151,7 @@ namespace editor {
 
     void InspectorPanel::render() {
         robot2D::WindowOptions propertiesWindowOptions{};
-        propertiesWindowOptions.name = "Inspector";
+        propertiesWindowOptions.name = ICON_FA_INFO_CIRCLE + std::string{" Inspector"};
 
         robot2D::createWindow(propertiesWindowOptions, [this]{
             if(m_selectedEntity && m_inspectType == InspectType::EditorEntity)

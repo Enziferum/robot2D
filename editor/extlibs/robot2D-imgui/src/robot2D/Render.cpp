@@ -28,12 +28,13 @@ source distribution.
 #include "Render.hpp"
 #define STB_IMAGE_RESIZE_IMPLEMENTATION
 #include "stb_image_resize.hpp"
+#include "../../../../src/IconsFontsAwesome5.hpp"
 
 namespace robot2D {
     #define IMGUI_IMPL_OPENGL_USE_VERTEX_ARRAY
 
     namespace {
-        constexpr int defaultFontSize = 20;
+        constexpr int defaultFontSize = 18;
         constexpr int iconQuadSize = 23;
         /// \brief IconID startOffset. Icon1 = 0xe000 Icon2 = 0xe001 and etc...
         const wchar_t start = 0xe000; // 57344
@@ -142,66 +143,84 @@ namespace robot2D {
     GuiRender::GuiRender()  = default;
     GuiRender::~GuiRender() = default;
 
-    void GuiRender::setup(const std::string& customFontPath, std::vector<std::string>&& customIconsPaths) {
+    void GuiRender::setup(bool createFonts) {
         if(!setupGL()) {
             RB_EDITOR_ERROR("Can't setup Gui Render");
             return;
         }
-        setupFonts(customFontPath, std::move(customIconsPaths));
+        if(createFonts)
+            setupDefaultFont();
     }
 
-    void GuiRender::setupFonts(const std::string& customFontPath, std::vector<std::string>&& customIconsPaths) {
+    void GuiRender::setupDefaultFont() {
         ImGuiIO& io = ImGui::GetIO();
-        unsigned char* pixels;
-        int width, height;
 
-        if(!customFontPath.empty())
-            io.FontDefault = io.Fonts->AddFontFromFileTTF(customFontPath.c_str(), defaultFontSize);
+        unsigned char* buffer;
+        vec2u size;
 
-        if(!customIconsPaths.empty()) {
-            int iconRectIDs[64];
-            for (uint32_t i = 0; i < 64; i++)
-                iconRectIDs[i] = io.Fonts -> AddCustomRectFontGlyph(io.FontDefault, start + i,
-                                                                  iconQuadSize, iconQuadSize, iconQuadSize, {0, -2});
-            io.Fonts -> Build();
+        io.Fonts -> GetTexDataAsRGBA32(&buffer, (int*)&size.x, (int*)&size.y);
+        createFontTexture(buffer, size);
+    }
 
-            io.Fonts -> GetTexDataAsRGBA32(&pixels, &width, &height);
 
-            for (uint32_t i = 0; i < customIconsPaths.size(); i++)
-            {
-                int rectId = iconRectIDs[i];
-                if (const ImFontAtlasCustomRect* rect = io.Fonts->GetCustomRectByIndex(rectId))
-                {
-                    int desiredChannels = 4;
-                    robot2D::Image image;
-                    image.loadFromFile(customIconsPaths[i], desiredChannels);
-                    auto* buffer = image.getBuffer();
-                    stbir_resize_uint8(buffer, image.getSize().x, image.getSize().y, 0, buffer, rect -> Width, rect -> Height, 0, 4);
-                    // Fill the custom rectangle with red pixels (in reality you would draw/copy your bitmap data here!)
-                    for (int y = 0; y < rect->Height; y++)
-                    {
-                        ImU32* p = (ImU32*)pixels + (rect->Y + y) * width + (rect->X);
-                        for (int x = 0; x < rect->Width; x++)
-                            *p++ = IM_COL32(
-                                    buffer[y*4 * rect->Width + x*4 + 0],
-                                    buffer[y*4 * rect->Width + x*4 + 1],
-                                    buffer[y*4 * rect->Width + x*4 + 2],
-                                    buffer[y*4 * rect->Width + x*4 + 3]);
-                    }
+    void GuiRender::setupFonts(std::vector<GuiFontConfig>&& fontConfigs) {
+        auto& io = ImGui::GetIO();
+        static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
+        for(const auto& fontConfig: fontConfigs) {
+            ImFontConfig icon_config;
+            icon_config.FontDataOwnedByAtlas = true;
+
+            if(fontConfig.isDefault) {
+                if(fontConfig.mode == GuiFontConfig::Mode::File) {
+                    std::string s{fontConfig.path};
+                    io.FontDefault = io.Fonts -> AddFontFromFileTTF(s.c_str(), fontConfig.size, &icon_config);
+                }
+                else if(fontConfig.mode == GuiFontConfig::Mode::Memory) {
+                    io.FontDefault = io.Fonts -> AddFontFromMemoryTTF(
+                            fontConfig.buffer -> data(), fontConfig.buffer -> size(),
+                            fontConfig.size, &icon_config);
+                }
+            }
+            else {
+                if(fontConfig.mergeFont) {
+                    icon_config.MergeMode = true;
+                    icon_config.PixelSnapH = true;
+                    icon_config.GlyphMinAdvanceX = fontConfig.size;
+                }
+
+                if(fontConfig.mode == GuiFontConfig::Mode::File) {
+                    std::string s{fontConfig.path};
+                    io.Fonts -> AddFontFromFileTTF(s.c_str(), fontConfig.size, &icon_config,
+                                                   fontConfig.mergeFont ? icons_ranges : nullptr);
+                }
+                else if(fontConfig.mode == GuiFontConfig::Mode::Memory) {
+                    io.Fonts -> AddFontFromMemoryTTF(
+                            fontConfig.buffer -> data(), fontConfig.buffer -> size(),
+                            fontConfig.size, &icon_config);
                 }
             }
         }
-        else
-            io.Fonts -> GetTexDataAsRGBA32(&pixels, &width, &height);
 
-        if(!pixels)
-            return;
-		m_fontTexture.create({static_cast<unsigned int>(width), static_cast<unsigned int>(height)}, pixels);
+        unsigned char* buffer;
+        vec2u size;
+        if(fontConfigs.size() > 0) {
+            io.Fonts -> FontBuilderFlags = 0;
+            io.Fonts -> Build();
+        }
 
-        ImTextureID texID = ImGui::convertTextureHandle(m_fontTexture.getID());
-        io.Fonts -> SetTexID(texID);
-        ImGui::StyleColorsDark();
+        io.Fonts -> GetTexDataAsRGBA32(&buffer, (int*)&size.x, (int*)&size.y);
+
+        createFontTexture(buffer, size);
     }
+
+    void GuiRender::createFontTexture(unsigned char* buffer, vec2u size) {
+        if(!buffer)
+            return;
+        m_fontTexture.create(size, buffer);
+        ImTextureID texID = ImGui::convertTextureHandle(m_fontTexture.getID());
+        ImGui::GetIO().Fonts -> SetTexID(texID);
+    }
+
 
     bool GuiRender::setupGL()
     {
@@ -351,10 +370,9 @@ namespace robot2D {
         glDeleteVertexArrays(1, &vertex_array_object);
 
         m_shader.unUse();
-        //glActiveTexture(GL_TEXTURE0);
-        //glBindTexture(GL_TEXTURE_2D, m_fontTexture.getID());
-
         m_renderContext -> restore();
     }
+
+
 
 } // namespace robot2D
