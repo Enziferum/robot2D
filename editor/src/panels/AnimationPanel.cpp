@@ -43,6 +43,7 @@ source distribution.
 #include <editor/DragDropIDS.hpp>
 #include <editor/async/ImageLoadTask.hpp>
 
+#include "../IconsFontsAwesome5.hpp"
 
 namespace editor {
 #ifndef IMGUI_DEFINE_MATH_OPERATORS
@@ -147,7 +148,9 @@ namespace editor {
     }
 
     void AnimationPanel::render() {
-        imgui_Window("Animation") {
+        std::string name = ICON_FA_FILE_VIDEO + std::string{" Animation"};
+
+        imgui_Window(name.c_str()) {
             renderSequencer();
             processDragDrop();
         }

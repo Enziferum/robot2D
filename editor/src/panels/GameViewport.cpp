@@ -23,6 +23,8 @@ source distribution.
 #include <editor/panels/GameViewport.hpp>
 #include <editor/Macro.hpp>
 
+#include "../IconsFontsAwesome5.hpp"
+
 namespace editor {
 
     GameViewport::GameViewport(robot2D::MessageBus& messageBus):
@@ -41,7 +43,7 @@ namespace editor {
                 },
                 {}
         };
-        windowOptions.name = "Game";
+        windowOptions.name = ICON_FA_CAMERA + std::string{" Game"};
         windowOptions.flagsMask = ImGuiWindowFlags_NoScrollbar;
 
         robot2D::createWindow(windowOptions, BIND_CLASS_FN(windowFunction));

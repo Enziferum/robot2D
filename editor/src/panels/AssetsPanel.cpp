@@ -37,6 +37,8 @@ source distribution.
 #include <editor/EditorResourceManager.hpp>
 #include <editor/Buffer.hpp>
 
+#include "../IconsFontsAwesome5.hpp"
+
 namespace editor {
     namespace fs = std::filesystem;
 
@@ -175,7 +177,9 @@ namespace editor {
         const float cellSize = m_configuration.m_thumbnaleSize + m_configuration.m_padding;
         bool anyItemIsHovered = false;
 
-        imgui_Window("Assets") {
+
+        std::string name = ICON_FA_FILE + std::string{" Assets"};
+        imgui_Window(name.c_str()) {
             m_visible = ImGui::IsWindowFocused();
 
             if(m_state == State::Loading)

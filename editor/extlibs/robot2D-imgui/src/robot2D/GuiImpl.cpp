@@ -40,8 +40,7 @@ namespace robot2D::priv {
         shutdown();
     }
 
-    void GuiImpl::setup(robot2D::Window& window,
-                        const std::string& customFontPath, std::vector<std::string>&& customIconsPaths) {
+    void GuiImpl::setup(robot2D::Window& window, bool createFonts) {
         m_window = &window;
         ImGui::CreateContext();
         ImGuiIO& io = ImGui::GetIO();
@@ -93,7 +92,7 @@ namespace robot2D::priv {
         m_cursors[ImGuiMouseCursor_ResizeNWSE].createDefault();
         m_cursors[ImGuiMouseCursor_NotAllowed].createDefault();
 
-        m_render.setup(customFontPath, std::move(customIconsPaths));
+        m_render.setup(createFonts);
     }
 
 
@@ -217,10 +216,8 @@ namespace robot2D::priv {
         ImGui::DestroyContext();
     }
 
-    void GuiImpl::setCustomFont() {
-        ImGuiIO& io = ImGui::GetIO();
-        io.Fonts->AddFontFromFileTTF(R"(E:\_asset\font\DroidSansFallback.ttf)", 24.0f);
-        io.FontDefault = io.Fonts->Fonts[1];
+    void GuiImpl::setupFonts(std::vector<GuiFontConfig>&& fontConfigs) {
+        m_render.setupFonts(std::move(fontConfigs));
     }
 
 } // namespace robot2D

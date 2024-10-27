@@ -34,9 +34,12 @@ namespace robot2D {
 
     Gui::~Gui() = default;
 
-    void Gui::setup(robot2D::Window& window,
-                    const std::string& customFontPath, std::vector<std::string>&& customIconsPaths) {
-        m_impl -> setup(window, customFontPath, std::move(customIconsPaths));
+    void Gui::setup(robot2D::Window& window, bool createFonts) {
+        m_impl -> setup(window, createFonts);
+    }
+
+    void Gui::setupFonts(std::vector<GuiFontConfig>&& fontConfigs) {
+        m_impl -> setupFonts(std::move(fontConfigs));
     }
 
     void Gui::handleEvents(const robot2D::Event& event) {
@@ -50,5 +53,6 @@ namespace robot2D {
     void Gui::render() {
         m_impl -> render();
     }
+
 
 } // namespace robot2D

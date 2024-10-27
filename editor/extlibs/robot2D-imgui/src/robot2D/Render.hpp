@@ -28,6 +28,7 @@ source distribution.
 
 #include <imgui/imgui.h>
 #include "OrthoView.hpp"
+#include <robot2D/imgui/GuiFontConfig.hpp>
 
 namespace robot2D {
 
@@ -47,11 +48,13 @@ namespace robot2D {
         GuiRender& operator=(GuiRender&& other) = delete;
         ~GuiRender();
 
-        void setup(const std::string& customFontPath = "", std::vector<std::string>&& customIconsPaths = {});
+        void setup(bool createFonts);
+        void setupFonts(std::vector<GuiFontConfig>&& fontConfigs);
         void render(ImDrawData* drawData);
     private:
         bool setupGL();
-        void setupFonts(const std::string& customFontPath, std::vector<std::string>&& customIconsPaths);
+        void setupDefaultFont();
+        void createFontTexture(unsigned char* buffer, vec2u size);
         void setupRenderState(ImDrawData* draw_data, const robot2D::vec2i& framebufferSize, unsigned int);
     private:
         robot2D::Texture m_fontTexture;

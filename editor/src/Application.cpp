@@ -30,7 +30,18 @@ source distribution.
 
 #include <imgui/imgui.h>
 
+#include <editor/FileApi.hpp>
+#include <robot2D/imgui/GuiFontConfig.hpp>
+#include "IconsFontsAwesome5.hpp"
+
 namespace editor {
+
+
+    namespace {
+        const std::string configPath = "res/robot2D.ini";
+    }
+
+
     Application::Application():
             robot2D::Application(),
             m_appConfiguration{},
@@ -40,6 +51,13 @@ namespace editor {
             m_projectInspector{m_messageBus}
             {}
 
+    int getDPI()
+    {
+        const HDC hdc = GetDC(NULL);
+        return GetDeviceCaps(hdc, LOGPIXELSX);
+    }
+
+
     void Application::setup() {
         {
             robot2D::Image iconImage;
@@ -47,23 +65,56 @@ namespace editor {
             m_window -> setIcon(std::move(iconImage));
         }
 
-        {
-            std::string customFontPath = "res/fonts/SourceSansPro-Regular.ttf";
-            std::vector<std::string> customFontPaths = {
-                    "res/icons/message.png"
-            };
-            m_guiWrapper.setup(*m_window, customFontPath, std::move(customFontPaths));
-
-
-
+        if(!hasFile(configPath)) {
+            ///
         }
 
 
-        //////////// Load C# Mono ////////////
+        {
+            /// TODO(a.raag): read from config .ini
+            std::string defaultFontPath = "res/fonts/notosans-regular.ttf";
+            std::string fontPath1 = std::string{"res/fonts/fa-regular-400.ttf"} ;
+            std::string fontPath2 = std::string{"res/fonts/fa-solid-900.ttf"} ;
+            float fontSize = 18.f;
+            float scaleFactor = static_cast<float>(getDPI()) / 96.f;
+
+            m_guiWrapper.setup(*m_window, false);
+            std::vector<robot2D::GuiFontConfig> guiFontConfigs;
+
+            robot2D::GuiFontConfig defaultFontConfig;
+            defaultFontConfig.mode = robot2D::GuiFontConfig::Mode::File;
+            defaultFontConfig.isDefault = true;
+            defaultFontConfig.path = defaultFontPath;
+            defaultFontConfig.size = fontSize * scaleFactor;
+
+            robot2D::GuiFontConfig iconFontConfig1;
+            iconFontConfig1.mode = robot2D::GuiFontConfig::Mode::File;
+            iconFontConfig1.isDefault = false;
+            iconFontConfig1.mergeFont = true;
+            iconFontConfig1.path = fontPath1;
+            iconFontConfig1.size = fontSize * scaleFactor * 0.75f;
+
+            robot2D::GuiFontConfig iconFontConfig2;
+            iconFontConfig2.mode = robot2D::GuiFontConfig::Mode::File;
+            iconFontConfig2.isDefault = false;
+            iconFontConfig2.mergeFont = true;
+            iconFontConfig2.path = fontPath2;
+            iconFontConfig2.size = fontSize * scaleFactor * 0.75f;
+
+
+            guiFontConfigs.push_back(defaultFontConfig);
+            guiFontConfigs.push_back(iconFontConfig1);
+            guiFontConfigs.push_back(iconFontConfig2);
+
+            m_guiWrapper.setupFonts(std::move(guiFontConfigs));
+        }
+
+
+        //////////////////////////////////// Load C# Mono ////////////////////////////////////
         std::string scriptingEngineDLLPath = "res/script/robot2D_ScriptCore";
         m_scriptingEngine.Init(scriptingEngineDLLPath);
         m_scriptingEngine.SetWindow(m_window);
-        //////////// Load C# Mono ////////////
+        //////////////////////////////////// Load C# Mono ////////////////////////////////////
 
         m_editorModule = EditorAssembly::createEditorModule(m_window,
                                                             m_messageBus,

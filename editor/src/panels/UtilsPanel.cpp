@@ -23,7 +23,7 @@ source distribution.
 #include <editor/panels/UtilPanel.hpp>
 
 namespace editor {
-
+#define  ICON u8"\ue000"
     UtilPanel::UtilPanel(IEditorCamera::Ptr sceneCamera):
             IPanel(UniqueType(typeid(UtilPanel))),
             m_camera{sceneCamera},
@@ -40,7 +40,8 @@ namespace editor {
     }
 
     void UtilPanel::render() {
-        ImGui::Begin("Utils");
+        std::string s = std::string{" Utils"};
+        ImGui::Begin(s.c_str());
 
         // TODO(a.raag) need apply graphics styles
 

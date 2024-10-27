@@ -33,6 +33,8 @@ source distribution.
 #include <editor/DragDropIDS.hpp>
 #include <robot2D/Core/Assert.hpp>
 
+#include "../IconsFontsAwesome5.hpp"
+
 namespace editor {
 
     #define GET_ENTITY_UUID(item) item -> getUserData<SceneEntity>() -> getUUID();
@@ -66,7 +68,8 @@ namespace editor {
             return;
 
         robot2D::WindowOptions windowOptions{};
-        windowOptions.name = "ScenePanel";
+        windowOptions.flagsMask = 0;
+        windowOptions.name = ICON_FA_EYE + std::string{" Scene"};
 
         robot2D::createWindow(windowOptions, BIND_CLASS_FN(windowFunction));
     }

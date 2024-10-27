@@ -30,6 +30,8 @@ source distribution.
 
 #include <editor/panels/TreeHierarchy.hpp>
 
+#include "../IconsFontsAwesome5.hpp"
+
 #define IMGUI_ICON_ENTITY			u8"\ue000"
 
 namespace editor {
@@ -326,7 +328,8 @@ namespace editor {
         ImGuiWindow* window = ImGui::GetCurrentWindow();
         auto pos = window->DC.CursorPos;
         renderFrame(m_name, window, pos);
-        if (ImGui::TreeNodeEx(m_name.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
+        std::string s = m_name;
+        if (ImGui::TreeNodeEx(s.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
 
             m_multiSelection.preUpdate(m_items);
 
@@ -352,7 +355,8 @@ namespace editor {
 
                 {
                     std::string treeNodeText;
-                    treeNodeText += IMGUI_ICON_ENTITY + std::string("  ") + *item -> m_name;
+
+                    treeNodeText += ICON_FA_ROBOT + std::string("  ") + *item -> m_name;
 
                     robot2D::ScopedStyleVarVec2 var(ImGuiStyleVar_FramePadding, { 2, 2 });
                     if(!hasItem)
@@ -445,7 +449,7 @@ namespace editor {
 
             {
                 std::string treeNodeText;
-                treeNodeText += IMGUI_ICON_ENTITY + std::string("  ") + *child -> m_name;
+                treeNodeText += ICON_FA_ROBOT + std::string("  ") + *child -> m_name;
 
                 robot2D::ScopedStyleVarVec2 var(ImGuiStyleVar_FramePadding, { 2, 2 });
                 if(!hasItem)
