@@ -148,7 +148,7 @@ namespace editor {
     }
 
     void AnimationPanel::render() {
-        std::string name = ICON_FA_FILE_VIDEO + std::string{" Animation"};
+        std::string name = ICON_FA_FILE_VIDEO + std::string{" Animation"} + "###AnimationPanel";
 
         imgui_Window(name.c_str()) {
             renderSequencer();

@@ -69,7 +69,7 @@ namespace editor {
 
         robot2D::WindowOptions windowOptions{};
         windowOptions.flagsMask = 0;
-        windowOptions.name = ICON_FA_EYE + std::string{" Scene"};
+        windowOptions.name = ICON_FA_EYE + std::string{" Scene"} + "###ScenePanel";
 
         robot2D::createWindow(windowOptions, BIND_CLASS_FN(windowFunction));
     }
