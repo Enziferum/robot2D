@@ -43,7 +43,7 @@ namespace editor {
                 },
                 {}
         };
-        windowOptions.name = ICON_FA_CAMERA + std::string{" Game"};
+        windowOptions.name = ICON_FA_CAMERA + std::string{" Game"} + "###GamePanel";
         windowOptions.flagsMask = ImGuiWindowFlags_NoScrollbar;
 
         robot2D::createWindow(windowOptions, BIND_CLASS_FN(windowFunction));

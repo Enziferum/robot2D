@@ -178,7 +178,7 @@ namespace editor {
         bool anyItemIsHovered = false;
 
 
-        std::string name = ICON_FA_FILE + std::string{" Assets"};
+        std::string name = ICON_FA_FILE + std::string{" Assets"} + "###AssetsPanel";
         imgui_Window(name.c_str()) {
             m_visible = ImGui::IsWindowFocused();
 

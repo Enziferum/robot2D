@@ -41,6 +41,8 @@ namespace editor {
         bool loadFromFile(EditorResourceID, const std::string& path);
         robot2D::Texture& getTexture(EditorResourceID);
     private:
+
+    private:
         robot2D::ResourceHandler<robot2D::Texture, EditorResourceID> m_resources;
         std::string m_iconsPath = "res/icons";
     };

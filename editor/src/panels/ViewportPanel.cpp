@@ -76,7 +76,7 @@ namespace editor {
             {}
         };
         m_windowOptions.flagsMask = ImGuiWindowFlags_NoScrollbar;
-        m_windowOptions.name = ICON_FA_ETHERNET + std::string{" Viewport"};
+        m_windowOptions.name = ICON_FA_ETHERNET + std::string{" Viewport"} + "###ViewportPanel";
 
         for(const auto& [type, name]: iconNames) {
             std::filesystem::path path{iconPath};

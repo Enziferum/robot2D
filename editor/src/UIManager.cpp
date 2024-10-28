@@ -24,10 +24,15 @@ source distribution.
 #include <editor/panels/ScenePanel.hpp>
 #include <imgui/imgui_internal.h>
 
+#include <editor/Enum.hpp>
+
 namespace editor {
 
     namespace  {
         constexpr ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
+
+        DECLARE_ENUM(UIPanelType, ScenePanel, UtilsPanel, AssetsPanel,
+                     ViewportPanel, GamePanel, AnimationPanel, InspectorPanel)
     }
 
     IUIManager::~IUIManager() = default;
@@ -83,7 +88,7 @@ namespace editor {
 
             static bool once = false;
             if(!once) {
-             //   createLayout();
+                createLayout();
                 once = true;
             }
 
@@ -93,7 +98,20 @@ namespace editor {
             panel -> render();
     }
 
+
     void UIManager::createLayout() {
+
+        std::unordered_map<UIPanelType, std::string> windowIDS = {
+                {UIPanelType::ScenePanel, "###" + ENUM2STR(UIPanelType::ScenePanel)},
+                {UIPanelType::UtilsPanel, "###" + ENUM2STR(UIPanelType::UtilsPanel)},
+                {UIPanelType::AssetsPanel, "###" + ENUM2STR(UIPanelType::AssetsPanel)},
+                {UIPanelType::ViewportPanel, "###" + ENUM2STR(UIPanelType::ViewportPanel)},
+                {UIPanelType::GamePanel, "###" + ENUM2STR(UIPanelType::GamePanel)},
+                {UIPanelType::AnimationPanel, "###" + ENUM2STR(UIPanelType::AnimationPanel)},
+                {UIPanelType::InspectorPanel, "###" + ENUM2STR(UIPanelType::InspectorPanel)},
+        };
+
+
         ImGuiID dockspace_id = ImGui::GetID("Robot2D_Dockspace");
         ImGui::DockBuilderRemoveNode(dockspace_id);
         ImGui::DockBuilderAddNode(dockspace_id, dockspace_flags);
@@ -113,8 +131,8 @@ namespace editor {
         auto tree_id = ImGui::DockBuilderSplitNode(treeNode, ImGuiDir_Up,
                                                    0.8f, nullptr,
                                                    &stats_id);
-        ImGui::DockBuilderDockWindow("ScenePanel", tree_id);
-        ImGui::DockBuilderDockWindow("Utils", stats_id);
+        ImGui::DockBuilderDockWindow(windowIDS[UIPanelType::ScenePanel].c_str(), tree_id);
+        ImGui::DockBuilderDockWindow(windowIDS[UIPanelType::UtilsPanel].c_str(), stats_id);
 
         auto canvasNode = ImGui::DockBuilderAddNode();
         ImGui::DockBuilderSetNodeSize(treeNode, {viewport -> Size.x - startXSize, viewport -> Size.y});
@@ -126,17 +144,17 @@ namespace editor {
         auto viewport_id = ImGui::DockBuilderSplitNode(canvasNode, ImGuiDir_Up,
                                                        0.8f, nullptr,
                                                        &assets_id);
-        ImGui::DockBuilderDockWindow("Viewport", viewport_id);
-        ImGui::DockBuilderDockWindow("Game", viewport_id);
+        ImGui::DockBuilderDockWindow(windowIDS[UIPanelType::ViewportPanel].c_str(), viewport_id);
+        ImGui::DockBuilderDockWindow(windowIDS[UIPanelType::GamePanel].c_str(), viewport_id);
 
-        ImGui::DockBuilderDockWindow("Assets", assets_id);
-        ImGui::DockBuilderDockWindow("Animation", assets_id);
+        ImGui::DockBuilderDockWindow(windowIDS[UIPanelType::AssetsPanel].c_str(), assets_id);
+        ImGui::DockBuilderDockWindow(windowIDS[UIPanelType::AnimationPanel].c_str(), assets_id);
         ImGui::DockBuilderDockWindow("Dear ImGui Demo", assets_id);
 
         auto inspector_id = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Right,
                                                         0.1f, nullptr,
                                                         &dockspace_id);
-        ImGui::DockBuilderDockWindow("Inspector", inspector_id);
+        ImGui::DockBuilderDockWindow(windowIDS[UIPanelType::InspectorPanel].c_str(), inspector_id);
         ImGui::DockBuilderFinish(dockspace_id);
     }
 

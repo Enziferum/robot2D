@@ -151,7 +151,7 @@ namespace editor {
 
     void InspectorPanel::render() {
         robot2D::WindowOptions propertiesWindowOptions{};
-        propertiesWindowOptions.name = ICON_FA_INFO_CIRCLE + std::string{" Inspector"};
+        propertiesWindowOptions.name = ICON_FA_INFO_CIRCLE + std::string{" Inspector"} + "###InspectorPanel";
 
         robot2D::createWindow(propertiesWindowOptions, [this]{
             if(m_selectedEntity && m_inspectType == InspectType::EditorEntity)

@@ -39,8 +39,13 @@ namespace editor {
 
     namespace {
         const std::string configPath = "res/robot2D.ini";
-    }
 
+        int getDPI()
+        {
+            const HDC hdc = GetDC(NULL);
+            return GetDeviceCaps(hdc, LOGPIXELSX);
+        }
+    }
 
     Application::Application():
             robot2D::Application(),
@@ -50,12 +55,6 @@ namespace editor {
             m_guiWrapper{},
             m_projectInspector{m_messageBus}
             {}
-
-    int getDPI()
-    {
-        const HDC hdc = GetDC(NULL);
-        return GetDeviceCaps(hdc, LOGPIXELSX);
-    }
 
 
     void Application::setup() {
@@ -73,8 +72,8 @@ namespace editor {
         {
             /// TODO(a.raag): read from config .ini
             std::string defaultFontPath = "res/fonts/notosans-regular.ttf";
-            std::string fontPath1 = std::string{"res/fonts/fa-regular-400.ttf"} ;
-            std::string fontPath2 = std::string{"res/fonts/fa-solid-900.ttf"} ;
+            std::string fontPath1 = std::string{"res/fonts/fa-regular-400.ttf"};
+            std::string fontPath2 = std::string{"res/fonts/fa-solid-900.ttf"};
             float fontSize = 18.f;
             float scaleFactor = static_cast<float>(getDPI()) / 96.f;
 
