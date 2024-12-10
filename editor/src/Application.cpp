@@ -31,8 +31,10 @@ source distribution.
 #include <imgui/imgui.h>
 
 #include <editor/FileApi.hpp>
+#include <GLFW/glfw3.h>
 #include <robot2D/imgui/GuiFontConfig.hpp>
 #include "IconsFontsAwesome5.hpp"
+#include <robot2D/Config.hpp>
 
 namespace editor {
 
@@ -42,8 +44,13 @@ namespace editor {
 
         int getDPI()
         {
+#ifdef ROBOT2D_LINUX
+            return 144;
+#endif
+#ifdef ROBOT2D_WINDOWS
             const HDC hdc = GetDC(NULL);
             return GetDeviceCaps(hdc, LOGPIXELSX);
+#endif
         }
     }
 
@@ -75,8 +82,23 @@ namespace editor {
             std::string fontPath1 = std::string{"res/fonts/fa-regular-400.ttf"};
             std::string fontPath2 = std::string{"res/fonts/fa-solid-900.ttf"};
             float fontSize = 18.f;
-            float scaleFactor = static_cast<float>(getDPI()) / 96.f;
 
+            {
+                float xscale, yscale;
+
+                auto monitor = glfwGetPrimaryMonitor();
+                glfwGetMonitorContentScale(monitor, &xscale, &yscale);
+                int wMM, hMM;
+                glfwGetMonitorPhysicalSize(monitor, &wMM, &hMM);
+                auto videoMode = glfwGetVideoMode(monitor);
+
+                double xres = (double)videoMode -> width * 25.4 / (double)wMM;
+                double yres = (double)videoMode -> height * 25.4 / (double)hMM;
+
+
+            }
+
+            float scaleFactor = static_cast<float>(getDPI()) / 96.f;
             m_guiWrapper.setup(*m_window, false);
             std::vector<robot2D::GuiFontConfig> guiFontConfigs;
 
