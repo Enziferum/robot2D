@@ -49,6 +49,7 @@ set(SRC
         source/Components.cpp
         source/Systems.cpp
         source/LayerScene.cpp
+        source/EcsScene.cpp
        # source/EditorUIScene.cpp
        # source/TreeHierarchy.cpp
         )

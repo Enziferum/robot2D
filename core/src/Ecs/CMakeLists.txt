@@ -3,6 +3,7 @@ set(SRCROOT ${PROJECT_SOURCE_DIR}/src/Ecs)
 
 set(ECS_INCLUDE_FILES
     ${INCLROOT}/Bitmask.hpp
+    ${INCLROOT}/ClassID.hpp
     ${INCLROOT}/Component.hpp
     ${INCLROOT}/Defines.hpp
     ${INCLROOT}/Entity.hpp
@@ -15,6 +16,7 @@ set(ECS_INCLUDE_FILES
 
 set(ECS_SOURCE_FILES
     ${SRCROOT}/Bitmask.cpp
+    ${SRCROOT}/ClassID.cpp
     ${SRCROOT}/Component.cpp
     ${SRCROOT}/Entity.cpp
     ${SRCROOT}/EntityManager.cpp
