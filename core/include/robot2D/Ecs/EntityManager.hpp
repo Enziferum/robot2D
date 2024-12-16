@@ -83,6 +83,20 @@ namespace robot2D::ecs {
         Bitmask getComponentBitmask(Entity entity);
 
         Entity duplicateEntity(robot2D::ecs::Entity entity);
+
+
+
+
+        std::vector<class_id> getRegisteredContanainerIDs();
+
+
+
+
+
+
+
+
+
     private:
         void markDestroyed(Entity entity);
 
@@ -118,9 +132,17 @@ namespace robot2D::ecs {
         if(m_componentContainers[componentID] == nullptr) {
             m_componentContainers[componentID] = std::make_shared<ComponentContainer<T>>(componentID);
         }
-        return *(dynamic_cast<ComponentContainer<T>*>(m_componentContainers[componentID].get()));
+
+        auto componentContainer = m_componentContainers.at(componentID);
+        if(auto container = std::dynamic_pointer_cast<ComponentContainer<T>>(componentContainer)) {
+            return *container;
+        }
+        else {
+            /// throw exception ??? asserts or what :???
+        }
     }
 
+    /// copy able + operator == ?? + move able
 
     template<typename T, typename... Args>
     T& Entity::addComponent(Args&& ... args) {

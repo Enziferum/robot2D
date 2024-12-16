@@ -110,7 +110,7 @@ namespace editor {
 
 
         //////////////////////////////////// Load C# Mono ////////////////////////////////////
-        std::string scriptingEngineDLLPath = "res/script/robot2D_ScriptCore";
+          std::string scriptingEngineDLLPath = "res/script/robot2D_ScriptCore";
         m_scriptingEngine.Init(scriptingEngineDLLPath);
         m_scriptingEngine.SetWindow(m_window);
         //////////////////////////////////// Load C# Mono ////////////////////////////////////

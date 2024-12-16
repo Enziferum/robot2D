@@ -161,5 +161,27 @@ namespace robot2D::ecs {
         std::unordered_map<EntityID, T> m_components;
     };
 
+    template<typename T>
+    ComponentContainer<T>& ComponentContainer<T>::operator=(const ComponentContainer& other) {
+        return *this;
+    }
+
+    template<typename T>
+    ComponentContainer<T>& ComponentContainer<T>::operator=(ComponentContainer &&other) {
+        return *this;
+    }
+
+
+    template<typename T>
+    ComponentContainer<T>::ComponentContainer(const ComponentContainer& other) {
+
+    }
+
+
+    template<typename T>
+    ComponentContainer<T>::ComponentContainer(ComponentContainer&& other) {
+
+    }
+
 
 }

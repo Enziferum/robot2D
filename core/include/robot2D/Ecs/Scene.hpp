@@ -97,6 +97,9 @@ namespace robot2D::ecs {
         void update(float dt);
 
         void draw(robot2D::RenderTarget& target, robot2D::RenderStates states) const override;
+
+        /// TODO(a.raag): maybe only const only for info but not any change able
+        EntityManager& getEntityManager() { return m_entityManager; }
     private:
         friend class SystemManager;
         robot2D::MessageBus& m_messageBus;
