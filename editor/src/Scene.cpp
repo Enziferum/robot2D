@@ -295,6 +295,8 @@ namespace editor {
     }
 
     SceneEntity Scene::duplicateEntity(robot2D::vec2f mousePos, SceneEntity entity) {
+        // TODO(a.raag): if clone not add "(Clone)"
+
         auto dupEntity = m_scene.duplicateEntity(entity.getWrappedEntity());
         std::string name = entity.getComponent<TagComponent>().getTag();
         name += "(Clone)";

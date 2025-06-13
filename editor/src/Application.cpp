@@ -34,6 +34,40 @@ source distribution.
 #include <robot2D/imgui/GuiFontConfig.hpp>
 #include "IconsFontsAwesome5.hpp"
 
+#include "rbini/Utils.hpp"
+#include <rbini/RBIni.hpp>
+
+
+namespace rbini {
+    template<>
+    struct value_formatter<::robot2D::vec2f> {
+        static std::string write(const robot2D::vec2f& value) {
+            constexpr int precision = 2;
+            std::string s = to_string(value.x, precision) + 'x' + to_string(value.y, precision);
+            return s;
+        }
+
+        static ::robot2D::vec2f read(const std::string& rawData) {
+            auto [x, y] = split_2(rawData, 'x');
+            return { std::stof(x), std::stof(y) };
+        }
+    };
+
+    template<>
+    struct value_formatter<::robot2D::vec2i> {
+        static std::string write(const robot2D::vec2i& value) {
+            constexpr int precision = 2;
+            std::string s = std::to_string(value.x) + 'x' + std::to_string(value.y);
+            return s;
+        }
+
+        static ::robot2D::vec2i read(const std::string& rawData) {
+            auto [x, y] = split_2(rawData, 'x');
+            return { std::stoi(x), std::stoi(y) };
+        }
+    };
+}
+
 namespace editor {
 
 
@@ -42,10 +76,37 @@ namespace editor {
 
         int getDPI()
         {
-            const HDC hdc = GetDC(NULL);
+            const HDC hdc = GetDC(nullptr);
             return GetDeviceCaps(hdc, LOGPIXELSX);
         }
+
+
+
+        void createDefaultConfig(const std::string& path) {
+            rbini::RBIniParser parser;
+            rbini::Section section{};
+
+            rbini::Value cameraPos;
+            cameraPos.setAs(robot2D::vec2i{0, 0});
+            section["CameraPos"] = cameraPos;
+            rbini::Value cameraSize;
+            cameraSize.setAs(robot2D::vec2i{1280, 720});
+            section["CameraSize"] = cameraSize;
+
+            parser["Editor"] = section;
+
+            rbini::Section resourses;
+            resourses["FontSize"] = rbini::Value{"18.00"};
+            resourses["DefaultFont"] = rbini::Value{"notosans-regular.ttf"};
+            resourses["Regular"] = rbini::Value{"fa-regular-400.ttf"};
+            resourses["Solid"] = rbini::Value{"fa-solid-900.ttf"};
+
+
+            parser.save2File(path);
+        }
     }
+
+
 
     Application::Application():
             robot2D::Application(),
@@ -64,8 +125,10 @@ namespace editor {
             m_window -> setIcon(std::move(iconImage));
         }
 
-        if(!hasFile(configPath)) {
-            ///
+        if(!hasFile(configPath))
+            createDefaultConfig(configPath);
+        else {
+            /// read from Config
         }
 
 
@@ -110,7 +173,7 @@ namespace editor {
 
 
         //////////////////////////////////// Load C# Mono ////////////////////////////////////
-          std::string scriptingEngineDLLPath = "res/script/robot2D_ScriptCore";
+        std::string scriptingEngineDLLPath = "res/script/robot2D_ScriptCore";
         m_scriptingEngine.Init(scriptingEngineDLLPath);
         m_scriptingEngine.SetWindow(m_window);
         //////////////////////////////////// Load C# Mono ////////////////////////////////////

@@ -89,8 +89,12 @@ namespace editor {
         return true;
     }
 
-    void SceneManager::loadSceneAsync(Project::Ptr project, std::string path, SceneLoadCallback&& callback,
-                                      IScriptInteractorFrom::WeakPtr scriptInteractorFrom) {
+    void SceneManager::loadSceneAsync(
+        Project::Ptr project,
+        std::string path,
+        SceneLoadCallback&& callback,
+        IScriptInteractorFrom::WeakPtr scriptInteractorFrom
+    ) {
         Scene::Ptr scene = std::make_shared<Scene>(m_messageBus);
         if(scene == nullptr) {
             m_error = SceneManagerError::MemoryAlloc;

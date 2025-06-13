@@ -83,65 +83,6 @@ namespace editor {
             }
         }
 
-/*
-        bool BeginDrapDropTargetWindow(const char* payload_type)
-        {
-            using namespace ImGui;
-            ImRect inner_rect = GetCurrentWindow() -> InnerRect;
-            if (BeginDragDropTargetCustom(inner_rect, GetID("##WindowBgArea")))
-                if (const ImGuiPayload* payload = AcceptDragDropPayload(payload_type,
-                                                                        ImGuiDragDropFlags_AcceptBeforeDelivery
-                                                                        | ImGuiDragDropFlags_AcceptNoDrawDefaultRect))
-                {
-                    if (payload->IsPreview())
-                    {
-                        ImDrawList* draw_list = GetForegroundDrawList();
-                        draw_list->AddRectFilled(inner_rect.Min, inner_rect.Max, GetColorU32(ImGuiCol_DragDropTarget, 0.05f));
-                        draw_list->AddRect(inner_rect.Min, inner_rect.Max, GetColorU32(ImGuiCol_DragDropTarget), 0.0f, 0, 2.0f);
-                    }
-                    if (payload -> IsDelivery())
-                        return true;
-                    EndDragDropTarget();
-                }
-            return false;
-        }
-
-        class DragDropTarget {
-        public:
-            explicit DragDropTarget(const std::string& id);
-            DragDropTarget() = delete;
-            DragDropTarget(const DragDropTarget& other) = delete;
-            DragDropTarget& operator=(const DragDropTarget& other) = delete;
-            DragDropTarget(DragDropTarget&& other) = delete;
-            DragDropTarget& operator=(DragDropTarget&& other) = delete;
-            ~DragDropTarget();
-
-            template<typename T>
-            T* unpackPayload();
-        private:
-            const std::string& m_id;
-            bool m_beginTarget { false };
-        };
-
-        DragDropTarget::DragDropTarget(const std::string& id): m_id(id) {
-            if(BeginDrapDropTargetWindow(m_id.c_str()))
-                m_beginTarget = true;
-        }
-
-        DragDropTarget::~DragDropTarget() {
-            if(m_beginTarget)
-                ImGui::EndDragDropTarget();
-        }
-
-        template<typename T>
-        inline T* DragDropTarget::unpackPayload() {
-            if(!m_beginTarget)
-                return nullptr;
-            auto* payload = ImGui::AcceptDragDropPayload(m_id.c_str());
-            if(!payload || !payload -> IsDataType(m_id.c_str()))
-                return nullptr;
-            return static_cast<T*>(payload -> Data);
-        }*/
     }
 
 
