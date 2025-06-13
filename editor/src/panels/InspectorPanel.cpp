@@ -317,7 +317,13 @@ namespace editor {
     
     void InspectorPanel::drawCameraComponent([[maybe_unused]] SceneEntity entity, CameraComponent& component) {
         auto& camera = component.camera;
+        bool lastIsPrimary = component.isPrimary;
         ImGui::Checkbox("Primary", &component.isPrimary);
+
+        if(component.isPrimary != lastIsPrimary) {
+            /// TODO(a.raag) set or unset primary entity
+        }
+
         float orthoSize = component.orthoSize;
         if (ImGui::DragFloat("Size", &orthoSize, 0.1))
             component.orthoSize = orthoSize;

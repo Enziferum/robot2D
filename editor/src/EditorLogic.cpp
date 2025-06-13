@@ -35,6 +35,7 @@ source distribution.
 #include <editor/commands/DeleteEntitiesCommand.hpp>
 #include <editor/commands/PasteCommand.hpp>
 #include <editor/async/ExportTask.hpp>
+#include <utility>
 
 
 #ifdef ROBOT2D_WINDOWS
@@ -172,7 +173,7 @@ namespace editor {
     }
 
     void EditorLogic::setup(IScriptInteractorFrom::WeakPtr scriptInteractor) {
-        m_scriptInteractor = scriptInteractor;
+        m_scriptInteractor = std::move(scriptInteractor);
         PopupManager::getManager() -> addObserver(this);
     }
 
@@ -471,6 +472,7 @@ namespace editor {
            return iterator -> value;
         });
 
+        // TODO(a.raag): filter by what ??
         if(!m_selectedEntities.empty()) {
             std::vector<ITreeItem::Ptr> selected_items{};
             selected_items.reserve(m_selectedEntities.size());

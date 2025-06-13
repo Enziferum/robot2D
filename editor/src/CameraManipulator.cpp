@@ -205,7 +205,7 @@ namespace editor {
         m_cameraView.setCenter({position.x, position.y});
 
         robot2D::vec2f midPoint = { m_aabb.lx + m_aabb.width / 2.f, m_aabb.ly + m_aabb.height / 2.f};
-        m_movieSprite.setPosition({midPoint.x - 10, midPoint.y - 10});
+        m_movieSprite.setPosition({midPoint.x - 10, midPoint.y - 10} );
     }
 
 

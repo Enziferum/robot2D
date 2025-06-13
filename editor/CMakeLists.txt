@@ -16,6 +16,7 @@ add_subdirectory(extlibs/yaml-cpp)
 add_subdirectory(extlibs/tinyfiledialog)
 add_subdirectory(extlibs/filewatch)
 add_subdirectory(extlibs/TinyXML)
+add_subdirectory(extlibs/RBIni)
 
 include(cmake/Box2DPatching.cmake)
 include(cmake/MonoPatching.cmake)
@@ -25,7 +26,7 @@ if(RB2D_EDITOR_USE_GLM)
     set(LIBS glm)
 endif()
 
-set(LIBS robot2D-core robot2D-imgui yaml-cpp tinyfiledialogs FileWatch box2d tinyxml ${MONO_LIBRARIES} ${LIBS})
+set(LIBS robot2D-core robot2D-imgui yaml-cpp tinyfiledialogs FileWatch box2d tinyxml rbini ${MONO_LIBRARIES} ${LIBS})
 
 file(GLOB_RECURSE INCLS include/editor/*.hpp)
 file(GLOB_RECURSE SRC src/*.cpp)

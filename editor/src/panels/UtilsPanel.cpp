@@ -23,7 +23,8 @@ source distribution.
 #include <editor/panels/UtilPanel.hpp>
 
 namespace editor {
-#define  ICON u8"\ue000"
+    #define  ICON u8"\ue000"
+
     UtilPanel::UtilPanel(IEditorCamera::Ptr sceneCamera):
             IPanel(UniqueType(typeid(UtilPanel))),
             m_camera{sceneCamera},
@@ -45,8 +46,19 @@ namespace editor {
 
         // TODO(a.raag) need apply graphics styles
 
-        ImGui::Text("Rendering 2D Stats ...");
 
+        /*
+         * Frame Time:
+         * Draw Quads:
+         * Draw Calls:
+         * World Size:
+         *
+         */
+
+
+
+
+        ImGui::Text("Rendering 2D Stats ...");
         ImGui::Text("Quads Count: %d", m_renderStats.drawQuads);
         ImGui::Text("Draw Calls Count: %d", m_renderStats.drawCalls);
 
