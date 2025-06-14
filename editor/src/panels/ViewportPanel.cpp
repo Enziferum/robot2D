@@ -184,6 +184,7 @@ namespace editor {
                         selectedEntity.getComponent<CameraComponent>().size = {frame.width, frame.height};
                         selectedEntity.getComponent<CameraComponent>().position = frame.topPoint();
                         selectedEntity.getComponent<CameraComponent>().orthoSize = m_CameraCollider.getSize();
+                        selectedEntity.getComponent<CameraComponent>().cameraRect = m_CameraCollider.getCameraRect();
                     }
                 }
             }

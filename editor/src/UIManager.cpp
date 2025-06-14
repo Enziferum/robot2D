@@ -25,6 +25,7 @@ source distribution.
 #include <imgui/imgui_internal.h>
 
 #include <editor/Enum.hpp>
+#include <editor/EditorConfig.hpp>
 
 namespace editor {
 
@@ -86,12 +87,18 @@ namespace editor {
             ImGuiID dockspace_id = ImGui::GetID("Robot2D_Dockspace");
             ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f),dockspace_flags);
 
-            static bool once = false;
-            if(!once) {
+            auto& config = EditorConfig::getConfig();
+            if(!config.layoutCreated) {
                 createLayout();
-                once = true;
-            }
+                config.layoutCreated = true;
 
+                std::fstream file("robot2D.ini", std::ios::out | std::ios::ate);
+                std::size_t iniOutSize = 0;
+                auto iniData = ImGui::SaveIniSettingsToMemory(&iniOutSize);
+
+                file.write(iniData, iniOutSize);
+                file.close();
+            }
         }
 
         for(auto& panel: m_panels)

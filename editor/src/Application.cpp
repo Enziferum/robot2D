@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2024
+(c) Alex Raag 2025
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -36,43 +36,14 @@ source distribution.
 
 #include "rbini/Utils.hpp"
 #include <rbini/RBIni.hpp>
+#include <editor/EditorConfig.hpp>
 
-
-namespace rbini {
-    template<>
-    struct value_formatter<::robot2D::vec2f> {
-        static std::string write(const robot2D::vec2f& value) {
-            constexpr int precision = 2;
-            std::string s = to_string(value.x, precision) + 'x' + to_string(value.y, precision);
-            return s;
-        }
-
-        static ::robot2D::vec2f read(const std::string& rawData) {
-            auto [x, y] = split_2(rawData, 'x');
-            return { std::stof(x), std::stof(y) };
-        }
-    };
-
-    template<>
-    struct value_formatter<::robot2D::vec2i> {
-        static std::string write(const robot2D::vec2i& value) {
-            constexpr int precision = 2;
-            std::string s = std::to_string(value.x) + 'x' + std::to_string(value.y);
-            return s;
-        }
-
-        static ::robot2D::vec2i read(const std::string& rawData) {
-            auto [x, y] = split_2(rawData, 'x');
-            return { std::stoi(x), std::stoi(y) };
-        }
-    };
-}
 
 namespace editor {
 
 
     namespace {
-        const std::string configPath = "res/robot2D.ini";
+        const std::string configPath = "robot2D.ini";
 
         int getDPI()
         {
@@ -81,29 +52,6 @@ namespace editor {
         }
 
 
-
-        void createDefaultConfig(const std::string& path) {
-            rbini::RBIniParser parser;
-            rbini::Section section{};
-
-            rbini::Value cameraPos;
-            cameraPos.setAs(robot2D::vec2i{0, 0});
-            section["CameraPos"] = cameraPos;
-            rbini::Value cameraSize;
-            cameraSize.setAs(robot2D::vec2i{1280, 720});
-            section["CameraSize"] = cameraSize;
-
-            parser["Editor"] = section;
-
-            rbini::Section resourses;
-            resourses["FontSize"] = rbini::Value{"18.00"};
-            resourses["DefaultFont"] = rbini::Value{"notosans-regular.ttf"};
-            resourses["Regular"] = rbini::Value{"fa-regular-400.ttf"};
-            resourses["Solid"] = rbini::Value{"fa-solid-900.ttf"};
-
-
-            parser.save2File(path);
-        }
     }
 
 
@@ -123,12 +71,6 @@ namespace editor {
             robot2D::Image iconImage;
             iconImage.loadFromFile(m_appConfiguration.logoPath);
             m_window -> setIcon(std::move(iconImage));
-        }
-
-        if(!hasFile(configPath))
-            createDefaultConfig(configPath);
-        else {
-            /// read from Config
         }
 
 
@@ -169,6 +111,17 @@ namespace editor {
             guiFontConfigs.push_back(iconFontConfig2);
 
             m_guiWrapper.setupFonts(std::move(guiFontConfigs));
+
+            auto& io = ImGui::GetIO();
+            io.IniFilename = nullptr;
+
+            auto& config = EditorConfig::getConfig();
+            if(!hasFile(configPath))
+                config.createDefaultConfig(configPath);
+            else {
+                config.loadConfig(configPath);
+            }
+
         }
 
 
@@ -237,6 +190,30 @@ namespace editor {
     }
 
     void Application::guiUpdate(float dt) {
+        auto& io = ImGui::GetIO();
+        if(io.WantSaveIniSettings && m_logic.getState() == AppState::Editor) {
+            std::size_t iniOutSize = 0;
+            auto iniData = ImGui::SaveIniSettingsToMemory(&iniOutSize);
+            auto& config = EditorConfig::getConfig();
+
+            std::string s;
+            std::fstream f("robot2D.ini", std::ios::in);
+            std::string line;
+            for(int i = 0; i < config.fieldsValue + 1; ++i) {
+                std::getline(f, line);
+                s += line + "\n";
+            }
+            s += "\n";
+
+            f.close();
+
+            std::fstream file("robot2D.ini", std::ios::out);
+            file.write(s.data(), s.length());
+            file.write(iniData, iniOutSize);
+
+            file.close();
+            io.WantSaveIniSettings = false;
+        }
         m_guiWrapper.update(dt);
     }
 

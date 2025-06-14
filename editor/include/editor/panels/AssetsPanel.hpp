@@ -47,7 +47,7 @@ namespace editor {
 
         const std::string iconsPath = "res/icons/";
         const float m_padding = 16.F;
-        const float m_thumbnaleSize = 128.F;
+        const float m_thumbnaleSize = 96.F;
         const std::unordered_map<ResourceIconType, std::string> iconPaths = {
                 { ResourceIconType::File, "FileIcon.png"},
                 { ResourceIconType::Directory, "DirectoryIcon.png"},
@@ -88,6 +88,8 @@ namespace editor {
         /// \brief in panel drag and out of panel
         void processDragDrop(const std::filesystem::directory_entry& directoryEntry,
                              std::filesystem::path& path);
+
+        void tableRender(int tableCount, bool& anyItemIsHovered);
     private:
         enum class AssetType {
             Scene,
@@ -116,7 +118,7 @@ namespace editor {
 
 
         State m_state = State::Loading;
-        bool m_itemClicked{false};
-        bool m_visible{false};
+        bool m_itemClicked{ false };
+        bool m_visible{ false };
     };
 }

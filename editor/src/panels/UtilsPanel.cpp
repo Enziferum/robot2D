@@ -41,7 +41,7 @@ namespace editor {
     }
 
     void UtilPanel::render() {
-        std::string s = std::string{" Utils"};
+        std::string s = std::string{"###UtilsPanel"};
         ImGui::Begin(s.c_str());
 
         // TODO(a.raag) need apply graphics styles
