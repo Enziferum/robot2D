@@ -248,23 +248,15 @@ namespace editor {
 
 
         CameraComponent() = default;
+        CameraComponent(const CameraComponent& other) = default;
+        CameraComponent& operator=(const CameraComponent& other) = default;
+        CameraComponent(CameraComponent&& other) = default;
+        CameraComponent& operator=(CameraComponent&& other) = default;
         ~CameraComponent() = default;
 
 
         robot2D::vec2f getSize() const { return size; }
         robot2D::vec2f getPosition() const { return position; }
-
-       // Property<float> Size;
-
-       // PROPERTY_GET(Size) {
-       //     return Size;
-      //  }
-
-      //  PROPERTY_SET(Size) {
-      //      if(oldValue != newValue) {
-                ///
-      //      }
-      //  }
 
 
 
@@ -272,6 +264,7 @@ namespace editor {
         float orthoSize;
         robot2D::vec2f size;
         robot2D::vec2f position;
+        robot2D::FloatRect cameraRect;
 
         SceneCamera camera;
         bool isPrimary{false};

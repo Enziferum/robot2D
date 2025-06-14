@@ -27,11 +27,31 @@ namespace editor {
     enum class EditorResourceID {
         Manipulator,
         ManipulatorRotate,
-        Movie
+        Movie,
+        Animation,
+        Content,
+        Entity,
+        FileIcon,
+        Gizmos,
+        Image,
+        Move,
+        PauseButton,
+        PlayButton,
+        Rotate,
+        Scale,
+        Script,
+        Studio,
+        Text
     };
 
     class EditorResourceManager {
     public:
+        EditorResourceManager(const EditorResourceManager& other) = delete;
+        EditorResourceManager& operator=(const EditorResourceManager& other) = delete;
+        EditorResourceManager(EditorResourceManager&& other) = delete;
+        EditorResourceManager& operator=(EditorResourceManager&& other) = delete;
+        ~EditorResourceManager() = default;
+
         static EditorResourceManager* getManager() {
             static EditorResourceManager editorResourceManager;
             return &editorResourceManager;
@@ -41,7 +61,7 @@ namespace editor {
         bool loadFromFile(EditorResourceID, const std::string& path);
         robot2D::Texture& getTexture(EditorResourceID);
     private:
-
+        EditorResourceManager() = default;
     private:
         robot2D::ResourceHandler<robot2D::Texture, EditorResourceID> m_resources;
         std::string m_iconsPath = "res/icons";

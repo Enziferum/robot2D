@@ -39,6 +39,8 @@ source distribution.
 
 #include "../IconsFontsAwesome5.hpp"
 
+#include <rbini/Utils.hpp>
+
 namespace editor {
 
     template<typename T, typename UIFunction>
@@ -283,14 +285,14 @@ namespace editor {
     }
 
     void InspectorPanel::drawComponents(SceneEntity entity) {
-        drawComponent<TransformComponent>("Transform", entity, BIND_CLASS_FN(drawTransformComponent));
-        drawComponent<CameraComponent>("Camera", entity, BIND_CLASS_FN(drawCameraComponent));
-        drawComponent<DrawableComponent>("Drawable", entity, BIND_CLASS_FN(drawDrawableComponent));
-        drawComponent<ScriptComponent>("Script", entity, BIND_CLASS_FN(drawScriptComponent));
-        drawComponent<Physics2DComponent>("physics2D", entity, BIND_CLASS_FN(drawPhysics2DComponent));
-        drawComponent<Collider2DComponent>("Collider2D", entity, BIND_CLASS_FN(drawCollider2DComponent));
-        drawComponent<TextComponent>("Text", entity, BIND_CLASS_FN(drawTextComponent));
-        drawComponent<AnimationComponent>("Animation", entity, BIND_CLASS_FN(drawAnimationComponent));
+        drawComponent<TransformComponent>( ICON_FA_WALKING + std::string{" Transform"}, entity, BIND_CLASS_FN(drawTransformComponent));
+        drawComponent<CameraComponent>( ICON_FA_CAMERA + std::string{" Camera"}, entity, BIND_CLASS_FN(drawCameraComponent));
+        drawComponent<DrawableComponent>(ICON_FA_PAINT_BRUSH + std::string{"  Drawable"}, entity, BIND_CLASS_FN(drawDrawableComponent));
+        drawComponent<ScriptComponent>(ICON_FA_FILE_CODE + std::string{" Script"}, entity, BIND_CLASS_FN(drawScriptComponent));
+        drawComponent<Physics2DComponent>(ICON_FA_HAMMER + std::string{"  Physics2D"}, entity, BIND_CLASS_FN(drawPhysics2DComponent));
+        drawComponent<Collider2DComponent>(ICON_FA_JEDI + std::string{" Collider2D"}, entity, BIND_CLASS_FN(drawCollider2DComponent));
+        drawComponent<TextComponent>(ICON_FA_TEXT_HEIGHT + std::string{"  Text"}, entity, BIND_CLASS_FN(drawTextComponent));
+        drawComponent<AnimationComponent>(ICON_FA_CAMERA + std::string{" Animation"}, entity, BIND_CLASS_FN(drawAnimationComponent));
     }
 
 
@@ -327,6 +329,13 @@ namespace editor {
         float orthoSize = component.orthoSize;
         if (ImGui::DragFloat("Size", &orthoSize, 0.1))
             component.orthoSize = orthoSize;
+
+        auto cameraRect = component.cameraRect;
+        std::string posText = rbini::to_string(cameraRect.lx) + "x" + rbini::to_string(cameraRect.ly);
+        std::string sizeText = rbini::to_string(cameraRect.width) + "x" + rbini::to_string(cameraRect.height);
+        ImGui::Text("Position: %s", posText.c_str());
+        ImGui::Text("Size: %s", sizeText.c_str());
+
 
         const char* aspectRatioTypeStrings[] = { "16:9", "9:16" };
         const char* aspectRatioProjectionTypeString = aspectRatioTypeStrings[(int)component.aspectRatio];
