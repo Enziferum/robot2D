@@ -69,6 +69,10 @@ namespace robot2D {
         m_render -> clear(color);
     }
 
+    void RenderTarget::clearScissor(const robot2D::UIntRect rect, const Color& color) {
+        m_render -> clearScissor(rect, color);
+    }
+
     void RenderTarget::draw(const Drawable& drawable, const RenderStates& states) {
         drawable.draw(*this, states);
     }
@@ -93,6 +97,10 @@ namespace robot2D {
 
     void RenderTarget::setView(const View& view, unsigned int layerID) {
         m_render -> setView(view, layerID);
+    }
+
+    void RenderTarget::setViewVirtual(const vec2u& windowSize, const View& view, unsigned int layerID) {
+        m_render -> setViewVirtual(windowSize, view, layerID);
     }
 
     const View& RenderTarget::getView(unsigned int layerID) const {

@@ -50,6 +50,14 @@ namespace robot2D {
             };
         }
 
+        float dot(const Vector2<T>& other) const {
+            return x * other.x + y * other.y;
+        }
+
+        float cross(const Vector2<T>& other) const {
+            return x * other.y - y * other.x;
+        }
+
         T x;
         T y;
     };

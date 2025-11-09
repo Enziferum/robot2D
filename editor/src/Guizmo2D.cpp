@@ -137,54 +137,61 @@ namespace editor {
 
     }
 
+
+    void Guizmo2D::moveManipulators(const robot2D::vec2f& diff) {
+        m_xAxisManipulator.moveX(diff.x);
+        m_xAxisManipulator.moveY(diff.y);
+        m_yAxisManipulator.moveX(diff.x);
+        m_yAxisManipulator.moveY(diff.y);
+        m_XYAxisManipulator.moveX(diff.x);
+        m_XYAxisManipulator.moveY(diff.y);
+    }
+
+
+    namespace {
+
+        float angleBetweenVectorInDegress(const robot2D::vec2f& center, const robot2D::vec2f& oldPos, const robot2D::vec2f& newPos) {
+            robot2D::vec2f v1 = oldPos - center;
+            robot2D::vec2f v2 = newPos - center;
+
+            float dot = v1.dot(v2);
+            float cross = v1.cross(v2);
+
+            float angle = -std::atan2(cross, dot); // угол в радианах, со знаком
+
+            return angle * 180 / M_PI;
+        }
+
+    }
+
+
     void Guizmo2D::processMouseMoved(robot2D::Event event) {
         if(!m_leftMousePressed) return;
         robot2D::vec2f moveVector{event.move.x, event.move.y};
         moveVector = m_camera -> convertPixelToCoords(moveVector);
 
+        robot2D::vec2f diff{};
         switch(m_operation) {
             case Operation::Move: {
                 if(m_xAxisManipulator.active()) {
                     /// move transformAble by x
-                    float diff = moveVector.x - m_manipulatorLastPos.x;
-                    for(auto transform: m_manipulateds) {
-                        auto pos = transform -> getPosition();
-                        transform -> setPosition({pos.x + diff, pos.y});
-                    }
-
-                    m_manipulatorLastPos.x += diff;
-                    m_xAxisManipulator.moveX(diff);
-                    m_yAxisManipulator.moveX(diff);
-                    m_XYAxisManipulator.moveX(diff);
-                    /// update manipulator's position
+                    diff.x =  moveVector.x - m_manipulatorLastPos.x;
                 }
                 else if(m_yAxisManipulator.active()) {
                     /// move transformAble by y
-                    float diff = moveVector.y - m_manipulatorLastPos.y;
-                    for(auto transform: m_manipulateds) {
-                        auto pos = transform -> getPosition();
-                        transform -> setPosition({pos.x, pos.y + diff});
-                    }
-
-                    m_manipulatorLastPos.y += diff;
-                    m_xAxisManipulator.moveY(diff);
-                    m_yAxisManipulator.moveY(diff);
-                    m_XYAxisManipulator.moveY(diff);
-                    /// update manipulator's position
+                    diff.y = moveVector.y - m_manipulatorLastPos.y;
                 }
                 else if(m_XYAxisManipulator.active()) {
-                    robot2D::vec2f diff = moveVector - m_manipulatorLastPos;
-                    for(auto transform: m_manipulateds) {
-                        auto pos = transform -> getPosition();
-                        transform -> setPosition(pos + diff);
-                    }
-                    m_manipulatorLastPos += diff;
-                    m_xAxisManipulator.moveX(diff.x);
-                    m_xAxisManipulator.moveY(diff.y);
-                    m_yAxisManipulator.moveX(diff.x);
-                    m_yAxisManipulator.moveY(diff.y);
-                    m_XYAxisManipulator.moveX(diff.x);
-                    m_XYAxisManipulator.moveY(diff.y);
+                    diff = moveVector - m_manipulatorLastPos;
+                }
+
+                m_manipulatorLastPos += diff;
+                moveManipulators(diff);
+
+
+                for(auto transform: m_manipulateds) {
+                    auto pos = transform -> getPosition();
+                    transform -> setPosition(pos + diff);
                 }
 
                 break;
@@ -233,16 +240,17 @@ namespace editor {
                 break;
             }
             case Operation::Rotate: {
-                robot2D::vec2f diff = moveVector - m_manipulatorLastPos;
-                m_manipulatorLastPos += diff;
-                float diffAngle = 1.f;
-                if(diff.y < 0)
-                    diffAngle = -1.f;
-
                 for(auto& transform: m_manipulateds) {
                     auto lastRotate = transform -> getRotation();
-                    transform -> setRotate(lastRotate + diffAngle);
+
+                    auto pos = transform -> getPosition();
+                    auto size = transform -> getLocalBounds();
+                    robot2D::vec2f center = pos + size.centerPoint();
+
+                    float diffAngle = angleBetweenVectorInDegress(pos, moveVector, m_manipulatorLastPos);
+                    transform -> rotate(diffAngle);
                 }
+                m_manipulatorLastPos = moveVector;
                 break;
             }
         }
@@ -339,7 +347,7 @@ namespace editor {
             if(position.y < minLeftPoint.y)
                 minLeftPoint.y = position.y;
             if(position.x > maxRightPoint.x)
-                minLeftPoint.x = position.x;
+                maxRightPoint.x = position.x;
             if(position.y > maxRightPoint.y)
                 maxRightPoint.y = position.y;
         }
@@ -420,6 +428,5 @@ namespace editor {
         m_camera = camera;
         setOperationType(m_operation);
     }
-
 
 }

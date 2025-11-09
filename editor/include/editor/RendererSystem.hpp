@@ -43,6 +43,8 @@ namespace editor {
         void setFrameBuffer(robot2D::FrameBuffer::Ptr frameBuffer) { m_frameBuffer = frameBuffer; }
         void setScene(Scene* scene);
         void setRuntimeFlag(bool flag) { m_runtimeFlag = flag; }
+        void setRuntimeWindowSize(const robot2D::vec2u& size) { m_runtimeWindowSize = size;}
+
         void update(float dt) override;
         void draw(robot2D::RenderTarget& target, robot2D::RenderStates states) const override;
     private:
@@ -63,6 +65,7 @@ namespace editor {
 
         std::vector<InsertItem> m_insertItems;
         robot2D::View m_cameraView;
+        robot2D::vec2u m_runtimeWindowSize;
     };
 
 }

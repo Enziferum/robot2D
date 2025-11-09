@@ -109,9 +109,8 @@ namespace robot2D::ecs {
         }
 
         void remove(std::size_t index) {
-            if(index >= m_components.size())
-                return;
-           // m_components.erase(m_components.begin() + index);
+            std::size_t indexErased = m_components.erase(index);
+            // TODO(a.raag):
         }
 
 

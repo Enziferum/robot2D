@@ -339,6 +339,7 @@ namespace editor {
 
         const char* aspectRatioTypeStrings[] = { "16:9", "9:16" };
         const char* aspectRatioProjectionTypeString = aspectRatioTypeStrings[(int)component.aspectRatio];
+
         imgui_Combo("AspectRation", aspectRatioProjectionTypeString) {
             for (int i = 0; i < 2; i++)
             {
@@ -354,6 +355,25 @@ namespace editor {
             }
 
         }
+
+        const char* scalingModeVector[] = {"PixelArt_IntegerFit_Letterbox", "PixelArt_IntegerFill_Crop",
+                                           "NonPixel_Fit_Letterbox", "NonPixel_Fill_Crop", "Stretch"};
+        const char* scalingModeString = scalingModeVector[(int)component.scalingMode];
+        imgui_Combo("ScalingMode", scalingModeString) {
+            for (int i = 0; i < 5; i++)
+            {
+                bool isSelected = scalingModeString == scalingModeVector[i];
+                if (ImGui::Selectable(scalingModeVector[i], isSelected))
+                {
+                    scalingModeString = scalingModeVector[i];
+                    component.scalingMode = static_cast<CameraComponent::ScalingMode>(i);
+                }
+
+                if (isSelected)
+                    ImGui::SetItemDefaultFocus();
+            }
+        }
+
     }
     
     void InspectorPanel::drawDrawableComponent(SceneEntity entity, DrawableComponent& component) {

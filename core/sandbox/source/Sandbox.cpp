@@ -47,9 +47,9 @@ void Sandbox::setup() {
 
    // m_gui.setup(*m_window);
 
-    sandbox::EcsScene::Ptr ecsScene = std::make_unique<sandbox::EcsScene>(*m_window);
+//    sandbox::EcsScene::Ptr ecsScene = std::make_unique<sandbox::EcsScene>(*m_window);
 
-    m_scene = std::move(ecsScene);
+    m_scene = std::move(render2DScene);
 }
 
 void Sandbox::handleEvents(const robot2D::Event& event) {
