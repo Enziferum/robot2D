@@ -83,5 +83,6 @@ namespace robot2D {
         virtual FrameBufferSpecification& getSpecification()= 0;
 
         static Ptr Create(const FrameBufferSpecification& specification);
+        vec2u actualSize;
     };
 }

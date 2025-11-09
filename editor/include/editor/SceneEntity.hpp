@@ -83,6 +83,8 @@ namespace editor {
         robot2D::FloatRect getBoundingBox() const;
 
         bool isChild() const { return m_parent != nullptr; }
+
+        const std::string& getName() const;
     private:
         friend class SceneGraph;
 

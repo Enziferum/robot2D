@@ -18,6 +18,7 @@ and must not be misrepresented as being the original software.
 3. This notice may not be removed or altered from any
 source distribution.
 *********************************************************************/
+
 #include <algorithm>
 
 #include <editor/SceneGraph.hpp>
@@ -30,15 +31,17 @@ namespace editor {
 
     void SceneGraph::update(float dt, robot2D::ecs::Scene& ecsScene) {
         m_deletePendingEntities.swap(m_deletePendingBuffer);
-        for (auto& entity : m_deletePendingEntities) {
-            for (auto child : entity.getChildren())
-                child.getWrappedEntity().removeSelf();
-
+        for (const auto& [deleteFromEcs, entity] : m_deletePendingEntities) {
+            if(deleteFromEcs) {
+                for (auto child: entity.getChildren())
+                    child.getWrappedEntity().removeSelf();
+            }
             m_sceneEntities.erase(std::remove_if(m_sceneEntities.begin(), m_sceneEntities.end(),
                 [&entity](const SceneEntity& item) {
                     return item == entity;
                 }), m_sceneEntities.end());
-            ecsScene.removeEntity(entity.getWrappedEntity());
+            if(deleteFromEcs)
+                ecsScene.removeEntity(entity.getWrappedEntity());
         }
         m_deletePendingEntities.clear();
 
@@ -128,8 +131,17 @@ namespace editor {
 
 
     void SceneGraph::removeEntity(const SceneEntity& entity) {
-        m_deletePendingBuffer.push_back(entity);
+        constexpr bool deleteFromEcs = true;
+        m_deletePendingBuffer.emplace_back(deleteFromEcs, entity);
     }
+
+
+    void SceneGraph::makeEntityChild(const SceneEntity &entity) {
+        constexpr bool deleteFromEcs = false;
+        m_deletePendingBuffer.emplace_back(deleteFromEcs, entity);
+    }
+
+
 
     bool SceneGraph::cloneSelf(SceneGraph& cloneGraph) {
         //constexpr bool cloneSystems = true;
@@ -165,6 +177,5 @@ namespace editor {
                 traverseGraphChildren(traverseFunction, entity);
         }
     }
-
 
 } // namespace editor

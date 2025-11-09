@@ -231,6 +231,7 @@ namespace editor {
     }
 
     void Box2DPhysicsAdapter::stop() {
+        m_entityList.clear();
         m_physicsWorld.reset();
     }
 

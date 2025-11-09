@@ -59,6 +59,7 @@ namespace editor {
 
         SceneEntity getEntity(UUID uuid) const;
         void removeEntity(const SceneEntity& entity);
+        void makeEntityChild(const SceneEntity& entity);
 
 
         bool setBefore(SceneEntity& source, SceneEntity& target);
@@ -113,8 +114,9 @@ namespace editor {
         /// <summary>
         ///  double buffer pattern for removing 
         /// </summary>
-        std::vector<SceneEntity> m_deletePendingEntities;
-        std::vector<SceneEntity> m_deletePendingBuffer;
+        using DeletePair = std::pair<bool, SceneEntity>; // bool here delete or not from ecs
+        std::vector<DeletePair> m_deletePendingEntities;
+        std::vector<DeletePair> m_deletePendingBuffer;
     };
 
 

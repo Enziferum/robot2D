@@ -23,8 +23,10 @@ source distribution.
 #include <sandbox/Render2DScene.hpp>
 #include <sandbox/Systems.hpp>
 #include <sandbox/Components.hpp>
-#include <iomanip>
-#include <GLFW/glfw3.h>
+
+#include <robot2D/Graphics/Font.hpp>
+#include <robot2D/Graphics/Text.hpp>
+
 #include <cmath>
 
 namespace {
@@ -170,6 +172,9 @@ private:
 std::vector<Quad> quads;
 std::vector<BoundingBox> bbs;
 
+robot2D::Font g_font;
+robot2D::Text g_text;
+
 Render2DScene::Render2DScene(robot2D::RenderWindow& window) : Scene(window), m_scene(messageBus) {}
 
 
@@ -256,6 +261,9 @@ void Render2DScene::setup() {
     ///// setup Ecs /////
 
     m_textures.loadFromFile(ResourceID::Logo, texturePath);
+    g_font.loadFromFile("res/fonts/font.ttf");
+    g_text.setText("Ожидание чтения карты");
+    g_text.setFont(g_font);
     {
         Quad q;
         q.setPosition({400, 400});
@@ -402,6 +410,7 @@ void Render2DScene::render() {
         m_window.draw(q);
     for(const auto& b: bbs)
         m_window.draw(b);
+    m_window.draw(g_text);
     m_window.afterRender();
 }
 

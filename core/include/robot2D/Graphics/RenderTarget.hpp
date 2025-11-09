@@ -56,6 +56,8 @@ namespace robot2D {
         /// Set new Viewport.
         virtual void setView(const View& view, unsigned int layerID = 1);
 
+        virtual void setViewVirtual(const vec2u& windowSize, const View& view, unsigned int layerID = 1);
+
         void setRawView(float* rawMatrix);
 
         virtual void setView3D(const Matrix3D& projection, const Matrix3D& view);
@@ -68,6 +70,7 @@ namespace robot2D {
 
         /// Clear Window background space with custom color
         void clear(const Color& color = Color::Black);
+        void clearScissor(const robot2D::UIntRect rect, const Color& color = Color::Black);
 
         /// Adding Layer inside Render Impl
         void createLayer();

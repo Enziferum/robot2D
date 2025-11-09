@@ -87,7 +87,7 @@ namespace robot2D::ecs {
 
 
 
-        std::vector<class_id> getRegisteredContanainerIDs();
+        // std::vector<class_id> getRegisteredContanainerIDs();
 
 
 
@@ -140,6 +140,8 @@ namespace robot2D::ecs {
         else {
             /// throw exception ??? asserts or what :???
         }
+
+        // return nullptr;
     }
 
     /// copy able + operator == ?? + move able

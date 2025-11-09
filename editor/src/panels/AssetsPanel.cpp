@@ -200,7 +200,7 @@ namespace editor {
                     ImGui::SetDragDropPayload(contentSceneID, itemPath, len);
                     imgui_Text(relativePath.filename().string().c_str());
                 }
-                if(extension == ".png" || extension == ".ttf") {
+                if(extension == ".png" || extension == ".jpg" ||  extension == ".ttf") {
                    ImGui::SetDragDropPayload(contentItemID, itemPath, len);
                    imgui_Text(relativePath.filename().string().c_str());
                 }

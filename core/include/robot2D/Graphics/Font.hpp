@@ -52,6 +52,8 @@ namespace robot2D {
         std::vector<std::unique_ptr<robot2D::Image>> m_images;
         std::unordered_map<int, GlyphCharacter> m_glyphCharacters;
         std::string m_path;
+
+        bool m_initialized{ false };
     };
 
 }

@@ -150,6 +150,8 @@ namespace editor {
         void processMouseMoved(robot2D::Event event);
         void processMousePressed(robot2D::Event event);
         void processMouseRelease(robot2D::Event event);
+
+        void moveManipulators(const robot2D::vec2f& diff);
     private:
         bool m_isShown{false};
         bool m_isCollide{false};

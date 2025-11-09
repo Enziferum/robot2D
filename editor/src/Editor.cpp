@@ -272,6 +272,7 @@ namespace editor {
             m_activeScene -> setRuntimeCamera(false);
             m_window -> draw(*m_activeScene);
         }
+
         m_window -> draw(m_guizmo2D);
         m_window -> draw(m_cameraManipulator);
         if(m_selectionCollider.isShown())
@@ -288,9 +289,13 @@ namespace editor {
 
             m_gameFrameBuffer -> Bind();
             const auto& clearColor = m_panelManager.getPanel<UtilPanel>().getColor();
-            m_window -> clear(clearColor);
+            m_window -> clear(robot2D::Color::Black);
+
             if(m_activeScene) {
+                auto sz = m_gameFrameBuffer -> actualSize;
+                m_window -> clearScissor({0, 0, sz.x, sz.y}, clearColor);
                 m_window -> beforeRender();
+                m_activeScene -> setRuntimeWindowSize(sz);
                 m_activeScene -> setRuntimeCamera(true);
                 m_window -> draw(*m_activeScene);
                 m_window -> afterRender();

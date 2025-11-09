@@ -246,6 +246,14 @@ namespace editor {
             Desktop = 0, Mobile
         };
 
+        enum class ScalingMode {
+            PixelArt_IntegerFit_Letterbox = 0, // без искажений, кратный масштаб, центр + полосы
+            PixelArt_IntegerFill_Crop, // кратный масштаб «cover», обрезает края
+            NonPixel_Fit_Letterbox, // без искажений, не обязательно кратный масштаб
+            NonPixel_Fill_Crop, // без искажений, «cover», обрезает края Stretch
+            Stretch // растягивает во весь экран (искажает аспект)
+        };
+
 
         CameraComponent() = default;
         CameraComponent(const CameraComponent& other) = default;
@@ -258,8 +266,7 @@ namespace editor {
         robot2D::vec2f getSize() const { return size; }
         robot2D::vec2f getPosition() const { return position; }
 
-
-
+        ScalingMode scalingMode;
         AspectRatio aspectRatio;
         float orthoSize;
         robot2D::vec2f size;
