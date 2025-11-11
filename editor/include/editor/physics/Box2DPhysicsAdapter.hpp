@@ -23,10 +23,19 @@ source distribution.
 
 #include <memory>
 #include <box2d/box2d.h>
+#include <unordered_set>
 #include "IPhysics2DAdapter.hpp"
 
 namespace editor {
+
+
     class Box2DPhysicsAdapter final: public IPhysics2DAdapter, b2ContactListener {
+    private:
+        struct Geom {
+            float nx, ny;
+            PhysicsContactPoint2D pts[2];
+            uint8_t count;
+        };
     public:
         Box2DPhysicsAdapter() = default;
         Box2DPhysicsAdapter(const Box2DPhysicsAdapter& other) = delete;
@@ -46,15 +55,37 @@ namespace editor {
         void start(editorEntityList& entityList) override;
         void stop() override;
         void addRuntime(SceneEntity entity) override;
-        void registerCallback(PhysicsCallbackType callbackType, editor::PhysicsCallback&& callback) override {
-            m_callbacks[callbackType] = std::move(callback);
+        void registerCallback(editor::PhysicsCallback&& callback) override {
+            m_callback = std::move(callback);
         }
+
+        void emitStayAndSwap();
     private:
         void addEntity(SceneEntity entity);
         void updateEntity(SceneEntity entity);
+
+        bool isTrigger(const b2Contact* contact);
+        void FillWorld(b2Contact* c, Geom& g);
     private:
         std::unique_ptr<b2World> m_physicsWorld{nullptr};
         std::list<SceneEntity> m_entityList;
-        std::unordered_map<PhysicsCallbackType, PhysicsCallback> m_callbacks;
+        PhysicsCallback m_callback;
+
+        struct PairKey {
+            uint64_t a,b; bool trigger;
+            bool operator==(const PairKey& o) const { return a==o.a && b==o.b && trigger==o.trigger; }
+        };
+        struct PairKeyHash {
+            size_t operator()(const PairKey& k) const {
+                return (size_t)k.a*1315423911u ^ (size_t)k.b ^ (k.trigger?0x9e37:0);
+            }
+        };
+
+        std::unordered_set<PairKey, PairKeyHash> m_prevPairs, m_currentPairs;
+
+        std::unordered_map<PairKey, Geom, PairKeyHash> m_geomCache;
+        std::unordered_map<PairKey, std::pair<float,float>, PairKeyHash> m_impulses;
+
+        std::vector<PhysicsContact2D> m_eventsThisFrame;
     };
 }

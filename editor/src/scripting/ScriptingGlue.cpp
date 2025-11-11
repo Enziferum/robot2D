@@ -111,6 +111,18 @@ namespace editor {
         return hasComp;
     }
 
+    static std::uint64_t Entity_FindEntityByName(MonoString* name) {
+        auto service = ScriptGlue::getService();
+        auto cppString = Utils::MonoStringToString(name);
+        auto interactor = service -> getInteractor();
+        RB_CORE_ASSERT(interactor);
+        SceneEntity entity = interactor -> getEntity(cppString);
+        RB_CORE_ASSERT(entity);
+        auto uuid = entity.getUUID();
+        auto myUuid = static_cast<std::uint64_t>(uuid);
+        return myUuid;
+    }
+
     static void TransformComponent_GetTranslation(UUID entityID, robot2D::vec2f* outTranslation)
     {
         auto service = ScriptGlue::getService();
@@ -425,6 +437,8 @@ namespace editor {
         RegisterComponent<TextComponent>(m_service);
         RegisterComponent<DrawableComponent>(m_service);
         RegisterComponent<AnimatorComponent>(m_service);
+        RegisterComponent<PhysicsContact2D>(m_service);
+        RegisterComponent<PhysicsContactPoint2D>(m_service);
     }
 
     void ScriptGlue::registerFunctions()
@@ -432,6 +446,7 @@ namespace editor {
         RB_ADD_INTERNAL_CALL(NativeLog);
         RB_ADD_INTERNAL_CALL(GetScriptInstance);
         RB_ADD_INTERNAL_CALL(Entity_HasComponent);
+        RB_ADD_INTERNAL_CALL(Entity_FindEntityByName);
         RB_ADD_INTERNAL_CALL(Input_IsKeyDown);
         RB_ADD_INTERNAL_CALL(Input_IsMousePressed);
         RB_ADD_INTERNAL_CALL(Input_GetMousePosition);

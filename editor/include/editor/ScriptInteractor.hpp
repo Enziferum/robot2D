@@ -108,6 +108,7 @@ namespace editor {
 
         virtual ~IScriptInteractor() = 0;
         virtual SceneEntity getEntity(std::uint64_t entityID) = 0;
+        virtual SceneEntity getEntity(const std::string& name) = 0;
 
         virtual bool loadSceneRuntime(std::string&& name) = 0;
         virtual void loadSceneAsyncRuntime(std::string&& name) = 0;
@@ -128,6 +129,7 @@ namespace editor {
 
         //////////////////////////////////////////////// IScriptInteractor ////////////////////////////////////////////////
         SceneEntity getEntity(std::uint64_t entityID) override;
+        SceneEntity getEntity(const std::string& name) override;
         void loadSceneAsyncRuntime(std::string &&name) override;
         bool loadSceneRuntime(std::string &&name) override;
         void exitEngineRuntime() override;

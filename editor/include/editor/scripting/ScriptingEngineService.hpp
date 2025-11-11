@@ -52,11 +52,7 @@ namespace editor {
 
         virtual void onUpdateEntity(SceneEntity sceneEntity, float delta) = 0;
 
-        virtual void onCollision2DBegin(const Physics2DContact& contact) = 0;
-        virtual void onCollision2DEnd(const Physics2DContact& contact) = 0;
-
-        virtual void onCollision2DBeginTrigger(const Physics2DContact& contact) = 0;
-        virtual void onCollision2DEndTrigger(const Physics2DContact& contact) = 0;
+        virtual void onPhysicsCallback(const PhysicsContact2D& contact, UUID self, UUID other) = 0;
 
         virtual void onRuntimeStart(std::shared_ptr<IScriptInteractorFrom> interactor) = 0;
         virtual void onRuntimeStop() = 0;

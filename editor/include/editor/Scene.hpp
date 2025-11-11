@@ -89,6 +89,7 @@ namespace editor {
         void restoreEntities(DeletedEntitiesRestoreInformation& restoreInformation);
 
         SceneEntity getEntity(UUID uuid) const;
+        SceneEntity getEntity(const std::string& name) const;
 
         bool isRunning() const { return m_running; }
 

@@ -52,6 +52,13 @@ namespace editor {
         return interactor -> getEntity(UUID{entityID});
     }
 
+    SceneEntity ScriptInteractor::getEntity(const std::string& name) {
+        auto interactor = m_editorInteractor.lock();
+        if(!interactor)
+            return {};
+        return interactor -> getEntity(name);
+    }
+
     void ScriptInteractor::loadSceneAsyncRuntime(std::string&& name) {
 
     }
