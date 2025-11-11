@@ -37,6 +37,7 @@ source distribution.
 
 #include "editor/panels/ITreeItem.hpp"
 #include <editor/Animation.hpp>
+#include <editor/physics/Layers2D.hpp>
 #include "SceneEntity.hpp"
 #include "Uuid.hpp"
 #include "Property.hpp"
@@ -277,10 +278,17 @@ namespace editor {
         bool isPrimary{false};
     };
 
+    struct CollisionLayer {
+        uint16_t categoryBits = 1 << 0; // Default
+        uint16_t maskBits     = 0xFFFF; // collide with all by default
+        int16_t  groupIndex   = 0;
+    };
 
     class Collider2DComponent final {
     public:
         DECLARE_COMPONENT_ID()
+
+        enum class Shape { Box, Circle /*…*/ } shape = Shape::Box;
 
         Collider2DComponent() = default;
         ~Collider2DComponent() = default;
@@ -292,8 +300,27 @@ namespace editor {
         float friction =  0.5f;
         float restitution = 0.0f;
         float restitutionThreshold = 0.5f;
+        bool isTrigger = false;
+        bool oneWay = false;
+        robot2D::vec2f oneWayNormal { 0, 1 }; // Up по умолчанию (мировой)
+        float oneWayDotThreshold = 0.5f;      // cos(60°) — порог "снизу/сверху"
 
-        void* runtimeBody{nullptr};
+
+        float skipCollideTime = 0.f;
+        void* runtimeFixture{ nullptr };
+
+        struct UserData {
+            UUID entityId;
+            bool oneWay;
+            robot2D::vec2f oneWayNormal;
+            bool generateEvents;
+        } userData;
+
+
+
+        bool    useDefaultMask = true;
+        bool markFilterDirty = false;
+        phys2d::FilterBits filter = phys2d::makeFilterDefault("Default");
     };
 
     class Physics2DComponent final {
@@ -307,6 +334,10 @@ namespace editor {
         BodyType type = BodyType::Static;
 
         bool fixedRotation = false;
+        bool bullet = false;
+        float gravityScale = 1.0f;
+        float linearDamping = 0.0f;
+        float angularDamping = 0.0f;
         void* runtimeBody{nullptr};
     };
 

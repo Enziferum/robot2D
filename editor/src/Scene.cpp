@@ -35,6 +35,7 @@ source distribution.
 #include <editor/scripting/ScriptingEngine.hpp>
 #include <editor/panels/TreeHierarchy.hpp>
 #include <editor/Messages.hpp>
+#include <editor/physics/Layers2D.hpp>
 
 namespace editor {
 
@@ -70,6 +71,8 @@ namespace editor {
         m_scene.addSystem<AnimatorSystem>(m_messageBus);
         m_scene.addSystem<AnimationSystem>(m_messageBus);
         m_scene.addSystem<UISystem>(m_messageBus);
+
+        InitPhysicsLayers();
     }
 
     void Scene::createMainCamera() {
@@ -241,25 +244,10 @@ namespace editor {
         if(!scriptingEngine)
             return;
 
-        m_physicsAdapter -> registerCallback(PhysicsCallbackType::Enter,
-                                           [scriptingEngine](const Physics2DContact& contact) {
-                                               scriptingEngine -> onCollision2DBegin(contact);
-                                           });
-
-        m_physicsAdapter -> registerCallback(PhysicsCallbackType::Exit,
-                                           [scriptingEngine](const Physics2DContact& contact) {
-                                               scriptingEngine -> onCollision2DEnd(contact);
-                                           });
-
-        m_physicsAdapter -> registerCallback(PhysicsCallbackType::EnterTrigger,
-                                           [scriptingEngine](const Physics2DContact& contact) {
-                                               scriptingEngine -> onCollision2DBeginTrigger(contact);
-                                           });
-
-        m_physicsAdapter -> registerCallback(PhysicsCallbackType::ExitTrigger,
-                                           [scriptingEngine](const Physics2DContact& contact) {
-                                               scriptingEngine -> onCollision2DEndTrigger(contact);
-                                           });
+        m_physicsAdapter -> registerCallback(
+                [scriptingEngine](const PhysicsContact2D& contact, UUID self, UUID other) {
+                scriptingEngine -> onPhysicsCallback(contact, self, other);
+        });
     }
 
     void Scene::onPhysics2DStop() {
@@ -291,6 +279,18 @@ namespace editor {
         if(m_running)
             return m_runtimeSceneGraph.getEntity(uuid);
         return m_sceneGraph.getEntity(uuid);
+    }
+
+    SceneEntity Scene::getEntity(const std::string& name) const {
+        if(m_running) {
+            auto found = std::find_if(m_scriptRuntimeContainer.begin(),
+                                      m_scriptRuntimeContainer.end(), [&](const SceneEntity& entity) {
+               return entity.getName() == name;
+            });
+            auto uuid = (*found).getUUID();
+            return *found;
+        }
+        return {};
     }
 
 

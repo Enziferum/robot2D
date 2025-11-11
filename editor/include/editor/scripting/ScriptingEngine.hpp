@@ -79,11 +79,7 @@ namespace editor {
         void onCreateEntity(SceneEntity sceneEntity) override;
         void onUpdateEntity(SceneEntity sceneEntity, float delta) override;
 
-        void onCollision2DBegin(const Physics2DContact& contact) override;
-        void onCollision2DEnd(const Physics2DContact& contact) override;
-
-        void onCollision2DBeginTrigger(const Physics2DContact& contact) override;
-        void onCollision2DEndTrigger(const Physics2DContact& contact) override;
+        void onPhysicsCallback(const PhysicsContact2D& contact, UUID self, UUID other) override;
 
         void onRuntimeStart(IScriptInteractorFrom::Ptr interactor) override;
         void onRuntimeStop() override;

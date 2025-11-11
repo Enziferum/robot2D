@@ -31,6 +31,7 @@ source distribution.
 #include <editor/ResouceManager.hpp>
 #include <editor/LocalResourceManager.hpp>
 #include <editor/DragDropIDS.hpp>
+#include <editor/physics/Layers2D.hpp>
 
 #include <editor/components/ButtonComponent.hpp>
 #include <editor/async/ImageLoadTask.hpp>
@@ -42,6 +43,135 @@ source distribution.
 #include <rbini/Utils.hpp>
 
 namespace editor {
+
+
+
+    void DrawLayerRegistryEditor(phys2d::LayerRegistry& LR)
+    {
+        ImGui::TextDisabled("Total Layers: %d (Box2D supports up to 16)", phys2d::kMaxLayers);
+
+        // --- Раздел: создание слоёв в пустых ячейках ---
+        if (ImGui::CollapsingHeader("Layer (registry)")) {
+            ImGui::BeginDisabled(); // имена из LayerRegistry сейчас только читаем (rename не реализован в примере)
+            if (ImGui::BeginTable("layers_list", 3, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg))
+            {
+                ImGui::TableSetupColumn("#", ImGuiTableColumnFlags_WidthFixed, 30.f);
+                ImGui::TableSetupColumn("Name");
+                ImGui::TableSetupColumn("Bit");
+                ImGui::TableHeadersRow();
+
+                for (int i = 0; i < phys2d::kMaxLayers; ++i) {
+                    ImGui::TableNextRow();
+                    ImGui::TableSetColumnIndex(0);
+                    ImGui::Text("%d", i);
+                    ImGui::TableSetColumnIndex(1);
+                    const auto& name = LR.names()[i];
+                    ImGui::TextUnformatted(name.empty() ? "<empty>" : name.c_str());
+                    ImGui::TableSetColumnIndex(2);
+                    if (!name.empty()) ImGui::Text("0x%04X", LR.bit(i));
+                    else ImGui::TextDisabled("-");
+                }
+                ImGui::EndTable();
+            }
+            ImGui::EndDisabled();
+
+            // Быстрое создание слоя в пустой ячейке
+            static int newIndex = 0;
+            static char newName[64] = "";
+            ImGui::Separator();
+            ImGui::Text("CreateNew Layer:");
+            ImGui::SetNextItemWidth(80.f);
+            ImGui::InputInt("Index", &newIndex);
+            if (newIndex < 0)
+                newIndex = 0;
+            if (newIndex >= phys2d::kMaxLayers)
+                newIndex = phys2d::kMaxLayers - 1;
+            ImGui::SameLine();
+            ImGui::SetNextItemWidth(200.f);
+            ImGui::InputText("Name", newName, IM_ARRAYSIZE(newName));
+            bool canDefine = LR.names()[newIndex].empty() && std::string(newName).size() > 0;
+
+            if (!LR.names()[newIndex].empty())
+                ImGui::TextDisabled("Index %d already belongs to layer '%s'", newIndex, LR.names()[newIndex].c_str());
+
+            if (ImGui::Button("Define Layer") && canDefine) {
+                try {
+                    LR.defineLayer(newIndex, std::string(newName));
+                    newName[0] = '\0';
+                } catch (const std::exception& e) {
+                    ImGui::OpenPopup("DefineError");
+                    (void)e;
+                }
+            }
+            if (ImGui::BeginPopup("DefineError")) {
+                ImGui::TextWrapped("Can't create layer. Check is unique name and index.");
+                if (ImGui::Button("OK")) ImGui::CloseCurrentPopup();
+                ImGui::EndPopup();
+            }
+        }
+
+        // --- Раздел: Глобальная матрица столкновений ---
+        if (ImGui::CollapsingHeader("Global collision matrix(default)", ImGuiTreeNodeFlags_DefaultOpen))
+        {
+            // Соберём актуальные имена
+            std::vector<int> idx;
+            std::vector<const char*> names;
+            for (int i = 0; i < phys2d::kMaxLayers; ++i) {
+                const auto& n = LR.names()[i];
+                if (!n.empty()) {
+                    idx.push_back(i); names.push_back(n.c_str());
+                }
+            }
+
+            if (names.empty()) {
+                ImGui::TextDisabled("No specific layers.");
+                return;
+            }
+
+            ImGui::TextDisabled("Checkbox A<->B symmetric. This settings forms default mask for new colliders.");
+            ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(6,4));
+            if (ImGui::BeginTable("coll_matrix", (int)names.size() + 1,
+                                  ImGuiTableFlags_Borders | ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable | ImGuiTableFlags_ScrollY,
+                                  ImVec2(0, ImGui::GetTextLineHeightWithSpacing() * (names.size() + 3))))
+            {
+                // Заголовок
+                ImGui::TableSetupColumn("Layer");
+                for (size_t c = 0; c < names.size(); ++c)
+                    ImGui::TableSetupColumn(names[c]);
+                ImGui::TableHeadersRow();
+
+                for (size_t r = 0; r < names.size(); ++r) {
+                    ImGui::TableNextRow();
+                    ImGui::TableSetColumnIndex(0);
+                    ImGui::TextUnformatted(names[r]);
+
+                    for (size_t c = 0; c < names.size(); ++c) {
+                        ImGui::TableSetColumnIndex((int)c + 1);
+
+                        // диагональ — серым
+                        if (r == c) {
+                            ImGui::BeginDisabled();
+                            bool value = false;
+                            ImGui::Checkbox("##self", &value);
+                            ImGui::EndDisabled();
+                            continue;
+                        }
+
+                        bool v = LR.defaultCollides(LR.names()[idx[r]], LR.names()[idx[c]]);
+                        ImGui::PushID((int)(r * names.size() + c));
+                        if (ImGui::Checkbox("##m", &v)) {
+                            // симметрично
+                            LR.setDefaultCollides(LR.names()[idx[r]], LR.names()[idx[c]], v);
+                        }
+                        ImGui::PopID();
+                    }
+                }
+                ImGui::EndTable();
+            }
+            ImGui::PopStyleVar();
+        }
+    }
+
 
     template<typename T, typename UIFunction>
     static void drawComponent(const std::string& name, SceneEntity& entity, UIFunction uiFunction)
@@ -180,6 +310,8 @@ namespace editor {
     }
 
     void InspectorPanel::drawComponentsBase(SceneEntity entity) {
+        DrawLayerRegistryEditor(phys2d::LayerRegistry::I());
+
         if(m_inspectType == InspectType::EditorEntity) {
             if(!entity.hasComponent<TagComponent>())
                 return;
@@ -456,6 +588,97 @@ namespace editor {
         }
     }
 
+    inline bool DrawColliderFilterEditor(phys2d::LayerRegistry& LR,
+                                         phys2d::FilterBits& filter,
+                                         bool& useDefaultMask)
+    {
+        bool changed = false;
+
+        // Список доступных слоёв
+        std::vector<int> idx;
+        std::vector<const char*> names;
+        for (int i = 0; i < phys2d::kMaxLayers; ++i) {
+            const auto& n = LR.names()[i];
+            if (!n.empty()) { idx.push_back(i); names.push_back(n.c_str()); }
+        }
+        if (names.empty()) {
+            ImGui::TextDisabled("Нет слоёв.");
+            return false;
+        }
+
+        // Текущий layer по categoryBits
+        int currentLayerIndex = 0; // fallback
+        for (size_t i = 0; i < idx.size(); ++i) {
+            if (filter.categoryBits == (uint16_t)(1u << idx[i])) { currentLayerIndex = (int)i; break; }
+        }
+
+        // Layer dropdown
+        ImGui::Text("Layer");
+        ImGui::SameLine();
+        if (ImGui::BeginCombo("##layer", names[currentLayerIndex])) {
+            for (size_t i = 0; i < names.size(); ++i) {
+                bool sel = (i == (size_t)currentLayerIndex);
+                if (ImGui::Selectable(names[i], sel)) {
+                    currentLayerIndex = (int)i;
+                    filter.categoryBits = (uint16_t)(1u << idx[i]);
+                    if (useDefaultMask) {
+                        filter.maskBits = LR.defaultMaskFor(LR.names()[idx[i]]);
+                    }
+                    changed = true;
+                }
+                if (sel) ImGui::SetItemDefaultFocus();
+            }
+            ImGui::EndCombo();
+        }
+
+        // Use default mask toggle
+        ImGui::Checkbox("Use default mask (from matrix)", &useDefaultMask);
+        if (useDefaultMask) {
+            // Подсказка: показываем маску как disabled
+            ImGui::BeginDisabled();
+        }
+
+        // Collides With (локальные чекбоксы)
+        ImGui::Text("Collides With:");
+        int cols = 3;
+        if (ImGui::BeginTable("mask_table", cols, ImGuiTableFlags_SizingFixedFit)) {
+            int col = 0;
+            for (size_t i = 0; i < idx.size(); ++i) {
+                if (col == 0) ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(col);
+                bool v = (filter.maskBits & (uint16_t)(1u << idx[i])) != 0;
+                ImGui::PushID((int)i);
+                if (ImGui::Checkbox(names[i], &v) && !useDefaultMask) {
+                    if (v) filter.maskBits |=  (uint16_t)(1u << idx[i]);
+                    else   filter.maskBits &= ~(uint16_t)(1u << idx[i]);
+                    changed = true;
+                }
+                ImGui::PopID();
+                col = (col + 1) % cols;
+            }
+            ImGui::EndTable();
+        }
+
+        if (useDefaultMask) {
+            ImGui::EndDisabled();
+            // синхронизируем фактическую маску
+            filter.maskBits = LR.defaultMaskFor(LR.names()[idx[currentLayerIndex]]);
+        }
+
+        // Group Index
+        ImGui::Separator();
+        ImGui::SetNextItemWidth(100.f);
+        if (ImGui::InputScalar("Group Index", ImGuiDataType_S16, &filter.groupIndex)) {
+            changed = true;
+        }
+        ImGui::SameLine();
+        ImGui::TextDisabled("0 – by masks, >0 – always inside group, <0 – newer inside group");
+
+        return changed;
+    }
+
+
+
     void InspectorPanel::drawPhysics2DComponent([[maybe_unused]] SceneEntity entity, Physics2DComponent& component) {
         const char* bodyTypeStrings[] = { "Static", "Dynamic", "Kinematic" };
         const char* currentBodyTypeString = bodyTypeStrings[(int)component.type];
@@ -474,9 +697,13 @@ namespace editor {
             }
 
         }
+        ImGui::DragFloat("GravityScale", &component.gravityScale, 0.01f, 0.0f, 1.0f);
+        ImGui::DragFloat("LinearDamping", &component.linearDamping, 0.01f, 0.0f, 1.0f);
+        ImGui::DragFloat("AngularDamping", &component.angularDamping, 0.01f, 0.0f, 1.0f);
         ImGui::Checkbox("Fixed Rotation", &component.fixedRotation);
+        ImGui::Checkbox("IsBullet", &component.bullet);
     }
-    
+
     void InspectorPanel::drawCollider2DComponent([[maybe_unused]] SceneEntity entity, Collider2DComponent& component) {
         float offset[2] = { component.offset.x, component.offset.y };
         float size[2] = { component.size.x, component.size.y };
@@ -486,14 +713,25 @@ namespace editor {
         ImGui::DragFloat("Friction", &component.friction, 0.01f, 0.0f, 1.0f);
         ImGui::DragFloat("Restitution", &component.restitution, 0.01f, 0.0f, 1.0f);
         ImGui::DragFloat("Restitution Threshold", &component.restitutionThreshold, 0.01f, 0.0f);
+        ImGui::DragFloat("SkipCollideTime(secs)", &component.skipCollideTime, 0.01f, 0.0f);
         component.offset = { offset[0], offset[1] };
         component.size = { size[0], size[1] };
+        ImGui::Checkbox("IsTrigger", &component.isTrigger);
+        ImGui::Checkbox("OneWay", &component.oneWay);
+
+        phys2d::FilterBits fb = component.filter;       // categoryBits/maskBits/groupIndex
+        bool useDefaultMask   = component.useDefaultMask;
+
+        if (DrawColliderFilterEditor(phys2d::LayerRegistry::I(), fb, useDefaultMask)) {
+            component.filter         = fb;
+            component.useDefaultMask = useDefaultMask;
+            component.markFilterDirty = true;           // чтобы обновить b2Fixture в рантайме
+        }
     }
 
     void InspectorPanel::drawAnimationComponent(SceneEntity, AnimationComponent& component) {
         auto* animationManager = AnimationManager::getManager();
     }
-
 
 
 

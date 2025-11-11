@@ -701,6 +701,10 @@ namespace editor {
         return m_activeScene -> getEntity(uuid);
     }
 
+    SceneEntity EditorLogic::getEntity(const std::string& name) {
+        return m_activeScene -> getEntity(name);
+    }
+
     void EditorLogic::setEditorCamera(IEditorCamera::Ptr editorCamera) {
         m_activeScene -> setEditorCamera(editorCamera);
     }

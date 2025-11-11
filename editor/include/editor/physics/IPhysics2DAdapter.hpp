@@ -25,6 +25,7 @@ source distribution.
 #include <functional>
 #include <editor/SceneEntity.hpp>
 #include <editor/Uuid.hpp>
+#include <editor/ClassID.hpp>
 
 namespace editor {
     using editorEntityList = std::list<SceneEntity>;
@@ -33,20 +34,42 @@ namespace editor {
         Box2D
     };
 
-    enum class PhysicsCallbackType: int {
-        Enter = 0,
-        Exit = 1,
-        EnterTrigger = 2,
-        ExitTrigger = 3
+
+
+    enum class PhysicsEventType : uint8_t {
+        Enter = 0, Exit, Stay,
+        EnterTrigger, ExitTrigger, StayTrigger
     };
 
-    struct Physics2DContact {
-        UUID entityA;
-        UUID entityB;
-        PhysicsCallbackType contanctType{PhysicsCallbackType::Enter};
+    struct PhysicsContactPoint2D {
+        DECLARE_COMPONENT_ID();
+
+        float px, py;     // точка контакта
+        float sep;        // separation (отрицательное = пересечение)
     };
 
-    using PhysicsCallback = std::function<void(const Physics2DContact&)>;
+    struct PhysicsContact2D {
+        DECLARE_COMPONENT_ID();
+
+        uint64_t entityA, entityB;      // твои ID
+        uint64_t fixtureA, fixtureB;    // опционально: ID/хэндлы фикстур
+        PhysicsEventType type;
+
+        // Геометрия/динамика
+        float nx, ny;                    // нормаль (как в Box2D: от A к B)
+        PhysicsContactPoint2D points[2]; // до 2 точек
+        uint8_t pointCount;              // фактическое число точек
+        float normalImpulse;             // суммарный нормальный импульс за PostSolve
+        float tangentImpulse;            // суммарный тангенциальный импульс
+
+        // Флаги
+        bool isSensorA, isSensorB;
+        uint16_t categoryA, categoryB;   // categoryBits
+        uint16_t maskA, maskB;           // maskBits
+    };
+
+
+    using PhysicsCallback = std::function<void(const PhysicsContact2D&, UUID self, UUID other)>;
 
     class IPhysics2DAdapter {
     public:
@@ -58,7 +81,7 @@ namespace editor {
         virtual void start(editorEntityList& entityList) = 0;
         virtual void stop() = 0;
         virtual void addRuntime(SceneEntity entity) = 0;
-        virtual void registerCallback(PhysicsCallbackType callbackType, PhysicsCallback&& callback) = 0;
+        virtual void registerCallback(PhysicsCallback&& callback) = 0;
     };
 
     IPhysics2DAdapter::Ptr getPhysics2DAdapter(PhysicsAdapterType);
