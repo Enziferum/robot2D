@@ -1,8 +1,5 @@
 ﻿using System;
-using System.Collections.Specialized;
-using System.Dynamic;
 using System.Reflection;
-using System.Reflection.Emit;
 using System.Runtime.InteropServices;
 
 namespace robot2D
@@ -10,13 +7,13 @@ namespace robot2D
 
     public enum PhysicsEventType : byte
     {
-        Enter, Stay, Exit, EnterTrigger, StayTrigger, ExitTrigger
+        Enter=0, Stay=1, Exit=2, EnterTrigger=3, StayTrigger=4, ExitTrigger=5
     }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct PhysicsContactPoint2D { public float px, py, sep; }
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
     public struct PhysicsContact2D
     {
         public ulong entityA, entityB;
@@ -28,8 +25,6 @@ namespace robot2D
         public float normalImpulse, tangentImpulse;
         [MarshalAs(UnmanagedType.I1)] public bool isSensorA, isSensorB;
         public ushort categoryA, categoryB, maskA, maskB;
-        //public float relVelX, relVelY;
-        //public uint frameIndex;
     }
 
     public static class Object
@@ -73,7 +68,6 @@ namespace robot2D
     {
         protected Entity()
         {
-            Console.WriteLine("Entity Default Ctor");
             ID = 0;
         } 
 
@@ -173,40 +167,16 @@ namespace robot2D
             }
                 
         }
-
-        /*
-        internal void onCollision2DInternal(ulong entityID, ulong otherEntityID, int type)
-        {
-            Collision2D collision2D = new Collision2D(entityID, otherEntityID);
-            string methodName = "None";
-            switch (type)
-            {
-                case 0:
-                    methodName = "onCollision2DEnter";
-                    break;
-                case 1:
-                    methodName = "onCollision2DExit";
-                    break;
-                case 2:
-                    methodName = "onCollision2DEnterTrigger";
-                    break;
-                case 3:
-                    methodName = "onCollision2DExitTrigger";
-                    break;
-            }
-            var method = GetType().GetMethod(methodName);
-            if(method != null)
-                method.Invoke(this, new object[] { collision2D });
-        }
-        */
-
+        
         public virtual void OnCreate() {}
         public virtual void OnUpdate(float deltaTime) { }
         public virtual void OnCollision2DInternal(ulong self, ulong other, int typeInt, ref PhysicsContact2D ev)
         {
+            Console.WriteLine(Marshal.OffsetOf<PhysicsContact2D>(nameof(PhysicsContact2D.ny)));
             Console.WriteLine("Entity: OnCollision2DInternal");
             var type = (PhysicsEventType)typeInt;
-
+            Console.WriteLine($"Collision Type: {type}");
+            
             // нормаль "к нам"
             var nToMe = (self == ev.entityA)
                 ? new Vector2(-ev.nx, -ev.ny)

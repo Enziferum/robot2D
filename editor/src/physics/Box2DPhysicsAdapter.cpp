@@ -209,6 +209,8 @@ namespace editor {
         ev.type = trig ? PhysicsEventType::EnterTrigger : PhysicsEventType::Enter;
         ev.nx = g.nx;
         ev.ny = g.ny;
+        RB_EDITOR_WARN("Geomerty: Normal {0}:{1}", g.nx, g.ny);
+        RB_EDITOR_WARN("Offset ny: {0}", offsetof(PhysicsContact2D, ny));
         ev.pointCount = g.count;
         for (int i=0; i < g.count; i++)
             ev.points[i] = g.pts[i];
