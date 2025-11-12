@@ -607,7 +607,7 @@ namespace editor {
                 MonoClass* evClass = mono_class_from_name(s_Data -> m_coreAssemblyImage, "robot2D", "PhysicsContact2D");
                 RB_ASSERT(evClass)
                 MonoObject* boxed = mono_value_box(s_Data -> m_appDomain, evClass, (void*)&contact);
-                void* args[4] = { &selfId, &otherId, &type, boxed };
+                void* args[4] = { &selfId, &otherId, &type, (void*)&contact };
 
                 mono_runtime_invoke(regMethods["OnCollision2DInternal"],
                                     klass -> getInstance(), args, nullptr);

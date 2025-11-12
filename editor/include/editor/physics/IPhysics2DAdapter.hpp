@@ -34,18 +34,17 @@ namespace editor {
         Box2D
     };
 
-
-
     enum class PhysicsEventType : uint8_t {
-        Enter = 0, Exit, Stay,
+        Enter = 0, Stay=1, Exit=2,
         EnterTrigger, ExitTrigger, StayTrigger
     };
 
+#pragma pack(push, 1)
     struct PhysicsContactPoint2D {
         DECLARE_COMPONENT_ID();
 
-        float px, py;     // точка контакта
-        float sep;        // separation (отрицательное = пересечение)
+        float px, py;
+        float sep;
     };
 
     struct PhysicsContact2D {
@@ -67,7 +66,7 @@ namespace editor {
         uint16_t categoryA, categoryB;   // categoryBits
         uint16_t maskA, maskB;           // maskBits
     };
-
+#pragma pack(pop)
 
     using PhysicsCallback = std::function<void(const PhysicsContact2D&, UUID self, UUID other)>;
 
@@ -82,6 +81,9 @@ namespace editor {
         virtual void stop() = 0;
         virtual void addRuntime(SceneEntity entity) = 0;
         virtual void registerCallback(PhysicsCallback&& callback) = 0;
+
+        static_assert(sizeof(PhysicsContactPoint2D) == 12, "ContactPoint size");
+        static_assert(sizeof(PhysicsContact2D) == 84, "Contact2D size");
     };
 
     IPhysics2DAdapter::Ptr getPhysics2DAdapter(PhysicsAdapterType);
