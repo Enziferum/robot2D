@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2024
+(c) Alex Raag 2025
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -28,7 +28,34 @@ source distribution.
 #include <editor/PopupManager.hpp>
 #include <editor/Exception.hpp>
 
+#include <imgui/imgui.h>
+
+#include <editor/FileApi.hpp>
+#include <robot2D/imgui/GuiFontConfig.hpp>
+#include "IconsFontsAwesome5.hpp"
+
+#include "rbini/Utils.hpp"
+#include <rbini/RBIni.hpp>
+#include <editor/EditorConfig.hpp>
+
+
 namespace editor {
+
+
+    namespace {
+        const std::string configPath = "robot2D.ini";
+
+        int getDPI()
+        {
+            const HDC hdc = GetDC(nullptr);
+            return GetDeviceCaps(hdc, LOGPIXELSX);
+        }
+
+
+    }
+
+
+
     Application::Application():
             robot2D::Application(),
             m_appConfiguration{},
@@ -38,6 +65,7 @@ namespace editor {
             m_projectInspector{m_messageBus}
             {}
 
+
     void Application::setup() {
         {
             robot2D::Image iconImage;
@@ -45,20 +73,63 @@ namespace editor {
             m_window -> setIcon(std::move(iconImage));
         }
 
+
         {
-            std::string customFontPath = "res/fonts/SourceSansPro-Regular.ttf";
-            std::vector<std::string> customFontPaths = {
-                    "res/icons/message.png"
-            };
-            m_guiWrapper.setup(*m_window, customFontPath, std::move(customFontPaths));
+            /// TODO(a.raag): read from config .ini
+            std::string defaultFontPath = "res/fonts/notosans-regular.ttf";
+            std::string fontPath1 = std::string{"res/fonts/fa-regular-400.ttf"};
+            std::string fontPath2 = std::string{"res/fonts/fa-solid-900.ttf"};
+            float fontSize = 18.f;
+            float scaleFactor = static_cast<float>(getDPI()) / 96.f;
+
+            m_guiWrapper.setup(*m_window, false);
+            std::vector<robot2D::GuiFontConfig> guiFontConfigs;
+
+            robot2D::GuiFontConfig defaultFontConfig;
+            defaultFontConfig.mode = robot2D::GuiFontConfig::Mode::File;
+            defaultFontConfig.isDefault = true;
+            defaultFontConfig.path = defaultFontPath;
+            defaultFontConfig.size = fontSize * scaleFactor;
+
+            robot2D::GuiFontConfig iconFontConfig1;
+            iconFontConfig1.mode = robot2D::GuiFontConfig::Mode::File;
+            iconFontConfig1.isDefault = false;
+            iconFontConfig1.mergeFont = true;
+            iconFontConfig1.path = fontPath1;
+            iconFontConfig1.size = fontSize * scaleFactor * 0.75f;
+
+            robot2D::GuiFontConfig iconFontConfig2;
+            iconFontConfig2.mode = robot2D::GuiFontConfig::Mode::File;
+            iconFontConfig2.isDefault = false;
+            iconFontConfig2.mergeFont = true;
+            iconFontConfig2.path = fontPath2;
+            iconFontConfig2.size = fontSize * scaleFactor * 0.75f;
+
+
+            guiFontConfigs.push_back(defaultFontConfig);
+            guiFontConfigs.push_back(iconFontConfig1);
+            guiFontConfigs.push_back(iconFontConfig2);
+
+            m_guiWrapper.setupFonts(std::move(guiFontConfigs));
+
+            auto& io = ImGui::GetIO();
+            io.IniFilename = nullptr;
+
+            auto& config = EditorConfig::getConfig();
+            if(!hasFile(configPath))
+                config.createDefaultConfig(configPath);
+            else {
+                config.loadConfig(configPath);
+            }
+
         }
 
 
-        //////////// Load C# Mono ////////////
+        //////////////////////////////////// Load C# Mono ////////////////////////////////////
         std::string scriptingEngineDLLPath = "res/script/robot2D_ScriptCore";
         m_scriptingEngine.Init(scriptingEngineDLLPath);
         m_scriptingEngine.SetWindow(m_window);
-        //////////// Load C# Mono ////////////
+        //////////////////////////////////// Load C# Mono ////////////////////////////////////
 
         m_editorModule = EditorAssembly::createEditorModule(m_window,
                                                             m_messageBus,
@@ -119,6 +190,30 @@ namespace editor {
     }
 
     void Application::guiUpdate(float dt) {
+        auto& io = ImGui::GetIO();
+        if(io.WantSaveIniSettings && m_logic.getState() == AppState::Editor) {
+            std::size_t iniOutSize = 0;
+            auto iniData = ImGui::SaveIniSettingsToMemory(&iniOutSize);
+            auto& config = EditorConfig::getConfig();
+
+            std::string s;
+            std::fstream f("robot2D.ini", std::ios::in);
+            std::string line;
+            for(int i = 0; i < config.fieldsValue + 1; ++i) {
+                std::getline(f, line);
+                s += line + "\n";
+            }
+            s += "\n";
+
+            f.close();
+
+            std::fstream file("robot2D.ini", std::ios::out);
+            file.write(s.data(), s.length());
+            file.write(iniData, iniOutSize);
+
+            file.close();
+            io.WantSaveIniSettings = false;
+        }
         m_guiWrapper.update(dt);
     }
 

@@ -35,6 +35,7 @@ source distribution.
 #include <editor/scripting/ScriptingEngine.hpp>
 #include <editor/panels/TreeHierarchy.hpp>
 #include <editor/Messages.hpp>
+#include <editor/physics/Layers2D.hpp>
 
 namespace editor {
 
@@ -70,20 +71,21 @@ namespace editor {
         m_scene.addSystem<AnimatorSystem>(m_messageBus);
         m_scene.addSystem<AnimationSystem>(m_messageBus);
         m_scene.addSystem<UISystem>(m_messageBus);
+
+        InitPhysicsLayers();
     }
 
     void Scene::createMainCamera() {
         auto entity = m_scene.createEntity();
-        entity.addComponent<IDComponent>(UUID());
-        entity.addComponent<TagComponent>().setTag("MainCamera");
+        auto cameraEntity = m_sceneGraph.createEntity(std::move(entity));
+        cameraEntity.addComponent<IDComponent>(UUID());
+        cameraEntity.addComponent<TagComponent>().setTag("MainCamera");
+        cameraEntity.addComponent<CameraComponent>().isPrimary = true;
 
-        auto& transform = entity.addComponent<TransformComponent>();
+        auto& transform = cameraEntity.addComponent<TransformComponent>();
         transform.setPosition(defaultPosition);
         transform.setSize(defaultSize);
-        entity.addComponent<DrawableComponent>();
-
-        auto& cameraComponent = entity.addComponent<CameraComponent>();
-        m_sceneGraph.addEntity(SceneEntity{ entity });
+        cameraEntity.addComponent<DrawableComponent>();
     }
 
 
@@ -134,7 +136,7 @@ namespace editor {
         m_runtimeScene.update(dt);
     }
 
-    void Scene::draw(robot2D::RenderTarget &target, robot2D::RenderStates states) const {
+    void Scene::draw(robot2D::RenderTarget& target, robot2D::RenderStates states) const {
         if(m_running) {
             target.draw(m_runtimeScene);
             return;
@@ -162,7 +164,7 @@ namespace editor {
         entity.addComponent<IDComponent>(UUID());
         entity.addComponent<TagComponent>();
 
-        auto &transform = entity.addComponent<TransformComponent>();
+        auto& transform = entity.addComponent<TransformComponent>();
         transform.setPosition(defaultPosition);
         transform.setSize(defaultSize);
         entity.addComponent<DrawableComponent>();
@@ -175,9 +177,9 @@ namespace editor {
 
     void Scene::onRuntimeStart(IScriptInteractorFrom::Ptr scriptInteractor) {
         m_running = true;
-        m_scene.cloneSelf(m_runtimeScene, m_runtimeClonedArray, true);
-
-
+        if(!m_scene.cloneSelf(m_runtimeScene, m_runtimeClonedArray, true)) {
+            throw std::runtime_error("m_scene.cloneSelf exception");
+        }
 
         m_runtimeSceneGraph.m_AllSceneEntitiesMap.clear();
         m_scriptRuntimeContainer.clear();
@@ -223,7 +225,11 @@ namespace editor {
             return;
         scriptingEngine -> onRuntimeStop();
         m_runtimeClonedArray.clear();
-        m_runtimeScene.clearSelf();
+        m_runtimeSceneGraph.m_AllSceneEntitiesMap.clear();
+        m_runtimeSceneGraph.m_sceneEntities.clear();
+        if(!m_runtimeScene.clearSelf()) {
+            throw std::runtime_error("Scene::onRuntimeStop exception");
+        }
     }
 
     void Scene::onPhysics2DRun(IScriptInteractorFrom::Ptr scriptInteractor) {
@@ -231,32 +237,17 @@ namespace editor {
         m_listPhysics.clear();
 
         for(const auto& ecsEntity: m_runtimeClonedArray)
-            m_listPhysics.push_back(SceneEntity{ecsEntity});
+            m_listPhysics.emplace_back(ecsEntity);
 
         m_physicsAdapter -> start(m_listPhysics);
         auto scriptingEngine = scriptInteractor -> getScriptingEngine();
         if(!scriptingEngine)
             return;
 
-        m_physicsAdapter -> registerCallback(PhysicsCallbackType::Enter,
-                                           [scriptingEngine](const Physics2DContact& contact) {
-                                               scriptingEngine -> onCollision2DBegin(contact);
-                                           });
-
-        m_physicsAdapter -> registerCallback(PhysicsCallbackType::Exit,
-                                           [scriptingEngine](const Physics2DContact& contact) {
-                                               scriptingEngine -> onCollision2DEnd(contact);
-                                           });
-
-        m_physicsAdapter -> registerCallback(PhysicsCallbackType::EnterTrigger,
-                                           [scriptingEngine](const Physics2DContact& contact) {
-                                               scriptingEngine -> onCollision2DBeginTrigger(contact);
-                                           });
-
-        m_physicsAdapter -> registerCallback(PhysicsCallbackType::ExitTrigger,
-                                           [scriptingEngine](const Physics2DContact& contact) {
-                                               scriptingEngine -> onCollision2DEndTrigger(contact);
-                                           });
+        m_physicsAdapter -> registerCallback(
+                [scriptingEngine](const PhysicsContact2D& contact, UUID self, UUID other) {
+                scriptingEngine -> onPhysicsCallback(contact, self, other);
+        });
     }
 
     void Scene::onPhysics2DStop() {
@@ -267,6 +258,7 @@ namespace editor {
 
     void Scene::removeEntityChild(SceneEntity entity) {
         m_hasChanges = true;
+        m_sceneGraph.makeEntityChild(entity);
     }
 
     void Scene::setRuntimeCamera(bool flag) {
@@ -276,10 +268,29 @@ namespace editor {
             m_runtimeScene.getSystem<RenderSystem>() -> setRuntimeFlag(flag);
     }
 
+    void Scene::setRuntimeWindowSize(const robot2D::vec2u& size) {
+        if(!m_running)
+            m_scene.getSystem<RenderSystem>() -> setRuntimeWindowSize(size);
+        else
+            m_runtimeScene.getSystem<RenderSystem>() -> setRuntimeWindowSize(size);
+    }
+
     SceneEntity Scene::getEntity(UUID uuid) const {
         if(m_running)
             return m_runtimeSceneGraph.getEntity(uuid);
         return m_sceneGraph.getEntity(uuid);
+    }
+
+    SceneEntity Scene::getEntity(const std::string& name) const {
+        if(m_running) {
+            auto found = std::find_if(m_scriptRuntimeContainer.begin(),
+                                      m_scriptRuntimeContainer.end(), [&](const SceneEntity& entity) {
+               return entity.getName() == name;
+            });
+            auto uuid = (*found).getUUID();
+            return *found;
+        }
+        return {};
     }
 
 
@@ -295,6 +306,8 @@ namespace editor {
     }
 
     SceneEntity Scene::duplicateEntity(robot2D::vec2f mousePos, SceneEntity entity) {
+        // TODO(a.raag): if clone not add "(Clone)"
+
         auto dupEntity = m_scene.duplicateEntity(entity.getWrappedEntity());
         std::string name = entity.getComponent<TagComponent>().getTag();
         name += "(Clone)";

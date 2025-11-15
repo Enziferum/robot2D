@@ -85,5 +85,9 @@ namespace editor {
         return m_entity.getComponent<TransformComponent>().getChildren();
     }
 
+    const std::string& SceneEntity::getName() const {
+        return m_entity.getComponent<TagComponent>().getTag();
+    }
+
 
 } // namespace editor

@@ -109,9 +109,8 @@ namespace robot2D::ecs {
         }
 
         void remove(std::size_t index) {
-            if(index >= m_components.size())
-                return;
-           // m_components.erase(m_components.begin() + index);
+            std::size_t indexErased = m_components.erase(index);
+            // TODO(a.raag):
         }
 
 
@@ -160,6 +159,28 @@ namespace robot2D::ecs {
     private:
         std::unordered_map<EntityID, T> m_components;
     };
+
+    template<typename T>
+    ComponentContainer<T>& ComponentContainer<T>::operator=(const ComponentContainer& other) {
+        return *this;
+    }
+
+    template<typename T>
+    ComponentContainer<T>& ComponentContainer<T>::operator=(ComponentContainer &&other) {
+        return *this;
+    }
+
+
+    template<typename T>
+    ComponentContainer<T>::ComponentContainer(const ComponentContainer& other) {
+
+    }
+
+
+    template<typename T>
+    ComponentContainer<T>::ComponentContainer(ComponentContainer&& other) {
+
+    }
 
 
 }

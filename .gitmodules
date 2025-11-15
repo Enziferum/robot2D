@@ -4,3 +4,6 @@
 [submodule "editor/extlibs/box2d"]
 	path = editor/extlibs/box2d
 	url = https://github.com/erincatto/box2d.git
+[submodule "editor/extlibs/RBIni"]
+	path = editor/extlibs/RBIni
+	url = https://github.com/Enziferum/RBIni.git

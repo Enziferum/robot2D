@@ -129,7 +129,8 @@ namespace robot2D::ecs {
             if(!result)
                 return false;
         }
-
+        if(!m_drawables.empty())
+            m_drawables.clear();
         return true;
     }
 

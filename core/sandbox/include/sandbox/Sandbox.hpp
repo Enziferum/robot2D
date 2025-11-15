@@ -28,6 +28,10 @@ source distribution.
 class Sandbox: public robot2D::Application {
 public:
     Sandbox();
+    Sandbox(const Sandbox& other) = delete;
+    Sandbox& operator=(const Sandbox& other) = delete;
+    Sandbox(Sandbox&& other) = delete;
+    Sandbox& operator=(Sandbox&& other) = delete;
     ~Sandbox()override = default;
 
     void setup() override;

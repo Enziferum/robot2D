@@ -68,6 +68,7 @@ namespace editor {
         void onRuntimeStop(IScriptInteractorFrom::Ptr scriptInteractor);
 
         void setRuntimeCamera(bool flag);
+        void setRuntimeWindowSize(const robot2D::vec2u& size);
 
         //////////////////////// Serializer Api ////////////////////////
         SceneEntity createEntity();
@@ -88,6 +89,7 @@ namespace editor {
         void restoreEntities(DeletedEntitiesRestoreInformation& restoreInformation);
 
         SceneEntity getEntity(UUID uuid) const;
+        SceneEntity getEntity(const std::string& name) const;
 
         bool isRunning() const { return m_running; }
 

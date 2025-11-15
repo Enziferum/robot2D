@@ -194,6 +194,7 @@ namespace robot2D::ecs {
             container.reset();
             container = nullptr;
         }
+
         //m_componentContainers.clear();
         m_componentContainersDeleteBuffer.clear();
         m_componentMasks.clear();

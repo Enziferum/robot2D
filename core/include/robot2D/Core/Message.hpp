@@ -27,15 +27,9 @@ namespace robot2D {
     using MessageBuffer = void*;
 
     class Message;
-
     template<typename T>
-    struct MessageFormatter {
-        static T unpack(Message* message) {
-            T msg;
-            msg.unpack(message -> m_buffer);
-            return msg;
-        }
-    };
+    struct MessageFormatter;
+
 
     /**
      * \brief Allow to store Custom Data in 'Message' format and use it with MessageBus.
@@ -75,6 +69,15 @@ namespace robot2D {
         std::size_t m_buffersz{ 0 };
 
         bool m_needUnpack{ false };
+    };
+
+    template<typename T>
+    struct MessageFormatter {
+        static T unpack(Message* message) {
+            T msg;
+            msg.unpack(message -> m_buffer);
+            return msg;
+        }
     };
 
     template<typename T>

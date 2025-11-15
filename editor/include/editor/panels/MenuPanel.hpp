@@ -42,6 +42,7 @@ namespace editor {
     private:
         void fileMenu();
         void editMenu();
+        void viewMenu();
         void projectMenu();
         void pluginsMenu();
         void developerMenu();

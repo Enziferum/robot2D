@@ -204,6 +204,7 @@ namespace robot2D::priv {
     void OpenGLFrameBuffer::Resize(const vec2u& newSize) {
         m_specification.size = {static_cast<int>(newSize.x),
                                 static_cast<int>(newSize.y)};
+        actualSize = newSize;
         Invalidate();
     }
 

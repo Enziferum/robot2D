@@ -23,6 +23,16 @@ source distribution.
 #include <editor/physics/Box2DPhysicsAdapter.hpp>
 
 namespace editor {
+    const class_id& PhysicsContactPoint2D::id() noexcept {
+        static const class_id id{"PhysicsContactPoint2D"};
+        return id;
+    }
+
+    const class_id& PhysicsContact2D::id() noexcept {
+        static const class_id id{"PhysicsContact2D"};
+        return id;
+    }
+
     IPhysics2DAdapter::~IPhysics2DAdapter() = default;
 
     IPhysics2DAdapter::Ptr getPhysics2DAdapter(PhysicsAdapterType type) {

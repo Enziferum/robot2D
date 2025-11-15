@@ -86,8 +86,8 @@ namespace editor {
 
                     ImGui::PushID(i);
 
-                    ImVec2 nameTextSize = font->CalcTextSizeA(fontSize, halfWidth, halfWidth, description.name.c_str());
-                    ImVec2 pathTextSize = font->CalcTextSizeA(fontSize, halfWidth, halfWidth, description.path.c_str());
+                    ImVec2 nameTextSize = font -> CalcTextSizeA(fontSize, halfWidth, halfWidth, description.name.c_str());
+                    ImVec2 pathTextSize = font -> CalcTextSizeA(fontSize, halfWidth, halfWidth, description.path.c_str());
                     ImVec2 textSize = ImVec2(nameTextSize.x + pathTextSize.x + 2 * m_configuration.textOffset,
                                              nameTextSize.y + pathTextSize.y + 2 * m_configuration.textOffset);
 
@@ -141,6 +141,8 @@ namespace editor {
                     auto* msg = m_messageBus.postMessage<ShowInspectorMessage>(MessageID::ShowInspector);
                     msg -> showAlways = m_configuration.openAlways;
                 }
+
+                imgui_Text("Robot2D: Build 42");
             }
         }
     }

@@ -36,6 +36,62 @@ source distribution.
 
 
 namespace robot2D::priv {
+
+    struct Viewport { int x, y, w, h, scale; };
+
+    inline Viewport ComputeIntegerViewport(int winW, int winH, int virtW, int virtH) {
+        float sx = float(winW) / virtW;
+        float sy = float(winH) / virtH;
+        int scale = int(std::floor(std::min(sx, sy)));
+        if (scale < 1)
+            scale = 1;
+
+        int w = virtW * scale;
+        int h = virtH * scale;
+        int x = (winW - w) / 2;
+        int y = (winH - h) / 2;         // letterbox
+        return { x, y, w, h, scale };
+    }
+
+
+    struct VirtualSize { int virtW, virtH, scale, viewportX, viewportY, viewportW, viewportH; };
+
+    VirtualSize chooseVirtualSize(int winW, int winH, int aspectNum, int aspectDen, bool integerScale=true)
+    {
+        double targetW = winW;
+        double targetH = (double)winW * aspectDen / aspectNum;
+        if (targetH > winH) {
+            targetH = winH;
+            targetW = (double)winH * aspectNum / aspectDen;
+        }
+
+        int vpW = (int)std::floor(targetW);
+        int vpH = (int)std::floor(targetH);
+        int vpX = (winW - vpW) / 2;
+        int vpY = (winH - vpH) / 2;
+
+        int scale = 1;
+        int virtW = vpW;
+        int virtH = vpH;
+
+        if (integerScale) {
+            int sW = vpW / aspectNum;
+            int sH = vpH / aspectDen;
+            scale = std::max(1, std::min(sW, sH));
+            virtW = aspectNum * scale;
+            virtH = aspectDen * scale;
+
+            vpW = virtW;
+            vpH = virtH;
+            vpX = (winW - vpW) / 2;
+            vpY = (winH - vpH) / 2;
+        } else {
+            scale = 0;
+        }
+
+        return { virtW, virtH, scale, vpX, vpY, vpW, vpH };
+    }
+
     ///////////////////// Consts /////////////////////
     constexpr short quadVertexSize = 4;
     constexpr short maxTextureSlots = 16;
@@ -250,6 +306,20 @@ namespace robot2D::priv {
         m_renderLayers[layerID].m_view = view;
         applyCurrentView(layerID);
     }
+    VirtualSize virtSize;
+    void OpenGLRender::setViewVirtual(const vec2u& windowSize, const View& view, unsigned int layerID) {
+        virtSize = chooseVirtualSize(windowSize.x, windowSize.y,
+                                          16, 9);
+
+        glViewport(virtSize.viewportX, virtSize.viewportY, virtSize.viewportW,virtSize.viewportH);
+        auto& m_quadShader = m_renderLayers[layerID].m_quadShader;
+        m_renderLayers[layerID].m_view = view;
+        m_quadShader.use();
+        m_quadShader.setMatrix(m_shaderKeys[ShaderKey::Projection], view.getTransform().get_matrix());
+        m_quadShader.unUse();
+    }
+
+
 
     IntRect OpenGLRender::getViewport(const View& view) {
         float width  = static_cast<float>(m_size.x);
@@ -262,6 +332,9 @@ namespace robot2D::priv {
                        static_cast<int>(0.5F + height * viewport.height));
     }
 
+
+
+
     void OpenGLRender::applyCurrentView(unsigned int layerID) {
         auto& m_view = m_renderLayers[layerID].m_view;
         //IntRect viewport = getViewport(m_view);
@@ -270,6 +343,7 @@ namespace robot2D::priv {
         auto& m_quadShader = m_renderLayers[layerID].m_quadShader;
 
         const FloatRect& viewport = m_view.getViewport();
+
         auto size = m_view.getRectangle();
         IntRect viewport1(static_cast<int>(0.5F + size.width  * viewport.lx),
                           static_cast<int>(0.5F + size.height * viewport.ly),
@@ -311,6 +385,18 @@ namespace robot2D::priv {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         else
             glClear(GL_COLOR_BUFFER_BIT);
+    }
+
+    void OpenGLRender::clearScissor(const robot2D::UIntRect rect, const Color& color) {
+        glEnable(GL_SCISSOR_TEST);
+        glScissor(virtSize.viewportX, virtSize.viewportY, virtSize.viewportW,virtSize.viewportH);
+        auto glColor = color.toGL();
+        glClearColor(glColor.red, glColor.green, glColor.blue, glColor.alpha);
+        if(m_dimensionType != RenderDimensionType::TwoD)
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        else
+            glClear(GL_COLOR_BUFFER_BIT);
+        glDisable(GL_SCISSOR_TEST);
     }
 
     const RenderStats& OpenGLRender::getStats() const {

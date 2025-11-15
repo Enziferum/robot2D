@@ -72,8 +72,10 @@ namespace robot2D::ecs {
     }
 
     bool SystemManager::clearSelf() {
-        for(auto& system: m_systems)
+        for(auto& system: m_systems) {
             system.reset();
+            system = nullptr;
+        }
         m_systems.clear();
         return true;
     }
