@@ -433,6 +433,12 @@ namespace editor {
 
         for (const auto& entity : m_selectedEntities) {
             auto dupEntity = m_activeScene -> duplicateEntity(mousePos, entity);
+            auto rect = dupEntity.calculateRect();
+            auto treeIterator = m_quadTree.insert(dupEntity, rect);
+            if(!dupEntity.hasComponent<QuadTreeComponent>())
+                dupEntity.addComponent<QuadTreeComponent>().iterator = treeIterator;
+            else
+                dupEntity.getComponent<QuadTreeComponent>().iterator = treeIterator;
             duplicatedEntities.emplace_back(dupEntity);
         }
 
