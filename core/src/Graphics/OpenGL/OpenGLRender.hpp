@@ -49,6 +49,7 @@ namespace robot2D {
             unsigned int getLayerCount() const  override;
 
             void clear(const Color &color = Color::Black) override;
+            void clearScissor(const robot2D::UIntRect rect, const Color& color = Color::Black) override;
 
             void render(const RenderStates& states) override;
             void render(const VertexData& data, const RenderStates& states) const override;
@@ -57,6 +58,7 @@ namespace robot2D {
             void render3D(const VertexArray::Ptr& vertexArray, RenderStates states) const override;
 
             void setView(const View& view, unsigned int layerID) override;
+            void setViewVirtual(const vec2u& windowSize, const View& view, unsigned int layerID) override;
             void setView3D(const Matrix3D& projection, const Matrix3D& view) override;
             void setRawView(float* rawMatrix) override;
 

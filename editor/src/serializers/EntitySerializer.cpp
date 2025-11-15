@@ -205,6 +205,7 @@ namespace editor {
             out << YAML::Key << "Rotation" << YAML::Value << ts.getRotate();
             out << YAML::Key << "Origin" << YAML::Value << ts.getOrigin();
 
+            auto name = entity.getName();
             if(entity.hasChildren()) {
                 std::vector<UUID> childIds;
 
@@ -359,6 +360,7 @@ namespace editor {
             out << YAML::Key << "Animations" << animationPaths;
             out << YAML::EndMap;
         }
+
         if(entity.hasComponent<ButtonComponent>()) {
             auto& btnComp = entity.getComponent<ButtonComponent>();
             if(btnComp.hasEntity()) {
@@ -374,6 +376,8 @@ namespace editor {
         out << YAML::EndMap;
 
         if(needSerializeChildren) {
+            auto children = entity.getChildren();
+            auto name = entity.getName();
             for(auto child: entity.getChildren())
                 SerializeEntity(out, SceneEntity(std::move(child)), scriptInteractor);
         }

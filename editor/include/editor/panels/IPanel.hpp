@@ -24,17 +24,32 @@ source distribution.
 #include <editor/Defines.hpp>
 
 namespace editor {
+
+    enum class PanelState {
+        Visible,
+        Closed
+    };
+
     class IPanel {
     public:
         using Ptr = std::shared_ptr<IPanel>;
     public:
-        IPanel(UniqueType uniqueType);
+        explicit IPanel(UniqueType uniqueType);
+        IPanel(const IPanel& other) = delete;
+        IPanel& operator=(const IPanel& other) = delete;
+        IPanel(IPanel&& other) = delete;
+        IPanel& operator=(IPanel&& other) = delete;
         virtual ~IPanel() = 0;
+
+
+        PanelState getState() const;
+        void setState(const PanelState& panelState);
 
         virtual void update(float dt);
         virtual void render() = 0;
         UniqueType getID() const { return m_id; }
     protected:
         UniqueType m_id;
+        PanelState m_state{ PanelState::Visible };
     };
 }

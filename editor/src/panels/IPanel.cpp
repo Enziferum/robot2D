@@ -24,7 +24,16 @@ source distribution.
 namespace editor {
     IPanel::IPanel(UniqueType uniqueType): m_id(uniqueType) {}
 
-    IPanel::~IPanel() {}
+    IPanel::~IPanel() = default;
 
     void IPanel::update(float dt) {}
+
+    PanelState IPanel::getState() const {
+        return m_state;
+    }
+    
+    void IPanel::setState(const PanelState& panelState) {
+        m_state = panelState;
+    }
+
 }

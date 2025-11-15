@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2023
+(c) Alex Raag 2024
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -37,6 +37,7 @@ source distribution.
 
 #include "editor/panels/ITreeItem.hpp"
 #include <editor/Animation.hpp>
+#include <editor/physics/Layers2D.hpp>
 #include "SceneEntity.hpp"
 #include "Uuid.hpp"
 #include "Property.hpp"
@@ -246,41 +247,48 @@ namespace editor {
             Desktop = 0, Mobile
         };
 
+        enum class ScalingMode {
+            PixelArt_IntegerFit_Letterbox = 0, // без искажений, кратный масштаб, центр + полосы
+            PixelArt_IntegerFill_Crop, // кратный масштаб «cover», обрезает края
+            NonPixel_Fit_Letterbox, // без искажений, не обязательно кратный масштаб
+            NonPixel_Fill_Crop, // без искажений, «cover», обрезает края Stretch
+            Stretch // растягивает во весь экран (искажает аспект)
+        };
+
 
         CameraComponent() = default;
+        CameraComponent(const CameraComponent& other) = default;
+        CameraComponent& operator=(const CameraComponent& other) = default;
+        CameraComponent(CameraComponent&& other) = default;
+        CameraComponent& operator=(CameraComponent&& other) = default;
         ~CameraComponent() = default;
 
 
         robot2D::vec2f getSize() const { return size; }
         robot2D::vec2f getPosition() const { return position; }
 
-       // Property<float> Size;
-
-       // PROPERTY_GET(Size) {
-       //     return Size;
-      //  }
-
-      //  PROPERTY_SET(Size) {
-      //      if(oldValue != newValue) {
-                ///
-      //      }
-      //  }
-
-
-
+        ScalingMode scalingMode;
         AspectRatio aspectRatio;
         float orthoSize;
         robot2D::vec2f size;
         robot2D::vec2f position;
+        robot2D::FloatRect cameraRect;
 
         SceneCamera camera;
         bool isPrimary{false};
     };
 
+    struct CollisionLayer {
+        uint16_t categoryBits = 1 << 0; // Default
+        uint16_t maskBits     = 0xFFFF; // collide with all by default
+        int16_t  groupIndex   = 0;
+    };
 
     class Collider2DComponent final {
     public:
         DECLARE_COMPONENT_ID()
+
+        enum class Shape { Box, Circle /*…*/ } shape = Shape::Box;
 
         Collider2DComponent() = default;
         ~Collider2DComponent() = default;
@@ -292,8 +300,27 @@ namespace editor {
         float friction =  0.5f;
         float restitution = 0.0f;
         float restitutionThreshold = 0.5f;
+        bool isTrigger = false;
+        bool oneWay = false;
+        robot2D::vec2f oneWayNormal { 0, 1 }; // Up по умолчанию (мировой)
+        float oneWayDotThreshold = 0.5f;      // cos(60°) — порог "снизу/сверху"
 
-        void* runtimeBody{nullptr};
+
+        float skipCollideTime = 0.f;
+        void* runtimeFixture{ nullptr };
+
+        struct UserData {
+            UUID entityId;
+            bool oneWay;
+            robot2D::vec2f oneWayNormal;
+            bool generateEvents;
+        } userData;
+
+
+
+        bool    useDefaultMask = true;
+        bool markFilterDirty = false;
+        phys2d::FilterBits filter = phys2d::makeFilterDefault("Default");
     };
 
     class Physics2DComponent final {
@@ -307,6 +334,10 @@ namespace editor {
         BodyType type = BodyType::Static;
 
         bool fixedRotation = false;
+        bool bullet = false;
+        float gravityScale = 1.0f;
+        float linearDamping = 0.0f;
+        float angularDamping = 0.0f;
         void* runtimeBody{nullptr};
     };
 

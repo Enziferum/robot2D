@@ -22,11 +22,18 @@ source distribution.
 #include <robot2D/imgui/Api.hpp>
 #include <editor/UIManager.hpp>
 #include <editor/panels/ScenePanel.hpp>
+#include <imgui/imgui_internal.h>
+
+#include <editor/Enum.hpp>
+#include <editor/EditorConfig.hpp>
 
 namespace editor {
 
     namespace  {
         constexpr ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
+
+        DECLARE_ENUM(UIPanelType, ScenePanel, UtilsPanel, AssetsPanel,
+                     ViewportPanel, GamePanel, AnimationPanel, InspectorPanel)
     }
 
     IUIManager::~IUIManager() = default;
@@ -35,7 +42,7 @@ namespace editor {
         m_gui{gui}, m_panels() {}
 
     void UIManager::update(float dt) {
-        for(auto& panel: m_panels)
+        for(const auto& panel: m_panels)
             panel -> update(dt);
     }
 
@@ -77,13 +84,85 @@ namespace editor {
         ImGuiIO& io = ImGui::GetIO();
         if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
         {
-            ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
-            ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f),
-                             dockspace_flags);
+            ImGuiID dockspace_id = ImGui::GetID("Robot2D_Dockspace");
+            ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f),dockspace_flags);
+
+            auto& config = EditorConfig::getConfig();
+            if(!config.layoutCreated) {
+                createLayout();
+                config.layoutCreated = true;
+
+                std::fstream file("robot2D.ini", std::ios::out | std::ios::ate);
+                std::size_t iniOutSize = 0;
+                auto iniData = ImGui::SaveIniSettingsToMemory(&iniOutSize);
+
+                file.write(iniData, iniOutSize);
+                file.close();
+            }
         }
 
         for(auto& panel: m_panels)
             panel -> render();
+    }
+
+
+    void UIManager::createLayout() {
+
+        std::unordered_map<UIPanelType, std::string> windowIDS = {
+                {UIPanelType::ScenePanel, "###" + ENUM2STR(UIPanelType::ScenePanel)},
+                {UIPanelType::UtilsPanel, "###" + ENUM2STR(UIPanelType::UtilsPanel)},
+                {UIPanelType::AssetsPanel, "###" + ENUM2STR(UIPanelType::AssetsPanel)},
+                {UIPanelType::ViewportPanel, "###" + ENUM2STR(UIPanelType::ViewportPanel)},
+                {UIPanelType::GamePanel, "###" + ENUM2STR(UIPanelType::GamePanel)},
+                {UIPanelType::AnimationPanel, "###" + ENUM2STR(UIPanelType::AnimationPanel)},
+                {UIPanelType::InspectorPanel, "###" + ENUM2STR(UIPanelType::InspectorPanel)},
+        };
+
+
+        ImGuiID dockspace_id = ImGui::GetID("Robot2D_Dockspace");
+        ImGui::DockBuilderRemoveNode(dockspace_id);
+        ImGui::DockBuilderAddNode(dockspace_id, dockspace_flags);
+        const ImGuiViewport* viewport = ImGui::GetMainViewport();
+        ImGui::DockBuilderSetNodeSize(dockspace_id, viewport -> Size);
+
+        float startXSize = 400;
+
+        auto treeNode = ImGui::DockBuilderAddNode();
+        ImGui::DockBuilderSetNodeSize(treeNode, {startXSize, viewport -> Size.y});
+
+        treeNode = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Left,
+                                               0.1f, nullptr,
+                                               &dockspace_id);
+
+        auto stats_id = ImGui::GetID("stats_id");
+        auto tree_id = ImGui::DockBuilderSplitNode(treeNode, ImGuiDir_Up,
+                                                   0.8f, nullptr,
+                                                   &stats_id);
+        ImGui::DockBuilderDockWindow(windowIDS[UIPanelType::ScenePanel].c_str(), tree_id);
+        ImGui::DockBuilderDockWindow(windowIDS[UIPanelType::UtilsPanel].c_str(), stats_id);
+
+        auto canvasNode = ImGui::DockBuilderAddNode();
+        ImGui::DockBuilderSetNodeSize(treeNode, {viewport -> Size.x - startXSize, viewport -> Size.y});
+        canvasNode = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Left,
+                                                 0.8f, nullptr,
+                                                 &dockspace_id);
+
+        auto assets_id = ImGui::GetID("assets_id");
+        auto viewport_id = ImGui::DockBuilderSplitNode(canvasNode, ImGuiDir_Up,
+                                                       0.8f, nullptr,
+                                                       &assets_id);
+        ImGui::DockBuilderDockWindow(windowIDS[UIPanelType::ViewportPanel].c_str(), viewport_id);
+        ImGui::DockBuilderDockWindow(windowIDS[UIPanelType::GamePanel].c_str(), viewport_id);
+
+        ImGui::DockBuilderDockWindow(windowIDS[UIPanelType::AssetsPanel].c_str(), assets_id);
+        ImGui::DockBuilderDockWindow(windowIDS[UIPanelType::AnimationPanel].c_str(), assets_id);
+        ImGui::DockBuilderDockWindow("Dear ImGui Demo", assets_id);
+
+        auto inspector_id = ImGui::DockBuilderSplitNode(dockspace_id, ImGuiDir_Right,
+                                                        0.1f, nullptr,
+                                                        &dockspace_id);
+        ImGui::DockBuilderDockWindow(windowIDS[UIPanelType::InspectorPanel].c_str(), inspector_id);
+        ImGui::DockBuilderFinish(dockspace_id);
     }
 
     void UIManager::blockEvents(bool flag) {}

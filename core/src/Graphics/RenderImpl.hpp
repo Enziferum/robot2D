@@ -51,6 +51,7 @@ namespace robot2D {
             virtual void render3D(const VertexArray::Ptr& vertexArray, RenderStates states) const = 0;
 
             virtual void setView(const View& view, unsigned int layerID) = 0;
+            virtual void setViewVirtual(const vec2u& windowSize, const View& view, unsigned int layerID) = 0;
             virtual const View& getView(unsigned int layerID) = 0;
             virtual const View& getDefaultView() = 0;
             virtual void setup() = 0;
@@ -60,6 +61,7 @@ namespace robot2D {
             virtual void flushRender(unsigned int layerID) const = 0;
             virtual const RenderStats& getStats() const = 0;
             virtual void clear(const Color& color = Color::Black) = 0;
+            virtual void clearScissor(const robot2D::UIntRect rect, const Color& color = Color::Black) = 0;
 
             virtual IntRect getViewport(const View& view) = 0;
             virtual void setView3D(const Matrix3D& projection, const Matrix3D& view) = 0;

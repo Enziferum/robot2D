@@ -26,7 +26,9 @@ source distribution.
 
 #include <imgui/imgui.h>
 #include <robot2D/Graphics/RenderWindow.hpp>
+
 #include "Render.hpp"
+#include <robot2D/imgui/GuiFontConfig.hpp>
 
 namespace robot2D::priv {
 
@@ -39,9 +41,9 @@ namespace robot2D::priv {
         GuiImpl& operator=(GuiImpl&& other)=delete;
         ~GuiImpl() noexcept;
 
-        void setup(robot2D::Window& window,
-                   const std::string& customFontPath = "", std::vector<std::string>&& customIconsPaths = {});
-        void setCustomFont();
+        void setup(robot2D::Window& window, bool createFonts);
+
+        void setupFonts(std::vector<GuiFontConfig>&& fontConfigs);
         void handleEvents(const robot2D::Event& event);
         void update(float dt);
         void render();

@@ -11,6 +11,8 @@ namespace robot2D {
     Font::Font() = default;
 
     Font::~Font() {
+        if(!m_initialized)
+            return;
         auto face = static_cast<FT_Face>(m_face);
         if(face)
             FT_Done_Face(face);
@@ -58,6 +60,7 @@ namespace robot2D {
         m_face = face;
         m_path = path;
 
+        m_initialized = true;
         return true;
     }
 

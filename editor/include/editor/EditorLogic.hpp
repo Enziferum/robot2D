@@ -105,6 +105,7 @@ namespace editor {
         void removeEntityChild(SceneEntity entity) override;
         bool isRunning() const override;
         SceneEntity getEntity(UUID uuid) override;
+        SceneEntity getEntity(const std::string& name) override;
 
         void restoreDeletedEntities(DeletedEntitiesRestoreInformation& restoreInformation,
                                     DeletedEntitiesRestoreUIInformation& restoreUiInformation) override;

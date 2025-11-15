@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2021
+(c) Alex Raag 2024
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -23,6 +23,7 @@ source distribution.
 /// Scenes ///
 #include <sandbox/Render2DScene.hpp>
 #include <sandbox/LayerScene.hpp>
+#include <sandbox/EcsScene.hpp>
 //#include <sandbox/EditorUIScene.hpp>
 /// Scenes ///
 
@@ -45,6 +46,8 @@ void Sandbox::setup() {
     //// Put own scenes here /////
 
    // m_gui.setup(*m_window);
+
+//    sandbox::EcsScene::Ptr ecsScene = std::make_unique<sandbox::EcsScene>(*m_window);
 
     m_scene = std::move(render2DScene);
 }

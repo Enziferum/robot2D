@@ -104,7 +104,7 @@ namespace editor {
             data = YAML::Load(sstr.str());
         }
         catch (...) {
-            RB_EDITOR_CRITICAL("YAML Exception");
+            RB_EDITOR_CRITICAL("[SceneSerializer]: Deserialize YAML Exception");
             exit(2);
         }
 
@@ -126,7 +126,13 @@ namespace editor {
             bool addToScene = true;
 
             auto deserializeEntity = m_scene -> createEntity();
-            entitySerializer -> deserialize(entity, deserializeEntity, addToScene, children, scriptingEngine);
+            entitySerializer -> deserialize(
+            entity,
+                   deserializeEntity,
+                   addToScene,
+                   children,
+        scriptingEngine
+            );
 
             if(addToScene)
                 m_scene -> addAssociatedEntity(std::move(deserializeEntity));

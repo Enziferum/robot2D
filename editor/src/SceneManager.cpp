@@ -71,7 +71,8 @@ namespace editor {
     }
 
 
-    bool SceneManager::add(Project::Ptr&& project, const std::string& path, IScriptInteractorFrom::WeakPtr scriptingEngine) {
+    bool SceneManager::add(Project::Ptr&& project, const std::string& path,
+                           IScriptInteractorFrom::WeakPtr scriptingEngine) {
         Scene::Ptr scene = std::make_shared<Scene>(m_messageBus);
         if(scene == nullptr) {
             m_error = SceneManagerError::MemoryAlloc;
@@ -89,8 +90,12 @@ namespace editor {
         return true;
     }
 
-    void SceneManager::loadSceneAsync(Project::Ptr project, std::string path, SceneLoadCallback&& callback,
-                                      IScriptInteractorFrom::WeakPtr scriptInteractorFrom) {
+    void SceneManager::loadSceneAsync(
+        Project::Ptr project,
+        std::string path,
+        SceneLoadCallback&& callback,
+        IScriptInteractorFrom::WeakPtr scriptInteractorFrom
+    ) {
         Scene::Ptr scene = std::make_shared<Scene>(m_messageBus);
         if(scene == nullptr) {
             m_error = SceneManagerError::MemoryAlloc;
@@ -133,6 +138,7 @@ namespace editor {
             return false;
 
         SceneSerializer serializer{scene};
+        /// TODO(a.raag): have scene name inside scene
         std::string sceneName = "Unnamed Scene";
         auto interactor = scriptingEngine.lock();
         if(!interactor)

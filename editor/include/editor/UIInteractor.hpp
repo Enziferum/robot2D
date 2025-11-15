@@ -62,6 +62,7 @@ namespace editor {
         virtual void removeEntityChild(SceneEntity entity) = 0;
         virtual bool isRunning() const = 0;
         virtual SceneEntity getEntity(UUID uuid) = 0;
+        virtual SceneEntity getEntity(const std::string& name) = 0;
 
         virtual void uiSelectedEntities(std::set<ITreeItem::Ptr>& uiItems, bool isAll) = 0;
 

@@ -91,7 +91,8 @@ namespace editor {
 
 
             if(m_movieSprite.getGlobalBounds().contains(pressedPoint)) {
-               // m_buttonCallback(m_manipulatedEntity);
+                if(m_buttonCallback)
+                    m_buttonCallback(m_manipulatedEntity);
             }
 
             int index = 0;
@@ -205,7 +206,7 @@ namespace editor {
         m_cameraView.setCenter({position.x, position.y});
 
         robot2D::vec2f midPoint = { m_aabb.lx + m_aabb.width / 2.f, m_aabb.ly + m_aabb.height / 2.f};
-        m_movieSprite.setPosition({midPoint.x - 10, midPoint.y - 10});
+        m_movieSprite.setPosition({midPoint.x - 10, midPoint.y - 10} );
     }
 
 
@@ -353,6 +354,65 @@ namespace editor {
 
         for(const auto& q: moveQ)
             target.draw(q);
+    }
+
+
+
+    void CameraManipulator::setButtonCallback(ButtonCallback&& buttonCallback) {
+        m_buttonCallback = std::move(buttonCallback);
+    }
+
+    void CameraManipulator::setManipulatedEntity(SceneEntity entity) {
+        m_manipulatedEntity = entity;
+    }
+
+    void CameraManipulator::setCamera(IEditorCamera::Ptr camera) { m_camera = camera; }
+
+    void CameraManipulator::setSize(const robot2D::vec2f& size) {
+        m_aabb.width = size.x;
+        m_aabb.height = size.y;
+    }
+
+
+    void CameraManipulator::setRect(const robot2D::vec2f& topLeft, const robot2D::vec2f& size) {
+        m_aabb.lx = topLeft.x;
+        m_aabb.ly = topLeft.y;
+        m_aabb.width = size.x;
+        m_aabb.height = size.y;
+    }
+    void CameraManipulator::setRect(const robot2D::FloatRect& rect) {
+        m_aabb = rect;
+    }
+
+    robot2D::vec2f CameraManipulator::getPosition() const {
+        return {m_aabb.lx, m_aabb.ly};
+    }
+
+    const robot2D::FloatRect& CameraManipulator::getRect() const {
+        return m_aabb;
+    }
+
+    bool CameraManipulator::contains(const robot2D::vec2f& point)  {
+        return m_aabb.contains(point);
+    }
+
+    bool CameraManipulator::notZero() const {
+        return m_aabb.width > 0 && m_aabb.height > 0;
+    }
+
+    bool CameraManipulator::intersects(const robot2D::FloatRect& rect) {
+        return m_aabb.intersects(rect);
+    }
+
+    void CameraManipulator::setIsShownDots(bool flag) { m_showDots = flag; }
+
+    const float& CameraManipulator::getSize() const { return m_size; }
+
+    bool CameraManipulator::isActive() const { return m_leftMousePressed &&
+                                   (m_buttonPressed || (m_selectedQuad != -1 && m_pressedPoint != robot2D::vec2f{})); }
+
+    const robot2D::FloatRect &CameraManipulator::getCameraRect() const {
+        return m_aabb;
     }
 
 }

@@ -28,85 +28,11 @@ source distribution.
 #include <editor/TextSystem.hpp>
 #include <editor/Scene.hpp>
 
-//#include "glm/gtc/type_ptr.hpp"
 #include "editor/panels/TreeHierarchy.hpp"
+#include "editor/BoundingBox.hpp"
 
 namespace editor {
 
-    namespace  {
-        struct BoundingBox: robot2D::Drawable {
-            struct Wall: robot2D::Drawable {
-                void draw(robot2D::RenderTarget& target,
-                          robot2D::RenderStates states) const {
-                    robot2D::Transform transform;
-                    transform.translate(position);
-                    transform.scale(size);
-                    states.transform *= transform;
-                    states.color = color;
-                    target.draw(states);
-                }
-
-                robot2D::Color color;
-                robot2D::vec2f position;
-                robot2D::vec2f size;
-                float angle = 0.f;
-            };
-
-            BoundingBox() {
-                for(auto& wall: m_moveWalls)
-                    wall.color = m_borderColor;
-            }
-
-            void setPosition(const robot2D::vec2f& position) {
-                m_aabb.lx = position.x;
-                m_aabb.ly = position.y;
-            }
-
-            void setSize(const robot2D::vec2f& size) {
-                m_aabb.width = size.x;
-                m_aabb.height = size.y;
-            }
-
-            void setAngle(float angle) {
-                m_angle = static_cast<float>(fmod(angle, 360));
-            }
-
-            void setBox(const robot2D::FloatRect& rect) {
-                m_aabb = rect;
-            }
-
-            void draw(robot2D::RenderTarget& target, robot2D::RenderStates states) const override {
-
-                m_moveWalls[0].position = robot2D::vec2f(m_aabb.lx - m_borderWidth, m_aabb.ly - m_borderWidth);
-                m_moveWalls[0].size = robot2D::vec2f(m_aabb.width + m_borderWidth * 2, m_borderWidth);
-                m_moveWalls[0].angle = m_angle;
-
-                m_moveWalls[1].position = robot2D::vec2f(m_aabb.lx, m_aabb.ly);
-                m_moveWalls[1].size = robot2D::vec2f(m_borderWidth, m_aabb.height);
-                m_moveWalls[1].angle = m_angle;
-
-                m_moveWalls[2].position = robot2D::vec2f(m_aabb.lx, m_aabb.ly + m_aabb.height);
-                m_moveWalls[2].size = robot2D::vec2f(m_aabb.width, m_borderWidth);
-                m_moveWalls[2].angle = m_angle;
-
-                m_moveWalls[3].position = robot2D::vec2f(m_aabb.lx + m_aabb.width, m_aabb.ly);
-                m_moveWalls[3].size = robot2D::vec2f(m_borderWidth, m_aabb.height);
-                m_moveWalls[3].angle = m_angle;
-
-                for(const auto& wall: m_moveWalls) {
-                    target.draw(wall);
-                }
-
-
-            }
-        private:
-            float m_borderWidth = 1.f;
-            robot2D::Color m_borderColor = robot2D::Color::Cyan;
-            mutable std::array<Wall, 4> m_moveWalls;
-            robot2D::FloatRect m_aabb;
-            float m_angle;
-        };
-    }
 
 
     RenderSystem::RenderSystem(robot2D::MessageBus& messageBus):
@@ -179,7 +105,9 @@ namespace editor {
             if (ent.hasComponent<CameraComponent>() && m_runtimeFlag) {
                 auto camera = ent.getComponent<CameraComponent>();
                 if (camera.isPrimary) {
-                     target.setView(m_cameraView);
+                    auto rect = m_cameraView.getRectangle().as<unsigned int>();
+                    target.setViewVirtual(m_runtimeWindowSize, m_cameraView);
+                    target.clearScissor(rect, robot2D::Color::Cyan);
                 }
             }
 
@@ -259,7 +187,8 @@ namespace editor {
         }
     }
 
-    robot2D::ecs::System::Ptr RenderSystem::cloneSelf(robot2D::ecs::Scene* scene, const std::vector<robot2D::ecs::Entity>& newEntities) {
+    robot2D::ecs::System::Ptr RenderSystem::cloneSelf(robot2D::ecs::Scene* scene,
+                                                      const std::vector<robot2D::ecs::Entity>& newEntities) {
         auto cloneSystem = std::make_shared<RenderSystem>(m_messageBus);
         if(!cloneBase(cloneSystem, scene, newEntities))
             return nullptr;

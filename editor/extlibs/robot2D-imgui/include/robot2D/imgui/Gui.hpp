@@ -26,12 +26,14 @@ source distribution.
 
 #include <imgui/imgui.h>
 #include <robot2D/Core/Window.hpp>
+#include "GuiFontConfig.hpp"
 
 namespace robot2D {
 
     namespace priv {
         class GuiImpl;
     }
+
 
     class Gui {
     public:
@@ -42,12 +44,15 @@ namespace robot2D {
         Gui& operator=(Gui&& other)=delete;
         ~Gui() noexcept;
 
-        void setup(robot2D::Window& window,
-                   const std::string& customFontPath = "", std::vector<std::string>&& customIconsPaths = {});
+        void setup(robot2D::Window& window, bool createFonts = false);
+
+        void setupFonts(std::vector<GuiFontConfig>&& fontConfigs);
+
         void handleEvents(const robot2D::Event& event);
         void update(float dt);
         void render();
     private:
         std::unique_ptr<priv::GuiImpl> m_impl{nullptr};
     };
+
 } // namespace robot2D

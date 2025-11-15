@@ -20,6 +20,7 @@ source distribution.
 *********************************************************************/
 
 #include <imgui/imgui.h>
+#include <imgui/imgui_internal.h>
 #include <filesystem>
 
 #include <robot2D/imgui/Api.hpp>
@@ -30,6 +31,7 @@ source distribution.
 #include <editor/PopupManager.hpp>
 #include <editor/FiledialogAdapter.hpp>
 #include <editor/Buffer.hpp>
+
 
 namespace editor {
 
@@ -56,6 +58,9 @@ namespace editor {
 
             imgui_Menu("Edit")
                 editMenu();
+
+            imgui_Menu("View")
+                viewMenu();
 
             imgui_Menu("Project")
                 projectMenu();
@@ -291,6 +296,52 @@ namespace editor {
                 showExportProjectModal();
                 break;
         }
+    }
+
+    void MenuPanel::viewMenu() {
+        using PanelPair = std::pair<std::string, bool>;
+        static std::vector<PanelPair> panels = {{"Panel1Panel", true}, {"Panel2", false}};
+        float maxWidth = ImGui::CalcTextSize(panels[0].first.c_str()).x;
+
+        imgui_Menu("Tools") {
+            /// get all registred
+
+            static int flags = ImGuiSelectableFlags_::ImGuiSelectableFlags_DontClosePopups | ImGuiSelectableFlags_SpanAvailWidth;
+
+            //ImGui::MenuItem()
+
+            auto* window = ImGui::GetCurrentWindow();
+            auto* drawList = window -> DrawList;
+            const ImGuiMenuColumns* offsets = &window->DC.MenuColumns;
+            auto context = ImGui::GetCurrentContext();
+            float checkMarkSize =  context -> FontSize * 0.866f;
+            float fullPanelSize = maxWidth + checkMarkSize + 2.f;
+
+
+            for(auto& panel: panels) {
+                ImVec2 pos = window -> DC.CursorPos;
+                if(ImGui::Selectable(panel.first.c_str(), panel.second, flags, {fullPanelSize, 20})) {
+                    panel.second = !panel.second;
+                }
+
+                if(panel.second) {
+                    /*pos + ImVec2(offsets->OffsetMark + stretch_w + context -> FontSize * 0.40f,
+                                               context -> FontSize * 0.134f * 0.5f);*/
+                    ImVec2 tmpPos = pos;
+                    auto textPos = maxWidth;// ImGui::CalcTextSize(panel.first.c_str());
+                    /// offsets -> OffsetMark + stretch_w + context -> FontSize * 0.40f
+                    tmpPos.x += textPos + 3.f;
+                    tmpPos.y += context -> FontSize * 0.134f * 0.5f;
+
+                    // context -> FontSize * 0.866f
+                    ImGui::RenderCheckMark(drawList, tmpPos,
+                                           ImGui::GetColorU32(ImGuiCol_Text), context -> FontSize * 0.866f);
+                }
+
+            }
+
+        }
+
     }
 
 }

@@ -40,7 +40,7 @@ namespace editor {
 
     class CameraManipulator: public robot2D::Drawable {
     public:
-        using ButtonCallback = std::function<void(robot2D::ecs::Entity)>;
+        using ButtonCallback = std::function<void(SceneEntity)>;
 
         enum class State {
             Default,
@@ -57,66 +57,35 @@ namespace editor {
         ~CameraManipulator() override = default;
 
         void handleEvents(const robot2D::Event& event);
-
-        void update(robot2D::vec2f mousePos, float dt) ;
+        void update(robot2D::vec2f mousePos, float dt);
 
         void setPosition(const robot2D::vec2f& position);
-
+        void setButtonCallback(ButtonCallback&& buttonCallback);
+        void setManipulatedEntity(SceneEntity entity);
+        void setCamera(IEditorCamera::Ptr camera);
+        void setSize(const robot2D::vec2f& size);
         void setSize(float size);
 
-
-        void setButtonCallback(ButtonCallback&& buttonCallback) {
-            m_buttonCallback = std::move(buttonCallback);
-        }
-
-        void setManipulatedEntity(SceneEntity entity) {
-            m_manipulatedEntity = entity;
-        }
-
-        void setCamera(IEditorCamera::Ptr camera) { m_camera = camera; }
-
-        void setSize(const robot2D::vec2f& size) {
-            m_aabb.width = size.x;
-            m_aabb.height = size.y;
-        }
+        void setRect(const robot2D::vec2f& topLeft, const robot2D::vec2f& size);
+        void setRect(const robot2D::FloatRect& rect);
 
 
-        void setRect(const robot2D::vec2f& topLeft, const robot2D::vec2f& size) {
-            m_aabb.lx = topLeft.x;
-            m_aabb.ly = topLeft.y;
-            m_aabb.width = size.x;
-            m_aabb.height = size.y;
-        }
-        void setRect(const robot2D::FloatRect& rect) {
-            m_aabb = rect;
-        }
+        const robot2D::FloatRect& getCameraRect() const;
 
-        robot2D::vec2f getPosition() const {
-            return {m_aabb.lx, m_aabb.ly};
-        }
+        robot2D::vec2f getPosition() const;
+        const robot2D::FloatRect& getRect() const;
 
-        const robot2D::FloatRect& getRect() const {
-            return m_aabb;
-        }
+        bool contains(const robot2D::vec2f& point);
 
-        bool contains(const robot2D::vec2f& point)  {
-            return m_aabb.contains(point);
-        }
+        bool notZero() const ;
 
-        bool notZero() const {
-            return m_aabb.width > 0 && m_aabb.height > 0;
-        }
+        bool intersects(const robot2D::FloatRect& rect);
 
-        bool intersects(const robot2D::FloatRect& rect) {
-            return m_aabb.intersects(rect);
-        }
+        void setIsShownDots(bool flag);
 
-        void setIsShownDots(bool flag) { m_showDots = flag; }
+        const float& getSize() const;
 
-        const float& getSize() const { return m_size; }
-
-        bool isActive() const { return m_leftMousePressed &&
-                    (m_buttonPressed || (m_selectedQuad != -1 && m_pressedPoint != robot2D::vec2f{})); }
+        bool isActive() const;
 
         void draw(robot2D::RenderTarget& target, robot2D::RenderStates states) const override;
     public:
