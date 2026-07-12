@@ -113,7 +113,7 @@ namespace editor {
             m_guiWrapper.setupFonts(std::move(guiFontConfigs));
 
             auto& io = ImGui::GetIO();
-            io.IniFilename = nullptr;
+         //   io.IniFilename = nullptr;
 
             auto& config = EditorConfig::getConfig();
             if(!hasFile(configPath))
@@ -163,6 +163,7 @@ namespace editor {
             m_window -> setView({{0, 0}, {static_cast<float>(evt.size.widht),
                                           static_cast<float>(evt.size.heigth)}});
         });
+
     }
 
     void Application::handleEvents(const robot2D::Event& event) {
@@ -191,29 +192,29 @@ namespace editor {
 
     void Application::guiUpdate(float dt) {
         auto& io = ImGui::GetIO();
-        if(io.WantSaveIniSettings && m_logic.getState() == AppState::Editor) {
-            std::size_t iniOutSize = 0;
-            auto iniData = ImGui::SaveIniSettingsToMemory(&iniOutSize);
-            auto& config = EditorConfig::getConfig();
-
-            std::string s;
-            std::fstream f("robot2D.ini", std::ios::in);
-            std::string line;
-            for(int i = 0; i < config.fieldsValue + 1; ++i) {
-                std::getline(f, line);
-                s += line + "\n";
-            }
-            s += "\n";
-
-            f.close();
-
-            std::fstream file("robot2D.ini", std::ios::out);
-            file.write(s.data(), s.length());
-            file.write(iniData, iniOutSize);
-
-            file.close();
-            io.WantSaveIniSettings = false;
-        }
+//        if(io.WantSaveIniSettings && m_logic.getState() == AppState::Editor) {
+//            std::size_t iniOutSize = 0;
+//            auto iniData = ImGui::SaveIniSettingsToMemory(&iniOutSize);
+//            auto& config = EditorConfig::getConfig();
+//
+//            std::string s;
+//            std::fstream f("robot2D.ini", std::ios::in);
+//            std::string line;
+//            for(int i = 0; i < config.fieldsValue + 1; ++i) {
+//                std::getline(f, line);
+//                s += line + "\n";
+//            }
+//            s += "\n";
+//
+//            f.close();
+//
+//            std::fstream file("robot2D.ini", std::ios::out);
+//            file.write(s.data(), s.length());
+//            file.write(iniData, iniOutSize);
+//
+//            file.close();
+//            io.WantSaveIniSettings = false;
+//        }
         m_guiWrapper.update(dt);
     }
 

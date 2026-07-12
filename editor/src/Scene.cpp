@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2024
+(c) Alex Raag 2026
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -104,7 +104,9 @@ namespace editor {
 
     void Scene::update(float dt) {
         auto& sceneEntities = m_sceneGraph.getEntities();
+
         for (const auto& restoreData: m_restoreItems) {
+
             if (restoreData.anchorIterator == sceneEntities.begin())
                 sceneEntities.insert(restoreData.anchorIterator, restoreData.sourceEntity);
             if (!restoreData.isChained) {
@@ -117,6 +119,7 @@ namespace editor {
                 if(prevFound)
                     sceneEntities.insert(std::next(*prevFound), restoreData.sourceEntity);
             }
+
         }
 
         m_restoreItems.clear();

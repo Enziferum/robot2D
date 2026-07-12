@@ -23,7 +23,7 @@ source distribution.
 
 namespace editor {
 
-    IFunction::~IFunction() {}
+    IFunction::~IFunction() = default;
 
     MessageDispatcher::MessageDispatcher(): m_functions{} {}
 

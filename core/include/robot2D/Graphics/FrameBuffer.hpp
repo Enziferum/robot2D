@@ -23,11 +23,12 @@ source distribution.
 
 #include <memory>
 #include <vector>
+#include <cstdint>
 #include <robot2D/Core/Vector2.hpp>
 
 namespace robot2D {
 
-    using RenderID = uint32_t;
+    using RenderID = std::uint32_t;
 
     enum class FrameBufferTextureFormat {
         None = 0,

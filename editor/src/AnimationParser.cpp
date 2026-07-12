@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2024
+(c) Alex Raag 2026
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -18,6 +18,7 @@ and must not be misrepresented as being the original software.
 3. This notice may not be removed or altered from any
 source distribution.
 *********************************************************************/
+
 #include <memory>
 
 #include <TinyXML/tinyxml.h>

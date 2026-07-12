@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2024
+(c) Alex Raag 2026
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -22,6 +22,7 @@ source distribution.
 #include <editor/Quad.hpp>
 
 namespace editor {
+
     robot2D::FloatRect Quad::getFrame() const {
         return {position.x, position.y, size.x, size.y};
     }

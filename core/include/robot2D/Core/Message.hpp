@@ -20,7 +20,7 @@ source distribution.
 *********************************************************************/
 
 #pragma once
-
+#include <cstdint>
 #include <robot2D/Config.hpp>
 
 namespace robot2D {
@@ -37,7 +37,7 @@ namespace robot2D {
     class ROBOT2D_EXPORT_API Message final {
     public:
 
-        using ID = int32_t;
+        using ID = std::int32_t;
         /// Predefined Internal Message format using into Engine.
         enum MessageType {
             System = 0,

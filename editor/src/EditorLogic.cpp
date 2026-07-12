@@ -307,18 +307,23 @@ namespace editor {
         };
 
         /// child, child -> ???
-
+        // m_mousePos;
         for(auto copy: m_copyEntities) {
             auto& transform = copy.getComponent<TransformComponent>();
             auto copiedEntity = m_activeScene -> duplicateEntity(transform.getPosition(), copy);
+            auto rect = copiedEntity.calculateRect();
+            auto treeIterator = m_quadTree.insert(copiedEntity, rect);
+            if(!copiedEntity.hasComponent<QuadTreeComponent>())
+                copiedEntity.addComponent<QuadTreeComponent>().iterator = treeIterator;
+            else
+                copiedEntity.getComponent<QuadTreeComponent>().iterator = treeIterator;
             copiedEntities.emplace_back(copiedEntity);
-            /// ?
-            // m_selectedEntities.emplace_back(copiedEntity);
         }
 
-        auto command = m_commandStack.addCommand<PasteCommand>(m_messageBus, std::move(copiedEntities), this);
+        auto command = m_commandStack.addCommand<PasteCommand>(m_messageBus,
+                                                               std::move(copiedEntities), this);
         if(!command) {
-            RB_EDITOR_ERROR("EditorLogic: Can't Create PasteCommand");
+            RB_EDITOR_ERROR("[EditorLogic]: [!] Can't Create PasteCommand");
         }
     }
 

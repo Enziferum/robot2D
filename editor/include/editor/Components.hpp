@@ -318,7 +318,7 @@ namespace editor {
 
 
 
-        bool    useDefaultMask = true;
+        bool useDefaultMask = true;
         bool markFilterDirty = false;
         phys2d::FilterBits filter = phys2d::makeFilterDefault("Default");
     };

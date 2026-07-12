@@ -22,5 +22,7 @@ source distribution.
 #include <editor/TaskFunction.hpp>
 
 namespace editor {
-    ITaskFunction::~ITaskFunction() {}
+
+    ITaskFunction::~ITaskFunction() = default;
+
 }

@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2024
+(c) Alex Raag 2026
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -45,6 +45,7 @@ namespace editor {
     }
 
     void Configuration::setup() {
+
         if(!m_properties.insert(std::pair<ConfigurationKey, std::string>(ConfigurationKey::Version,
                                                                          editorVersion)).second){
             RB_EDITOR_ERROR("Configuration setup error");
@@ -68,5 +69,6 @@ namespace editor {
             RB_EDITOR_ERROR("Configuration setup error");
             return;
         }
+
     }
 }

@@ -53,7 +53,7 @@ namespace editor {
         frame_bb.Max.y = pos.y + frame_height;
         //ImU32 bg_col = ImGui::ColorConvertFloat4ToU32({0.5, 0.4, 0.3, 0.5});
         ImU32 bg_col = ImGui::ColorConvertFloat4ToU32({0.4f, 0.4f, 0.4f, 0.5f});
-        window->DrawList->AddRectFilled(frame_bb.Min, frame_bb.Max, bg_col, 0.f);
+        window -> DrawList->AddRectFilled(frame_bb.Min, frame_bb.Max, bg_col, 0.f);
         //ImGui::RenderFrame(frame_bb.Min, frame_bb.Max, bg_col, true, style.FrameRounding);
     }
 
@@ -327,7 +327,7 @@ namespace editor {
 
         ImGuiWindow* window = ImGui::GetCurrentWindow();
         auto pos = window->DC.CursorPos;
-        renderFrame(m_name, window, pos);
+        //renderFrame(m_name, window, pos);
         std::string s = m_name;
         if (ImGui::TreeNodeEx(s.c_str(), ImGuiTreeNodeFlags_DefaultOpen)) {
 

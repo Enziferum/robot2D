@@ -265,7 +265,7 @@ namespace editor {
         } m_reorderInfo;
 
 
-        robot2D::Key m_shortCutKey{robot2D::Key::Q};
+        robot2D::Key m_shortCutKey { robot2D::Key::Q };
         std::string m_playloadIdentifier = "TreeNodeItem";
         MultiSelection m_multiSelection;
 
