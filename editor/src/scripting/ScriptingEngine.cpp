@@ -298,7 +298,7 @@ namespace editor {
 
         bool status = loadCoreAssembly(coreLibPath);
         if(!status) {
-            RB_EDITOR_ERROR("Can't load Core Scripting Engine Library");
+            RB_EDITOR_ERROR("[ScriptEngine]: Can't load Core Scripting Engine Library {0}", engineDLLPath);
             return;
         }
 
@@ -307,7 +307,7 @@ namespace editor {
     void ScriptEngine::runtimeInit(const std::string& filePath) {
         bool status = loadAppAssembly(filePath);
         if(!status) {
-            RB_EDITOR_ERROR("ScriptingEngine: Can't load Application's Script Library");
+            RB_EDITOR_ERROR("[ScriptingEngine]: Can't load Application's Script Library {0}", filePath);
             return;
         }
 

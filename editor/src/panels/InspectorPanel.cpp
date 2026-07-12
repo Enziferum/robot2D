@@ -599,7 +599,9 @@ namespace editor {
         std::vector<const char*> names;
         for (int i = 0; i < phys2d::kMaxLayers; ++i) {
             const auto& n = LR.names()[i];
-            if (!n.empty()) { idx.push_back(i); names.push_back(n.c_str()); }
+            if (!n.empty()) { idx.push_back(i);
+                names.push_back(n.c_str());
+            }
         }
         if (names.empty()) {
             ImGui::TextDisabled("Нет слоёв.");
@@ -623,10 +625,12 @@ namespace editor {
                     filter.categoryBits = (uint16_t)(1u << idx[i]);
                     if (useDefaultMask) {
                         filter.maskBits = LR.defaultMaskFor(LR.names()[idx[i]]);
+                        filter.name = names[i];
                     }
                     changed = true;
                 }
-                if (sel) ImGui::SetItemDefaultFocus();
+                if (sel)
+                    ImGui::SetItemDefaultFocus();
             }
             ImGui::EndCombo();
         }

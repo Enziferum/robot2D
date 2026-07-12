@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2024
+(c) Alex Raag 2026
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -156,9 +156,7 @@ namespace editor {
 
             float dot = v1.dot(v2);
             float cross = v1.cross(v2);
-
-            float angle = -std::atan2(cross, dot); // угол в радианах, со знаком
-
+            float angle = -std::atan2(cross, dot);
             return angle * 180 / M_PI;
         }
 
@@ -307,7 +305,8 @@ namespace editor {
 
                 m_xAxisManipulator.setPosition({middle.x, middle.y + xSize.y / 2.f});
                 m_yAxisManipulator.setPosition({middle.x + ySize.x / 2.F, middle.y});
-                m_XYAxisManipulator.setPosition(robot2D::vec2f{middle.x + xyOffset, middle.y - xySize.y - xyOffset});
+                m_XYAxisManipulator.setPosition(robot2D::vec2f{middle.x + xyOffset,
+                                                               middle.y - xySize.y - xyOffset});
             }
             else {
                 auto bounds = transformable -> getGlobalBounds();

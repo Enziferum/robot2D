@@ -107,7 +107,6 @@ namespace editor {
                 if (camera.isPrimary) {
                     auto rect = m_cameraView.getRectangle().as<unsigned int>();
                     target.setViewVirtual(m_runtimeWindowSize, m_cameraView);
-                    target.clearScissor(rect, robot2D::Color::Cyan);
                 }
             }
 
@@ -180,10 +179,10 @@ namespace editor {
 
         if(sourceOldDistance > targetOldDistance) {
             /// insert before remove last
-            m_insertItems.push_back(std::make_tuple(targetIter, source, ReorderDeleteType::Last));
+            m_insertItems.emplace_back(targetIter, source, ReorderDeleteType::Last);
         }
         else if (sourceOldDistance < targetOldDistance) {
-            m_insertItems.push_back(std::make_tuple(targetIter, source, ReorderDeleteType::First));
+            m_insertItems.emplace_back(targetIter, source, ReorderDeleteType::First);
         }
     }
 

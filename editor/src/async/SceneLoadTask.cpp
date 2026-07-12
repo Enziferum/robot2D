@@ -43,9 +43,13 @@ namespace editor {
     void SceneLoadTask::execute()  {
 
         SceneSerializer serializer{m_scene };
+
         auto interactor = m_scriptInteractorFrom.lock();
-        if(!interactor)
+        if(!interactor) {
+            RB_EDITOR_ERROR("[SceneLoadTask]: Interactor is nullptr.");
             return;
+        }
+
         if(!serializer.deserialize(m_scene -> getPath(), interactor)) {
             RB_EDITOR_ERROR("SceneLoadTask: Can't Deserialze Scene");
             return;

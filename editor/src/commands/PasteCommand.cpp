@@ -21,6 +21,7 @@ source distribution.
 #include <editor/Components.hpp>
 #include <editor/Messages.hpp>
 #include <editor/commands/PasteCommand.hpp>
+#include <robot2D/Util/Logger.hpp>
 
 namespace editor {
 
@@ -37,7 +38,7 @@ namespace editor {
                                m_entities(entities),
                                m_interactor{interactor}
     {
-
+        RB_EDITOR_TRACE("[PasteCommand]: added entites = {0}", entities.size());
     }
 
 

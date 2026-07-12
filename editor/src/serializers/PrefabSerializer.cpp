@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2024
+(c) Alex Raag 2026
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -116,8 +116,9 @@ namespace editor {
             bool addToScene = true;
             auto& deserializedEntity = prefab -> getEntity();
 
-            bool status = entitySerializer -> deserialize(entity, deserializedEntity,
-                                            addToScene, children, scriptInteractor);
+            bool status = entitySerializer -> deserialize(entity,
+                                                          deserializedEntity,
+                                                          addToScene, children, scriptInteractor);
 
             if(!status) {
                 m_error = PrefabError::BadDeSerialization;

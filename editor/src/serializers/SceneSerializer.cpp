@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2024
+(c) Alex Raag 2026
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -88,6 +88,18 @@ namespace editor {
 
         return true;
     }
+    /// 1
+    //// 2 15 3
+    ////  6  4 9
+
+    struct SceneSerializeData {
+        enum class ResourceType {
+            Texture,
+            Font
+        };
+
+        std::vector<ResourceType> resourceTypes;
+    };
 
     bool SceneSerializer::deserialize(const std::string& path, IScriptInteractorFrom::Ptr scriptingEngine) {
         YAML::Node data;
@@ -103,8 +115,8 @@ namespace editor {
             ifstream.close();
             data = YAML::Load(sstr.str());
         }
-        catch (...) {
-            RB_EDITOR_CRITICAL("[SceneSerializer]: Deserialize YAML Exception");
+        catch (const std::exception& e) {
+            RB_EDITOR_CRITICAL("[SceneSerializer]: Deserialize YAML Exception {0}", e.what());
             exit(2);
         }
 

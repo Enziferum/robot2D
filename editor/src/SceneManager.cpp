@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2024
+(c) Alex Raag 2026
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -114,8 +114,12 @@ namespace editor {
         };
 
         auto taskQueue = TaskQueue::GetQueue();
-        taskQueue -> addAsyncTask<SceneLoadTask>(std::move(loadCallback), scene,
-                                                 scriptInteractorFrom, std::move(callback));
+        auto loadSceneTaskID = taskQueue -> addAsyncTask<SceneLoadTask>(
+                std::move(loadCallback),
+                scene,
+                scriptInteractorFrom,
+                std::move(callback)
+        );
     }
 
     bool SceneManager::remove() {

@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2024
+(c) Alex Raag 2026
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -62,6 +62,7 @@ namespace editor {
             m_window = window;
         m_descriptions = descriptions;
     }
+
 
     void ProjectInspector::render() {
         auto font = ImGui::GetFont();
@@ -147,6 +148,7 @@ namespace editor {
         }
     }
 
+
     void ProjectInspector::createProject() {
 
         std::string creationPath;
@@ -174,6 +176,7 @@ namespace editor {
         pack_message_string(m_projectPath, buffer);
     }
 
+
     void ProjectInspector::addProject() {
         std::string addPath;
         if(!FiledialogAdapter::get() -> selectFolder(addPath, "Add Existing Robot2D Project")) {
@@ -199,6 +202,7 @@ namespace editor {
         pack_message_string(m_projectPath, buffer);
     }
 
+
     void ProjectInspector::loadProject(const unsigned int& index) {
         auto& desc = m_descriptions[index];
         int allocSize = StringBuffer::calcAllocSize(desc.name) + StringBuffer::calcAllocSize(desc.path);
@@ -208,6 +212,7 @@ namespace editor {
         pack_message_string(desc.name, buffer);
         pack_message_string(desc.path, buffer);
     }
+
 
     void ProjectInspector::deleteProject(const unsigned int& index) {
         assert(index < m_descriptions.size() && "Index out of Range");
@@ -220,5 +225,6 @@ namespace editor {
         pack_message_string(project.name, buffer);
         pack_message_string(project.path, buffer);
     }
+
 }
 

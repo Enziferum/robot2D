@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2024
+(c) Alex Raag 2026
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -24,10 +24,10 @@ source distribution.
 namespace editor {
     TaskQueue::TaskQueue(): m_inputTasksQueue{},
                             m_outputTasksQueue{},
-                            m_currentId{0} {
+                            m_taskId(0) {
         try {
-            m_thread = std::thread{&TaskQueue::threadWork, this};
             m_running.store(true, std::memory_order::memory_order_relaxed);
+            m_thread = std::thread{&TaskQueue::threadWork, this};
         }
         catch(...) {
             m_running.store(false, std::memory_order::memory_order_relaxed);
@@ -45,21 +45,25 @@ namespace editor {
         while (m_running.load(std::memory_order::memory_order_relaxed)) {
             using namespace std::chrono_literals;
 
-            std::unique_lock<std::mutex> lock(m_inputMutex);
-            data_cond.wait(lock, [this] {
-                return !m_inputTasksQueue.empty()
-                       || !m_running.load(std::memory_order::memory_order_relaxed);
-            });
+            ITask::Ptr task { nullptr };
 
-            if (m_inputTasksQueue.empty())
-                continue;
-            auto task = m_inputTasksQueue.front();
-            if (!task)
-                continue;
+            {
+                std::unique_lock<std::mutex> lock(m_inputMutex);
+                data_cond.wait(lock, [this] {
+                    return !m_inputTasksQueue.empty()
+                           || !m_running.load(std::memory_order::memory_order_relaxed);
+                });
 
-            m_inputTasksQueue.pop();
+                if (m_inputTasksQueue.empty())
+                    continue;
+                task = m_inputTasksQueue.front();
+                if (!task)
+                    continue;
 
-            task -> execute();
+                m_inputTasksQueue.pop();
+
+                task -> execute();
+            }
 
             {
                 std::lock_guard<std::mutex> outLock{m_outputMutex};
@@ -68,10 +72,18 @@ namespace editor {
         }
     }
 
+    void TaskQueue::setStatus(editor::TaskID taskId) {
+
+    }
+
+    void TaskQueue::setException(editor::TaskID taskId) {
+
+    }
+
     void TaskQueue::process() {
         ITask::Ptr task{nullptr};
         {
-            std::lock_guard<std::mutex> outLock{m_outputMutex};
+            std::lock_guard<std::mutex> outLock {m_outputMutex };
             if(!m_outputTasksQueue.empty()) {
                 task = m_outputTasksQueue.front();
                 m_outputTasksQueue.pop();

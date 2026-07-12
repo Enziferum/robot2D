@@ -24,8 +24,10 @@ namespace editor {
             static LayerRegistry& I() { static LayerRegistry inst; return inst; }
 
             void defineLayer(int index, std::string name) {
-                if (index < 0 || index >= kMaxLayers) throw std::out_of_range("layer index");
-                if (m_indexToName[index] != "" || m_nameToIndex.count(name)) throw std::runtime_error("layer exists");
+                if (index < 0 || index >= kMaxLayers)
+                    throw std::out_of_range("layer index");
+                if (m_indexToName[index] != "" || m_nameToIndex.count(name))
+                    throw std::runtime_error("layer exists");
                 m_indexToName[index] = name;
                 m_nameToIndex[name]  = index;
                 m_layers[index]      = LayerInfo{name, (uint16_t)(1u << index), index};
@@ -47,6 +49,7 @@ namespace editor {
                 int ia = index(a), ib = index(b);
                 m_matrix[ia][ib] = m_matrix[ib][ia] = on;
             }
+
             bool defaultCollides(const std::string& a, const std::string& b) const {
                 int ia = index(a), ib = index(b);
                 return m_matrix[ia][ib];
@@ -92,6 +95,7 @@ namespace editor {
             uint16_t categoryBits = 1;
             uint16_t maskBits     = 0xFFFF;
             int16_t  groupIndex   = 0;
+            std::string name;
         };
 
         inline FilterBits makeFilterDefault(const std::string& layerName, int16_t groupIndex = 0) {
@@ -99,7 +103,8 @@ namespace editor {
             return FilterBits{
                     /*categoryBits*/ reg.bit(layerName),
                     /*maskBits*/     reg.defaultMaskFor(layerName),
-                    /*groupIndex*/   groupIndex
+                    /*groupIndex*/   groupIndex,
+                    /*name*/         layerName
             };
         }
 

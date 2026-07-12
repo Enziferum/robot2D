@@ -33,6 +33,7 @@ source distribution.
 #include <editor/ResouceManager.hpp>
 #include <editor/LocalResourceManager.hpp>
 #include <editor/FileApi.hpp>
+#include <editor/physics/Layers2D.hpp>
 
 namespace YAML {
     template<>
@@ -130,6 +131,9 @@ namespace editor {
 	}
 
 
+
+#define WRITE_YAML(name, value) out << YAML::Key << name << YAML::Value << value;
+
     static std::string RigidBody2DBodyTypeToString(Physics2DComponent::BodyType bodyType)
     {
         switch (bodyType)
@@ -171,9 +175,12 @@ namespace editor {
     }
 
 
+
     void SerializeEntity(YAML::Emitter& out, SceneEntity entity, IScriptInteractorFrom::Ptr scriptInteractor) {
         out << YAML::BeginMap;
         out << YAML::Key << "Entity" << YAML::Value << entity.getComponent<IDComponent>().ID;
+
+        WRITE_YAML("Entity", entity.getUUID())
 
         bool needSerializeChildren = false;
 
@@ -302,6 +309,7 @@ namespace editor {
             auto& rb2dComponent = entity.getComponent<Physics2DComponent>();
             out << YAML::Key << "BodyType" << YAML::Value << RigidBody2DBodyTypeToString(rb2dComponent.type);
             out << YAML::Key << "FixedRotation" << YAML::Value << rb2dComponent.fixedRotation;
+            out << YAML::Key << "Bullet" << YAML::Value << rb2dComponent.bullet;
 
             out << YAML::EndMap; // Rigidbody2DComponent
         }
@@ -318,6 +326,8 @@ namespace editor {
             out << YAML::Key << "Friction" << YAML::Value << bc2dComponent.friction;
             out << YAML::Key << "Restitution" << YAML::Value << bc2dComponent.restitution;
             out << YAML::Key << "RestitutionThreshold" << YAML::Value << bc2dComponent.restitutionThreshold;
+            out << YAML::Key << "UseDefaultMask" << YAML::Value << bc2dComponent.useDefaultMask;
+            out << YAML::Key << "FilterLayer" << YAML::Value << bc2dComponent.filter.name;
 
             out << YAML::EndMap; // BoxCollider2DComponent
         }
@@ -524,6 +534,8 @@ namespace editor {
             auto& rb2d = deserializedEntity.addComponent<Physics2DComponent>();
             rb2d.type = RigidBody2DBodyTypeFromString(rigidbody2DComponent["BodyType"].as<std::string>());
             rb2d.fixedRotation = rigidbody2DComponent["FixedRotation"].as<bool>();
+            if(rigidbody2DComponent["Bullet"])
+                rb2d.bullet = rigidbody2DComponent["Bullet"].as<bool>();
         }
 
         auto boxCollider2DComponent = entity["BoxCollider2DComponent"];
@@ -536,6 +548,16 @@ namespace editor {
             bc2d.friction = boxCollider2DComponent["Friction"].as<float>();
             bc2d.restitution = boxCollider2DComponent["Restitution"].as<float>();
             bc2d.restitutionThreshold = boxCollider2DComponent["RestitutionThreshold"].as<float>();
+            if(boxCollider2DComponent["UseDefaultMask"])
+               bc2d.useDefaultMask = boxCollider2DComponent["UseDefaultMask"].as<bool>();
+            if(boxCollider2DComponent["FilterLayer"]) {
+                auto filterLayer = boxCollider2DComponent["FilterLayer"].as<std::string>();
+                auto &registry = phys2d::LayerRegistry::I();
+                if (std::find_if(registry.names().begin(), registry.names().end(), [&](const auto &name) {
+                    return name == filterLayer;
+                }) != registry.names().end())
+                    bc2d.filter = phys2d::makeFilterDefault(filterLayer);
+            }
         }
 
         auto prefabComponent = entity["PrefabComponent"];

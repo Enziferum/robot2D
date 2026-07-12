@@ -1,5 +1,5 @@
 /*********************************************************************
-(c) Alex Raag 2024
+(c) Alex Raag 2026
 https://github.com/Enziferum
 robot2D - Zlib license.
 This software is provided 'as-is', without any express or
@@ -88,17 +88,17 @@ namespace editor {
             ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f),dockspace_flags);
 
             auto& config = EditorConfig::getConfig();
-            if(!config.layoutCreated) {
-                createLayout();
-                config.layoutCreated = true;
-
-                std::fstream file("robot2D.ini", std::ios::out | std::ios::ate);
-                std::size_t iniOutSize = 0;
-                auto iniData = ImGui::SaveIniSettingsToMemory(&iniOutSize);
-
-                file.write(iniData, iniOutSize);
-                file.close();
-            }
+//            if(!config.layoutCreated) {
+//                createLayout();
+//                config.layoutCreated = true;
+//
+//                std::fstream file("robot2D.ini", std::ios::out | std::ios::ate);
+//                std::size_t iniOutSize = 0;
+//                auto iniData = ImGui::SaveIniSettingsToMemory(&iniOutSize);
+//
+//                file.write(iniData, iniOutSize);
+//                file.close();
+//            }
         }
 
         for(auto& panel: m_panels)

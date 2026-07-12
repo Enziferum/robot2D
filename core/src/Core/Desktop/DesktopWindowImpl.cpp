@@ -25,6 +25,7 @@ source distribution.
 #include "DesktopWindowImpl.hpp"
 
 namespace robot2D::priv {
+
     DesktopWindowImpl::DesktopWindowImpl():
             m_window(nullptr),
             m_size(800, 600),
