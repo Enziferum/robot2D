@@ -1,15 +1,23 @@
 param(
     [string[]]$Files,
+    [string]$FilesFrom,
     [string[]]$Scope = @('core/include', 'core/src', 'core/tests', 'core/sandbox', 'editor/include', 'editor/src', 'editor/tests'),
     [string]$BuildDirectory = 'cmake-build-debug',
     [string]$ClangTidy = 'clang-tidy',
-    [switch]$ListOnly
+    [switch]$ListOnly,
+    [switch]$WarningsAsErrors
 )
 
 $ErrorActionPreference = 'Stop'
+$taskDefaultScope = !$PSBoundParameters.ContainsKey('Scope')
 Push-Location (Join-Path $PSScriptRoot '..')
 try {
     $taskRoot = (Get-Location).Path
+    if($FilesFrom) {
+        if($Files) { throw 'Use Files or FilesFrom, not both.' }
+        $Files = @((Get-Content -LiteralPath $FilesFrom -Raw | ConvertFrom-Json))
+        if(!$Files.Count) { throw 'FilesFrom must contain a non-empty JSON array.' }
+    }
     $taskRootPrefix = $taskRoot.TrimEnd('\', '/') + [IO.Path]::DirectorySeparatorChar
     $taskScopes = @($Scope | ForEach-Object {
         $taskResolved = (Resolve-Path -LiteralPath $_).Path.TrimEnd('\', '/')
@@ -21,6 +29,13 @@ try {
     if(!$taskScopes.Count) { throw 'At least one scope is required.' }
 
     function Test-TaskScope([string]$Path) {
+        if($taskDefaultScope) {
+            foreach($taskVendor in @('core/src/Graphics/internal', 'core/include/robot2D/Graphics/internal')) {
+                $taskVendorPath = Join-Path $taskRoot $taskVendor
+                if($Path.StartsWith($taskVendorPath + [IO.Path]::DirectorySeparatorChar,
+                                    [StringComparison]::OrdinalIgnoreCase)) { return $false }
+            }
+        }
         foreach($taskSelectedScope in $taskScopes) {
             if($Path.Equals($taskSelectedScope, [StringComparison]::OrdinalIgnoreCase) -or
                $Path.StartsWith($taskSelectedScope + [IO.Path]::DirectorySeparatorChar,
@@ -66,8 +81,13 @@ try {
         "$taskPattern([/\\]|$)"
     })
     $taskHeaderFilter = '^(' + ($taskPatterns -join '|') + ')'
+    $taskExcludeFilter = '^$'
+    if($taskDefaultScope) {
+        $taskExcludeFilter = '[/\\]core[/\\](src[/\\]Graphics|include[/\\]robot2D[/\\]Graphics)[/\\]internal[/\\]'
+    }
     $taskArguments = @('-p', $BuildDirectory, "--config-file=$taskRoot/.clang-tidy",
-                       "--header-filter=$taskHeaderFilter", '--exclude-header-filter=^$')
+                       "--header-filter=$taskHeaderFilter", "--exclude-header-filter=$taskExcludeFilter")
+    if($WarningsAsErrors) { $taskArguments += '--warnings-as-errors=*' }
     $taskCache = Join-Path $BuildDirectory 'CMakeCache.txt'
     $taskCompilerEntry = Select-String -LiteralPath $taskCache -Pattern '^CMAKE_CXX_COMPILER:(FILEPATH|STRING)=(.+)$'
     if(!$taskCompilerEntry) {

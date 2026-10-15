@@ -1,22 +1,22 @@
 /*********************************************************************
-(c) Alex Raag 2024
-https://github.com/Enziferum
-robot2D - Zlib license.
-This software is provided 'as-is', without any express or
-implied warranty. In no event will the authors be held
-liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute
-it freely, subject to the following restrictions:
-1. The origin of this software must not be misrepresented;
-you must not claim that you wrote the original software.
-If you use this software in a product, an acknowledgment
-in the product documentation would be appreciated but
-is not required.
-2. Altered source versions must be plainly marked as such,
-and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any
-source distribution.
+   (c) Alex Raag 2024
+   https://github.com/Enziferum
+   robot2D - Zlib license.
+   This software is provided 'as-is', without any express or
+   implied warranty. In no event will the authors be held
+   liable for any damages arising from the use of this software.
+   Permission is granted to anyone to use this software for any purpose,
+   including commercial applications, and to alter it and redistribute
+   it freely, subject to the following restrictions:
+   1. The origin of this software must not be misrepresented;
+   you must not claim that you wrote the original software.
+   If you use this software in a product, an acknowledgment
+   in the product documentation would be appreciated but
+   is not required.
+   2. Altered source versions must be plainly marked as such,
+   and must not be misrepresented as being the original software.
+   3. This notice may not be removed or altered from any
+   source distribution.
 *********************************************************************/
 
 #include <algorithm>
@@ -34,9 +34,9 @@ namespace editor {
 
 
 
-    RenderSystem::RenderSystem(robot2D::MessageBus& messageBus):
-            robot2D::ecs::System(messageBus,typeid(RenderSystem)),
-            m_needUpdateZBuffer{false} {
+    RenderSystem::RenderSystem(robot2D::MessageBus& messageBus) :
+        robot2D::ecs::System(messageBus, typeid(RenderSystem)),
+        m_needUpdateZBuffer{false} {
         addRequirement<TransformComponent>();
         addRequirement<DrawableComponent>();
     }
@@ -50,14 +50,14 @@ namespace editor {
 
             if(std::get<2>(item) == ReorderDeleteType::Last) {
                 auto found = std::find_if(m_entities.rbegin(), m_entities.rend(),
-                                                [&source](robot2D::ecs::Entity item) {
+                        [&source](robot2D::ecs::Entity item) {
                     return item.getIndex() == source.getIndex();
                 });
                 m_entities.erase(std::prev(found.base()));
             }
             else if(std::get<2>(item) == ReorderDeleteType::First) {
                 auto found = std::find_if(m_entities.begin(), m_entities.end(),
-                                                 [&source](robot2D::ecs::Entity item) {
+                        [&source](robot2D::ecs::Entity item) {
                     return item.getIndex() == source.getIndex();
                 });
                 m_entities.erase(found);
@@ -74,7 +74,7 @@ namespace editor {
             }
             if(entity.hasComponent<CameraComponent>()) {
                 auto camera = entity.getComponent<CameraComponent>();
-                if (camera.isPrimary) {
+                if(camera.isPrimary) {
                     auto size = camera.getSize();
                     auto pos = camera.getPosition();
 
@@ -85,9 +85,9 @@ namespace editor {
 
         if(m_needUpdateZBuffer) {
             std::stable_sort(m_entities.begin(), m_entities.end(),
-                      [](const robot2D::ecs::Entity& left, const robot2D::ecs::Entity& right) {
+                [](const robot2D::ecs::Entity& left, const robot2D::ecs::Entity& right) {
                 return left.getComponent<DrawableComponent>().getDepth() <
-                        right.getComponent<DrawableComponent>().getDepth();
+                       right.getComponent<DrawableComponent>().getDepth();
             });
 
             m_needUpdateZBuffer = false;
@@ -101,10 +101,9 @@ namespace editor {
             auto& drawable = ent.getComponent<DrawableComponent>();
             auto t = transform.getTransform();
 
-            if (ent.hasComponent<CameraComponent>() && m_runtimeFlag) {
+            if(ent.hasComponent<CameraComponent>() && m_runtimeFlag) {
                 auto camera = ent.getComponent<CameraComponent>();
-                if (camera.isPrimary) {
-                    auto rect = m_cameraView.getRectangle().as<unsigned int>();
+                if(camera.isPrimary) {
                     target.setViewVirtual(m_runtimeWindowSize, m_cameraView);
                 }
             }
@@ -121,7 +120,7 @@ namespace editor {
                     continue;
 
                 auto textSystem = getScene() -> getSystem<TextSystem>();
-                auto vertexArray =  textSystem -> getVertexArray();
+                auto vertexArray = textSystem -> getVertexArray();
                 renderStates.shader = const_cast<robot2D::ShaderHandler*>(&textSystem -> getShader());
                 renderStates.shader -> use();
                 auto view = target.getView(drawable.getLayerIndex()).getTransform();
@@ -164,12 +163,12 @@ namespace editor {
 
     void RenderSystem::setBefore(robot2D::ecs::Entity source, robot2D::ecs::Entity target) {
         auto sourceIter = std::find_if(m_entities.begin(), m_entities.end(),
-                                       [&source](robot2D::ecs::Entity item) {
+                [&source](robot2D::ecs::Entity item) {
             return item.getIndex() == source.getIndex();
         });
 
         auto targetIter = std::find_if(m_entities.begin(), m_entities.end(),
-                                       [&target](robot2D::ecs::Entity item) {
+                [&target](robot2D::ecs::Entity item) {
             return item.getIndex() == target.getIndex();
         });
 
@@ -182,13 +181,13 @@ namespace editor {
             /// insert before remove last
             m_insertItems.emplace_back(targetIter, source, ReorderDeleteType::Last);
         }
-        else if (sourceOldDistance < targetOldDistance) {
+        else if(sourceOldDistance < targetOldDistance) {
             m_insertItems.emplace_back(targetIter, source, ReorderDeleteType::First);
         }
     }
 
     robot2D::ecs::System::Ptr RenderSystem::cloneSelf(robot2D::ecs::Scene* scene,
-                                                      const std::vector<robot2D::ecs::Entity>& newEntities) {
+        const std::vector<robot2D::ecs::Entity>& newEntities) {
         auto cloneSystem = std::make_shared<RenderSystem>(m_messageBus);
         if(!cloneBase(cloneSystem, scene, newEntities))
             return nullptr;

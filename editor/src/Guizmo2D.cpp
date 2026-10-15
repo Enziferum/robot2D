@@ -1,22 +1,22 @@
 /*********************************************************************
-(c) Alex Raag 2026
-https://github.com/Enziferum
-robot2D - Zlib license.
-This software is provided 'as-is', without any express or
-implied warranty. In no event will the authors be held
-liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute
-it freely, subject to the following restrictions:
-1. The origin of this software must not be misrepresented;
-you must not claim that you wrote the original software.
-If you use this software in a product, an acknowledgment
-in the product documentation would be appreciated but
-is not required.
-2. Altered source versions must be plainly marked as such,
-and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any
-source distribution.
+   (c) Alex Raag 2026
+   https://github.com/Enziferum
+   robot2D - Zlib license.
+   This software is provided 'as-is', without any express or
+   implied warranty. In no event will the authors be held
+   liable for any damages arising from the use of this software.
+   Permission is granted to anyone to use this software for any purpose,
+   including commercial applications, and to alter it and redistribute
+   it freely, subject to the following restrictions:
+   1. The origin of this software must not be misrepresented;
+   you must not claim that you wrote the original software.
+   If you use this software in a product, an acknowledgment
+   in the product documentation would be appreciated but
+   is not required.
+   2. Altered source versions must be plainly marked as such,
+   and must not be misrepresented as being the original software.
+   3. This notice may not be removed or altered from any
+   source distribution.
 *********************************************************************/
 
 #ifdef _MSC_VER
@@ -45,13 +45,13 @@ namespace editor {
         const robot2D::Color activeColor{255.f, 190.f, 70.f};
 
         void drawRing(robot2D::RenderTarget& target, robot2D::RenderStates states,
-                      const robot2D::FloatRect& bounds, robot2D::vec2f units, float thickness,
-                      const robot2D::Color& color) {
+            const robot2D::FloatRect& bounds, robot2D::vec2f units, float thickness,
+            const robot2D::Color& color) {
             constexpr int segments = 64;
             const auto center = bounds.centerPoint();
             const robot2D::vec2f outer{bounds.width * 0.5f, bounds.height * 0.5f};
             const robot2D::vec2f inner{std::max(0.f, outer.x - thickness * units.x),
-                                      std::max(0.f, outer.y - thickness * units.y)};
+                                       std::max(0.f, outer.y - thickness * units.y)};
             states.texture = nullptr;
             states.color = color;
             robot2D::VertexData vertices(4);
@@ -95,7 +95,9 @@ namespace editor {
         m_sprite.setSize(size);
     }
 
-    bool Guizmo2D::Manipulator::active() const { return m_active; }
+    bool Guizmo2D::Manipulator::active() const {
+        return m_active;
+    }
 
     void Guizmo2D::Manipulator::setPosition(const robot2D::vec2f& position) {
         m_rect.lx = position.x;
@@ -116,7 +118,7 @@ namespace editor {
 
     void Guizmo2D::Manipulator::moveY(float offset) {
         auto pos = m_sprite.getPosition();
-        m_sprite.setPosition({pos.x, pos.y  + offset});
+        m_sprite.setPosition({pos.x, pos.y + offset});
         m_rect.ly += offset;
     }
 
@@ -126,7 +128,7 @@ namespace editor {
         states.color = m_color;
         robot2D::VertexData vertices(4);
         auto quad = [&](robot2D::vec2f first, robot2D::vec2f second,
-                        robot2D::vec2f third, robot2D::vec2f fourth) {
+            robot2D::vec2f third, robot2D::vec2f fourth) {
             vertices[0].position = first;
             vertices[1].position = second;
             vertices[2].position = third;
@@ -155,7 +157,7 @@ namespace editor {
                 rect(end - head, center - bounds.height * 0.4f, head, bounds.height * 0.8f);
             else
                 quad({end - head, bounds.ly}, {end, center},
-                     {end - head, bounds.ly + bounds.height}, {end - head, bounds.ly + bounds.height});
+                    {end - head, bounds.ly + bounds.height}, {end - head, bounds.ly + bounds.height});
         }
         else {
             const float center = bounds.lx + bounds.width * 0.5f;
@@ -165,14 +167,13 @@ namespace editor {
                 rect(center - bounds.width * 0.4f, bounds.ly, bounds.width * 0.8f, head);
             else
                 quad({bounds.lx, bounds.ly + head}, {center, bounds.ly},
-                     {bounds.lx + bounds.width, bounds.ly + head}, {bounds.lx + bounds.width, bounds.ly + head});
+                    {bounds.lx + bounds.width, bounds.ly + head}, {bounds.lx + bounds.width, bounds.ly + head});
         }
     }
-    Guizmo2D::Guizmo2D():
-            m_xAxisManipulator{Manipulator::Axis::X, robot2D::Color::Red},
-            m_yAxisManipulator{Manipulator::Axis::Y, robot2D::Color::Green},
-            m_XYAxisManipulator{Manipulator::Axis::BOTH, robot2D::Color::Blue}
-    {
+    Guizmo2D::Guizmo2D() :
+        m_xAxisManipulator{Manipulator::Axis::X, robot2D::Color::Red},
+        m_yAxisManipulator{Manipulator::Axis::Y, robot2D::Color::Green},
+        m_XYAxisManipulator{Manipulator::Axis::BOTH, robot2D::Color::Blue} {
         m_eventBinder.bindEvent(robot2D::Event::MousePressed, BIND_CLASS_FN(processMousePressed));
         m_eventBinder.bindEvent(robot2D::Event::MouseReleased, BIND_CLASS_FN(processMouseRelease));
         m_eventBinder.bindEvent(robot2D::Event::MouseMoved, BIND_CLASS_FN(processMouseMoved));
@@ -181,7 +182,7 @@ namespace editor {
     void Guizmo2D::handleEvents(const robot2D::Event& event) {
         if(event.type == robot2D::Event::LostFocus || event.type == robot2D::Event::MouseReleased) {
             if(event.type == robot2D::Event::LostFocus
-                    || event.mouse.btn == robot2D::mouse2int(robot2D::Mouse::MouseLeft))
+                || event.mouse.btn == robot2D::mouse2int(robot2D::Mouse::MouseLeft))
                 cancelDrag();
             return;
         }
@@ -267,7 +268,7 @@ namespace editor {
     }
 
     void Guizmo2D::draw(robot2D::RenderTarget& target,
-                        [[maybe_unused]] robot2D::RenderStates states) const {
+        [[maybe_unused]] robot2D::RenderStates states) const {
         if(!m_isShown)
             return;
 
@@ -299,7 +300,8 @@ namespace editor {
 
     namespace {
 
-        float angleBetweenVectorInDegress(const robot2D::vec2f& center, const robot2D::vec2f& oldPos, const robot2D::vec2f& newPos) {
+        float angleBetweenVectorInDegress(const robot2D::vec2f& center, const robot2D::vec2f& oldPos,
+            const robot2D::vec2f& newPos) {
             robot2D::vec2f v1 = oldPos - center;
             robot2D::vec2f v2 = newPos - center;
 
@@ -327,93 +329,90 @@ namespace editor {
 
         robot2D::vec2f diff{};
         switch(m_operation) {
-            case Operation::Move: {
-                if(m_xAxisManipulator.active()) {
-                    /// move transformAble by x
-                    diff.x =  moveVector.x - m_manipulatorLastPos.x;
-                }
-                else if(m_yAxisManipulator.active()) {
-                    /// move transformAble by y
-                    diff.y = moveVector.y - m_manipulatorLastPos.y;
-                }
-                else if(m_XYAxisManipulator.active()) {
-                    diff = moveVector - m_manipulatorLastPos;
-                }
+        case Operation::Move: {
+            if(m_xAxisManipulator.active()) {
+                /// move transformAble by x
+                diff.x = moveVector.x - m_manipulatorLastPos.x;
+            }
+            else if(m_yAxisManipulator.active()) {
+                /// move transformAble by y
+                diff.y = moveVector.y - m_manipulatorLastPos.y;
+            }
+            else if(m_XYAxisManipulator.active()) {
+                diff = moveVector - m_manipulatorLastPos;
+            }
 
+            m_manipulatorLastPos += diff;
+            moveManipulators(diff);
+
+
+            for(auto transform: m_movementRoots) {
+                auto pos = transform -> getPosition();
+                transform -> setPosition(pos + diff);
+            }
+
+            break;
+        }
+        case Operation::Scale: {
+
+            if(m_xAxisManipulator.active()) {
+                /// move transformAble by x
+                float diff = moveVector.x - m_manipulatorLastPos.x;
+                m_manipulatorLastPos.x += diff;
+                for(auto transform: m_manipulateds) {
+                    auto size = transform -> getSize();
+                    transform -> setSize( {size.x + diff, size.y} );
+                }
+                m_xAxisManipulator.moveX(diff);
+                m_yAxisManipulator.moveX(diff);
+                m_XYAxisManipulator.moveX(diff);
+                /// update manipulator's position
+            }
+            else if(m_yAxisManipulator.active()) {
+                /// move transformAble by y
+                float diff = moveVector.y - m_manipulatorLastPos.y;
+                m_manipulatorLastPos.y += diff;
+                for(auto transform: m_manipulateds) {
+                    auto size = transform -> getSize();
+                    transform -> setSize( {size.x, size.y + diff} );
+                }
+                m_xAxisManipulator.moveY(diff);
+                m_yAxisManipulator.moveY(diff);
+                m_XYAxisManipulator.moveY(diff);
+                /// update manipulator's position
+            }
+            else if(m_XYAxisManipulator.active()) {
+                robot2D::vec2f diff = moveVector - m_manipulatorLastPos;
+                for(auto transform: m_manipulateds) {
+                    auto size = transform -> getSize();
+                    transform -> setSize( size + diff );
+                }
                 m_manipulatorLastPos += diff;
-                moveManipulators(diff);
-
-
-                for(auto transform: m_movementRoots) {
-                    auto pos = transform -> getPosition();
-                    transform -> setPosition(pos + diff);
-                }
-
-                break;
+                m_xAxisManipulator.moveX(diff.x);
+                m_xAxisManipulator.moveY(diff.y);
+                m_yAxisManipulator.moveX(diff.x);
+                m_yAxisManipulator.moveY(diff.y);
+                m_XYAxisManipulator.moveX(diff.x);
+                m_XYAxisManipulator.moveY(diff.y);
             }
-            case Operation::Scale: {
+            break;
+        }
+        case Operation::Rotate: {
+            for(auto& transform: m_manipulateds) {
+                auto pos = transform -> getPosition();
 
-                if (m_xAxisManipulator.active()) {
-                    /// move transformAble by x
-                    float diff = moveVector.x - m_manipulatorLastPos.x;
-                    m_manipulatorLastPos.x += diff;
-                    for(auto transform: m_manipulateds) {
-                        auto size = transform -> getSize();
-                        transform -> setSize( {size.x + diff, size.y} );
-                    }
-                    m_xAxisManipulator.moveX(diff);
-                    m_yAxisManipulator.moveX(diff);
-                    m_XYAxisManipulator.moveX(diff);
-                    /// update manipulator's position
-                } else if (m_yAxisManipulator.active()) {
-                    /// move transformAble by y
-                    float diff = moveVector.y - m_manipulatorLastPos.y;
-                    m_manipulatorLastPos.y += diff;
-                    for(auto transform: m_manipulateds) {
-                        auto size = transform -> getSize();
-                        transform -> setSize( {size.x, size.y + diff} );
-                    }
-                    m_xAxisManipulator.moveY(diff);
-                    m_yAxisManipulator.moveY(diff);
-                    m_XYAxisManipulator.moveY(diff);
-                    /// update manipulator's position
-                }
-                else if(m_XYAxisManipulator.active()) {
-                    robot2D::vec2f diff = moveVector - m_manipulatorLastPos;
-                    for(auto transform: m_manipulateds) {
-                        auto size = transform -> getSize();
-                        transform -> setSize( size + diff );
-                    }
-                    m_manipulatorLastPos += diff;
-                    m_xAxisManipulator.moveX(diff.x);
-                    m_xAxisManipulator.moveY(diff.y);
-                    m_yAxisManipulator.moveX(diff.x);
-                    m_yAxisManipulator.moveY(diff.y);
-                    m_XYAxisManipulator.moveX(diff.x);
-                    m_XYAxisManipulator.moveY(diff.y);
-                }
-                break;
+                float diffAngle = angleBetweenVectorInDegress(pos, moveVector, m_manipulatorLastPos);
+                transform -> rotate(diffAngle);
             }
-            case Operation::Rotate: {
-                for(auto& transform: m_manipulateds) {
-                    auto lastRotate = transform -> getRotation();
-
-                    auto pos = transform -> getPosition();
-                    auto size = transform -> getLocalBounds();
-                    robot2D::vec2f center = pos + size.centerPoint();
-
-                    float diffAngle = angleBetweenVectorInDegress(pos, moveVector, m_manipulatorLastPos);
-                    transform -> rotate(diffAngle);
-                }
-                m_manipulatorLastPos = moveVector;
-                break;
-            }
+            m_manipulatorLastPos = moveVector;
+            break;
+        }
         }
         for(std::size_t index = 0; index < m_manipulateds.size(); ++index) {
             const auto* transform = m_manipulateds[index];
             const auto& before = previous[index];
             if(before.position != transform -> getPosition() || before.size != transform -> getSize() ||
-               before.rotation != transform -> getRotation()) {
+                before.rotation != transform -> getRotation()) {
                 if(m_onModified)
                     m_onModified();
                 break;
@@ -428,8 +427,8 @@ namespace editor {
             mousePoint = m_camera -> convertPixelToCoords(mousePoint);
             const bool hit = m_operation == Operation::Rotate ? containsRotation(mousePoint)
                     : (m_xAxisManipulator.isPressed(mousePoint)
-                       || m_yAxisManipulator.isPressed(mousePoint)
-                       || m_XYAxisManipulator.isPressed(mousePoint));
+                || m_yAxisManipulator.isPressed(mousePoint)
+                || m_XYAxisManipulator.isPressed(mousePoint));
             if(hit) {
                 m_leftMousePressed = true;
                 m_manipulatorLastPos = mousePoint;
@@ -451,7 +450,7 @@ namespace editor {
 
     void Guizmo2D::setManipulated(TransformComponent* transformable) {
         if(m_manipulateds.size() != (transformable ? 1u : 0u)
-                || (transformable && m_manipulateds[0] != transformable))
+            || (transformable && m_manipulateds[0] != transformable))
             cancelDrag();
         m_manipulateds.clear();
         m_movementRoots.clear();
