@@ -48,7 +48,7 @@ def git_paths(*args):
 
 def option(name, default):
     value = subprocess.run(["git", "config", "--get", f"robot2d.hooks.{name}"], cwd=ROOT,
-                           capture_output=True, text=True)
+                           capture_output=True, text=True, encoding="utf-8", errors="replace")
     if value.returncode not in (0, 1):
         raise CheckError("Cannot read hook configuration")
     return value.stdout.strip() if value.returncode == 0 else default
@@ -136,7 +136,7 @@ def check(changed, *, plan=False):
     untracked = git_paths("ls-files", "--others", "--exclude-standard")
     mismatch = [path for path in unstaged + untracked if build_input(path) or
                 path.startswith(".githooks/") or
-                (path.startswith("scripts/") and path.endswith((".py", ".ps1")))]
+                (path.startswith("scripts/") and path.endswith(".py"))]
     if mismatch:
         raise CheckError("Stage or set aside these check inputs before checking: " + ", ".join(mismatch))
     if python_checks:
