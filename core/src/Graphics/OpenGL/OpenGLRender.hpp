@@ -81,7 +81,7 @@ namespace robot2D {
             void applyCurrentView(unsigned int layerID);
 
             void setupLayer();
-            void renderCache(unsigned int layerID) const;
+            void renderCache(unsigned int layerID, std::size_t& cacheIndex, std::size_t batchIndex) const;
             void resetBatch(RenderBuffer& buffer) const;
             void queueBatch(unsigned int layerID) const;
             void drawBatch(unsigned int layerID, const RenderVertex* vertices, uint32_t vertexCount,

@@ -51,7 +51,7 @@ endif()
 
 if(RB2D_EDITOR_GRAPHICS_TESTS)
     foreach(batch_api IN ITEMS 43 45)
-        foreach(batch_case IN ITEMS capacity textures layers flush geometry three-d malformed)
+        foreach(batch_case IN ITEMS capacity textures layers flush geometry three-d malformed mixed mixed-overflow)
             set(batch_name "core-batch-${batch_case}-${batch_api}")
             rb2d_register_test("${batch_name}" robot2D-batch-render-tests "${batch_case}" "graphics;integration" "${batch_api}")
             set_tests_properties("${batch_name}" PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 60)

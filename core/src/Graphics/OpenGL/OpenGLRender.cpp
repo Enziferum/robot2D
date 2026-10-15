@@ -453,16 +453,23 @@ namespace robot2D::priv {
                 layerID, m_renderLayers.size());
             return;
         }
-        auto& buffer = m_renderLayers[layerID].m_renderBuffer;
-        for(const auto& batch: buffer.pendingBatches)
-            drawBatch(layerID, batch.vertices.data(), static_cast<uint32_t>(batch.vertices.size()),
-                batch.textureSlots.data(), batch.textureSlotCount);
-        buffer.pendingBatches.clear();
+        auto& layer = m_renderLayers[layerID];
+        auto& buffer = layer.m_renderBuffer;
+        std::size_t cacheIndex = 0;
+        for(std::size_t batchIndex = 0; batchIndex <= buffer.pendingBatches.size(); ++batchIndex) {
+            renderCache(layerID, cacheIndex, batchIndex);
+            if(batchIndex < buffer.pendingBatches.size()) {
+                const auto& batch = buffer.pendingBatches[batchIndex];
+                drawBatch(layerID, batch.vertices.data(), static_cast<uint32_t>(batch.vertices.size()),
+                    batch.textureSlots.data(), batch.textureSlotCount);
+            }
+        }
         drawBatch(layerID, buffer.quadBuffer.get(),
             static_cast<uint32_t>(buffer.quadBufferPtr - buffer.quadBuffer.get()),
             buffer.textureSlots.data(), buffer.textureSlotIndex);
+        buffer.pendingBatches.clear();
+        layer.m_vertexArrayCache.clear();
         resetBatch(buffer);
-        renderCache(layerID);
     }
 
 
@@ -583,11 +590,19 @@ namespace robot2D::priv {
         if(layerID >= m_renderLayers.size())
             layerID = m_renderLayers.size() - 1;
 
-        m_renderLayers[layerID].m_vertexArrayCache.push_back({vertexArray, states});
+        if(!vertexArray)
+            return;
+        // Seal preceding quads without drawing the layer early. Remember where this
+        // geometry belongs among the completed batches, including overflow batches.
+        queueBatch(layerID);
+        auto& layer = m_renderLayers[layerID];
+        layer.m_vertexArrayCache.push_back({vertexArray, states, layer.m_renderBuffer.pendingBatches.size()});
     }
 
-    void OpenGLRender::renderCache(unsigned int layerID) const {
-        for(const auto& it: m_renderLayers[layerID].m_vertexArrayCache) {
+    void OpenGLRender::renderCache(unsigned int layerID, std::size_t& cacheIndex, std::size_t batchIndex) const {
+        const auto& cache = m_renderLayers[layerID].m_vertexArrayCache;
+        while(cacheIndex < cache.size() && cache[cacheIndex].m_batchesBefore == batchIndex) {
+            const auto& it = cache[cacheIndex++];
             if(!it.m_vertexArray)
                 continue;
 
@@ -660,7 +675,6 @@ namespace robot2D::priv {
                 glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         }
 
-        m_renderLayers[layerID].m_vertexArrayCache.clear();
     }
 
     void OpenGLRender::render3D(const VertexArray::Ptr& vertexArray, RenderStates states) const {

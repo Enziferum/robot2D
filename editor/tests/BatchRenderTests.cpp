@@ -233,6 +233,106 @@ namespace {
         glDeleteProgram(shader.getProgram());
     }
 
+    // TextSystem/Core Text submit an atlas-backed VertexArray through this same path.
+    class AtlasGeometry {
+    public:
+        AtlasGeometry(const Color& color, float x = 0) {
+            const unsigned char coverage = 255;
+            atlas.create({1, 1}, &coverage, 0, ImageColorFormat::RED);
+            CHECK(shader.createShader(ShaderType::Vertex,
+                "#version 430 core\nlayout(location=0) in vec2 position; layout(location=1) in vec2 uv;"
+                "layout(location=2) in vec4 color; out vec2 coords; out vec4 tint;"
+                "void main(){coords=uv; tint=color; gl_Position=vec4(position.x/32.-1.,1.-position.y/32.,0,1);}",
+                false, "mixed-text.vert"));
+            CHECK(shader.createShader(ShaderType::Fragment,
+                "#version 430 core\nin vec2 coords; in vec4 tint; out vec4 pixel; uniform sampler2D atlas;"
+                "void main(){pixel=tint*texture(atlas,coords).r;}", false, "mixed-text.frag"));
+            shader.use();
+            shader.set("atlas", 0);
+            shader.unUse();
+            batch.initalize({{ElementType::Float2, "position"}, {ElementType::Float2, "uv"},
+                    {ElementType::Float4, "color"}});
+            batch.preProcessBatching();
+            for(const vec2f pos: {vec2f{x, 0}, vec2f{x + 8, 0}, vec2f{x + 8, 8}, vec2f{x, 8}})
+                batch.pack(Vertex{pos, {0, 0}, color.toGL()});
+            batch.processBatching();
+        }
+        ~AtlasGeometry() {
+            glDeleteProgram(shader.getProgram());
+        }
+        void draw(Target& target, unsigned int layer = 1) {
+            RenderStates states;
+            states.layerID = layer;
+            states.shader = &shader;
+            states.texture = &atlas;
+            states.renderInfo.indexCount = batch.getIndexCount();
+            states.blendMode = BlendMode::MinusAlphaOne;
+            target.draw(batch.getVertexArray(), states);
+        }
+    private:
+        QuadBatchRender<Vertex> batch;
+        ShaderHandler shader;
+        Texture atlas;
+    };
+
+    void mixed(bool api45) {
+        Surface surface(api45);
+        AtlasGeometry text(Color(0, 255, 0, 128));
+        AtlasGeometry geometry(Color(255, 255, 0, 128), 16);
+        surface.begin();
+        surface.quad(Color(255, 0, 0, 128));
+        text.draw(surface.target);
+        surface.quad(Color(0, 0, 255, 128));
+        surface.quad(Color(255, 0, 0, 128), 1, 16);
+        geometry.draw(surface.target);
+        surface.quad(Color(0, 0, 255, 128), 1, 16);
+        surface.target.afterRender();
+        surface.expect(4, 4, 32, 64, 128);
+        surface.expect(20, 4, 96, 64, 128);
+        CHECK(surface.target.getStats().drawCalls == 5);
+        surface.target.flushRender(1);
+        surface.target.afterRender();
+        surface.expect(4, 4, 32, 64, 128);
+        CHECK(surface.target.getStats().drawCalls == 5);
+        surface.begin();
+        text.draw(surface.target);
+        surface.target.afterRender();
+        surface.expect(4, 4, 0, 128, 0);
+        CHECK(surface.target.getStats().drawCalls == 1);
+        surface.begin();
+        surface.quad(Color(255, 0, 0, 128));
+        text.draw(surface.target);
+        text.draw(surface.target);
+        surface.quad(Color(0, 0, 255, 128));
+        surface.target.flushRender(1);
+        surface.expect(4, 4, 16, 96, 128);
+        surface.target.afterRender();
+        CHECK(surface.target.getStats().drawCalls == 4);
+        surface.expect(4, 4, 16, 96, 128);
+    }
+
+    void mixedOverflow(bool api45) {
+        Surface surface(api45);
+        surface.target.createLayer();
+        AtlasGeometry text(Color(0, 255, 0, 128));
+        surface.begin();
+        text.draw(surface.target);
+        for(int i = 0; i < 20001; ++i)
+            surface.quad(i == 20000 ? Color(0, 0, 255, 128) : Color::Red, 1,
+                i == 20000 ? 0.f : -16.f, i == 20000 ? 0.f : -16.f);
+        // Lower layers still precede the complete mixed stream, regardless of submission order.
+        surface.quad(Color::Red, 0);
+        surface.quad(Color::White, 2, 16);
+        surface.target.afterRender();
+        surface.expect(4, 4, 63, 64, 128);
+        surface.expect(20, 4, 255, 255, 255);
+        CHECK(surface.target.getStats().drawCalls == 5);
+        surface.begin();
+        surface.target.afterRender();
+        surface.expect(4, 4, 0, 0, 0);
+        CHECK(surface.target.getStats().drawCalls == 0);
+    }
+
     void malformed(bool api45, std::ostringstream& errors) {
         Surface surface(api45);
         surface.begin();
@@ -282,6 +382,8 @@ int main(int argc, char** argv) {
             else if(name == "flush") flush(api45);
             else if(name == "geometry") geometry(api45);
             else if(name == "three-d") geometry(api45, true);
+            else if(name == "mixed") mixed(api45);
+            else if(name == "mixed-overflow") mixedOverflow(api45);
             else if(name == "malformed") malformed(api45, errors);
             else CHECK(false && "Unknown test case");
             CHECK(glGetError() == GL_NO_ERROR);
