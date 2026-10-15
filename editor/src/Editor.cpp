@@ -35,9 +35,11 @@ source distribution.
 #include <editor/panels/AssetsPanel.hpp>
 #include <editor/panels/MenuPanel.hpp>
 #include <editor/panels/InspectorPanel.hpp>
+#include <editor/panels/SceneSettingsPanel.hpp>
 #include <editor/panels/UtilPanel.hpp>
 #include <editor/panels/ViewportPanel.hpp>
 #include <editor/panels/GameViewport.hpp>
+#include <editor/panels/ConsolePanel.hpp>
 ///////////////////////////// PANELS /////////////////////////////
 
 #include <editor/Components.hpp>
@@ -158,6 +160,7 @@ namespace editor {
             m_window = window;
 
         m_interactor = editorInteractor;
+        m_panelManager.setRuntimeControls(m_interactor, m_messageBus);
 
         for(auto& path: m_configuration.texturePaths) {
             auto fullPath = m_configuration.texturesPath + path.second;
@@ -177,9 +180,11 @@ namespace editor {
 
         m_panelManager.addPanel<ScenePanel>(m_messageBus, m_messageDispather, m_prefabManager);
         m_panelManager.addPanel<AssetsPanel>(m_messageBus, m_interactor, m_panelManager, m_prefabManager);
+        m_panelManager.addPanel<ConsolePanel>(logger::Log::getFilePath());
         m_panelManager.addPanel<InspectorPanel>(m_messageDispather, m_messageBus, m_prefabManager, m_panelManager);
+        m_panelManager.addPanel<SceneSettingsPanel>();
         m_panelManager.addPanel<UtilPanel>(m_editorCamera);
-        m_panelManager.addPanel<MenuPanel>(m_messageBus, m_interactor);
+        m_panelManager.addPanel<MenuPanel>(m_messageBus, m_interactor, &m_panelManager);
         m_panelManager.addPanel<ViewportPanel>(m_interactor,
                                                m_editorCamera,
                                                m_messageBus,
@@ -191,6 +196,16 @@ namespace editor {
         m_panelManager.addPanel<GameViewport>(m_messageBus);
         m_panelManager.addPanel<AnimationPanel>(m_messageBus, m_messageDispather, m_interactor);
 
+        m_panelManager.registerPanel(m_panelManager.getPanel<ScenePanel>(), "ScenePanel", "Scene");
+        m_panelManager.registerPanel(m_panelManager.getPanel<ViewportPanel>(), "ViewportPanel", "Viewport");
+        m_panelManager.registerPanel(m_panelManager.getPanel<GameViewport>(), "GamePanel", "Game");
+        m_panelManager.registerPanel(m_panelManager.getPanel<InspectorPanel>(), "InspectorPanel", "Inspector");
+        m_panelManager.registerPanel(m_panelManager.getPanel<SceneSettingsPanel>(), "SceneSettingsPanel", "Scene Settings");
+        m_panelManager.registerPanel(m_panelManager.getPanel<AssetsPanel>(), "AssetsPanel", "Assets");
+        m_panelManager.registerPanel(m_panelManager.getPanel<ConsolePanel>(), "ConsolePanel", "Console");
+        m_panelManager.registerPanel(m_panelManager.getPanel<AnimationPanel>(), "AnimationPanel", "Animation");
+        m_panelManager.registerPanel(m_panelManager.getPanel<UtilPanel>(), "StatusBar", "Status bar", "##EditorStatusBar");
+
         setupBindings();
         setupShortCuts();
         setupSpinner();
@@ -201,6 +216,7 @@ namespace editor {
 
     void Editor::handleEvents(const robot2D::Event& event) {
         if(event.type == robot2D::Event::LostFocus) {
+            m_guizmo2D.cancelDrag();
             m_state = State::LostFocus;
         }
         if(event.type == robot2D::Event::GainFocus) {
@@ -213,7 +229,10 @@ namespace editor {
         if(m_interactor -> getState() == EditorState::Edit) {
             m_editorCamera -> handleEvents(event);
             m_shortcutManager.handleEvents(event);
-            m_guizmo2D.handleEvents(event);
+            auto& viewport = m_panelManager.getPanel<ViewportPanel>();
+            if(event.type != robot2D::Event::MousePressed
+                    || viewport.containsMouse({static_cast<float>(event.mouse.x), static_cast<float>(event.mouse.y)}))
+                m_guizmo2D.handleEvents(event);
             m_cameraManipulator.handleEvents(event);
             m_panelManager.getPanel<ViewportPanel>().handleEvents(event);
             m_eventBinder.handleEvents(event);
@@ -353,7 +372,7 @@ namespace editor {
         m_cameraManipulator.setCamera(m_editorCamera);
         m_editorCamera -> setViewportSize(windowSize.as<float>());
 
-        applyStyle(EditorStyle::UE4);
+        applyStyle(EditorStyle::SlateBlue);
 
 #ifdef ROBOT2D_LINUX
         m_window -> setResizable(true);
@@ -442,28 +461,6 @@ namespace editor {
         }
     }
 
-
-    void Editor::findSelectedEntitiesOnUI(std::vector<ITreeItem::Ptr>&& items) {
-        auto& scenePanel = m_panelManager.getPanel<ScenePanel>();
-        scenePanel.processSelectedEntities(std::move(items));
-
-        auto& inspectorPanel = m_panelManager.getPanel<InspectorPanel>();
-        /// TODO(a.raag): if has more than 1 entity ??
-        auto item = items.back();
-        auto* entity = item -> getUserData<SceneEntity>();
-        inspectorPanel.setSelected(*entity);
-    }
-
-    DeletedEntitiesRestoreUIInformation
-    Editor::removeEntitiesOnUI(std::list<ITreeItem::Ptr>&& uiItems) {
-        auto& panel = m_panelManager.getPanel<ScenePanel>();
-        return panel.removeEntitiesOnUI(std::move(uiItems));
-    }
-
-    void Editor::restoreEntitiesOnUI(DeletedEntitiesRestoreUIInformation& restoreUiInformation) {
-        auto& panel = m_panelManager.getPanel<ScenePanel>();
-        panel.restoreEntitiesOnUI(restoreUiInformation);
-    }
 
     void Editor::clearSelectionOnUI() {
         auto& scenePanel = m_panelManager.getPanel<ScenePanel>();

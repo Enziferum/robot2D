@@ -3,7 +3,6 @@
 #include <vector>
 
 #include <editor/SceneEntity.hpp>
-#include <editor/panels/ITreeItem.hpp>
 
 #include "EditorState.hpp"
 #include "DeletedEntitesRestoreInformation.hpp"
@@ -21,7 +20,6 @@ namespace editor {
         EditorPresenter& operator=(EditorPresenter&& other) = delete;
         ~EditorPresenter() = default;
 
-        void findSelectedEntitiesOnUI(std::vector<ITreeItem::Ptr>&& selectedEntities);
         void clearSelectionOnUI();
 
         void prepareView();
@@ -30,8 +28,6 @@ namespace editor {
 
         void showPopup(PopupConfiguration* popupConfiguration);
 
-        DeletedEntitiesRestoreUIInformation removeEntitiesFromUI(std::list<ITreeItem::Ptr>&& uiItems);
-        void restoreEntitiesOnUI(DeletedEntitiesRestoreUIInformation& restoreUiInformation);
         void setMainCameraEntity(SceneEntity entity);
     private:
         IEditor* m_editor;

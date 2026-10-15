@@ -35,7 +35,6 @@ source distribution.
 #include <robot2D/Graphics/Font.hpp>
 #include <robot2D/Ecs/Entity.hpp>
 
-#include "editor/panels/ITreeItem.hpp"
 #include <editor/Animation.hpp>
 #include <editor/physics/Layers2D.hpp>
 #include "SceneEntity.hpp"
@@ -44,6 +43,7 @@ source distribution.
 #include "ClassID.hpp"
 #include "SceneEntity.hpp"
 #include "QuadTree.hpp"
+#include "components/HierarchyComponent.hpp"
 
 namespace editor {
 
@@ -70,10 +70,6 @@ namespace editor {
         void setSize(const robot2D::vec2f& factor) override;
 
 
-        void addChild(SceneEntity parent, SceneEntity child);
-        void removeChild(SceneEntity entity, bool removeFromScene = true);
-        void clearChildren() { m_children.clear(); }
-        bool hasChildren() const;
 
         robot2D::FloatRect getLocalBounds() const;
 
@@ -81,27 +77,14 @@ namespace editor {
             return getTransformNoScale().transformRect(getLocalBounds());
         }
 
-        std::list<SceneEntity>& getChildren() {
-            return m_children;
-        }
-
-        const std::list<SceneEntity>& getChildren() const {
-            return m_children;
-        }
-
-        bool isChild() const { return m_parent && m_childID != -1; }
-
-        void removeSelf(bool removeFromScene = true);
-
-        SceneEntity getParent() { return m_parent; }
-
         bool m_hasModification { false };
     private:
-        void removeChild(int childID, bool removeFromScene);
-    private:
-        int m_childID = -1;
-        std::list<SceneEntity> m_children;
-        SceneEntity m_parent;
+        friend class Scene;
+        // Transient movement context; hierarchy data belongs to HierarchyComponent.
+        Scene* m_scene { nullptr };
+        UUID m_entityID { 0 };
+        SceneContext m_context = SceneContext::Editor;
+        std::uint64_t m_contextVersion { 0 };
     };
 
     // TODO: @a.raag add Rotation
@@ -388,11 +371,6 @@ namespace editor {
 
     struct PrefabComponent {
         UUID prefabUUID;
-    };
-
-    struct UIComponent {
-        ITreeItem::Ptr treeItem;
-        void setName(std::string* text) { treeItem -> setName(text); }
     };
 
     struct AnimationComponent {

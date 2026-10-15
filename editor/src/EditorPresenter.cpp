@@ -34,19 +34,6 @@ namespace editor {
         m_editor -> prepareView();
     }
 
-    void EditorPresenter::restoreEntitiesOnUI(DeletedEntitiesRestoreUIInformation &restoreUiInformation) {
-        m_editor -> restoreEntitiesOnUI(restoreUiInformation);
-    }
-
-    DeletedEntitiesRestoreUIInformation
-    EditorPresenter::removeEntitiesFromUI(std::list<ITreeItem::Ptr>&& uiItems) {
-        return m_editor -> removeEntitiesOnUI(std::move(uiItems));
-    }
-
-    void EditorPresenter::findSelectedEntitiesOnUI(std::vector<ITreeItem::Ptr>&& items) {
-        m_editor -> findSelectedEntitiesOnUI(std::move(items));
-    }
-
     void EditorPresenter::clearSelectionOnUI() {
         m_editor -> clearSelectionOnUI();
     }

@@ -484,7 +484,7 @@ namespace editor {
             }
         }
 
-        for(auto& child: transform.getChildren())
+        for(auto& child: entity.getChildren())
             addEntity(child);
     }
 

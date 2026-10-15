@@ -59,7 +59,7 @@ namespace editor {
     }
 
     void SceneLoadTask::loadAssets() {
-        for(auto& entity: m_scene -> getEntities())
+        for(auto entity: m_scene -> getRootEntities())
             loadAssets(entity);
     }
 

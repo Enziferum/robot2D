@@ -28,7 +28,6 @@ source distribution.
 #include <editor/TextSystem.hpp>
 #include <editor/Scene.hpp>
 
-#include "editor/panels/TreeHierarchy.hpp"
 #include "editor/BoundingBox.hpp"
 
 namespace editor {
@@ -50,14 +49,14 @@ namespace editor {
             m_entities.insert(std::get<0>(item), source);
 
             if(std::get<2>(item) == ReorderDeleteType::Last) {
-                auto found = util::find_last_if(m_entities.begin(), m_entities.end(),
+                auto found = std::find_if(m_entities.rbegin(), m_entities.rend(),
                                                 [&source](robot2D::ecs::Entity item) {
                     return item.getIndex() == source.getIndex();
                 });
-                m_entities.erase(found);
+                m_entities.erase(std::prev(found.base()));
             }
             else if(std::get<2>(item) == ReorderDeleteType::First) {
-                auto found = util::find_first_if(m_entities.begin(), m_entities.end(),
+                auto found = std::find_if(m_entities.begin(), m_entities.end(),
                                                  [&source](robot2D::ecs::Entity item) {
                     return item.getIndex() == source.getIndex();
                 });
@@ -174,6 +173,8 @@ namespace editor {
             return item.getIndex() == target.getIndex();
         });
 
+        if(sourceIter == m_entities.end() || targetIter == m_entities.end())
+            return;
         auto sourceOldDistance = std::distance(m_entities.begin(), sourceIter);
         auto targetOldDistance = std::distance(m_entities.begin(), targetIter);
 

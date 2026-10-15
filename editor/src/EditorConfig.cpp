@@ -19,115 +19,181 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
+#include <cmath>
 #include <fstream>
+#include <iterator>
+#include <stdexcept>
+
 #include <editor/EditorConfig.hpp>
 #include <rbini/RBIni.hpp>
 #include <rbini/Utils.hpp>
 
-#include <imgui/ImGui.hpp>
-
-namespace rbini {
-    template<>
-    struct value_formatter<::robot2D::vec2f> {
-        static std::string write(const robot2D::vec2f& value) {
-            constexpr int precision = 2;
-            std::string s = to_string(value.x, precision) + 'x' + to_string(value.y, precision);
-            return s;
-        }
-
-        static ::robot2D::vec2f read(const std::string& rawData) {
-            auto [x, y] = split_2(rawData, 'x');
-            return { std::stof(x), std::stof(y) };
-        }
-    };
-
-    template<>
-    struct value_formatter<::robot2D::vec2i> {
-        static std::string write(const robot2D::vec2i& value) {
-            constexpr int precision = 2;
-            std::string s = std::to_string(value.x) + 'x' + std::to_string(value.y);
-            return s;
-        }
-
-        static ::robot2D::vec2i read(const std::string& rawData) {
-            auto [x, y] = split_2(rawData, 'x');
-            return { std::stoi(x), std::stoi(y) };
-        }
-    };
-}
-
-
 namespace editor {
 
-    void EditorConfig::createDefaultConfig(const std::string& path) {
-        rbini::RBIniParser parser;
-        rbini::Section section{};
-
-        rbini::Value cameraPos;
-        cameraPos.setAs(robot2D::vec2i{0, 0});
-        section["CameraPos"] = cameraPos;
-        rbini::Value cameraSize;
-        cameraSize.setAs(robot2D::vec2i{1280, 720});
-        section["CameraSize"] = cameraSize;
-        rbini::Value boolValue;
-        bool layoutCreated = false;
-        boolValue.setAs(layoutCreated);
-        section["LayoutCreated"] = boolValue;
-        parser["Editor"] = section;
-
-        parser.save2File(path);
-    }
-
-    void EditorConfig::loadConfig(const std::string& path) {
-        auto& config = EditorConfig::getConfig();
-        rbini::RBIniParser parser;
-        if(!parser.loadFromFile(path, config.fieldsValue + 1))
-            return;
-        const auto& editorSection = parser["Editor"];
-        config.cameraPos = editorSection["CameraPos"].as<robot2D::vec2i>();
-        config.cameraSize = editorSection["CameraSize"].as<robot2D::vec2i>();
-        config.layoutCreated = editorSection["LayoutCreated"].as<bool>();
-
-
-        if(!config.layoutCreated)
-            return;
-        std::fstream file(path, std::ios::in);
-        if(!file.is_open())
-            return;
-        std::string line;
-        const int skipValue = config.fieldsValue + 1;
-        int cntr = 0;
-
-        std::string imguiString = "";
-        while(std::getline(file, line)) {
-            if(cntr < skipValue) {
-                ++cntr;
-                continue;
-            }
-
-            imguiString += line + "\n";
+    namespace {
+        const rbini::Value* findValue(const rbini::RBIniParser& parser,
+                                      const std::string& section, const std::string& key) {
+            auto foundSection = parser.getSections().find(section);
+            if(foundSection == parser.getSections().end())
+                return nullptr;
+            auto foundValue = foundSection -> second.getValues().find(key);
+            return foundValue == foundSection -> second.getValues().end() ? nullptr : &foundValue -> second;
         }
 
-        ImGui::LoadIniSettingsFromMemory(imguiString.c_str(), imguiString.length());
+        robot2D::vec2i readVector(const rbini::Value* value, robot2D::vec2i fallback) {
+            if(!value || value -> asRaw().find('x') == std::string::npos)
+                return fallback;
+            try {
+                auto [x, y] = rbini::split_2(value -> asRaw(), 'x');
+                std::size_t xSize = 0, ySize = 0;
+                auto result = robot2D::vec2i{std::stoi(x, &xSize), std::stoi(y, &ySize)};
+                return xSize == x.size() && ySize == y.size() ? result : fallback;
+            }
+            catch(const std::exception&) {
+                return fallback;
+            }
+        }
+
+        float readRatio(const rbini::Value* value, float fallback) {
+            if(!value)
+                return fallback;
+            try {
+                std::size_t size = 0;
+                auto ratio = std::stof(value -> asRaw(), &size);
+                return size == value -> asRaw().size() && std::isfinite(ratio)
+                       && ratio > 0.f && ratio < 1.f ? ratio : fallback;
+            }
+            catch(const std::exception&) {
+                return fallback;
+            }
+        }
+
+        std::string decodeSettings(const std::string& encoded) {
+            std::string settings;
+            for(std::size_t index = 0; index < encoded.size(); ++index) {
+                auto symbol = encoded[index];
+                if(symbol != '\\') {
+                    settings += symbol;
+                    continue;
+                }
+                if(++index == encoded.size())
+                    throw std::runtime_error("Incomplete layout escape");
+                switch(encoded[index]) {
+                    case '\\': settings += '\\'; break;
+                    case 'n': settings += '\n'; break;
+                    case 'r': settings += '\r'; break;
+                    default: throw std::runtime_error("Invalid layout escape");
+                }
+            }
+            return settings;
+        }
     }
 
-    void EditorConfig::saveConfig(const std::string& path) {
-        auto& config = EditorConfig::getConfig();
+    bool EditorConfig::createDefaultConfig(const std::string& path) {
+        *this = EditorConfig{};
+        return saveConfig(path);
+    }
+
+    bool EditorConfig::loadConfig(const std::string& path) {
+        *this = EditorConfig{};
         rbini::RBIniParser parser;
-        rbini::Section section{};
+        try {
+            if(!parser.loadFromFile(path) || parser.getSections().find("Editor") == parser.getSections().end())
+                return false;
+        }
+        catch(const std::exception&) {
+            return false;
+        }
 
-        rbini::Value cameraPos;
-        cameraPos.setAs(robot2D::vec2i{0, 0});
-        section["CameraPos"] = cameraPos;
-        rbini::Value cameraSize;
-        cameraSize.setAs(robot2D::vec2i{1280, 720});
-        section["CameraSize"] = cameraSize;
-        rbini::Value boolValue;
-        boolValue.setAs(config.layoutCreated);
-        section["LayoutCreated"] = boolValue;
-        parser["Editor"] = section;
+        cameraPos = readVector(findValue(parser, "Editor", "CameraPos"), cameraPos);
+        if(auto value = findValue(parser, "Assets", "ThumbnailSize")) {
+            try {
+                std::size_t parsed = 0;
+                auto size = std::stoi(value -> asRaw(), &parsed);
+                if(parsed == value -> asRaw().size() && size >= 48 && size <= 128)
+                    assetsThumbnailSize = size;
+            }
+            catch(const std::exception&) {}
+        }
+        if(auto visible = findValue(parser, "Editor", "SceneSettingsVisible"))
+            panelVisibility["SceneSettingsPanel"] = visible -> asRaw() != "false";
+        if(auto panels = parser.getSections().find("Panels"); panels != parser.getSections().end()) {
+            for(const auto& [key, value]: panels -> second.getValues()) {
+                if(value.asRaw() == "true" || value.asRaw() == "false")
+                    panelVisibility[key] = value.asRaw() == "true";
+            }
+        }
+        auto size = readVector(findValue(parser, "Editor", "CameraSize"), cameraSize);
+        if(size.x > 0 && size.y > 0)
+            cameraSize = size;
+        leftRatio = readRatio(findValue(parser, "Layout", "LeftRatio"), leftRatio);
+        rightRatio = readRatio(findValue(parser, "Layout", "RightRatio"), rightRatio);
+        if(leftRatio + rightRatio >= 0.95f) {
+            leftRatio = EditorConfig{}.leftRatio;
+            rightRatio = EditorConfig{}.rightRatio;
+        }
+        centerTopRatio = readRatio(findValue(parser, "Layout", "CenterTopRatio"), centerTopRatio);
+        auto created = findValue(parser, "Editor", "LayoutCreated");
+        if(!created || created -> asRaw() != "true")
+            return true;
 
-        parser.save2File(path);
+        auto settings = findValue(parser, "Layout", "Settings");
+        auto version = findValue(parser, "Layout", "Version");
+        if(version && version -> asRaw() != "1" && version -> asRaw() != "2")
+            return true;
+        if(settings) {
+            if(!version || version -> asRaw() != "1")
+                return true;
+            try {
+                layoutSettings = decodeSettings(settings -> asRaw());
+            }
+            catch(const std::exception&) {
+                layoutSettings.clear();
+            }
+        }
+        else {
+            // Older robot2D.ini files appended ImGui sections after editor fields.
+            std::ifstream input(path, std::ios::binary);
+            std::string line;
+            bool layoutStarted = false;
+            while(std::getline(input, line)) {
+                if(!line.empty() && line.back() == '\r')
+                    line.pop_back();
+                if(line == "[ImGuiLayout]") {
+                    layoutSettings.assign(std::istreambuf_iterator<char>(input), std::istreambuf_iterator<char>());
+                    break;
+                }
+                if(line.rfind("[Window][", 0) == 0 || line == "[Docking][Data]")
+                    layoutStarted = true;
+                if(layoutStarted)
+                    layoutSettings += line + '\n';
+            }
+        }
+        layoutCreated = !layoutSettings.empty();
+        return true;
     }
 
+    bool EditorConfig::saveConfig(const std::string& path) const {
+        std::ofstream output(path, std::ios::binary | std::ios::trunc);
+        if(!output.is_open())
+            return false;
+        output << "[Editor]\n"
+               << "CameraPos=" << cameraPos.x << 'x' << cameraPos.y << '\n'
+               << "CameraSize=" << cameraSize.x << 'x' << cameraSize.y << '\n'
+               << "LayoutCreated=" << (layoutCreated ? "true" : "false") << "\n\n"
+               << "[Panels]\n";
+        for(const auto& [key, visible]: panelVisibility)
+            output << key << '=' << (visible ? "true" : "false") << '\n';
+        output << "\n[Assets]\nThumbnailSize=" << assetsThumbnailSize << "\n"
+               << "\n[Layout]\n"
+               << "Version=2\n"
+               << "LeftRatio=" << leftRatio << '\n'
+               << "RightRatio=" << rightRatio << '\n'
+               << "CenterTopRatio=" << centerTopRatio << "\n\n"
+               << "; Saved window positions and docking nodes.\n"
+               << "[ImGuiLayout]\n"
+               << layoutSettings;
+        output.flush();
+        return output.good();
+    }
 } // namespace editor

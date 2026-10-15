@@ -31,7 +31,7 @@ namespace robot2D::ecs {
 
 
     bool operator==(const Entity& left, const Entity& right) {
-        return (left.m_id == right.m_id);
+        return left.m_entityManager == right.m_entityManager && left.m_id == right.m_id;
     }
 
     bool operator != (const Entity& l, const Entity& r) {

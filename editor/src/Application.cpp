@@ -34,8 +34,6 @@ source distribution.
 #include <robot2D/imgui/GuiFontConfig.hpp>
 #include "IconsFontsAwesome5.hpp"
 
-#include "rbini/Utils.hpp"
-#include <rbini/RBIni.hpp>
 #include <editor/EditorConfig.hpp>
 
 
@@ -113,14 +111,19 @@ namespace editor {
             m_guiWrapper.setupFonts(std::move(guiFontConfigs));
 
             auto& io = ImGui::GetIO();
-         //   io.IniFilename = nullptr;
+            io.IniFilename = nullptr;
 
             auto& config = EditorConfig::getConfig();
-            if(!hasFile(configPath))
-                config.createDefaultConfig(configPath);
-            else {
-                config.loadConfig(configPath);
+            if(!hasFile(configPath)) {
+                if(!config.createDefaultConfig(configPath))
+                    RB_EDITOR_WARN("Can't create editor config: {0}", configPath);
             }
+            else {
+                if(!config.loadConfig(configPath))
+                    RB_EDITOR_WARN("Can't load editor config; using defaults: {0}", configPath);
+            }
+            if(config.layoutCreated)
+                ImGui::LoadIniSettingsFromMemory(config.layoutSettings.data(), config.layoutSettings.size());
 
         }
 
@@ -152,7 +155,7 @@ namespace editor {
             m_window -> setResizable(false);
             m_window -> setSize(m_appConfiguration.inspectorSize);
 
-            applyStyle(EditorStyle::UE4);
+            applyStyle(EditorStyle::SlateBlue);
             m_projectInspector.setup(m_window, m_logic.getCache().getProjects());
         }
 
@@ -191,37 +194,37 @@ namespace editor {
     }
 
     void Application::guiUpdate(float dt) {
-        auto& io = ImGui::GetIO();
-//        if(io.WantSaveIniSettings && m_logic.getState() == AppState::Editor) {
-//            std::size_t iniOutSize = 0;
-//            auto iniData = ImGui::SaveIniSettingsToMemory(&iniOutSize);
-//            auto& config = EditorConfig::getConfig();
-//
-//            std::string s;
-//            std::fstream f("robot2D.ini", std::ios::in);
-//            std::string line;
-//            for(int i = 0; i < config.fieldsValue + 1; ++i) {
-//                std::getline(f, line);
-//                s += line + "\n";
-//            }
-//            s += "\n";
-//
-//            f.close();
-//
-//            std::fstream file("robot2D.ini", std::ios::out);
-//            file.write(s.data(), s.length());
-//            file.write(iniData, iniOutSize);
-//
-//            file.close();
-//            io.WantSaveIniSettings = false;
-//        }
+        if(m_editorLayoutActive && m_logic.getState() != AppState::Editor) {
+            if(saveEditorLayout())
+                m_editorLayoutActive = false;
+        }
         m_guiWrapper.update(dt);
+        if(ImGui::GetIO().WantSaveIniSettings && m_logic.getState() == AppState::Editor)
+            saveEditorLayout();
+    }
+
+    bool Application::saveEditorLayout() {
+        auto& config = EditorConfig::getConfig();
+        if(!config.layoutCreated)
+            return false;
+        std::size_t size = 0;
+        auto* settings = ImGui::SaveIniSettingsToMemory(&size);
+        config.layoutSettings.assign(settings, size);
+        if(!config.saveConfig(configPath)) {
+            RB_EDITOR_WARN("Can't save editor layout: {0}", configPath);
+            ImGui::GetIO().WantSaveIniSettings = true;
+            return false;
+        }
+        ImGui::GetIO().WantSaveIniSettings = false;
+        return true;
     }
 
     void Application::render() {
         m_window -> clear();
-        if(m_logic.getState() == AppState::Editor)
+        if(m_logic.getState() == AppState::Editor) {
             m_editorModule -> render();
+            m_editorLayoutActive = true;
+        }
         else if(m_logic.getState() == AppState::ProjectInspector)
             m_projectInspector.render();
         PopupManager::getManager() -> onRender();
@@ -230,6 +233,8 @@ namespace editor {
     }
 
     void Application::destroy() {
+        if(m_editorLayoutActive)
+            saveEditorLayout();
         m_scriptingEngine.Shutdown();
         m_editorModule -> destroy();
     }

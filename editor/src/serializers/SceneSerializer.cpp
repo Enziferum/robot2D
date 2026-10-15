@@ -136,58 +136,38 @@ namespace editor {
 
         for(const auto& entity: entites) {
             bool addToScene = true;
-
-            auto deserializeEntity = m_scene -> createEntity();
-            entitySerializer -> deserialize(
-            entity,
-                   deserializeEntity,
-                   addToScene,
-                   children,
-        scriptingEngine
-            );
-
-            if(addToScene)
-                m_scene -> addAssociatedEntity(std::move(deserializeEntity));
+            auto deserializedEntity = m_scene -> createEmptyEntity();
+            if(!entitySerializer -> deserialize(entity, deserializedEntity, addToScene,
+                                                 children, scriptingEngine))
+                return false;
+            if(m_scene -> getEntity(deserializedEntity.getUUID()))
+                return false;
+            if(!m_scene -> attachEntity(deserializedEntity))
+                return false;
         }
 
-        /// TODO(a.raag): Save and Read Scene as Tree
-        for(auto& child: children) {
-            if(child.isChild) {
-                auto selfUUID = child.self.getUUID();
-                if(child.hasChildren()) {
-                    for(auto& item: children) {
-                        if(item.isChild && item.parentUUID == selfUUID)
-                            child.self.addChild(item.self);
-                    }
-                }
-
-                auto parent = child.self.getComponent<TransformComponent>().getParent();
-                if(!parent) {
-                    auto found = m_scene -> getEntity(child.parentUUID);
-                    if(found)
-                        found.addChild(child.self);
-                    else {
-                        for(auto& item: children) {
-                            if(item.isChild && item.self.getUUID() == child.parentUUID)
-                                item.self.addChild(child.self);
-                        }
-                    }
-                }
+        for(auto& info: children) {
+            if(!info.hasChildren())
+                continue;
+            auto parent = m_scene -> getEntity(info.childPair.first);
+            if(!parent)
+                return false;
+            for(auto uuid: info.childPair.second) {
+                auto child = m_scene -> getEntity(uuid);
+                if(!child || !m_scene -> reparent(child, parent))
+                    return false;
             }
-            else {
-                if(child.hasChildren()) {
-                    auto& parentUUID = child.childPair.first;
-                    auto self = m_scene -> getEntity(parentUUID);
-
-                    for(auto& item: children) {
-                        if(item.isChild && item.parentUUID == parentUUID)
-                            self.addChild(item.self);
-                    }
-                }
-            }
-
         }
-
+        for(auto& info: children) {
+            if(!info.isChild)
+                continue;
+            auto parent = m_scene -> getEntity(info.parentUUID);
+            auto currentParent = info.self.getParent();
+            if(currentParent && currentParent != parent)
+                return false;
+            if(!parent || !m_scene -> reparent(info.self, parent))
+                return false;
+        }
 
         return true;
     }
