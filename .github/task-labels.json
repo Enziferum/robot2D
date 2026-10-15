@@ -43,18 +43,30 @@
     "owner:user": {
       "color": "F9D0C4",
       "description": "Реализация закреплена за пользователем; ассистент помогает по согласованию"
+    },
+    "area:core": {
+      "color": "0E8A16",
+      "description": "Библиотека Core: ECS, графика и общие контракты движка"
+    },
+    "area:render": {
+      "color": "D876E3",
+      "description": "Рендер, графические ресурсы и контракт отрисовки Core/Editor/player"
     }
   },
   "tasks": {
     "RENDER-02": [
       "area:editor",
       "type:bug",
-      "owner:shared"
+      "owner:shared",
+      "area:core",
+      "area:render"
     ],
     "RENDER-01": [
       "area:tooling",
       "type:maintenance",
-      "owner:shared"
+      "owner:shared",
+      "area:core",
+      "area:render"
     ],
     "SAVE-01": [
       "area:editor",
@@ -220,7 +232,9 @@
     "RENDER-03": [
       "area:editor",
       "type:bug",
-      "owner:shared"
+      "owner:shared",
+      "area:core",
+      "area:render"
     ],
     "BUILD-01": [
       "area:tooling",
@@ -300,6 +314,43 @@
     "QA-02": [
       "area:editor",
       "type:tests",
+      "owner:shared"
+    ],
+    "RENDER-04": [
+      "area:core",
+      "area:render",
+      "type:design",
+      "owner:shared"
+    ],
+    "RENDER-05": [
+      "area:core",
+      "area:render",
+      "type:refactor",
+      "owner:shared"
+    ],
+    "ECS-01": [
+      "area:core",
+      "type:design",
+      "owner:shared"
+    ],
+    "ECS-04": [
+      "area:core",
+      "type:refactor",
+      "owner:shared"
+    ],
+    "ECS-05": [
+      "area:core",
+      "type:refactor",
+      "owner:shared"
+    ],
+    "ECS-02": [
+      "area:core",
+      "type:bug",
+      "owner:shared"
+    ],
+    "ECS-03": [
+      "area:core",
+      "type:bug",
       "owner:shared"
     ]
   }
