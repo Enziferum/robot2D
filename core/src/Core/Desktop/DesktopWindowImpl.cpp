@@ -97,6 +97,9 @@ namespace robot2D::priv {
 
         if(m_context.renderApi == WindowContext::RenderApi::OpenGL4_3 ||
             m_context.renderApi == WindowContext::RenderApi::OpenGL4_5) {
+#if !defined(NDEBUG)
+            glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
+#endif
             glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, opengl_major);
             glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, opengl_minor);
             glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);

@@ -1,22 +1,22 @@
 /*********************************************************************
-(c) Alex Raag 2026
-https://github.com/Enziferum
-robot2D - Zlib license.
-This software is provided 'as-is', without any express or
-implied warranty. In no event will the authors be held
-liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute
-it freely, subject to the following restrictions:
-1. The origin of this software must not be misrepresented;
-you must not claim that you wrote the original software.
-If you use this software in a product, an acknowledgment
-in the product documentation would be appreciated but
-is not required.
-2. Altered source versions must be plainly marked as such,
-and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any
-source distribution.
+   (c) Alex Raag 2026
+   https://github.com/Enziferum
+   robot2D - Zlib license.
+   This software is provided 'as-is', without any express or
+   implied warranty. In no event will the authors be held
+   liable for any damages arising from the use of this software.
+   Permission is granted to anyone to use this software for any purpose,
+   including commercial applications, and to alter it and redistribute
+   it freely, subject to the following restrictions:
+   1. The origin of this software must not be misrepresented;
+   you must not claim that you wrote the original software.
+   If you use this software in a product, an acknowledgment
+   in the product documentation would be appreciated but
+   is not required.
+   2. Altered source versions must be plainly marked as such,
+   and must not be misrepresented as being the original software.
+   3. This notice may not be removed or altered from any
+   source distribution.
 *********************************************************************/
 
 #include <robot2D/Graphics/GL.hpp>
@@ -26,7 +26,8 @@ source distribution.
 
 namespace editor {
 
-    const std::string gridVertexShader = R"(
+    const std::string gridVertexShader =
+        R"(
         #version 410 core
         layout (location = 0) in vec2 Position;
         layout (location = 1) in vec2 TexCoord;
@@ -49,7 +50,7 @@ namespace editor {
         m_shader.unUse();
     }
 
-    void SceneGrid::setGridColors(const robot2D::Color &one, const robot2D::Color &two) {
+    void SceneGrid::setGridColors(const robot2D::Color& one, const robot2D::Color& two) {
         m_shader.use();
         m_shader.set("colorOne", one);
         m_shader.set("colorTwo", two);
@@ -59,12 +60,12 @@ namespace editor {
     robot2D::vec2f quadVertexPositions[4];
 
     bool SceneGrid::setup() {
-        if(!m_shader.createShader(robot2D::ShaderType::Vertex, gridVertexShader, false)){
+        if(!m_shader.createShader(robot2D::ShaderType::Vertex, gridVertexShader, false, "Editor.Grid.vertex")) {
             RB_ERROR("Can't setup Grid's vertex shader");
             return false;
         }
 
-        if(!m_shader.createShader(robot2D::ShaderType::Fragment, "res/shaders/gridShader.frag", true)){
+        if(!m_shader.createShader(robot2D::ShaderType::Fragment, "res/shaders/gridShader.frag", true)) {
             RB_ERROR("Can't setup Grid's fragment shader");
             return false;
         }
@@ -111,7 +112,7 @@ namespace editor {
         return true;
     }
 
-    void SceneGrid::render(robot2D::vec2i size) const{
+    void SceneGrid::render(robot2D::vec2i size) const {
         m_shader.use();
         m_shader.set("u_resolution", robot2D::vec2f{static_cast<float>(size.x), static_cast<float>(size.y)});
 
@@ -119,7 +120,7 @@ namespace editor {
         m_vertexArray -> Bind();
 
         static auto indicesSize = m_vertexArray -> getIndexBuffer() -> getSize() / 4;
-        glDrawElements(GL_TRIANGLES, static_cast<int>(indicesSize), GL_UNSIGNED_INT, nullptr);
+        glCall(glDrawElements, GL_TRIANGLES, static_cast<int>(indicesSize), GL_UNSIGNED_INT, nullptr);
         m_vertexArray -> unBind();
         m_shader.unUse();
     }

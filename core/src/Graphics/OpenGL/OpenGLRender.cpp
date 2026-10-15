@@ -94,7 +94,7 @@ namespace robot2D::priv {
 
     ///////////////////// Consts /////////////////////
     constexpr short quadVertexSize = 4;
-    constexpr short maxTextureSlots = 16;
+    constexpr short maxTextureSlots = RenderBuffer::maxTextureSlots;
     constexpr unsigned int defaultLayerID = 1;
     constexpr unsigned int maxLayers = 5;
     constexpr unsigned int defaultLayersValue = 2;
@@ -113,31 +113,6 @@ namespace robot2D::priv {
         /// TODO(a.raag): Primary idea to be possible render vertexarray + quads in begin end render cycle.
     };
 
-#if defined(ROBOT2D_WINDOWS) or defined(ROBOT2D_LINUX)
-    void OpenGLMessageCallback(
-        unsigned source,
-        unsigned type,
-        unsigned id,
-        unsigned severity,
-        int length,
-        const char* message,
-        const void* userParam) {
-        (void) source;
-        (void) type;
-        (void) id;
-        (void) length;
-        (void) userParam;
-        switch(severity)
-        {
-        case GL_DEBUG_SEVERITY_HIGH:         RB_CORE_CRITICAL(message); return;
-        case GL_DEBUG_SEVERITY_MEDIUM:       RB_CORE_ERROR(message); return;
-        case GL_DEBUG_SEVERITY_LOW:          RB_CORE_WARN(message); return;
-        case GL_DEBUG_SEVERITY_NOTIFICATION: RB_CORE_TRACE(message); return;
-        }
-
-        assert(false && "Unknown severity level!");
-    }
-#endif
     OpenGLRender::OpenGLRender(const vec2u& windowSize) {
         m_size = windowSize;
 
@@ -152,23 +127,11 @@ namespace robot2D::priv {
     }
 
     void OpenGLRender::setupOpenGL() {
-#if defined(ROBOT2D_WINDOWS) or defined(ROBOT2D_LINUX)
-        RB_CORE_INFO("OpenGL Info:");
-        // RB_CORE_INFO("Vendor: {0} ", glGetString(GL_VENDOR));
-        // RB_CORE_INFO("Renderer: {0}", glGetString(GL_RENDERER));
-        // RB_CORE_INFO("Version: {0}", glGetString(GL_VERSION));
-        RB_CORE_INFO("Version: {0}", "SomeVersion");
-#endif
-
+        configureGLDiagnostics();
+        logGLContextInfo();
         m_renderApi = RenderAPI::getOpenGLVersion();
         m_dimensionType = RenderAPI::getDimensionType();
 
-#if defined(ROBOT2D_WINDOWS)
-        glEnable(GL_DEBUG_OUTPUT);
-        glEnable(GL_DEBUG_OUTPUT_SYNCHRONOUS);
-        glDebugMessageCallback(OpenGLMessageCallback, nullptr);
-        glDebugMessageControl(GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_NOTIFICATION, 0, NULL, GL_FALSE);
-#endif
         if(useBlending) {
             glEnable(GL_BLEND);
             glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -176,13 +139,6 @@ namespace robot2D::priv {
 
         if(m_dimensionType != RenderDimensionType::TwoD)
             glEnable(GL_DEPTH_TEST);
-    }
-
-    RenderLayer::~RenderLayer() {
-    }
-
-    void RenderLayer::destroy() {
-        delete[] m_renderBuffer.quadBuffer;
     }
 
     void OpenGLRender::createLayer() {
@@ -195,9 +151,10 @@ namespace robot2D::priv {
         RenderBuffer& m_renderBuffer = renderLayer.m_renderBuffer;
         ShaderHandler& m_quadShader = renderLayer.m_quadShader;
 
-        m_renderBuffer.quadBuffer = new RenderVertex[m_renderBuffer.maxQuadsCount];
+        m_renderBuffer.quadBuffer = std::make_unique<RenderVertex[]>(m_renderBuffer.maxVerticesCount);
+        m_renderBuffer.quadBufferPtr = m_renderBuffer.quadBuffer.get();
         m_renderBuffer.vertexArray = VertexArray::Create();
-        m_renderBuffer.vertexBuffer = VertexBuffer::Create(sizeof(RenderVertex) * m_renderBuffer.maxQuadsCount);
+        m_renderBuffer.vertexBuffer = VertexBuffer::Create(sizeof(RenderVertex) * m_renderBuffer.maxVerticesCount);
         // for OpenGL name - utility only
         m_renderBuffer.vertexBuffer -> setAttributeLayout({
             {ElementType::Float3, "Position"},
@@ -223,7 +180,7 @@ namespace robot2D::priv {
             offset += 4;
         }
         auto indexBuffer = IndexBuffer::Create(quadIndices,
-                m_renderBuffer.maxIndicesCount);
+                m_renderBuffer.maxIndicesCount * sizeof(uint32_t));
         m_renderBuffer.vertexArray -> setIndexBuffer(indexBuffer);
 
         delete[] quadIndices;
@@ -243,21 +200,21 @@ namespace robot2D::priv {
         auto openGLFragmentSource = openGLVersion + OpenGL::fragmentSource;
 
         if(!m_quadShader.createShader(ShaderType::Vertex,
-            openGLVertexSource, false)) {
+            openGLVertexSource, false, "Core.Quad.vertex")) {
             std::string reason = "Can't load Quad Vertex Shader";
             throw std::runtime_error(reason);
         }
 
         if(!m_quadShader.createShader(ShaderType::Fragment,
-            openGLFragmentSource, false)) {
+            openGLFragmentSource, false, "Core.Quad.fragment")) {
             std::string reason = "Can't load Quad Fragment Shader";
             throw std::runtime_error(reason);
         }
 
         GLubyte texData[] = { 255, 255, 255, 255 }; // 0xffffffff;
 
-        m_renderBuffer.whiteTexture.create({1, 1}, texData);
-        m_renderBuffer.textureSlots[0] = m_renderBuffer.whiteTexture.getID();
+        m_renderBuffer.whiteTexture -> create({1, 1}, texData);
+        m_renderBuffer.textureSlots[0] = m_renderBuffer.whiteTexture -> getID();
 
         int samples[maxTextureSlots];
         for(int it = 0; it < maxTextureSlots; ++it)
@@ -295,8 +252,7 @@ namespace robot2D::priv {
     }
 
     void OpenGLRender::destroy() {
-        for(auto& it: m_renderLayers)
-            it.destroy();
+        m_renderLayers.clear();
     }
 
     void OpenGLRender::setView(const View& view, unsigned int layerID) {
@@ -417,65 +373,95 @@ namespace robot2D::priv {
     }
 
 
+    void OpenGLRender::resetBatch(RenderBuffer& buffer) const {
+        buffer.quadBufferPtr = buffer.quadBuffer.get();
+        buffer.indexCount = 0;
+        buffer.textureSlotIndex = 1;
+        buffer.textureSlots.fill(0);
+        buffer.textureSlots[0] = buffer.whiteTexture -> getID();
+    }
+
+    void OpenGLRender::queueBatch(unsigned int layerID) const {
+        auto& buffer = m_renderLayers[layerID].m_renderBuffer;
+        if(buffer.indexCount == 0)
+            return;
+        // Keep completed batches on the CPU until this layer is executed. Drawing an
+        // upper layer here would put it underneath lower layers submitted later.
+        RenderBuffer::PendingBatch batch;
+        batch.vertices.assign(buffer.quadBuffer.get(), buffer.quadBufferPtr);
+        batch.textureSlots = buffer.textureSlots;
+        batch.textureSlotCount = buffer.textureSlotIndex;
+        buffer.pendingBatches.emplace_back(std::move(batch));
+        resetBatch(buffer);
+    }
+
     void OpenGLRender::beforeRender() const {
-        memset(&m_stats, 0, sizeof(RenderStats));
-        for(auto& it: m_renderLayers)
-            it.m_renderBuffer.quadBufferPtr = it.m_renderBuffer.quadBuffer;
+        m_stats = {};
+        for(auto& layer: m_renderLayers) {
+            resetBatch(layer.m_renderBuffer);
+            layer.m_renderBuffer.pendingBatches.clear();
+            layer.m_vertexArrayCache.clear();
+        }
     }
 
     void OpenGLRender::afterRender() const {
-        unsigned int index = 0;
-        for(auto& it: m_renderLayers) {
-            auto size = uint32_t((uint8_t*) it.m_renderBuffer.quadBufferPtr
-                    - (uint8_t*) it.m_renderBuffer.quadBuffer);
-            it.m_renderBuffer.vertexBuffer -> setData(it.m_renderBuffer.quadBuffer, size);
-
-            if(index == 1)
-                flushRender(index);
-            ++index;
-        }
+        for(unsigned int layerID = 0; layerID < m_renderLayers.size(); ++layerID)
+            flushRender(layerID);
     }
 
-    void OpenGLRender::flushRender(unsigned int layerID) const {
-        auto& m_renderBuffer = m_renderLayers[layerID].m_renderBuffer;
-        auto& m_quadShader = m_renderLayers[layerID].m_quadShader;
+    void OpenGLRender::drawBatch(unsigned int layerID, const RenderVertex* vertices, uint32_t vertexCount,
+        const uint32_t* textureSlots, uint32_t textureSlotCount) const {
+        if(vertexCount == 0)
+            return;
+        auto& buffer = m_renderLayers[layerID].m_renderBuffer;
+        auto& shader = m_renderLayers[layerID].m_quadShader;
+        buffer.vertexBuffer -> setData(vertices, vertexCount * sizeof(RenderVertex));
 
-        for(auto i = 1; i < static_cast<int>(m_renderBuffer.textureSlotIndex); ++i) {
+        for(uint32_t i = 1; i < textureSlotCount; ++i) {
             if(m_renderApi == RenderApi::OpenGL4_3) {
                 glActiveTexture(GL_TEXTURE0 + i);
-                glBindTexture(GL_TEXTURE_2D, m_renderBuffer.textureSlots[i]);
+                glBindTexture(GL_TEXTURE_2D, textureSlots[i]);
             }
             else if(m_renderApi == RenderApi::OpenGL4_5) {
 #if !defined(ROBOT2D_MACOS)
-                glBindTextureUnit(i, m_renderBuffer.textureSlots[i]);
+                glBindTextureUnit(i, textureSlots[i]);
 #endif
             }
         }
-        m_quadShader.use();
-
+        shader.use();
         auto& view = m_renderLayers[layerID].m_view;
         if(view.isClipping()) {
             glEnable(GL_SCISSOR_TEST);
             auto rect = view.getRectangle();
             glScissor(rect.lx, rect.ly, rect.width, rect.height);
         }
-
-        m_renderBuffer.vertexArray -> Bind();
-        glDrawElements(GL_TRIANGLES,
-            static_cast<GLsizei>(m_renderBuffer.indexCount),
-            GL_UNSIGNED_INT,
-            nullptr);
-        m_renderBuffer.vertexArray -> unBind();
-        glBindTexture(GL_TEXTURE_2D, 0);
+        buffer.vertexArray -> Bind();
+        glCall(glDrawElements, GL_TRIANGLES, static_cast<GLsizei>(vertexCount / quadVertexSize * 6),
+            GL_UNSIGNED_INT, nullptr);
+        buffer.vertexArray -> unBind();
         glActiveTexture(GL_TEXTURE0);
-        m_quadShader.unUse();
-
-        m_renderBuffer.indexCount = 0;
-        m_renderBuffer.textureSlotIndex = 1;
-        m_stats.drawCalls++;
-
+        glBindTexture(GL_TEXTURE_2D, 0);
+        shader.unUse();
+        ++m_stats.drawCalls;
         if(view.isClipping())
             glDisable(GL_SCISSOR_TEST);
+    }
+
+    void OpenGLRender::flushRender(unsigned int layerID) const {
+        if(layerID >= m_renderLayers.size()) {
+            RB_CORE_ERROR("[Render] flush rejected: layer={} does not exist; layer-count={}",
+                layerID, m_renderLayers.size());
+            return;
+        }
+        auto& buffer = m_renderLayers[layerID].m_renderBuffer;
+        for(const auto& batch: buffer.pendingBatches)
+            drawBatch(layerID, batch.vertices.data(), static_cast<uint32_t>(batch.vertices.size()),
+                batch.textureSlots.data(), batch.textureSlotCount);
+        buffer.pendingBatches.clear();
+        drawBatch(layerID, buffer.quadBuffer.get(),
+            static_cast<uint32_t>(buffer.quadBufferPtr - buffer.quadBuffer.get()),
+            buffer.textureSlots.data(), buffer.textureSlotIndex);
+        resetBatch(buffer);
         renderCache(layerID);
     }
 
@@ -544,8 +530,10 @@ namespace robot2D::priv {
     }
 
     void OpenGLRender::render(const Vertex3DData& data, const RenderStates& states) const {
-        // Rendering quads only not supported
-        assert(data.size() == quadVertexSize && "Supports only Quad Vertex Data.");
+        if(data.size() != quadVertexSize) {
+            RB_CORE_ERROR("[Render] quad rejected: expected {} vertices; received {}", quadVertexSize, data.size());
+            return;
+        }
 
         int layerID = states.layerID;
         if(m_renderLayers.size() <= states.layerID)
@@ -553,11 +541,8 @@ namespace robot2D::priv {
 
         auto& m_renderBuffer = m_renderLayers[layerID].m_renderBuffer;
 
-        if(m_renderBuffer.indexCount >= m_renderBuffer.maxIndicesCount) {
-            RB_CORE_INFO("INDEX COUNT > MAX, VALUE : {0}", m_renderBuffer.indexCount);
-            afterRender();
-            beforeRender();
-        }
+        if(m_renderBuffer.indexCount + 6 > m_renderBuffer.maxIndicesCount)
+            queueBatch(layerID);
 
         float textureIndex = 0.F;
         if(states.texture) {
@@ -570,8 +555,7 @@ namespace robot2D::priv {
 
             if(textureIndex == 0.F) {
                 if(m_renderBuffer.textureSlotIndex >= maxTextureSlots) {
-                    afterRender();
-                    beforeRender();
+                    queueBatch(layerID);
                 }
 
                 textureIndex = (float)m_renderBuffer.textureSlotIndex;
@@ -591,6 +575,7 @@ namespace robot2D::priv {
 
         m_renderBuffer.indexCount += 6;
         m_stats.drawQuads++;
+        m_stats.drawVertices += quadVertexSize;
     }
 
     void OpenGLRender::render(const VertexArray::Ptr& vertexArray, RenderStates states) const {
@@ -657,10 +642,11 @@ namespace robot2D::priv {
                                                                   : static_cast<GLsizei>(vertexArray -> getIndexBuffer()
                 -> getSize() / 4);
 
-            glDrawElements(drawMode,
+            glCall(glDrawElements, drawMode,
                 drawIndexCount,
                 GL_UNSIGNED_INT,
                 nullptr);
+            ++m_stats.drawCalls;
             vertexArray -> unBind();
             glBindTexture(GL_TEXTURE_2D, 0);
             glActiveTexture(GL_TEXTURE0);
@@ -727,10 +713,11 @@ namespace robot2D::priv {
             static_cast<GLsizei>(states.renderInfo.indexCount):
             static_cast<GLsizei>(vertexArray -> getIndexBuffer() -> getSize() / 4);
 
-        glDrawElements(drawMode,
+        glCall(glDrawElements, drawMode,
             drawIndexCount,
             GL_UNSIGNED_INT,
             nullptr);
+        ++m_stats.drawCalls;
         vertexArray -> unBind();
         glBindTexture(GL_TEXTURE_2D, 0);
         glActiveTexture(GL_TEXTURE0);
