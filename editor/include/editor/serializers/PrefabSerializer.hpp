@@ -26,7 +26,7 @@ source distribution.
 #include <editor/Enum.hpp>
 
 namespace editor {
-    DECLARE_ENUM(PrefabError, NoFileOpen, BadSerialization, BadDeSerialization)
+    DECLARE_ENUM(PrefabError, NoFileOpen, BadSerialization, BadDeSerialization, None)
 
     class PrefabSerializer {
     public:
@@ -40,9 +40,11 @@ namespace editor {
         bool serialize(Prefab::Ptr prefab, IScriptInteractorFrom::Ptr scriptInteractor);
         bool deserialize(Prefab::Ptr prefab, IScriptInteractorFrom::Ptr scriptInteractor);
         PrefabError getError() const;
+        const std::string& getErrorMessage() const { return m_errorMessage; }
     private:
         Prefab::Ptr m_prefab;
-        PrefabError m_error;
+        PrefabError m_error = PrefabError::None;
+        std::string m_errorMessage;
     };
 
 }

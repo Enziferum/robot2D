@@ -314,6 +314,14 @@ namespace editor {
 
     void Guizmo2D::processMouseMoved(robot2D::Event event) {
         if(!m_leftMousePressed) return;
+        struct TransformState {
+            robot2D::vec2f position;
+            robot2D::vec2f size;
+            float rotation;
+        };
+        std::vector<TransformState> previous;
+        for(const auto* transform: m_manipulateds)
+            previous.push_back({transform -> getPosition(), transform -> getSize(), transform -> getRotation()});
         robot2D::vec2f moveVector{event.move.x, event.move.y};
         moveVector = m_camera -> convertPixelToCoords(moveVector);
 
@@ -398,6 +406,16 @@ namespace editor {
                     transform -> rotate(diffAngle);
                 }
                 m_manipulatorLastPos = moveVector;
+                break;
+            }
+        }
+        for(std::size_t index = 0; index < m_manipulateds.size(); ++index) {
+            const auto* transform = m_manipulateds[index];
+            const auto& before = previous[index];
+            if(before.position != transform -> getPosition() || before.size != transform -> getSize() ||
+               before.rotation != transform -> getRotation()) {
+                if(m_onModified)
+                    m_onModified();
                 break;
             }
         }

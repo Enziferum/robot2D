@@ -32,6 +32,7 @@ source distribution.
 #include <editor/Messages.hpp>
 #include <editor/PopupManager.hpp>
 #include <editor/FiledialogAdapter.hpp>
+#include <editor/FileApi.hpp>
 #include <editor/Buffer.hpp>
 
 
@@ -141,29 +142,16 @@ namespace editor {
             }
         }
 
-        imgui_MenuItem("Save", "Ctrl+S") {
-            std::string savePath;
-            std::vector<std::string> saveFilePatterns = {"*.robot2D"};
-
-            // TODO(a.raag): get current project path
-            if(FiledialogAdapter::get() -> saveFile(savePath,
-                                                    "Save Robot2D Project",
-                                                    "",
-                                                    saveFilePatterns,
-                                                    "Scene")) {
-                int allocSize = StringBuffer::calcAllocSize(savePath);
-                void* rawBuffer = m_messageBus.postMessage(MessageID::SaveProject, allocSize);
-                Buffer buffer{ rawBuffer };
-                pack_message_string(savePath, buffer);
-            }
+        imgui_MenuItem("Save Scene", "Ctrl+S") {
+            Buffer buffer{m_messageBus.postMessage(MessageID::SaveScene, StringBuffer::calcAllocSize(""))};
+            pack_message_string("", buffer);
         }
 
-        imgui_MenuItem("Save", "Ctrl+Shift+S") {
+        imgui_MenuItem("Save As...") {
             std::string savePath;
             std::vector<std::string> saveFilePatterns = {"*.scene"};
 
-            // TODO(a.raag): get current project path
-            std::string defaultSavePath = "assets/scenes";
+            const auto defaultSavePath = combinePath(m_interactor -> getAssociatedProjectPath(), "assets/scenes");
 
             if(FiledialogAdapter::get() -> saveFile(savePath,
                                                     "Save Robot2D Scene",
@@ -176,6 +164,10 @@ namespace editor {
                 Buffer buffer{ rawBuffer };
                 pack_message_string(savePath, buffer);
             }
+        }
+        imgui_MenuItem("Save All", "Ctrl+Shift+S") {
+            Buffer buffer{m_messageBus.postMessage(MessageID::SaveAll, StringBuffer::calcAllocSize(""))};
+            pack_message_string("", buffer);
         }
     }
 

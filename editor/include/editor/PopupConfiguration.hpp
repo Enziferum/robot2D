@@ -28,8 +28,9 @@ namespace editor {
 
     struct PopupConfiguration {
         std::string title;
-        std::function<void()> onYes;
+        std::function<bool()> onYes;
         std::function<void()> onNo;
+        std::string error;
     };
 
 }

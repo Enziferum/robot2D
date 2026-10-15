@@ -20,160 +20,271 @@ source distribution.
 *********************************************************************/
 
 #include <fstream>
-#include <yaml-cpp/yaml.h>
-#include <robot2D/Util/Logger.hpp>
-
-
+#include <filesystem>
+#include <sstream>
+#include <unordered_map>
+#include <unordered_set>
+#include <optional>
+#include <algorithm>
 #include <editor/serializers/SceneSerializer.hpp>
 #include <editor/serializers/EntitySerializer.hpp>
-
+#include <editor/serializers/YamlFields.hpp>
+#include <editor/serializers/YamlFile.hpp>
 #include <editor/Scene.hpp>
 #include <editor/Components.hpp>
-#include <editor/scripting/ScriptingEngine.hpp>
-
 
 namespace editor {
 
+    namespace {
+        constexpr unsigned sceneVersion = 1;
+        using EntityID = std::uint64_t;
 
-    class ISceneDeserializer {
-    public:
-        virtual ~ISceneDeserializer() = 0;
-        virtual bool deserialize(const std::string& path) = 0;
-    };
-
-    ISceneDeserializer::~ISceneDeserializer() = default;
-
-
-    class YamlSceneDeserializer: public ISceneDeserializer {
-    public:
-        ~YamlSceneDeserializer() override = default;
-        bool deserialize(const std::string& path) override;
-    };
-
-    bool YamlSceneDeserializer::deserialize(const std::string& path) {
-        return true;
+        struct EntityRecord {
+            EntityID id;
+            YAML::Node data;
+            std::vector<EntityID> children;
+            std::optional<EntityID> legacyParent;
+        };
     }
 
-
-
-    SceneSerializer::SceneSerializer(Scene::Ptr scene): m_scene(scene) {}
-
+    SceneSerializer::SceneSerializer(Scene::Ptr scene): m_scene(std::move(scene)) {}
 
     bool SceneSerializer::serialize(const std::string& path, const std::string& sceneName,
-                                    IScriptInteractorFrom::Ptr scriptingEngine) {
-        if(m_scene == nullptr)
-            return false;
-
-
-
-        YAML::Emitter out;
-        out << YAML::BeginMap;
-        out << YAML::Key << "Scene" << YAML::Value << sceneName;
-        out << YAML::Key << "Entities" << YAML::Value << YAML::BeginSeq;
-
-        auto entitySerializer = getSerializer<EntityYAMLSerializer>();
-        for(auto& entity: m_scene -> getEntities())
-            entitySerializer -> serialize(out, entity, scriptingEngine);
-        out << YAML::EndSeq;
-        out << YAML::EndMap;
-
-        std::ofstream ofstream(path);
-        if(!ofstream.is_open()) {
-            m_error = SceneSerializerError::NoFileOpen;
+                                     IScriptInteractorFrom::Ptr scriptingEngine) {
+        m_error = SceneSerializerError::None;
+        m_errorMessage.clear();
+        if(!m_scene) {
+            m_error = SceneSerializerError::InvalidScene;
             return false;
         }
+        try {
+            std::vector<SceneEntity> entities;
+            std::vector<EntityID> roots;
+            for(const auto& root: m_scene -> getRootEntities())
+                roots.push_back(root.getUUID());
+            std::vector<SceneEntity> pending;
+            for(auto it = m_scene -> getRootEntities().rbegin(); it != m_scene -> getRootEntities().rend(); ++it)
+                pending.push_back(*it);
+            std::unordered_set<EntityID> visited;
+            while(!pending.empty()) {
+                auto entity = pending.back();
+                pending.pop_back();
+                if(!entity || !visited.insert(entity.getUUID()).second) {
+                    m_error = SceneSerializerError::InvalidHierarchy;
+                    m_errorMessage = "Repeated or invalid entity while traversing the scene";
+                    return false;
+                }
+                entities.push_back(entity);
+                auto children = entity.getChildren();
+                for(auto it = children.rbegin(); it != children.rend(); ++it)
+                    pending.push_back(*it);
+            }
 
-        ofstream << out.c_str();
-        ofstream.close();
-
-        return true;
+            YAML::Emitter out;
+            out << YAML::BeginMap;
+            yaml::write(out, "SceneVersion", sceneVersion);
+            yaml::write(out, "Scene", sceneName);
+            yaml::write(out, "EntityCount", entities.size());
+            out << YAML::Key << "RootEntities" << YAML::Value << YAML::Flow << roots;
+            out << YAML::Key << "Entities" << YAML::Value << YAML::BeginSeq;
+            EntityYAMLSerializer serializer;
+            for(const auto& entity: entities) {
+                if(!serializer.serialize(out, entity, scriptingEngine, false)) {
+                    m_error = SceneSerializerError::InvalidData;
+                    m_errorMessage = "Entity " + std::to_string(static_cast<EntityID>(entity.getUUID())) +
+                                     ": " + serializer.getErrorMessage();
+                    return false;
+                }
+            }
+            out << YAML::EndSeq << YAML::EndMap;
+            if(!yaml::writeFile(path, out)) {
+                m_error = SceneSerializerError::WriteFailed;
+                m_errorMessage = "Could not replace scene file: " + path;
+                return false;
+            }
+            return true;
+        }
+        catch(const std::exception& error) {
+            m_error = SceneSerializerError::InvalidData;
+            m_errorMessage = error.what();
+            return false;
+        }
     }
-    /// 1
-    //// 2 15 3
-    ////  6  4 9
-
-    struct SceneSerializeData {
-        enum class ResourceType {
-            Texture,
-            Font
-        };
-
-        std::vector<ResourceType> resourceTypes;
-    };
 
     bool SceneSerializer::deserialize(const std::string& path, IScriptInteractorFrom::Ptr scriptingEngine) {
-        YAML::Node data;
+        m_error = SceneSerializerError::None;
+        m_errorMessage.clear();
         try {
-            std::ifstream ifstream(path);
-            if(!ifstream.is_open()) {
+            std::ifstream input(std::filesystem::u8path(path), std::ios::binary);
+            if(!input.is_open()) {
                 m_error = SceneSerializerError::NoFileOpen;
+                m_errorMessage = "Could not open scene: " + path;
                 return false;
             }
-
-            std::stringstream sstr;
-            sstr << ifstream.rdbuf();
-            ifstream.close();
-            data = YAML::Load(sstr.str());
-        }
-        catch (const std::exception& e) {
-            RB_EDITOR_CRITICAL("[SceneSerializer]: Deserialize YAML Exception {0}", e.what());
-            exit(2);
-        }
-
-        if(!data["Scene"]) {
-            m_error = SceneSerializerError::NotSceneTag;
-            return false;
-        }
-
-        std::string sceneName = data["Scene"].as<std::string>();
-        auto entites = data["Entities"];
-        if(!entites)
-            return false;
-
-
-        auto entitySerializer = getSerializer<EntityYAMLSerializer>();
-        std::vector<ChildInfo> children;
-
-        for(const auto& entity: entites) {
-            bool addToScene = true;
-            auto deserializedEntity = m_scene -> createEmptyEntity();
-            if(!entitySerializer -> deserialize(entity, deserializedEntity, addToScene,
-                                                 children, scriptingEngine))
+            std::stringstream contents;
+            contents << input.rdbuf();
+            if(input.bad()) {
+                m_error = SceneSerializerError::InvalidData;
+                m_errorMessage = "Could not read complete scene file";
                 return false;
-            if(m_scene -> getEntity(deserializedEntity.getUUID()))
-                return false;
-            if(!m_scene -> attachEntity(deserializedEntity))
-                return false;
-        }
-
-        for(auto& info: children) {
-            if(!info.hasChildren())
-                continue;
-            auto parent = m_scene -> getEntity(info.childPair.first);
-            if(!parent)
-                return false;
-            for(auto uuid: info.childPair.second) {
-                auto child = m_scene -> getEntity(uuid);
-                if(!child || !m_scene -> reparent(child, parent))
-                    return false;
             }
+            const auto data = YAML::Load(contents.str());
+            return deserializeDocument(data, scriptingEngine);
         }
-        for(auto& info: children) {
-            if(!info.isChild)
-                continue;
-            auto parent = m_scene -> getEntity(info.parentUUID);
-            auto currentParent = info.self.getParent();
-            if(currentParent && currentParent != parent)
-                return false;
-            if(!parent || !m_scene -> reparent(info.self, parent))
-                return false;
+        catch(const std::exception& error) {
+            m_error = SceneSerializerError::InvalidData;
+            m_errorMessage = error.what();
+            return false;
         }
+    }
 
-        return true;
+    bool SceneSerializer::deserializeDocument(const YAML::Node& data, IScriptInteractorFrom::Ptr scriptingEngine) {
+        m_error = SceneSerializerError::None;
+        m_errorMessage.clear();
+        auto fail = [&](SceneSerializerError error, const std::string& message) {
+            m_error = error;
+            m_errorMessage = message;
+            return false;
+        };
+        if(!m_scene || m_scene -> isRunning() || !m_scene -> getRootEntities().empty())
+            return fail(SceneSerializerError::InvalidScene, "Loading requires a fresh, empty editor scene");
+        try {
+            const auto version = yaml::optional<unsigned long long>(data, "SceneVersion", 0);
+            if(version > sceneVersion)
+                return fail(SceneSerializerError::UnsupportedVersion, "Scene version " + std::to_string(version));
+            const bool legacy = version == 0;
+            yaml::validateKeys(data, legacy);
+            if(!data["Scene"])
+                return fail(SceneSerializerError::NotSceneTag, "Missing scene name");
+            const auto name = yaml::read<std::string>(data, "Scene");
+            const auto nodes = yaml::required(data, "Entities");
+            if(!nodes.IsSequence())
+                return fail(SceneSerializerError::InvalidData, "Entities must be a sequence");
+            if(!legacy && yaml::read<std::size_t>(data, "EntityCount") != nodes.size())
+                return fail(SceneSerializerError::CountMismatch, "EntityCount does not match Entities.size()");
+
+            std::vector<EntityRecord> records;
+            records.reserve(nodes.size());
+            std::unordered_map<EntityID, std::size_t> index;
+            index.reserve(nodes.size());
+            for(const auto& node: nodes) {
+                const auto id = yaml::read<EntityID>(node, "Entity");
+                if(!index.emplace(id, records.size()).second || m_scene -> getEntity(UUID{id}))
+                    return fail(SceneSerializerError::InvalidData, "Duplicate entity UUID " + std::to_string(id));
+                if(!yaml::required(node, "TagComponent").IsMap())
+                    return fail(SceneSerializerError::InvalidData, "TagComponent must be a map");
+                yaml::read<std::string>(node["TagComponent"], "Tag");
+                records.push_back({id, node, {}, {}});
+                auto& record = records.back();
+                if(const auto hierarchy = node["HierarchyComponent"]) {
+                    if(!hierarchy.IsMap())
+                        return fail(SceneSerializerError::InvalidHierarchy, "HierarchyComponent must be a map");
+                    record.children = yaml::optional<std::vector<EntityID>>(hierarchy, "Children", {});
+                }
+                if(const auto transform = node["TransformComponent"]) {
+                    if(!transform.IsMap())
+                        return fail(SceneSerializerError::InvalidData, "TransformComponent must be a map");
+                    if(!legacy && (transform["ParentID"] || transform["ChildIDs"] ||
+                                   transform["isChild"] || transform["HasChildren"]))
+                        return fail(SceneSerializerError::InvalidHierarchy, "Legacy hierarchy fields in a versioned scene");
+                    if(legacy && !node["HierarchyComponent"]) {
+                        if(transform["ChildIDs"])
+                            record.children = yaml::read<std::vector<EntityID>>(transform, "ChildIDs");
+                        else if(yaml::optional<bool>(transform, "HasChildren", false))
+                            return fail(SceneSerializerError::InvalidHierarchy, "HasChildren requires ChildIDs");
+                        if(yaml::optional<bool>(transform, "isChild", false) || transform["ParentID"])
+                            record.legacyParent = yaml::read<EntityID>(transform, "ParentID");
+                    }
+                }
+            }
+
+            std::unordered_map<EntityID, EntityID> parents;
+            parents.reserve(records.size());
+            for(const auto& record: records) {
+                for(const auto child: record.children) {
+                    if(!index.count(child) || child == record.id || !parents.emplace(child, record.id).second)
+                        return fail(SceneSerializerError::InvalidHierarchy, "Invalid, repeated or multiply parented child " + std::to_string(child));
+                }
+            }
+            if(legacy) {
+                for(const auto& record: records) {
+                    if(!record.legacyParent)
+                        continue;
+                    const auto parent = *record.legacyParent;
+                    if(!index.count(parent) || parent == record.id)
+                        return fail(SceneSerializerError::InvalidHierarchy, "Invalid legacy parent");
+                    const auto found = parents.find(record.id);
+                    if(found != parents.end() && found -> second != parent)
+                        return fail(SceneSerializerError::InvalidHierarchy, "ParentID contradicts ChildIDs");
+                    if(found == parents.end()) {
+                        records[index.at(parent)].children.push_back(record.id);
+                        parents.emplace(record.id, parent);
+                    }
+                }
+            }
+            std::vector<EntityID> roots;
+            if(legacy) {
+                for(const auto& record: records)
+                    if(!parents.count(record.id))
+                        roots.push_back(record.id);
+            }
+            else
+                roots = yaml::read<std::vector<EntityID>>(data, "RootEntities");
+            std::unordered_set<EntityID> visited;
+            visited.reserve(records.size());
+            std::vector<EntityID> pending = roots;
+            while(!pending.empty()) {
+                const auto id = pending.back();
+                pending.pop_back();
+                if(!index.count(id) || !visited.insert(id).second)
+                    return fail(SceneSerializerError::InvalidHierarchy, "Unknown or repeated hierarchy entry");
+                const auto& children = records[index.at(id)].children;
+                pending.insert(pending.end(), children.begin(), children.end());
+            }
+            for(const auto root: roots)
+                if(parents.count(root))
+                    return fail(SceneSerializerError::InvalidHierarchy, "A root entity also has a parent");
+            if(visited.size() != records.size())
+                return fail(SceneSerializerError::InvalidHierarchy, "Hierarchy contains a cycle or unreachable entity");
+
+            // Register every UUID before loading components which can refer to other entities.
+            for(const auto& record: records) {
+                auto entity = m_scene -> createEmptyEntity();
+                entity.addComponent<IDComponent>().ID = UUID{record.id};
+                entity.addComponent<TagComponent>();
+                if(!m_scene -> attachEntity(entity))
+                    return fail(SceneSerializerError::InvalidData, "Could not register entity");
+            }
+            EntityYAMLSerializer serializer;
+            std::vector<ChildInfo> unusedHierarchy;
+            for(const auto& record: records) {
+                auto entity = m_scene -> getEntity(UUID{record.id});
+                bool addToScene = true;
+                if(!serializer.deserialize(record.data, entity, addToScene, unusedHierarchy, scriptingEngine))
+                    return fail(SceneSerializerError::InvalidData, "Entity " + std::to_string(record.id) +
+                                ": " + serializer.getErrorMessage());
+                // Rebind loaded TransformComponent to its owning scene; this does not add an ECS entity twice.
+                if(!m_scene -> attachEntity(entity))
+                    return fail(SceneSerializerError::InvalidData, "Could not finalize entity");
+            }
+            for(const auto& record: records)
+                for(const auto child: record.children)
+                    if(!m_scene -> reparent(m_scene -> getEntity(UUID{child}), m_scene -> getEntity(UUID{record.id})))
+                        return fail(SceneSerializerError::InvalidHierarchy, "Could not attach child");
+            for(std::size_t i = roots.size(); i > 1; --i)
+                if(!m_scene -> setBefore(m_scene -> getEntity(UUID{roots[i - 2]}), m_scene -> getEntity(UUID{roots[i - 1]})))
+                    return fail(SceneSerializerError::InvalidHierarchy, "Could not restore root order");
+            m_scene -> setName(name);
+            m_scene -> markSaved();
+            return true;
+        }
+        catch(const std::exception& error) {
+            return fail(SceneSerializerError::InvalidData, error.what());
+        }
     }
 
     SceneSerializerError SceneSerializer::getError() const {
-        return SceneSerializerError::None;
+        return m_error;
     }
 
-}
+} // namespace editor

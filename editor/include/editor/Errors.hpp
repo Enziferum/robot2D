@@ -29,7 +29,13 @@ namespace editor {
         None,
         NoCacheFile,
         EditorTagNone,
-        ProjectsTagNone
+        ProjectsTagNone,
+        ReadFailed,
+        WriteFailed,
+        BackupFailed,
+        InvalidCache,
+        UnsupportedVersion,
+        InvalidProject
     };
 
     enum class ProjectManagerError {
@@ -57,7 +63,13 @@ namespace editor {
     enum class SceneSerializerError {
         None,
         NotSceneTag,
-        NoFileOpen
+        NoFileOpen,
+        InvalidData,
+        UnsupportedVersion,
+        InvalidHierarchy,
+        CountMismatch,
+        InvalidScene,
+        WriteFailed
     };
 
 

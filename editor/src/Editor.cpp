@@ -112,7 +112,11 @@ namespace editor {
 
         ShortCut saveScene{robot2D::Key::LEFT_CONTROL, robot2D::Key::S};
         saveScene.setCallback([this]() {
-            m_interactor -> saveScene();
+            if(robot2D::Window::isKeyboardPressed(robot2D::Key::LEFT_SHIFT) ||
+               robot2D::Window::isKeyboardPressed(robot2D::Key::RIGHT_SHIFT))
+                m_interactor -> saveAll();
+            else
+                m_interactor -> saveScene();
         });
         m_shortcutManager.bind(std::make_pair(EditorShortCutType::SaveScene, saveScene));
 
@@ -160,6 +164,10 @@ namespace editor {
             m_window = window;
 
         m_interactor = editorInteractor;
+        m_guizmo2D.setModificationCallback([this]() {
+            for(const auto& entity: m_interactor -> getSelectedEntities())
+                entity.markModified();
+        });
         m_panelManager.setRuntimeControls(m_interactor, m_messageBus);
 
         for(auto& path: m_configuration.texturePaths) {
@@ -476,6 +484,23 @@ namespace editor {
     }
 
 
+    bool Editor::hasAssetChanges() const {
+        return m_prefabManager.hasChanges();
+    }
+
+    bool Editor::saveAssetChanges() {
+        // Preserve the normal Inspector notification for the currently edited prefab.
+        auto& inspector = m_panelManager.getPanel<InspectorPanel>();
+        if(!inspector.savePrefabChanges())
+            return false;
+        return m_prefabManager.saveChanges(m_interactor);
+    }
+
+    void Editor::discardAssetChanges() {
+        m_panelManager.getPanel<InspectorPanel>().discardSelection();
+        m_prefabManager.discardChanges();
+    }
+
     void Editor::showPopup(PopupConfiguration* configuration) {
         m_popupConfiguration = configuration;
         auto* manager = PopupManager::getManager();
@@ -494,22 +519,26 @@ namespace editor {
         if (ImGui::BeginPopupModal(m_popupConfiguration -> title.c_str(), nullptr,
                                    ImGuiWindowFlags_AlwaysAutoResize))
         {
-            ImGui::Text("Scene has changed. Want to save?");
+            ImGui::TextUnformatted("Scene or prefab assets have unsaved changes.");
+            if(!m_popupConfiguration -> error.empty())
+                ImGui::TextWrapped("%s", m_popupConfiguration -> error.c_str());
             ImGui::Separator();
 
-            if (ImGui::Button("Yes", ImVec2(120, 0))) {
-                // setMouseHoverDirectly(false);
-                m_popupConfiguration -> onYes();
-                m_popupConfiguration = nullptr;
-                manager -> endPopup();
-                ImGui::CloseCurrentPopup();
+            bool close = false;
+            if (ImGui::Button("Save", ImVec2(120, 0))) {
+                close = m_popupConfiguration -> onYes();
             }
 
             ImGui::SetItemDefaultFocus();
             ImGui::SameLine();
-            if (ImGui::Button("No", ImVec2(120, 0))) {
-                // setMouseHoverDirectly(false);
+            if (ImGui::Button("Discard", ImVec2(120, 0))) {
                 m_popupConfiguration -> onNo();
+                close = true;
+            }
+            ImGui::SameLine();
+            if(ImGui::Button("Cancel", ImVec2(120, 0)) || ImGui::IsKeyPressed(ImGuiKey_Escape))
+                close = true;
+            if(close) {
                 m_popupConfiguration = nullptr;
                 manager -> endPopup();
                 ImGui::CloseCurrentPopup();

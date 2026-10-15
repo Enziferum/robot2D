@@ -28,8 +28,11 @@ source distribution.
 #include <queue>
 #include <atomic>
 #include <unordered_map>
+#include <numeric>
+#include <limits>
 
 #include "Task.hpp"
+#include <robot2D/Util/Logger.hpp>
 
 namespace editor {
 
@@ -67,7 +70,7 @@ namespace editor {
     };
 
     using TaskID = std::uint32_t;
-    // using InvalidTaskId = 0;
+    constexpr std::uint32_t InvalidTaskId = std::numeric_limits<std::uint32_t>::max();
 
     struct TaskInfo {
         TaskStatus status;
@@ -96,15 +99,15 @@ namespace editor {
                     std::forward<Callback>(callback)
             );
             if(!function) {
-                //TODO: add logging
-                return -1;
+                RB_EDITOR_ERROR("[TaskQueue]: Can't allocate TaskFunction");
+                return InvalidTaskId;
             }
             auto task = std::make_shared<T>(function, std::forward<Args>(args)...);
             const auto taskID =
                     m_taskId.fetch_add(1, std::memory_order::memory_order_relaxed);
 
             {
-                std::lock_guard<std::mutex> lock(m_inputMutex);
+                std::lock_guard lock(m_inputMutex);
                 m_inputTasksQueue.push(task);
             }
 
@@ -121,8 +124,6 @@ namespace editor {
 
 
         TaskStatus getStatus(TaskID taskId);
-
-        /// remove all ?
         void clear();
     private:
         TaskQueue();

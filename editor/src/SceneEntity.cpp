@@ -45,6 +45,11 @@ namespace editor {
         return static_cast<bool>(m_entity) && !m_entity.destroyed();
     }
 
+    void SceneEntity::markModified() const {
+        if(*this && m_scene && m_context == SceneContext::Editor)
+            m_scene -> markModified();
+    }
+
     UUID SceneEntity::getUUID() const {
         if(m_uuid)
             return *m_uuid;

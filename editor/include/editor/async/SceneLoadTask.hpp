@@ -28,6 +28,8 @@ source distribution.
 #include <editor/ScriptInteractor.hpp>
 
 namespace editor {
+    // CPU resource loading shared by scene tasks and prefab templates.
+    void loadSceneAssets(const Scene::Ptr& scene);
     class SceneLoadTask final: public ITask {
     public:
         using SceneLoadChainCallback = std::function<void(Scene::Ptr)>;
@@ -46,7 +48,6 @@ namespace editor {
         SceneLoadChainCallback getChainCallback() const { return m_chainCallback; }
     private:
         void loadAssets();
-        void loadAssets(SceneEntity& entity);
     private:
         Scene::Ptr m_scene;
         SceneLoadChainCallback m_chainCallback;

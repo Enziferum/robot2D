@@ -65,6 +65,7 @@ namespace editor {
                 task -> execute();
             }
 
+
             {
                 std::lock_guard<std::mutex> outLock{m_outputMutex};
                 m_outputTasksQueue.push(task);
@@ -72,11 +73,11 @@ namespace editor {
         }
     }
 
-    void TaskQueue::setStatus(editor::TaskID taskId) {
+    void TaskQueue::setStatus(TaskID taskId) {
 
     }
 
-    void TaskQueue::setException(editor::TaskID taskId) {
+    void TaskQueue::setException(TaskID taskId) {
 
     }
 
@@ -96,7 +97,7 @@ namespace editor {
     void TaskQueue::stop() {
         m_running.store(false, std::memory_order::memory_order_relaxed);
         {
-            std::unique_lock<std::mutex> lock(m_inputMutex);
+            std::lock_guard<std::mutex> lock(m_inputMutex);
             data_cond.notify_all();
         }
 
@@ -104,4 +105,24 @@ namespace editor {
             m_thread.join();
 
     }
+
+
+    TaskStatus TaskQueue::getStatus(TaskID taskId) {
+        std::lock_guard lock(m_statusMutex);
+        auto found = m_statuses.find(taskId);
+        if (found == m_statuses.end())
+            return TaskStatus::Bad;
+        return found -> second.status;
+    }
+
+
+    void TaskQueue::clear() {
+        std::scoped_lock lock(m_inputMutex, m_outputMutex);
+        for (int i = 0; i < m_outputTasksQueue.size(); ++i)
+            m_outputTasksQueue.pop();
+        for (int i = 0; i < m_inputTasksQueue.size(); ++i)
+            m_inputTasksQueue.pop();
+    }
+
+
 }

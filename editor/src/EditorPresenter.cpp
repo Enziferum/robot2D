@@ -42,6 +42,18 @@ namespace editor {
         m_editor -> showPopup(popupConfiguration);
     }
 
+    bool EditorPresenter::hasAssetChanges() const {
+        return m_editor -> hasAssetChanges();
+    }
+
+    bool EditorPresenter::saveAssetChanges() {
+        return m_editor -> saveAssetChanges();
+    }
+
+    void EditorPresenter::discardAssetChanges() {
+        m_editor -> discardAssetChanges();
+    }
+
     void EditorPresenter::setMainCameraEntity(SceneEntity entity) {
         m_editor -> setMainCameraEntity(entity);
     }
