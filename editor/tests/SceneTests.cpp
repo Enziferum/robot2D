@@ -10,6 +10,10 @@
 #include <editor/serializers/SceneSerializer.hpp>
 #include <editor/serializers/YamlFile.hpp>
 #include <editor/serializers/PrefabSerializer.hpp>
+#include <editor/FileApi.hpp>
+#include <editor/ResouceManager.hpp>
+#include <editor/LocalResourceManager.hpp>
+#include <editor/async/AnimationTextureSliceTask.hpp>
 #include <iostream>
 #include <limits>
 
@@ -39,6 +43,7 @@ namespace {
             }
         }
         ~GraphicsContext() {
+            editor::LocalResourceManager::getManager() -> releaseGraphicsResources();
             glfwDestroyWindow(m_window); glfwTerminate();
         }
     private:
@@ -459,6 +464,112 @@ namespace {
         CHECK(loaded.getComponent<editor::TextComponent>().getFontPath() == "assets/missing-font.ttf");
         CHECK(glGetError() == GL_NO_ERROR);
     }
+
+    void writeImage(const fs::path& path, unsigned width, std::uint8_t red) {
+        fs::create_directories(path.parent_path());
+        // Uncompressed 32-bit TGA, kept local to the fixture; Image::save is a stub.
+        std::string bytes(18, '\0');
+        bytes[2] = 2;
+        bytes[12] = static_cast<char>(width);
+        bytes[14] = 2;
+        bytes[16] = 32;
+        bytes[17] = 0x28;
+        for(unsigned pixel = 0; pixel < width * 2; ++pixel) {
+            bytes += static_cast<char>(255);
+            bytes += static_cast<char>(255);
+            bytes += static_cast<char>(red);
+            bytes += static_cast<char>(255);
+        }
+        write(path, bytes);
+    }
+
+    void assetIdentity() {
+        Directory fixture;
+        robot2D::MessageBus bus;
+        editor::MessageDispatcher dispatcher;
+        auto scripts = std::make_shared<ScriptStub>();
+        View view;
+        editor::EditorPresenter presenter(&view);
+        editor::EditorRouter router(&view);
+        editor::EditorLogic logic(bus, dispatcher, presenter, router);
+        logic.setup(scripts);
+        QueueStop stop;
+        auto source = std::make_shared<editor::Scene>(bus);
+        auto first = source -> createEntity("First");
+        first.addComponent<editor::DrawableComponent>().setTexturePath("assets/a/player.tga");
+        first.addComponent<editor::TextComponent>().setFontPath("assets/a/hud.ttf");
+        auto second = source -> createEntity("Second");
+        second.addComponent<editor::DrawableComponent>().setTexturePath("assets/b/player.tga");
+        second.addComponent<editor::TextComponent>().setFontPath("assets/b/hud.ttf");
+        auto shared = source -> createEntity("Shared");
+        shared.addComponent<editor::DrawableComponent>().setTexturePath("assets/a/../a/player.tga");
+        for(unsigned projectIndex = 0; projectIndex < 2; ++projectIndex) {
+            const auto root = fixture.path() / ("project-" + std::to_string(projectIndex));
+            writeImage(root / "assets/a/player.tga", 2 + projectIndex * 2, 50);
+            writeImage(root / "assets/b/player.tga", 3 + projectIndex * 2, 200);
+            fs::copy_file(fs::path(RB2D_TEST_RESOURCE_DIR) / "fonts/notosans-regular.ttf", root / "assets/a/hud.ttf");
+            fs::copy_file(fs::path(RB2D_TEST_RESOURCE_DIR) / "fonts/notosans-bold.ttf", root / "assets/b/hud.ttf");
+            fs::create_directories(root / "assets/scenes");
+            source -> setAssociatedProjectPath(root.u8string());
+            editor::SceneSerializer writer(source);
+            CHECK(writer.serialize((root / "assets/scenes/main.scene").u8string(), "Resources", scripts));
+            auto project = std::make_shared<editor::Project>();
+            project -> setPath(root.u8string());
+            project -> setStartScene("main.scene");
+            // Reopen twice in the same process, then load another project with the same UUIDs/filenames.
+            for(int reopen = 0; reopen < 2; ++reopen) {
+                logic.loadProject(project);
+                CHECK(waitFor([&]() {
+                    editor::TaskQueue::GetQueue() -> process();
+                    return presenter.getState() != editor::EditorState::Load;
+                }));
+                CHECK(presenter.getState() == editor::EditorState::Edit && view.scene);
+                const auto a = view.scene -> getEntity(first.getUUID());
+                const auto b = view.scene -> getEntity(second.getUUID());
+                const auto alias = view.scene -> getEntity(shared.getUUID());
+                const auto& textureA = a.getComponent<editor::DrawableComponent>().getTexture();
+                const auto& textureB = b.getComponent<editor::DrawableComponent>().getTexture();
+                CHECK(textureA.getSize().x == 2 + projectIndex * 2);
+                CHECK(textureB.getSize().x == 3 + projectIndex * 2);
+                CHECK(&textureA == alias.getComponent<editor::DrawableComponent>().getTexturePointer());
+                const auto* fontA = a.getComponent<editor::TextComponent>().getFont();
+                const auto* fontB = b.getComponent<editor::TextComponent>().getFont();
+                CHECK(fontA && fontB && fontA != fontB);
+                CHECK(fontA -> getPath() == editor::resourceFileKey((root / "assets/a/hud.ttf").u8string()));
+                CHECK(fontB -> getPath() == editor::resourceFileKey((root / "assets/b/hud.ttf").u8string()));
+                CHECK(glGetError() == GL_NO_ERROR);
+            }
+        }
+        // Cache objects are static; release GL ownership before destroying the context.
+        view.scene.reset();
+        logic.destroy();
+        editor::LocalResourceManager::getManager() -> releaseGraphicsResources();
+        CHECK(glGetError() == GL_NO_ERROR);
+    }
+
+    void animationResources() {
+        Directory fixture;
+        const auto first = fixture / "assets/a/sheet.tga";
+        const auto second = fixture / "assets/b/sheet.tga";
+        writeImage(first, 2, 50);
+        writeImage(second, 4, 200);
+        // A second slice of the same sheet used to dereference a null addImage result.
+        for(const auto& path: {first, first, second}) {
+            editor::AnimationTextureSliceTask task(nullptr, "sheet.tga", path.u8string());
+            task.execute();
+            CHECK(!task.getRects().empty());
+        }
+        auto* manager = editor::ResourceManager::getManager();
+        CHECK(manager -> getImage(editor::resourceFileKey(first.u8string())).getSize().x == 2);
+        CHECK(manager -> getImage(editor::resourceFileKey(second.u8string())).getSize().x == 4);
+        const auto recovered = fixture / "assets/recovered.tga";
+        const auto key = editor::resourceFileKey(recovered.u8string());
+        CHECK(!manager -> loadImage(key) && !manager -> hasImage(key));
+        writeImage(recovered, 3, 100);
+        CHECK(manager -> loadImage(key));
+        CHECK(manager -> getImage(key).getSize().x == 3);
+        CHECK(glGetError() == GL_NO_ERROR);
+    }
 }
 
 int main(int argc, char** argv) {
@@ -470,6 +581,8 @@ int main(int argc, char** argv) {
         if(name == "hierarchy") hierarchy();
         else if(name == "asset-roundtrip") assetRoundtrip();
         else if(name == "missing-assets") missingAssets();
+        else if(name == "asset-identity") assetIdentity();
+        else if(name == "animation-resources") animationResources();
         else if(name == "roundtrip") roundtrip();
         else if(name == "invalid") invalid();
         else if(name == "legacy") legacy();
