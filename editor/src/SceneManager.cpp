@@ -96,6 +96,7 @@ namespace editor {
         SceneLoadCallback&& callback,
         IScriptInteractorFrom::WeakPtr scriptInteractorFrom
     ) {
+        RB_EDITOR_INFO("[SceneManager] Load requested; project='{}'; path='{}'", project -> getPath(), path);
         Scene::Ptr scene = std::make_shared<Scene>(m_messageBus);
         if(scene == nullptr) {
             m_error = SceneManagerError::MemoryAlloc;
@@ -104,22 +105,42 @@ namespace editor {
 
         scene -> setPath(path);
         scene -> setAssociatedProjectPath(project -> getPath());
-        m_associatedProject = std::move(project);
+        const auto generation = ++m_loadGeneration;
 
-        auto loadCallback = [this](const SceneLoadTask& task) {
+        auto loadCallback = [this, generation, project](const SceneLoadTask& task) {
+            if(generation != m_loadGeneration)
+                return;
             auto&& chainCallback = task.getChainCallback();
+            if(task.getOutcome() != TaskOutcome::Succeeded) {
+                m_error = SceneManagerError::SceneDeserialize;
+                RB_EDITOR_ERROR("[SceneManager] Load not applied; path='{}'; reason='{}'",
+                                task.getScene() -> getPath(), task.getErrorMessage());
+                chainCallback(nullptr);
+                return;
+            }
             auto scene = task.getScene();
+            RB_EDITOR_INFO("[SceneManager] Task callback received; applying scene; path='{}'",
+                           scene -> getPath());
             m_activeScene = scene;
+            m_associatedProject = project;
+            m_error = SceneManagerError::None;
             chainCallback(m_activeScene);
         };
 
         auto taskQueue = TaskQueue::GetQueue();
-        auto loadSceneTaskID = taskQueue -> addAsyncTask<SceneLoadTask>(
+        auto rejectedCallback = callback;
+        auto loadSceneTaskID = taskQueue -> addAsyncTaskWithCompletion<SceneLoadTask>(
                 std::move(loadCallback),
                 scene,
                 scriptInteractorFrom,
                 std::move(callback)
         );
+        if(loadSceneTaskID == InvalidTaskId) {
+            m_error = SceneManagerError::SceneDeserialize;
+            rejectedCallback(nullptr);
+            return;
+        }
+        RB_EDITOR_INFO("[SceneManager] Load queued; task_id={}; path='{}'", loadSceneTaskID, path);
     }
 
     bool SceneManager::remove() {
@@ -148,7 +169,10 @@ namespace editor {
             return false;
 
         const auto savePath = path.empty() ? scene -> getPath() : path;
+        RB_EDITOR_INFO("[SceneSave] Started; path='{}'; dirty={}", savePath, scene -> hasChanges());
         if(!serializer.serialize(savePath, sceneName, interactor)) {
+            RB_EDITOR_ERROR("[SceneSave] Failed; path='{}'; reason='{}'; detail='{}'", savePath,
+                            errorToString(serializer.getError()), serializer.getErrorMessage());
             m_error = SceneManagerError::SceneSerialize;
             return false;
         }
@@ -156,6 +180,7 @@ namespace editor {
         scene -> setPath(savePath);
         scene -> markSaved();
         m_error = SceneManagerError::None;
+        RB_EDITOR_INFO("[SceneSave] Completed; path='{}'", savePath);
         return true;
     }
 

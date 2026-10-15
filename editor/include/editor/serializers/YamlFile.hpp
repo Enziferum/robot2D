@@ -36,18 +36,26 @@ source distribution.
 namespace editor::yaml {
 
     inline bool writeFile(const std::string& path, const YAML::Emitter& out) {
-        if(!out.good() || path.empty())
+        if(!out.good() || path.empty() || path.find('\0') != std::string::npos)
             return false;
         namespace fs = std::filesystem;
         const auto destination = fs::u8path(path);
-        auto temporary = destination;
-        temporary += ".tmp";
+        fs::path temporary;
         std::error_code error;
-        for(unsigned i = 1; fs::exists(temporary, error) && !error; ++i) {
+        constexpr unsigned maxAttempts = 128;
+        bool available = false;
+        for(unsigned i = 0; i < maxAttempts; ++i) {
             temporary = destination;
-            temporary += ".tmp." + std::to_string(i);
+            temporary += i == 0 ? ".tmp" : ".tmp." + std::to_string(i);
+            const bool exists = fs::exists(temporary, error);
+            if(error)
+                return false;
+            if(!exists) {
+                available = true;
+                break;
+            }
         }
-        if(error)
+        if(!available)
             return false;
         std::ofstream output(temporary, std::ios::binary | std::ios::trunc);
         if(!output.is_open())

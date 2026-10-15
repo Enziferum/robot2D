@@ -9,7 +9,7 @@ process_logging_compiler_flags()
 include(cmake/Process.cmake)
 
 if(NOT RB2D_BUILD_SHARED_LIBS)
-    target_compile_definitions(${PROJECT_NAME} PUBLIC "ROBOT2D_CORE_STATIC")
+    target_compile_definitions(${PROJECT_NAME} PUBLIC "ROBOT2D_STATIC")
 endif()
 
 #if(RB2D_BUILD_SANDBOX)

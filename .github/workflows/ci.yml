@@ -3,95 +3,83 @@ name: Engine Build
 on:
   push:
   pull_request:
-    types: [opened, edited, reopened]
+  workflow_dispatch:
 
-permissions: write-all
+permissions:
+  contents: read
 
-env:
-  BUILD_TYPE: Release
+concurrency:
+  group: engine-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  build-ubuntu:
-    runs-on: ubuntu-latest
-
+  build:
+    name: ${{ matrix.os }} / Release
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 40
+    defaults:
+      run:
+        shell: ${{ matrix.shell }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-24.04
+            shell: bash
+            command: xvfb-run -a python3 scripts/ci.py --graphics
+          - os: windows-2022
+            shell: msys2 {0}
+            command: python scripts/ci.py
     steps:
-    
-      - uses: actions/checkout@v3
-
-      - name: Install dependencies
-        run: python3 ${{github.workspace}}/scripts/install_deps.py --mode 2
-
-      - name: Configure CMake
-        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DRB2D_BUILD_CORE_TESTS=ON
-
-      - name: Engine Build
-        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target robot2D --target robot2D-core-tests -- -j 2
-
-      - name: Run Core's tests
-        run: ctest --output-junit engine_tests.xml --output-on-failure --test-dir ${{github.workspace}}/build/core/tests
-        continue-on-error: true
-        
-      - name: Test Report
-        uses: dorny/test-reporter@v1
-        if: success() || failure()    # run this step even if previous step failed
+      - uses: actions/checkout@v7
         with:
-          name: tests-ubuntu            # Name of the check run which will be created
-          path: build/core/tests/*.xml    # Path to test results
-          reporter: java-junit        # Format of test results
-        continue-on-error: true  	
+          submodules: recursive
+          persist-credentials: false
 
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v2
-        with:
-          name: linux-assets
-          path: ${{github.workspace}}/linter
-
-  build-windows:
-    env: 
-      glfw3_DIR: 'C:\Program Files\GLFW\lib\cmake\glfw3'
-      spdlog_DIR: 'C:\Program Files\spdlog\lib\cmake\spdlog'      
-    runs-on: windows-latest
-
-    steps:
-    
-      - uses: actions/checkout@v3
-
-      - name: Create linter folder
-        run: mkdir ${{github.workspace}}\linter
-        shell: cmd
-        
-      - name: Install dependencies
-        run: python3 ${{github.workspace}}/scripts/install_deps.py --mode 2 --wincompiler 2 --winvsversion 2
-        shell: cmd
-        
-      - name: Setup Mono
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
         run: |
-          choco install mono
-      
-      - name: Configure CMake
-        run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DRB2D_BUILD_CORE_TESTS=ON
-        shell: cmd
+          sudo apt-get update
+          sudo apt-get install -y ninja-build g++ pkg-config libglfw3-dev libspdlog-dev libfreetype-dev libgl1-mesa-dev mono-devel xvfb xauth libgl1-mesa-dri
 
-      - name: Engine Build
-        run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target robot2D --target robot2D-core-tests
-        shell: cmd
-        
-      - name: Run Core's tests
-        run: ctest --output-junit engine_tests.xml --output-on-failure --test-dir ${{github.workspace}}/build/core/tests
-        continue-on-error: true
-        shell: cmd
-        
-      - name: Test Report
-        uses: dorny/test-reporter@v1
-        if: success() || failure()    # run this step even if previous step failed
+      - name: Install Windows dependencies
+        if: runner.os == 'Windows'
+        uses: msys2/setup-msys2@v2
         with:
-          name: tests-windows           # Name of the check run which will be created
-          path: build/core/tests/*.xml    # Path to test results
-          reporter: java-junit        # Format of test results
-        continue-on-error: true  	
-        
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v2
+          msystem: MINGW64
+          update: true
+          install: >-
+            mingw-w64-x86_64-gcc
+            mingw-w64-x86_64-cmake
+            mingw-w64-x86_64-ninja
+            mingw-w64-x86_64-glfw
+            mingw-w64-x86_64-spdlog
+            mingw-w64-x86_64-freetype
+            mingw-w64-x86_64-python
+            mingw-w64-x86_64-pkgconf
+
+      - name: Install Windows Mono
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: choco install mono --yes --no-progress
+
+      - name: Verify report generation
+        run: python${{ runner.os == 'Linux' && '3' || '' }} -m unittest discover -s scripts/tests -v
+
+      - name: Configure, build and test
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+        run: ${{ matrix.command }}
+
+      - name: Upload test reports and diagnostic logs
+        if: always()
+        uses: actions/upload-artifact@v7
         with:
-          name: windows-assets
-          path: ${{github.workspace}}/linter
+          name: test-report-${{ matrix.os }}
+          path: |
+            build/reports/
+            build/Testing/Temporary/
+            build/CMakeFiles/CMakeConfigureLog.yaml
+            build/editor/tests/scenarios/
+          retention-days: 14
+          if-no-files-found: warn

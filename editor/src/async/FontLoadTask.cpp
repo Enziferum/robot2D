@@ -36,6 +36,7 @@ namespace editor {
 
     void FontLoadTask::execute() {
         if(!m_font.loadFromFile(m_fontPath)) {
+            fail("Could not load font: " + m_fontPath);
             RB_EDITOR_ERROR("Can't load Font async, path = {0}", m_fontPath);
             return;
         }

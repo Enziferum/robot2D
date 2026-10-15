@@ -23,6 +23,7 @@ source distribution.
 #include <unordered_map>
 #include <functional>
 #include <vector>
+#include <cstdint>
 #include <robot2D/Core/MessageBus.hpp>
 
 #include <editor/scripting/ScriptingEngineService.hpp>
@@ -59,6 +60,7 @@ namespace editor {
         Project::Ptr m_associatedProject;
         Scene::Ptr m_activeScene;
         SceneManagerError m_error;
+        std::uint64_t m_loadGeneration { 0 };
     };
 
 } // namespace editor
