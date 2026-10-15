@@ -1,5 +1,9 @@
 # Roadmap robot2D: 0.8.0 → 0.9.0 → 1.0.0
 
+Этот релизный маршрут охватывает весь проект. Общая карта Core/ECS/Render/Editor,
+межмодульные зависимости и правила синхронизации чатов —
+[project-roadmap.md](project-roadmap.md).
+
 Согласованное направление, разложенное на Issues 2026-10-15. Даты релизов не назначены. Статусы и фактические результаты проверяются в GitHub Issues/Projects; наличие задачи не означает начало её реализации.
 
 ## Цели релизов
@@ -14,6 +18,9 @@
 
 ## Как делим работу
 
+- Core и Editor используют одни Issues/Projects и milestones. Метка area:core
+  выделяет Core-задачи, area:render — рендер. Milestone не запрещает начинать
+  проектирование раньше целевого релиза; изменение общего API согласуется с потребителями.
 - Цель — и развитие движка, и развитие навыков пользователя. Сложные задачи доступны обоим участникам.
 - `owner:shared`: ведущий не назначен. Перед началом пользователь выбирает, реализует ли сам с поддержкой ассистента или поручает реализацию ассистенту.
 - Второй участник помогает постановкой, разбором вариантов, ревью и проверками. Ассистент не забирает реализацию, если выбран режим подсказок/ревью.
@@ -34,6 +41,17 @@ Build создаёт переносимую папку с Game.exe, ресурс
 
 ## Порядок для быстрого результата
 
+Уточнение по Core от 2026-10-15: до интеграции команд и runtime согласовать
+[ECS-01](https://github.com/Enziferum/robot2D/issues/100) вместе с SNAP-01.
+Необходимые изменения ComponentContainer/API, удаления и клонирования входят
+в 0.8.0: ECS-04/05 → ECS-02/03. Обсуждение команд и Snapshot может идти параллельно;
+старый маршрут ниже не означает, что изменения Core откладываются до готового Undo/Redo.
+
+Большой 2D-рендер: [RENDER-04](https://github.com/Enziferum/robot2D/issues/98)
+проектируется сейчас параллельно, основной объём
+[RENDER-05](https://github.com/Enziferum/robot2D/issues/99) относится к 0.9.0.
+RENDER-03 остаётся в 0.8.0; новый 3D renderer ещё не имеет назначенного релиза.
+
 1. Выбрать ведущего [CMD-01](https://github.com/Enziferum/robot2D/issues/46) и согласовать контракт [SNAP-01](https://github.com/Enziferum/robot2D/issues/68); проверить Duplicate → Undo → Redo, затем остальные операции.
 2. [CMD-02](https://github.com/Enziferum/robot2D/issues/70), [CMD-03](https://github.com/Enziferum/robot2D/issues/71), [CMD-04](https://github.com/Enziferum/robot2D/issues/72): закончить Copy/Paste, Duplicate, Delete и согласованную историю.
 3. Подготовить минимум ресурсов и C#: [ASSET-02](https://github.com/Enziferum/robot2D/issues/73), [SCRIPT-01](https://github.com/Enziferum/robot2D/issues/76), [PREFAB-01](https://github.com/Enziferum/robot2D/issues/75); согласовать параллельную работу по [CANCEL-01](https://github.com/Enziferum/robot2D/issues/69).
@@ -48,19 +66,30 @@ Build создаёт переносимую папку с Game.exe, ресурс
 
 ### 0.8.0
 
+Core дополняет существующий план следующими задачами. Объём уточняется в ECS-01
+и ограничивается необходимой основой команд/runtime; новый backend хранения не выбран.
+
+| Core / ECS | Ответственность | Предшественники |
+|---|---|---|
+| [ECS-01 #100](https://github.com/Enziferum/robot2D/issues/100) — согласовать контракты и объём | Совместно; инициатор — пользователь | — |
+| [ECS-04 #101](https://github.com/Enziferum/robot2D/issues/101) — ComponentContainer | Совместно; ведущий перед стартом | ECS-01 |
+| [ECS-05 #102](https://github.com/Enziferum/robot2D/issues/102) — API и миграция | Совместно; ведущий перед стартом | ECS-01, ECS-04 |
+| [ECS-02 #103](https://github.com/Enziferum/robot2D/issues/103) — удаление | Совместно; ведущий перед стартом | ECS-01, ECS-04, ECS-05 |
+| [ECS-03 #104](https://github.com/Enziferum/robot2D/issues/104) — клонирование | Совместно; ведущий перед стартом | ECS-01, ECS-04, ECS-05 |
+
 | Задача | Ответственность | Предшественники |
 |---|---|---|
 | [SNAP-01](https://github.com/Enziferum/robot2D/issues/68) — Snapshot: контракт состояния для Undo/Redo | Пользователь; помощь по согласованию | — |
 | [CANCEL-01](https://github.com/Enziferum/robot2D/issues/69) — CancellationToken и interrupt points загрузки | Пользователь; помощь по согласованию | — |
-| [CMD-02](https://github.com/Enziferum/robot2D/issues/70) — Copy/Paste и Duplicate с корректными ссылками | Совместно; ведущий перед стартом | [SNAP-01](https://github.com/Enziferum/robot2D/issues/68) |
-| [CMD-03](https://github.com/Enziferum/robot2D/issues/71) — Delete и восстановление иерархии | Совместно; ведущий перед стартом | [SNAP-01](https://github.com/Enziferum/robot2D/issues/68) |
+| [CMD-02](https://github.com/Enziferum/robot2D/issues/70) — Copy/Paste и Duplicate с корректными ссылками | Совместно; ведущий перед стартом | [SNAP-01](https://github.com/Enziferum/robot2D/issues/68), [ECS-03](https://github.com/Enziferum/robot2D/issues/104), [ECS-05](https://github.com/Enziferum/robot2D/issues/102) |
+| [CMD-03](https://github.com/Enziferum/robot2D/issues/71) — Delete и восстановление иерархии | Совместно; ведущий перед стартом | [SNAP-01](https://github.com/Enziferum/robot2D/issues/68), [ECS-02](https://github.com/Enziferum/robot2D/issues/103), [ECS-05](https://github.com/Enziferum/robot2D/issues/102) |
 | [CMD-04](https://github.com/Enziferum/robot2D/issues/72) — История команд и dirty-state относительно сохранения | Совместно; ведущий перед стартом | [CMD-02](https://github.com/Enziferum/robot2D/issues/70), [CMD-03](https://github.com/Enziferum/robot2D/issues/71) |
 | [ASSET-02](https://github.com/Enziferum/robot2D/issues/73) — Минимальный импорт и переносимые ссылки на ресурсы | Совместно; ведущий перед стартом | — |
 | [ANIM-01](https://github.com/Enziferum/robot2D/issues/74) — Спрайтшит → клип → preview → C# → standalone | Совместно; ведущий перед стартом | [ASSET-02](https://github.com/Enziferum/robot2D/issues/73) |
 | [PREFAB-01](https://github.com/Enziferum/robot2D/issues/75) — Шаблоны врагов и пуль для runtime-спавна | Совместно; ведущий перед стартом | [ASSET-02](https://github.com/Enziferum/robot2D/issues/73) |
 | [SCRIPT-01](https://github.com/Enziferum/robot2D/issues/76) — Воспроизводимая сборка C# и диагностика ошибок | Совместно; ведущий перед стартом | — |
-| [RUNTIME-01](https://github.com/Enziferum/robot2D/issues/77) — C# Instantiate/Destroy и жизнь runtime-сущностей | Совместно; ведущий перед стартом | [SCRIPT-01](https://github.com/Enziferum/robot2D/issues/76), [PREFAB-01](https://github.com/Enziferum/robot2D/issues/75) |
-| [RUNTIME-02](https://github.com/Enziferum/robot2D/issues/37) — Play/Stop: изоляция и повторяемый запуск | Совместно; ведущий перед стартом | [SCRIPT-01](https://github.com/Enziferum/robot2D/issues/76) |
+| [RUNTIME-01](https://github.com/Enziferum/robot2D/issues/77) — C# Instantiate/Destroy и жизнь runtime-сущностей | Совместно; ведущий перед стартом | [SCRIPT-01](https://github.com/Enziferum/robot2D/issues/76), [PREFAB-01](https://github.com/Enziferum/robot2D/issues/75), [ECS-02](https://github.com/Enziferum/robot2D/issues/103), [ECS-03](https://github.com/Enziferum/robot2D/issues/104), [ECS-05](https://github.com/Enziferum/robot2D/issues/102) |
+| [RUNTIME-02](https://github.com/Enziferum/robot2D/issues/37) — Play/Stop: изоляция и повторяемый запуск | Совместно; ведущий перед стартом | [SCRIPT-01](https://github.com/Enziferum/robot2D/issues/76), [ECS-03](https://github.com/Enziferum/robot2D/issues/104) |
 | [PHYS-01](https://github.com/Enziferum/robot2D/issues/78) — Физика и события столкновений для арены | Совместно; ведущий перед стартом | [RUNTIME-01](https://github.com/Enziferum/robot2D/issues/77) |
 | [INPUT-01](https://github.com/Enziferum/robot2D/issues/79) — Ввод, камера и прицеливание в Game View и standalone | Совместно; ведущий перед стартом | — |
 | [HUD-01](https://github.com/Enziferum/robot2D/issues/80) — Минимальный HUD и отображение состояния из C# | Совместно; ведущий перед стартом | [SCRIPT-01](https://github.com/Enziferum/robot2D/issues/76), [ASSET-02](https://github.com/Enziferum/robot2D/issues/73) |
@@ -83,6 +112,11 @@ Build создаёт переносимую папку с Game.exe, ресурс
 
 
 ### 0.9.0
+
+| Core / Render | Ответственность | Предшественники |
+|---|---|---|
+| [RENDER-04 #98](https://github.com/Enziferum/robot2D/issues/98) — новый 2D-контракт; проектирование начинается сейчас | Совместно; ведущий перед стартом | RENDER-02 |
+| [RENDER-05 #99](https://github.com/Enziferum/robot2D/issues/99) — реализация и адаптация Editor/player | Совместно; ведущий перед стартом | RENDER-04 |
 
 | Задача | Ответственность | Предшественники |
 |---|---|---|

@@ -12,7 +12,10 @@ In current version 0.8(W.I.P) support platforms are: Windows / Linux / MacOS ?.
 Primary focus is fully work with project as `Engine` in editor way only. It's means Engine will be private as core 
 of editor.
 \
-Next planning version is 0.8. See `Project 0.8` to check actual tasks.
+Development plan: [Project roadmap](docs/project-roadmap.md) ·
+[0.8–1.0 release goals](docs/release-roadmap.md) ·
+[GitHub task board](https://github.com/users/Enziferum/projects/5).
+Core/ECS, Render, Editor and runtime share this plan and release milestones.
 
 \
 Project's idea - learning, have fun and sometimes make games on it :) 
