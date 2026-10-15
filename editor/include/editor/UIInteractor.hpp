@@ -58,6 +58,7 @@ namespace editor {
         virtual SceneEntity addButton() = 0;
         virtual SceneEntity createEmptyEntity() = 0;
         virtual SceneEntity duplicateEmptyEntity(SceneEntity entity) = 0;
+        virtual void applyPrefabChanges(UUID prefabID, SceneEntity entity) = 0;
         virtual bool setBefore(SceneEntity sourceEntity, SceneEntity target) = 0;
         virtual bool reparentEntity(SceneEntity entity, SceneEntity parent = {}) = 0;
         virtual bool isRunning() const = 0;

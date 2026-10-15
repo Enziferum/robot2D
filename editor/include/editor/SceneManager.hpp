@@ -49,7 +49,7 @@ namespace editor {
         void loadSceneAsync(Project::Ptr associatedProject, std::string path, SceneLoadCallback&& callback,
                             IScriptInteractorFrom::WeakPtr scriptingEngine);
         bool remove();
-        bool save(Scene::Ptr&& scene, IScriptInteractorFrom::WeakPtr scriptingEngine);
+        bool save(Scene::Ptr&& scene, IScriptInteractorFrom::WeakPtr scriptingEngine, const std::string& path = {});
 
         Project::Ptr getAssociatedProject() const;
         Scene::Ptr getActiveScene() const;

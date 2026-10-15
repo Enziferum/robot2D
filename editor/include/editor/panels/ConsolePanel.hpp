@@ -10,6 +10,12 @@ namespace editor {
     class ConsolePanel final: public IPanel {
     public:
         explicit ConsolePanel(std::string path);
+        ConsolePanel(const ConsolePanel& other) = delete;
+        ConsolePanel& operator=(const ConsolePanel& other) = delete;
+        ConsolePanel(ConsolePanel&& other) = delete;
+        ConsolePanel& operator=(ConsolePanel&& other) = delete;
+        ~ConsolePanel() override = default;
+
         void update(float deltaTime) override;
         void render() override;
     private:

@@ -33,6 +33,8 @@ file(GLOB_RECURSE SRC src/*.cpp)
 
 add_executable(${PROJECT_NAME} ${INCLS} ${SRC})
 
+include(cmake/BuildInfo.cmake)
+
 if (RB2D_OS_WINDOWS)
     if(RB2D_COMPILER_MSVC)
         GroupSourcesByFolder(${PROJECT_NAME})

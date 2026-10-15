@@ -30,6 +30,7 @@ namespace editor {
         virtual void removeEntities(std::vector<SceneEntity>& entities, bool clearContainer) = 0;
         virtual EditorState getState() const = 0;
         virtual bool saveScene() = 0;
+        virtual bool saveAll() = 0;
         virtual robot2D::vec2f getMainCameraPosition() const = 0;
         virtual void setMainCamera(SceneEntity cameraEntity) = 0;
         virtual void setEditorCamera(IEditorCamera::Ptr editorCamera) = 0;

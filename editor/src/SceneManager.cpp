@@ -60,7 +60,7 @@ namespace editor {
         if(!interactor)
             return false;
 
-        std::string sceneName = "Unnamed Scene";
+        const auto& sceneName = scene -> getName();
         SceneSerializer serializer(m_activeScene);
         if(!serializer.serialize(m_activeScene -> getPath(), sceneName, interactor)) {
             m_error = SceneManagerError::SceneSerialize;
@@ -79,7 +79,7 @@ namespace editor {
             return false;
         }
         SceneSerializer serializer(scene);
-        std::string sceneName = "Unnamed Scene";
+        const auto& sceneName = scene -> getName();
         auto interactor = scriptingEngine.lock();
         if(!interactor)
             return false;
@@ -137,22 +137,25 @@ namespace editor {
         return m_error;
     }
 
-    bool SceneManager::save(Scene::Ptr&& scene, IScriptInteractorFrom::WeakPtr scriptingEngine) {
+    bool SceneManager::save(Scene::Ptr&& scene, IScriptInteractorFrom::WeakPtr scriptingEngine, const std::string& path) {
         if(scene == nullptr)
             return false;
 
         SceneSerializer serializer{scene};
-        /// TODO(a.raag): have scene name inside scene
-        std::string sceneName = "Unnamed Scene";
+        const auto& sceneName = scene -> getName();
         auto interactor = scriptingEngine.lock();
         if(!interactor)
             return false;
 
-        if(!serializer.serialize(scene-> getPath(), sceneName, interactor)) {
+        const auto savePath = path.empty() ? scene -> getPath() : path;
+        if(!serializer.serialize(savePath, sceneName, interactor)) {
             m_error = SceneManagerError::SceneSerialize;
             return false;
         }
 
+        scene -> setPath(savePath);
+        scene -> markSaved();
+        m_error = SceneManagerError::None;
         return true;
     }
 

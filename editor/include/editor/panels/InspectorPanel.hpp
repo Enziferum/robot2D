@@ -54,6 +54,8 @@ namespace editor {
 
         void render() override;
         void clearSelection();
+        void discardSelection();
+        bool savePrefabChanges();
     private:
         void drawAssetBase();
         void drawComponentsBase(SceneEntity entity);
@@ -73,6 +75,7 @@ namespace editor {
         void drawUIButtonComponent(SceneEntity, ButtonComponent& component);
 
         void onPrefabAssetSelected(const PrefabAssetPressedMessage& message);
+        SceneEntity resolveEntity(UUID uuid) const;
         void onPanelEntityNeedSelect(const PanelEntitySelectedMessage& message);
         void onPanelEntitySelected(const PanelEntitySelectedMessage& message);
 
@@ -94,6 +97,5 @@ namespace editor {
             AssetFont
         } m_inspectType = InspectType::EditorEntity;
 
-        bool m_prefabHasModification{false};
     };
 }

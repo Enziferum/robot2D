@@ -27,6 +27,9 @@ namespace editor {
         const EditorState& getState() const;
 
         void showPopup(PopupConfiguration* popupConfiguration);
+        bool hasAssetChanges() const;
+        bool saveAssetChanges();
+        void discardAssetChanges();
 
         void setMainCameraEntity(SceneEntity entity);
     private:

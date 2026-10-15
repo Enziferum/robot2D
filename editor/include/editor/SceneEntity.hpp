@@ -66,6 +66,8 @@ namespace editor {
         friend bool operator==(const SceneEntity& left, const SceneEntity& right);
         friend bool operator!=(const SceneEntity& left, const SceneEntity& right);
         explicit operator bool() const noexcept;
+        // Notify the owning editor scene after changing persisted component data.
+        void markModified() const;
 
         bool addChild(SceneEntity sceneEntity);
         [[nodiscard]]

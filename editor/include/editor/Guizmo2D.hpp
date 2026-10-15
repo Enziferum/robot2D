@@ -33,6 +33,7 @@ source distribution.
 #include "EventBinder.hpp"
 #include "EditorCamera.hpp"
 #include "Quad.hpp"
+#include <functional>
 #include "Components.hpp"
 
 namespace editor {
@@ -97,6 +98,10 @@ namespace editor {
                     m_rect.height = 20;
                 }
             }
+            Manipulator(const Manipulator& other) = delete;
+            Manipulator& operator=(const Manipulator& other) = delete;
+            Manipulator(Manipulator&& other) = delete;
+            Manipulator& operator=(Manipulator&& other) = delete;
             ~Manipulator() override = default;
 
             robot2D::vec2f getSize() const;
@@ -144,6 +149,7 @@ namespace editor {
         // Move selected roots once; the full selection still determines gizmo placement.
         void setMovementRoots(const std::vector<TransformComponent*>& transforms);
         void cancelDrag();
+        void setModificationCallback(std::function<void()> callback) { m_onModified = std::move(callback); }
 
         void setOperationType(Operation type);
         Operation getOperationType() const { return m_operation; }
@@ -175,6 +181,7 @@ namespace editor {
 
         std::vector<TransformComponent*> m_manipulateds;
         std::vector<TransformComponent*> m_movementRoots;
+        std::function<void()> m_onModified;
 
         EventBinder m_eventBinder;
         Operation m_operation{Operation::Move};

@@ -81,6 +81,8 @@ namespace robot2D {
         /// \brief process window closing, in next version will allow to set onClose callback
         ///
         void close();
+        /// Cancel an OS close request while the application asks about unsaved changes.
+        void cancelClose();
 
         ///
         /// \brief make swap buffers in render context

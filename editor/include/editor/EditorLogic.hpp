@@ -82,6 +82,7 @@ namespace editor {
         EditorState getState() const override;
         /// \brief Save Scene by Shortcut.
         bool saveScene() override;
+        bool saveAll() override;
 
         void closeCurrentProject(std::function<void()>&& resultCallback);
         robot2D::vec2f getMainCameraPosition() const override;
@@ -102,6 +103,7 @@ namespace editor {
         SceneEntity createEmptyEntity() override;
         /// \brief using when need create entity on scene, but don't want to notify someone
         SceneEntity duplicateEmptyEntity(SceneEntity entity) override;
+        void applyPrefabChanges(UUID prefabID, SceneEntity entity) override;
 
         bool setBefore(SceneEntity sourceEntity, SceneEntity target) override;
         bool reparentEntity(SceneEntity entity, SceneEntity parent = {}) override;
@@ -149,6 +151,7 @@ namespace editor {
         Scene::Ptr m_activeScene;
 
         PopupConfiguration m_popupConfiguration;
+        EditorState m_stateBeforePopup { EditorState::Edit };
 
         SelectionService m_selectionService;
         std::vector<SceneEntity> m_copyEntities;

@@ -37,6 +37,8 @@ source distribution.
 #include <editor/scripting/ScriptingEngine.hpp>
 #include <editor/Messages.hpp>
 #include <editor/physics/Layers2D.hpp>
+#include <editor/ResouceManager.hpp>
+#include <editor/LocalResourceManager.hpp>
 
 namespace editor {
 
@@ -342,18 +344,107 @@ namespace editor {
         }
     }
 
-    SceneEntity Scene::duplicateEmptyEntity(SceneEntity entity) {
-        if(entity.m_scene != this || !entity || entity.m_context != SceneContext::Editor
-           || !entity.hasComponent<IDComponent>())
+    SceneEntity Scene::duplicateEmptyEntity(SceneEntity source, IScriptInteractorFrom::Ptr scriptInteractor) {
+        if(m_running || !source || source.m_context != SceneContext::Editor ||
+           !source.m_scene || source.m_scene -> isRunning())
             return {};
-        auto dupEntity = m_scene.duplicateEntity(entity.getWrappedEntity());
-        dupEntity.getComponent<IDComponent>().ID = UUID();
+        std::vector<SceneEntity> originals;
+        std::vector<SceneEntity> pending{source};
+        std::unordered_set<UUID> visited;
+        while(!pending.empty()) {
+            auto entity = pending.back();
+            pending.pop_back();
+            if(!entity || !entity.hasComponent<IDComponent>() || !entity.hasComponent<TagComponent>() ||
+               !visited.insert(entity.getUUID()).second || (entity.hasComponent<ScriptComponent>() && !scriptInteractor))
+                return {};
+            originals.push_back(entity);
+            const auto children = entity.getChildren();
+            for(auto it = children.rbegin(); it != children.rend(); ++it)
+                pending.push_back(*it);
+        }
 
-        auto duplicate = wrapEntity(std::move(dupEntity), SceneContext::Editor);
-        if(duplicate.hasComponent<HierarchyComponent>())
-            duplicate.getComponent<HierarchyComponent>() = HierarchyComponent{};
-        addRoot(duplicate);
-        return duplicate;
+        std::unordered_map<UUID, SceneEntity> copies;
+        copies.reserve(originals.size());
+        for(const auto& original: originals) {
+            auto copy = createEmptyEntity();
+            auto id = UUID();
+            while(getEntity(id))
+                id = UUID();
+            copy.addComponent<IDComponent>().ID = id;
+            copy.addComponent<TagComponent>() = original.getComponent<TagComponent>();
+            // Copy persisted components by type: component IDs differ between ECS scenes.
+            const auto copyComponent = [&](auto* type) {
+                using T = std::remove_pointer_t<decltype(type)>;
+                if(original.hasComponent<T>())
+                    copy.addComponent<T>() = original.getComponent<T>();
+            };
+            copyComponent(static_cast<TransformComponent*>(nullptr));
+            copyComponent(static_cast<Transform3DComponent*>(nullptr));
+            copyComponent(static_cast<CameraComponent*>(nullptr));
+            copyComponent(static_cast<DrawableComponent*>(nullptr));
+            copyComponent(static_cast<TextComponent*>(nullptr));
+            copyComponent(static_cast<ScriptComponent*>(nullptr));
+            copyComponent(static_cast<Physics2DComponent*>(nullptr));
+            copyComponent(static_cast<Collider2DComponent*>(nullptr));
+            copyComponent(static_cast<PrefabComponent*>(nullptr));
+            copyComponent(static_cast<ButtonComponent*>(nullptr));
+            if(copy.hasComponent<Physics2DComponent>())
+                copy.getComponent<Physics2DComponent>().runtimeBody = nullptr;
+            if(copy.hasComponent<Collider2DComponent>()) {
+                auto& collider = copy.getComponent<Collider2DComponent>();
+                collider.runtimeFixture = nullptr;
+                collider.userData.entityId = id;
+            }
+            if(copy.hasComponent<ButtonComponent>()) {
+                copy.getComponent<ButtonComponent>().onClickCallback = nullptr;
+                copy.addComponent<UIHitbox>();
+            }
+            if(original.hasComponent<AnimationComponent>()) {
+                copy.addComponent<AnimationComponent>();
+                copy.addComponent<AnimatorComponent>();
+            }
+            if(!attachEntity(copy))
+                return {};
+            copies.emplace(original.getUUID(), copy);
+        }
+        const auto remap = [&](UUID id) {
+            const auto found = copies.find(id);
+            return found == copies.end() ? id : found -> second.getUUID();
+        };
+        auto* resources = ResourceManager::getManager();
+        auto* localResources = LocalResourceManager::getManager();
+        for(const auto& original: originals) {
+            auto copy = copies.at(original.getUUID());
+            if(copy.hasComponent<ButtonComponent>()) {
+                auto& button = copy.getComponent<ButtonComponent>();
+                button.scriptEntity = remap(button.scriptEntity);
+            }
+            if(copy.hasComponent<ScriptComponent>()) {
+                auto fields = scriptInteractor -> getFields(original.getUUID());
+                for(auto& [name, field]: fields) {
+                    if(field.getType() == FieldType::Entity || field.getType() == FieldType::Transform) {
+                        const auto& value = field;
+                        field.setValue(remap(value.getValue<UUID>()));
+                    }
+                }
+                scriptInteractor -> getFields(copy.getUUID()) = std::move(fields);
+            }
+            if(copy.hasComponent<AnimationComponent>()) {
+                auto paths = resources -> getAnimationPaths(original.getUUID());
+                resources -> setAnimationPathsToLoad(copy.getUUID(), std::move(paths));
+                const auto* local = localResources -> findAnimations(original.getUUID());
+                const auto animations = local ? *local : resources -> getAnimationsCopy(original.getUUID());
+                for(const auto& animation: animations) {
+                    auto* added = resources -> addAnimation(copy.getUUID(), animation.name);
+                    if(added)
+                        *added = animation;
+                }
+            }
+            for(const auto& child: original.getChildren())
+                if(!reparent(copies.at(child.getUUID()), copy))
+                    return {};
+        }
+        return copies.at(source.getUUID());
     }
 
     void Scene::removeDuplicate(SceneEntity entity) {

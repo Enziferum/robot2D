@@ -105,7 +105,7 @@ namespace editor {
         [[maybe_unused]]
         SceneEntity duplicateEntity(robot2D::vec2f mousePos, SceneEntity entity);
         [[maybe_unused]]
-        SceneEntity duplicateEmptyEntity(SceneEntity entity);
+        SceneEntity duplicateEmptyEntity(SceneEntity entity, IScriptInteractorFrom::Ptr scriptInteractor = {});
 
         [[maybe_unused]]
         SceneEntity duplicateRuntime(SceneEntity entity, robot2D::vec2f position);
@@ -116,6 +116,15 @@ namespace editor {
         void setEditorCamera(EditorCamera::Ptr editorCamera);
 
         bool hasChanges() const { return m_hasChanges; }
+        void markModified() { if(!m_running) m_hasChanges = true; }
+        void markSaved() { m_hasChanges = false; }
+        void setName(const std::string& name) {
+            if(m_name != name) {
+                m_name = name;
+                markModified();
+            }
+        }
+        const std::string& getName() const { return m_name; }
 
         void forEachEntity(TraverseFunction&& traverseFunction,
                            SceneContext context = SceneContext::Editor);
@@ -130,6 +139,13 @@ namespace editor {
         void duplicateEntityChild(SceneEntity parent, SceneEntity dupEntity);
 
         struct EntityStorage {
+            EntityStorage() = default;
+            EntityStorage(const EntityStorage& other) = delete;
+            EntityStorage& operator=(const EntityStorage& other) = delete;
+            EntityStorage(EntityStorage&& other) = default;
+            EntityStorage& operator=(EntityStorage&& other) = default;
+            ~EntityStorage() = default;
+
             std::list<SceneEntity> roots;
             std::unordered_map<UUID, SceneEntity> entities;
             std::vector<SceneEntity> pendingRemovals;
@@ -168,6 +184,7 @@ namespace editor {
 
         robot2D::MessageBus& m_messageBus;
         std::string m_path;
+        std::string m_name = "Unnamed Scene";
         std::string m_associatedProjectPath;
         bool m_running = false;
         bool m_hasChanges{false};

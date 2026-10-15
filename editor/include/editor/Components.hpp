@@ -379,7 +379,7 @@ namespace editor {
         }
 
         const robot2D::Texture* getTexture() const {
-            return m_animation -> texture;
+            return m_animation ? m_animation -> texture : m_texture;
         }
 
         void setTextureRect(const robot2D::IntRect& rect) {
@@ -397,9 +397,9 @@ namespace editor {
         friend class AnimationSystem;
 
         bool m_hasUpdate{false};
-        Animation* m_animation;
+        Animation* m_animation{nullptr};
         robot2D::IntRect m_textureRect;
-        const robot2D::Texture* m_texture;
+        const robot2D::Texture* m_texture{nullptr};
     };
 
     struct AnimatorComponent {

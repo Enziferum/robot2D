@@ -27,6 +27,12 @@ namespace editor {
     class SceneSettingsPanel: public IPanel {
     public:
         SceneSettingsPanel();
+        SceneSettingsPanel(const SceneSettingsPanel& other) = delete;
+        SceneSettingsPanel& operator=(const SceneSettingsPanel& other) = delete;
+        SceneSettingsPanel(SceneSettingsPanel&& other) = delete;
+        SceneSettingsPanel& operator=(SceneSettingsPanel&& other) = delete;
+        ~SceneSettingsPanel() override = default;
+
         void render() override;
     };
 }

@@ -16,6 +16,12 @@ namespace editor {
     class ConsoleLog {
     public:
         explicit ConsoleLog(std::string path);
+        ConsoleLog(const ConsoleLog& other) = delete;
+        ConsoleLog& operator=(const ConsoleLog& other) = delete;
+        ConsoleLog(ConsoleLog&& other) = delete;
+        ConsoleLog& operator=(ConsoleLog&& other) = delete;
+        ~ConsoleLog() = default;
+
         void poll();
         void clear();
         const std::deque<ConsoleEntry>& getEntries() const { return m_entries; }

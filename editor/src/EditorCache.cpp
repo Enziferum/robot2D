@@ -19,191 +19,327 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
+#include <algorithm>
 #include <fstream>
 #include <sstream>
 #include <filesystem>
 #include <yaml-cpp/yaml.h>
 #include <robot2D/Util/Logger.hpp>
 #include <editor/EditorCache.hpp>
+#include <editor/BuildInfo.hpp>
+
+#ifdef _WIN32
+    #ifndef NOMINMAX
+        #define NOMINMAX
+    #endif
+    #include <windows.h>
+#endif
 
 namespace editor {
-    EditorCache::EditorCache(const Configuration& configuration): m_showInspector(true),
-                                m_cacheDescriptions(),
-                                m_configuration(configuration) {}
+
+    namespace {
+        constexpr unsigned cacheVersion = 1;
+        namespace fs = std::filesystem;
+
+        bool validString(const std::string& value) {
+            return !value.empty() && value.find('\0') == std::string::npos;
+        }
+
+        bool validProject(const ProjectDescription& description) {
+            return validString(description.name) && validString(description.path);
+        }
+
+        bool samePath(const std::string& left, const std::string& right) {
+            if(left.empty() || right.empty())
+                return left == right;
+            const auto a = fs::u8path(left).lexically_normal();
+            const auto b = fs::u8path(right).lexically_normal();
+            if(a == b)
+                return true;
+            std::error_code error;
+            return fs::equivalent(a, b, error) && !error;
+        }
+
+        fs::path unusedSibling(const fs::path& path, const std::string& suffix, std::error_code& error) {
+            auto candidate = path;
+            candidate += suffix;
+            for(unsigned i = 1; fs::exists(candidate, error) && !error; ++i) {
+                candidate = path;
+                candidate += suffix + "." + std::to_string(i);
+            }
+            return candidate;
+        }
+
+        bool replaceFile(const fs::path& temporary, const fs::path& destination) {
+#ifdef _WIN32
+            return MoveFileExW(temporary.c_str(), destination.c_str(),
+                               MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH) != 0;
+#else
+            std::error_code error;
+            fs::rename(temporary, destination, error);
+            return !error;
+#endif
+        }
+    }
+
+    EditorCache::EditorCache(const Configuration&) {}
 
     bool EditorCache::parseCache(const std::string& path) {
-        m_cachePath = path;
-        if(!std::filesystem::exists(path)) {
-            m_cacheError = EditorCacheError::NoCacheFile;
-            createCacheFile(path);
+        m_showInspector = true;
+        m_currentDescription = {};
+        m_cacheDescriptions.clear();
+        m_cacheError = EditorCacheError::None;
+        m_writeEnabled = false;
+        m_cachePath.clear();
+        if(path.empty()) {
+            m_cacheError = EditorCacheError::ReadFailed;
             return false;
         }
 
-        std::ifstream ifstream(path);
-        if(!ifstream.is_open())
+        try {
+            std::error_code error;
+            const auto cachePath = fs::absolute(fs::u8path(path), error).lexically_normal();
+            if(error) {
+                m_cacheError = EditorCacheError::ReadFailed;
+                return false;
+            }
+            m_cachePath = cachePath.u8string();
+            const bool exists = fs::exists(cachePath, error);
+            if(error) {
+                m_cacheError = EditorCacheError::ReadFailed;
+                return false;
+            }
+            if(!exists) {
+                m_writeEnabled = true;
+                if(save(m_cacheDescriptions, m_currentDescription, m_showInspector))
+                    return true;
+                m_writeEnabled = false;
+                return false;
+            }
+            if(!fs::is_regular_file(cachePath, error) || error) {
+                m_cacheError = EditorCacheError::ReadFailed;
+                return false;
+            }
+            std::ifstream input(cachePath, std::ios::binary);
+            if(!input.is_open()) {
+                m_cacheError = EditorCacheError::ReadFailed;
+                return false;
+            }
+            std::stringstream contents;
+            contents << input.rdbuf();
+            if(input.bad()) {
+                m_cacheError = EditorCacheError::ReadFailed;
+                return false;
+            }
+            input.close();
+            const auto data = YAML::Load(contents.str());
+            if(!data.IsMap())
+                return recoverInvalidCache("Expected a YAML map");
+
+            const auto versionNode = data["CacheVersion"];
+            const auto version = versionNode ? versionNode.as<unsigned long long>() : 0ULL;
+            if(version > cacheVersion) {
+                m_cacheError = EditorCacheError::UnsupportedVersion;
+                return false;
+            }
+            const bool legacy = version == 0;
+            if(legacy && !data["Robot2D Editor"].IsScalar())
+                return recoverInvalidCache("Missing legacy editor marker");
+            if((data["EditorVersion"] && !data["EditorVersion"].IsScalar()) ||
+               (data["EditorBuild"] && !data["EditorBuild"].IsScalar()))
+                return recoverInvalidCache("Editor metadata must be scalar values");
+
+            const auto projectsNode = data["Projects"];
+            if((projectsNode && !projectsNode.IsSequence()) || (!legacy && !projectsNode))
+                return recoverInvalidCache("Projects must be a sequence");
+            bool showInspector = true;
+            if(data["ShowInspector"])
+                showInspector = data["ShowInspector"].as<bool>();
+            std::vector<ProjectDescription> projects;
+            if(projectsNode) {
+                projects.reserve(projectsNode.size());
+                for(const auto& item: projectsNode) {
+                    if(!item.IsMap() || !item["Name"].IsScalar() || !item["Path"].IsScalar())
+                        return recoverInvalidCache("Each project must have scalar Name and Path fields");
+                    ProjectDescription description;
+                    description.name = item["Name"].as<std::string>();
+                    description.path = item["Path"].as<std::string>();
+                    if(!validProject(description))
+                        return recoverInvalidCache("Project name or path is empty or contains a null character");
+                    const auto found = std::find_if(projects.begin(), projects.end(), [&](const auto& project) {
+                        return samePath(project.path, description.path);
+                    });
+                    if(found == projects.end())
+                        projects.emplace_back(std::move(description));
+                }
+            }
+            ProjectDescription current;
+            if(data["CurrentProject"]) {
+                const auto currentPath = data["CurrentProject"].as<std::string>();
+                const auto found = std::find_if(projects.begin(), projects.end(), [&](const auto& project) {
+                    return samePath(project.path, currentPath);
+                });
+                if(found != projects.end())
+                    current = *found;
+            }
+
+            // Keep a successfully read legacy cache usable even if migration cannot be saved.
+            m_cacheDescriptions = std::move(projects);
+            m_currentDescription = std::move(current);
+            m_showInspector = showInspector;
+            if(legacy && !backup(".legacy.bak")) {
+                m_showInspector = true;
+                return false;
+            }
+            m_writeEnabled = true;
+            if(legacy && !save(m_cacheDescriptions, m_currentDescription, m_showInspector)) {
+                m_writeEnabled = false;
+                m_showInspector = true;
+                return false;
+            }
+            return true;
+        }
+        catch(const YAML::Exception& error) {
+            return recoverInvalidCache(error.what());
+        }
+        catch(const fs::filesystem_error&) {
+            m_cacheError = EditorCacheError::ReadFailed;
             return false;
-        std::stringstream sstr;
-        sstr << ifstream.rdbuf();
+        }
+    }
 
-        YAML::Node data = YAML::Load(sstr.str());
-        if(!data["Robot2D Editor"]) {
-            m_cacheError = EditorCacheError::EditorTagNone;
+    bool EditorCache::backup(const std::string& suffix) {
+        std::error_code error;
+        const auto source = fs::u8path(m_cachePath);
+        const auto destination = unusedSibling(source, suffix, error);
+        if(error || !fs::copy_file(source, destination, fs::copy_options::none, error) || error) {
+            m_cacheError = EditorCacheError::BackupFailed;
             return false;
         }
-        if(data["ShowInspector"])
-            m_showInspector = data["ShowInspector"].as<bool>();
-
-        auto projects = data["Projects"];
-        if(!projects) {
-            m_cacheError = EditorCacheError::ProjectsTagNone;
-            return false;
-        }
-
-        for(auto proj: projects) {
-            ProjectDescription currentProject;
-
-            currentProject.path = proj["Path"].as<std::string>();
-            currentProject.name = proj["Name"].as<std::string>();
-
-            m_cacheDescriptions.emplace_back(currentProject);
-        }
-
-        if(data["CurrentProject"]) {
-            m_currentDescription.path = data["CurrentProject"].as<std::string>();
-        }
-
         return true;
     }
 
-    void EditorCache::createCacheFile(const std::string& path) {
+    bool EditorCache::recoverInvalidCache(const char* reason) {
+        RB_EDITOR_WARN("Invalid editor cache '{0}': {1}", m_cachePath, reason);
+        m_showInspector = true;
+        m_currentDescription = {};
+        m_cacheDescriptions.clear();
+        m_writeEnabled = false;
+        if(!backup(".invalid.bak"))
+            return false;
+        m_writeEnabled = true;
+        if(save(m_cacheDescriptions, m_currentDescription, m_showInspector))
+            m_cacheError = EditorCacheError::InvalidCache;
+        else
+            m_writeEnabled = false;
+        return false;
+    }
+
+    bool EditorCache::save(const std::vector<ProjectDescription>& projects,
+                           const ProjectDescription& current, bool showInspector) {
+        // Unsupported or unreadable files are preserved; the editor can still work for this session.
+        if(!m_writeEnabled)
+            return true;
         YAML::Emitter out;
         out << YAML::BeginMap;
-        auto [status, result] = m_configuration.getValue(ConfigurationKey::Version);
-        out << YAML::Key << "Robot2D Editor" << YAML::Value << result;
-        out << YAML::EndMap;
-
-        std::ofstream ofstream(path);
-        if(!ofstream.is_open()) {
-            m_cacheError = EditorCacheError::NoCacheFile;
-            return;
+        out << YAML::Key << "CacheVersion" << YAML::Value << cacheVersion;
+        out << YAML::Key << "EditorVersion" << YAML::Value << buildInfo::getVersion();
+        out << YAML::Key << "EditorBuild" << YAML::Value << buildInfo::buildID;
+        out << YAML::Key << "ShowInspector" << YAML::Value << showInspector;
+        if(!current.path.empty())
+            out << YAML::Key << "CurrentProject" << YAML::Value << current.path;
+        out << YAML::Key << "Projects" << YAML::Value << YAML::BeginSeq;
+        for(const auto& project: projects) {
+            out << YAML::BeginMap;
+            out << YAML::Key << "Name" << YAML::Value << project.name;
+            out << YAML::Key << "Path" << YAML::Value << project.path;
+            out << YAML::EndMap;
         }
-
-        ofstream << out.c_str();
-        ofstream.close();
-    }
-
-    bool EditorCache::loadProject(const ProjectDescription& description) {
-        std::ifstream ifstream(m_cachePath);
-        if(!ifstream.is_open()) {
-            return false;
-        }
-        std::stringstream sstr;
-        sstr << ifstream.rdbuf();
-        ifstream.close();
-
-        YAML::Node data = YAML::Load(sstr.str());
-        YAML::Emitter out;
-        if(!data["Robot2D Editor"]) {
-            m_cacheError = EditorCacheError::EditorTagNone;
+        out << YAML::EndSeq << YAML::EndMap;
+        if(!out.good()) {
+            m_cacheError = EditorCacheError::WriteFailed;
             return false;
         }
 
-        data["CurrentProject"] = description.path;
-        data["ShowInspector"] = m_showInspector;
-
-        std::ofstream ofstream(m_cachePath);
-        ofstream << data;
-        ofstream.close();
-        return true;
+        std::error_code error;
+        const auto destination = fs::u8path(m_cachePath);
+        const auto temporary = unusedSibling(destination, ".tmp", error);
+        if(error) {
+            m_cacheError = EditorCacheError::WriteFailed;
+            return false;
+        }
+        std::ofstream output(temporary, std::ios::binary | std::ios::trunc);
+        if(output.is_open()) {
+            output << out.c_str() << '\n';
+            output.flush();
+            output.close();
+            if(output && replaceFile(temporary, destination)) {
+                m_cacheError = EditorCacheError::None;
+                return true;
+            }
+        }
+        fs::remove(temporary, error);
+        m_cacheError = EditorCacheError::WriteFailed;
+        return false;
     }
 
     bool EditorCache::addProject(const ProjectDescription& description) {
-        std::ifstream ifstream(m_cachePath);
-        if(!ifstream.is_open()) {
+        if(!validProject(description)) {
+            m_cacheError = EditorCacheError::InvalidProject;
             return false;
         }
-        std::stringstream sstr;
-        sstr << ifstream.rdbuf();
-        ifstream.close();
-
-        YAML::Node data = YAML::Load(sstr.str());
-        YAML::Emitter out;
-        if(!data["Robot2D Editor"]) {
-            m_cacheError = EditorCacheError::EditorTagNone;
+        auto projects = m_cacheDescriptions;
+        const auto found = std::find_if(projects.begin(), projects.end(), [&](const auto& project) {
+            return samePath(project.path, description.path);
+        });
+        const auto current = description;
+        if(found == projects.end())
+            projects.push_back(current);
+        else
+            *found = current;
+        if(!save(projects, current, m_showInspector))
             return false;
-        }
-
-        YAML::Node projectsNode(YAML::NodeType::Map);
-        projectsNode["Path"] = (description.path);
-        projectsNode["Name"] = (description.name);
-        data["Projects"].push_back(projectsNode);
-        data["CurrentProject"] = description.path;
-        data["ShowInspector"] = m_showInspector;
-
-        std::ofstream ofstream(m_cachePath);
-        ofstream << data;
-        ofstream.close();
+        m_currentDescription = current;
+        m_cacheDescriptions.swap(projects);
         return true;
     }
 
+    bool EditorCache::loadProject(const ProjectDescription& description) {
+        return addProject(description);
+    }
+
     bool EditorCache::removeProject(const ProjectDescription& description) {
-        std::ifstream ifstream(m_cachePath);
-        if(!ifstream.is_open())
-            return false;
-
-        std::stringstream sstr;
-        sstr << ifstream.rdbuf();
-        ifstream.close();
-
-        YAML::Node data = YAML::Load(sstr.str());
-        YAML::Emitter out;
-        if(!data["Robot2D Editor"]) {
-            m_cacheError = EditorCacheError::EditorTagNone;
+        if(!validProject(description)) {
+            m_cacheError = EditorCacheError::InvalidProject;
             return false;
         }
-        if(!data["Projects"]) {
-            m_cacheError = EditorCacheError::ProjectsTagNone;
+        auto projects = m_cacheDescriptions;
+        projects.erase(std::remove_if(projects.begin(), projects.end(), [&](const auto& project) {
+            return samePath(project.path, description.path);
+        }), projects.end());
+        auto current = m_currentDescription;
+        if(samePath(current.path, description.path))
+            current = {};
+        if(!save(projects, current, m_showInspector))
             return false;
-        }
-        if(data["CurrentProject"]) {
-            m_currentDescription.path = data["CurrentProject"].as<std::string>();
-        }
+        m_currentDescription = std::move(current);
+        m_cacheDescriptions.swap(projects);
+        return true;
+    }
 
-        m_cacheDescriptions.clear();
-
-        for(auto project: data["Projects"]) {
-            ProjectDescription desc;
-            desc.path = project["Path"].as<std::string>();
-            desc.name = project["Name"].as<std::string>();
-            if (desc.path == description.path)
-                continue;
-            m_cacheDescriptions.emplace_back(std::move(desc));
-        }
-
-        auto version = data["Robot2D Editor"].as<std::string>();
-        out << YAML::BeginMap;
-        out << YAML::Key << "Robot2D Editor" << YAML::Value << version;
-        out << YAML::Key << "Projects" << YAML::Value << YAML::BeginSeq;
-        for(const auto& it: m_cacheDescriptions) {
-            out << YAML::BeginMap;
-            out << YAML::Key << "Path" << YAML::Value << it.path;
-            out << YAML::Key << "Name" << YAML::Value << it.name;
-            out << YAML::EndMap;
-        }
-        out << YAML::EndSeq;
-        if(description.path != m_currentDescription.path)
-           out << YAML::Key << "CurrentProject" << YAML::Value << m_currentDescription.path;
-        out << YAML::Key << "ShowInspector" << YAML::Value << m_showInspector;
-        out << YAML::EndMap;
-
-        std::ofstream ofstream(m_cachePath);
-        ofstream << out.c_str();
-        ofstream.close();
+    bool EditorCache::setShowInspector(const bool& flag) {
+        if(!save(m_cacheDescriptions, m_currentDescription, flag))
+            return false;
+        m_showInspector = flag;
         return true;
     }
 
     bool EditorCache::isShowInspector() const {
         return m_showInspector || m_currentDescription.empty();
+    }
+
+    bool EditorCache::showInspectorOnStartup() const {
+        return m_showInspector;
     }
 
     const EditorCacheError& EditorCache::getError() const {
@@ -215,12 +351,7 @@ namespace editor {
     }
 
     const ProjectDescription& EditorCache::getCurrentProject() const {
-        m_currentDescription.name = "Project";
         return m_currentDescription;
     }
 
-    void EditorCache::setShowInspector(const bool& flag) {
-        m_showInspector = flag;
-    }
-}
-
+} // namespace editor

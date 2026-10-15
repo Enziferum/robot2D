@@ -105,6 +105,8 @@ namespace editor {
     {
 
         m_messageDispatcher.onMessage<MenuProjectMessage>(MessageID::SaveScene, BIND_CLASS_FN(saveScene));
+        m_messageDispatcher.onMessage<MenuProjectMessage>(MessageID::SaveAll,
+            [this](const MenuProjectMessage&) { saveAll(); });
         m_messageDispatcher.onMessage<OpenSceneMessage>(MessageID::OpenScene, BIND_CLASS_FN(openScene));
         m_messageDispatcher.onMessage<CreateSceneMessage>(MessageID::CreateScene, BIND_CLASS_FN(createScene));
         m_messageDispatcher.onMessage<PrefabLoadMessage>(MessageID::PrefabLoad, BIND_CLASS_FN(addPrefabEntity));
@@ -222,19 +224,23 @@ namespace editor {
             return;
 
         auto taskQueue =  TaskQueue::GetQueue();
-        if(m_activeScene -> hasChanges() || taskQueue -> hasPendingTasks()) {
+        if(m_activeScene -> hasChanges() || m_presenter.hasAssetChanges() || taskQueue -> hasPendingTasks()) {
             m_popupConfiguration.title = "Close Scene";
-            m_popupConfiguration.onYes = [this, taskQueue, scenePath]() {
-                m_presenter.switchState(EditorState::Load);
-                if(!saveScene()) {
-                    RB_EDITOR_ERROR("EditorLogic: can't save scene");
+            m_popupConfiguration.error.clear();
+            m_popupConfiguration.onYes = [this, scenePath]() {
+                if(!saveAll()) {
+                    m_popupConfiguration.error = "Could not save changes. Check the file path and write access, then retry.";
+                    RB_EDITOR_ERROR("EditorLogic: can't save changes");
+                    return false;
                 }
-
+                m_presenter.switchState(EditorState::Load);
                 m_sceneManager.loadSceneAsync(m_currentProject, scenePath,
                                               BIND_CLASS_FN(loadSceneCallback), m_scriptInteractor);
+                return true;
             };
 
-            m_popupConfiguration.onNo = [this, taskQueue, scenePath]() {
+            m_popupConfiguration.onNo = [this, scenePath]() {
+                m_presenter.discardAssetChanges();
                 m_presenter.switchState(EditorState::Load);
                 m_sceneManager.loadSceneAsync(m_currentProject, scenePath,
                                               BIND_CLASS_FN(loadSceneCallback), m_scriptInteractor);
@@ -257,11 +263,19 @@ namespace editor {
     }
 
     void EditorLogic::saveScene(const MenuProjectMessage& message) {
-        m_sceneManager.save(std::move(m_activeScene), m_scriptInteractor);
+        if(!m_sceneManager.save(std::move(m_activeScene), m_scriptInteractor, message.path))
+            RB_EDITOR_ERROR("EditorLogic: can't save scene to {0}", message.path);
     }
 
     bool EditorLogic::saveScene() {
-        return m_sceneManager.save(std::move(m_activeScene), m_scriptInteractor);
+        const bool saved = m_sceneManager.save(std::move(m_activeScene), m_scriptInteractor);
+        if(!saved)
+            RB_EDITOR_ERROR("EditorLogic: can't save scene");
+        return saved;
+    }
+
+    bool EditorLogic::saveAll() {
+        return m_presenter.saveAssetChanges() && (!m_activeScene || saveScene());
     }
 
     void EditorLogic::loadSceneCallback(Scene::Ptr loadedScene) {
@@ -349,8 +363,10 @@ namespace editor {
     }
 
     void EditorLogic::processEntity(SceneEntity entity) {
-        auto iterator = m_quadTree.insert(entity, entity.calculateRect());
-        entity.addComponent<QuadTreeComponent>().iterator = iterator;
+        if(entity.hasComponent<TransformComponent>()) {
+            auto iterator = m_quadTree.insert(entity, entity.calculateRect());
+            entity.addComponent<QuadTreeComponent>().iterator = iterator;
+        }
 
         auto* manager = ResourceManager::getManager();
         auto* localManager = LocalResourceManager::getManager();
@@ -395,9 +411,7 @@ namespace editor {
             if(localManager -> hasFont(id)) {
                 text.setFont(localManager -> getFont(id));
             }
-            else {
-                if(!manager -> hasFont(id))
-                    return;
+            else if(manager -> hasFont(id)) {
                 auto& font = manager -> getFont(id);
                 auto* localFont = localManager -> addFont(fontPath.filename().string());
                 if(localFont) {
@@ -408,7 +422,8 @@ namespace editor {
         }
 
         if(entity.hasComponent<AnimationComponent>()) {
-            for(auto& copyAnimation: manager -> getAnimations(entity.getComponent<IDComponent>().ID)) {
+            const auto animations = manager -> getAnimationsCopy(entity.getUUID());
+            for(const auto& copyAnimation: animations) {
                 auto* animation = localManager -> addAnimation(entity.getComponent<IDComponent>().ID);
                 *animation = copyAnimation;
 
@@ -427,7 +442,9 @@ namespace editor {
                 }
             }
             auto& animationComponent = entity.getComponent<AnimationComponent>();
-            animationComponent.setAnimation( &localManager -> getAnimations(entity.getComponent<IDComponent>().ID)[0]);
+            const auto* localAnimations = localManager -> findAnimations(entity.getUUID());
+            if(localAnimations && !localAnimations -> empty())
+                animationComponent.setAnimation(&localManager -> getAnimations(entity.getUUID()).front());
         }
 
         if(entity.hasChildren()) {
@@ -462,11 +479,13 @@ namespace editor {
 
 
     void EditorLogic::onBeginPopup() {
+         m_stateBeforePopup = m_presenter.getState();
          m_presenter.switchState(EditorState::Modal);
     }
 
     void EditorLogic::onEndPopup() {
-        m_presenter.switchState(EditorState::Edit);
+        if(m_presenter.getState() == EditorState::Modal)
+            m_presenter.switchState(m_stateBeforePopup);
     }
 
     void EditorLogic::undoCommand() {
@@ -578,7 +597,12 @@ namespace editor {
     }
 
     SceneEntity EditorLogic::duplicateEmptyEntity(SceneEntity entity) {
-        return m_activeScene -> duplicateEmptyEntity(entity);
+        if(!m_activeScene || m_activeScene -> isRunning())
+            return {};
+        auto instance = m_activeScene -> duplicateEmptyEntity(entity, getScriptInteractor());
+        if(instance)
+            processEntity(instance);
+        return instance;
     }
 
     bool EditorLogic::setBefore(SceneEntity sourceEntity, SceneEntity target) {
@@ -638,20 +662,25 @@ namespace editor {
     }
 
     void EditorLogic::closeCurrentProject(std::function<void()>&& resultCallback) {
-        m_quadTree.clear();
-
+        if(m_presenter.getState() == EditorState::Modal)
+            return;
         auto taskQueue = TaskQueue::GetQueue();
         m_closeResultProjectCallback = std::move(resultCallback);
-        if(m_activeScene -> hasChanges() || taskQueue -> hasPendingTasks()) {
+        if((m_activeScene && m_activeScene -> hasChanges()) || m_presenter.hasAssetChanges() || taskQueue -> hasPendingTasks()) {
             m_popupConfiguration.title = "Close Project";
+            m_popupConfiguration.error.clear();
             m_popupConfiguration.onYes = [this]() {
-                m_presenter.switchState(EditorState::Load);
-                if(!saveScene()) {
-                    RB_EDITOR_ERROR("EditorLogic: can't save scene");
+                if(!saveAll()) {
+                    m_popupConfiguration.error = "Could not save changes. Check the file path and write access, then retry.";
+                    RB_EDITOR_ERROR("EditorLogic: can't save changes");
+                    return false;
                 }
+                m_presenter.switchState(EditorState::Load);
                 m_closeResultProjectCallback();
+                return true;
             };
             m_popupConfiguration.onNo = [this]() {
+                m_presenter.discardAssetChanges();
                 m_closeResultProjectCallback();
             };
             m_presenter.showPopup(&m_popupConfiguration);
@@ -660,7 +689,16 @@ namespace editor {
             m_closeResultProjectCallback();
     }
 
+    void EditorLogic::applyPrefabChanges(UUID prefabID, SceneEntity entity) {
+        PrefabAssetModificatedMessage message;
+        message.prefabUUID = prefabID;
+        message.prefabEntity = entity;
+        prefabModificated(message);
+    }
+
     void EditorLogic::prefabModificated(const PrefabAssetModificatedMessage& message) {
+        if(!m_activeScene || !message.prefabEntity)
+            return;
         constexpr auto processModification = [](SceneEntity prefabEntity,
                 SceneEntity modificateEntity) {
             if(prefabEntity.hasComponent<DrawableComponent>()
@@ -668,7 +706,9 @@ namespace editor {
                 auto& modificateDrawable = modificateEntity.getComponent<DrawableComponent>();
                 auto prefabDrawable = prefabEntity.getComponent<DrawableComponent>();
                 modificateDrawable.setColor(prefabDrawable.getColor());
-                modificateDrawable.setTexture(prefabDrawable.getTexture());
+                if(prefabDrawable.hasTexture())
+                    modificateDrawable.setTexture(prefabDrawable.getTexture());
+                modificateEntity.markModified();
             }
         };
 

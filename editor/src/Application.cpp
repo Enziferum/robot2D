@@ -156,7 +156,8 @@ namespace editor {
             m_window -> setSize(m_appConfiguration.inspectorSize);
 
             applyStyle(EditorStyle::SlateBlue);
-            m_projectInspector.setup(m_window, m_logic.getCache().getProjects());
+            const auto& cache = m_logic.getCache();
+            m_projectInspector.setup(cache.getProjects(), cache.showInspectorOnStartup());
         }
 
         m_eventBinder.bindEvent(robot2D::Event::Resized, [this](const robot2D::Event& evt) {
@@ -170,6 +171,11 @@ namespace editor {
     }
 
     void Application::handleEvents(const robot2D::Event& event) {
+        if(event.type == robot2D::Event::Closed && m_logic.getState() == AppState::Editor) {
+            m_window -> cancelClose();
+            m_editorModule -> closeCurrentProject([this]() { m_running = false; });
+            return;
+        }
         m_eventBinder.handleEvents(event);
 
         m_guiWrapper.handleEvents(event);

@@ -85,14 +85,17 @@ namespace editor {
         }
         ImGui::Spacing();
         ImGui::PopID();
-        if(remove)
+        if(remove) {
             entity.removeComponent<T>();
+            entity.markModified();
+        }
     }
 
     template<typename T>
     static bool addComponentMenuItem(const char* name, SceneEntity& entity) {
         if(ImGui::MenuItem(name, nullptr, false, !entity.hasComponent<T>())) {
             entity.addComponent<T>();
+            entity.markModified();
             return true;
         }
         return false;
@@ -139,23 +142,21 @@ namespace editor {
     }
 
     void InspectorPanel::setSelected(SceneEntity entity) {
+        if(!savePrefabChanges())
+            return;
         m_selectedEntity = entity;
+        m_inspectType = InspectType::EditorEntity;
     }
 
 
     void InspectorPanel::clearSelection() {
-        if (m_inspectType == InspectType::AssetPrefab && m_prefabHasModification) {
-            if (m_selectedEntity.hasComponent<PrefabComponent>()) {
-                auto& prefabComponent = m_selectedEntity.getComponent<PrefabComponent>();
-                m_prefabManager.savePrefab(m_interactor, prefabComponent.prefabUUID);
-                m_prefabHasModification = false;
-                auto* msg =
-                    m_messageBus.postMessage<PrefabAssetModificatedMessage>(MessageID::PrefabAssetModificated);
-                msg -> prefabUUID = prefabComponent.prefabUUID;
-                msg -> prefabEntity = m_selectedEntity;
-            }
-        }
+        if(savePrefabChanges())
+            discardSelection();
+    }
+
+    void InspectorPanel::discardSelection() {
         m_selectedEntity = {};
+        m_inspectType = InspectType::EditorEntity;
     }
 
 
@@ -210,7 +211,10 @@ namespace editor {
             if(robot2D::InputText("##Tag", &tag, flags)) {
                 if(tag.empty())
                     tag = "Untitled Entity";
-                entity.getComponent<TagComponent>().setTag(tag);
+                if(entity.getName() != tag) {
+                    entity.getComponent<TagComponent>().setTag(tag);
+                    entity.markModified();
+                }
             }
         }
         else {
@@ -266,6 +270,7 @@ namespace editor {
         robot2D::vec2f lastPosition = component.getPosition();
         robot2D::vec2f lastSize = component.getSize();
         float lastRotation = component.getRotate();
+        auto lastOrigin = component.getOrigin();
 
         component.getScale();
 
@@ -278,23 +283,26 @@ namespace editor {
         component.setSize(component.getSize());
 
         if (lastPosition != component.getPosition() || lastSize != component.getSize() ||
-            lastRotation != component.getRotate())
-            m_prefabHasModification = true;
+            lastRotation != component.getRotate() || lastOrigin != component.getOrigin())
+            entity.markModified();
 
     }
     
     void InspectorPanel::drawCameraComponent([[maybe_unused]] SceneEntity entity, CameraComponent& component) {
         auto& camera = component.camera;
         bool lastIsPrimary = component.isPrimary;
-        ImGui::Checkbox("Primary", &component.isPrimary);
+        if(ImGui::Checkbox("Primary", &component.isPrimary))
+            entity.markModified();
 
         if(component.isPrimary != lastIsPrimary) {
             /// TODO(a.raag) set or unset primary entity
         }
 
         float orthoSize = component.orthoSize;
-        if (ImGui::DragFloat("Size", &orthoSize, 0.1))
+        if (ImGui::DragFloat("Size", &orthoSize, 0.1)) {
             component.orthoSize = orthoSize;
+            entity.markModified();
+        }
 
         auto cameraRect = component.cameraRect;
         std::string posText = rbini::to_string(cameraRect.lx) + "x" + rbini::to_string(cameraRect.ly);
@@ -314,6 +322,7 @@ namespace editor {
                 {
                     aspectRatioProjectionTypeString = aspectRatioTypeStrings[i];
                     component.aspectRatio = static_cast<CameraComponent::AspectRatio>(i);
+                    if(!isSelected) entity.markModified();
                 }
 
                 if (isSelected)
@@ -333,6 +342,7 @@ namespace editor {
                 {
                     scalingModeString = scalingModeVector[i];
                     component.scalingMode = static_cast<CameraComponent::ScalingMode>(i);
+                    if(!isSelected) entity.markModified();
                 }
 
                 if (isSelected)
@@ -345,16 +355,20 @@ namespace editor {
     void InspectorPanel::drawDrawableComponent(SceneEntity entity, DrawableComponent& component) {
         auto color = component.getColor().toGL();
         auto p_color = reinterpret_cast<float*>(&color);
-        ImGui::ColorEdit4("Color", p_color);
-        ImGui::Checkbox("Draw BoundingBox", &component.drawBoundingBox());
+        if(ImGui::ColorEdit4("Color", p_color))
+            entity.markModified();
+        if(ImGui::Checkbox("Draw BoundingBox", &component.drawBoundingBox()))
+            entity.markModified();
+        component.setColor(robot2D::Color::fromGL(p_color[0], p_color[1], p_color[2], p_color[3]));
         if (component.isUtil)
             return;
 
-        component.setColor(robot2D::Color::fromGL(p_color[0], p_color[1], p_color[2], p_color[3]));
         int lastDepth = component.getDepth();
         ImGui::InputInt("zDepth", &component.getDepth());
-        if (lastDepth != component.getDepth())
+        if (lastDepth != component.getDepth()) {
             component.setReorderZBuffer(true);
+            entity.markModified();
+        }
 
         ImGui::Button("Texture", ImVec2(100.0f, 0.0f));
 
@@ -365,11 +379,18 @@ namespace editor {
                 std::filesystem::path localPath = std::filesystem::path("assets") / path;
                 auto texturePath = combinePath(m_interactor -> getAssociatedProjectPath(), localPath.string());
 
-                component.setTexturePath(localPath.string());
+                if(component.getTexturePath() != localPath.string()) {
+                    component.setTexturePath(localPath.string());
+                    entity.markModified();
+                }
                 auto manager = ResourceManager::getManager();
                 if (!manager -> hasImage(localPath.filename().string())) {
                     auto queue = TaskQueue::GetQueue();
-                    queue -> template addAsyncTask<ImageLoadTask>([](const ImageLoadTask& task) {
+                    // Keep a discarded template alive until its pending resource callback finishes.
+                    auto owner = m_inspectType == InspectType::AssetPrefab
+                            ? m_prefabManager.findPrefab(m_selectedEntity.getComponent<PrefabComponent>().prefabUUID)
+                            : nullptr;
+                    queue -> template addAsyncTask<ImageLoadTask>([owner](const ImageLoadTask& task) {
                         InspectorPanel::onLoadImage(task.getImage(), task.getEntity());
                     }, texturePath, entity);
                 }
@@ -409,16 +430,26 @@ namespace editor {
                 std::filesystem::path localPath = std::filesystem::path("assets") / path;
                 auto fontPath = combinePath(m_interactor -> getAssociatedProjectPath(), localPath.string());
 
+                if(component.getFontPath() != localPath.string()) {
+                    component.setFontPath(localPath.string());
+                    entity.markModified();
+                }
+
                 auto queue = TaskQueue::GetQueue();
-                queue -> template addAsyncTask<FontLoadTask>([](const FontLoadTask& task) {
+                auto owner = m_inspectType == InspectType::AssetPrefab
+                        ? m_prefabManager.findPrefab(m_selectedEntity.getComponent<PrefabComponent>().prefabUUID)
+                        : nullptr;
+                queue -> template addAsyncTask<FontLoadTask>([owner](const FontLoadTask& task) {
                     InspectorPanel::onLoadFont(task.getFont(), task.getEntity());
                 }, fontPath, entity);
             }
         }
 
         if (component.getFont()) {
-            robot2D::InputText("##Text", &component.getText(), 0);
-            component.setText(component.getText());
+            if(robot2D::InputText("##Text", &component.getText(), 0)) {
+                component.setText(component.getText());
+                entity.markModified();
+            }
         }
     }
 
@@ -528,6 +559,7 @@ namespace editor {
                 {
                     currentBodyTypeString = bodyTypeStrings[i];
                     component.type = (Physics2DComponent::BodyType)i;
+                    if(!isSelected) entity.markModified();
                 }
 
                 if (isSelected)
@@ -535,27 +567,29 @@ namespace editor {
             }
 
         }
-        ImGui::DragFloat("GravityScale", &component.gravityScale, 0.01f, 0.0f, 1.0f);
-        ImGui::DragFloat("LinearDamping", &component.linearDamping, 0.01f, 0.0f, 1.0f);
-        ImGui::DragFloat("AngularDamping", &component.angularDamping, 0.01f, 0.0f, 1.0f);
-        ImGui::Checkbox("Fixed Rotation", &component.fixedRotation);
-        ImGui::Checkbox("IsBullet", &component.bullet);
+        bool changed = ImGui::DragFloat("GravityScale", &component.gravityScale, 0.01f, 0.0f, 1.0f);
+        changed |= ImGui::DragFloat("LinearDamping", &component.linearDamping, 0.01f, 0.0f, 1.0f);
+        changed |= ImGui::DragFloat("AngularDamping", &component.angularDamping, 0.01f, 0.0f, 1.0f);
+        changed |= ImGui::Checkbox("Fixed Rotation", &component.fixedRotation);
+        changed |= ImGui::Checkbox("IsBullet", &component.bullet);
+        if(changed)
+            entity.markModified();
     }
 
     void InspectorPanel::drawCollider2DComponent([[maybe_unused]] SceneEntity entity, Collider2DComponent& component) {
         float offset[2] = { component.offset.x, component.offset.y };
         float size[2] = { component.size.x, component.size.y };
-        ImGui::DragFloat2("Offset", offset);
-        ImGui::DragFloat2("Size", size);
-        ImGui::DragFloat("Density", &component.density, 0.01f, 0.0f, 1.0f);
-        ImGui::DragFloat("Friction", &component.friction, 0.01f, 0.0f, 1.0f);
-        ImGui::DragFloat("Restitution", &component.restitution, 0.01f, 0.0f, 1.0f);
-        ImGui::DragFloat("Restitution Threshold", &component.restitutionThreshold, 0.01f, 0.0f);
-        ImGui::DragFloat("SkipCollideTime(secs)", &component.skipCollideTime, 0.01f, 0.0f);
+        bool changed = ImGui::DragFloat2("Offset", offset);
+        changed |= ImGui::DragFloat2("Size", size);
+        changed |= ImGui::DragFloat("Density", &component.density, 0.01f, 0.0f, 1.0f);
+        changed |= ImGui::DragFloat("Friction", &component.friction, 0.01f, 0.0f, 1.0f);
+        changed |= ImGui::DragFloat("Restitution", &component.restitution, 0.01f, 0.0f, 1.0f);
+        changed |= ImGui::DragFloat("Restitution Threshold", &component.restitutionThreshold, 0.01f, 0.0f);
+        changed |= ImGui::DragFloat("SkipCollideTime(secs)", &component.skipCollideTime, 0.01f, 0.0f);
         component.offset = { offset[0], offset[1] };
         component.size = { size[0], size[1] };
-        ImGui::Checkbox("IsTrigger", &component.isTrigger);
-        ImGui::Checkbox("OneWay", &component.oneWay);
+        changed |= ImGui::Checkbox("IsTrigger", &component.isTrigger);
+        changed |= ImGui::Checkbox("OneWay", &component.oneWay);
 
         phys2d::FilterBits fb = component.filter;       // categoryBits/maskBits/groupIndex
         bool useDefaultMask   = component.useDefaultMask;
@@ -564,7 +598,10 @@ namespace editor {
             component.filter         = fb;
             component.useDefaultMask = useDefaultMask;
             component.markFilterDirty = true;           // чтобы обновить b2Fixture в рантайме
+            changed = true;
         }
+        if(changed)
+            entity.markModified();
     }
 
     void InspectorPanel::drawAnimationComponent(SceneEntity, AnimationComponent& component) {
@@ -605,6 +642,7 @@ namespace editor {
                         currItem = name;
                         component.name = currItem;
                         scriptInteractor -> setScriptClass(name, entity.getUUID());
+                        if(!is_selected) entity.markModified();
                     }
                 }
             }
@@ -656,13 +694,17 @@ namespace editor {
                 case FieldType::Float: {
                     if(hasField) {
                         float* data = field.getValue<float>();
-                        if (ImGui::DragFloat(name.c_str(), data))
+                        if (ImGui::DragFloat(name.c_str(), data)) {
                             field.setValue(data);
+                            entity.markModified();
+                        }
                     }
                     else {
                         float data = 0.0f;
-                        if (ImGui::DragFloat(name.c_str(), &data))
+                        if (ImGui::DragFloat(name.c_str(), &data)) {
                             field.setValue(data);
+                            entity.markModified();
+                        }
                     }
 
                     break;
@@ -670,8 +712,10 @@ namespace editor {
                 case FieldType::Int: {
                     if(hasField) {
                         int* data = field.getValue<int>();
-                        if (ImGui::DragInt(name.c_str(), data))
-                            field.setValue(&data);
+                        if (ImGui::DragInt(name.c_str(), data)) {
+                            field.setValue(data);
+                            entity.markModified();
+                        }
                     }
                     else {
                         /// TODO(a.raag): add logic
@@ -683,7 +727,7 @@ namespace editor {
                     std::string resultButtonText = "None";
                     if(hasField) {
                         auto uuid = *field.getValue<UUID>();
-                        auto preEntity = m_interactor -> getEntity(uuid);
+                        auto preEntity = resolveEntity(uuid);
                         if (preEntity)
                             resultButtonText = preEntity.getComponent<TagComponent>().getTag();
                     }
@@ -695,6 +739,7 @@ namespace editor {
                             auto payloadEntity = m_uiManager.getTreeItem(*uuid);
                             if (payloadEntity && payloadEntity != entity) {
                                 field.setValue(payloadEntity.getUUID());
+                                entity.markModified();
                             }
                         }
                     }
@@ -704,7 +749,7 @@ namespace editor {
                     std::string resultButtonText = "None";
                     if(hasField) {
                         auto uuid = *field.getValue<UUID>();
-                        auto preEntity = m_interactor -> getEntity(uuid);
+                        auto preEntity = resolveEntity(uuid);
                         if (preEntity)
                             resultButtonText = preEntity.getComponent<TagComponent>().getTag();
                     }
@@ -724,6 +769,7 @@ namespace editor {
                             SceneEntity duplicateEntity = m_interactor -> duplicateEmptyEntity(prefab -> getEntity());
                             if (duplicateEntity && duplicateEntity != entity) {
                                 field.setValue(duplicateEntity.getUUID());
+                                entity.markModified();
                             }
                         }
                     }
@@ -741,7 +787,7 @@ namespace editor {
         ImGui::Text("OnClick");
         std::string resultText = "No Object";
         if (component.hasEntity()) {
-            auto preEntity = m_interactor -> getEntity(component.scriptEntity);
+            auto preEntity = resolveEntity(component.scriptEntity);
 
             if (preEntity)
                 resultText = preEntity.template getComponent<TagComponent>().getTag();
@@ -753,8 +799,10 @@ namespace editor {
             if(auto uuid = dragDropTarget.unpackPayload<UUID>()) {
                 auto payloadEntity = m_uiManager.getTreeItem(*uuid);
 
-                if (payloadEntity && payloadEntity.hasComponent<ScriptComponent>())
+                if (payloadEntity && payloadEntity.hasComponent<ScriptComponent>()) {
                     component.scriptEntity = payloadEntity.getComponent<IDComponent>().ID;
+                    entity.markModified();
+                }
             }
         }
 
@@ -824,50 +872,58 @@ namespace editor {
 
 
 
+    SceneEntity InspectorPanel::resolveEntity(UUID uuid) const {
+        if(m_inspectType == InspectType::AssetPrefab && m_selectedEntity.hasComponent<PrefabComponent>()) {
+            auto prefab = m_prefabManager.findPrefab(m_selectedEntity.getComponent<PrefabComponent>().prefabUUID);
+            if(prefab && prefab -> getTemplateScene()) {
+                auto entity = prefab -> getTemplateScene() -> getEntity(uuid);
+                if(entity)
+                    return entity;
+            }
+        }
+        return m_interactor ? m_interactor -> getEntity(uuid) : SceneEntity{};
+    }
+
+    bool InspectorPanel::savePrefabChanges() {
+        if(m_inspectType != InspectType::AssetPrefab)
+            return true;
+        if(!m_selectedEntity.hasComponent<PrefabComponent>())
+            return false;
+        const auto id = m_selectedEntity.getComponent<PrefabComponent>().prefabUUID;
+        auto prefab = m_prefabManager.findPrefab(id);
+        if(!prefab || !prefab -> getTemplateScene())
+            return false;
+        if(!prefab -> getTemplateScene() -> hasChanges())
+            return true;
+        if(!m_prefabManager.savePrefab(m_interactor, id)) {
+            RB_EDITOR_ERROR("InspectorPanel: Can't save modified prefab");
+            return false;
+        }
+        m_interactor -> applyPrefabChanges(id, m_selectedEntity);
+        return true;
+    }
+
     void InspectorPanel::onPrefabAssetSelected(const PrefabAssetPressedMessage& message) {
-        m_inspectType = InspectType::AssetPrefab;
-
-        std::filesystem::path localPath = std::filesystem::path("assets") / message.localPath;
-        auto fullPath = combinePath(m_interactor->getAssociatedProjectPath(), localPath.string());
-
+        if(!m_interactor || !savePrefabChanges())
+            return;
+        const auto localPath = std::filesystem::path("assets") / message.localPath;
+        const auto fullPath = combinePath(m_interactor -> getAssociatedProjectPath(), localPath.string());
         auto prefab = m_prefabManager.loadPrefab(m_interactor, fullPath);
-        if (!prefab) {
+        if(!prefab) {
             RB_EDITOR_ERROR("InspectorPanel: Can't load prefab by path {0}", fullPath);
+            return;
         }
-        else {
-           m_selectedEntity = prefab -> getEntity();
-        }
+        m_selectedEntity = prefab -> getEntity();
+        m_inspectType = InspectType::AssetPrefab;
     }
 
     void InspectorPanel::onPanelEntityNeedSelect(const PanelEntitySelectedMessage& message) {
-        if (m_inspectType == InspectType::AssetPrefab && m_prefabHasModification) {
-            if (m_selectedEntity.hasComponent<PrefabComponent>()) {
-                auto& prefabComponent = m_selectedEntity.getComponent<PrefabComponent>();
-                m_prefabManager.savePrefab(m_interactor, prefabComponent.prefabUUID);
-                m_prefabHasModification = false;
-                auto* msg =
-                    m_messageBus.postMessage<PrefabAssetModificatedMessage>(MessageID::PrefabAssetModificated);
-                msg -> prefabUUID = prefabComponent.prefabUUID;
-                msg -> prefabEntity = m_selectedEntity;
-            }
-        }
-
-        m_inspectType = InspectType::EditorEntity;
-        m_selectedEntity = message.entity;
+        onPanelEntitySelected(message);
     }
 
     void InspectorPanel::onPanelEntitySelected(const PanelEntitySelectedMessage& message) {
-        if (m_inspectType == InspectType::AssetPrefab && m_prefabHasModification) {
-            if (m_selectedEntity.hasComponent<PrefabComponent>()) {
-                auto& prefabComponent = m_selectedEntity.getComponent<PrefabComponent>();
-                m_prefabManager.savePrefab(m_interactor, prefabComponent.prefabUUID);
-                m_prefabHasModification = false;
-                auto* msg =
-                    m_messageBus.postMessage<PrefabAssetModificatedMessage>(MessageID::PrefabAssetModificated);
-                msg -> prefabUUID = prefabComponent.prefabUUID;
-                msg -> prefabEntity = m_selectedEntity;
-            }
-        }
+        if(!savePrefabChanges())
+            return;
         m_inspectType = InspectType::EditorEntity;
         m_selectedEntity = message.entity;
     }

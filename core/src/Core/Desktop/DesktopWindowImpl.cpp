@@ -172,6 +172,10 @@ namespace robot2D::priv {
         glfwSetJoystickCallback(joystick_callback);
     }
 
+    void DesktopWindowImpl::cancelClose() {
+        glfwSetWindowShouldClose(m_window, false);
+    }
+
     void DesktopWindowImpl::close_callback(GLFWwindow* wnd) {
         auto window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
         Event event{};

@@ -46,12 +46,15 @@ namespace editor {
 
         bool savePrefab(UIInteractor::Ptr interactor, Prefab::Ptr prefab);
         bool savePrefab(UIInteractor::Ptr interactor, UUID uuid);
+        bool hasChanges() const;
+        bool saveChanges(UIInteractor::Ptr interactor);
+        void discardChanges();
 
         Prefab::Ptr findPrefab(UUID prefabID);
 
         bool deletePrefab(UUID prefabID);
     private:
-        Prefab::Ptr findPrefab(const std::string& path);
+        Prefab::Ptr findPrefab(const std::string& path) const;
     private:
         std::unordered_map<UUID, Prefab::Ptr> m_prefabs;
     };
