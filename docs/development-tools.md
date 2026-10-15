@@ -55,7 +55,7 @@ clang-tidy либо сделай его доступным в PATH. Скрипт
 неявные include-пути от компилятора из CMakeCache, а не привязывает их к версии GCC.
 
 ```powershell
-.\scripts\run_clang_tidy.ps1 -BuildDirectory cmake-build-debug -ClangTidy 'C:\Program Files\JetBrains\CLion 2025.1.1\bin\clang\win\x64\bin\clang-tidy.exe' -Files editor/src/SelectionService.cpp
+.\scripts\run_clang_tidy.ps1 -BuildDirectory cmake-build-debug -ClangTidy 'C:\msys64\mingw64\bin\clang-tidy.exe' -Files editor/src/SelectionService.cpp
 ```
 
 Сначала посмотреть список без запуска анализатора:
@@ -133,11 +133,19 @@ python scripts/install_git_hooks.py --uncrustify 'C:/path/to/uncrustify.exe' --c
 не нужна. План для текущего индекса: `python scripts/pre_commit.py --plan`;
 полный запуск без commit: `git hook run pre-commit`.
 
+На Windows hook ставит каталог выбранного CMake в начало своего PATH, чтобы
+GCC не загружал несовместимые MSYS DLL из каталогов Git for Windows. Изменение
+действует только внутри процесса hook; пользовательский PATH не записывается.
+
 Стандартная область исключает extlibs/ext, а также скопированные stb и
 сгенерированные glad/Khronos в `core/src/Graphics/internal` и
 `core/include/robot2D/Graphics/internal`. Для их ручной проверки нужен явный `-Scope`
 на конкретную область. Заголовки зависимостей продолжают разбираться компилятором:
-ошибки парсера не подавляются. Hook не добавляет анализ зависимостей автоматически.
+ошибки парсера не подавляются. Каталог stb/glad подключён к core как SYSTEM;
+иначе межпроцедурный анализ способен показать замечание из stb через вызывающий
+собственный `.cpp`, несмотря на header filter. Hook не добавляет анализ
+зависимостей автоматически. Фильтрация clang-tidy учитывает и путь диагностики
+([реализация LLVM](https://github.com/llvm/llvm-project/blob/main/clang-tools-extra/clang-tidy/ClangTidyDiagnosticConsumer.cpp)).
 
 Для передачи списка файлов между Python и PowerShell используется `-FilesFrom`
 с JSON-массивом путей (его нельзя совмещать с `-Files`). Для ручного вызова из
