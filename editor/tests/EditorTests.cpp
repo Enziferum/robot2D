@@ -6,6 +6,7 @@
 #include <editor/ConsoleLog.hpp>
 #include <editor/EditorCache.hpp>
 #include <editor/EditorConfig.hpp>
+#include <editor/FileApi.hpp>
 #include <editor/Messages.hpp>
 #include <editor/serializers/YamlFile.hpp>
 #include <robot2D/imgui/DragDropTarget.hpp>
@@ -15,6 +16,78 @@
 
 namespace {
     using namespace tests;
+
+    void assetPaths() {
+        Directory fixture;
+        const auto root = fixture / "old-assets-parent/project";
+        fs::create_directories(root / "assets/images");
+        write(root / "assets/images/sheet.png", "image fixture");
+        const auto reference = editor::projectAssetReference(root.u8string(),
+                (root / "assets/images/sheet.png").u8string());
+        CHECK(reference == "assets/images/sheet.png");
+        CHECK(editor::projectAssetReference(root.u8string(), "assets\\images\\sheet.png") == reference);
+        CHECK(editor::projectAssetReference(root.u8string(), "assets/images/../images/sheet.png") == reference);
+        CHECK(editor::projectAssetReference(root.u8string(), "assets/missing.ttf") == "assets/missing.ttf");
+        const auto moved = fixture / "moved project";
+        fs::rename(root, moved);
+        CHECK(read(fs::u8path(editor::resolveProjectAsset(moved.u8string(), reference))) == "image fixture");
+        for(const auto& invalid: {"../outside.png", "assets/../../outside.png", "other-assets/file.png", ""}) {
+            bool rejected = false;
+            try { editor::resolveProjectAsset(moved.u8string(), invalid); }
+            catch(const std::exception&) { rejected = true; }
+            CHECK(rejected);
+        }
+        bool nulRejected = false;
+        try { editor::projectAssetReference(moved.u8string(), std::string("assets/a\0b", 10)); }
+        catch(const std::exception&) { nulRejected = true; }
+        CHECK(nulRejected);
+    }
+
+    void assetImport() {
+        Directory fixture;
+        const auto root = fixture / "project";
+        const auto source = fixture / "font.ttf";
+        fs::create_directories(root);
+        write(source, "original font");
+        CHECK(editor::importProjectAsset(root.u8string(), source.u8string(),
+            "assets/fonts") == "assets/fonts/font.ttf");
+        CHECK(read(root / "assets/fonts/font.ttf") == "original font");
+        CHECK(editor::importProjectAsset(root.u8string(), (root / "assets/fonts/font.ttf").u8string(),
+            (root / "assets/fonts").u8string()) == "assets/fonts/font.ttf");
+        write(source, "different font");
+        bool rejected = false;
+        try { editor::importProjectAsset(root.u8string(), source.u8string(), "assets/fonts"); }
+        catch(const std::exception&) { rejected = true; }
+        CHECK(rejected && read(root / "assets/fonts/font.ttf") == "original font");
+        rejected = false;
+        try { editor::importProjectAsset(root.u8string(), (fixture / "missing.png").u8string()); }
+        catch(const std::exception&) { rejected = true; }
+        CHECK(rejected && !fs::exists(root / "assets/missing.png"));
+    }
+
+    void assetPackage() {
+        Directory fixture;
+        const auto root = fixture / "project";
+        const auto output = fixture / "game";
+        fs::create_directories(root / "assets/fonts");
+        fs::create_directories(root / "assets/enemies");
+        write(root / "assets/fonts/hud.ttf", "font bytes");
+        write(root / "assets/enemies/slime.prefab", "prefab bytes");
+        write(root / "assets/enemies/idle.anim", "clip bytes");
+        editor::copyProjectAssets(root.u8string(), output.u8string());
+        fs::rename(root, fixture / "unavailable-source");
+        CHECK(read(output / "assets/fonts/hud.ttf") == "font bytes");
+        CHECK(read(output / "assets/enemies/slime.prefab") == "prefab bytes");
+        CHECK(read(output / "assets/enemies/idle.anim") == "clip bytes");
+        bool rejected = false;
+        try { editor::copyProjectAssets(output.u8string(), output.u8string()); }
+        catch(const std::exception&) { rejected = true; }
+        CHECK(rejected);
+        rejected = false;
+        try { editor::copyProjectAssets(output.u8string(), (output / "assets/nested").u8string()); }
+        catch(const std::exception&) { rejected = true; }
+        CHECK(rejected && !fs::exists(output / "assets/nested"));
+    }
 
     void selection() {
         editor::SelectionService selected;
@@ -48,7 +121,7 @@ namespace {
         log.poll();
         CHECK(!log.getStatus().empty());
         write(path, "[2026-10-15 12:00:00.123] [info] [thread 1] Editor: 100% ###\r\n"
-                    "[12:00:01] [warning] Editor: partial");
+            "[12:00:01] [warning] Editor: partial");
         log.poll();
         CHECK(log.getStatus().empty() && log.getEntries().size() == 1);
         CHECK(log.getEntries()[0].level == editor::LogLevel::Info);
@@ -180,7 +253,7 @@ namespace {
         Directory fixture;
         auto& config = editor::EditorConfig::getConfig();
         write(fixture / "bad.ini", "[Editor]\nCameraPos=wrong\nCameraSize=bad\n"
-              "[Assets]\nThumbnailSize=invalid\n[Layout]\nLeftRatio=nan\nRightRatio=5\nCenterTopRatio=-1\n");
+            "[Assets]\nThumbnailSize=invalid\n[Layout]\nLeftRatio=nan\nRightRatio=5\nCenterTopRatio=-1\n");
         CHECK(config.loadConfig((fixture / "bad.ini").u8string()));
         CHECK(config.cameraPos == robot2D::vec2i(0, 0));
         CHECK(config.cameraSize == robot2D::vec2i(1280, 720));
@@ -225,8 +298,9 @@ namespace {
         Directory fixture;
         editor::Configuration defaults;
         const std::vector<std::string> malformed = {"[broken", "", "[]",
-            "CacheVersion: 1\nProjects: {}\n", "CacheVersion: nope\nProjects: []\n",
-            "CacheVersion: 1\nProjects: [{Name: MissingPath}]\n"};
+                                                    "CacheVersion: 1\nProjects: {}\n",
+                                                    "CacheVersion: nope\nProjects: []\n",
+                                                    "CacheVersion: 1\nProjects: [{Name: MissingPath}]\n"};
         for(std::size_t i = 0; i < malformed.size(); ++i) {
             const auto path = fixture.path() / (std::to_string(i) + ".cache");
             write(path, malformed[i]);
@@ -284,9 +358,11 @@ namespace {
         const auto description = project(fixture, "NewProject");
         struct FileLock {
             HANDLE handle;
-            ~FileLock() { if(handle != INVALID_HANDLE_VALUE) CloseHandle(handle); }
+            ~FileLock() {
+                if(handle != INVALID_HANDLE_VALUE) CloseHandle(handle);
+            }
         } lock{CreateFileW(path.c_str(), GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE,
-                          nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr)};
+                   nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr)};
         CHECK(lock.handle != INVALID_HANDLE_VALUE);
         CHECK(!cache.addProject(description));
         CHECK(cache.getError() == editor::EditorCacheError::WriteFailed);
@@ -301,6 +377,9 @@ int main(int argc, char** argv) {
         CHECK(argc == 2);
         const std::string name = argv[1];
         if(name == "selection") selection();
+        else if(name == "asset-paths") assetPaths();
+        else if(name == "asset-import") assetImport();
+        else if(name == "asset-package") assetPackage();
         else if(name == "console-stream") consoleStream();
         else if(name == "console-limits") consoleLimits();
         else if(name == "yaml-save") yamlSave();
