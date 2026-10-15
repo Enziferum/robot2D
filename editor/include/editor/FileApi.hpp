@@ -1,22 +1,22 @@
 /*********************************************************************
-(c) Alex Raag 2023
-https://github.com/Enziferum
-robot2D - Zlib license.
-This software is provided 'as-is', without any express or
-implied warranty. In no event will the authors be held
-liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute
-it freely, subject to the following restrictions:
-1. The origin of this software must not be misrepresented;
-you must not claim that you wrote the original software.
-If you use this software in a product, an acknowledgment
-in the product documentation would be appreciated but
-is not required.
-2. Altered source versions must be plainly marked as such,
-and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any
-source distribution.
+   (c) Alex Raag 2023
+   https://github.com/Enziferum
+   robot2D - Zlib license.
+   This software is provided 'as-is', without any express or
+   implied warranty. In no event will the authors be held
+   liable for any damages arising from the use of this software.
+   Permission is granted to anyone to use this software for any purpose,
+   including commercial applications, and to alter it and redistribute
+   it freely, subject to the following restrictions:
+   1. The origin of this software must not be misrepresented;
+   you must not claim that you wrote the original software.
+   If you use this software in a product, an acknowledgment
+   in the product documentation would be appreciated but
+   is not required.
+   2. Altered source versions must be plainly marked as such,
+   and must not be misrepresented as being the original software.
+   3. This notice may not be removed or altered from any
+   source distribution.
 *********************************************************************/
 
 #pragma once
@@ -42,4 +42,15 @@ namespace editor {
     std::string addFilename(const std::string& path, const std::string& filename);
 
     std::string cutPath(const std::string& fullPath, const std::string& anchor);
+
+    // References use assets/... relative to the project, never to the process cwd.
+    // Invalid/outside paths throw; missing resources may still be referenced and saved.
+    std::string projectAssetReference(const std::string& projectPath, const std::string& path);
+    std::string resolveProjectAsset(const std::string& projectPath, const std::string& reference);
+    // Copies one file without overwriting. Returns its project-relative reference.
+    std::string importProjectAsset(const std::string& projectPath, const std::string& source,
+        const std::string& destinationDirectory = "assets");
+    // Conservative 0.8 packaging: preserve all assets, including clip/prefab dependencies.
+    // Requires a fresh destination assets directory; no existing files are overwritten.
+    void copyProjectAssets(const std::string& projectPath, const std::string& destinationRoot);
 }
