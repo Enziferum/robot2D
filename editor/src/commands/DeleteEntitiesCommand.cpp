@@ -25,11 +25,9 @@ source distribution.
 namespace editor {
 
     DeleteEntitiesCommand::DeleteEntitiesCommand(UIInteractor::Ptr interactor,
-                                                 DeletedEntitiesRestoreInformation deletedEntitiesRestoreInformation,
-                                                 DeletedEntitiesRestoreUIInformation deletedEntitiesRestoreUIInformation):
+                                                 DeletedEntitiesRestoreInformation deletedEntitiesRestoreInformation):
                                                  m_interactor{interactor},
-                                                 m_deletedEntitiesRestoreInformation(deletedEntitiesRestoreInformation),
-                                                 m_deletedEntitiesRestoreUIInformation(deletedEntitiesRestoreUIInformation)
+                                                 m_deletedEntitiesRestoreInformation(deletedEntitiesRestoreInformation)
                                                  {}
 
     const class_id& DeleteEntitiesCommand::id() noexcept {
@@ -43,6 +41,6 @@ namespace editor {
         if(!m_interactor)
             return;
 
-        m_interactor -> restoreDeletedEntities(m_deletedEntitiesRestoreInformation, m_deletedEntitiesRestoreUIInformation);
+        m_interactor -> restoreDeletedEntities(m_deletedEntitiesRestoreInformation);
     }
 }

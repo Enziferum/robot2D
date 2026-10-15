@@ -22,7 +22,7 @@ source distribution.
 #include <robot2D/Ecs/EntityManager.hpp>
 #include <editor/SceneEntity.hpp>
 #include <editor/Components.hpp>
-#include <editor/SceneGraph.hpp>
+#include <editor/Scene.hpp>
 
 namespace editor {
 
@@ -31,36 +31,55 @@ namespace editor {
     SceneEntity::SceneEntity(const robot2D::ecs::Entity& entity): m_entity(entity) {}
 
     bool operator==(const SceneEntity& left, const SceneEntity& right) {
-        return (left.m_entity == right.m_entity) && (left.getUUID() == right.getUUID());
+        return left.m_scene == right.m_scene && left.m_context == right.m_context
+               && left.m_contextVersion == right.m_contextVersion && left.m_entity == right.m_entity;
     }
 
     bool operator!=(const SceneEntity& left, const SceneEntity& right) {
         return !(left == right);
     }
 
-    UUID SceneEntity::getUUID() const {
-        auto& idComponent = m_entity.getComponent<IDComponent>();
-        return idComponent.ID;
+    SceneEntity::operator bool() const noexcept {
+        if(m_scene && !m_scene -> isContextValid(m_context, m_contextVersion))
+            return false;
+        return static_cast<bool>(m_entity) && !m_entity.destroyed();
     }
 
-    void SceneEntity::addChild(SceneEntity& sceneEntity) {
-        sceneEntity.m_parent = this;
-        m_graph -> addEntityInternal(sceneEntity);
+    void SceneEntity::markModified() const {
+        if(*this && m_scene && m_context == SceneContext::Editor)
+            m_scene -> markModified();
+    }
 
-        auto& transformComponent = m_entity.getComponent<TransformComponent>();
-        transformComponent.addChild(*this, sceneEntity);
+    UUID SceneEntity::getUUID() const {
+        if(m_uuid)
+            return *m_uuid;
+        if(!hasComponent<IDComponent>())
+            return UUID{0};
+        return m_entity.getComponent<IDComponent>().ID;
+    }
+
+    bool SceneEntity::addChild(SceneEntity entity) {
+        return m_scene && m_scene -> reparent(entity, *this);
     }
 
     bool SceneEntity::hasChildren() const {
-        return m_entity.getComponent<TransformComponent>().hasChildren();
+        return !getChildren().empty();
     }
 
-    const std::list<SceneEntity>& SceneEntity::getChildren() const {
-        return m_entity.getComponent<TransformComponent>().getChildren();
+    std::vector<SceneEntity> SceneEntity::getChildren() const {
+        return m_scene ? m_scene -> getChildren(*this) : std::vector<SceneEntity>{};
+    }
+
+    SceneEntity SceneEntity::getParent() const {
+        return m_scene ? m_scene -> getParent(*this) : SceneEntity{};
+    }
+
+    bool SceneEntity::isChild() const {
+        return static_cast<bool>(getParent());
     }
 
     robot2D::FloatRect SceneEntity::calculateRect() const {
-        const auto& tx = m_entity.getComponent<TransformComponent>();
+        const auto& tx = getComponent<TransformComponent>();
         if(tx.getRotation() != 0.f)
             return getBoundingBox();
 
@@ -77,16 +96,12 @@ namespace editor {
     }
 
     robot2D::FloatRect SceneEntity::getBoundingBox() const {
-        const auto& tx = m_entity.getComponent<TransformComponent>();
+        const auto& tx = getComponent<TransformComponent>();
         return tx.getGlobalBounds();
     }
 
-    std::list<SceneEntity>& SceneEntity::getChildren() {
-        return m_entity.getComponent<TransformComponent>().getChildren();
-    }
-
     const std::string& SceneEntity::getName() const {
-        return m_entity.getComponent<TagComponent>().getTag();
+        return getComponent<TagComponent>().getTag();
     }
 
 

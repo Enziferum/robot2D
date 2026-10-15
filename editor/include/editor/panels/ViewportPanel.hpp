@@ -24,6 +24,7 @@ source distribution.
 #include <utility>
 #include <robot2D/Graphics/FrameBuffer.hpp>
 #include <robot2D/imgui/Gui.hpp>
+#include <robot2D/imgui/Api.hpp>
 #include <robot2D/Core/MessageBus.hpp>
 #include <robot2D/Graphics/Texture.hpp>
 #include <robot2D/Util/ResourceHandler.hpp>
@@ -67,18 +68,18 @@ namespace editor {
         ~ViewportPanel() override = default;
 
         bool isActive() const noexcept {
-            return m_panelHovered && m_panelFocused;
+            return getState() == PanelState::Visible && m_panelHovered && m_panelFocused;
         }
 
         void handleEvents(const robot2D::Event& event);
+        bool containsMouse(robot2D::vec2f position) const;
         void setFramebuffer(robot2D::FrameBuffer::Ptr frameBuffer);
 
 
         void update(float deltaTime) override;
         void render() override;
     private:
-        void instrumentBar(robot2D::vec2f windowOffset, robot2D::vec2f windowAvailSize);
-        void toolbarOverlay(robot2D::vec2f windowOffset, robot2D::vec2f windowAvailSize);
+        void instrumentBar();
     private:
         UIInteractor* m_uiInteractor;
 

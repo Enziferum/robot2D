@@ -241,12 +241,12 @@ namespace robot2D {
         glGenBuffers(1, &EBO);
 
         bool shaderSourceIsPath = false;
-        if(!m_shader.createShader(robot2D::ShaderType::Vertex, vertexShader, shaderSourceIsPath)) {
+        if(!m_shader.createShader(robot2D::ShaderType::Vertex, vertexShader, shaderSourceIsPath, "ImGui.vertex")) {
             RB_EDITOR_ERROR("Can't create GUI VertexShader");
             return false;
         }
 
-        if(!m_shader.createShader(robot2D::ShaderType::Fragment, fragmentShader, shaderSourceIsPath)) {
+        if(!m_shader.createShader(robot2D::ShaderType::Fragment, fragmentShader, shaderSourceIsPath, "ImGui.fragment")) {
             RB_EDITOR_ERROR("Can't create GUI Fragment Shader");
             return false;
         }
@@ -359,7 +359,7 @@ namespace robot2D {
 
                 // Bind texture, Draw
                 glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)pcmd->GetTexID());
-                glDrawElements(GL_TRIANGLES, (GLsizei)pcmd->ElemCount,
+                glCall(glDrawElements, GL_TRIANGLES, (GLsizei)pcmd->ElemCount,
                                sizeof(ImDrawIdx) == 2 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT,
                                (void*)(intptr_t)(pcmd->IdxOffset * sizeof(ImDrawIdx)));
 

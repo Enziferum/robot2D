@@ -4,7 +4,8 @@
 
 namespace robot2D {
 
-    constexpr const char* textVertShader = R"(
+    constexpr const char* textVertShader =
+        R"(
     #version 330 core
     layout(location = 0) in vec2 position;
     layout(location = 1) in vec2 uv;
@@ -21,7 +22,8 @@ namespace robot2D {
     }
 )";
 
-    constexpr const char* textFragShader = R"(
+    constexpr const char* textFragShader =
+        R"(
     #version 330 core
 
     out vec4 fragColor;
@@ -76,8 +78,8 @@ namespace robot2D {
                 {robot2D::ElementType::Float4, "Color"},
             }});
 
-        m_textShader.createShader(robot2D::ShaderType::Vertex, textVertShader, false);
-        m_textShader.createShader(robot2D::ShaderType::Fragment, textFragShader, false);
+        m_textShader.createShader(robot2D::ShaderType::Vertex, textVertShader, false, "Core.Text.vertex");
+        m_textShader.createShader(robot2D::ShaderType::Fragment, textFragShader, false, "Core.Text.fragment");
         m_textShader.use();
         m_textShader.set("textSampler", 0);
         m_textShader.unUse();
@@ -90,10 +92,10 @@ namespace robot2D {
     }
 
     void Text::updateGeometry() const {
-        if (!m_font || !m_needupdate)
+        if(!m_font || !m_needupdate)
             return;
 
-        if (m_bufferCache.empty() || m_scaled) {
+        if(m_bufferCache.empty() || m_scaled) {
             m_bufferCache = m_font -> getBufferCache(1.F);
             m_scaled = false;
         }
@@ -102,10 +104,10 @@ namespace robot2D {
 
         quadBatchRender.refresh();
         robot2D::vec2f copyPos = m_pos;
-        for (const auto& s: m_text) {
+        for(const auto& s: m_text) {
             auto& preQuad = m_bufferCache[s];
 
-            for (int it = 0; it < 4; ++it) {
+            for(int it = 0; it < 4; ++it) {
                 Vertex vertex;
                 vertex.position = getTransform() * preQuad.vertices[it].position;
                 vertex.texCoords = preQuad.vertices[it].uvs;
@@ -123,28 +125,28 @@ namespace robot2D {
     }
 
     void Text::afterRender(bool hardUpdate) const {
-        if (hardUpdate) {
+        if(hardUpdate) {
             quadBatchRender.processBatching();
         }
 
         unsigned int index = 0;
-//        const auto& textures = m_font -> getTextures();
-//
-//        for (const auto& texture: textures) {
-//            texture -> bind(index);
-//            ++index;
-//        }
+        //        const auto& textures = m_font -> getTextures();
+        //
+        //        for (const auto& texture: textures) {
+        //            texture -> bind(index);
+        //            ++index;
+        //        }
 
         quadBatchRender.Bind();
-        glDrawElements(GL_TRIANGLES,
-                       quadBatchRender.getIndexCount(),
-                       GL_UNSIGNED_INT,
-                       nullptr);
+        glCall(glDrawElements, GL_TRIANGLES,
+            quadBatchRender.getIndexCount(),
+            GL_UNSIGNED_INT,
+            nullptr);
         quadBatchRender.unBind();
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, 0);
-        if (hardUpdate) {
+        if(hardUpdate) {
             quadBatchRender.refresh();
         }
     }
@@ -158,10 +160,10 @@ namespace robot2D {
         m_textShader.setMatrix("projection", target.getView().getTransform().get_matrix());
         m_textShader.unUse();
 
-        if (m_needupdate)
+        if(m_needupdate)
             beforeRender();
 
-        if (quadBatchRender.needRefresh()) {
+        if(quadBatchRender.needRefresh()) {
             afterRender(true);
             beforeRender();
         }
@@ -184,12 +186,12 @@ namespace robot2D {
         return m_color;
     }
 
-    void Text::move(const vec2f &offset) {
+    void Text::move(const vec2f& offset) {
         Transformable::move(offset);
         m_needupdate = true;
     }
 
-    void Text::scale(const vec2f &factor) {
+    void Text::scale(const vec2f& factor) {
         Transformable::scale(factor);
         m_needupdate = true;
     }

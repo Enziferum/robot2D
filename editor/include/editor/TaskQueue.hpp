@@ -28,8 +28,13 @@ source distribution.
 #include <queue>
 #include <atomic>
 #include <unordered_map>
+#include <numeric>
+#include <limits>
+#include <type_traits>
+#include <utility>
 
 #include "Task.hpp"
+#include <robot2D/Util/Logger.hpp>
 
 namespace editor {
 
@@ -63,11 +68,13 @@ namespace editor {
         Bad,
         Started,
         Processing,
-        Done
+        Done,
+        Failed,
+        Cancelled
     };
 
     using TaskID = std::uint32_t;
-    // using InvalidTaskId = 0;
+    constexpr std::uint32_t InvalidTaskId = std::numeric_limits<std::uint32_t>::max();
 
     struct TaskInfo {
         TaskStatus status;
@@ -76,6 +83,7 @@ namespace editor {
 
     class TaskQueue {
     public:
+        TaskQueue();
         TaskQueue(const TaskQueue&) = delete;
         TaskQueue& operator=(const TaskQueue&) = delete;
         TaskQueue(TaskQueue&&) = delete;
@@ -89,62 +97,66 @@ namespace editor {
 
         template<typename T, typename ... Args, typename Callback>
         TaskID addAsyncTask(Callback&& callback, Args&& ...args) {
-
             using CallbackStorage = std::decay_t<Callback>;
+            return addAsyncTaskWithCompletion<T>(
+                [success = CallbackStorage(std::forward<Callback>(callback))](const T& task) mutable {
+                    if(task.getOutcome() == TaskOutcome::Succeeded)
+                        success(task);
+                }, std::forward<Args>(args)...);
+        }
 
-            auto function = std::make_shared<TaskFunction<T, CallbackStorage>>(
-                    std::forward<Callback>(callback)
-            );
-            if(!function) {
-                //TODO: add logging
-                return -1;
-            }
-            auto task = std::make_shared<T>(function, std::forward<Args>(args)...);
-            const auto taskID =
-                    m_taskId.fetch_add(1, std::memory_order::memory_order_relaxed);
-
+        // Receives success, failure or task-observed cancellation on the process() thread.
+        // requestStop() prevents new dispatches; stop() also synchronizes with an in-flight callback.
+        template<typename T, typename ...Args, typename Callback>
+        TaskID addAsyncTaskWithCompletion(Callback&& callback, Args&& ...args) {
             {
-                std::lock_guard<std::mutex> lock(m_inputMutex);
-                m_inputTasksQueue.push(task);
+                std::lock_guard lock(m_mutex);
+                if(m_stopping)
+                    return InvalidTaskId;
             }
-
+            using CallbackStorage = std::decay_t<Callback>;
+            auto function = std::make_shared<TaskFunction<T, CallbackStorage>>(
+                    CallbackStorage(std::forward<Callback>(callback)));
+            auto task = std::make_shared<T>(function, std::forward<Args>(args)...);
+            TaskID taskID;
+            {
+                std::lock_guard lock(m_mutex);
+                if(m_stopping || m_taskId == InvalidTaskId)
+                    return InvalidTaskId;
+                taskID = m_taskId++;
+                task -> m_taskID = taskID;
+                m_statuses.emplace(taskID, TaskInfo{TaskStatus::Started});
+                m_inputTasksQueue.push(std::move(task));
+            }
             data_cond.notify_one();
-
             return taskID;
         }
 
         void process();
+        void requestStop();
         void stop();
-
-        /// TODO(a.raag): create correct method
-        bool hasPendingTasks() const { return false; }
-
-
+        bool hasPendingTasks() const;
         TaskStatus getStatus(TaskID taskId);
-
-        /// remove all ?
+        TaskInfo getTaskInfo(TaskID taskId) const;
+        // Discards waiting tasks and undelivered results; the active task can still complete.
         void clear();
     private:
-        TaskQueue();
-
         void threadWork();
-
-        void setStatus(TaskID taskId);
-        void setException(TaskID taskId);
+        void discard(std::queue<ITask::Ptr>& tasks);
     private:
         std::thread m_thread;
-
-        std::mutex m_inputMutex;
-        std::mutex m_outputMutex;
+        std::thread::id m_workerID;
+        mutable std::mutex m_mutex;
+        std::mutex m_requestMutex;
+        std::mutex m_stopMutex;
+        std::recursive_mutex m_callbackMutex;
         std::queue<ITask::Ptr> m_inputTasksQueue;
         std::queue<ITask::Ptr> m_outputTasksQueue;
-
-
-        std::mutex m_statusMutex;
+        ITask::Ptr m_activeTask;
         std::unordered_map<TaskID, TaskInfo> m_statuses;
-
         std::condition_variable data_cond;
-        std::atomic_int m_taskId;
-        std::atomic_bool m_running;
+        TaskID m_taskId { 0 };
+        bool m_stopping { false };
+        std::size_t m_activeCallbacks { 0 };
     };
 }

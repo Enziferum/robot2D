@@ -57,6 +57,7 @@ namespace editor {
         auto* manager = ResourceManager::getManager();
         auto* image = manager -> addImage(m_fileName);
         if(!image -> loadFromFile(m_filePath)) {
+            fail("Could not load animation image: " + m_filePath);
             RB_EDITOR_ERROR("AnimationTextureSliceTask: Can't loadImage by path {0}", m_filePath);
             return;
         }

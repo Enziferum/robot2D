@@ -29,7 +29,14 @@ namespace robot2D {
 
     template<>
     std::string PayloadBuffer::unpack() {
-        return { static_cast<char*>(m_buffer), m_bufferSz };
+        if(!m_buffer || !m_bufferSz)
+            return {};
+        const auto* data = static_cast<const char*>(m_buffer);
+        auto size = m_bufferSz;
+        // Text payloads may include the C-string terminator; it is not part of the value.
+        if(data[size - 1] == '\0')
+            --size;
+        return { data, size };
     }
 
     DragDropTarget::DragDropTarget() {

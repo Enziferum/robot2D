@@ -40,55 +40,60 @@ namespace editor {
         m_renderStats = std::move(renderStats);
     }
 
-    void UtilPanel::render() {
-        std::string s = std::string{"###UtilsPanel"};
-        ImGui::Begin(s.c_str());
-
-        // TODO(a.raag) need apply graphics styles
-
-
-        /*
-         * Frame Time:
-         * Draw Quads:
-         * Draw Calls:
-         * World Size:
-         *
-         */
-
-
-
-
-        ImGui::Text("Rendering 2D Stats ...");
-        ImGui::Text("Quads Count: %d", m_renderStats.drawQuads);
-        ImGui::Text("Draw Calls Count: %d", m_renderStats.drawCalls);
-
-        if(m_camera -> getType() == EditorCameraType::Orthographic) {
-            auto& position = m_camera -> getView().getCenter();
-            auto size = m_camera -> getView().getSize();
-            ImGui::Text("Viewport center := %.2f, %.2f", position.x, position.y);
-            ImGui::Text("Viewport size := %.2f, %.2f", size.x, size.y);
-            int i_size[2] = { (int)size.x, (int)size.y };
-            ImGui::InputInt2("Viewport size", i_size);
-            m_camera -> getView().setSize(i_size[0], i_size[1]);
-            ImGui::Text("Zoom := %.2f", m_camera -> getZoom());
-        }
-        else if(m_camera -> getType() == EditorCameraType::Perspective) {
-            auto cameraView = m_camera -> getViewMatrix();
-            auto& position = m_camera -> getPosition();
-            ImGui::Text("Viewport Position := %.2f, %.2f, %.2f", position.x, position.y, position.z);
-        }
-
-        if(ImGui::Button("Reset"))
-            m_camera -> resetDefaults();
-
-
-        auto color = m_clearColor.toGL();
-        float colors[4];
-        colors[0] = color.red; colors[1] = color.green;
-        colors[2] = color.blue; colors[3] = color.alpha;
-        ImGui::ColorEdit4("Color", colors);
-        m_clearColor = {robot2D::Color::fromGL(colors[0], colors[1], colors[2], colors[3])};
-        ImGui::End();
+    float UtilPanel::getHeight() {
+        return ImGui::GetFrameHeight() + 8.f;
     }
 
+    void UtilPanel::render() {
+        auto* viewport = ImGui::GetMainViewport();
+        auto height = getHeight();
+        ImGui::SetNextWindowViewport(viewport -> ID);
+        ImGui::SetNextWindowPos({viewport -> WorkPos.x, viewport -> WorkPos.y + viewport -> WorkSize.y - height});
+        ImGui::SetNextWindowSize({viewport -> WorkSize.x, height});
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {10.f, 4.f});
+        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.f);
+        auto flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoDocking
+                     | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings
+                     | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
+        ImGui::Begin("##EditorStatusBar", nullptr, flags);
+        auto fps = ImGui::GetIO().Framerate;
+        ImGui::AlignTextToFramePadding();
+        if(viewport -> WorkSize.x >= 900.f)
+            ImGui::TextDisabled("%.1f ms  |  %.0f FPS  |  Quads: %u  |  Draw calls: %u",
+                                fps > 0.f ? 1000.f / fps : 0.f, fps, m_renderStats.drawQuads, m_renderStats.drawCalls);
+        else
+            ImGui::TextDisabled("Quads: %u  |  Draw calls: %u", m_renderStats.drawQuads, m_renderStats.drawCalls);
+        if(m_camera && viewport -> WorkSize.x >= 900.f) {
+            ImGui::SameLine(0.f, 16.f);
+            ImGui::TextDisabled("Zoom: %.2f", m_camera -> getZoom());
+        }
+        ImGui::SameLine(0.f, 16.f);
+        if(ImGui::Button("Viewport"))
+            ImGui::OpenPopup("ViewportSettings");
+        if(ImGui::BeginPopup("ViewportSettings")) {
+            if(m_camera) {
+                if(m_camera -> getType() == EditorCameraType::Orthographic) {
+                    auto position = m_camera -> getView().getCenter();
+                    auto size = m_camera -> getView().getSize();
+                    ImGui::Text("Center: %.2f, %.2f", position.x, position.y);
+                    int viewSize[2] = {static_cast<int>(size.x), static_cast<int>(size.y)};
+                    if(ImGui::InputInt2("Viewport size", viewSize) && viewSize[0] > 0 && viewSize[1] > 0)
+                        m_camera -> getView().setSize(viewSize[0], viewSize[1]);
+                }
+                else {
+                    auto position = m_camera -> getPosition();
+                    ImGui::Text("Position: %.2f, %.2f, %.2f", position.x, position.y, position.z);
+                }
+                if(ImGui::Button("Reset camera"))
+                    m_camera -> resetDefaults();
+            }
+            auto color = m_clearColor.toGL();
+            float values[4] = {color.red, color.green, color.blue, color.alpha};
+            if(ImGui::ColorEdit4("Background", values))
+                m_clearColor = robot2D::Color::fromGL(values[0], values[1], values[2], values[3]);
+            ImGui::EndPopup();
+        }
+        ImGui::End();
+        ImGui::PopStyleVar(2);
+    }
 }

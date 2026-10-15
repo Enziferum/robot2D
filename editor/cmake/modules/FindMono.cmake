@@ -1,3 +1,22 @@
+# Unix distributions use multiarch library directories; include/assembly/config
+# paths cannot be inferred by walking up from libmonosgen's directory.
+if(UNIX AND NOT APPLE)
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(MONO_PC REQUIRED mono-2)
+    find_program(MONO_EXECUTABLE mono REQUIRED)
+    find_program(MONO_MCS_EXECUTABLE mcs REQUIRED)
+    pkg_get_variable(MONO_RUNTIME_LIBDIR mono-2 libdir)
+    pkg_get_variable(MONO_RUNTIME_SYSCONFDIR mono-2 sysconfdir)
+    set(MONO_INCLUDE_PATH "${MONO_PC_INCLUDE_DIRS}")
+    set(MONO_LIBRARIES "${MONO_PC_LINK_LIBRARIES}")
+    set(MONO_LIBRARY_PATH "${MONO_RUNTIME_LIBDIR}")
+    set(MONO_ASSEMBLY_PATH "${MONO_RUNTIME_LIBDIR}")
+    set(MONO_CONFIG_PATH "${MONO_RUNTIME_SYSCONFDIR}")
+    get_filename_component(MONO_BINARY_PATH "${MONO_EXECUTABLE}" DIRECTORY)
+    set(MONO_FOUND TRUE)
+    return()
+endif()
+
 if(CMAKE_SIZEOF_VOID_P EQUAL 8)
     # 64 bits
 	set (MONO_DEFAULT_INSTALL_PATH

@@ -25,12 +25,11 @@ source distribution.
 #include <cassert>
 #include <functional>
 #include <list>
+#include <unordered_map>
 
 #include <robot2D/Ecs/Scene.hpp>
 #include <robot2D/Ecs/Entity.hpp>
 #include <robot2D/Graphics/Drawable.hpp>
-
-#include <editor/UIInteractor.hpp>
 
 #include "Components.hpp"
 #include "physics/IPhysics2DAdapter.hpp"
@@ -38,7 +37,6 @@ source distribution.
 #include "DeletedEntitesRestoreInformation.hpp"
 #include "EditorCamera.hpp"
 #include "SceneEntity.hpp"
-#include "SceneGraph.hpp"
 
 namespace editor {
 
@@ -57,8 +55,10 @@ namespace editor {
 
         void createMainCamera();
 
-        std::list<SceneEntity>& getEntities();
         const std::list<SceneEntity>& getEntities() const;
+        const std::list<SceneEntity>& getRootEntities(SceneContext context = SceneContext::Editor) const;
+        std::vector<SceneEntity> getChildren(SceneEntity entity) const;
+        SceneEntity getParent(SceneEntity entity) const;
 
         void handleEventsRuntime(const robot2D::Event& event);
         void update(float dt);
@@ -70,25 +70,27 @@ namespace editor {
         void setRuntimeCamera(bool flag);
         void setRuntimeWindowSize(const robot2D::vec2u& size);
 
-        //////////////////////// Serializer Api ////////////////////////
-        SceneEntity createEntity();
-        void addAssociatedEntity(SceneEntity&& entity);
+        // Creates a registered root with ID, Tag, Transform and Hierarchy components.
+        SceneEntity createEntity(const std::string& name = "Untitled Entity");
+        // Registers an entity after its components have been loaded.
+        bool attachEntity(SceneEntity& entity);
+        // Creates an unregistered entity for serializers and prefab construction.
         SceneEntity createEmptyEntity();
-
-        //////////////////////// Serializer Api ////////////////////////
 
         /////////////////////////// ScenePanel API ///////////////////////////
         SceneEntity addEmptyEntity();
         SceneEntity addEmptyButton();
+        void registerUICallback(SceneEntity uiEntity);
         /////////////////////////// ScenePanel API ///////////////////////////
 
 
         bool setBefore(SceneEntity source, SceneEntity target);
-        void removeEntityChild(SceneEntity entity);
+        bool reparent(SceneEntity entity, SceneEntity parent = {});
         DeletedEntitiesRestoreInformation removeEntities(std::vector<SceneEntity>& removingEntities);
         void restoreEntities(DeletedEntitiesRestoreInformation& restoreInformation);
 
         SceneEntity getEntity(UUID uuid) const;
+        SceneEntity getEntity(UUID uuid, SceneContext context) const;
         SceneEntity getEntity(const std::string& name) const;
 
         bool isRunning() const { return m_running; }
@@ -103,7 +105,7 @@ namespace editor {
         [[maybe_unused]]
         SceneEntity duplicateEntity(robot2D::vec2f mousePos, SceneEntity entity);
         [[maybe_unused]]
-        SceneEntity duplicateEmptyEntity(SceneEntity entity);
+        SceneEntity duplicateEmptyEntity(SceneEntity entity, IScriptInteractorFrom::Ptr scriptInteractor = {});
 
         [[maybe_unused]]
         SceneEntity duplicateRuntime(SceneEntity entity, robot2D::vec2f position);
@@ -114,61 +116,78 @@ namespace editor {
         void setEditorCamera(EditorCamera::Ptr editorCamera);
 
         bool hasChanges() const { return m_hasChanges; }
+        void markModified() { if(!m_running) m_hasChanges = true; }
+        void markSaved() { m_hasChanges = false; }
+        void setName(const std::string& name) {
+            if(m_name != name) {
+                m_name = name;
+                markModified();
+            }
+        }
+        const std::string& getName() const { return m_name; }
 
-        /// \brief use for simple traverse inside Scene and don't think how SceneGraph works by outside caller.
-        void traverseGraph(TraverseFunction&& traverseFunction);
+        void forEachEntity(TraverseFunction&& traverseFunction,
+                           SceneContext context = SceneContext::Editor);
     protected:
         void draw(robot2D::RenderTarget& target, robot2D::RenderStates states) const override;
     private:
-        struct RemoveEntityInfo {
-            SceneEntity entity;
-            bool isDeleted{false};
-        };
-
         void initScene();
         void onPhysics2DRun(IScriptInteractorFrom::Ptr scriptInteractor);
         void onPhysics2DStop();
 
         void removeDuplicate(SceneEntity entity);
-        void removeChildEntities(DeletedEntitiesRestoreInformation& information,
-                                 std::vector<RemoveEntityInfo>& removingEntities,
-                                 const SceneEntity& parent, bool isParentDel = false);
-
         void duplicateEntityChild(SceneEntity parent, SceneEntity dupEntity);
 
-        void registerUICallback(SceneEntity uiEntity);
+        struct EntityStorage {
+            EntityStorage() = default;
+            EntityStorage(const EntityStorage& other) = delete;
+            EntityStorage& operator=(const EntityStorage& other) = delete;
+            EntityStorage(EntityStorage&& other) = default;
+            EntityStorage& operator=(EntityStorage&& other) = default;
+            ~EntityStorage() = default;
+
+            std::list<SceneEntity> roots;
+            std::unordered_map<UUID, SceneEntity> entities;
+            std::vector<SceneEntity> pendingRemovals;
+        };
+        EntityStorage& getStorage(SceneContext context);
+        const EntityStorage& getStorage(SceneContext context) const;
+        SceneEntity wrapEntity(robot2D::ecs::Entity entity, SceneContext context);
+        bool registerEntity(SceneEntity entity);
+        void addRoot(SceneEntity entity);
+        bool ownsEntity(SceneEntity entity) const;
+        bool isContextValid(SceneContext context, std::uint64_t version) const;
+        bool reorderEntity(SceneEntity source, SceneEntity target);
+        void queueRemoval(SceneEntity entity);
+        void processRemovals(SceneContext context);
+        void cancelPendingRemoval(SceneEntity entity);
+        void moveChildren(UUID parentID, const robot2D::vec2f& offset,
+                          SceneContext context, std::uint64_t version);
+        void forEachChild(TraverseFunction& traverseFunction, SceneEntity parent);
     private:
-        friend class EditorLogic;
+        friend class SceneEntity;
+        friend class TransformComponent;
         friend class DuplicateCommand;
-        SceneGraph m_sceneGraph;
-        SceneGraph m_runtimeSceneGraph;
+        EntityStorage m_editorEntities;
+        EntityStorage m_runtimeEntities;
+        std::uint64_t m_runtimeVersion { 0 };
         std::vector<SceneEntity> m_scriptRuntimeContainer;
 
         std::vector<robot2D::ecs::Entity> m_runtimeClonedArray;
         std::list<SceneEntity> m_listPhysics;
 
         robot2D::ecs::Scene m_scene;
-        robot2D::ecs::Scene m_runtimeScene;
+        std::unique_ptr<robot2D::ecs::Scene> m_runtimeScene;
 
         IEditorCamera::Ptr m_editorCamera{nullptr};
         IPhysics2DAdapter::Ptr m_physicsAdapter{ nullptr };
 
         robot2D::MessageBus& m_messageBus;
         std::string m_path;
+        std::string m_name = "Unnamed Scene";
         std::string m_associatedProjectPath;
         bool m_running = false;
         bool m_hasChanges{false};
 
-        using Iterator = std::list<SceneEntity>::iterator;   
-        using SetItem = std::tuple<Iterator, SceneEntity, bool, SceneEntity>;
-
-        struct RestoreData {
-            bool isChained{ false };
-            Iterator anchorIterator;
-            SceneEntity anchorEntity {};
-            SceneEntity sourceEntity;
-        };
-
-        std::vector<RestoreData> m_restoreItems;
     };
 } // namespace editor

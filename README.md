@@ -12,7 +12,10 @@ In current version 0.8(W.I.P) support platforms are: Windows / Linux / MacOS ?.
 Primary focus is fully work with project as `Engine` in editor way only. It's means Engine will be private as core 
 of editor.
 \
-Next planning version is 0.8. See `Project 0.8` to check actual tasks.
+Development plan: [Project roadmap](docs/project-roadmap.md) ·
+[0.8–1.0 release goals](docs/release-roadmap.md) ·
+[GitHub task board](https://github.com/users/Enziferum/projects/5).
+Core/ECS, Render, Editor and runtime share this plan and release milestones.
 
 \
 Project's idea - learning, have fun and sometimes make games on it :) 
@@ -56,3 +59,22 @@ Code Guards
   ctest --output-junit engine_tests.xml --output-on-failure --test-dir build/tests
 ```
  - Your output will be inside `build` folder.
+
+## Editor regression tests
+
+Enable `RB2D_BUILD_EDITOR_TESTS=ON`, build `robot2D-editor-test-suite`, then run:
+
+```shell
+ctest --test-dir build -L headless --no-tests=error --output-on-failure
+```
+
+Scene integration tests use a hidden OpenGL 4.5 context and are enabled separately
+with `RB2D_EDITOR_GRAPHICS_TESTS=ON` (`ctest --test-dir build -L graphics`).
+See [editor test setup, coverage and manual UI checks](docs/editor-testing.md).
+
+## CI reports
+
+GitHub Actions → **Engine Build** → select a run → **Summary** shows test results
+and failure details for Linux/Windows. **Artifacts** contains JUnit XML and full
+build/test logs (`test-report-<runner>`, retained for 14 days).
+See [CI setup and local reproduction](docs/ci.md).

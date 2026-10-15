@@ -4,16 +4,16 @@ uniform vec2 u_resolution;
 
 void stroke(float dist, vec4 color, inout vec4 fragColor, float thickness, float aa)
 {
-    float alpha = smoothstep(0.5 * (thickness + aa), 0.5 * (thickness - aa), abs(dist));
+    float alpha = 1.0 - smoothstep(0.5 * (thickness - aa), 0.5 * (thickness + aa), abs(dist));
     fragColor = mix(fragColor, color, alpha);
 }
 
 void renderGrid(vec2 pos, out vec4 fragColor) {
-    vec3 background = vec3(0.23);
+    vec3 background = vec3(0.055, 0.065, 0.08);
     vec3 axes = vec3(0.4);
     vec3 lines = vec3(0.7);
-    vec4 sublines = vec4(0.42, 0.42, 0.42, 1);
-    vec4 sublines1 = vec4(1, 1, 1, 0.5);
+    vec4 sublines = vec4(0.22, 0.26, 0.32, 0.75);
+    vec4 sublines1 = vec4(0.14, 0.17, 0.21, 0.45);
 
     float subdiv = 8.0; // default 8.0
     float subdiv1 = 64.0; // default 8.0

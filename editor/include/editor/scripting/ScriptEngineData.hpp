@@ -25,6 +25,8 @@ source distribution.
 #include <string>
 #include <vector>
 #include <filesystem>
+#include <cstring>
+#include <cstdint>
 
 #include <robot2D/Core/Window.hpp>
 #include <filewatch/FileWatch.hpp>
@@ -54,7 +56,7 @@ namespace editor {
 
         ScriptFieldInstance()
         {
-            memset(m_Buffer, 0, sizeof(m_Buffer));
+            std::memset(m_Buffer, 0, sizeof(m_Buffer));
         }
 
         template<typename T>
@@ -68,10 +70,10 @@ namespace editor {
         void setValue(T value)
         {
             static_assert(sizeof(T) <= 64, "Type too large!");
-            memcpy(m_Buffer, &value, sizeof(T));
+            std::memcpy(m_Buffer, &value, sizeof(T));
         }
     private:
-        uint8_t m_Buffer[64];
+        std::uint8_t m_Buffer[64];
 
         friend class ScriptEngine;
         friend class ScriptInstance;

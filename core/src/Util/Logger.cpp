@@ -22,21 +22,24 @@ source distribution.
 #include <robot2D/Util/Logger.hpp>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/sinks/basic_file_sink.h>
+#include <filesystem>
 
 namespace logger {
 
     std::shared_ptr<spdlog::logger> Log::s_CoreLogger;
     std::shared_ptr<spdlog::logger> Log::s_EditorLogger;
     std::shared_ptr<spdlog::logger> Log::s_ClientLogger;
+    std::string Log::s_FilePath;
 
     void Log::Init()
     {
         std::vector<spdlog::sink_ptr> logSinks;
         logSinks.emplace_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
-        logSinks.emplace_back(std::make_shared<spdlog::sinks::basic_file_sink_mt>("robot2D.log", true));
+        s_FilePath = std::filesystem::absolute("robot2D.log").string();
+        logSinks.emplace_back(std::make_shared<spdlog::sinks::basic_file_sink_mt>(s_FilePath, true));
 
-        logSinks[0]->set_pattern("%^[%T] %n: %v%$");
-        logSinks[1]->set_pattern("[%T] [%l] %n: %v");
+        logSinks[0]->set_pattern("%^[%T.%e] [%l] [thread %t] %n: %v%$");
+        logSinks[1]->set_pattern("[%Y-%m-%d %T.%e] [%l] [thread %t] %n: %v");
 
         s_CoreLogger = std::make_shared<spdlog::logger>("Robot2DCore", begin(logSinks), end(logSinks));
         spdlog::register_logger(s_CoreLogger);
@@ -52,5 +55,7 @@ namespace logger {
         spdlog::register_logger(s_ClientLogger);
         s_ClientLogger->set_level(spdlog::level::trace);
         s_ClientLogger->flush_on(spdlog::level::trace);
+        s_CoreLogger->info("[Logging] Session started; file='{}'; working_directory='{}'",
+                           s_FilePath, std::filesystem::current_path().string());
     }
 }

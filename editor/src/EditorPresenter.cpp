@@ -34,25 +34,24 @@ namespace editor {
         m_editor -> prepareView();
     }
 
-    void EditorPresenter::restoreEntitiesOnUI(DeletedEntitiesRestoreUIInformation &restoreUiInformation) {
-        m_editor -> restoreEntitiesOnUI(restoreUiInformation);
-    }
-
-    DeletedEntitiesRestoreUIInformation
-    EditorPresenter::removeEntitiesFromUI(std::list<ITreeItem::Ptr>&& uiItems) {
-        return m_editor -> removeEntitiesOnUI(std::move(uiItems));
-    }
-
-    void EditorPresenter::findSelectedEntitiesOnUI(std::vector<ITreeItem::Ptr>&& items) {
-        m_editor -> findSelectedEntitiesOnUI(std::move(items));
-    }
-
     void EditorPresenter::clearSelectionOnUI() {
         m_editor -> clearSelectionOnUI();
     }
 
     void EditorPresenter::showPopup(PopupConfiguration* popupConfiguration) {
         m_editor -> showPopup(popupConfiguration);
+    }
+
+    bool EditorPresenter::hasAssetChanges() const {
+        return m_editor -> hasAssetChanges();
+    }
+
+    bool EditorPresenter::saveAssetChanges() {
+        return m_editor -> saveAssetChanges();
+    }
+
+    void EditorPresenter::discardAssetChanges() {
+        m_editor -> discardAssetChanges();
     }
 
     void EditorPresenter::setMainCameraEntity(SceneEntity entity) {

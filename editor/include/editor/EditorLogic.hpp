@@ -33,6 +33,7 @@ source distribution.
 #include "PopupConfiguration.hpp"
 #include "PopupManager.hpp"
 #include "CommandStack.hpp"
+#include "SelectionService.hpp"
 
 #include "ScriptInteractor.hpp"
 #include "EditorInteractor.hpp"
@@ -81,6 +82,7 @@ namespace editor {
         EditorState getState() const override;
         /// \brief Save Scene by Shortcut.
         bool saveScene() override;
+        bool saveAll() override;
 
         void closeCurrentProject(std::function<void()>&& resultCallback);
         robot2D::vec2f getMainCameraPosition() const override;
@@ -91,7 +93,8 @@ namespace editor {
 
         //////////////////////////////////////// UIInteractor ////////////////////////////////////////
         SceneEntity findEntity(const robot2D::vec2i& mousePos)  override;
-        std::vector<SceneEntity>& getSelectedEntities()  override;
+        std::vector<SceneEntity> getSelectedEntities() override;
+        SelectionService& getSelectionService() override;
         std::string getAssociatedProjectPath() const override;
         const std::list<SceneEntity>& getEntities() const override;
         void addEmptyEntity() override;
@@ -100,17 +103,15 @@ namespace editor {
         SceneEntity createEmptyEntity() override;
         /// \brief using when need create entity on scene, but don't want to notify someone
         SceneEntity duplicateEmptyEntity(SceneEntity entity) override;
+        void applyPrefabChanges(UUID prefabID, SceneEntity entity) override;
 
         bool setBefore(SceneEntity sourceEntity, SceneEntity target) override;
-        void removeEntityChild(SceneEntity entity) override;
+        bool reparentEntity(SceneEntity entity, SceneEntity parent = {}) override;
         bool isRunning() const override;
         SceneEntity getEntity(UUID uuid) override;
         SceneEntity getEntity(const std::string& name) override;
 
-        void restoreDeletedEntities(DeletedEntitiesRestoreInformation& restoreInformation,
-                                    DeletedEntitiesRestoreUIInformation& restoreUiInformation) override;
-
-        void uiSelectedEntities(std::set<ITreeItem::Ptr>& uiItems, bool isAll) override;
+        void restoreDeletedEntities(DeletedEntitiesRestoreInformation& restoreInformation) override;
 
         const std::vector<class_id>& getCommandStack() const override;
         void exportProject(const ExportOptions& exportOptions) override;
@@ -120,6 +121,7 @@ namespace editor {
     private:
         void loadSceneCallback(Scene::Ptr loadedScene);
         void processEntity(SceneEntity entity);
+        void notifySelection();
 
         friend class EditorModule;
         void switchRuntimeState(const ToolbarMessage::Type& messageType);
@@ -145,12 +147,14 @@ namespace editor {
         IScriptInteractorFrom::WeakPtr m_scriptInteractor;
 
         Project::Ptr m_currentProject;
+        Project::Ptr m_pendingProject;
         SceneManager m_sceneManager;
         Scene::Ptr m_activeScene;
 
         PopupConfiguration m_popupConfiguration;
+        EditorState m_stateBeforePopup { EditorState::Edit };
 
-        std::vector<SceneEntity> m_selectedEntities;
+        SelectionService m_selectionService;
         std::vector<SceneEntity> m_copyEntities;
 
         SceneEntity m_mainCameraEntity;

@@ -28,9 +28,10 @@ source distribution.
 #include "IPanel.hpp"
 
 namespace editor {
+    class UIManager;
     class MenuPanel: public IPanel, public PopupDelegate {
     public:
-        MenuPanel(robot2D::MessageBus& messageBus, UIInteractor::Ptr interactor);
+        MenuPanel(robot2D::MessageBus& messageBus, UIInteractor::Ptr interactor, UIManager* panelManager = nullptr);
         MenuPanel(const MenuPanel& other) = delete;
         MenuPanel& operator=(const MenuPanel& other) = delete;
         MenuPanel(MenuPanel&& other) = delete;
@@ -62,5 +63,8 @@ namespace editor {
         } m_popupType = PopupType::None;
 
         ExportOptions m_exportOptions;
+        bool m_showImGuiDemo { false };
+        bool m_showPanelDiagnostics { false };
+        UIManager* m_panelManager { nullptr };
     };
 }

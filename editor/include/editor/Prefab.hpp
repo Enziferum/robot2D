@@ -26,6 +26,7 @@ source distribution.
 #include "Uuid.hpp"
 
 namespace editor {
+    class Scene;
 
     class Prefab final {
     public:
@@ -44,13 +45,18 @@ namespace editor {
         void setPath(const std::string& path);
         void setUUID(UUID uuid);
         void addUUID();
+        void setProjectPath(const std::string& path) { m_projectPath = path; }
+        const std::shared_ptr<Scene>& getTemplateScene() const { return m_templateScene; }
 
         SceneEntity& getEntity() { return m_entity; }
         const SceneEntity& getEntity() const { return m_entity; }
         const std::string& getPath() const { return m_path; }
         const UUID& getUUID() const { return m_uuid; }
     private:
+        friend class PrefabSerializer;
         std::string m_path;
+        std::string m_projectPath;
+        std::shared_ptr<Scene> m_templateScene;
         SceneEntity m_entity;
         UUID m_uuid;
     };

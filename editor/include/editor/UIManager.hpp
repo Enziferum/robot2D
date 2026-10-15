@@ -21,16 +21,20 @@ source distribution.
 
 #pragma once
 #include <vector>
+#include <string>
 #include <algorithm>
 #include <cassert>
 
 #include <editor/SceneEntity.hpp>
 #include <robot2D/imgui/Gui.hpp>
+#include <robot2D/Core/MessageBus.hpp>
 #include "panels/IPanel.hpp"
 
 #include "Uuid.hpp"
 
 namespace editor {
+
+    class UIInteractor;
 
     class IUIManager {
     public:
@@ -58,17 +62,39 @@ namespace editor {
 
         void update(float dt);
         void render();
+        void setRuntimeControls(UIInteractor* interactor, robot2D::MessageBus& messageBus);
+
+        struct PanelEntry {
+            std::string key;
+            std::string name;
+            std::string windowName;
+            IPanel* panel;
+        };
+        bool registerPanel(IPanel& panel, const std::string& key, const std::string& name,
+                           const std::string& windowName = {});
+        const std::vector<PanelEntry>& getPanels() const { return m_registeredPanels; }
+        bool setPanelVisible(const std::string& key, bool visible);
+        void showAllPanels();
+        void restoreDefaultLayout();
+        void renderDiagnostics() const;
 
         void blockEvents(bool flag) override;
         SceneEntity getTreeItem(editor::UUID uuid) override;
     private:
         void renderBaseCanvas();
         void canvasWindowFunction();
+        void renderRuntimeToolbar();
 
         void createLayout();
+        bool isStatusBarVisible() const;
     private:
         robot2D::Gui& m_gui;
+        UIInteractor* m_runtimeInteractor { nullptr };
+        robot2D::MessageBus* m_runtimeMessageBus { nullptr };
         std::vector<IPanel::Ptr> m_panels;
+        std::vector<PanelEntry> m_registeredPanels;
+        bool m_resetLayout { false };
+        unsigned int m_dockspaceID { 0 };
     };
 
     template<typename T, typename ...Args>

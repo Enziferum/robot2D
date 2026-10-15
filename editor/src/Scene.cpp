@@ -19,6 +19,8 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 #include <optional>
+#include <unordered_set>
+#include <mutex>
 #include <robot2D/Graphics/RenderTarget.hpp>
 
 #include <editor/Scene.hpp>
@@ -33,9 +35,10 @@ source distribution.
 #include <editor/UISystem.hpp>
 
 #include <editor/scripting/ScriptingEngine.hpp>
-#include <editor/panels/TreeHierarchy.hpp>
 #include <editor/Messages.hpp>
 #include <editor/physics/Layers2D.hpp>
+#include <editor/ResouceManager.hpp>
+#include <editor/LocalResourceManager.hpp>
 
 namespace editor {
 
@@ -44,23 +47,9 @@ namespace editor {
         constexpr robot2D::vec2f defaultSize = {20.f, 20.f};
     }
 
-    template<typename Container, typename T>
-    std::optional<typename Container::iterator> find(Container& container, const T& item) {
-        auto found = std::find_if(std::begin(container), std::end(container), [&item](const T& containerItem) {
-            return item == containerItem;
-        });
-
-        if(found != std::end(container))
-            return found;
-
-        return std::nullopt;
-    }
-
     Scene::Scene(robot2D::MessageBus &messageBus) :
-            m_sceneGraph(messageBus),
-            m_runtimeSceneGraph(messageBus),
             m_scene(messageBus),
-            m_runtimeScene{messageBus},
+            m_runtimeScene{nullptr},
             m_messageBus{messageBus} {
         initScene();
     }
@@ -72,62 +61,38 @@ namespace editor {
         m_scene.addSystem<AnimationSystem>(m_messageBus);
         m_scene.addSystem<UISystem>(m_messageBus);
 
-        InitPhysicsLayers();
+        static std::once_flag physicsLayersInitialized;
+        std::call_once(physicsLayersInitialized, InitPhysicsLayers);
     }
 
     void Scene::createMainCamera() {
-        auto entity = m_scene.createEntity();
-        auto cameraEntity = m_sceneGraph.createEntity(std::move(entity));
-        cameraEntity.addComponent<IDComponent>(UUID());
-        cameraEntity.addComponent<TagComponent>().setTag("MainCamera");
-        cameraEntity.addComponent<CameraComponent>().isPrimary = true;
-
-        auto& transform = cameraEntity.addComponent<TransformComponent>();
-        transform.setPosition(defaultPosition);
-        transform.setSize(defaultSize);
-        cameraEntity.addComponent<DrawableComponent>();
-    }
-
-
-    std::list<SceneEntity>& Scene::getEntities() {
-        return m_sceneGraph.getEntities();
+        auto entity = createEntity("MainCamera");
+        entity.addComponent<CameraComponent>().isPrimary = true;
+        entity.addComponent<DrawableComponent>();
     }
 
     const std::list<SceneEntity>& Scene::getEntities() const {
-        return m_sceneGraph.getEntities();
+        return getRootEntities();
+    }
+
+    const std::list<SceneEntity>& Scene::getRootEntities(SceneContext context) const {
+        return getStorage(context).roots;
     }
 
     void Scene::handleEventsRuntime(const robot2D::Event& event) {
-        m_scene.getSystem<UISystem>() -> handleEvents(event);
+        if(m_running && m_runtimeScene)
+            m_runtimeScene -> getSystem<UISystem>() -> handleEvents(event);
     }
 
-
     void Scene::update(float dt) {
-        auto& sceneEntities = m_sceneGraph.getEntities();
-
-        for (const auto& restoreData: m_restoreItems) {
-
-            if (restoreData.anchorIterator == sceneEntities.begin())
-                sceneEntities.insert(restoreData.anchorIterator, restoreData.sourceEntity);
-            if (!restoreData.isChained) {
-                if (restoreData.anchorIterator != sceneEntities.end())
-                    sceneEntities.insert(std::next(restoreData.anchorIterator), restoreData.sourceEntity);
-                else
-                    sceneEntities.insert(restoreData.anchorIterator, restoreData.sourceEntity);
-            } else {
-                auto prevFound = find(sceneEntities, restoreData.anchorEntity);
-                if(prevFound)
-                    sceneEntities.insert(std::next(*prevFound), restoreData.sourceEntity);
-            }
-
-        }
-
-        m_restoreItems.clear();
-        m_sceneGraph.update(dt, m_scene);
+        processRemovals(SceneContext::Editor);
         m_scene.update(dt);
     }
 
     void Scene::updateRuntime(float dt, IScriptInteractorFrom::Ptr scriptInteractor) {
+        if(!m_running || !m_runtimeScene)
+            return;
+        processRemovals(SceneContext::Runtime);
         auto scriptingEngine = scriptInteractor -> getScriptingEngine();
         if(!scriptingEngine)
             return;
@@ -136,66 +101,95 @@ namespace editor {
             scriptingEngine -> onUpdateEntity(entity, dt);
 
         m_physicsAdapter -> update(dt);
-        m_runtimeScene.update(dt);
+        m_runtimeScene -> update(dt);
     }
 
     void Scene::draw(robot2D::RenderTarget& target, robot2D::RenderStates states) const {
         if(m_running) {
-            target.draw(m_runtimeScene);
+            target.draw(*m_runtimeScene);
             return;
         }
         target.draw(m_scene);
     }
 
-    SceneEntity Scene::createEntity() {
-        auto entity = m_scene.createEntity();
-        return m_sceneGraph.createEntity(std::move(entity));
-    }
-
-    SceneEntity Scene::createEmptyEntity() {
-        return SceneEntity(std::move(m_scene.createEmptyEntity()));
-    }
-
-    void Scene::addAssociatedEntity(SceneEntity &&entity) {
-        m_sceneGraph.addEntity(std::move(entity));
-        m_hasChanges = true;
-    }
-
-
-    SceneEntity Scene::addEmptyEntity() {
-        auto entity = m_scene.createEntity();
-        entity.addComponent<IDComponent>(UUID());
-        entity.addComponent<TagComponent>();
-
+    SceneEntity Scene::createEntity(const std::string& name) {
+        auto entity = createEmptyEntity();
+        entity.addComponent<IDComponent>();
+        entity.addComponent<TagComponent>().setTag(name);
         auto& transform = entity.addComponent<TransformComponent>();
         transform.setPosition(defaultPosition);
         transform.setSize(defaultSize);
-        entity.addComponent<DrawableComponent>();
-
-        m_sceneGraph.addEntity(SceneEntity{entity});
+        attachEntity(entity);
         m_hasChanges = true;
-        auto sceneEntity = m_sceneGraph.getEntities().back();
-        return sceneEntity;
+        return entity;
+    }
+
+    SceneEntity Scene::createEmptyEntity() {
+        return wrapEntity(m_scene.createEmptyEntity(), SceneContext::Editor);
+    }
+
+    bool Scene::attachEntity(SceneEntity& entity) {
+        if(entity.m_scene != this || !entity || entity.m_context != SceneContext::Editor
+           || !entity.hasComponent<IDComponent>())
+            return false;
+        auto existing = getEntity(entity.getUUID(), SceneContext::Editor);
+        if(existing && existing.getWrappedEntity() != entity.getWrappedEntity())
+            return false;
+        if(!registerEntity(entity))
+            return false;
+        entity = getEntity(entity.getUUID(), SceneContext::Editor);
+        addRoot(entity);
+        if(!existing)
+            m_scene.addEntity(entity.getWrappedEntity());
+        m_hasChanges = true;
+        return true;
+    }
+
+    SceneEntity Scene::addEmptyEntity() {
+        auto entity = createEntity();
+        entity.addComponent<DrawableComponent>();
+        return entity;
     }
 
     void Scene::onRuntimeStart(IScriptInteractorFrom::Ptr scriptInteractor) {
+        if(m_running)
+            return;
+        ++m_runtimeVersion;
+        m_runtimeClonedArray.clear();
+        m_runtimeEntities = EntityStorage{};
+        m_runtimeScene = std::make_unique<robot2D::ecs::Scene>(m_messageBus);
         m_running = true;
-        if(!m_scene.cloneSelf(m_runtimeScene, m_runtimeClonedArray, true)) {
+        if(!m_scene.cloneSelf(*m_runtimeScene, m_runtimeClonedArray, true)) {
             throw std::runtime_error("m_scene.cloneSelf exception");
         }
 
-        m_runtimeSceneGraph.m_AllSceneEntitiesMap.clear();
+        m_runtimeEntities.entities.clear();
+        m_runtimeEntities.roots.clear();
         m_scriptRuntimeContainer.clear();
         for(const auto& entity: m_runtimeClonedArray) {
-            SceneEntity newSceneEntity{entity};
-            m_runtimeSceneGraph.m_AllSceneEntitiesMap[newSceneEntity.getUUID()] = newSceneEntity;
+            if(!entity.hasComponent<IDComponent>()) {
+                m_runtimeScene -> removeEntity(entity);
+                continue;
+            }
+            auto source = getEntity(entity.getComponent<IDComponent>().ID, SceneContext::Editor);
+            if(!source || source.getWrappedEntity().getIndex() != entity.getIndex()) {
+                m_runtimeScene -> removeEntity(entity);
+                continue;
+            }
+            auto wrappedEntity = entity;
+            auto newSceneEntity = wrapEntity(std::move(wrappedEntity), SceneContext::Runtime);
+            if(!registerEntity(newSceneEntity))
+                continue;
             if(entity.hasComponent<ScriptComponent>())
                 m_scriptRuntimeContainer.push_back(newSceneEntity);
         }
 
+        for(auto root: m_editorEntities.roots)
+            addRoot(getEntity(root.getUUID(), SceneContext::Runtime));
+
         onPhysics2DRun(scriptInteractor);
 
-        m_runtimeScene.getSystem<RenderSystem>() -> setScene(this);
+        m_runtimeScene -> getSystem<RenderSystem>() -> setScene(this);
         auto scriptingEngine = scriptInteractor -> getScriptingEngine();
         if(!scriptingEngine)
             return;
@@ -203,12 +197,12 @@ namespace editor {
         scriptingEngine -> onRuntimeStart(scriptInteractor);
 
 
-      /*  m_runtimeSceneGraph.filterEntities<ScriptComponent>(m_scriptRuntimeContainer);*/
+
         for (const auto& entity: m_scriptRuntimeContainer)
             scriptingEngine -> onCreateEntity(entity);
 
 
-        m_runtimeSceneGraph.traverseGraph(std::move([](SceneEntity& sceneEntity) {
+        forEachEntity(std::move([](SceneEntity& sceneEntity) {
             if (sceneEntity.hasComponent<ButtonComponent>()) {
                 auto& hitbox = sceneEntity.getComponent<UIHitbox>();
                 auto& ts = sceneEntity.getComponent<TransformComponent>();
@@ -216,31 +210,32 @@ namespace editor {
                 hitbox.m_area = robot2D::FloatRect::create(ts.getPosition(),
                                                            ts.getSize() + ts.getPosition());
             }
-        }));
+        }), SceneContext::Runtime);
     }
 
     void Scene::onRuntimeStop(IScriptInteractorFrom::Ptr scriptInteractor) {
-        m_runtimeScene.getSystem<RenderSystem>() -> setScene(nullptr);
-        m_running = false;
-        onPhysics2DStop();
-        auto scriptingEngine = scriptInteractor -> getScriptingEngine();
-        if(!scriptingEngine)
+        if(!m_running)
             return;
-        scriptingEngine -> onRuntimeStop();
+        m_runtimeScene -> getSystem<RenderSystem>() -> setScene(nullptr);
+        onPhysics2DStop();
+        auto scriptingEngine = scriptInteractor ? scriptInteractor -> getScriptingEngine() : nullptr;
+        if(scriptingEngine)
+            scriptingEngine -> onRuntimeStop();
+        m_running = false;
+        ++m_runtimeVersion;
+        m_runtimeEntities = EntityStorage{};
         m_runtimeClonedArray.clear();
-        m_runtimeSceneGraph.m_AllSceneEntitiesMap.clear();
-        m_runtimeSceneGraph.m_sceneEntities.clear();
-        if(!m_runtimeScene.clearSelf()) {
-            throw std::runtime_error("Scene::onRuntimeStop exception");
-        }
+        m_scriptRuntimeContainer.clear();
+        m_listPhysics.clear();
+        m_runtimeScene.reset();
     }
 
     void Scene::onPhysics2DRun(IScriptInteractorFrom::Ptr scriptInteractor) {
         m_physicsAdapter = getPhysics2DAdapter(PhysicsAdapterType::Box2D);
         m_listPhysics.clear();
 
-        for(const auto& ecsEntity: m_runtimeClonedArray)
-            m_listPhysics.emplace_back(ecsEntity);
+        for(auto entity: m_runtimeEntities.roots)
+            m_listPhysics.emplace_back(entity);
 
         m_physicsAdapter -> start(m_listPhysics);
         auto scriptingEngine = scriptInteractor -> getScriptingEngine();
@@ -259,56 +254,55 @@ namespace editor {
     }
 
 
-    void Scene::removeEntityChild(SceneEntity entity) {
-        m_hasChanges = true;
-        m_sceneGraph.makeEntityChild(entity);
-    }
-
     void Scene::setRuntimeCamera(bool flag) {
         if(!m_running)
             m_scene.getSystem<RenderSystem>() -> setRuntimeFlag(flag);
         else
-            m_runtimeScene.getSystem<RenderSystem>() -> setRuntimeFlag(flag);
+            m_runtimeScene -> getSystem<RenderSystem>() -> setRuntimeFlag(flag);
     }
 
     void Scene::setRuntimeWindowSize(const robot2D::vec2u& size) {
         if(!m_running)
             m_scene.getSystem<RenderSystem>() -> setRuntimeWindowSize(size);
         else
-            m_runtimeScene.getSystem<RenderSystem>() -> setRuntimeWindowSize(size);
+            m_runtimeScene -> getSystem<RenderSystem>() -> setRuntimeWindowSize(size);
     }
 
     SceneEntity Scene::getEntity(UUID uuid) const {
-        if(m_running)
-            return m_runtimeSceneGraph.getEntity(uuid);
-        return m_sceneGraph.getEntity(uuid);
+        return getEntity(uuid, m_running ? SceneContext::Runtime : SceneContext::Editor);
+    }
+
+    SceneEntity Scene::getEntity(UUID uuid, SceneContext context) const {
+        const auto& entities = getStorage(context).entities;
+        auto found = entities.find(uuid);
+        if(found != entities.end() && found -> second)
+            return found -> second;
+        return {};
     }
 
     SceneEntity Scene::getEntity(const std::string& name) const {
-        if(m_running) {
-            auto found = std::find_if(m_scriptRuntimeContainer.begin(),
-                                      m_scriptRuntimeContainer.end(), [&](const SceneEntity& entity) {
-               return entity.getName() == name;
-            });
-            auto uuid = (*found).getUUID();
-            return *found;
+        const auto& entities = getStorage(m_running ? SceneContext::Runtime : SceneContext::Editor).entities;
+        for(const auto& [uuid, entity]: entities) {
+            if(entity && entity.hasComponent<TagComponent>() && entity.getName() == name)
+                return entity;
         }
         return {};
     }
 
-
     bool Scene::setBefore(SceneEntity source, SceneEntity target) {
-        if (m_sceneGraph.setBefore(source, target)) {
-            m_scene.getSystem<RenderSystem>() -> setBefore(source.getWrappedEntity(),
-                                                         target.getWrappedEntity());
+        if(!reorderEntity(source, target))
+            return false;
+        auto* ecs = source.m_context == SceneContext::Editor ? &m_scene : m_runtimeScene.get();
+        if(ecs && source.hasComponent<DrawableComponent>() && target.hasComponent<DrawableComponent>())
+            ecs -> getSystem<RenderSystem>() -> setBefore(source.getWrappedEntity(), target.getWrappedEntity());
+        if(source.m_context == SceneContext::Editor)
             m_hasChanges = true;
-            return true;
-        }
-
-        return false;
+        return true;
     }
 
     SceneEntity Scene::duplicateEntity(robot2D::vec2f mousePos, SceneEntity entity) {
+        if(!ownsEntity(entity) || entity.m_context != SceneContext::Editor)
+            return {};
         // TODO(a.raag): if clone not add "(Clone)"
 
         auto dupEntity = m_scene.duplicateEntity(entity.getWrappedEntity());
@@ -322,13 +316,13 @@ namespace editor {
         msg -> entityID = dupEntity.getComponent<IDComponent>().ID;
         m_hasChanges = true;
 
-        SceneEntity duplicateSceneEntity{std::move(dupEntity)};
+        auto duplicateSceneEntity = wrapEntity(std::move(dupEntity), SceneContext::Editor);
+        if(duplicateSceneEntity.hasComponent<HierarchyComponent>())
+            duplicateSceneEntity.getComponent<HierarchyComponent>() = HierarchyComponent{};
+        addRoot(duplicateSceneEntity);
         if(entity.isChild()) {
             auto parent = entity.getParent();
-            parent -> addChild(duplicateSceneEntity);
-        }
-        else {
-            m_sceneGraph.addEntity(duplicateSceneEntity);
+            parent.addChild(duplicateSceneEntity);
         }
 
         if (entity.hasChildren())
@@ -337,209 +331,225 @@ namespace editor {
         return duplicateSceneEntity;
     }
 
-    void Scene::duplicateEntityChild(SceneEntity parent, SceneEntity dupEntity) {
-        auto& parentTransform = dupEntity.getComponent<TransformComponent>();
-        auto& dupParentTransform = parent.getComponent<TransformComponent>();
-        dupParentTransform.clearChildren();
-
-        for(auto& child: parentTransform.getChildren()) {
-            auto dupChild = m_scene.duplicateEntity(child.getWrappedEntity());
-            //dupParentTransform.addChild(parent, dupChild);
-           // if(child.getComponent<TransformComponent>().hasChildren())
-              //  duplicateEntityChild(dupChild, child);
+    void Scene::duplicateEntityChild(SceneEntity parent, SceneEntity source) {
+        for(auto child: source.getChildren()) {
+            auto duplicated = m_scene.duplicateEntity(child.getWrappedEntity());
+            duplicated.getComponent<IDComponent>().ID = UUID();
+            auto duplicateChild = wrapEntity(std::move(duplicated), SceneContext::Editor);
+            if(duplicateChild.hasComponent<HierarchyComponent>())
+                duplicateChild.getComponent<HierarchyComponent>() = HierarchyComponent{};
+            addRoot(duplicateChild);
+            reparent(duplicateChild, parent);
+            duplicateEntityChild(duplicateChild, child);
         }
     }
 
-    SceneEntity Scene::duplicateEmptyEntity(SceneEntity entity) {
-        auto dupEntity = m_scene.duplicateEntity(entity.getWrappedEntity());
-        dupEntity.getComponent<IDComponent>().ID = UUID();
+    SceneEntity Scene::duplicateEmptyEntity(SceneEntity source, IScriptInteractorFrom::Ptr scriptInteractor) {
+        if(m_running || !source || source.m_context != SceneContext::Editor ||
+           !source.m_scene || source.m_scene -> isRunning())
+            return {};
+        std::vector<SceneEntity> originals;
+        std::vector<SceneEntity> pending{source};
+        std::unordered_set<UUID> visited;
+        while(!pending.empty()) {
+            auto entity = pending.back();
+            pending.pop_back();
+            if(!entity || !entity.hasComponent<IDComponent>() || !entity.hasComponent<TagComponent>() ||
+               !visited.insert(entity.getUUID()).second || (entity.hasComponent<ScriptComponent>() && !scriptInteractor))
+                return {};
+            originals.push_back(entity);
+            const auto children = entity.getChildren();
+            for(auto it = children.rbegin(); it != children.rend(); ++it)
+                pending.push_back(*it);
+        }
 
-        /// TODO(a.raag): create or add ??
-        return m_sceneGraph.createEntity(std::move(dupEntity));
+        std::unordered_map<UUID, SceneEntity> copies;
+        copies.reserve(originals.size());
+        for(const auto& original: originals) {
+            auto copy = createEmptyEntity();
+            auto id = UUID();
+            while(getEntity(id))
+                id = UUID();
+            copy.addComponent<IDComponent>().ID = id;
+            copy.addComponent<TagComponent>() = original.getComponent<TagComponent>();
+            // Copy persisted components by type: component IDs differ between ECS scenes.
+            const auto copyComponent = [&](auto* type) {
+                using T = std::remove_pointer_t<decltype(type)>;
+                if(original.hasComponent<T>())
+                    copy.addComponent<T>() = original.getComponent<T>();
+            };
+            copyComponent(static_cast<TransformComponent*>(nullptr));
+            copyComponent(static_cast<Transform3DComponent*>(nullptr));
+            copyComponent(static_cast<CameraComponent*>(nullptr));
+            copyComponent(static_cast<DrawableComponent*>(nullptr));
+            copyComponent(static_cast<TextComponent*>(nullptr));
+            copyComponent(static_cast<ScriptComponent*>(nullptr));
+            copyComponent(static_cast<Physics2DComponent*>(nullptr));
+            copyComponent(static_cast<Collider2DComponent*>(nullptr));
+            copyComponent(static_cast<PrefabComponent*>(nullptr));
+            copyComponent(static_cast<ButtonComponent*>(nullptr));
+            if(copy.hasComponent<Physics2DComponent>())
+                copy.getComponent<Physics2DComponent>().runtimeBody = nullptr;
+            if(copy.hasComponent<Collider2DComponent>()) {
+                auto& collider = copy.getComponent<Collider2DComponent>();
+                collider.runtimeFixture = nullptr;
+                collider.userData.entityId = id;
+            }
+            if(copy.hasComponent<ButtonComponent>()) {
+                copy.getComponent<ButtonComponent>().onClickCallback = nullptr;
+                copy.addComponent<UIHitbox>();
+            }
+            if(original.hasComponent<AnimationComponent>()) {
+                copy.addComponent<AnimationComponent>();
+                copy.addComponent<AnimatorComponent>();
+            }
+            if(!attachEntity(copy))
+                return {};
+            copies.emplace(original.getUUID(), copy);
+        }
+        const auto remap = [&](UUID id) {
+            const auto found = copies.find(id);
+            return found == copies.end() ? id : found -> second.getUUID();
+        };
+        auto* resources = ResourceManager::getManager();
+        auto* localResources = LocalResourceManager::getManager();
+        for(const auto& original: originals) {
+            auto copy = copies.at(original.getUUID());
+            if(copy.hasComponent<ButtonComponent>()) {
+                auto& button = copy.getComponent<ButtonComponent>();
+                button.scriptEntity = remap(button.scriptEntity);
+            }
+            if(copy.hasComponent<ScriptComponent>()) {
+                auto fields = scriptInteractor -> getFields(original.getUUID());
+                for(auto& [name, field]: fields) {
+                    if(field.getType() == FieldType::Entity || field.getType() == FieldType::Transform) {
+                        const auto& value = field;
+                        field.setValue(remap(value.getValue<UUID>()));
+                    }
+                }
+                scriptInteractor -> getFields(copy.getUUID()) = std::move(fields);
+            }
+            if(copy.hasComponent<AnimationComponent>()) {
+                auto paths = resources -> getAnimationPaths(original.getUUID());
+                resources -> setAnimationPathsToLoad(copy.getUUID(), std::move(paths));
+                const auto* local = localResources -> findAnimations(original.getUUID());
+                const auto animations = local ? *local : resources -> getAnimationsCopy(original.getUUID());
+                for(const auto& animation: animations) {
+                    auto* added = resources -> addAnimation(copy.getUUID(), animation.name);
+                    if(added)
+                        *added = animation;
+                }
+            }
+            for(const auto& child: original.getChildren())
+                if(!reparent(copies.at(child.getUUID()), copy))
+                    return {};
+        }
+        return copies.at(source.getUUID());
     }
 
     void Scene::removeDuplicate(SceneEntity entity) {
         m_hasChanges = true;
-        m_sceneGraph.removeEntity(entity);
+        queueRemoval(entity);
     }
 
 
-    DeletedEntitiesRestoreInformation Scene::removeEntities(std::vector<SceneEntity>& removingEntities) {
-        DeletedEntitiesRestoreInformation restoreInformation;
-        using RestoreInfo = DeletedEntitiesRestoreInformation::RestoreInfo;
-
-        std::vector<RemoveEntityInfo> removeInfos{removingEntities.size()};
-        std::transform(removingEntities.begin(), removingEntities.end(), removeInfos.begin(),
-                       [](SceneEntity entity) {
-                           return RemoveEntityInfo{entity};
-                       });
-        using FoundIterator = std::list<SceneEntity>::const_iterator;
-        const auto& sceneEntities = m_sceneGraph.getEntities();
-
-        for (auto& item: removeInfos) {
-            FoundIterator found = sceneEntities.begin();
-
-            bool isParentDel = false;
-            for (; found != sceneEntities.end(); ++found) {
-                auto iterEntity = *found;
-                if (iterEntity == item.entity) {
-                    item.isDeleted = true;
-                    isParentDel = true;
-                    if(iterEntity.hasComponent<UIComponent>())
-                        iterEntity.getComponent<UIComponent>().setName(nullptr);
-                }
-
-                if (iterEntity.hasChildren())
-                    removeChildEntities(restoreInformation, removeInfos, iterEntity, isParentDel);
-
-                if (iterEntity == item.entity) {
+    DeletedEntitiesRestoreInformation Scene::removeEntities(std::vector<SceneEntity>& entities) {
+        DeletedEntitiesRestoreInformation information;
+        if(m_running)
+            return information;
+        std::unordered_set<UUID> selected;
+        for(auto entity: entities) {
+            if(ownsEntity(entity) && entity.m_context == SceneContext::Editor)
+                selected.insert(entity.getUUID());
+        }
+        std::unordered_set<UUID> visited;
+        std::function<void(SceneEntity)> collect = [&](SceneEntity entity) {
+            if(!entity || !visited.insert(entity.getUUID()).second)
+                return;
+            DeletedEntitiesRestoreInformation::RestoreInfo info;
+            info.entity = entity;
+            auto parent = entity.getParent();
+            info.child = static_cast<bool>(parent);
+            info.anchorEntity = parent;
+            auto siblings = parent ? parent.getChildren()
+                                   : std::vector<SceneEntity>(m_editorEntities.roots.begin(),
+                                                              m_editorEntities.roots.end());
+            auto found = std::find(siblings.begin(), siblings.end(), entity);
+            if(found != siblings.end()) {
+                info.first = found == siblings.begin();
+                if(std::next(found) != siblings.end())
+                    info.nextSiblingID = std::next(found) -> getUUID();
+                if(!parent && found != siblings.begin())
+                    info.anchorEntity = *std::prev(found);
+            }
+            information.push(std::move(info));
+            for(auto child: entity.getChildren())
+                collect(child);
+        };
+        for(auto entity: entities) {
+            if(!ownsEntity(entity) || entity.m_context != SceneContext::Editor)
+                continue;
+            bool parentSelected = false;
+            for(auto parent = entity.getParent(); parent; parent = parent.getParent()) {
+                if(selected.find(parent.getUUID()) != selected.end()) {
+                    parentSelected = true;
                     break;
                 }
             }
-
-            if (found == sceneEntities.end())
+            if(parentSelected)
                 continue;
-
-
-            m_sceneGraph.removeEntity(item.entity);
-            RestoreInfo restoreInfo; // first isChained child
-
-            if (!restoreInformation.hasItems()) {
-                if (found == sceneEntities.begin()) {
-                    restoreInfo.first = true;
-                    restoreInfo.entity = item.entity;
-                } else {
-                    restoreInfo.anchorEntity = *std::prev(found);
-                    restoreInfo.entity = item.entity;
-                }
-            } else {
-                auto lastInfo = restoreInformation.getLast();
-                if (lastInfo.entity == *(std::prev(found))) {
-                    restoreInfo.anchorEntity = lastInfo.entity;
-                    restoreInfo.entity = *found;
-                    restoreInfo.isChained = true;
-                } else {
-                    if (found == sceneEntities.begin()) {
-                        restoreInfo.entity = *found;
-                        restoreInfo.first = true;
-                    } else {
-                        auto prev = std::prev(found);
-                        restoreInfo.anchorEntity = *prev;
-                        restoreInfo.entity = *found;
-                    }
-                }
-            }
-
-            restoreInformation.push(std::move(restoreInfo));
+            collect(entity);
+            queueRemoval(entity);
         }
-
-        return restoreInformation;
+        if(information.hasItems())
+            m_hasChanges = true;
+        return information;
     }
 
-
-    void Scene::removeChildEntities(DeletedEntitiesRestoreInformation &information,
-                                    std::vector<RemoveEntityInfo> &removingEntities,
-                                    const SceneEntity &parent,
-                                    bool isParentDel) {
-
-        for (auto& item: removingEntities) {
-            for (auto child: parent.getChildren()) {
-                if (!child)
-                    continue;
-                auto& childTransform = child.getComponent<TransformComponent>();
-
-                if (child == item.entity)
-                    isParentDel = true;
-
-                if (childTransform.hasChildren())
-                    removeChildEntities(information, removingEntities, child, isParentDel);
-
-                if (child == item.entity) {
-                    information.push(parent, child, false, true, true);
-                    item.isDeleted = true;
-                    child.getComponent<UIComponent>().setName(nullptr);
-                    m_scene.removeEntity(child.getWrappedEntity());
-                }
-
-                if (isParentDel && !item.isDeleted) {
-                    information.push(parent, child, false, true, true);
-                    child.getComponent<UIComponent>().setName(nullptr);
-                    m_scene.removeEntity(child.getWrappedEntity());
-                }
-
-            }
+    void Scene::restoreEntities(DeletedEntitiesRestoreInformation& information) {
+        if(m_running)
+            return;
+        for(const auto& info: information.getInfos()) {
+            if(info.entity.m_scene != this || info.entity.m_context != SceneContext::Editor)
+                return;
         }
-
-    }
-
-    void Scene::restoreEntities(DeletedEntitiesRestoreInformation& restoreInformation) {
-        using EntityPair = std::pair<SceneEntity, SceneEntity>;
-        std::vector<EntityPair> childBuffer;
-        childBuffer.reserve(restoreInformation.getInfos().size());
-        auto& sceneEntities = m_sceneGraph.getEntities();
-
-        for (auto& info: restoreInformation.getInfos()) {
-            if (!m_scene.restoreEntity(info.entity.getWrappedEntity())) {
-                RB_EDITOR_ERROR("EditorScene: Can't Restore entity with index {0}",
+        for(auto& info: information.getInfos()) {
+            cancelPendingRemoval(info.entity);
+            if(!info.entity && !m_scene.restoreEntity(info.entity.getWrappedEntity())) {
+                RB_EDITOR_ERROR("EditorScene: Can't restore entity with index {0}",
                                 info.entity.getWrappedEntity().getIndex());
                 return;
             }
-            auto& tag = info.entity.getComponent<TagComponent>().getTag();
-            info.entity.getComponent<UIComponent>().setName(&tag);
-
-            if (info.child) {
-                if (info.anchorEntity)
-                    info.anchorEntity.addChild(info.entity);
-                else
-                    childBuffer.emplace_back(info.anchorEntity, info.entity);
-
-            } else {
-
-                RestoreData restoreData;
-                restoreData.sourceEntity = info.entity;
-
-                if (info.first) {
-                    restoreData.anchorIterator = sceneEntities.begin();
-                } else {
-                    if (!info.isChained) {
-                        auto anchorFound = find(sceneEntities, info.anchorEntity);
-                        if(anchorFound)
-                            restoreData.anchorIterator = *anchorFound;
-                    } else {
-                        restoreData.isChained = true;
-                        restoreData.anchorIterator = sceneEntities.end();
-                        restoreData.anchorEntity = info.anchorEntity;
-                    }
-                }
-
-                m_restoreItems.emplace_back(restoreData);
+            if(info.entity.hasComponent<HierarchyComponent>())
+                info.entity.getComponent<HierarchyComponent>() = HierarchyComponent{};
+            registerEntity(info.entity);
+        }
+        for(auto& info: information.getInfos()) {
+            if(info.child)
+                reparent(info.entity, info.anchorEntity);
+            else
+                addRoot(info.entity);
+        }
+        for(auto iter = information.getInfos().rbegin(); iter != information.getInfos().rend(); ++iter) {
+            if(iter -> nextSiblingID) {
+                auto sibling = getEntity(*iter -> nextSiblingID);
+                if(sibling)
+                    reorderEntity(iter -> entity, sibling);
             }
         }
-
-        for (auto& [parent, child]: childBuffer)
-            parent.addChild(child);
-
+        m_hasChanges = true;
     }
 
     SceneEntity Scene::addEmptyButton() {
-        auto entity = m_scene.createEntity();
-        auto &transform = entity.addComponent<TransformComponent>();
-        entity.addComponent<IDComponent>(UUID());
-        entity.addComponent<TagComponent>();
-
-        transform.setPosition(defaultPosition);
-        transform.setSize(defaultSize);
-
+        auto entity = createEntity();
         entity.addComponent<ButtonComponent>();
         entity.addComponent<UIHitbox>().callbackIDs[UIHitbox::CallbackID::MouseDown] =
             m_scene.getSystem<UISystem>() -> addMousePressedCallback([](robot2D::ecs::Entity entity, std::uint64_t) {
-                auto& btnComp = entity.getComponent<ButtonComponent>();
-                if (btnComp.hasEntity() && btnComp.onClickCallback && !btnComp.clickMethodName.empty())
-                    btnComp.onClickCallback(btnComp.scriptEntity, btnComp.clickMethodName);
+                auto& button = entity.getComponent<ButtonComponent>();
+                if(button.hasEntity() && button.onClickCallback && !button.clickMethodName.empty())
+                    button.onClickCallback(button.scriptEntity, button.clickMethodName);
             });
-
-
-        return m_sceneGraph.createEntity(std::move(entity));
+        return entity;
     }
 
     void Scene::setEditorCamera(IEditorCamera::Ptr editorCamera) {
@@ -548,6 +558,9 @@ namespace editor {
     }
 
     void Scene::registerUICallback(SceneEntity uiEntity) {
+        if(!ownsEntity(uiEntity) || uiEntity.m_context != SceneContext::Editor
+           || !uiEntity.hasComponent<ButtonComponent>())
+            return;
         uiEntity.addComponent<UIHitbox>().callbackIDs[UIHitbox::CallbackID::MouseDown] =
             m_scene.getSystem<UISystem>() -> addMousePressedCallback([](robot2D::ecs::Entity entity, std::uint64_t) {
                 auto& btnComp = entity.getComponent<ButtonComponent>();
@@ -558,26 +571,235 @@ namespace editor {
     }
 
     SceneEntity Scene::duplicateRuntime(SceneEntity entity, robot2D::vec2f position) {
+        if(!m_running || !m_runtimeScene || !ownsEntity(entity) || entity.m_context != SceneContext::Runtime)
+            return {};
 
-        auto dupEntity = m_scene.duplicateEntity(entity.getWrappedEntity());
+        auto dupEntity = m_runtimeScene -> duplicateEntity(entity.getWrappedEntity());
         dupEntity.getComponent<TagComponent>().setTag("RuntimeClone");
         dupEntity.getComponent<IDComponent>().ID = UUID();
-        dupEntity.getComponent<TransformComponent>().setPosition(position);
-        auto sceneEntity = SceneEntity{dupEntity};
+        auto sceneEntity = wrapEntity(std::move(dupEntity), SceneContext::Runtime);
+        if(sceneEntity.hasComponent<HierarchyComponent>())
+            sceneEntity.getComponent<HierarchyComponent>() = HierarchyComponent{};
+        addRoot(sceneEntity);
+        sceneEntity.getComponent<TransformComponent>().setPosition(position);
         m_physicsAdapter -> addRuntime(sceneEntity);
 
         if (entity.isChild()) {
             auto parent = entity.getParent();
-            parent -> addChild(sceneEntity);
-        } else
-            m_runtimeSceneGraph.addEntity(sceneEntity);
+            parent.addChild(sceneEntity);
+        }
 
         return sceneEntity;
     }
 
-    void Scene::traverseGraph(TraverseFunction&& traverseFunction) {
-        m_sceneGraph.traverseGraph(std::move(traverseFunction));
+
+
+    Scene::EntityStorage& Scene::getStorage(SceneContext context) {
+        return context == SceneContext::Editor ? m_editorEntities : m_runtimeEntities;
     }
 
+    const Scene::EntityStorage& Scene::getStorage(SceneContext context) const {
+        return context == SceneContext::Editor ? m_editorEntities : m_runtimeEntities;
+    }
+
+    bool Scene::isContextValid(SceneContext context, std::uint64_t version) const {
+        return context == SceneContext::Editor ? version == 0
+                                              : m_running && version == m_runtimeVersion;
+    }
+
+    SceneEntity Scene::wrapEntity(robot2D::ecs::Entity entity, SceneContext context) {
+        SceneEntity result{entity};
+        result.m_scene = this;
+        result.m_context = context;
+        result.m_contextVersion = context == SceneContext::Editor ? 0 : m_runtimeVersion;
+        if(result.hasComponent<IDComponent>())
+            result.m_uuid = entity.getComponent<IDComponent>().ID;
+        return result;
+    }
+
+    bool Scene::registerEntity(SceneEntity entity) {
+        if(entity.m_scene != this || !entity || !entity.hasComponent<IDComponent>())
+            return false;
+        auto& storage = getStorage(entity.m_context);
+        auto uuid = entity.getUUID();
+        auto found = storage.entities.find(uuid);
+        if(found != storage.entities.end() && found -> second.getWrappedEntity() != entity.getWrappedEntity())
+            return false;
+        entity.m_uuid = uuid;
+        if(!entity.hasComponent<HierarchyComponent>())
+            entity.addComponent<HierarchyComponent>();
+        if(entity.hasComponent<TransformComponent>()) {
+            auto& transform = entity.getComponent<TransformComponent>();
+            transform.m_scene = this;
+            transform.m_entityID = uuid;
+            transform.m_context = entity.m_context;
+            transform.m_contextVersion = entity.m_contextVersion;
+        }
+        storage.entities[uuid] = entity;
+        return true;
+    }
+
+    bool Scene::ownsEntity(SceneEntity entity) const {
+        if(entity.m_scene != this || !entity || !entity.hasComponent<IDComponent>())
+            return false;
+        return getEntity(entity.getUUID(), entity.m_context) == entity;
+    }
+
+    void Scene::addRoot(SceneEntity entity) {
+        if(!registerEntity(entity))
+            return;
+        auto self = getEntity(entity.getUUID(), entity.m_context);
+        auto& roots = getStorage(entity.m_context).roots;
+        if(!self.isChild() && std::find(roots.begin(), roots.end(), self) == roots.end())
+            roots.emplace_back(self);
+    }
+
+    std::vector<SceneEntity> Scene::getChildren(SceneEntity entity) const {
+        std::vector<SceneEntity> children;
+        if(!ownsEntity(entity) || !entity.hasComponent<HierarchyComponent>())
+            return children;
+        for(auto uuid: entity.getComponent<HierarchyComponent>().getChildrenIDs()) {
+            auto child = getEntity(uuid, entity.m_context);
+            if(child)
+                children.emplace_back(child);
+        }
+        return children;
+    }
+
+    SceneEntity Scene::getParent(SceneEntity entity) const {
+        if(!ownsEntity(entity) || !entity.hasComponent<HierarchyComponent>())
+            return {};
+        auto parent = entity.getComponent<HierarchyComponent>().getParentID();
+        return parent ? getEntity(*parent, entity.m_context) : SceneEntity{};
+    }
+
+    bool Scene::reparent(SceneEntity entity, SceneEntity parent) {
+        if(!ownsEntity(entity) || ((parent.m_scene || parent.getWrappedEntity()) && !ownsEntity(parent)))
+            return false;
+        auto context = entity.m_context;
+        if(context != (m_running ? SceneContext::Runtime : SceneContext::Editor)
+           || (parent && parent.m_context != context))
+            return false;
+        if(parent) {
+            std::unordered_set<UUID> visited;
+            for(auto ancestor = parent; ancestor; ancestor = ancestor.getParent()) {
+                if(ancestor == entity || !visited.insert(ancestor.getUUID()).second)
+                    return false;
+            }
+        }
+        auto& storage = getStorage(context);
+        auto oldParent = entity.getParent();
+        auto& hierarchy = entity.getComponent<HierarchyComponent>();
+        if(oldParent == parent && (parent || !hierarchy.m_parentID)) {
+            if(!parent)
+                addRoot(entity);
+            return true;
+        }
+        if(oldParent)
+            oldParent.getComponent<HierarchyComponent>().m_childrenIDs.remove(entity.getUUID());
+        storage.roots.remove(entity);
+        hierarchy.m_parentID.reset();
+        if(parent) {
+            hierarchy.m_parentID = parent.getUUID();
+            auto& children = parent.getComponent<HierarchyComponent>().m_childrenIDs;
+            if(std::find(children.begin(), children.end(), entity.getUUID()) == children.end())
+                children.emplace_back(entity.getUUID());
+        }
+        else
+            storage.roots.emplace_back(getEntity(entity.getUUID(), context));
+        if(context == SceneContext::Editor)
+            m_hasChanges = true;
+        return true;
+    }
+
+    bool Scene::reorderEntity(SceneEntity source, SceneEntity target) {
+        if(!ownsEntity(source) || !ownsEntity(target) || source == target
+           || source.m_context != target.m_context || source.getParent() != target.getParent())
+            return false;
+        auto parent = source.getParent();
+        if(parent) {
+            auto& children = parent.getComponent<HierarchyComponent>().m_childrenIDs;
+            auto from = std::find(children.begin(), children.end(), source.getUUID());
+            auto to = std::find(children.begin(), children.end(), target.getUUID());
+            if(from == children.end() || to == children.end())
+                return false;
+            children.splice(to, children, from);
+        }
+        else {
+            auto& roots = getStorage(source.m_context).roots;
+            auto from = std::find(roots.begin(), roots.end(), source);
+            auto to = std::find(roots.begin(), roots.end(), target);
+            if(from == roots.end() || to == roots.end())
+                return false;
+            roots.splice(to, roots, from);
+        }
+        return true;
+    }
+
+    void Scene::moveChildren(UUID parentID, const robot2D::vec2f& offset,
+                              SceneContext context, std::uint64_t version) {
+        if(!isContextValid(context, version))
+            return;
+        auto parent = getEntity(parentID, context);
+        for(auto child: getChildren(parent)) {
+            if(child.hasComponent<TransformComponent>()) {
+                auto& transform = child.getComponent<TransformComponent>();
+                transform.setPosition(transform.getPosition() + offset);
+            }
+        }
+    }
+
+    void Scene::queueRemoval(SceneEntity entity) {
+        if(ownsEntity(entity))
+            getStorage(entity.m_context).pendingRemovals.emplace_back(entity);
+    }
+
+    void Scene::cancelPendingRemoval(SceneEntity entity) {
+        auto& pending = getStorage(entity.m_context).pendingRemovals;
+        pending.erase(std::remove(pending.begin(), pending.end(), entity), pending.end());
+    }
+
+    void Scene::processRemovals(SceneContext context) {
+        auto& storage = getStorage(context);
+        auto pending = std::move(storage.pendingRemovals);
+        storage.pendingRemovals.clear();
+        auto* ecs = context == SceneContext::Editor ? &m_scene : m_runtimeScene.get();
+        if(!ecs)
+            return;
+        std::function<void(SceneEntity)> removeSubtree = [&](SceneEntity entity) {
+            if(!ownsEntity(entity))
+                return;
+            for(auto child: getChildren(entity))
+                removeSubtree(child);
+            auto uuid = entity.getUUID();
+            auto parent = getParent(entity);
+            if(parent)
+                parent.getComponent<HierarchyComponent>().m_childrenIDs.remove(uuid);
+            storage.roots.remove(entity);
+            storage.entities.erase(uuid);
+            ecs -> removeEntity(entity.getWrappedEntity());
+        };
+        for(auto entity: pending)
+            removeSubtree(entity);
+    }
+
+    void Scene::forEachEntity(TraverseFunction&& traverseFunction, SceneContext context) {
+        auto roots = getRootEntities(context);
+        for(auto entity: roots) {
+            if(!entity)
+                continue;
+            traverseFunction(entity);
+            forEachChild(traverseFunction, entity);
+        }
+    }
+
+    void Scene::forEachChild(TraverseFunction& traverseFunction, SceneEntity parent) {
+        for(auto entity: getChildren(parent)) {
+            if(!entity)
+                continue;
+            traverseFunction(entity);
+            forEachChild(traverseFunction, entity);
+        }
+    }
 
 }

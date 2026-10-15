@@ -19,6 +19,7 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 #include <filesystem>
+#include <chrono>
 
 #include <editor/async/SceneLoadTask.hpp>
 #include <editor/serializers/SceneSerializer.hpp>
@@ -27,6 +28,9 @@ source distribution.
 #include <editor/AnimationParser.hpp>
 
 namespace editor {
+    namespace {
+        void loadEntityAssets(const Scene::Ptr& scene, SceneEntity entity);
+    }
     namespace fs = std::filesystem;
 
     SceneLoadTask::SceneLoadTask(ITaskFunction::Ptr function,
@@ -41,29 +45,47 @@ namespace editor {
 
 
     void SceneLoadTask::execute()  {
-
+        const auto started = std::chrono::steady_clock::now();
+        RB_EDITOR_INFO("[SceneLoad] Started; path='{}'", m_scene -> getPath());
         SceneSerializer serializer{m_scene };
 
         auto interactor = m_scriptInteractorFrom.lock();
         if(!interactor) {
-            RB_EDITOR_ERROR("[SceneLoadTask]: Interactor is nullptr.");
+            fail("Script interactor is unavailable");
+            RB_EDITOR_ERROR("[SceneLoad] Failed; path='{}'; reason=script interactor unavailable",
+                            m_scene -> getPath());
             return;
         }
 
         if(!serializer.deserialize(m_scene -> getPath(), interactor)) {
-            RB_EDITOR_ERROR("SceneLoadTask: Can't Deserialze Scene");
+            fail(serializer.getErrorMessage());
+            RB_EDITOR_ERROR("[SceneLoad] Deserialize failed; path='{}'; reason='{}'; detail='{}'",
+                            m_scene -> getPath(), errorToString(serializer.getError()),
+                            serializer.getErrorMessage());
             return;
         }
 
+        RB_EDITOR_INFO("[SceneLoad] Deserialize completed; path='{}'; entities={}; loading assets",
+                       m_scene -> getPath(), m_scene -> getEntities().size());
         loadAssets();
+        const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::steady_clock::now() - started).count();
+        RB_EDITOR_INFO("[SceneLoad] CPU loading completed; path='{}'; elapsed_ms={}",
+                       m_scene -> getPath(), elapsed);
     }
 
     void SceneLoadTask::loadAssets() {
-        for(auto& entity: m_scene -> getEntities())
-            loadAssets(entity);
+        loadSceneAssets(m_scene);
     }
 
-    void SceneLoadTask::loadAssets(SceneEntity& entity) {
+    void loadSceneAssets(const Scene::Ptr& scene) {
+        if(!scene) return;
+        for(auto entity: scene -> getRootEntities())
+            loadEntityAssets(scene, entity);
+    }
+
+    namespace {
+    void loadEntityAssets(const Scene::Ptr& scene, SceneEntity entity) {
         if(entity.hasComponent<DrawableComponent>()) {
             auto& drawable = entity.getComponent<DrawableComponent>();
             auto& localTexturePath = drawable.getTexturePath();
@@ -72,7 +94,7 @@ namespace editor {
                 auto id = texturePath.filename().string();
                 auto image = ResourceManager::getManager() -> addImage(id);
                 if(image) {
-                    auto absolutePath = combinePath(m_scene -> getAssociatedProjectPath(),
+                    auto absolutePath = combinePath(scene -> getAssociatedProjectPath(),
                                                     texturePath.string());
                     if(!image -> loadFromFile(absolutePath)) {
                         RB_EDITOR_WARN("SceneLoadTask::loadAssets: can't load image by path {0}", absolutePath);
@@ -88,7 +110,7 @@ namespace editor {
                 auto id = fontPath.filename().string();
                 auto font = ResourceManager::getManager() -> addFont(id);
                 if(font) {
-                    auto absolutePath = combinePath(m_scene -> getAssociatedProjectPath(), fontPath.string());
+                    auto absolutePath = combinePath(scene -> getAssociatedProjectPath(), fontPath.string());
                     if(!font -> loadFromFile(absolutePath)) {
                         RB_EDITOR_WARN("SceneLoadTask::loadAssets: can't load image by path {0}", absolutePath);
                     }
@@ -109,7 +131,7 @@ namespace editor {
                 auto animation = resourceManager -> addAnimation(entity.getComponent<IDComponent>().ID, id);
                 if(!animation)
                     continue;
-                auto absolutePath = combinePath(m_scene -> getAssociatedProjectPath(),
+                auto absolutePath = combinePath(scene -> getAssociatedProjectPath(),
                                                 animationPath.string());
                 if(!animationParser.loadFromFile(absolutePath, animation))
                     RB_EDITOR_WARN("SceneLoadTask::loadAssets: can't load animation by path {0}", absolutePath);
@@ -122,7 +144,7 @@ namespace editor {
                 if(!image)
                     continue;
                 auto absoluteImagePath =
-                        combinePath(m_scene -> getAssociatedProjectPath(), imagePath.string());
+                        combinePath(scene -> getAssociatedProjectPath(), imagePath.string());
 
                 if(!image -> loadFromFile(absoluteImagePath)) {
                     RB_EDITOR_WARN("SceneLoadTask::loadAssets: can't load animation's image by path {0}", absoluteImagePath);
@@ -133,7 +155,8 @@ namespace editor {
 
         if(entity.hasChildren()) {
             for(auto& child: entity.getChildren())
-                loadAssets(child);
+                loadEntityAssets(scene, child);
         }
+    }
     }
 }

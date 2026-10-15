@@ -93,6 +93,10 @@ namespace editor {
         std::vector<Animation>& getAnimations(UUID uuid) {
             return m_animations.at(uuid);
         }
+        const std::vector<Animation>* findAnimations(UUID uuid) const {
+            const auto found = m_animations.find(uuid);
+            return found == m_animations.end() ? nullptr : &found -> second;
+        }
     private:
         robot2D::ResourceHandler<robot2D::Texture, std::string> m_textures;
         robot2D::ResourceHandler<robot2D::Font, std::string> m_fonts;

@@ -36,7 +36,11 @@ namespace editor {
     }
 
     void Prefab::addUUID() {
-        m_entity.addComponent<PrefabComponent>().prefabUUID = m_uuid;
+        if(!m_entity)
+            return;
+        if(!m_entity.hasComponent<PrefabComponent>())
+            m_entity.addComponent<PrefabComponent>();
+        m_entity.getComponent<PrefabComponent>().prefabUUID = m_uuid;
     }
 
     void Prefab::setUUID(UUID uuid) {

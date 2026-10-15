@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.21)
-project(robot2D)
+project(robot2D VERSION 0.8.0)
+
+include(cmake/Version.cmake)
 
 set(CMAKE_CXX_STANDARD 17)
 
@@ -20,6 +22,10 @@ if(RB2D_USE_CMAKE_VERBOSE)
 endif ()
 
 include(cmake/Base.cmake)
+
+enable_testing()
+
+include(cmake/ShaderValidation.cmake)
 
 add_subdirectory(core)
 add_subdirectory(editor)

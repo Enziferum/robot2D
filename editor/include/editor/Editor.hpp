@@ -78,12 +78,11 @@ namespace editor {
         virtual void prepareView() = 0;
 
         virtual void clearSelectionOnUI() = 0;
-        virtual DeletedEntitiesRestoreUIInformation removeEntitiesOnUI(std::list<ITreeItem::Ptr>&& uiItems) = 0;
-        virtual void restoreEntitiesOnUI(DeletedEntitiesRestoreUIInformation& restoreUiInformation) = 0;
-
-        virtual void findSelectedEntitiesOnUI(std::vector<ITreeItem::Ptr>&& item) = 0;
         virtual void showPopup(PopupConfiguration* configuration) = 0;
         virtual void setMainCameraEntity(SceneEntity entity) = 0;
+        virtual bool hasAssetChanges() const = 0;
+        virtual bool saveAssetChanges() = 0;
+        virtual void discardAssetChanges() = 0;
     };
 
     class Editor: public IEditor, public PopupDelegate {
@@ -105,10 +104,10 @@ namespace editor {
         void openScene(Scene::Ptr scene, std::string path) override;
         void prepareView() override;
         void showPopup(editor::PopupConfiguration* configuration) override;
-        void findSelectedEntitiesOnUI(std::vector<ITreeItem::Ptr>&& items) override;
+        bool hasAssetChanges() const override;
+        bool saveAssetChanges() override;
+        void discardAssetChanges() override;
         void clearSelectionOnUI() override;
-        DeletedEntitiesRestoreUIInformation removeEntitiesOnUI(std::list<ITreeItem::Ptr>&& uiItems) override;
-        void restoreEntitiesOnUI(DeletedEntitiesRestoreUIInformation& restoreUiInformation) override;
         virtual void setMainCameraEntity(SceneEntity entity) override;
         /////////////////////////// IEditor ///////////////////////////
 

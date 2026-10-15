@@ -20,9 +20,10 @@ source distribution.
 *********************************************************************/
 
 #include <filesystem>
+#include <array>
+#include <unordered_map>
 
 #include <robot2D/Graphics/Texture.hpp>
-#include <robot2D/Util/ResourceHandler.hpp>
 #include <robot2D/Core/MessageBus.hpp>
 #include <editor/Observer.hpp>
 #include <editor/UIManager.hpp>
@@ -45,18 +46,13 @@ namespace editor {
             Animation
         };
 
-        const std::string iconsPath = "res/icons/";
+        const std::string iconFontPath = "res/fonts/fa-solid-900.ttf";
         const float m_padding = 16.F;
-        const float m_thumbnaleSize = 96.F;
-        const std::unordered_map<ResourceIconType, std::string> iconPaths = {
-                { ResourceIconType::File, "FileIcon.png"},
-                { ResourceIconType::Directory, "DirectoryIcon.png"},
-                { ResourceIconType::Scene, "studio.png"},
-                { ResourceIconType::Image, "image.png"},
-                { ResourceIconType::Script, "script.png"},
-                { ResourceIconType::Font, "text.png"},
-                { ResourceIconType::Prefab, "content.png"},
-                { ResourceIconType::Animation, "animation.png"}
+        float m_thumbnaleSize = 64.F;
+        const std::array<ResourceIconType, 8> iconTypes = {
+                ResourceIconType::File, ResourceIconType::Directory, ResourceIconType::Scene,
+                ResourceIconType::Image, ResourceIconType::Script, ResourceIconType::Font,
+                ResourceIconType::Prefab, ResourceIconType::Animation
         };
     };
 
@@ -84,7 +80,12 @@ namespace editor {
     private:
         void dropFiles(const std::vector<std::string>& paths);
         void uiAssetsCreation();
+        void renderNavigation();
+        void navigateTo(const std::filesystem::path& path);
         void processAssets();
+        void setupIconAtlas();
+        void drawResourceIcon(AssetsPanelConfiguration::ResourceIconType type,
+                              robot2D::vec2f position, float size);
         /// \brief in panel drag and out of panel
         void processDragDrop(const std::filesystem::directory_entry& directoryEntry,
                              std::filesystem::path& path);
@@ -109,12 +110,18 @@ namespace editor {
 
         std::filesystem::path m_currentPath;
         std::filesystem::path m_assetsPath;
-        robot2D::ResourceHandler<robot2D::Texture,
-                AssetsPanelConfiguration::ResourceIconType> m_assetsIcons;
+        struct ResourceIcon {
+            robot2D::vec2f uvMin;
+            robot2D::vec2f uvMax;
+            robot2D::vec2f size;
+        };
+        robot2D::Texture m_iconAtlas;
+        std::unordered_map<AssetsPanelConfiguration::ResourceIconType, ResourceIcon> m_resourceIcons;
 
         AssetsPanelConfiguration m_configuration;
         std::vector<AssetItem> m_assetItems;
         std::pair<std::filesystem::path, bool> m_itemEditName;
+        std::string m_editName;
 
 
         State m_state = State::Loading;

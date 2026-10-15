@@ -1,22 +1,22 @@
 /*********************************************************************
-(c) Alex Raag 2021
-https://github.com/Enziferum
-robot2D - Zlib license.
-This software is provided 'as-is', without any express or
-implied warranty. In no event will the authors be held
-liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute
-it freely, subject to the following restrictions:
-1. The origin of this software must not be misrepresented;
-you must not claim that you wrote the original software.
-If you use this software in a product, an acknowledgment
-in the product documentation would be appreciated but
-is not required.
-2. Altered source versions must be plainly marked as such,
-and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any
-source distribution.
+   (c) Alex Raag 2021
+   https://github.com/Enziferum
+   robot2D - Zlib license.
+   This software is provided 'as-is', without any express or
+   implied warranty. In no event will the authors be held
+   liable for any damages arising from the use of this software.
+   Permission is granted to anyone to use this software for any purpose,
+   including commercial applications, and to alter it and redistribute
+   it freely, subject to the following restrictions:
+   1. The origin of this software must not be misrepresented;
+   you must not claim that you wrote the original software.
+   If you use this software in a product, an acknowledgment
+   in the product documentation would be appreciated but
+   is not required.
+   2. Altered source versions must be plainly marked as such,
+   and must not be misrepresented as being the original software.
+   3. This notice may not be removed or altered from any
+   source distribution.
 *********************************************************************/
 
 #pragma once
@@ -43,7 +43,12 @@ namespace robot2D {
 
         /// \brief Create specific shader.
         /// \details
-        bool createShader(ShaderType shaderType, const std::string& source, bool is_path);
+        bool createShader(ShaderType shaderType, const std::string& source, bool is_path,
+            const std::string& sourceName = {});
+
+        const std::string& getLastError() const {
+            return m_lastError;
+        }
 
         /// \brief Set to shader program variable by name and data
         template<typename T>
@@ -66,11 +71,11 @@ namespace robot2D {
     private:
 
         /// Preparing process
-        int setupShader(ShaderType shaderType, const std::string& source, bool is_file = true);
+        int setupShader(ShaderType shaderType, const std::string& source, bool is_file,
+            const std::string& sourceName);
     private:
         int m_shaderProgram;
-        int success;
-        char infoLog[512];
+        std::string m_lastError;
     };
 
 }

@@ -24,6 +24,7 @@ source distribution.
 #include <memory>
 #include "editor/Errors.hpp"
 #include <editor/ScriptInteractor.hpp>
+#include <yaml-cpp/yaml.h>
 
 namespace editor {
 
@@ -33,17 +34,21 @@ namespace editor {
         SceneSerializer(std::shared_ptr<Scene> scene);
         SceneSerializer(const SceneSerializer& other) = delete;
         SceneSerializer& operator=(const SceneSerializer& other) = delete;
-        SceneSerializer(SceneSerializer& other) = delete;
+        SceneSerializer(SceneSerializer&& other) = delete;
         SceneSerializer& operator=(SceneSerializer&& other) = delete;
         ~SceneSerializer() = default;
 
         bool serialize(const std::string& path, const std::string& sceneName,
                        IScriptInteractorFrom::Ptr scriptingEngine);
+        // Load into a fresh scene; discard that scene if loading fails.
         bool deserialize(const std::string& path, IScriptInteractorFrom::Ptr scriptingEngine);
+        bool deserializeDocument(const YAML::Node& data, IScriptInteractorFrom::Ptr scriptingEngine);
         SceneSerializerError getError() const;
+        const std::string& getErrorMessage() const { return m_errorMessage; }
 
     private:
         std::shared_ptr<Scene> m_scene;
-        SceneSerializerError m_error;
+        SceneSerializerError m_error = SceneSerializerError::None;
+        std::string m_errorMessage;
     };
 }

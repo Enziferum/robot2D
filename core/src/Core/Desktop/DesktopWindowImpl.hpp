@@ -44,6 +44,7 @@ namespace robot2D::priv {
         void setTitle(const std::string& title) const override;
 
         void close() override;
+        void cancelClose() override;
         void display() override;
 
         bool isMousePressed(const Mouse& button)override;

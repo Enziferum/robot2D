@@ -30,18 +30,26 @@ namespace editor {
     struct static_string {
         static constexpr std::size_t static_string_npos = std::numeric_limits<std::size_t>::max();
 
-        constexpr std::size_t length() const { return Size - 1; }
+        constexpr std::size_t length() const {
+            return Size - 1;
+        }
 
-        constexpr std::size_t size() const { return Size - 1; }
+        constexpr std::size_t size() const {
+            return Size - 1;
+        }
 
-        constexpr std::size_t begin() const { return 0; }
+        constexpr std::size_t begin() const {
+            return 0;
+        }
 
-        constexpr std::size_t end() const { return Size - 1; }
+        constexpr std::size_t end() const {
+            return Size - 1;
+        }
 
         /// constexpr has if / else in c++17 ??
         constexpr std::size_t find(char ch, std::size_t from = 0, std::size_t nth = 0) const {
             return Size < 2 || from >= Size - 1 ? static_string_npos: m_buffer[from] != ch ?
-                                                                      find(ch, from + 1, nth) : nth > 0 ? find(ch, from + 1, nth - 1) : from;
+                   find(ch, from + 1, nth) : nth > 0 ? find(ch, from + 1, nth - 1) : from;
         }
 
         constexpr std::size_t count( char ch, std::size_t index) const {
@@ -52,24 +60,26 @@ namespace editor {
             return { m_buffer.data() };
         }
 
-        constexpr std::array<const char, Size>& getBuffer() const { return m_buffer; }
+        constexpr std::array<const char, Size>& getBuffer() const {
+            return m_buffer;
+        }
 
         std::array<const char, Size> m_buffer;
     };
 
     template<std::size_t Size, std::size_t... Indices>
-    constexpr static_string<sizeof...(Indices) + 1> make_static_string(const char (&str)[Size],
-                                                                       std::index_sequence<Indices...>) {
-        return  { str[Indices]... , '\0' };
+    constexpr static_string<sizeof...(Indices) + 1> make_static_string(const char (& str)[Size],
+        std::index_sequence<Indices...>) {
+        return  { str[Indices] ..., '\0' };
     }
 
     template<std::size_t Size>
-    constexpr static_string<Size> make_static_string(const char (&str)[Size]) {
+    constexpr static_string<Size> make_static_string(const char (& str)[Size]) {
         return make_static_string(str, std::make_index_sequence<Size - 1>{});
     }
 
     template<>
-    constexpr static_string<1> make_static_string(const char (&str)[1]) {
+    constexpr static_string<1> make_static_string(const char (& str)[1]) {
         return {'\0'};
     }
 
@@ -90,7 +100,7 @@ namespace editor {
         template<typename EnumT, std::size_t InSize>
         static void registerEnum(const std::array<std::string, InSize>& buffer) {
             Value value;
-            for (const auto& val : buffer)
+            for(const auto& val : buffer)
                 value.push_back(&val);
             Key key = typeid(EnumT);
             m_enumValues[key] = value;
@@ -112,19 +122,19 @@ namespace editor {
 
 
     template<typename EnumT, std::size_t RetSize, std::size_t InSize>
-    constexpr std::array<std::string, RetSize> unpack_enum_string(const static_string<InSize>& enum_str) {
+    std::array<std::string, RetSize> unpack_enum_string(const static_string<InSize>& enum_str) {
         std::array<std::string, RetSize> result;
         std::size_t arr_index = 0;
 
         int index = 0;
-        while (arr_index < RetSize ) {
-            if (arr_index == RetSize - 1) {
+        while(arr_index < RetSize) {
+            if(arr_index == RetSize - 1) {
                 int offset = arr_index == 0 ? 0 : 1;
 
                 auto len = InSize - index - offset;
                 std::unique_ptr<char[]> buffer = std::make_unique<char[]>(len + 1);
 
-                for (int i = 0; i < len; ++i)
+                for(int i = 0; i < len; ++i)
                     buffer[i] = enum_str.m_buffer[index + i + offset];
                 buffer[len] = '\0';
                 result[arr_index] = std::string{ buffer.get() };
@@ -137,7 +147,7 @@ namespace editor {
                     auto len = comma - index - offset;
                     std::unique_ptr<char[]> buffer = std::make_unique<char[]>(len + 1);
 
-                    for (int i = 0; i < len; ++i)
+                    for(int i = 0; i < len; ++i)
                         buffer[i] = enum_str.m_buffer[index + i + offset];
                     buffer[len] = '\0';
                     result[arr_index] = std::string{ buffer.get() };
@@ -153,17 +163,18 @@ namespace editor {
     }
 
 #define DECLARE_ENUM(T, ...) \
-    enum class T { __VA_ARGS__ };                          \
-    struct enum_##T##_holder { \
-        static std::string get_string(int index) { return SelfName + "::" + m_arr[index]; }                            \
-    private:                      \
-        static inline const std::string SelfName = #T;                           \
-        static constexpr auto enum_buffer = make_static_string(#__VA_ARGS__);                                    \
-        static constexpr std::size_t enum_size = (enum_buffer.count(',', 0) + 1);                     \
-        static inline std::array<std::string, enum_size> m_arr         \
-            = unpack_enum_string<T, enum_size>(enum_buffer); \
-    };
+        enum class T { __VA_ARGS__ };                          \
+        struct enum_ ## T ## _holder { \
+            static std::string get_string(int index) { return SelfName + "::" + m_arr[index]; }                            \
+        private:                      \
+            static inline const std::string SelfName = #T;                           \
+            static constexpr auto enum_buffer = make_static_string(#__VA_ARGS__);                                    \
+            static constexpr std::size_t enum_size = (enum_buffer.count(',', 0) + 1);                     \
+            static inline std::array<std::string, enum_size> m_arr         \
+                = unpack_enum_string<T, enum_size>(enum_buffer); \
+        };
 
-#define ENUM2STR(value) enum_classes_holder::get_string<std::decay_t<decltype(value)>>(static_cast<std::underlying_type_t<std::decay_t<decltype(value)>>>(value))
+#define ENUM2STR(value) enum_classes_holder::get_string<std::decay_t<decltype(value)> >( \
+            static_cast<std::underlying_type_t<std::decay_t<decltype(value)> > >(value))
 
 } // namespace editor

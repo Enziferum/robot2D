@@ -26,6 +26,7 @@ source distribution.
 #include <editor/serializers/PrefabSerializer.hpp>
 #include <editor/FileApi.hpp>
 #include <editor/Components.hpp>
+#include <editor/async/SceneLoadTask.hpp>
 
 
 
@@ -36,58 +37,111 @@ namespace editor {
     }
 
     bool PrefabManager::addPrefab(UIInteractor::Ptr interactor, SceneEntity entity, const std::string& directoryPath) {
-        const auto& uuid = entity.getComponent<IDComponent>().ID;
-        const auto& name = entity.getComponent<TagComponent>().getTag();
-        std::string filePath = name + prefabExtension;
-        std::string fullPath = combinePath(directoryPath, filePath);
-
-        m_prefabs[uuid] = std::make_shared<Prefab>(fullPath, entity, UUID());
-
-        auto scriptInteractor = interactor -> getScriptInteractor();
-        if(!scriptInteractor)
+        if(!interactor || !entity || !entity.hasComponent<TagComponent>())
             return false;
+        const auto filename = std::filesystem::u8path(entity.getName() + prefabExtension);
+        if(filename.has_parent_path())
+            return false;
+        const auto fullPath = (std::filesystem::u8path(directoryPath) / filename).u8string();
+        std::error_code error;
+        if(std::filesystem::exists(std::filesystem::u8path(fullPath), error)) {
+            RB_EDITOR_ERROR("Prefab already exists; use Save to update the asset: {0}", fullPath);
+            return false;
+        }
+        if(error)
+            return false;
+        // A cached prefab owns its template; it must never retain the selected scene entity.
+        auto prefab = std::make_shared<Prefab>(fullPath, entity, UUID());
+        prefab -> setProjectPath(interactor -> getAssociatedProjectPath());
         PrefabSerializer serializer;
-        return serializer.serialize(m_prefabs[uuid], scriptInteractor);
+        auto scripts = interactor -> getScriptInteractor();
+        if(!serializer.serialize(prefab, scripts) || !serializer.deserialize(prefab, scripts)) {
+            RB_EDITOR_ERROR("Can't create prefab: {0}", serializer.getErrorMessage());
+            return false;
+        }
+        loadSceneAssets(prefab -> getTemplateScene());
+        if(!entity.hasComponent<PrefabComponent>())
+            entity.addComponent<PrefabComponent>();
+        entity.getComponent<PrefabComponent>().prefabUUID = prefab -> getUUID();
+        entity.markModified();
+        m_prefabs[prefab -> getUUID()] = std::move(prefab);
+        return true;
     }
 
     Prefab::Ptr PrefabManager::loadPrefab(UIInteractor::Ptr interactor, const std::string& path) {
-
-        Prefab::Ptr prefab{ nullptr };
-        prefab = findPrefab(path);
-        if(prefab)
-            return prefab;
-
-        prefab = std::make_shared<Prefab>();
-        prefab -> setEntity(interactor -> createEmptyEntity());
+        if(!interactor)
+            return nullptr;
+        if(auto cached = findPrefab(path))
+            return cached;
+        auto prefab = std::make_shared<Prefab>();
         prefab -> setPath(path);
-
+        prefab -> setProjectPath(interactor -> getAssociatedProjectPath());
         PrefabSerializer serializer;
-        auto scriptInteractor = interactor -> getScriptInteractor();
-        bool ok = serializer.deserialize(prefab, scriptInteractor);
-        if(!ok) {
-            RB_EDITOR_ERROR("PrefabManager: can't load prefab");
+        if(!serializer.deserialize(prefab, interactor -> getScriptInteractor())) {
+            RB_EDITOR_ERROR("Can't load prefab: {0}", serializer.getErrorMessage());
             return nullptr;
         }
-
-        prefab -> addUUID();
-
-        auto uuid = prefab -> getUUID();
-        m_prefabs[uuid] = prefab;
-
-        return m_prefabs[uuid];
+        const auto found = m_prefabs.find(prefab -> getUUID());
+        if(found != m_prefabs.end()) {
+            RB_EDITOR_ERROR("Another prefab with the same asset UUID is already cached: {0}", path);
+            return nullptr;
+        }
+        loadSceneAssets(prefab -> getTemplateScene());
+        m_prefabs[prefab -> getUUID()] = prefab;
+        return prefab;
     }
 
     Prefab::Ptr PrefabManager::findPrefab(UUID prefabID) {
-        return nullptr;
+        const auto found = m_prefabs.find(prefabID);
+        return found == m_prefabs.end() ? nullptr : found -> second;
     }
 
-    Prefab::Ptr PrefabManager::findPrefab(const std::string& path) {
-        for(auto& prefab: m_prefabs) {
-           if(prefab.second -> getPath() == path)
-             return prefab.second;
+    Prefab::Ptr PrefabManager::findPrefab(const std::string& path) const {
+        for(const auto& prefab: m_prefabs) {
+            std::error_code error;
+            if(std::filesystem::equivalent(std::filesystem::u8path(prefab.second -> getPath()),
+                                           std::filesystem::u8path(path), error) && !error)
+                return prefab.second;
         }
 
         return nullptr;
+    }
+
+    bool PrefabManager::hasPrefab(UUID prefabID) const {
+        return m_prefabs.find(prefabID) != m_prefabs.end();
+    }
+
+    bool PrefabManager::hasPrefab(std::string path) const {
+        return static_cast<bool>(findPrefab(path));
+    }
+
+    bool PrefabManager::hasChanges() const {
+        for(const auto& [id, prefab]: m_prefabs)
+            if(prefab -> getTemplateScene() && prefab -> getTemplateScene() -> hasChanges())
+                return true;
+        return false;
+    }
+
+    bool PrefabManager::saveChanges(UIInteractor::Ptr interactor) {
+        for(const auto& [id, prefab]: m_prefabs) {
+            if(prefab -> getTemplateScene() && prefab -> getTemplateScene() -> hasChanges()) {
+                if(!savePrefab(interactor, prefab)) {
+                    RB_EDITOR_ERROR("Can't save modified prefab: {0}", prefab -> getPath());
+                    return false;
+                }
+                interactor -> applyPrefabChanges(id, prefab -> getEntity());
+            }
+        }
+        return true;
+    }
+
+    void PrefabManager::discardChanges() {
+        for(auto it = m_prefabs.begin(); it != m_prefabs.end();) {
+            if(it -> second -> getTemplateScene() && it -> second -> getTemplateScene() -> hasChanges())
+                it = m_prefabs.erase(it);
+            else
+                ++it;
+        }
     }
 
     bool PrefabManager::deletePrefab(UUID prefabID) {
@@ -95,26 +149,23 @@ namespace editor {
     }
 
     bool PrefabManager::savePrefab(UIInteractor::Ptr interactor, Prefab::Ptr prefab) {
-        if(!prefab)
+        if(!prefab || !interactor)
             return false;
-        const auto& uuid = prefab -> getUUID();
-
         auto scriptInteractor = interactor -> getScriptInteractor();
-        if(!scriptInteractor)
-            return false;
         PrefabSerializer serializer;
-        return serializer.serialize(m_prefabs[uuid], scriptInteractor);
+        return serializer.serialize(prefab, scriptInteractor);
     }
 
     bool PrefabManager::savePrefab(UIInteractor::Ptr interactor, UUID uuid) {
-        if(m_prefabs.find(uuid) == m_prefabs.end())
+        if(!interactor)
+            return false;
+        auto prefab = findPrefab(uuid);
+        if(!prefab)
             return false;
 
         PrefabSerializer serializer;
         auto scriptInteractor = interactor -> getScriptInteractor();
-        if(!scriptInteractor)
-            return false;
-        return serializer.serialize(m_prefabs[uuid], scriptInteractor);
+        return serializer.serialize(prefab, scriptInteractor);
     }
 
 
