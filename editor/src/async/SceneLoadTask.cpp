@@ -90,31 +90,19 @@ namespace editor {
                 auto& drawable = entity.getComponent<DrawableComponent>();
                 auto& localTexturePath = drawable.getTexturePath();
                 if(!localTexturePath.empty()) {
-                    fs::path texturePath{localTexturePath};
-                    auto id = texturePath.filename().string();
-                    auto image = ResourceManager::getManager() -> addImage(id);
-                    if(image) {
-                        auto absolutePath = combinePath(scene -> getAssociatedProjectPath(),
-                                texturePath.string());
-                        if(!image -> loadFromFile(absolutePath)) {
-                            RB_EDITOR_WARN("SceneLoadTask::loadAssets: can't load image by path {0}", absolutePath);
-                        }
-                    }
+                    const auto key = resourceFileKey(combinePath(scene -> getAssociatedProjectPath(),
+                            localTexturePath));
+                    if(!ResourceManager::getManager() -> loadImage(key))
+                        RB_EDITOR_WARN("SceneLoadTask::loadAssets: can't load image by path {0}", key);
                 }
             }
             if(entity.hasComponent<TextComponent>()) {
                 auto& text = entity.getComponent<TextComponent>();
                 auto& localFontPath = text.getFontPath();
                 if(!localFontPath.empty()) {
-                    fs::path fontPath{localFontPath};
-                    auto id = fontPath.filename().string();
-                    auto font = ResourceManager::getManager() -> addFont(id);
-                    if(font) {
-                        auto absolutePath = combinePath(scene -> getAssociatedProjectPath(), fontPath.string());
-                        if(!font -> loadFromFile(absolutePath)) {
-                            RB_EDITOR_WARN("SceneLoadTask::loadAssets: can't load font by path {0}", absolutePath);
-                        }
-                    }
+                    const auto key = resourceFileKey(combinePath(scene -> getAssociatedProjectPath(), localFontPath));
+                    if(!ResourceManager::getManager() -> loadFont(key))
+                        RB_EDITOR_WARN("SceneLoadTask::loadAssets: can't load font by path {0}", key);
                 }
             }
             if(entity.hasComponent<AnimationComponent>()) {
@@ -137,23 +125,12 @@ namespace editor {
                     }
                     loaded.filePath = absolutePath;
 
-                    auto localImagePath = loaded.texturePath;
-                    fs::path imagePath{localImagePath};
-                    auto imageId = imagePath.filename().string();
-                    auto* image = resourceManager -> addImage(imageId);
-                    if(!image && !resourceManager -> hasImage(imageId))
-                        continue;
-                    auto absoluteImagePath =
-                        combinePath(scene -> getAssociatedProjectPath(), imagePath.string());
-
-                    if(image && !image -> loadFromFile(absoluteImagePath)) {
-                        RB_EDITOR_WARN("SceneLoadTask::loadAssets: can't load animation's image by path {0}",
-                            absoluteImagePath);
+                    const auto imageId = resourceFileKey(combinePath(scene -> getAssociatedProjectPath(),
+                            loaded.texturePath));
+                    if(!resourceManager -> loadImage(imageId)) {
+                        RB_EDITOR_WARN("SceneLoadTask::loadAssets: can't load animation's image by path {0}", imageId);
                         continue;
                     }
-                    const auto& loadedImage = resourceManager -> getImage(imageId);
-                    if(!loadedImage.getSize().x || !loadedImage.getSize().y)
-                        continue;
                     auto* animation = resourceManager -> addAnimation(entity.getUUID(), id);
                     if(animation)
                         *animation = std::move(loaded);

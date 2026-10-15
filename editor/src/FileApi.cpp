@@ -54,6 +54,10 @@ namespace editor {
         return (fs::absolute(assetPath(projectPath)) / fs::u8path(relative)).lexically_normal().u8string();
     }
 
+    std::string resourceFileKey(const std::string& path) {
+        return fs::weakly_canonical(fs::absolute(assetPath(path))).generic_u8string();
+    }
+
     std::string importProjectAsset(const std::string& projectPath, const std::string& source,
         const std::string& destinationDirectory) {
         const auto from = fs::weakly_canonical(fs::absolute(assetPath(source)));

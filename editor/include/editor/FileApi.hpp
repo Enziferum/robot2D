@@ -47,6 +47,8 @@ namespace editor {
     // Invalid/outside paths throw; missing resources may still be referenced and saved.
     std::string projectAssetReference(const std::string& projectPath, const std::string& path);
     std::string resolveProjectAsset(const std::string& projectPath, const std::string& reference);
+    // In-memory key only; never persisted. Includes the directory and project location.
+    std::string resourceFileKey(const std::string& path);
     // Copies one file without overwriting. Returns its project-relative reference.
     std::string importProjectAsset(const std::string& projectPath, const std::string& source,
         const std::string& destinationDirectory = "assets");
