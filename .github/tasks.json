@@ -1,0 +1,42 @@
+{
+  "github": {
+    "repository": "Enziferum/robot2D",
+    "project_owner": "Enziferum",
+    "project_number": 5,
+    "project_url": "https://github.com/users/Enziferum/projects/5",
+    "issues": {
+      "PROCESS-01": 44,
+      "LOAD-01": 45,
+      "CMD-01": 46,
+      "ASSET-01": 47,
+      "UI-01": 48,
+      "VIEW-01": 49,
+      "CODE-01": 50,
+      "VERSION-01": 51,
+      "SAVE-01": 52,
+      "LOG-01": 53,
+      "TOOL-01": 54,
+      "ARCH-01": 55,
+      "ASYNC-01": 56,
+      "CI-01": 57,
+      "TEST-01": 58
+    }
+  },
+  "tasks": {
+    "SAVE-01": "Сохранение, dirty-state, Save / Discard / Cancel",
+    "LOAD-01": "Надёжная загрузка и завершение работы",
+    "TEST-01": "Постоянные воспроизводимые тесты редактора",
+    "CMD-01": "CommandStack, клонирование, удаление и clipboard",
+    "ASSET-01": "Ресурсы, кэши, Assets и preview",
+    "UI-01": "Поиск, multiselection и ошибки Inspector",
+    "VIEW-01": "Frame Selected, snapping и Guizmo",
+    "CODE-01": "Структура кода и общие UI-контролы",
+    "LOG-01": "Диагностика запуска, загрузки и завершения",
+    "TOOL-01": "Анализ и форматирование собственного кода",
+    "ARCH-01": "Ответственности приложения и редактора",
+    "ASYNC-01": "Исходы задач, остановка и завершение очереди",
+    "CI-01": "Сборки, тесты и отчёты GitHub Actions",
+    "PROCESS-01": "GitHub Projects, учёт задач и Git hooks",
+    "VERSION-01": "Единый источник версии и правила релизов"
+  }
+}
