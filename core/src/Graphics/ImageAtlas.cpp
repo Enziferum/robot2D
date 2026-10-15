@@ -1,22 +1,22 @@
 /*********************************************************************
-(c) Alex Raag 2021
-https://github.com/Enziferum
-robot2D - Zlib license.
-This software is provided 'as-is', without any express or
-implied warranty. In no event will the authors be held
-liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute
-it freely, subject to the following restrictions:
-1. The origin of this software must not be misrepresented;
-you must not claim that you wrote the original software.
-If you use this software in a product, an acknowledgment
-in the product documentation would be appreciated but
-is not required.
-2. Altered source versions must be plainly marked as such,
-and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any
-source distribution.
+   (c) Alex Raag 2021
+   https://github.com/Enziferum
+   robot2D - Zlib license.
+   This software is provided 'as-is', without any express or
+   implied warranty. In no event will the authors be held
+   liable for any damages arising from the use of this software.
+   Permission is granted to anyone to use this software for any purpose,
+   including commercial applications, and to alter it and redistribute
+   it freely, subject to the following restrictions:
+   1. The origin of this software must not be misrepresented;
+   you must not claim that you wrote the original software.
+   If you use this software in a product, an acknowledgment
+   in the product documentation would be appreciated but
+   is not required.
+   2. Altered source versions must be plainly marked as such,
+   and must not be misrepresented as being the original software.
+   3. This notice may not be removed or altered from any
+   source distribution.
 *********************************************************************/
 
 #include "internal/stb_image_write.h"
@@ -34,8 +34,8 @@ namespace robot2D {
     }
 
     bool ImageAtlas::createAtlas(const std::vector<robot2D::Image>& images,
-                                 robot2D::vec2i itemSize,
-                                 int itemsPerRow) {
+        robot2D::vec2i itemSize,
+        int itemsPerRow) {
         constexpr int channelsNum = 4;
         int textureIndex = 1;
         int rowIndex = 0;
@@ -53,7 +53,7 @@ namespace robot2D {
                                                                                 : sz / itemsPerRow + 1) : 1);
 
         std::unique_ptr<unsigned char[]> pixelBuffer =
-                std::make_unique<unsigned char[]>(textureSize.x *  textureSize.y * channelsNum);
+            std::make_unique<unsigned char[]>(textureSize.x * textureSize.y * channelsNum);
 
 
         if(!pixelBuffer) {
@@ -98,7 +98,7 @@ namespace robot2D {
                         pixelBuffer[to + channel] = source[from + channel];
                     }
 
-                    if ((sourceY % 64) == 0) {
+                    if((sourceY % 64) == 0) {
                         printf("\r Pack status %d%%....", 100 * sourceY / sourceSize.y);
                     }
                 }
@@ -126,8 +126,8 @@ namespace robot2D {
     IntRect ImageAtlas::getRect(int row, int column) const noexcept{
         const auto& imageSize = m_atlasImage.getSize();
 
-        int maxRow = static_cast<int>(imageSize.x) / m_rectSize.x;
-        int maxColumn = static_cast<int>(imageSize.y) / m_rectSize.y;
+        [[maybe_unused]] int maxRow = static_cast<int>(imageSize.x) / m_rectSize.x;
+        [[maybe_unused]] int maxColumn = static_cast<int>(imageSize.y) / m_rectSize.y;
 
         assert((row < maxRow && column < maxColumn) && "Row and column must be valid");
 
@@ -152,9 +152,9 @@ namespace robot2D {
         assert(m_atlasImage.getBuffer() != nullptr && "Image Atlas can't have zero pixel buffer");
 
         int err = stbi_write_png(atlasPath.c_str(),
-                                 textureSize.x, textureSize.y,
-                                 m_atlasImage.getColorFormat(), m_atlasImage.getBuffer(),
-                                 textureSize.x * m_atlasImage.getColorFormat());
+                textureSize.x, textureSize.y,
+                m_atlasImage.getColorFormat(), m_atlasImage.getBuffer(),
+                textureSize.x * m_atlasImage.getColorFormat());
 
         if(err == 0) {
             RB_CORE_ERROR("Can't write image by path {0}", atlasPath);

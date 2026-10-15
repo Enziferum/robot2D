@@ -1,22 +1,22 @@
 /*********************************************************************
-(c) Alex Raag 2021
-https://github.com/Enziferum
-robot2D - Zlib license.
-This software is provided 'as-is', without any express or
-implied warranty. In no event will the authors be held
-liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute
-it freely, subject to the following restrictions:
-1. The origin of this software must not be misrepresented;
-you must not claim that you wrote the original software.
-If you use this software in a product, an acknowledgment
-in the product documentation would be appreciated but
-is not required.
-2. Altered source versions must be plainly marked as such,
-and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any
-source distribution.
+   (c) Alex Raag 2021
+   https://github.com/Enziferum
+   robot2D - Zlib license.
+   This software is provided 'as-is', without any express or
+   implied warranty. In no event will the authors be held
+   liable for any damages arising from the use of this software.
+   Permission is granted to anyone to use this software for any purpose,
+   including commercial applications, and to alter it and redistribute
+   it freely, subject to the following restrictions:
+   1. The origin of this software must not be misrepresented;
+   you must not claim that you wrote the original software.
+   If you use this software in a product, an acknowledgment
+   in the product documentation would be appreciated but
+   is not required.
+   2. Altered source versions must be plainly marked as such,
+   and must not be misrepresented as being the original software.
+   3. This notice may not be removed or altered from any
+   source distribution.
 *********************************************************************/
 
 #include <robot2D/Graphics/Graphics.hpp>
@@ -35,7 +35,7 @@ namespace {
     constexpr const char* texturePath = "res/textures/old_logo.png";
 }
 
-struct Quad: robot2D::Drawable, robot2D::Transformable {
+struct Quad : robot2D::Drawable, robot2D::Transformable {
     robot2D::Texture* texture = nullptr;
     robot2D::Color color = robot2D::Color::White;
 
@@ -74,28 +74,28 @@ struct Quad: robot2D::Drawable, robot2D::Transformable {
 };
 
 
-struct BoundingBox: robot2D::Drawable {
-    struct Wall: robot2D::Drawable{
-        robot2D::Transform getTransform() const{
-            float angl  = -angle * 3.141592654f / 180.f;
+struct BoundingBox : robot2D::Drawable {
+    struct Wall : robot2D::Drawable {
+        robot2D::Transform getTransform() const {
+            float angl = -angle * 3.141592654f / 180.f;
             float cosine = static_cast<float>(std::cos(angl));
-            float sine   = static_cast<float>(std::sin(angl));
-            float sxc    = size.x  * cosine;
-            float syc    = size.y  * cosine;
-            float sxs    = size.x  * sine;
-            float sys    = size.y  * sine;
-            float tx     = -origin.x * sxc - origin.y * sys + position.x;
-            float ty     =  origin.x * sxs - origin.y * syc + position.y;
+            float sine = static_cast<float>(std::sin(angl));
+            float sxc = size.x * cosine;
+            float syc = size.y * cosine;
+            float sxs = size.x * sine;
+            float sys = size.y * sine;
+            float tx = -origin.x * sxc - origin.y * sys + position.x;
+            float ty = origin.x * sxs - origin.y * syc + position.y;
 
             auto t = robot2D::Transform( sxc, sys, tx,
-                                     -sxs, syc, ty,
-                                     0.f, 0.f, 1.f);
+                    -sxs, syc, ty,
+                    0.f, 0.f, 1.f);
 
             return t;
         }
 
         void draw(robot2D::RenderTarget& target,
-                        robot2D::RenderStates states) const {
+            robot2D::RenderStates states) const {
             //robot2D::Transform transform = getTransform();
             robot2D::Transform transform;
             transform.translate(position);
@@ -175,11 +175,12 @@ std::vector<BoundingBox> bbs;
 robot2D::Font g_font;
 robot2D::Text g_text;
 
-Render2DScene::Render2DScene(robot2D::RenderWindow& window) : Scene(window), m_scene(messageBus) {}
+Render2DScene::Render2DScene(robot2D::RenderWindow& window) : Scene(window), m_scene(messageBus) {
+}
 
 
 robot2D::FloatRect create4Points(const robot2D::vec2f& point1, const robot2D::vec2f& point2,
-                        const robot2D::vec2f& point3, const robot2D::vec2f& point4)  {
+    const robot2D::vec2f& point3, const robot2D::vec2f& point4) {
     robot2D::vec2f topPoint = point1;
     robot2D::vec2f botPoint = point1;
 
@@ -217,7 +218,7 @@ robot2D::FloatRect getBoundingBoxRotateCenter(robot2D::FloatRect rect, float deg
     float nH = std::abs(wx * sinA) + std::abs(wy * cosA);
     float nW = std::abs(wx * cosA) + std::abs(wy * sinA);
 
-    return robot2D::FloatRect::create({cx - nW, cy - nH}, {cx + nW,cy + nW});
+    return robot2D::FloatRect::create({cx - nW, cy - nH}, {cx + nW, cy + nW});
 }
 
 robot2D::vec2f rotatePoint(robot2D::vec2f point, float angle, robot2D::vec2f center_of_rotation) {
@@ -289,22 +290,10 @@ void Render2DScene::setup() {
         float sinA = std::sin(convertAngle(rotateAngle));
         float cosA = std::cos(convertAngle(rotateAngle));
 
-        robot2D::vec2f p1 = {cx - wx * cosA + wy * sinA , cy - wx * sinA - wy * cosA};
+        robot2D::vec2f p1 = {cx - wx * cosA + wy * sinA, cy - wx * sinA - wy * cosA};
         robot2D::vec2f p2 = {cx + wx * cosA + wy * sinA, cy + wx * sinA - wy * cosA};
         robot2D::vec2f p3 = {cx + wx * cosA - wy * sinA, cy + wx * sinA + wy * cosA};
         robot2D::vec2f p4 = {cx - wx * cosA - wy * sinA, cy - wx * sinA + wy * cosA};
-
-        auto rotateRect = create4Points(
-                {cx - wx * cosA + wy * sinA , cy - wx * sinA - wy * cosA},
-                {cx + wx * cosA + wy * sinA, cy + wx * sinA - wy * cosA},
-                {cx + wx * cosA - wy * sinA, cy + wx * sinA + wy * cosA},
-                {cx - wx * cosA - wy * sinA, cy - wx * sinA + wy * cosA}
-        );
-
-
-        float nH = std::abs(wx * sinA) + std::abs(wy * cosA);
-        float nW = std::abs(wx * cosA) + std::abs(wy * sinA);
-
 
         BoundingBox b;
         //b.setBox(getBoundingBoxRotateCenter(q.calculateRect(), rotateAngle));
@@ -312,13 +301,12 @@ void Render2DScene::setup() {
         bbs.emplace_back(b);
 
         std::array<robot2D::vec2f, 4> pps;
-        pps[0] = rotatePoint1(rect.topPoint(),  rotateAngle, rect.centerPoint());
+        pps[0] = rotatePoint1(rect.topPoint(), rotateAngle, rect.centerPoint());
         pps[1] = rotatePoint1(rect.widthPoint(), rotateAngle, rect.centerPoint());
         pps[2] = rotatePoint1(rect.heightPoint(), rotateAngle, rect.centerPoint());
         pps[3] = rotatePoint1(rect.botPoint(), rotateAngle, rect.centerPoint());
 
-        for(const auto& pp: pps)
-        {
+        for(const auto& pp: pps) {
             Quad q1;
             q1.setPosition(pp);
             q1.setSize({10, 10});
@@ -340,7 +328,7 @@ void Render2DScene::handleEvents(const robot2D::Event& event) {
         m_window.setView(robot2D::View(robot2D::FloatRect{0, 0,
                                                           static_cast<float>(event.size.widht),
                                                           static_cast<float>(event.size.heigth)
-        }));
+            }));
     }
 
     if(event.type == robot2D::Event::JoystickConnected) {
@@ -383,7 +371,7 @@ void Render2DScene::update(float dt) {
             auto leftManipulator = gamepadInput.leftManipulatorOffset;
 
             if((-1.F <= leftManipulator.x && leftManipulator.x <= 1.F)
-                    && (-1.F <= leftManipulator.y && leftManipulator.y <= 1.F) ) {
+                && (-1.F <= leftManipulator.y && leftManipulator.y <= 1.F) ) {
                 //q.move(leftManipulator * speed * dt);
             }
         }

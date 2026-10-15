@@ -106,7 +106,8 @@ python scripts/install_git_hooks.py
 
 Скрипт локально устанавливает core.hooksPath=.githooks. Он не перезаписывает
 другой hooksPath: если уже подключён менеджер hooks, вручную добавить вызов
-scripts/check_commit_message.py с путём к файлу сообщения в существующий commit-msg.
+scripts/check_commit_message.py с путём к файлу сообщения в существующий commit-msg,
+а scripts/pre_commit.py — в существующий pre-commit.
 На Linux/macOS для hook нужен executable bit; установщик задаёт его.
 Git для Windows запускает shell-hook через собственный sh, Python нужен в PATH.
 Hooks не включаются автоматически при clone, каждый участник выполняет установку.
@@ -120,6 +121,8 @@ python -m unittest discover -s scripts/tests -v
 
 Hook блокирует commit при неправильном сообщении; сообщения он не переписывает.
 Проверка локальная: Git допускает --no-verify, поэтому это не серверный запрет.
-В этом шаге подключён commit-msg. Обязательные pre-commit тесты/линтер ещё
-не подключены: сначала требуется совместимый clang-tidy/MinGW и отдельный
-согласованный запуск проверок. Текущий CI продолжает проверять сборку/тесты.
+TOOL-01 добавляет pre-commit: форматирование, сборку, headless-тесты и строгий
+clang-tidy собственного кода. Установка инструментов, локальные параметры,
+правила staged-файлов и ручной запуск описаны в
+[инструкции](development-tools.md#обязательный-pre-commit).
+Текущий CI продолжает проверять сборку/тесты и регрессии scripts/tests.
