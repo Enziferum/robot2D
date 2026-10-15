@@ -25,5 +25,7 @@ include(cmake/Base.cmake)
 
 enable_testing()
 
+include(cmake/ShaderValidation.cmake)
+
 add_subdirectory(core)
 add_subdirectory(editor)

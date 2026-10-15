@@ -1,0 +1,24 @@
+{
+  "programs": [
+    {"name": "Core.Quad.430", "stages": [
+      {"stage": "vert", "path": "core/include/robot2D/Graphics/QuadShaderTexts.hpp", "symbol": "vertexSource", "prefix": "#version 430 core\n"},
+      {"stage": "frag", "path": "core/include/robot2D/Graphics/QuadShaderTexts.hpp", "symbol": "fragmentSource", "prefix": "#version 430 core\n"}
+    ]},
+    {"name": "Core.Quad.450", "stages": [
+      {"stage": "vert", "path": "core/include/robot2D/Graphics/QuadShaderTexts.hpp", "symbol": "vertexSource", "prefix": "#version 450 core\n"},
+      {"stage": "frag", "path": "core/include/robot2D/Graphics/QuadShaderTexts.hpp", "symbol": "fragmentSource", "prefix": "#version 450 core\n"}
+    ]},
+    {"name": "Core.Text", "stages": [
+      {"stage": "vert", "path": "core/src/Graphics/Text.cpp", "symbol": "textVertShader"},
+      {"stage": "frag", "path": "core/src/Graphics/Text.cpp", "symbol": "textFragShader"}
+    ]},
+    {"name": "Editor.Text", "stages": [
+      {"stage": "vert", "path": "editor/src/TextSystem.cpp", "symbol": "textVertShader"},
+      {"stage": "frag", "path": "editor/src/TextSystem.cpp", "symbol": "textFragShader"}
+    ]},
+    {"name": "Editor.Grid", "stages": [
+      {"stage": "vert", "path": "editor/src/SceneGrid.cpp", "symbol": "gridVertexShader"},
+      {"stage": "frag", "path": "editor/res/shaders/gridShader.frag"}
+    ]}
+  ]
+}

@@ -79,3 +79,30 @@ Windows/GCC 15.2: полный Ninja/Release-прогон прошёл (35/35 co
 дополнительный запуск с graphics — 44/44 без пропусков. Запись отчёта в
 GITHUB_STEP_SUMMARY проверена. Linux локально не запускался, WSL-дистрибутива нет.
 Удалённый запуск GitHub Actions требуется после публикации изменений.
+
+### Подтверждённый удалённый запуск
+
+2026-10-15, commit 26fdade, [PR #59](https://github.com/Enziferum/robot2D/pull/59):
+[GitHub Actions](https://github.com/Enziferum/robot2D/actions/runs/38731059852)
+успешен на Ubuntu 24.04 (43/43 теста, включая graphics) и Windows 2022
+(35/35 core/headless), без пропусков. Артефакты обеих job скачаны;
+summary.md, tests.xml и полные логи присутствуют и соответствуют результатам.
+Чистая локальная Windows/Release-сборка с зафиксированными submodules — 44/44.
+PR готов к ревью; слияние ещё не выполнялось.
+
+Исправление yaml-cpp находится в editor/cmake/YamlCppPatching.cmake: GCC получает
+недостающий cstdint только для emitterutils.cpp, без правок исходников submodule.
+
+### Отчёты прямо в PR Checks
+
+В PR #59 добавлен dorny/test-reporter v3 (закреплённый commit):
+[Linux report](https://github.com/Enziferum/robot2D/runs/116417685976) и
+[Windows report](https://github.com/Enziferum/robot2D/runs/116418553605).
+Эти страницы содержат счётчики и полный список тестов; ничего скачивать не нужно.
+Путь в интерфейсе: PR → Checks → Tests (нужная платформа).
+Встроенный Summary запуска также сохраняется.
+
+На финальном commit c6c657f [CI успешен](https://github.com/Enziferum/robot2D/actions/runs/38733201188):
+Linux 43/43, Windows 35/35; оба Test Report Checks опубликованы и проверены.
+Для PR из fork этот Action пропускается из-за read-only токена; таблица остаётся
+доступна в Actions → запуск → Summary. Права checks:write ограничены build job.

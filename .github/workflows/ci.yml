@@ -69,7 +69,25 @@ jobs:
         shell: pwsh
         run: choco install mono --yes --no-progress
 
+      - name: Checkout pinned GLSL validator
+        uses: actions/checkout@v7
+        with:
+          repository: KhronosGroup/glslang
+          ref: 16.6.0
+          path: work/glslang-src
+          persist-credentials: false
+
+      - name: Build GLSL validator
+        run: |
+          cmake -S work/glslang-src -B work/glslang-build -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_SPIRV=OFF -DENABLE_HLSL=OFF -DGLSLANG_TESTS=OFF -DGLSLANG_ENABLE_INSTALL=OFF
+          cmake --build work/glslang-build --target glslang-standalone --parallel 2
+
+      - name: Validate GLSL stages and programs
+        run: python${{ runner.os == 'Linux' && '3' || '' }} scripts/validate_shaders.py --validator work/glslang-build/StandAlone/glslang${{ runner.os == 'Windows' && '.exe' || '' }} --require-version 16.6.0
+
       - name: Verify report generation
+        env:
+          GLSLANG_VALIDATOR: work/glslang-build/StandAlone/glslang${{ runner.os == 'Windows' && '.exe' || '' }}
         run: python${{ runner.os == 'Linux' && '3' || '' }} -m unittest discover -s scripts/tests -v
 
       - name: Configure, build and test

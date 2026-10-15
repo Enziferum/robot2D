@@ -39,7 +39,9 @@ namespace robot2D {
 
         int getIndexCount() const;
 
-        robot2D::VertexArray::Ptr getVertexArray() const { return m_vertexArray; }
+        robot2D::VertexArray::Ptr getVertexArray() const {
+            return m_vertexArray;
+        }
     private:
         const int quadSize = 4;
         const int quadIndicesSize = 6;
@@ -76,7 +78,7 @@ namespace robot2D {
         assert(quadIndices != nullptr && "Indices buffer must not nullptr");
 
         uint32_t offset = 0;
-        for (uint32_t i = 0; i < maxIndexCount; i += 6) {
+        for(uint32_t i = 0; i < maxIndexCount; i += 6) {
             quadIndices[i + 0] = offset + 0;
             quadIndices[i + 1] = offset + 1;
             quadIndices[i + 2] = offset + 2;
@@ -88,7 +90,7 @@ namespace robot2D {
             offset += 4;
         }
         auto indexBuffer = robot2D::IndexBuffer::Create(quadIndices,
-                                                        maxIndexCount);
+                maxIndexCount * sizeof(uint32_t));
         m_vertexArray->setIndexBuffer(indexBuffer);
 
         delete[] quadIndices;
@@ -112,7 +114,7 @@ namespace robot2D {
 
     template<typename BatchVertex>
     void QuadBatchRender<BatchVertex>::processBatching() {
-        auto size = uint32_t((uint8_t *) batchElement - (uint8_t *)batchHead);
+        auto size = uint32_t((uint8_t*) batchElement - (uint8_t*)batchHead);
         m_vertexBuffer -> setData(batchHead, sizeof(BatchVertex) * batchElementIndex );
     }
 
