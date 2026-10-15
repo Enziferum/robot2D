@@ -81,6 +81,10 @@ gh project item-edit 5 --owner Enziferum --url https://github.com/Enziferum/robo
 
 ## Коммиты
 
+Правила общей версии core/editor, dev-сборок, тегов релизов и версий файлов
+зафиксированы в [versioning.md](versioning.md). ID задачи и номер версии
+приложения имеют независимые назначения.
+
 Первая строка обязательна в формате `TASK-ID: описание`:
 
 ```text
