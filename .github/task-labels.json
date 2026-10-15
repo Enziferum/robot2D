@@ -1,0 +1,32 @@
+{
+  "definitions": {
+    "area:editor": {"color": "1D76DB", "description": "Редактор, сцены, ресурсы и интеграция движка"},
+    "area:tooling": {"color": "5319E7", "description": "Сборка, CI, анализ и форматирование"},
+    "area:workflow": {"color": "006B75", "description": "Учёт задач, Git-процесс и релизы"},
+    "type:bug": {"color": "D73A4A", "description": "Исправление ошибки или надёжности поведения"},
+    "type:feature": {"color": "A2EEEF", "description": "Новая функциональность"},
+    "type:refactor": {"color": "7057FF", "description": "Изменение структуры кода"},
+    "type:maintenance": {"color": "FBCA04", "description": "Поддержка инфраструктуры и диагностики"},
+    "type:design": {"color": "D4C5F9", "description": "Архитектурное обсуждение и проектирование"},
+    "type:tests": {"color": "0E8A16", "description": "Покрытие поведения автоматическими тестами"}
+  },
+  "tasks": {
+    "RENDER-02": ["area:editor", "type:bug"],
+    "RENDER-01": ["area:tooling", "type:maintenance"],
+    "SAVE-01": ["area:editor", "type:bug"],
+    "LOAD-01": ["area:editor", "type:bug"],
+    "TEST-01": ["area:editor", "type:tests"],
+    "CMD-01": ["area:editor", "type:feature"],
+    "ASSET-01": ["area:editor", "type:feature"],
+    "UI-01": ["area:editor", "type:feature"],
+    "VIEW-01": ["area:editor", "type:feature"],
+    "CODE-01": ["area:editor", "type:refactor"],
+    "LOG-01": ["area:editor", "type:maintenance"],
+    "TOOL-01": ["area:tooling", "type:maintenance"],
+    "ARCH-01": ["area:editor", "type:design"],
+    "ASYNC-01": ["area:editor", "type:maintenance"],
+    "CI-01": ["area:tooling", "type:maintenance"],
+    "PROCESS-01": ["area:workflow", "type:maintenance"],
+    "VERSION-01": ["area:workflow", "type:maintenance"]
+  }
+}

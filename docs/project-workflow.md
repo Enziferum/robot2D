@@ -79,7 +79,52 @@ gh project item-edit 5 --owner Enziferum --url https://github.com/Enziferum/robo
 Для старого gh без --field/--value использовать field-list и GraphQL node IDs
 в item-edit либо обновить CLI.
 
-## Коммиты
+## Ветки и метки задач
+
+Одна рабочая ветка относится к одной основной задаче. Формат имени:
+`codex/<task-id-в-нижнем-регистре>-<краткое-описание>`, например
+`codex/process-01-task-workflow`. Ветку создаём только при начале работы.
+Базовую удалённую ветку указываем явно; текущая ветка разработки — october2026_dev.
+Если локальные изменения базы не опубликованы, сначала согласовать их публикацию:
+gh создаёт ветку от удалённого состояния, а не от локальных незакоммиченных файлов.
+
+Создавать ветку через gh issue develop: это регистрирует связь в Development Issue.
+Пример для PROCESS-01 (#44):
+
+```text
+gh issue develop 44 --repo Enziferum/robot2D --list
+gh issue develop 44 --repo Enziferum/robot2D --base october2026_dev --name codex/process-01-task-workflow
+gh issue develop 44 --repo Enziferum/robot2D --list
+```
+
+Сначала проверить существующие связанные ветки и удалённую базу. Команда без
+--checkout не переключает локальную рабочую папку; для переключения выполнить
+отдельно git fetch / git switch после проверки незавершённых изменений.
+Само имя ветки не создаёт связи на GitHub. В описании PR также указывать Issue;
+Closes #N использовать, только когда PR действительно завершает задачу.
+
+2026-10-15 создана и проверена связанная ветка `codex/process-01-task-workflow`
+для PROCESS-01 (#44) от october2026_dev, SHA eff6c08.
+Локальный origin использует SSH: при отсутствии SSH-доступа gh issue develop
+может создать ветку/связь на сервере и затем завершиться ошибкой локального fetch.
+В этом случае сначала проверить --list и удалённую ветку, не повторять создание
+вслепую. Git remote автоматически не менять. Локальный checkout — отдельное действие.
+
+Метки Issues: `area:editor`, `area:tooling`, `area:workflow` и `type:*`
+(bug, feature, refactor, maintenance, design, tests). Прогресс отражается в
+Status доски. Определения и назначения — `.github/task-labels.json`.
+ID уже присутствует в заголовке Issue; отдельная метка для каждого ID не требуется.
+
+```text
+pwsh -File scripts/sync_task_labels.ps1
+pwsh -File scripts/sync_task_labels.ps1 -Apply
+```
+
+Без -Apply команда показывает план. При применении создаются отсутствующие метки
+и добавляются назначения существующим Issues после проверки их ID. Прочие метки,
+их цвет и описание сохраняются. После применения проверить список Issues через gh.
+
+## Сообщения коммитов
 
 Правила общей версии core/editor, dev-сборок, тегов релизов и версий файлов
 зафиксированы в [versioning.md](versioning.md). ID задачи и номер версии

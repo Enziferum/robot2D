@@ -5,6 +5,8 @@
     "project_number": 5,
     "project_url": "https://github.com/users/Enziferum/projects/5",
     "issues": {
+      "RENDER-02": 63,
+      "RENDER-01": 61,
       "PROCESS-01": 44,
       "LOAD-01": 45,
       "CMD-01": 46,
@@ -23,6 +25,8 @@
     }
   },
   "tasks": {
+    "RENDER-02": "Корректность ёмкости, переполнения и завершения batch рендера",
+    "RENDER-01": "Диагностика OpenGL и проверка GLSL перед рефакторингом рендера",
     "SAVE-01": "Сохранение, dirty-state, Save / Discard / Cancel",
     "LOAD-01": "Надёжная загрузка и завершение работы",
     "TEST-01": "Постоянные воспроизводимые тесты редактора",
