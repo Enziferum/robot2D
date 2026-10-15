@@ -26,11 +26,12 @@ source distribution.
 
 namespace editor::buildInfo {
 
-    inline constexpr const char* buildID = "@RB2D_BUILD_ID@";
+    inline constexpr const char* buildID = RB2_BUILD_ID;
+    inline constexpr const char* gitSHA = RB2_GIT_SHA;
     inline constexpr const char* configuration = "$<IF:$<BOOL:$<CONFIG>>,$<CONFIG>,Unknown>";
 
     inline std::string getVersion() {
-        return std::to_string(RB2_MAJOR_VERSION) + "." + std::to_string(RB2_MINOR_VERSION);
+        return RB2_VERSION_FULL;
     }
 
     inline std::string getWindowTitle() {

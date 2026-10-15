@@ -27,7 +27,8 @@ def own_cpp(path):
 
 
 def build_input(path):
-    return (own_cpp(path) or path.endswith("CMakeLists.txt") or path.endswith(".cmake")
+    template = path.endswith(".in") and (own_cpp(path[:-3]) or path.startswith("editor/cmake/"))
+    return (own_cpp(path) or template or path.endswith("CMakeLists.txt") or path.endswith(".cmake")
             or path in {".clang-tidy", "uncrustify.cfg", "scripts/run_clang_tidy.ps1"})
 
 

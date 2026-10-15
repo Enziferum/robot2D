@@ -1,6 +1,7 @@
 """Regression checks for scope, dependency coverage and fail-closed hooks."""
 
 import importlib.util
+import io
 import json
 from pathlib import Path
 import subprocess
@@ -16,6 +17,14 @@ spec.loader.exec_module(hook)
 
 
 class PreCommitTests(unittest.TestCase):
+    def test_generated_version_templates_trigger_native_checks(self):
+        for path in ("core/include/robot2D/Version.hpp.in", "editor/cmake/BuildInfo.hpp.in"):
+            with self.subTest(path=path), patch("sys.stdout", new_callable=io.StringIO) as output:
+                hook.check([path], plan=True)
+                plan = json.loads(output.getvalue())
+                self.assertTrue(plan["native_build_and_tests"])
+                self.assertEqual(plan["format"], [])
+
     def test_documentation_and_dependencies_do_not_invoke_native_tools(self):
         for paths in (["docs/editor-roadmap.md"], ["editor/extlibs/yaml-cpp/src/emit.cpp"],
                       ["core/ext/imgui/imgui.cpp"], ["editor/src-backup/foo.cpp"],

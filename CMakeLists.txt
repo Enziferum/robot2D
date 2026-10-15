@@ -1,5 +1,7 @@
 cmake_minimum_required(VERSION 3.21)
-project(robot2D)
+project(robot2D VERSION 0.8.0)
+
+include(cmake/Version.cmake)
 
 set(CMAKE_CXX_STANDARD 17)
 
