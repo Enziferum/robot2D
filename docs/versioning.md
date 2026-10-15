@@ -91,6 +91,8 @@ CMake следит за HEAD и ссылкой ветки: следующий bu
 CMake/Git fixtures для версий без зависимостей движка. Нужны CMake, Ninja и Git.
 Они проверяют release/dev/rc, отсутствие Git, неверные параметры, worktree,
 detached HEAD и обновление SHA через build без ручного reconfigure.
+В Windows CI MSYS2 наследует PATH runner, чтобы Git for Windows был доступен
+и генератору метаданных, и этим fixtures; инструменты MinGW остаются первыми.
 
 Headless CTest `editor-version` проверяет согласованность окна/конфигурации,
 версии нового проекта и кэша, а также загрузку проекта с Editor Version 0.5
