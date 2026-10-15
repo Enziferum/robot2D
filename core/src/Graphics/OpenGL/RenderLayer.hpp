@@ -18,9 +18,11 @@ namespace robot2D {
         // TODO: @a.raag Maybe move out layer creation from Render?
         struct RenderLayer {
             RenderLayer() = default;
-            ~RenderLayer();
-
-            void destroy();
+            RenderLayer(const RenderLayer&) = delete;
+            RenderLayer& operator=(const RenderLayer&) = delete;
+            RenderLayer(RenderLayer&&) noexcept = default;
+            RenderLayer& operator=(RenderLayer&&) noexcept = default;
+            ~RenderLayer() = default;
 
             RenderBuffer m_renderBuffer;
             ShaderHandler m_quadShader;

@@ -3,7 +3,7 @@
 #include "robot2D/Ecs/Scene.hpp"
 
 namespace {
-    class EcsTest: public ::testing::Test {
+    class EcsTest : public ::testing::Test {
     protected:
         robot2D::ecs::ComponentManager m_componentManager;
         robot2D::MessageBus m_messagebus;
@@ -13,7 +13,7 @@ namespace {
 TEST_F(EcsTest, EntityManager_test) {
     robot2D::ecs::Scene scene{m_messagebus};
     robot2D::ecs::EntityManager entityManager{m_componentManager, &scene};
-    auto entity = entityManager.createEntity();
+    entityManager.createEntity();
 }
 
 TEST_F(EcsTest, entityManager_many_entities_test) {
@@ -22,7 +22,7 @@ TEST_F(EcsTest, entityManager_many_entities_test) {
 
     robot2D::ecs::EntityManager entityManager{m_componentManager, &scene};
     for(int i = 0; i < entitiesCount; ++i) {
-        auto entity = entityManager.createEntity();
+        entityManager.createEntity();
     }
 
 }

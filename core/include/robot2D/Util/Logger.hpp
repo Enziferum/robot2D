@@ -106,12 +106,14 @@ namespace logger {
     {
     public:
         static void Init();
+        static const std::string& getFilePath() { return s_FilePath; }
 
         static std::shared_ptr<spdlog::logger>& getCoreLogger() { return s_CoreLogger; }
         static std::shared_ptr<spdlog::logger>& getEditorLogger() { return s_EditorLogger; }
         static std::shared_ptr<spdlog::logger>& getClientLogger() { return s_ClientLogger; }
     private:
         static std::shared_ptr<spdlog::logger> s_CoreLogger;
+        static std::string s_FilePath;
         static std::shared_ptr<spdlog::logger> s_EditorLogger;
         static std::shared_ptr<spdlog::logger> s_ClientLogger;
     };

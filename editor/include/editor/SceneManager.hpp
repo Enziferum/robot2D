@@ -23,6 +23,7 @@ source distribution.
 #include <unordered_map>
 #include <functional>
 #include <vector>
+#include <cstdint>
 #include <robot2D/Core/MessageBus.hpp>
 
 #include <editor/scripting/ScriptingEngineService.hpp>
@@ -49,7 +50,7 @@ namespace editor {
         void loadSceneAsync(Project::Ptr associatedProject, std::string path, SceneLoadCallback&& callback,
                             IScriptInteractorFrom::WeakPtr scriptingEngine);
         bool remove();
-        bool save(Scene::Ptr&& scene, IScriptInteractorFrom::WeakPtr scriptingEngine);
+        bool save(Scene::Ptr&& scene, IScriptInteractorFrom::WeakPtr scriptingEngine, const std::string& path = {});
 
         Project::Ptr getAssociatedProject() const;
         Scene::Ptr getActiveScene() const;
@@ -59,6 +60,7 @@ namespace editor {
         Project::Ptr m_associatedProject;
         Scene::Ptr m_activeScene;
         SceneManagerError m_error;
+        std::uint64_t m_loadGeneration { 0 };
     };
 
 } // namespace editor

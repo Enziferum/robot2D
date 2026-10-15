@@ -70,6 +70,10 @@ namespace robot2D {
         m_windowImpl -> close();
     }
 
+    void Window::cancelClose() {
+        m_windowImpl -> cancelClose();
+    }
+
     void Window::setTitle(const std::string& title) {
         m_windowImpl -> setTitle(title);
     }

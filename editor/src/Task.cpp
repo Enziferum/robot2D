@@ -33,4 +33,13 @@ namespace editor {
     }
 
     TaskID ITask::getTaskID() const { return m_taskID; }
+
+    void ITask::fail(std::string message) {
+        m_errorMessage = std::move(message);
+        m_outcome = TaskOutcome::Failed;
+    }
+
+    void ITask::markCancelled() {
+        m_outcome = TaskOutcome::Cancelled;
+    }
 }

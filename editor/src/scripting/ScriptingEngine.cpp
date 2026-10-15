@@ -1,22 +1,22 @@
 /*********************************************************************
-(c) Alex Raag 2024
-https://github.com/Enziferum
-robot2D - Zlib license.
-This software is provided 'as-is', without any express or
-implied warranty. In no event will the authors be held
-liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute
-it freely, subject to the following restrictions:
-1. The origin of this software must not be misrepresented;
-you must not claim that you wrote the original software.
-If you use this software in a product, an acknowledgment
-in the product documentation would be appreciated but
-is not required.
-2. Altered source versions must be plainly marked as such,
-and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any
-source distribution.
+   (c) Alex Raag 2024
+   https://github.com/Enziferum
+   robot2D - Zlib license.
+   This software is provided 'as-is', without any express or
+   implied warranty. In no event will the authors be held
+   liable for any damages arising from the use of this software.
+   Permission is granted to anyone to use this software for any purpose,
+   including commercial applications, and to alter it and redistribute
+   it freely, subject to the following restrictions:
+   1. The origin of this software must not be misrepresented;
+   you must not claim that you wrote the original software.
+   If you use this software in a product, an acknowledgment
+   in the product documentation would be appreciated but
+   is not required.
+   2. Altered source versions must be plainly marked as such,
+   and must not be misrepresented as being the original software.
+   3. This notice may not be removed or altered from any
+   source distribution.
 *********************************************************************/
 
 #include <cassert>
@@ -79,12 +79,10 @@ namespace editor {
 
     namespace util {
 
-        char* ReadBytes(const std::string& filepath, uint32_t* outSize)
-        {
+        char* ReadBytes(const std::string& filepath, uint32_t* outSize) {
             std::ifstream stream(filepath, std::ios::binary | std::ios::ate);
 
-            if (!stream)
-            {
+            if(!stream) {
                 // Failed to open the file
                 return nullptr;
             }
@@ -93,8 +91,7 @@ namespace editor {
             stream.seekg(0, std::ios::beg);
             uint32_t size = end - stream.tellg();
 
-            if (size == 0)
-            {
+            if(size == 0) {
                 // File is empty
                 return nullptr;
             }
@@ -107,8 +104,7 @@ namespace editor {
             return buffer;
         }
 
-        MonoAssembly* loadMonoAssembly(const std::string& assemblyPath)
-        {
+        MonoAssembly* loadMonoAssembly(const std::string& assemblyPath) {
             uint32_t fileSize = 0;
             char* fileData = ReadBytes(assemblyPath, &fileSize);
 
@@ -116,10 +112,9 @@ namespace editor {
             MonoImageOpenStatus status;
             MonoImage* image = mono_image_open_from_data_full(fileData, fileSize, 1, &status, 0);
 
-            if (status != MONO_IMAGE_OK)
-            {
+            if(status != MONO_IMAGE_OK) {
                 const char* errorMessage = mono_image_strerror(status);
-                // Log some error message using the errorMessage data
+                RB_EDITOR_ERROR("ScriptingEngine: failed to load Mono image: {}", errorMessage);
                 return nullptr;
             }
 
@@ -144,14 +139,12 @@ namespace editor {
             return assembly;
         }
 
-        void PrintAssemblyTypes(MonoAssembly* assembly)
-        {
+        void PrintAssemblyTypes(MonoAssembly* assembly) {
             MonoImage* image = mono_assembly_get_image(assembly);
             const MonoTableInfo* typeDefinitionsTable = mono_image_get_table_info(image, MONO_TABLE_TYPEDEF);
             int32_t numTypes = mono_table_info_get_rows(typeDefinitionsTable);
 
-            for (int32_t i = 0; i < numTypes; i++)
-            {
+            for(int32_t i = 0; i < numTypes; i++) {
                 uint32_t cols[MONO_TYPEDEF_SIZE];
                 mono_metadata_decode_row(typeDefinitionsTable, i, cols, MONO_TYPEDEF_SIZE);
 
@@ -162,13 +155,11 @@ namespace editor {
             }
         }
 
-        ScriptFieldType MonoTypeToScriptFieldType(MonoType* monoType)
-        {
+        ScriptFieldType MonoTypeToScriptFieldType(MonoType* monoType) {
             std::string typeName = mono_type_get_name(monoType);
 
             auto it = s_ScriptFieldTypeMap.find(typeName);
-            if (it == s_ScriptFieldTypeMap.end())
-            {
+            if(it == s_ScriptFieldTypeMap.end()) {
                 RB_EDITOR_ERROR("Unknown type: {}", typeName);
                 return ScriptFieldType::None;
             }
@@ -176,61 +167,59 @@ namespace editor {
             return it->second;
         }
 
-        const char* ScriptFieldTypeToString(ScriptFieldType fieldType)
-        {
-            switch (fieldType)
+        const char* ScriptFieldTypeToString(ScriptFieldType fieldType) {
+            switch(fieldType)
             {
-                case ScriptFieldType::None:    return "None";
-                case ScriptFieldType::Float:   return "Float";
-                case ScriptFieldType::Double:  return "Double";
-                case ScriptFieldType::Bool:    return "Bool";
-                case ScriptFieldType::Char:    return "Char";
-                case ScriptFieldType::Byte:    return "Byte";
-                case ScriptFieldType::Short:   return "Short";
-                case ScriptFieldType::Int:     return "Int";
-                case ScriptFieldType::Long:    return "Long";
-                case ScriptFieldType::UByte:   return "UByte";
-                case ScriptFieldType::UShort:  return "UShort";
-                case ScriptFieldType::UInt:    return "UInt";
-                case ScriptFieldType::ULong:   return "ULong";
-                case ScriptFieldType::Vector2: return "Vector2";
-                case ScriptFieldType::Vector3: return "Vector3";
-                case ScriptFieldType::Vector4: return "Vector4";
-                case ScriptFieldType::Entity:  return "Entity";
-                case ScriptFieldType::Collision2D:  return "Collision2D";
-                case ScriptFieldType::Transform:  return "Transform";
-                case ScriptFieldType::Drawable:  return "Drawable";
-                case ScriptFieldType::Text:  return "Text";
-                case ScriptFieldType::Animator:  return "Animator";
+            case ScriptFieldType::None:    return "None";
+            case ScriptFieldType::Float:   return "Float";
+            case ScriptFieldType::Double:  return "Double";
+            case ScriptFieldType::Bool:    return "Bool";
+            case ScriptFieldType::Char:    return "Char";
+            case ScriptFieldType::Byte:    return "Byte";
+            case ScriptFieldType::Short:   return "Short";
+            case ScriptFieldType::Int:     return "Int";
+            case ScriptFieldType::Long:    return "Long";
+            case ScriptFieldType::UByte:   return "UByte";
+            case ScriptFieldType::UShort:  return "UShort";
+            case ScriptFieldType::UInt:    return "UInt";
+            case ScriptFieldType::ULong:   return "ULong";
+            case ScriptFieldType::Vector2: return "Vector2";
+            case ScriptFieldType::Vector3: return "Vector3";
+            case ScriptFieldType::Vector4: return "Vector4";
+            case ScriptFieldType::Entity:  return "Entity";
+            case ScriptFieldType::Collision2D:  return "Collision2D";
+            case ScriptFieldType::Transform:  return "Transform";
+            case ScriptFieldType::Drawable:  return "Drawable";
+            case ScriptFieldType::Text:  return "Text";
+            case ScriptFieldType::Animator:  return "Animator";
             }
             RB_CORE_ASSERT(false, "Unknown ScriptFieldType");
             return "None";
         }
 
-        ScriptFieldType ScriptFieldTypeFromString(std::string_view fieldType)
-        {
-            if (fieldType == "None")    return ScriptFieldType::None;
-            if (fieldType == "Float")   return ScriptFieldType::Float;
-            if (fieldType == "Double")  return ScriptFieldType::Double;
-            if (fieldType == "Bool")    return ScriptFieldType::Bool;
-            if (fieldType == "Char")    return ScriptFieldType::Char;
-            if (fieldType == "Byte")    return ScriptFieldType::Byte;
-            if (fieldType == "Short")   return ScriptFieldType::Short;
-            if (fieldType == "Int")     return ScriptFieldType::Int;
-            if (fieldType == "Long")    return ScriptFieldType::Long;
-            if (fieldType == "UByte")   return ScriptFieldType::UByte;
-            if (fieldType == "UShort")  return ScriptFieldType::UShort;
-            if (fieldType == "UInt")    return ScriptFieldType::UInt;
-            if (fieldType == "ULong")   return ScriptFieldType::ULong;
-            if (fieldType == "Vector2") return ScriptFieldType::Vector2;
-            if (fieldType == "Vector3") return ScriptFieldType::Vector3;
-            if (fieldType == "Vector4") return ScriptFieldType::Vector4;
-            if (fieldType == "Entity")  return ScriptFieldType::Entity;
-            if (fieldType == "Collision2D")  return ScriptFieldType::Collision2D;
-            if (fieldType == "Transform")  return ScriptFieldType::Transform;
-            if (fieldType == "Drawable")  return ScriptFieldType::Drawable;
-            if (fieldType == "Text")  return ScriptFieldType::Text;
-            if (fieldType == "Animation")  return ScriptFieldType::Animator;
+        ScriptFieldType ScriptFieldTypeFromString(std::string_view fieldType) {
+            if(fieldType == "None")     return ScriptFieldType::None;
+            if(fieldType == "Float")    return ScriptFieldType::Float;
+            if(fieldType == "Double")   return ScriptFieldType::Double;
+            if(fieldType == "Bool")     return ScriptFieldType::Bool;
+            if(fieldType == "Char")     return ScriptFieldType::Char;
+            if(fieldType == "Byte")     return ScriptFieldType::Byte;
+            if(fieldType == "Short")    return ScriptFieldType::Short;
+            if(fieldType == "Int")      return ScriptFieldType::Int;
+            if(fieldType == "Long")     return ScriptFieldType::Long;
+            if(fieldType == "UByte")    return ScriptFieldType::UByte;
+            if(fieldType == "UShort")   return ScriptFieldType::UShort;
+            if(fieldType == "UInt")     return ScriptFieldType::UInt;
+            if(fieldType == "ULong")    return ScriptFieldType::ULong;
+            if(fieldType == "Vector2")  return ScriptFieldType::Vector2;
+            if(fieldType == "Vector3")  return ScriptFieldType::Vector3;
+            if(fieldType == "Vector4")  return ScriptFieldType::Vector4;
+            if(fieldType == "Entity")   return ScriptFieldType::Entity;
+            if(fieldType == "Collision2D")   return ScriptFieldType::Collision2D;
+            if(fieldType == "Transform")   return ScriptFieldType::Transform;
+            if(fieldType == "Drawable")   return ScriptFieldType::Drawable;
+            if(fieldType == "Text")   return ScriptFieldType::Text;
+            if(fieldType == "Animation")   return ScriptFieldType::Animator;
 
             RB_CORE_ASSERT(false, "Unknown ScriptFieldType");
             return ScriptFieldType::None;
@@ -242,35 +231,34 @@ namespace editor {
 
     struct MethodSignature {
         MethodSignature() = default;
-        MethodSignature(const std::initializer_list<ScriptFieldType>&  types) {
+        MethodSignature(const std::initializer_list<ScriptFieldType>& types) {
             m_types.assign(types.begin(), types.end());
         }
         std::vector<ScriptFieldType> m_types;
     };
 
     std::unordered_map<std::string, MethodSignature> engineRegisteredMethods = {
-            { "onCollision2DEnter", {  ScriptFieldType::Collision2D  } },
-            { "onCollision2DExit", {  ScriptFieldType::Collision2D  } },
-            { "OnCollision2DInternal", {  ScriptFieldType::Collision2D  } },
+        { "onCollision2DEnter", {  ScriptFieldType::Collision2D  } },
+        { "onCollision2DExit", {  ScriptFieldType::Collision2D  } },
+        { "OnCollision2DInternal", {  ScriptFieldType::Collision2D  } },
     };
 
-    class ScriptEngineReloadTask: public ITask {
+    class ScriptEngineReloadTask : public ITask {
     public:
-        explicit ScriptEngineReloadTask(ITaskFunction::Ptr func): ITask(func) {}
+        explicit ScriptEngineReloadTask(ITaskFunction::Ptr func) : ITask(func) {
+        }
         ~ScriptEngineReloadTask() override = default;
         void execute() override {
             RB_EDITOR_INFO("Reloading Script Engine");
         }
     };
 
-    static void OnAppAssemblyFileSystemEvent(const std::string& path, const filewatch::Event change_type)
-    {
-        if (!s_Data -> isReloadPending() && change_type == filewatch::Event::modified)
-        {
+    static void OnAppAssemblyFileSystemEvent(const std::string& path, const filewatch::Event change_type) {
+        if(!s_Data -> isReloadPending() && change_type == filewatch::Event::modified) {
             s_Data -> setReloadPending(true);
 
             TaskQueue::GetQueue() -> addAsyncTask<ScriptEngineReloadTask>([](const ScriptEngineReloadTask& task) {
-                s_Data -> resetFilewatcher() ;
+                s_Data -> resetFilewatcher();
                 // ScriptEngine::ReloadEngine();
             });
         }
@@ -313,8 +301,8 @@ namespace editor {
 
         LoadAssemblyClasses();
         ScriptGlue::registerComponents();
-        s_Data -> m_entityClass = std::make_shared<MonoClassWrapper>(s_Data,"robot2D",
-                                                                     "Entity", true);
+        s_Data -> m_entityClass = std::make_shared<MonoClassWrapper>(s_Data, "robot2D",
+                "Entity", true);
         s_Data -> m_entityClass -> registerMethod(".ctor", 1);
         s_Data -> m_entityClass -> registerMethod("setComponentField", 2);
         s_Data -> m_entityClass -> registerMethod("setEntityField", 2);
@@ -324,8 +312,7 @@ namespace editor {
         util::PrintAssemblyTypes(s_Data -> m_appAssebly);
     }
 
-    void ScriptEngine::LoadAssemblyClasses()
-    {
+    void ScriptEngine::LoadAssemblyClasses() {
         s_Data -> m_entityClasses.clear();
 
         const MonoTableInfo* typeDefinitionsTable = mono_image_get_table_info(s_Data ->
@@ -334,24 +321,24 @@ namespace editor {
         MonoClass* entityClass = mono_class_from_name(s_Data -> m_coreAssemblyImage, "robot2D", "Entity");
 
 
-        for (int32_t i = 0; i < numTypes; i++)
-        {
+        for(int32_t i = 0; i < numTypes; i++) {
             uint32_t cols[MONO_TYPEDEF_SIZE];
             mono_metadata_decode_row(typeDefinitionsTable, i, cols, MONO_TYPEDEF_SIZE);
 
-            const char* nameSpace = mono_metadata_string_heap(s_Data -> m_appAssemblyImage, cols[MONO_TYPEDEF_NAMESPACE]);
+            const char* nameSpace = mono_metadata_string_heap(s_Data -> m_appAssemblyImage,
+                    cols[MONO_TYPEDEF_NAMESPACE]);
             const char* className = mono_metadata_string_heap(s_Data -> m_appAssemblyImage, cols[MONO_TYPEDEF_NAME]);
             std::string fullName;
-            if (strlen(nameSpace) != 0)
+            if(strlen(nameSpace) != 0)
                 fullName = fmt::format("{}.{}", nameSpace, className);
             else
                 fullName = className;
             MonoClass* monoClass = mono_class_from_name(s_Data -> m_appAssemblyImage, nameSpace, className);
-            if (!monoClass || monoClass == entityClass || mono_class_is_enum(monoClass))
+            if(!monoClass || monoClass == entityClass || mono_class_is_enum(monoClass))
                 continue;
 
             bool isEntity = mono_class_is_subclass_of(monoClass, entityClass, false);
-            if (!isEntity)
+            if(!isEntity)
                 continue;
 
             /// search
@@ -360,15 +347,13 @@ namespace editor {
             auto scriptClass = std::make_shared<MonoClassWrapper>(s_Data, nameSpace, className);
             s_Data -> m_entityClasses[fullName] = scriptClass;
 
-            int fieldCount = mono_class_num_fields(monoClass);
-            void* iterator =  nullptr;
+            void* iterator = nullptr;
 
             while(MonoClassField* field = mono_class_get_fields(monoClass, &iterator)) {
                 const char* fieldName = mono_field_get_name(field);
                 uint32_t flags = mono_field_get_flags(field);
 
-                if (flags & MONO_FIELD_ATTRIBUTE_PUBLIC)
-                {
+                if(flags & MONO_FIELD_ATTRIBUTE_PUBLIC) {
                     MonoType* type = mono_field_get_type(field);
                     std::string typeName = mono_type_get_name(type);
                     if(auto pos = typeName.find('.'); pos != std::string::npos)
@@ -380,15 +365,18 @@ namespace editor {
                         if(mono_class_is_subclass_of(klazz, entityClass, false)) {
                             ScriptFieldType fieldType = ScriptFieldType::Entity;
                             if(!scriptClass -> registerField(fieldName, { fieldType, fieldName, field })) {
-                                RB_EDITOR_ERROR("ScriptingEngine: Can't register field type {0}",  std::string( util::ScriptFieldTypeToString(fieldType)));
+                                RB_EDITOR_ERROR("ScriptingEngine: Can't register field type {0}",
+                                    std::string( util::ScriptFieldTypeToString(fieldType)));
                             }
                         }
                     }
                     else {
                         ScriptFieldType fieldType = util::MonoTypeToScriptFieldType(type);
-                        RB_EDITOR_WARN("ScriptingEngine: Field Type {0}", std::string( util::ScriptFieldTypeToString(fieldType)));
+                        RB_EDITOR_WARN("ScriptingEngine: Field Type {0}",
+                            std::string( util::ScriptFieldTypeToString(fieldType)));
                         if(!scriptClass -> registerField(fieldName, { fieldType, fieldName, field })) {
-                            RB_EDITOR_ERROR("ScriptingEngine: Can't register field type {0}",  std::string( util::ScriptFieldTypeToString(fieldType)));
+                            RB_EDITOR_ERROR("ScriptingEngine: Can't register field type {0}",
+                                std::string( util::ScriptFieldTypeToString(fieldType)));
                         }
                     }
                 }
@@ -398,30 +386,30 @@ namespace editor {
             while(MonoMethod* method = mono_class_get_methods(monoClass, &methodIterator)) {
                 std::string methodName = mono_method_get_name(method);
                 uint32_t methodsFlags;
-                uint32_t flags = mono_method_get_flags(method, &methodsFlags);
+                mono_method_get_flags(method, &methodsFlags);
 
 
-            //    if(engineRegisteredMethods.find(methodName) != engineRegisteredMethods.end()) {
-                    const auto& signature = engineRegisteredMethods[methodName];
-                 //   RB_EDITOR_WARN("ScriptingEngine: Found Method: {0}", methodName);
-                    auto methodToken = mono_method_get_token(method);
-                    auto sig = mono_method_get_signature(method, s_Data -> m_appAssemblyImage, methodToken);
+                //    if(engineRegisteredMethods.find(methodName) != engineRegisteredMethods.end()) {
+                const auto& signature = engineRegisteredMethods[methodName];
+                //   RB_EDITOR_WARN("ScriptingEngine: Found Method: {0}", methodName);
+                auto methodToken = mono_method_get_token(method);
+                auto sig = mono_method_get_signature(method, s_Data -> m_appAssemblyImage, methodToken);
 
-                    void* methodSigIter = nullptr;
-                    int index = 0;
-                    bool validSignature = true;
+                void* methodSigIter = nullptr;
+                int index = 0;
+                bool validSignature = true;
 
-                    auto paramCount = mono_signature_get_param_count(sig);
-                    while(MonoType* type = mono_signature_get_params(sig, &methodSigIter)) {
-//                        if(signature.m_types[index] != util::MonoTypeToScriptFieldType(type)) {
-//                            RB_EDITOR_ERROR("ScriptingEngine: Bad Signature for method {0}", methodName);
-//                            validSignature = false;
-//                        }
-                        ++index;
-                    }
-                    if(validSignature)
-                        scriptClass -> registerMethod(methodName, paramCount);
-            //    }
+                auto paramCount = mono_signature_get_param_count(sig);
+                while(MonoType* type = mono_signature_get_params(sig, &methodSigIter)) {
+                    //                        if(signature.m_types[index] != util::MonoTypeToScriptFieldType(type)) {
+                    //                            RB_EDITOR_ERROR("ScriptingEngine: Bad Signature for method {0}", methodName);
+                    //                            validSignature = false;
+                    //                        }
+                    ++index;
+                }
+                if(validSignature)
+                    scriptClass -> registerMethod(methodName, paramCount);
+                //    }
 
             }
         }
@@ -448,7 +436,7 @@ namespace editor {
         }
 
         s_Data -> m_appAssemblyImage = mono_assembly_get_image(s_Data -> m_appAssebly);
-       // s_Data -> m_fileWatcher = std::make_unique<filewatch::FileWatch<std::string>>(filePath.string(),
+        // s_Data -> m_fileWatcher = std::make_unique<filewatch::FileWatch<std::string>>(filePath.string(),
         //            OnAppAssemblyFileSystemEvent);
         return true;
     }
@@ -459,10 +447,10 @@ namespace editor {
 
         if(enableDebug) {
             const char* options[] =
-                    {
-                            "--soft-breakpoints",
-                            "--debugger-agent=transport=dt_socket,suspend=n,server=y,address=127.0.0.1:55555"
-                    };
+            {
+                "--soft-breakpoints",
+                "--debugger-agent=transport=dt_socket,suspend=n,server=y,address=127.0.0.1:55555"
+            };
 
             mono_jit_parse_options(sizeof(options) / sizeof(char*), const_cast<char**>(options));
             mono_debug_init(MONO_DEBUG_FORMAT_MONO);
@@ -480,8 +468,16 @@ namespace editor {
     }
 
     void ScriptEngine::Shutdown() {
+        if(!s_Data)
+            return;
+        // Stop the producer before unloading Mono or destroying the state accessed by its callback.
+        s_Data -> resetFilewatcher();
+        s_Data -> m_entityInstances.clear();
+        s_Data -> interactor.reset();
+        s_Data -> camera.reset();
         ShutdownMono();
         delete s_Data;
+        s_Data = nullptr;
     }
 
     void ScriptEngine::ShutdownMono() {
@@ -497,7 +493,7 @@ namespace editor {
         if(hasEntityClass(sc.name)) {
             auto uuid = entity.getComponent<IDComponent>().ID;
             auto instance = std::make_shared<ScriptInstance>(s_Data,
-                                                             s_Data -> m_entityClasses[sc.name], entity);
+                    s_Data -> m_entityClasses[sc.name], entity);
             s_Data -> m_entityInstances[uuid] = instance;
 
             auto& interactor = s_Data -> interactor;
@@ -512,7 +508,7 @@ namespace editor {
                             auto MonoString = mono_string_new(s_Data -> m_appDomain, field.getName().c_str());
                             void* storage[2] = { (void*)(MonoString), (void*)(field.getBuffer()) };
                             mono_runtime_invoke(regMethods["setComponentField"],
-                                                klass -> getInstance(), storage, nullptr);
+                                klass -> getInstance(), storage, nullptr);
                         }
                     }
                     else if(scriptFieldType == ScriptFieldType::Entity) {
@@ -522,7 +518,7 @@ namespace editor {
                             auto MonoString = mono_string_new(s_Data -> m_appDomain, field.getName().c_str());
                             void* storage[2] = { (void*)(MonoString), (void*)(field.getBuffer())};
                             mono_runtime_invoke(regMethods["setEntityField"],
-                                                klass -> getInstance(), storage, nullptr);
+                                klass -> getInstance(), storage, nullptr);
                         }
                     }
                     else
@@ -542,7 +538,7 @@ namespace editor {
                             auto MonoString = mono_string_new(s_Data -> m_appDomain, field.Field.Name.c_str());
                             void* storage[2] = { (void*)(MonoString), (void*)(field.m_Buffer) };
                             mono_runtime_invoke(regMethods["setComponentField"],
-                                                klass -> getInstance(), storage, nullptr);
+                                klass -> getInstance(), storage, nullptr);
                         }
                     }
                     else if(field.Field.Type == ScriptFieldType::Entity) {
@@ -552,7 +548,7 @@ namespace editor {
                             auto MonoString = mono_string_new(s_Data -> m_appDomain, field.Field.Name.c_str());
                             void* storage[2] = { (void*)(MonoString), (void*)(field.m_Buffer)};
                             mono_runtime_invoke(regMethods["setEntityField"],
-                                                klass -> getInstance(), storage, nullptr);
+                                klass -> getInstance(), storage, nullptr);
                         }
                     }
                     else
@@ -599,25 +595,25 @@ namespace editor {
                 if(regMethods.find("OnCollision2DInternal") == regMethods.end())
                     continue;
 
-                uint64_t selfId  = self;
+                uint64_t selfId = self;
                 uint64_t otherId = other;
-                int      type    = static_cast<int>(contact.type);
+                int type = static_cast<int>(contact.type);
 
 
                 MonoClass* evClass = mono_class_from_name(s_Data -> m_coreAssemblyImage, "robot2D", "PhysicsContact2D");
                 RB_ASSERT(evClass)
-                MonoObject* boxed = mono_value_box(s_Data -> m_appDomain, evClass, (void*)&contact);
+                mono_value_box(s_Data -> m_appDomain, evClass, (void*)&contact);
                 void* args[4] = { &selfId, &otherId, &type, (void*)&contact };
 
                 mono_runtime_invoke(regMethods["OnCollision2DInternal"],
-                                    klass -> getInstance(), args, nullptr);
+                    klass -> getInstance(), args, nullptr);
             }
 
         }
 
     }
 
-    MonoImage* ScriptEngine::GetCoreAssemblyImage() const{
+    MonoImage* ScriptEngine::GetCoreAssemblyImage() const {
         return s_Data -> m_coreAssemblyImage;
     }
 
@@ -660,8 +656,8 @@ namespace editor {
 
         // Retrieve and instantiate class
         s_Data -> m_entityClass.reset();
-        s_Data -> m_entityClass = std::make_shared<MonoClassWrapper>(s_Data,"robot2D",
-                                                                     "Entity", true);
+        s_Data -> m_entityClass = std::make_shared<MonoClassWrapper>(s_Data, "robot2D",
+                "Entity", true);
     }
 
     MonoClassWrapper::Ptr ScriptEngine::getManagedObject(UUID entityId) const {

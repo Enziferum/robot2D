@@ -21,7 +21,11 @@ source distribution.
 
 #pragma once
 #include <memory>
+#include <functional>
+#include <string>
 #include <editor/Defines.hpp>
+
+namespace robot2D { struct WindowOptions; }
 
 namespace editor {
 
@@ -44,12 +48,18 @@ namespace editor {
 
         PanelState getState() const;
         void setState(const PanelState& panelState);
+        void requestFocus();
 
         virtual void update(float dt);
         virtual void render() = 0;
         UniqueType getID() const { return m_id; }
     protected:
+        void renderWindow(const robot2D::WindowOptions& options, std::function<void()>&& content);
         UniqueType m_id;
         PanelState m_state{ PanelState::Visible };
+    private:
+        friend class UIManager;
+        std::string m_panelKey;
+        bool m_focusRequested { false };
     };
 }

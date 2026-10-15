@@ -105,15 +105,11 @@ namespace editor {
     {
 
         m_messageDispatcher.onMessage<MenuProjectMessage>(MessageID::SaveScene, BIND_CLASS_FN(saveScene));
+        m_messageDispatcher.onMessage<MenuProjectMessage>(MessageID::SaveAll,
+            [this](const MenuProjectMessage&) { saveAll(); });
         m_messageDispatcher.onMessage<OpenSceneMessage>(MessageID::OpenScene, BIND_CLASS_FN(openScene));
         m_messageDispatcher.onMessage<CreateSceneMessage>(MessageID::CreateScene, BIND_CLASS_FN(createScene));
         m_messageDispatcher.onMessage<PrefabLoadMessage>(MessageID::PrefabLoad, BIND_CLASS_FN(addPrefabEntity));
-        m_messageDispatcher.onMessage<PanelEntitySelectedMessage>(MessageID::PanelEntitySelected,
-            [this](const PanelEntitySelectedMessage& message) {
-            m_selectedEntities.clear();
-            m_selectedEntities.emplace_back(message.entity);
-        });
-
         m_messageDispatcher.onMessage<PrefabAssetModificatedMessage>(MessageID::PrefabAssetModificated,
                                                                      BIND_CLASS_FN(prefabModificated));
 
@@ -146,7 +142,7 @@ namespace editor {
             case EditorState::Load:
                 break;
             case EditorState::Edit: {
-                for(auto& entity: m_selectedEntities) {
+                for(auto& entity: getSelectedEntities()) {
                     if(!entity)
                         continue;
                     auto& tx = entity.getComponent<TransformComponent>();
@@ -178,7 +174,11 @@ namespace editor {
     }
 
     void EditorLogic::destroy() {
+        RB_EDITOR_INFO("[EditorLogic] Waiting for task queue to stop");
         TaskQueue::GetQueue() -> stop();
+        RB_EDITOR_INFO("[EditorLogic] Task queue stopped");
+        if(m_activeScene && m_activeScene -> isRunning())
+            m_activeScene -> onRuntimeStop(m_scriptInteractor.lock());
     }
 
     void EditorLogic::createProject(Project::Ptr project) {
@@ -188,6 +188,11 @@ namespace editor {
                             errorToString(m_sceneManager.getError()));
             return;
         }
+        m_selectionService.clear();
+        m_commandStack.clear();
+        m_copyEntities.clear();
+        m_quadTree.clear();
+        m_mainCameraEntity = {};
         m_activeScene = m_sceneManager.getActiveScene();
 
         m_activeScene -> createMainCamera();
@@ -202,7 +207,7 @@ namespace editor {
     }
 
     void EditorLogic::loadProject(Project::Ptr project) {
-        m_currentProject = project;
+        m_pendingProject = project;
         m_presenter.switchState(EditorState::Load);
 
         auto path = project -> getPath();
@@ -223,19 +228,23 @@ namespace editor {
             return;
 
         auto taskQueue =  TaskQueue::GetQueue();
-        if(m_activeScene -> hasChanges() || taskQueue -> hasPendingTasks()) {
+        if(m_activeScene -> hasChanges() || m_presenter.hasAssetChanges() || taskQueue -> hasPendingTasks()) {
             m_popupConfiguration.title = "Close Scene";
-            m_popupConfiguration.onYes = [this, taskQueue, scenePath]() {
-                m_presenter.switchState(EditorState::Load);
-                if(!saveScene()) {
-                    RB_EDITOR_ERROR("EditorLogic: can't save scene");
+            m_popupConfiguration.error.clear();
+            m_popupConfiguration.onYes = [this, scenePath]() {
+                if(!saveAll()) {
+                    m_popupConfiguration.error = "Could not save changes. Check the file path and write access, then retry.";
+                    RB_EDITOR_ERROR("EditorLogic: can't save changes");
+                    return false;
                 }
-
+                m_presenter.switchState(EditorState::Load);
                 m_sceneManager.loadSceneAsync(m_currentProject, scenePath,
                                               BIND_CLASS_FN(loadSceneCallback), m_scriptInteractor);
+                return true;
             };
 
-            m_popupConfiguration.onNo = [this, taskQueue, scenePath]() {
+            m_popupConfiguration.onNo = [this, scenePath]() {
+                m_presenter.discardAssetChanges();
                 m_presenter.switchState(EditorState::Load);
                 m_sceneManager.loadSceneAsync(m_currentProject, scenePath,
                                               BIND_CLASS_FN(loadSceneCallback), m_scriptInteractor);
@@ -258,14 +267,37 @@ namespace editor {
     }
 
     void EditorLogic::saveScene(const MenuProjectMessage& message) {
-        m_sceneManager.save(std::move(m_activeScene), m_scriptInteractor);
+        if(!m_sceneManager.save(std::move(m_activeScene), m_scriptInteractor, message.path))
+            RB_EDITOR_ERROR("EditorLogic: can't save scene to {0}", message.path);
     }
 
     bool EditorLogic::saveScene() {
-        return m_sceneManager.save(std::move(m_activeScene), m_scriptInteractor);
+        const bool saved = m_sceneManager.save(std::move(m_activeScene), m_scriptInteractor);
+        if(!saved)
+            RB_EDITOR_ERROR("EditorLogic: can't save scene");
+        return saved;
+    }
+
+    bool EditorLogic::saveAll() {
+        return m_presenter.saveAssetChanges() && (!m_activeScene || saveScene());
     }
 
     void EditorLogic::loadSceneCallback(Scene::Ptr loadedScene) {
+        if(!loadedScene) {
+            m_pendingProject.reset();
+            m_presenter.switchState(m_activeScene ? EditorState::Edit : EditorState::LoadFailed);
+            RB_EDITOR_ERROR("[EditorLogic] Scene load failed; previous scene preserved={}",
+                            static_cast<bool>(m_activeScene));
+            return;
+        }
+        if(m_pendingProject)
+            m_currentProject = std::move(m_pendingProject);
+        RB_EDITOR_INFO("[EditorLogic] Applying scene to editor; path='{}'", loadedScene -> getPath());
+        m_selectionService.clear();
+        m_commandStack.clear();
+        m_copyEntities.clear();
+        m_quadTree.clear();
+        m_mainCameraEntity = {};
         m_activeScene = loadedScene;
         m_presenter.switchState(EditorState::Edit);
         m_presenter.setMainCameraEntity({});
@@ -289,12 +321,14 @@ namespace editor {
         // TODO(a.raag): update project's start scene
         // m_currentProject -> save();
         m_router.openScene(m_activeScene, m_currentProject -> getPath());
+        RB_EDITOR_INFO("[EditorLogic] Scene applied; path='{}'; entities={}",
+                       m_activeScene -> getPath(), m_activeScene -> getEntities().size());
     }
 
 
     void EditorLogic::copyToBuffer() {
         m_copyEntities.clear();
-        m_copyEntities = m_selectedEntities;
+        m_copyEntities = getSelectedEntities();
     }
 
     void EditorLogic::pasterFromBuffer() {
@@ -345,8 +379,10 @@ namespace editor {
     }
 
     void EditorLogic::processEntity(SceneEntity entity) {
-        auto iterator = m_quadTree.insert(entity, entity.calculateRect());
-        entity.addComponent<QuadTreeComponent>().iterator = iterator;
+        if(entity.hasComponent<TransformComponent>()) {
+            auto iterator = m_quadTree.insert(entity, entity.calculateRect());
+            entity.addComponent<QuadTreeComponent>().iterator = iterator;
+        }
 
         auto* manager = ResourceManager::getManager();
         auto* localManager = LocalResourceManager::getManager();
@@ -391,9 +427,7 @@ namespace editor {
             if(localManager -> hasFont(id)) {
                 text.setFont(localManager -> getFont(id));
             }
-            else {
-                if(!manager -> hasFont(id))
-                    return;
+            else if(manager -> hasFont(id)) {
                 auto& font = manager -> getFont(id);
                 auto* localFont = localManager -> addFont(fontPath.filename().string());
                 if(localFont) {
@@ -404,7 +438,8 @@ namespace editor {
         }
 
         if(entity.hasComponent<AnimationComponent>()) {
-            for(auto& copyAnimation: manager -> getAnimations(entity.getComponent<IDComponent>().ID)) {
+            const auto animations = manager -> getAnimationsCopy(entity.getUUID());
+            for(const auto& copyAnimation: animations) {
                 auto* animation = localManager -> addAnimation(entity.getComponent<IDComponent>().ID);
                 *animation = copyAnimation;
 
@@ -423,7 +458,9 @@ namespace editor {
                 }
             }
             auto& animationComponent = entity.getComponent<AnimationComponent>();
-            animationComponent.setAnimation( &localManager -> getAnimations(entity.getComponent<IDComponent>().ID)[0]);
+            const auto* localAnimations = localManager -> findAnimations(entity.getUUID());
+            if(localAnimations && !localAnimations -> empty())
+                animationComponent.setAnimation(&localManager -> getAnimations(entity.getUUID()).front());
         }
 
         if(entity.hasChildren()) {
@@ -434,9 +471,10 @@ namespace editor {
 
     void EditorLogic::duplicateEntity(robot2D::vec2f mousePos) {
         std::vector<SceneEntity> duplicatedEntities;
-        duplicatedEntities.reserve(m_selectedEntities.size());
+        auto selectedEntities = getSelectedEntities();
+        duplicatedEntities.reserve(selectedEntities.size());
 
-        for (const auto& entity : m_selectedEntities) {
+        for (const auto& entity : selectedEntities) {
             auto dupEntity = m_activeScene -> duplicateEntity(mousePos, entity);
             auto rect = dupEntity.calculateRect();
             auto treeIterator = m_quadTree.insert(dupEntity, rect);
@@ -457,11 +495,13 @@ namespace editor {
 
 
     void EditorLogic::onBeginPopup() {
+         m_stateBeforePopup = m_presenter.getState();
          m_presenter.switchState(EditorState::Modal);
     }
 
     void EditorLogic::onEndPopup() {
-        m_presenter.switchState(EditorState::Edit);
+        if(m_presenter.getState() == EditorState::Modal)
+            m_presenter.switchState(m_stateBeforePopup);
     }
 
     void EditorLogic::undoCommand() {
@@ -474,44 +514,24 @@ namespace editor {
 
 
     void EditorLogic::findSelectEntities(const robot2D::FloatRect& rect) {
-        m_selectedEntities.clear();
-
+        std::vector<UUID> selectedEntities;
         auto&& foundItems = m_quadTree.search(rect);
-        m_selectedEntities.resize(foundItems.size());
-        std::transform(foundItems.begin(), foundItems.end(), m_selectedEntities.begin(), [](
-                const QuadTreeContainer<SceneEntity>::ContainerIterator iterator) {
-           return iterator -> value;
-        });
-
-        // TODO(a.raag): filter by what ??
-        if(!m_selectedEntities.empty()) {
-            std::vector<ITreeItem::Ptr> selected_items{};
-            selected_items.reserve(m_selectedEntities.size());
-
-            for(auto& entity: m_selectedEntities) {
-                auto& component = entity.getComponent<UIComponent>();
-                selected_items.push_back(component.treeItem);
-            }
-            m_presenter.findSelectedEntitiesOnUI(std::move(selected_items));
+        for(auto iterator: foundItems) {
+            auto entity = iterator -> value;
+            if(entity)
+                selectedEntities.emplace_back(entity.getUUID());
         }
-
-        /// TODO(a.raag): add Selection Command
+        m_selectionService.selectEntities(selectedEntities);
+        notifySelection();
     }
 
 
     void EditorLogic::removeEntities(std::vector<SceneEntity>& entities, bool clearContainer) {
         auto restoreInformation = m_activeScene -> removeEntities(entities);
-
-        std::list<ITreeItem::Ptr> uiItems;
-        for(const auto& entity: entities) {
-            if(entity)
-                uiItems.emplace_back(entity.getComponent<UIComponent>().treeItem);
-        }
-
-        auto uiDeletedInformation = m_presenter.removeEntitiesFromUI(std::move(uiItems));
-
+        for(const auto& entity: entities)
+            m_selectionService.removeEntity(entity.getUUID());
         auto command =
-                m_commandStack.addCommand<DeleteEntitiesCommand>(this, restoreInformation, uiDeletedInformation);
+                m_commandStack.addCommand<DeleteEntitiesCommand>(this, restoreInformation);
         if(!command) {
             RB_EDITOR_ERROR("EditorLogic: Can't Create DeleteCommand");
         }
@@ -524,7 +544,12 @@ namespace editor {
 
     void EditorLogic::removeSelectedEntities() {
         constexpr bool clearContainer = true;
-        removeEntities(m_selectedEntities, clearContainer);
+        auto selectedEntities = getSelectedEntities();
+        if(selectedEntities.empty())
+            return;
+        removeEntities(selectedEntities, clearContainer);
+        m_selectionService.clear();
+        m_presenter.clearSelectionOnUI();
     }
 
     EditorState EditorLogic::getState() const {
@@ -533,8 +558,31 @@ namespace editor {
 
     //////////////////////////////////////// UIInteractor ////////////////////////////////////////
 
-    std::vector<SceneEntity>& EditorLogic::getSelectedEntities()  {
-        return m_selectedEntities;
+    std::vector<SceneEntity> EditorLogic::getSelectedEntities() {
+        std::vector<SceneEntity> entities;
+        auto selectedEntities = m_selectionService.getSelectedEntities();
+        if(!m_activeScene) {
+            m_selectionService.clear();
+            return entities;
+        }
+        for(auto uuid: selectedEntities) {
+            auto entity = m_activeScene -> getEntity(uuid);
+            if(entity)
+                entities.emplace_back(entity);
+            else
+                m_selectionService.removeEntity(uuid);
+        }
+        return entities;
+    }
+
+    SelectionService& EditorLogic::getSelectionService() {
+        return m_selectionService;
+    }
+
+    void EditorLogic::notifySelection() {
+        auto active = m_selectionService.lastActive();
+        auto* msg = m_messageBus.postMessage<PanelEntitySelectedMessage>(MessageID::PanelEntitySelected);
+        msg -> entity = active && m_activeScene ? m_activeScene -> getEntity(*active) : SceneEntity{};
     }
 
     std::string EditorLogic::getAssociatedProjectPath() const {
@@ -565,15 +613,20 @@ namespace editor {
     }
 
     SceneEntity EditorLogic::duplicateEmptyEntity(SceneEntity entity) {
-        return m_activeScene -> duplicateEmptyEntity(entity);
+        if(!m_activeScene || m_activeScene -> isRunning())
+            return {};
+        auto instance = m_activeScene -> duplicateEmptyEntity(entity, getScriptInteractor());
+        if(instance)
+            processEntity(instance);
+        return instance;
     }
 
     bool EditorLogic::setBefore(SceneEntity sourceEntity, SceneEntity target) {
         return m_activeScene -> setBefore(sourceEntity, target);
     }
 
-    void EditorLogic::removeEntityChild(SceneEntity entity) {
-        m_activeScene -> removeEntityChild(entity);
+    bool EditorLogic::reparentEntity(SceneEntity entity, SceneEntity parent) {
+        return m_activeScene && m_activeScene -> reparent(entity, parent);
     }
 
     bool EditorLogic::isRunning() const {
@@ -583,52 +636,40 @@ namespace editor {
     }
 
     SceneEntity EditorLogic::findEntity(const robot2D::vec2i& mousePos) {
-        m_selectedEntities.clear();
         robot2D::FloatRect rect = {{ static_cast<float>(mousePos.x),
                                      static_cast<float>(mousePos.y) }, { 1.f, 1.f }};
         auto&& foundItems = m_quadTree.search(rect);
-        if(foundItems.empty()) {
-            m_presenter.clearSelectionOnUI();
+        std::vector<SceneEntity> entities;
+        for(auto iterator: foundItems) {
+            auto entity = iterator -> value;
+            if(entity && entity.hasComponent<TransformComponent>())
+                entities.emplace_back(entity);
+        }
+        if(entities.empty()) {
+            m_selectionService.clear();
+            notifySelection();
             return {};
         }
-        else if(foundItems.size() > 1) {
-            std::vector<SceneEntity> tmp;
-            tmp.reserve(foundItems.size());
-            std::transform(foundItems.begin(), foundItems.end(), tmp.begin(), [](
-                    const QuadTreeContainer<SceneEntity>::ContainerIterator iterator) {
-                return iterator -> value;
-            });
-
-            std::sort(tmp.begin(), tmp.end(), [](SceneEntity entity1, SceneEntity entity2) {
-                auto depth1 = entity1.getComponent<DrawableComponent>().getDepth();
-                auto depth2 = entity2.getComponent<DrawableComponent>().getDepth();
-                return depth1 > depth2;
-            });
-
-            m_selectedEntities.push_back(tmp[0]);
-            return tmp[0];
-        }
-        else {
-            std::transform(foundItems.begin(), foundItems.end(), m_selectedEntities.begin(), [](
-                    const QuadTreeContainer<SceneEntity>::ContainerIterator iterator) {
-                return iterator -> value;
-            });
-
-            return m_selectedEntities[0];
-        }
-
-        return SceneEntity{};
+        std::stable_sort(entities.begin(), entities.end(), [](SceneEntity left, SceneEntity right) {
+            auto leftDepth = left.hasComponent<DrawableComponent>()
+                             ? left.getComponent<DrawableComponent>().getDepth() : 0;
+            auto rightDepth = right.hasComponent<DrawableComponent>()
+                              ? right.getComponent<DrawableComponent>().getDepth() : 0;
+            return leftDepth > rightDepth;
+        });
+        auto entity = entities.front();
+        m_selectionService.selectEntity(entity.getUUID());
+        notifySelection();
+        return entity;
     }
 
 
     bool EditorLogic::hasSelectedEntities() const {
-        return !m_selectedEntities.empty();
+        return !m_selectionService.empty();
     }
 
-    void EditorLogic::restoreDeletedEntities(DeletedEntitiesRestoreInformation& restoreInformation,
-                                             DeletedEntitiesRestoreUIInformation& restoreUiInformation) {
+    void EditorLogic::restoreDeletedEntities(DeletedEntitiesRestoreInformation& restoreInformation) {
         m_activeScene -> restoreEntities(restoreInformation);
-        m_presenter.restoreEntitiesOnUI(restoreUiInformation);
     }
 
 
@@ -637,20 +678,25 @@ namespace editor {
     }
 
     void EditorLogic::closeCurrentProject(std::function<void()>&& resultCallback) {
-        m_quadTree.clear();
-
+        if(m_presenter.getState() == EditorState::Modal)
+            return;
         auto taskQueue = TaskQueue::GetQueue();
         m_closeResultProjectCallback = std::move(resultCallback);
-        if(m_activeScene -> hasChanges() || taskQueue -> hasPendingTasks()) {
+        if((m_activeScene && m_activeScene -> hasChanges()) || m_presenter.hasAssetChanges() || taskQueue -> hasPendingTasks()) {
             m_popupConfiguration.title = "Close Project";
+            m_popupConfiguration.error.clear();
             m_popupConfiguration.onYes = [this]() {
-                m_presenter.switchState(EditorState::Load);
-                if(!saveScene()) {
-                    RB_EDITOR_ERROR("EditorLogic: can't save scene");
+                if(!saveAll()) {
+                    m_popupConfiguration.error = "Could not save changes. Check the file path and write access, then retry.";
+                    RB_EDITOR_ERROR("EditorLogic: can't save changes");
+                    return false;
                 }
+                m_presenter.switchState(EditorState::Load);
                 m_closeResultProjectCallback();
+                return true;
             };
             m_popupConfiguration.onNo = [this]() {
+                m_presenter.discardAssetChanges();
                 m_closeResultProjectCallback();
             };
             m_presenter.showPopup(&m_popupConfiguration);
@@ -659,7 +705,16 @@ namespace editor {
             m_closeResultProjectCallback();
     }
 
+    void EditorLogic::applyPrefabChanges(UUID prefabID, SceneEntity entity) {
+        PrefabAssetModificatedMessage message;
+        message.prefabUUID = prefabID;
+        message.prefabEntity = entity;
+        prefabModificated(message);
+    }
+
     void EditorLogic::prefabModificated(const PrefabAssetModificatedMessage& message) {
+        if(!m_activeScene || !message.prefabEntity)
+            return;
         constexpr auto processModification = [](SceneEntity prefabEntity,
                 SceneEntity modificateEntity) {
             if(prefabEntity.hasComponent<DrawableComponent>()
@@ -667,11 +722,13 @@ namespace editor {
                 auto& modificateDrawable = modificateEntity.getComponent<DrawableComponent>();
                 auto prefabDrawable = prefabEntity.getComponent<DrawableComponent>();
                 modificateDrawable.setColor(prefabDrawable.getColor());
-                modificateDrawable.setTexture(prefabDrawable.getTexture());
+                if(prefabDrawable.hasTexture())
+                    modificateDrawable.setTexture(prefabDrawable.getTexture());
+                modificateEntity.markModified();
             }
         };
 
-        m_activeScene -> traverseGraph(std::move([&processModification, message](SceneEntity& sceneEntity) {
+        m_activeScene -> forEachEntity(std::move([&processModification, message](SceneEntity& sceneEntity) {
             if(sceneEntity.hasComponent<PrefabComponent>()) {
                 auto& prefabComponent = sceneEntity.getComponent<PrefabComponent>();
                 if(prefabComponent.prefabUUID == message.prefabUUID) {
@@ -687,8 +744,10 @@ namespace editor {
     }
 
     void EditorLogic::setMainCamera(SceneEntity cameraEntity) {
-        m_selectedEntities.clear();
-        m_selectedEntities.emplace_back(cameraEntity);
+        if(cameraEntity)
+            m_selectionService.selectEntity(cameraEntity.getUUID());
+        else
+            m_selectionService.clear();
     }
 
     void EditorLogic::exportProject(const ExportOptions& exportOptions) {
@@ -696,16 +755,6 @@ namespace editor {
         queue -> addAsyncTask<ExportTask>([](const ExportTask& exportTask) {
 
         }, exportOptions);
-    }
-
-    void EditorLogic::uiSelectedEntities(std::set<ITreeItem::Ptr>& uiItems, bool isAll) {
-        m_selectedEntities.clear();
-
-        for(auto& uiItem: uiItems) {
-           auto* entity = uiItem -> getUserData<SceneEntity>();
-           if(entity && *entity)
-               m_selectedEntities.push_back(*entity);
-        }
     }
 
     SceneEntity EditorLogic::getEntity(UUID uuid) {

@@ -23,6 +23,7 @@ source distribution.
 #include <editor/ApplicationLogic.hpp>
 #include <editor/scripting/ScriptingEngine.hpp>
 #include <editor/Exception.hpp>
+#include <editor/BuildInfo.hpp>
 
 namespace editor {
     ApplicationLogic::ApplicationLogic(MessageDispatcher& messageDispatcher):
@@ -34,10 +35,8 @@ namespace editor {
     {}
 
     void ApplicationLogic::setup(IEditorOpener* editorModule, ScriptingEngineService::Ptr scriptingEngine) {
-        auto [hasKey, version] = m_configuration.getValue(ConfigurationKey::Version);
-        if(hasKey) {
-            RB_EDITOR_WARN("Editor's Current Version {0}.", version);
-        }
+        RB_EDITOR_INFO("Editor's Current Version {0}, build {1}.",
+                       buildInfo::getVersion(), buildInfo::buildID);
 
         m_editorOpener = editorModule;
         m_scriptingEngineService = scriptingEngine;
@@ -45,12 +44,8 @@ namespace editor {
         auto [status, result] = m_configuration.getValue(ConfigurationKey::CachePath);
 
         if(!m_editorCache.parseCache(result)) {
-            if(m_editorCache.getError() == EditorCacheError::NoCacheFile){}
-            else {
-                RB_EDITOR_ERROR("Error to parse Editor Cache, description := {0}",
-                                errorToString(m_editorCache.getError()));
-                RB2D_EXCEPTION("Editor's cache parse error");
-            }
+            RB_EDITOR_WARN("Editor cache: {0}. Opening project browser.",
+                           errorToString(m_editorCache.getError()));
         }
 
         if(m_editorCache.isShowInspector())
@@ -67,10 +62,19 @@ namespace editor {
                                                           BIND_CLASS_FN(loadProject));
             m_messageDispatcher.onMessage<ProjectMessage>(MessageID::DeleteProject,
                                                           BIND_CLASS_FN(deleteProject));
+            m_messageDispatcher.onMessage<ProjectMessage>(MessageID::RemoveRecentProject,
+                [this](const ProjectMessage& message) {
+                    if(!m_editorCache.removeProject(message.description)) {
+                        RB_EDITOR_ERROR("Can't remove project from recent list: {0}",
+                                        errorToString(m_editorCache.getError()));
+                        RB2D_EXCEPTION("Editor Cache Error");
+                    }
+                });
 
             m_messageDispatcher.onMessage<ShowInspectorMessage>(MessageID::ShowInspector,
                 [this](const ShowInspectorMessage& message) {
-                    m_editorCache.setShowInspector(message.showAlways);
+                    if(!m_editorCache.setShowInspector(message.showAlways))
+                        RB_EDITOR_ERROR("Can't save project browser startup preference");
             });
         } else {
             const auto& projectDescription = m_editorCache.getCurrentProject();
@@ -94,7 +98,7 @@ namespace editor {
 
     void ApplicationLogic::createProject(const ProjectMessage& projectDescription) {
         if(m_projectManager.hasActivateProject()) {
-            m_editorOpener -> closeCurrentProject([this, &projectDescription]() {
+            m_editorOpener -> closeCurrentProject([this, projectDescription]() {
                 createProjectInternal(projectDescription);
             });
         }
@@ -154,7 +158,7 @@ namespace editor {
 
     void ApplicationLogic::loadProject(const ProjectMessage& projectDescription) {
         if(m_projectManager.hasActivateProject()) {
-            m_editorOpener -> closeCurrentProject([this, &projectDescription]() {
+            m_editorOpener -> closeCurrentProject([this, projectDescription]() {
                 loadProjectInternal(projectDescription);
             });
         }

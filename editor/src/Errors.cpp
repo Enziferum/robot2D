@@ -25,6 +25,20 @@ namespace editor {
 
     std::string errorToString(const EditorCacheError& error) {
         switch(error) {
+            case EditorCacheError::None:
+                return "No cache error";
+            case EditorCacheError::ReadFailed:
+                return "Can't read cache; changes will be kept for this session only";
+            case EditorCacheError::WriteFailed:
+                return "Can't save cache; the previous file was preserved";
+            case EditorCacheError::BackupFailed:
+                return "Can't back up cache; the original is preserved and changes are session-only";
+            case EditorCacheError::InvalidCache:
+                return "Invalid cache was backed up; using an empty cache";
+            case EditorCacheError::UnsupportedVersion:
+                return "Cache format is newer than supported; the original is preserved and changes are session-only";
+            case EditorCacheError::InvalidProject:
+                return "Cache project must have a name and a path";
             case EditorCacheError::NoCacheFile:
                 return "Don't Have Cache file";
             case EditorCacheError::EditorTagNone:
@@ -79,6 +93,20 @@ namespace editor {
 
     std::string errorToString(const SceneSerializerError& error) {
         switch (error) {
+            case SceneSerializerError::None:
+                return "No scene serialization error";
+            case SceneSerializerError::InvalidData:
+                return "Invalid scene data";
+            case SceneSerializerError::UnsupportedVersion:
+                return "Unsupported scene format version";
+            case SceneSerializerError::InvalidHierarchy:
+                return "Invalid scene hierarchy";
+            case SceneSerializerError::CountMismatch:
+                return "EntityCount does not match Entities";
+            case SceneSerializerError::InvalidScene:
+                return "Loading requires an empty editor scene";
+            case SceneSerializerError::WriteFailed:
+                return "Can't write scene file";
             case SceneSerializerError::NotSceneTag:
                 return "No Scene Tag";
             case SceneSerializerError::NoFileOpen:

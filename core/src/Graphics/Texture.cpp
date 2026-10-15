@@ -1,22 +1,22 @@
 /*********************************************************************
-(c) Alex Raag 2021
-https://github.com/Enziferum
-robot2D - Zlib license.
-This software is provided 'as-is', without any express or
-implied warranty. In no event will the authors be held
-liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute
-it freely, subject to the following restrictions:
-1. The origin of this software must not be misrepresented;
-you must not claim that you wrote the original software.
-If you use this software in a product, an acknowledgment
-in the product documentation would be appreciated but
-is not required.
-2. Altered source versions must be plainly marked as such,
-and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any
-source distribution.
+   (c) Alex Raag 2021
+   https://github.com/Enziferum
+   robot2D - Zlib license.
+   This software is provided 'as-is', without any express or
+   implied warranty. In no event will the authors be held
+   liable for any damages arising from the use of this software.
+   Permission is granted to anyone to use this software for any purpose,
+   including commercial applications, and to alter it and redistribute
+   it freely, subject to the following restrictions:
+   1. The origin of this software must not be misrepresented;
+   you must not claim that you wrote the original software.
+   If you use this software in a product, an acknowledgment
+   in the product documentation would be appreciated but
+   is not required.
+   2. Altered source versions must be plainly marked as such,
+   and must not be misrepresented as being the original software.
+   3. This notice may not be removed or altered from any
+   source distribution.
 *********************************************************************/
 
 #include <robot2D/Graphics/GL.hpp>
@@ -26,12 +26,12 @@ source distribution.
 namespace robot2D {
     GLenum convertColorType(const ImageColorFormat& format) {
         switch(format) {
-            case ImageColorFormat::RED:
-                return GL_RED;
-            case ImageColorFormat::RGB:
-                return GL_RGB;
-            case ImageColorFormat::RGBA:
-                return GL_RGBA;
+        case ImageColorFormat::RED:
+            return GL_RED;
+        case ImageColorFormat::RGB:
+            return GL_RGB;
+        case ImageColorFormat::RGBA:
+            return GL_RGBA;
         }
         return GL_RGB;
     }
@@ -76,9 +76,10 @@ namespace robot2D {
 
         if(RenderAPI::getOpenGLVersion() == RenderApi::OpenGL4_3) {
             if(m_texParam == 0) {
-                glTexParameteri(m_texture, GL_TEXTURE_WRAP_S, GL_REPEAT);
-                glTexParameteri(m_texture, GL_TEXTURE_WRAP_T, GL_REPEAT);
-            } else if(m_texParam == 1) {
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+            }
+            else if(m_texParam == 1) {
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
             }
@@ -94,7 +95,8 @@ namespace robot2D {
             if(m_texParam == 0) {
                 glTextureParameteri(m_texture, GL_TEXTURE_WRAP_S, GL_REPEAT);
                 glTextureParameteri(m_texture, GL_TEXTURE_WRAP_T, GL_REPEAT);
-            } else if(m_texParam == 1) {
+            }
+            else if(m_texParam == 1) {
                 glTextureParameteri(m_texture, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
                 glTextureParameteri(m_texture, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
             }
@@ -132,10 +134,10 @@ namespace robot2D {
         auto size = m_image.getSize();
         if(RenderAPI::getOpenGLVersion() == RenderApi::OpenGL4_3)
             glTexImage2D(GL_TEXTURE_2D, 0, glFormat, size.x,
-                         size.y, 0, glFormat, GL_UNSIGNED_BYTE, bufferData);
+                size.y, 0, glFormat, GL_UNSIGNED_BYTE, bufferData);
         else
             glTextureSubImage2D(m_texture, 0, 0, 0,
-                                size.x, size.y, glFormat, GL_UNSIGNED_BYTE, bufferData);
+                size.x, size.y, glFormat, GL_UNSIGNED_BYTE, bufferData);
     }
 
     void Texture::bind(uint32_t slot) {

@@ -1,0 +1,427 @@
+#define GLFW_INCLUDE_NONE
+#include "TestSupport.hpp"
+#include <GLFW/glfw3.h>
+#include <robot2D/Graphics/GL.hpp>
+#include <robot2D/Util/Logger.hpp>
+#include <editor/Scene.hpp>
+#include <editor/SceneManager.hpp>
+#include <editor/Editor.hpp>
+#include <editor/EditorLogic.hpp>
+#include <editor/serializers/SceneSerializer.hpp>
+#include <editor/serializers/YamlFile.hpp>
+#include <editor/serializers/PrefabSerializer.hpp>
+#include <iostream>
+#include <limits>
+
+namespace {
+    using namespace tests;
+
+    struct GraphicsUnavailable : std::runtime_error { using std::runtime_error::runtime_error; };
+
+    class GraphicsContext {
+    public:
+        GraphicsContext() {
+            if(!glfwInit()) throw GraphicsUnavailable("GLFW initialization unavailable");
+            glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+            glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+            glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 5);
+            glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+            m_window = glfwCreateWindow(32, 32, "robot2D regression tests", nullptr, nullptr);
+            if(!m_window) {
+                glfwTerminate();
+                throw GraphicsUnavailable("OpenGL 4.5 context unavailable");
+            }
+            glfwMakeContextCurrent(m_window);
+            if(!gladLoadGLLoader(reinterpret_cast<GLADloadproc>(glfwGetProcAddress))) {
+                glfwDestroyWindow(m_window);
+                glfwTerminate();
+                throw GraphicsUnavailable("OpenGL loader unavailable");
+            }
+        }
+        ~GraphicsContext() {
+            glfwDestroyWindow(m_window); glfwTerminate();
+        }
+    private:
+        GLFWwindow* m_window { nullptr };
+    };
+
+    class ScriptStub : public editor::IScriptInteractorFrom {
+    public:
+        bool hasEntityClass(const std::string&) const override {
+            return false;
+        }
+        void setScriptClass(std::string, editor::UUID) override {
+        }
+        bool hasFields(editor::UUID) const override {
+            return !fields.empty();
+        }
+        FieldMap& getFields(editor::UUID) override {
+            return fields;
+        }
+        std::vector<std::string> getClassesNames() const override {
+            return {};
+        }
+        void callScriptMethod(editor::UUID, const std::string&) override {
+        }
+        void setEditorCamera(editor::EditorCamera::Ptr) override {
+        }
+        editor::ScriptingEngineService* getScriptingEngine() const override {
+            return nullptr;
+        }
+        FieldMap fields;
+    };
+
+    struct QueueStop {
+        ~QueueStop() {
+            editor::TaskQueue::GetQueue() -> stop();
+        }
+    };
+
+    std::vector<std::uint64_t> ids(const std::list<editor::SceneEntity>& entities) {
+        std::vector<std::uint64_t> result;
+        for(auto entity: entities) result.push_back(entity.getUUID());
+        return result;
+    }
+
+    void hierarchy() {
+        robot2D::MessageBus bus;
+        editor::Scene scene(bus);
+        auto a = scene.createEntity("Parent");
+        auto b = scene.createEntity("Child");
+        auto c = scene.createEntity("Grandchild");
+        auto d = scene.createEntity("Other root");
+        CHECK(scene.reparent(b, a) && scene.reparent(c, b));
+        CHECK(b.getParent() == a && c.getParent() == b);
+        CHECK(scene.getRootEntities().size() == 2);
+        CHECK(!scene.reparent(a, c) && !scene.reparent(a, a));
+        CHECK(scene.setBefore(d, a));
+        CHECK(ids(scene.getRootEntities()) == std::vector<std::uint64_t>({d.getUUID(), a.getUUID()}));
+        CHECK(scene.reparent(c, {}));
+        CHECK(!c.getParent() && b.getChildren().empty());
+        editor::Scene foreign(bus);
+        CHECK(!foreign.reparent(b, a));
+        auto duplicate = scene.createEmptyEntity();
+        duplicate.addComponent<editor::IDComponent>().ID = a.getUUID();
+        CHECK(!scene.attachEntity(duplicate));
+        CHECK(scene.getEntity(a.getUUID()) == a);
+    }
+
+    void roundtrip() {
+        Directory fixture;
+        robot2D::MessageBus bus;
+        auto source = std::make_shared<editor::Scene>(bus);
+        auto a = source -> createEntity("Parent % ###");
+        auto b = source -> createEntity("Child");
+        auto c = source -> createEntity("Other root");
+        CHECK(source -> reparent(b, a));
+        CHECK(source -> setBefore(c, a));
+        b.getComponent<editor::TransformComponent>().setPosition({17, 31});
+        b.getComponent<editor::TransformComponent>().setRotate(37.f);
+        auto& drawable = a.addComponent<editor::DrawableComponent>();
+        drawable.setTexturePath("assets/textures/example.png");
+        drawable.setDepth(7);
+        const auto file = fixture / "roundtrip.scene";
+        editor::SceneSerializer writer(source);
+        CHECK(writer.serialize(file.u8string(), "Named scene", nullptr));
+        auto document = YAML::Load(read(file));
+        CHECK(document["SceneVersion"].as<int>() == 1 && document["EntityCount"].as<int>() == 3);
+        YAML::Node reversed(YAML::NodeType::Sequence);
+        for(std::size_t i = document["Entities"].size(); i > 0; --i)
+            reversed.push_back(document["Entities"][i - 1]);
+        document["Entities"] = reversed;
+        write(file, YAML::Dump(document));
+        auto loaded = std::make_shared<editor::Scene>(bus);
+        editor::SceneSerializer reader(loaded);
+        CHECK(reader.deserialize(file.u8string(), nullptr));
+        CHECK(loaded -> getName() == "Named scene" && !loaded -> hasChanges());
+        CHECK(ids(loaded -> getRootEntities()) == ids(source -> getRootEntities()));
+        CHECK(loaded -> getEntity(b.getUUID()).getParent() == loaded -> getEntity(a.getUUID()));
+        CHECK(loaded -> getEntity(b.getUUID()).getComponent<editor::TransformComponent>().getPosition()
+            == robot2D::vec2f(17, 31));
+        CHECK(loaded -> getEntity(a.getUUID()).getComponent<editor::DrawableComponent>().getDepth() == 7);
+        CHECK(!reader.deserialize(file.u8string(), nullptr));
+        CHECK(reader.getError() == editor::SceneSerializerError::InvalidScene);
+    }
+
+    void invalid() {
+        Directory fixture;
+        robot2D::MessageBus bus;
+        auto source = std::make_shared<editor::Scene>(bus);
+        auto a = source -> createEntity("Parent");
+        auto b = source -> createEntity("Child");
+        CHECK(source -> reparent(b, a));
+        const auto file = fixture / "scene.scene";
+        editor::SceneSerializer writer(source);
+        CHECK(writer.serialize(file.u8string(), "Valid", nullptr));
+        const auto valid = YAML::Load(read(file));
+        auto reject = [&](const YAML::Node& document, editor::SceneSerializerError expected) {
+            auto target = std::make_shared<editor::Scene>(bus);
+            editor::SceneSerializer reader(target);
+            CHECK(!reader.deserializeDocument(document, nullptr));
+            CHECK(reader.getError() == expected && !reader.getErrorMessage().empty());
+        };
+        auto document = YAML::Clone(valid);
+        document["SceneVersion"] = 999;
+        reject(document, editor::SceneSerializerError::UnsupportedVersion);
+        document = YAML::Clone(valid);
+        document["EntityCount"] = 999;
+        reject(document, editor::SceneSerializerError::CountMismatch);
+        document = YAML::Clone(valid);
+        document["RootEntities"].push_back(document["RootEntities"][0]);
+        reject(document, editor::SceneSerializerError::InvalidHierarchy);
+        document = YAML::Clone(valid);
+        document["Entities"][0]["Entity"] = document["Entities"][1]["Entity"].as<std::uint64_t>();
+        reject(document, editor::SceneSerializerError::InvalidData);
+        document = YAML::Clone(valid);
+        document["Entities"][0]["HierarchyComponent"]["Children"].push_back(static_cast<std::uint64_t>(a.getUUID()));
+        reject(document, editor::SceneSerializerError::InvalidHierarchy);
+        for(const auto* text: {"[broken", "[]", "Scene: &self {loop: *self}\nEntities: []\n"}) {
+            write(file, text);
+            auto target = std::make_shared<editor::Scene>(bus);
+            editor::SceneSerializer reader(target);
+            CHECK(!reader.deserialize(file.u8string(), nullptr) && !reader.getErrorMessage().empty());
+        }
+    }
+
+    void legacy() {
+        Directory fixture;
+        const auto file = fixture / "legacy.scene";
+        write(file, "Scene: Legacy\nEntities:\n- Entity: 100\n  Entity: 100\n  TagComponent: {Tag: Parent}\n"
+            "  TransformComponent:\n    Position: [0, 0]\n    Size: [1, 1]\n    Rotation: 0\n"
+            "    HasChildren: true\n    ChildIDs: [200]\n- Entity: 200\n  TagComponent: {Tag: Child}\n"
+            "  TransformComponent:\n    Position: [0, 0]\n    Size: [1, 1]\n    Rotation: 0\n"
+            "    isChild: true\n    ParentID: 100\n");
+        robot2D::MessageBus bus;
+        auto scene = std::make_shared<editor::Scene>(bus);
+        editor::SceneSerializer reader(scene);
+        CHECK(reader.deserialize(file.u8string(), nullptr));
+        CHECK(scene -> getName() == "Legacy" && !scene -> hasChanges());
+        CHECK(scene -> getEntity(editor::UUID{200}).getParent() == scene -> getEntity(editor::UUID{100}));
+    }
+
+    void saveDirty() {
+        Directory fixture;
+        robot2D::MessageBus bus;
+        auto scripts = std::make_shared<ScriptStub>();
+        auto scene = std::make_shared<editor::Scene>(bus);
+        auto entity = scene -> createEntity("Object");
+        scene -> setPath((fixture / "saved.scene").u8string());
+        editor::SceneManager manager(bus);
+        CHECK(manager.save(editor::Scene::Ptr(scene), scripts));
+        CHECK(!scene -> hasChanges());
+        const auto original = read(fixture / "saved.scene");
+        const auto originalPath = scene -> getPath();
+        entity.markModified();
+        CHECK(scene -> hasChanges());
+        CHECK(!manager.save(editor::Scene::Ptr(scene), {}));
+        CHECK(manager.getError() == editor::SceneManagerError::SceneSerialize);
+        CHECK(scene -> hasChanges() && scene -> getPath() == originalPath);
+        CHECK(read(fixture / "saved.scene") == original);
+        const auto rejectedLog = read(logger::Log::getFilePath());
+        CHECK(rejectedLog.find(originalPath) != std::string::npos);
+        CHECK(rejectedLog.find("reason=script interactor unavailable") != std::string::npos);
+        CHECK(!manager.save(editor::Scene::Ptr(scene), scripts, (fixture / "missing/failed.scene").u8string()));
+        CHECK(scene -> hasChanges() && scene -> getPath() == originalPath);
+        CHECK(read(fixture / "saved.scene") == original);
+        CHECK(manager.save(editor::Scene::Ptr(scene), scripts, (fixture / "save-as.scene").u8string()));
+        CHECK(manager.getError() == editor::SceneManagerError::None);
+        CHECK(!scene -> hasChanges() && scene -> getPath() != originalPath);
+        auto& transform = entity.getComponent<editor::TransformComponent>();
+        transform.setRotate(std::numeric_limits<float>::quiet_NaN());
+        editor::SceneSerializer writer(scene);
+        CHECK(!writer.serialize((fixture / "saved.scene").u8string(), "Invalid", nullptr));
+        CHECK(read(fixture / "saved.scene") == original);
+        const auto rejectedPath = (fixture / "no-scene.scene").u8string();
+        CHECK(!manager.save({}, scripts, rejectedPath));
+        CHECK(manager.getError() == editor::SceneManagerError::SceneSerialize);
+        CHECK(!fs::exists(fs::u8path(rejectedPath)));
+        const auto noSceneLog = read(logger::Log::getFilePath());
+        CHECK(noSceneLog.find(rejectedPath) != std::string::npos);
+        CHECK(noSceneLog.find("reason=no active scene") != std::string::npos);
+    }
+
+    void prefab() {
+        Directory fixture;
+        robot2D::MessageBus bus;
+        auto source = std::make_shared<editor::Scene>(bus);
+        auto parent = source -> createEntity("Template parent");
+        auto child = source -> createEntity("Template child");
+        CHECK(source -> reparent(child, parent));
+        auto prefab = std::make_shared<editor::Prefab>((fixture / "tree.prefab").u8string(),
+                parent, editor::UUID{9876});
+        editor::PrefabSerializer serializer;
+        CHECK(serializer.serialize(prefab, nullptr));
+        auto loaded = std::make_shared<editor::Prefab>();
+        loaded -> setPath(prefab -> getPath());
+        CHECK(serializer.deserialize(loaded, nullptr));
+        CHECK(loaded -> getEntity().getName() == "Template parent");
+        CHECK(loaded -> getEntity().getChildren().size() == 1);
+        CHECK(loaded -> getEntity().getChildren().front().getName() == "Template child");
+        CHECK(loaded -> getEntity().getUUID() != parent.getUUID());
+        CHECK(source -> getRootEntities().size() == 1 && child.getParent() == parent);
+        write(fixture / "bad.prefab", "[broken");
+        loaded -> setPath((fixture / "bad.prefab").u8string());
+        CHECK(!serializer.deserialize(loaded, nullptr));
+        CHECK(source -> getEntity(parent.getUUID()) == parent);
+    }
+
+    void asyncLoad() {
+        Directory fixture;
+        robot2D::MessageBus bus;
+        auto scripts = std::make_shared<ScriptStub>();
+        auto project = std::make_shared<editor::Project>();
+        project -> setPath(fixture.path().u8string());
+        auto source = std::make_shared<editor::Scene>(bus);
+        editor::SceneSerializer writer(source);
+        CHECK(writer.serialize((fixture / "first.scene").u8string(), "First", scripts));
+        CHECK(writer.serialize((fixture / "second.scene").u8string(), "Second", scripts));
+        editor::SceneManager manager(bus);
+        QueueStop stop;
+        auto* queue = editor::TaskQueue::GetQueue();
+        int staleCalls = 0;
+        bool loaded = false;
+        manager.loadSceneAsync(project, (fixture / "first.scene").u8string(),
+            [&](auto) { ++staleCalls; }, scripts);
+        manager.loadSceneAsync(project, (fixture / "second.scene").u8string(),
+            [&](auto scene) { CHECK(scene && scene -> getName() == "Second"); loaded = true; }, scripts);
+        CHECK(waitFor([&]() { queue -> process(); return loaded; }));
+        CHECK(staleCalls == 0);
+        const auto previous = manager.getActiveScene();
+        bool failed = false;
+        manager.loadSceneAsync(project, (fixture / "missing.scene").u8string(),
+            [&](auto scene) { CHECK(!scene); failed = true; }, scripts);
+        CHECK(waitFor([&]() { queue -> process(); return failed; }));
+        CHECK(manager.getActiveScene() == previous);
+        bool unavailable = false;
+        manager.loadSceneAsync(project, (fixture / "first.scene").u8string(),
+            [&](auto scene) { CHECK(!scene); unavailable = true; }, {});
+        CHECK(waitFor([&]() { queue -> process(); return unavailable; }));
+        CHECK(manager.getActiveScene() == previous);
+    }
+
+    class View : public editor::IEditor {
+    public:
+        editor::Scene::Ptr scene;
+        editor::PopupConfiguration* popup { nullptr };
+        bool assetDirty { false };
+        bool assetSaveOK { true };
+        int discarded { 0 };
+        void openScene(editor::Scene::Ptr value, std::string) override {
+            scene = std::move(value);
+        }
+        void prepareView() override {
+        }
+        void clearSelectionOnUI() override {
+        }
+        void showPopup(editor::PopupConfiguration* value) override {
+            popup = value;
+        }
+        void setMainCameraEntity(editor::SceneEntity) override {
+        }
+        bool hasAssetChanges() const override {
+            return assetDirty;
+        }
+        bool saveAssetChanges() override {
+            if(!assetSaveOK) return false; assetDirty = false; return true;
+        }
+        void discardAssetChanges() override {
+            assetDirty = false; ++discarded;
+        }
+    };
+
+    void closeProject() {
+        Directory fixture;
+        fs::create_directories(fixture / "assets/scenes");
+        robot2D::MessageBus bus;
+        editor::MessageDispatcher dispatcher;
+        auto scripts = std::make_shared<ScriptStub>();
+        View view;
+        editor::EditorPresenter presenter(&view);
+        editor::EditorRouter router(&view);
+        editor::EditorLogic logic(bus, dispatcher, presenter, router);
+        logic.setup(scripts);
+        QueueStop stop;
+        auto project = std::make_shared<editor::Project>();
+        project -> setPath(fixture.path().u8string());
+        project -> setStartScene("start.scene");
+        auto source = std::make_shared<editor::Scene>(bus);
+        editor::SceneSerializer writer(source);
+        CHECK(writer.serialize((fixture / "assets/scenes/start.scene").u8string(), "Start", scripts));
+        logic.loadProject(project);
+        CHECK(waitFor([&]() {
+            editor::TaskQueue::GetQueue() -> process();
+            return presenter.getState() == editor::EditorState::Edit;
+        }));
+        CHECK(view.scene);
+        int closed = 0;
+        view.scene -> markModified();
+        logic.closeCurrentProject([&]() { ++closed; });
+        CHECK(view.popup && closed == 0);
+        // Cancel is represented by dismissing the prompt without choosing Yes/No.
+        CHECK(view.scene -> hasChanges() && closed == 0);
+        view.scene -> setPath((fixture / "missing/fail.scene").u8string());
+        CHECK(!view.popup -> onYes());
+        CHECK(closed == 0 && view.scene -> hasChanges() && !view.popup -> error.empty());
+        view.scene -> setPath((fixture / "saved.scene").u8string());
+        CHECK(view.popup -> onYes());
+        CHECK(closed == 1 && !view.scene -> hasChanges());
+        presenter.switchState(editor::EditorState::Edit);
+        view.assetDirty = true;
+        view.assetSaveOK = false;
+        logic.closeCurrentProject([&]() { ++closed; });
+        CHECK(!view.popup -> onYes() && closed == 1 && view.assetDirty);
+        view.popup -> onNo();
+        CHECK(closed == 2 && view.discarded == 1 && !view.assetDirty);
+    }
+
+    void startupFailure() {
+        Directory fixture;
+        robot2D::MessageBus bus;
+        editor::MessageDispatcher dispatcher;
+        auto scripts = std::make_shared<ScriptStub>();
+        View view;
+        editor::EditorPresenter presenter(&view);
+        editor::EditorRouter router(&view);
+        editor::EditorLogic logic(bus, dispatcher, presenter, router);
+        logic.setup(scripts);
+        QueueStop stop;
+        auto project = std::make_shared<editor::Project>();
+        project -> setPath(fixture.path().u8string());
+        project -> setStartScene("absent.scene");
+        logic.loadProject(project);
+        CHECK(waitFor([&]() {
+            editor::TaskQueue::GetQueue() -> process();
+            return presenter.getState() != editor::EditorState::Load;
+        }));
+        CHECK(presenter.getState() == editor::EditorState::LoadFailed && !view.scene);
+    }
+}
+
+int main(int argc, char** argv) {
+    logger::Log::Init();
+    try {
+        CHECK(argc == 2);
+        GraphicsContext graphics;
+        const std::string name = argv[1];
+        if(name == "hierarchy") hierarchy();
+        else if(name == "roundtrip") roundtrip();
+        else if(name == "invalid") invalid();
+        else if(name == "legacy") legacy();
+        else if(name == "prefab") prefab();
+        else if(name == "save-dirty") saveDirty();
+        else if(name == "async-load") asyncLoad();
+        else if(name == "close-project") closeProject();
+        else if(name == "startup-failure") startupFailure();
+        else CHECK(false && "Unknown test case");
+        std::cout << name << " passed\n";
+        return 0;
+    }
+    catch(const GraphicsUnavailable& error) {
+        std::cerr << "SKIP: " << error.what() << '\n';
+        return 77;
+    }
+    catch(const std::exception& error) {
+        std::cerr << error.what() << '\n';
+        return 1;
+    }
+}

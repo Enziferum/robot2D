@@ -20,6 +20,7 @@ source distribution.
 *********************************************************************/
 
 #include <yaml-cpp/yaml.h>
+#include <unordered_set>
 #include <robot2D/Ecs/EntityManager.hpp>
 
 #include <editor/serializers/EntitySerializer.hpp>
@@ -35,104 +36,27 @@ source distribution.
 #include <editor/FileApi.hpp>
 #include <editor/physics/Layers2D.hpp>
 
-namespace YAML {
-    template<>
-    struct convert<editor::UUID>
-    {
-        static Node encode(const editor::UUID& uuid)
-        {
-            Node node;
-            node.push_back((uint64_t)uuid);
-            return node;
-        }
-
-        static bool decode(const Node& node, editor::UUID& uuid)
-        {
-            uuid = node.as<uint64_t>();
-            return true;
-        }
-    };
-
-    template<>
-    struct convert<robot2D::vec2f> {
-        static Node encode(const robot2D::vec2f& rhs) {
-            Node node;
-            node.push_back(rhs.x);
-            node.push_back(rhs.y);
-            return node;
-        }
-
-        static bool decode(const Node& node, robot2D::vec2f& rhs) {
-            if(!node.IsSequence() || node.size() != 2)
-                return false;
-            rhs.x = node[0].as<float>();
-            rhs.y = node[1].as<float>();
-            return true;
-        }
-    };
-
-    template<>
-    struct convert<robot2D::vec3f> {
-        static Node encode(const robot2D::vec3f& rhs) {
-            Node node;
-            node.push_back(rhs.x);
-            node.push_back(rhs.y);
-            node.push_back(rhs.z);
-            return node;
-        }
-
-        static bool decode(const Node& node, robot2D::vec3f& rhs) {
-            if(!node.IsSequence() || node.size() != 3)
-                return false;
-            rhs.x = node[0].as<float>();
-            rhs.y = node[1].as<float>();
-            rhs.z = node[2].as<float>();
-            return true;
-        }
-    };
-
-    template<>
-    struct convert<robot2D::Color> {
-        static Node encode(const robot2D::Color& rhs) {
-            Node node;
-            node.push_back(rhs.red);
-            node.push_back(rhs.green);
-            node.push_back(rhs.blue);
-            node.push_back(rhs.alpha);
-            return node;
-        }
-
-        static bool decode(const Node& node, robot2D::Color& rhs) {
-            if(!node.IsSequence() || node.size() != 4)
-                return false;
-            rhs.red = node[0].as<float>();
-            rhs.green = node[1].as<float>();
-            rhs.blue = node[2].as<float>();
-            rhs.alpha = node[3].as<float>();
-            return true;
-        }
-    };
-}
+#include <editor/serializers/YamlTypes.hpp>
+#include <editor/serializers/YamlFields.hpp>
 
 namespace editor {
 
 
 #define WRITE_SCRIPT_FIELD(FieldType, Type)           \
 			case ScriptFieldType::FieldType:          \
-				out << field.getValue<Type>();  \
+				yaml::value(out, field.getValue<Type>());  \
 				break
 
 #define READ_SCRIPT_FIELD(FieldType, Type)             \
 	case ScriptFieldType::FieldType:                   \
 	{                                                  \
-		Type data = scriptField["Data"].as<Type>();    \
+		Type data = yaml::read<Type>(scriptField, "Data");    \
 		field.setValue(data);                  \
 		break;                                         \
 	}
 
 
 
-#define WRITE_YAML(name, value) out << YAML::Key << name << YAML::Value << value;
 
     static std::string RigidBody2DBodyTypeToString(Physics2DComponent::BodyType bodyType)
     {
@@ -151,44 +75,33 @@ namespace editor {
         if (bodyTypeString == "Static")    return Physics2DComponent::BodyType::Static;
         if (bodyTypeString == "Dynamic")   return Physics2DComponent::BodyType::Dynamic;
         if (bodyTypeString == "Kinematic") return Physics2DComponent::BodyType::Kinematic;
-
-        return Physics2DComponent::BodyType::Static;
+        throw YAML::RepresentationException(YAML::Mark::null_mark(), "Unknown Rigidbody2D BodyType '" + bodyTypeString + "'");
     }
 
-    YAML::Emitter& operator<<(YAML::Emitter& out, const robot2D::vec2f& value) {
-        out << YAML::Flow;
-        out << YAML::BeginSeq << value.x << value.y << YAML::EndSeq;
-        return out;
-    }
-
-    YAML::Emitter& operator<<(YAML::Emitter& out, const robot2D::vec3f& value) {
-        out << YAML::Flow;
-        out << YAML::BeginSeq << value.x << value.y << value.z << YAML::EndSeq;
-        return out;
-    }
-
-    YAML::Emitter& operator<<(YAML::Emitter& out, const robot2D::Color& value) {
-        out << YAML::Flow;
-        out << YAML::BeginSeq << value.red << value.green
-            << value.blue << value.alpha << YAML::EndSeq;
-        return out;
-    }
-
-
-
-    void SerializeEntity(YAML::Emitter& out, SceneEntity entity, IScriptInteractorFrom::Ptr scriptInteractor) {
+    static bool SerializeEntity(YAML::Emitter& out, SceneEntity entity,
+                                IScriptInteractorFrom::Ptr scriptInteractor, bool recursive) {
+        if(!entity || !entity.hasComponent<IDComponent>() || !entity.hasComponent<TagComponent>())
+            return false;
         out << YAML::BeginMap;
-        out << YAML::Key << "Entity" << YAML::Value << entity.getComponent<IDComponent>().ID;
+        yaml::write(out, "Entity", entity.getComponent<IDComponent>().ID);
 
-        WRITE_YAML("Entity", entity.getUUID())
 
-        bool needSerializeChildren = false;
+        const auto childEntities = entity.getChildren();
+        if(!childEntities.empty()) {
+            std::vector<uint64_t> ids;
+            ids.reserve(childEntities.size());
+            for(const auto& child: childEntities)
+                ids.push_back(child.getUUID());
+            yaml::write(out, "HierarchyComponent", YAML::BeginMap);
+            yaml::write(out, "Children", ids);
+            out << YAML::EndMap;
+        }
 
         if(entity.hasComponent<TagComponent>()) {
             out << YAML::Key << "TagComponent";
             out << YAML::BeginMap;
             auto& tag = entity.getComponent<TagComponent>().getTag();
-            out << YAML::Key << "Tag" << YAML::Value << tag;
+            yaml::write(out, "Tag", tag);
             out << YAML::EndMap;
         }
 
@@ -196,10 +109,10 @@ namespace editor {
             out << YAML::Key << "CameraComponent";
             out << YAML::BeginMap;
             auto isPrimary = entity.getComponent<CameraComponent>().isPrimary;
-            out << YAML::Key << "isPrimary" << YAML::Value << isPrimary;
-            out << YAML::Key << "OrthoSize" << YAML::Value << entity.getComponent<CameraComponent>().orthoSize;
-            out << YAML::Key << "Size" << YAML::Value << entity.getComponent<CameraComponent>().size;
-            out << YAML::Key << "Position" << YAML::Value << entity.getComponent<CameraComponent>().position;
+            yaml::write(out, "isPrimary", isPrimary);
+            yaml::write(out, "OrthoSize", entity.getComponent<CameraComponent>().orthoSize);
+            yaml::write(out, "Size", entity.getComponent<CameraComponent>().size);
+            yaml::write(out, "Position", entity.getComponent<CameraComponent>().position);
             out << YAML::EndMap;
         }
 
@@ -207,43 +120,21 @@ namespace editor {
             out << YAML::Key << "TransformComponent";
             out << YAML::BeginMap;
             auto& ts = entity.getComponent<TransformComponent>();
-            out << YAML::Key << "Position" << YAML::Value << ts.getPosition();
-            out << YAML::Key << "Size" << YAML::Value << ts.getSize();
-            out << YAML::Key << "Rotation" << YAML::Value << ts.getRotate();
-            out << YAML::Key << "Origin" << YAML::Value << ts.getOrigin();
-
-            auto name = entity.getName();
-            if(entity.hasChildren()) {
-                std::vector<UUID> childIds;
-
-                for(auto& child: ts.getChildren()) {
-                    if(child)
-                        childIds.emplace_back(child.getUUID());
-                }
-
-                if(!childIds.empty()) {
-                    out << YAML::Key << "HasChildren" << YAML::Value << true;
-                    out << YAML::Key << "ChildIDs" << YAML::Value << childIds;
-                    needSerializeChildren = true;
-                }
-            }
-
-            if(ts.isChild()) {
-                out << YAML::Key << "isChild" << YAML::Value << true;
-                out << YAML::Key << "ParentID" << YAML::Value << ts.getParent().getComponent<IDComponent>().ID;
-            }
+            yaml::write(out, "Position", ts.getPosition());
+            yaml::write(out, "Size", ts.getSize());
+            yaml::write(out, "Rotation", ts.getRotate());
+            yaml::write(out, "Origin", ts.getOrigin());
 
             out << YAML::EndMap;
         }
 
         if(entity.hasComponent<Transform3DComponent>()) {
-            out << YAML::Key << "TransformComponent";
+            out << YAML::Key << "Transform3DComponent";
             out << YAML::BeginMap;
             auto& ts = entity.getComponent<Transform3DComponent>();
-            out << YAML::Key << "Position" << YAML::Value << ts.getPosition();
-            //out << YAML::Key << "Size" << YAML::Value << ts.getSize();
-            // TODO: @a.raag add rotation
-            out << YAML::Key << "Rotation" << YAML::Value << 0.F;
+            yaml::write(out, "Position", ts.getPosition());
+            yaml::write(out, "Scale", ts.getScale());
+            yaml::write(out, "Rotation", ts.getRotation());
             out << YAML::EndMap;
         }
 
@@ -251,18 +142,19 @@ namespace editor {
             out << YAML::Key << "SpriteComponent";
             out << YAML::BeginMap;
             auto& sp = entity.getComponent<DrawableComponent>();
-            out << YAML::Key << "Color" << YAML::Value << sp.getColor();
-            out << YAML::Key << "TexturePath" << YAML::Value << sp.getTexturePath();
-            out << YAML::Key << "zDepth" << YAML::Value << sp.getDepth();
+            yaml::write(out, "Color", sp.getColor());
+            yaml::write(out, "TexturePath", sp.getTexturePath());
+            yaml::write(out, "zDepth", sp.getDepth());
             out << YAML::EndMap;
         }
 
         if(entity.hasComponent<ScriptComponent>()) {
+            if(!scriptInteractor) return false;
             auto& scriptComponent = entity.getComponent<ScriptComponent>();
 
             out << YAML::Key << "ScriptComponent";
             out << YAML::BeginMap;
-            out << YAML::Key << "ClassName" << YAML::Value << scriptComponent.name;
+            yaml::write(out, "ClassName", scriptComponent.name);
 
             const auto& fields = scriptInteractor -> getFields(entity.getUUID());
             if(!fields.empty()) {
@@ -272,8 +164,8 @@ namespace editor {
                 {
                     auto scriptType = util::convert2Script(field.getType());
                     out << YAML::BeginMap; // ScriptField
-                    out << YAML::Key << "Name" << YAML::Value << name;
-                    out << YAML::Key << "Type" << YAML::Value << util::ScriptFieldTypeToString(scriptType);
+                    yaml::write(out, "Name", name);
+                    yaml::write(out, "Type", util::ScriptFieldTypeToString(scriptType));
                     out << YAML::Key << "Data" << YAML::Value;
 
                     switch (scriptType)
@@ -292,6 +184,7 @@ namespace editor {
                         WRITE_SCRIPT_FIELD(ULong,   uint64_t  );
                         WRITE_SCRIPT_FIELD(Vector2, robot2D::vec2f );
                         WRITE_SCRIPT_FIELD(Transform, UUID );
+                        WRITE_SCRIPT_FIELD(Entity, UUID );
                     }
                     out << YAML::EndMap; // ScriptFields
                 }
@@ -307,9 +200,9 @@ namespace editor {
             out << YAML::BeginMap; // Rigidbody2DComponent
 
             auto& rb2dComponent = entity.getComponent<Physics2DComponent>();
-            out << YAML::Key << "BodyType" << YAML::Value << RigidBody2DBodyTypeToString(rb2dComponent.type);
-            out << YAML::Key << "FixedRotation" << YAML::Value << rb2dComponent.fixedRotation;
-            out << YAML::Key << "Bullet" << YAML::Value << rb2dComponent.bullet;
+            yaml::write(out, "BodyType", RigidBody2DBodyTypeToString(rb2dComponent.type));
+            yaml::write(out, "FixedRotation", rb2dComponent.fixedRotation);
+            yaml::write(out, "Bullet", rb2dComponent.bullet);
 
             out << YAML::EndMap; // Rigidbody2DComponent
         }
@@ -320,14 +213,14 @@ namespace editor {
             out << YAML::BeginMap; // BoxCollider2DComponent
 
             auto& bc2dComponent = entity.getComponent<Collider2DComponent>();
-            out << YAML::Key << "Offset" << YAML::Value << bc2dComponent.offset;
-            out << YAML::Key << "Size" << YAML::Value << bc2dComponent.size;
-            out << YAML::Key << "Density" << YAML::Value << bc2dComponent.density;
-            out << YAML::Key << "Friction" << YAML::Value << bc2dComponent.friction;
-            out << YAML::Key << "Restitution" << YAML::Value << bc2dComponent.restitution;
-            out << YAML::Key << "RestitutionThreshold" << YAML::Value << bc2dComponent.restitutionThreshold;
-            out << YAML::Key << "UseDefaultMask" << YAML::Value << bc2dComponent.useDefaultMask;
-            out << YAML::Key << "FilterLayer" << YAML::Value << bc2dComponent.filter.name;
+            yaml::write(out, "Offset", bc2dComponent.offset);
+            yaml::write(out, "Size", bc2dComponent.size);
+            yaml::write(out, "Density", bc2dComponent.density);
+            yaml::write(out, "Friction", bc2dComponent.friction);
+            yaml::write(out, "Restitution", bc2dComponent.restitution);
+            yaml::write(out, "RestitutionThreshold", bc2dComponent.restitutionThreshold);
+            yaml::write(out, "UseDefaultMask", bc2dComponent.useDefaultMask);
+            yaml::write(out, "FilterLayer", bc2dComponent.filter.name);
 
             out << YAML::EndMap; // BoxCollider2DComponent
         }
@@ -338,9 +231,9 @@ namespace editor {
             out << YAML::BeginMap; // TextComponent
 
             auto& text = entity.getComponent<TextComponent>();
-            out << YAML::Key << "Text" << YAML::Value << text.getText();
+            yaml::write(out, "Text", text.getText());
             if(text.getFont())
-                out << YAML::Key << "FontPath" << YAML::Value << text.getFont() -> getPath();
+                yaml::write(out, "FontPath", text.getFont() -> getPath());
             out << YAML::EndMap; // TextComponent
         }
 
@@ -348,13 +241,15 @@ namespace editor {
             out << YAML::Key << "PrefabComponent";
             out << YAML::BeginMap;
             auto& uuid = entity.getComponent<PrefabComponent>().prefabUUID;
-            out << YAML::Key << "UUID" << YAML::Value << uuid;
+            yaml::write(out, "UUID", uuid);
             out << YAML::EndMap;
         }
 
         if(entity.hasComponent<AnimationComponent>()) {
             auto* animationManager = LocalResourceManager::getManager();
-            auto animations= animationManager -> getAnimations(entity.getComponent<IDComponent>().ID);
+            const std::vector<Animation> empty;
+            const auto* found = animationManager -> findAnimations(entity.getUUID());
+            const auto& animations = found ? *found : empty;
 
             out << YAML::Key << "AnimationComponent";
             out << YAML::BeginMap;
@@ -362,12 +257,14 @@ namespace editor {
             animationPaths.reserve(animations.size());
             AnimationParser animationParser;
 
-            for(auto& animation: animations) {
+            for(auto animation: animations) {
                 animationPaths.emplace_back(cutPath(animation.filePath, "assets"));
                 animationParser.saveToFile(animation.filePath, &animation);
             }
+            if(!found)
+                animationPaths = ResourceManager::getManager() -> getAnimationPaths(entity.getUUID());
 
-            out << YAML::Key << "Animations" << animationPaths;
+            yaml::write(out, "Animations", animationPaths);
             out << YAML::EndMap;
         }
 
@@ -376,215 +273,261 @@ namespace editor {
             if(btnComp.hasEntity()) {
                 out << YAML::Key << "ButtonComponent";
                 out << YAML::BeginMap;
-                out << YAML::Key << "ScriptUUID" << YAML::Value << btnComp.scriptEntity;
+                yaml::write(out, "ScriptUUID", btnComp.scriptEntity);
                 if(!btnComp.clickMethodName.empty())
-                    out << YAML::Key << "MethodName" << YAML::Value << btnComp.clickMethodName;
+                    yaml::write(out, "MethodName", btnComp.clickMethodName);
                 out << YAML::EndMap;
             }
         }
 
         out << YAML::EndMap;
 
-        if(needSerializeChildren) {
-            auto children = entity.getChildren();
-            auto name = entity.getName();
-            for(auto child: entity.getChildren())
-                SerializeEntity(out, SceneEntity(std::move(child)), scriptInteractor);
+        if(recursive) {
+            for(const auto& child: childEntities)
+                if(!SerializeEntity(out, child, scriptInteractor, true))
+                    return false;
         }
-
+        return out.good();
     }
 
     IEntitySerializer::~IEntitySerializer() noexcept = default;
 
     bool EntityYAMLSerializer::serialize(YAML::Emitter& out, const SceneEntity& entity,
-                                         IScriptInteractorFrom::Ptr scriptInteractor) {
-        SerializeEntity(out, entity, scriptInteractor);
-        return true;
+                                         IScriptInteractorFrom::Ptr scriptInteractor, bool recursive) {
+        m_errorMessage.clear();
+        try {
+            if(SerializeEntity(out, entity, scriptInteractor, recursive) && out.good())
+                return true;
+            m_errorMessage = "Invalid entity, missing script interactor or incomplete YAML output";
+        }
+        catch(const std::exception& error) {
+            m_errorMessage = error.what();
+        }
+        return false;
     }
 
-    /// TODO(a.raag) Stringify Enum
-    enum class YamlNode {
-
-    };
-
-    bool EntityYAMLSerializer::deserialize(const YAML::detail::iterator_value& iterator,
+    bool EntityYAMLSerializer::deserialize(const YAML::Node& iterator,
                                            SceneEntity& deserializedEntity,
                                            bool& addToScene,
                                            std::vector<ChildInfo>& children,
                                            IScriptInteractorFrom::Ptr scriptInteractor) {
 
-        const auto& entity = iterator;
-
-        /// BASE
-        if(!entity["Entity"] || !entity["TagComponent"]) {
-            return false;
-        }
-
-        auto uuid = entity["Entity"].as<UUID>();
-        deserializedEntity.addComponent<IDComponent>().ID = uuid;
-        auto& tagData = deserializedEntity.addComponent<TagComponent>();
-        tagData.setTag(entity["TagComponent"]["Tag"].as<std::string>());
-
-        auto cameraComponent = entity["CameraComponent"];
-        if(cameraComponent) {
-            auto& isPrimary = deserializedEntity.addComponent<CameraComponent>().isPrimary;
-            isPrimary = cameraComponent["isPrimary"].as<bool>();
-            deserializedEntity.getComponent<CameraComponent>().orthoSize = cameraComponent["OrthoSize"].as<float>();
-            deserializedEntity.getComponent<CameraComponent>().size = cameraComponent["Size"].as<robot2D::vec2f>();
-            deserializedEntity.getComponent<CameraComponent>().position = cameraComponent["Position"].as<robot2D::vec2f>();
-        }
-
-        auto transformComponent = entity["TransformComponent"];
-        if(transformComponent) {
-            auto& transform = deserializedEntity.addComponent<TransformComponent>();
-            transform.setPosition(transformComponent["Position"].as<robot2D::vec2f>());
-            transform.setSize(transformComponent["Size"].as<robot2D::vec2f>());
-            transform.setRotate(transformComponent["Rotation"].as<float>());
-            if(transformComponent["Origin"])
-                transform.setOrigin(transformComponent["Origin"].as<robot2D::vec2f>());
-            ChildInfo childInfo;
-
-            if(transformComponent["HasChildren"]) {
-                auto childIDS = transformComponent["ChildIDs"].as<std::vector<UUID>>();
-                ChildPair pair = std::make_pair(uuid, childIDS);
-                childInfo.childPair = std::move(pair);
-            }
-            if(transformComponent["isChild"]) {
-                auto parentID = transformComponent["ParentID"].as<UUID>();
-                childInfo.isChild = true;
-                childInfo.parentUUID = parentID;
-                childInfo.self = deserializedEntity;
-                addToScene = false;
+        m_errorMessage.clear();
+        try {
+            const auto& entity = iterator;
+            if(!entity.IsMap())
+                throw YAML::RepresentationException(entity.Mark(), "Expected an entity map");
+            static const std::unordered_set<std::string> componentNames {
+                "Entity", "TagComponent", "CameraComponent", "TransformComponent", "Transform3DComponent",
+                "HierarchyComponent", "SpriteComponent", "ScriptComponent", "Rigidbody2DComponent",
+                "BoxCollider2DComponent", "TextComponent", "PrefabComponent", "AnimationComponent", "ButtonComponent"
+            };
+            for(const auto& item: entity) {
+                const auto key = item.first.as<std::string>();
+                if(!componentNames.count(key))
+                    throw YAML::RepresentationException(item.first.Mark(), "Unsupported entity field '" + key + "'");
+                if(key != "Entity" && !item.second.IsMap())
+                    throw YAML::RepresentationException(item.second.Mark(), "Component '" + key + "' must be a map");
             }
 
-            if(!childInfo.isEmpty())
-                children.emplace_back(childInfo);
+            /// BASE
+            if(!entity["Entity"] || !entity["TagComponent"])
+                throw YAML::RepresentationException(entity.Mark(), "Entity and TagComponent are required");
 
-        }
+            auto uuid = yaml::read<UUID>(entity, "Entity");
+            if(!deserializedEntity.hasComponent<IDComponent>())
+                deserializedEntity.addComponent<IDComponent>();
+            if(!deserializedEntity.hasComponent<TagComponent>())
+                deserializedEntity.addComponent<TagComponent>();
+            deserializedEntity.getComponent<IDComponent>().ID = uuid;
+            auto& tagData = deserializedEntity.getComponent<TagComponent>();
+            tagData.setTag(yaml::read<std::string>(yaml::required(entity, "TagComponent"), "Tag"));
 
-        auto spriteComponent = entity["SpriteComponent"];
-        if(spriteComponent) {
-            auto& drawable = deserializedEntity.addComponent<DrawableComponent>();
-            drawable.setColor(spriteComponent["Color"].as<robot2D::Color>());
-            if(spriteComponent["TexturePath"])
-                drawable.setTexturePath(spriteComponent["TexturePath"].as<std::string>());
-            if(spriteComponent["zDepth"])
-                drawable.setDepth(spriteComponent["zDepth"].as<int>());
-            drawable.setReorderZBuffer(true);
-        }
-
-        auto textComponent = entity["TextComponent"];
-        if(textComponent) {
-            auto& text = deserializedEntity.addComponent<TextComponent>();
-            text.setText(textComponent["Text"].as<std::string>());
-            if(textComponent["FontPath"])
-                text.setFontPath(textComponent["FontPath"].as<std::string>());
-        }
-
-        auto scriptComponent = entity["ScriptComponent"];
-        if(scriptComponent) {
-            auto& sc = deserializedEntity.addComponent<ScriptComponent>();
-            if(!scriptComponent["ClassName"]) {
-                /// TODO(a.raag) skip
+            auto cameraComponent = entity["CameraComponent"];
+            if(cameraComponent) {
+                auto& isPrimary = deserializedEntity.addComponent<CameraComponent>().isPrimary;
+                isPrimary = yaml::read<bool>(cameraComponent, "isPrimary");
+                deserializedEntity.getComponent<CameraComponent>().orthoSize = yaml::read<float>(cameraComponent, "OrthoSize");
+                deserializedEntity.getComponent<CameraComponent>().size = yaml::read<robot2D::vec2f>(cameraComponent, "Size");
+                deserializedEntity.getComponent<CameraComponent>().position = yaml::read<robot2D::vec2f>(cameraComponent, "Position");
             }
-            sc.name = scriptComponent["ClassName"].as<std::string>();
 
-            auto scriptFields = scriptComponent["ScriptFields"];
-            if (scriptFields)
-            {
-                auto& fields = scriptInteractor -> getFields(uuid);
-                for(const auto& scriptField: scriptFields) {
-                    std::string name = scriptField["Name"].as<std::string>();
-                    std::string typeString = scriptField["Type"].as<std::string>();
-                    ScriptFieldType type = util::ScriptFieldTypeFromString(typeString);
+            auto transformComponent = entity["TransformComponent"];
+            if(transformComponent) {
+                auto& transform = deserializedEntity.addComponent<TransformComponent>();
+                transform.setPosition(yaml::read<robot2D::vec2f>(transformComponent, "Position"));
+                transform.setSize(yaml::read<robot2D::vec2f>(transformComponent, "Size"));
+                transform.setRotate(yaml::read<float>(transformComponent, "Rotation"));
+                if(transformComponent["Origin"])
+                    transform.setOrigin(yaml::read<robot2D::vec2f>(transformComponent, "Origin"));
+                ChildInfo childInfo;
 
-                    Field field;
-                    field.setName(name);
-                    field.setType(util::convertFromScript(type));
-                    fields[name] = field;
+                if(!entity["HierarchyComponent"] && yaml::optional<bool>(transformComponent, "HasChildren", false)) {
+                    auto childIDS = yaml::read<std::vector<UUID>>(transformComponent, "ChildIDs");
+                    ChildPair pair = std::make_pair(uuid, childIDS);
+                    childInfo.childPair = std::move(pair);
+                }
+                if(!entity["HierarchyComponent"] && yaml::optional<bool>(transformComponent, "isChild", false)) {
+                    auto parentID = yaml::read<UUID>(transformComponent, "ParentID");
+                    childInfo.isChild = true;
+                    childInfo.parentUUID = parentID;
+                    childInfo.self = deserializedEntity;
+                    addToScene = false;
+                }
 
-                    if(!scriptField["Data"])
-                        continue;
-                    switch (type)
-                    {
-                        default:
-                            break;
-                        READ_SCRIPT_FIELD(Float, float);
-                        READ_SCRIPT_FIELD(Double, double);
-                        READ_SCRIPT_FIELD(Bool, bool);
-                        READ_SCRIPT_FIELD(Char, char);
-                        READ_SCRIPT_FIELD(Byte, int8_t);
-                        READ_SCRIPT_FIELD(Short, int16_t);
-                        READ_SCRIPT_FIELD(Int, int32_t);
-                        READ_SCRIPT_FIELD(Long, int64_t);
-                        READ_SCRIPT_FIELD(UByte, uint8_t);
-                        READ_SCRIPT_FIELD(UShort, uint16_t);
-                        READ_SCRIPT_FIELD(UInt, uint32_t);
-                        READ_SCRIPT_FIELD(ULong, uint64_t);
-                        READ_SCRIPT_FIELD(Vector2, robot2D::vec2f);
-                        READ_SCRIPT_FIELD(Transform, UUID);
+                if(!childInfo.isEmpty())
+                    children.emplace_back(childInfo);
+
+            }
+
+            if(const auto hierarchy = entity["HierarchyComponent"]) {
+                ChildInfo info;
+                info.childPair.first = uuid;
+                if(hierarchy["Children"])
+                    info.childPair.second = yaml::read<std::vector<UUID>>(hierarchy, "Children");
+                if(info.hasChildren())
+                    children.push_back(std::move(info));
+            }
+
+            if(const auto transform3D = entity["Transform3DComponent"]) {
+                auto& transform = deserializedEntity.addComponent<Transform3DComponent>();
+                transform.setPosition(yaml::read<robot2D::vec3f>(transform3D, "Position"));
+                transform.setScale(yaml::read<robot2D::vec3f>(transform3D, "Scale"));
+                transform.setRotation(yaml::read<robot2D::vec3f>(transform3D, "Rotation"));
+            }
+
+            auto spriteComponent = entity["SpriteComponent"];
+            if(spriteComponent) {
+                auto& drawable = deserializedEntity.addComponent<DrawableComponent>();
+                drawable.setColor(yaml::read<robot2D::Color>(spriteComponent, "Color"));
+                if(spriteComponent["TexturePath"])
+                    drawable.setTexturePath(yaml::read<std::string>(spriteComponent, "TexturePath"));
+                if(spriteComponent["zDepth"])
+                    drawable.setDepth(yaml::read<int>(spriteComponent, "zDepth"));
+                drawable.setReorderZBuffer(true);
+            }
+
+            auto textComponent = entity["TextComponent"];
+            if(textComponent) {
+                auto& text = deserializedEntity.addComponent<TextComponent>();
+                text.setText(yaml::read<std::string>(textComponent, "Text"));
+                if(textComponent["FontPath"])
+                    text.setFontPath(yaml::read<std::string>(textComponent, "FontPath"));
+            }
+
+            auto scriptComponent = entity["ScriptComponent"];
+            if(scriptComponent) {
+                if(!scriptInteractor)
+                    throw YAML::RepresentationException(scriptComponent.Mark(), "ScriptComponent requires a script interactor");
+                auto& sc = deserializedEntity.addComponent<ScriptComponent>();
+                sc.name = yaml::read<std::string>(scriptComponent, "ClassName");
+
+                auto scriptFields = scriptComponent["ScriptFields"];
+                if (scriptFields)
+                {
+                    if(!scriptFields.IsSequence())
+                        throw YAML::RepresentationException(scriptFields.Mark(), "ScriptFields must be a sequence");
+                    auto& fields = scriptInteractor -> getFields(uuid);
+                    for(const auto& scriptField: scriptFields) {
+                        std::string name = yaml::read<std::string>(scriptField, "Name");
+                        std::string typeString = yaml::read<std::string>(scriptField, "Type");
+                        static const std::unordered_set<std::string> supportedTypes {
+                            "Float", "Int", "Transform", "Entity"
+                        };
+                        if(!supportedTypes.count(typeString))
+                            throw YAML::RepresentationException(scriptField.Mark(), "Unsupported script field type '" + typeString + "'");
+                        yaml::required(scriptField, "Data");
+                        ScriptFieldType type = util::ScriptFieldTypeFromString(typeString);
+
+                        auto& field = fields[name];
+                        field.setName(name);
+                        field.setType(util::convertFromScript(type));
+
+                        switch (type)
+                        {
+                            default:
+                                break;
+                            READ_SCRIPT_FIELD(Float, float);
+                            READ_SCRIPT_FIELD(Double, double);
+                            READ_SCRIPT_FIELD(Bool, bool);
+                            READ_SCRIPT_FIELD(Char, char);
+                            READ_SCRIPT_FIELD(Byte, int8_t);
+                            READ_SCRIPT_FIELD(Short, int16_t);
+                            READ_SCRIPT_FIELD(Int, int32_t);
+                            READ_SCRIPT_FIELD(Long, int64_t);
+                            READ_SCRIPT_FIELD(UByte, uint8_t);
+                            READ_SCRIPT_FIELD(UShort, uint16_t);
+                            READ_SCRIPT_FIELD(UInt, uint32_t);
+                            READ_SCRIPT_FIELD(ULong, uint64_t);
+                            READ_SCRIPT_FIELD(Vector2, robot2D::vec2f);
+                            READ_SCRIPT_FIELD(Transform, UUID);
+                        READ_SCRIPT_FIELD(Entity, UUID);
+                        }
                     }
                 }
             }
-        }
 
-        auto rigidbody2DComponent = entity["Rigidbody2DComponent"];
-        if (rigidbody2DComponent)
-        {
-            auto& rb2d = deserializedEntity.addComponent<Physics2DComponent>();
-            rb2d.type = RigidBody2DBodyTypeFromString(rigidbody2DComponent["BodyType"].as<std::string>());
-            rb2d.fixedRotation = rigidbody2DComponent["FixedRotation"].as<bool>();
-            if(rigidbody2DComponent["Bullet"])
-                rb2d.bullet = rigidbody2DComponent["Bullet"].as<bool>();
-        }
-
-        auto boxCollider2DComponent = entity["BoxCollider2DComponent"];
-        if (boxCollider2DComponent)
-        {
-            auto& bc2d = deserializedEntity.addComponent<Collider2DComponent>();
-            bc2d.offset = boxCollider2DComponent["Offset"].as<robot2D::vec2f>();
-            bc2d.size = boxCollider2DComponent["Size"].as<robot2D::vec2f>();
-            bc2d.density = boxCollider2DComponent["Density"].as<float>();
-            bc2d.friction = boxCollider2DComponent["Friction"].as<float>();
-            bc2d.restitution = boxCollider2DComponent["Restitution"].as<float>();
-            bc2d.restitutionThreshold = boxCollider2DComponent["RestitutionThreshold"].as<float>();
-            if(boxCollider2DComponent["UseDefaultMask"])
-               bc2d.useDefaultMask = boxCollider2DComponent["UseDefaultMask"].as<bool>();
-            if(boxCollider2DComponent["FilterLayer"]) {
-                auto filterLayer = boxCollider2DComponent["FilterLayer"].as<std::string>();
-                auto &registry = phys2d::LayerRegistry::I();
-                if (std::find_if(registry.names().begin(), registry.names().end(), [&](const auto &name) {
-                    return name == filterLayer;
-                }) != registry.names().end())
-                    bc2d.filter = phys2d::makeFilterDefault(filterLayer);
+            auto rigidbody2DComponent = entity["Rigidbody2DComponent"];
+            if (rigidbody2DComponent)
+            {
+                auto& rb2d = deserializedEntity.addComponent<Physics2DComponent>();
+                rb2d.type = RigidBody2DBodyTypeFromString(yaml::read<std::string>(rigidbody2DComponent, "BodyType"));
+                rb2d.fixedRotation = yaml::read<bool>(rigidbody2DComponent, "FixedRotation");
+                if(rigidbody2DComponent["Bullet"])
+                    rb2d.bullet = yaml::read<bool>(rigidbody2DComponent, "Bullet");
             }
-        }
 
-        auto prefabComponent = entity["PrefabComponent"];
-        if(prefabComponent) {
-            deserializedEntity.addComponent<PrefabComponent>().prefabUUID = prefabComponent["UUID"].as<uint64_t>();
-        }
+            auto boxCollider2DComponent = entity["BoxCollider2DComponent"];
+            if (boxCollider2DComponent)
+            {
+                auto& bc2d = deserializedEntity.addComponent<Collider2DComponent>();
+                bc2d.offset = yaml::read<robot2D::vec2f>(boxCollider2DComponent, "Offset");
+                bc2d.size = yaml::read<robot2D::vec2f>(boxCollider2DComponent, "Size");
+                bc2d.density = yaml::read<float>(boxCollider2DComponent, "Density");
+                bc2d.friction = yaml::read<float>(boxCollider2DComponent, "Friction");
+                bc2d.restitution = yaml::read<float>(boxCollider2DComponent, "Restitution");
+                bc2d.restitutionThreshold = yaml::read<float>(boxCollider2DComponent, "RestitutionThreshold");
+                if(boxCollider2DComponent["UseDefaultMask"])
+                   bc2d.useDefaultMask = yaml::read<bool>(boxCollider2DComponent, "UseDefaultMask");
+                if(boxCollider2DComponent["FilterLayer"]) {
+                    auto filterLayer = yaml::read<std::string>(boxCollider2DComponent, "FilterLayer");
+                    auto &registry = phys2d::LayerRegistry::I();
+                    if (std::find_if(registry.names().begin(), registry.names().end(), [&](const auto &name) {
+                        return name == filterLayer;
+                    }) != registry.names().end())
+                        bc2d.filter = phys2d::makeFilterDefault(filterLayer);
+                }
+            }
 
-        auto animationComponent = entity["AnimationComponent"];
-        if(animationComponent) {
-            auto resourceManager = ResourceManager::getManager();
-            auto animationPaths = animationComponent["Animations"].as<std::vector<std::string>>();
-            resourceManager -> setAnimationPathsToLoad(uuid, std::move(animationPaths));
-            deserializedEntity.addComponent<AnimationComponent>();
-            deserializedEntity.addComponent<AnimatorComponent>();
-        }
+            auto prefabComponent = entity["PrefabComponent"];
+            if(prefabComponent) {
+                deserializedEntity.addComponent<PrefabComponent>().prefabUUID = yaml::read<uint64_t>(prefabComponent, "UUID");
+            }
 
-        auto buttonComponent = entity["ButtonComponent"];
-        if(buttonComponent) {
-            auto& btnComponent = deserializedEntity.addComponent<ButtonComponent>();
-            deserializedEntity.addComponent<UIHitbox>();
-            btnComponent.scriptEntity = buttonComponent["ScriptUUID"].as<UUID>();
-            if(buttonComponent["MethodName"])
-                btnComponent.clickMethodName = buttonComponent["MethodName"].as<std::string>();
-        }
+            auto animationComponent = entity["AnimationComponent"];
+            if(animationComponent) {
+                auto resourceManager = ResourceManager::getManager();
+                auto animationPaths = yaml::read<std::vector<std::string>>(animationComponent, "Animations");
+                resourceManager -> setAnimationPathsToLoad(uuid, std::move(animationPaths));
+                deserializedEntity.addComponent<AnimationComponent>();
+                deserializedEntity.addComponent<AnimatorComponent>();
+            }
 
-        return true;
+            auto buttonComponent = entity["ButtonComponent"];
+            if(buttonComponent) {
+                auto& btnComponent = deserializedEntity.addComponent<ButtonComponent>();
+                deserializedEntity.addComponent<UIHitbox>();
+                btnComponent.scriptEntity = yaml::read<UUID>(buttonComponent, "ScriptUUID");
+                if(buttonComponent["MethodName"])
+                    btnComponent.clickMethodName = yaml::read<std::string>(buttonComponent, "MethodName");
+            }
+
+            return true;
+        }
+        catch(const std::exception& error) {
+            m_errorMessage = error.what();
+            return false;
+        }
     }
-
 
 } // namespace editor

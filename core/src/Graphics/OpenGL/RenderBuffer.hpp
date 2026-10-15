@@ -1,26 +1,28 @@
 /*********************************************************************
-(c) Alex Raag 2021
-https://github.com/Enziferum
-robot2D - Zlib license.
-This software is provided 'as-is', without any express or
-implied warranty. In no event will the authors be held
-liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute
-it freely, subject to the following restrictions:
-1. The origin of this software must not be misrepresented;
-you must not claim that you wrote the original software.
-If you use this software in a product, an acknowledgment
-in the product documentation would be appreciated but
-is not required.
-2. Altered source versions must be plainly marked as such,
-and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any
-source distribution.
+   (c) Alex Raag 2021
+   https://github.com/Enziferum
+   robot2D - Zlib license.
+   This software is provided 'as-is', without any express or
+   implied warranty. In no event will the authors be held
+   liable for any damages arising from the use of this software.
+   Permission is granted to anyone to use this software for any purpose,
+   including commercial applications, and to alter it and redistribute
+   it freely, subject to the following restrictions:
+   1. The origin of this software must not be misrepresented;
+   you must not claim that you wrote the original software.
+   If you use this software in a product, an acknowledgment
+   in the product documentation would be appreciated but
+   is not required.
+   2. Altered source versions must be plainly marked as such,
+   and must not be misrepresented as being the original software.
+   3. This notice may not be removed or altered from any
+   source distribution.
 *********************************************************************/
 
 #pragma once
 #include <array>
+#include <vector>
+#include <memory>
 #include <robot2D/Graphics/Texture.hpp>
 #include <robot2D/Graphics/Color.hpp>
 #include <robot2D/Graphics/Buffer.hpp>
@@ -41,6 +43,14 @@ namespace robot2D {
 
 
     struct ROBOT2D_EXPORT_API RenderBuffer {
+        static constexpr unsigned int maxTextureSlots = 16;
+
+        struct PendingBatch {
+            std::vector<RenderVertex> vertices;
+            std::array<uint32_t, maxTextureSlots> textureSlots {};
+            uint32_t textureSlotCount = 1;
+        };
+
         unsigned int maxQuadsCount = 20000;
         unsigned int maxVerticesCount = maxQuadsCount * 4;
         unsigned int maxIndicesCount = maxQuadsCount * 6;
@@ -48,14 +58,15 @@ namespace robot2D {
         VertexArray::Ptr vertexArray;
         VertexBuffer::Ptr vertexBuffer;
 
-        RenderVertex* quadBuffer = nullptr;
+        std::unique_ptr<RenderVertex[]> quadBuffer;
         RenderVertex* quadBufferPtr = nullptr;
 
-        Texture whiteTexture;
-        std::array<uint32_t, 32> textureSlots;
+        std::unique_ptr<Texture> whiteTexture = std::make_unique<Texture>();
+        std::array<uint32_t, maxTextureSlots> textureSlots {};
+        std::vector<PendingBatch> pendingBatches;
 
         uint32_t indexCount = 0;
-        uint32_t textureSlotIndex = 0;
+        uint32_t textureSlotIndex = 1;
 
         robot2D::vec3f quadVertexPositions[4];
     };

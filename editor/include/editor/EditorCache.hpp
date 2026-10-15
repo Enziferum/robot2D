@@ -21,7 +21,6 @@ source distribution.
 #pragma once
 
 #include <vector>
-#include <list>
 
 #include "ProjectDescription.hpp"
 #include "Errors.hpp"
@@ -31,11 +30,16 @@ namespace editor {
     class EditorCache {
     public:
         EditorCache(const Configuration& configuration);
+        EditorCache(const EditorCache& other) = delete;
+        EditorCache& operator=(const EditorCache& other) = delete;
+        EditorCache(EditorCache&& other) = delete;
+        EditorCache& operator=(EditorCache&& other) = delete;
         ~EditorCache() = default;
 
         bool parseCache(const std::string& path);
         bool isShowInspector() const;
-        void setShowInspector(const bool& flag);
+        bool showInspectorOnStartup() const;
+        bool setShowInspector(const bool& flag);
 
         const EditorCacheError& getError() const;
 
@@ -46,16 +50,18 @@ namespace editor {
 
         const ProjectDescription& getCurrentProject() const;
     private:
-        void createCacheFile(const std::string& path);
+        bool save(const std::vector<ProjectDescription>& projects,
+                  const ProjectDescription& current, bool showInspector);
+        bool backup(const std::string& suffix);
+        bool recoverInvalidCache(const char* reason);
     private:
-        bool m_showInspector;
+        bool m_showInspector = true;
+        bool m_writeEnabled = false;
         std::string m_cachePath;
-        EditorCacheError m_cacheError;
+        EditorCacheError m_cacheError = EditorCacheError::None;
 
-        using PathPair = std::pair<std::string, std::string>;
-        mutable ProjectDescription m_currentDescription;
+        ProjectDescription m_currentDescription;
 
         std::vector<ProjectDescription> m_cacheDescriptions;
-        Configuration m_configuration;
     };
 }

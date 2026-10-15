@@ -24,7 +24,8 @@ source distribution.
 namespace editor {
     enum class EditorStyle {
         GoldBlack,
-        UE4
+        UE4,
+        SlateBlue
     };
 
 

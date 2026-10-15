@@ -1,22 +1,22 @@
 /*********************************************************************
-(c) Alex Raag 2026
-https://github.com/Enziferum
-robot2D - Zlib license.
-This software is provided 'as-is', without any express or
-implied warranty. In no event will the authors be held
-liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute
-it freely, subject to the following restrictions:
-1. The origin of this software must not be misrepresented;
-you must not claim that you wrote the original software.
-If you use this software in a product, an acknowledgment
-in the product documentation would be appreciated but
-is not required.
-2. Altered source versions must be plainly marked as such,
-and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any
-source distribution.
+   (c) Alex Raag 2026
+   https://github.com/Enziferum
+   robot2D - Zlib license.
+   This software is provided 'as-is', without any express or
+   implied warranty. In no event will the authors be held
+   liable for any damages arising from the use of this software.
+   Permission is granted to anyone to use this software for any purpose,
+   including commercial applications, and to alter it and redistribute
+   it freely, subject to the following restrictions:
+   1. The origin of this software must not be misrepresented;
+   you must not claim that you wrote the original software.
+   If you use this software in a product, an acknowledgment
+   in the product documentation would be appreciated but
+   is not required.
+   2. Altered source versions must be plainly marked as such,
+   and must not be misrepresented as being the original software.
+   3. This notice may not be removed or altered from any
+   source distribution.
 *********************************************************************/
 
 #include <robot2D/Core/Window.hpp>
@@ -36,8 +36,7 @@ namespace editor {
         constexpr robot2D::vec2f qSize = {6, 6};
     }
 
-    CameraManipulator::CameraManipulator(robot2D::MessageBus& messageBus): m_messageBus{messageBus}
-    {
+    CameraManipulator::CameraManipulator(robot2D::MessageBus& messageBus) : m_messageBus{messageBus} {
         m_eventBinder.bindEvent(robot2D::Event::EventType::MousePressed, BIND_CLASS_FN(onMousePressed));
         m_eventBinder.bindEvent(robot2D::Event::EventType::MouseReleased, BIND_CLASS_FN(onMouseReleased));
         m_eventBinder.bindEvent(robot2D::Event::EventType::MouseMoved, BIND_CLASS_FN(onMouseMoved));
@@ -51,10 +50,10 @@ namespace editor {
 
         auto textureSize = resourceManager -> getTexture(EditorResourceID::Movie).getSize();
         m_movieSprite.setTexture(resourceManager -> getTexture(EditorResourceID::Movie),
-                {0, 0,
-                 static_cast<int>(textureSize.x),
-                 static_cast<int>(textureSize.y)}
-        );
+            {0, 0,
+             static_cast<int>(textureSize.x),
+             static_cast<int>(textureSize.y)}
+            );
         m_movieSprite.setSize(movieButtonSize);
 
         m_aabb.width = minRectSize.x;
@@ -135,7 +134,7 @@ namespace editor {
         bool inscrease = true;
 
         if(m_selectedQuad == 0) {
-            if(diff.y < 0 ) {
+            if(diff.y < 0) {
                 diffSize += sizeStep;
                 inscrease = true;
             }
@@ -146,7 +145,7 @@ namespace editor {
         }
 
         if(m_selectedQuad == 1) {
-            if(diff.x < 0 ) {
+            if(diff.x < 0) {
                 diffSize += sizeStep;
                 inscrease = true;
             }
@@ -195,8 +194,8 @@ namespace editor {
         auto frame = getRect();
 
         robot2D::vec2f colliderPosition = {
-                position.x - frame.width / 2.f,
-                position.y - frame.height / 2.f,
+            position.x - frame.width / 2.f,
+            position.y - frame.height / 2.f,
         };
 
         m_aabb.lx = colliderPosition.x;
@@ -217,7 +216,7 @@ namespace editor {
 
     void CameraManipulator::recalculateRect(robot2D::vec2f mousePos, float dt) {
         float diffSize = m_size;
-        robot2D::vec2f aspectCoof{16/9, 1};
+        robot2D::vec2f aspectCoof{16 / 9, 1};
 
 
         mousePos = m_camera -> convertPixelToCoords(mousePos);
@@ -225,7 +224,7 @@ namespace editor {
         m_pressedPoint = mousePos;
 
         if(m_selectedQuad == static_cast<int>(SelectQuad::Top)) {
-            if(diff.y < 0 ) {
+            if(diff.y < 0) {
                 diffSize += sizeStep;
             }
             else if(diff.y > 0 && (diffSize - sizeStep >= minSize)) {
@@ -234,7 +233,7 @@ namespace editor {
         }
 
         if(m_selectedQuad == static_cast<int>(SelectQuad::Left)) {
-            if(diff.x < 0 ) {
+            if(diff.x < 0) {
                 diffSize += sizeStep;
             }
             else if(diff.x > 0 && (diffSize - sizeStep >= minSize)) {
@@ -264,7 +263,8 @@ namespace editor {
 
 
         diffSize = m_lastSize - m_size;
-        if(diffSize == 0.f) {}
+        if(diffSize == 0.f) {
+        }
         else if(diffSize > 0) {
             //   m_aabb.lx += pixelPerStep * dt * cos(45);
             //  m_aabb.ly -= pixelPerStep * dt * sin(45);
@@ -272,7 +272,6 @@ namespace editor {
             m_aabb.height -= pixelPerStep * 2 * dt;
         }
         else if(diffSize < 0) {
-            diffSize = std::abs(diffSize);
             //  m_aabb.lx -= pixelPerStep * dt * cos(45);
             //  m_aabb.ly += pixelPerStep * dt * sin(45);
             m_aabb.width += pixelPerStep * 2 * dt;
@@ -286,25 +285,25 @@ namespace editor {
 
 
         moveQ[0].position = {
-                ( m_aabb.lx + m_aabb.width / 2.F ) - qSize.x / 2.F,
-                m_aabb.ly - qSize.y / 2.F
+            (m_aabb.lx + m_aabb.width / 2.F) - qSize.x / 2.F,
+            m_aabb.ly - qSize.y / 2.F
         };
 
         moveQ[1].position = {
-                m_aabb.lx - qSize.x / 2.F,
-                ( m_aabb.ly + m_aabb.height / 2.F ) - qSize.y / 2.F
+            m_aabb.lx - qSize.x / 2.F,
+            (m_aabb.ly + m_aabb.height / 2.F) - qSize.y / 2.F
         };
 
 
         moveQ[2].position = {
-                ( m_aabb.lx + m_aabb.width ) - qSize.x / 2.F,
-                ( m_aabb.ly + m_aabb.height / 2.f ) - qSize.y / 2.F
+            (m_aabb.lx + m_aabb.width) - qSize.x / 2.F,
+            (m_aabb.ly + m_aabb.height / 2.f) - qSize.y / 2.F
         };
 
 
         moveQ[3].position = {
-                ( m_aabb.lx + m_aabb.width / 2.f ) - qSize.x / 2.F,
-                m_aabb.ly + m_aabb.height - qSize.y / 2.F
+            (m_aabb.lx + m_aabb.width / 2.f) - qSize.x / 2.F,
+            m_aabb.ly + m_aabb.height - qSize.y / 2.F
         };
 
 
@@ -346,11 +345,15 @@ namespace editor {
 
         if(!m_showDots)
             return;
-        
-        moveQ[0].color = (m_selectedQuad == static_cast<int>(SelectQuad::Top) ? robot2D::Color::Yellow: robot2D::Color::White);
-        moveQ[1].color = (m_selectedQuad == static_cast<int>(SelectQuad::Left) ? robot2D::Color::Yellow: robot2D::Color::White);
-        moveQ[2].color = (m_selectedQuad == static_cast<int>(SelectQuad::Right) ? robot2D::Color::Yellow: robot2D::Color::White);
-        moveQ[3].color = (m_selectedQuad == static_cast<int>(SelectQuad::Bottom) ? robot2D::Color::Yellow: robot2D::Color::White);
+
+        moveQ[0].color = (m_selectedQuad ==
+            static_cast<int>(SelectQuad::Top) ? robot2D::Color::Yellow: robot2D::Color::White);
+        moveQ[1].color = (m_selectedQuad ==
+            static_cast<int>(SelectQuad::Left) ? robot2D::Color::Yellow: robot2D::Color::White);
+        moveQ[2].color = (m_selectedQuad ==
+            static_cast<int>(SelectQuad::Right) ? robot2D::Color::Yellow: robot2D::Color::White);
+        moveQ[3].color = (m_selectedQuad ==
+            static_cast<int>(SelectQuad::Bottom) ? robot2D::Color::Yellow: robot2D::Color::White);
 
         for(const auto& q: moveQ)
             target.draw(q);
@@ -366,7 +369,9 @@ namespace editor {
         m_manipulatedEntity = entity;
     }
 
-    void CameraManipulator::setCamera(IEditorCamera::Ptr camera) { m_camera = camera; }
+    void CameraManipulator::setCamera(IEditorCamera::Ptr camera) {
+        m_camera = camera;
+    }
 
     void CameraManipulator::setSize(const robot2D::vec2f& size) {
         m_aabb.width = size.x;
@@ -392,7 +397,7 @@ namespace editor {
         return m_aabb;
     }
 
-    bool CameraManipulator::contains(const robot2D::vec2f& point)  {
+    bool CameraManipulator::contains(const robot2D::vec2f& point) {
         return m_aabb.contains(point);
     }
 
@@ -404,12 +409,18 @@ namespace editor {
         return m_aabb.intersects(rect);
     }
 
-    void CameraManipulator::setIsShownDots(bool flag) { m_showDots = flag; }
+    void CameraManipulator::setIsShownDots(bool flag) {
+        m_showDots = flag;
+    }
 
-    const float& CameraManipulator::getSize() const { return m_size; }
+    const float& CameraManipulator::getSize() const {
+        return m_size;
+    }
 
-    bool CameraManipulator::isActive() const { return m_leftMousePressed &&
-                                   (m_buttonPressed || (m_selectedQuad != -1 && m_pressedPoint != robot2D::vec2f{})); }
+    bool CameraManipulator::isActive() const {
+        return m_leftMousePressed &&
+               (m_buttonPressed || (m_selectedQuad != -1 && m_pressedPoint != robot2D::vec2f{}));
+    }
 
     const robot2D::FloatRect &CameraManipulator::getCameraRect() const {
         return m_aabb;

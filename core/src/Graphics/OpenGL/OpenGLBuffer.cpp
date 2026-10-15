@@ -1,25 +1,26 @@
 /*********************************************************************
-(c) Alex Raag 2021
-https://github.com/Enziferum
-robot2D - Zlib license.
-This software is provided 'as-is', without any express or
-implied warranty. In no event will the authors be held
-liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute
-it freely, subject to the following restrictions:
-1. The origin of this software must not be misrepresented;
-you must not claim that you wrote the original software.
-If you use this software in a product, an acknowledgment
-in the product documentation would be appreciated but
-is not required.
-2. Altered source versions must be plainly marked as such,
-and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any
-source distribution.
+   (c) Alex Raag 2021
+   https://github.com/Enziferum
+   robot2D - Zlib license.
+   This software is provided 'as-is', without any express or
+   implied warranty. In no event will the authors be held
+   liable for any damages arising from the use of this software.
+   Permission is granted to anyone to use this software for any purpose,
+   including commercial applications, and to alter it and redistribute
+   it freely, subject to the following restrictions:
+   1. The origin of this software must not be misrepresented;
+   you must not claim that you wrote the original software.
+   If you use this software in a product, an acknowledgment
+   in the product documentation would be appreciated but
+   is not required.
+   2. Altered source versions must be plainly marked as such,
+   and must not be misrepresented as being the original software.
+   3. This notice may not be removed or altered from any
+   source distribution.
 *********************************************************************/
 
 #include <robot2D/Graphics/GL.hpp>
+#include <robot2D/Util/Logger.hpp>
 #include "OpenGLBuffer.hpp"
 
 namespace robot2D {
@@ -33,6 +34,9 @@ namespace robot2D {
         glCall(glBufferData, GL_ARRAY_BUFFER, size, nullptr, GL_DYNAMIC_DRAW);
 
         m_size = size;
+#if !defined(ROBOT2D_MACOS)
+        labelGLObject(GL_BUFFER, m_bufferID, "VertexBuffer");
+#endif
     }
 
     OpenGLVertexBuffer::OpenGLVertexBuffer(float* data, const uint32_t& size) {
@@ -40,6 +44,9 @@ namespace robot2D {
         glCall(glBindBuffer, GL_ARRAY_BUFFER, m_bufferID);
         glCall(glBufferData, GL_ARRAY_BUFFER, size, data, GL_STATIC_DRAW);
         m_size = size;
+#if !defined(ROBOT2D_MACOS)
+        labelGLObject(GL_BUFFER, m_bufferID, "VertexBuffer");
+#endif
     }
 
     OpenGLVertexBuffer::~OpenGLVertexBuffer() {
@@ -55,6 +62,12 @@ namespace robot2D {
     }
 
     void OpenGLVertexBuffer::setData(const void* data, const uint32_t& size) {
+        if(size > m_size || (size != 0 && data == nullptr)) {
+            RB_CORE_ERROR("[OpenGL] operation=VertexBuffer.setData; buffer={}; requested={} bytes; "
+                "capacity={} bytes; upload rejected: {}", m_bufferID, size, m_size,
+                size > m_size ? "size exceeds buffer capacity" : "source data is null");
+            return;
+        }
         Bind();
         glCall(glBufferSubData, GL_ARRAY_BUFFER, 0, size, data);
     }
@@ -62,11 +75,14 @@ namespace robot2D {
 
     ////// Index Buffer //////
 
-    OpenGLIndexBuffer::OpenGLIndexBuffer(uint32_t* data, const uint32_t& size)  {
+    OpenGLIndexBuffer::OpenGLIndexBuffer(uint32_t* data, const uint32_t& size) {
         glCall(glGenBuffers, 1, &m_bufferID);
         glCall(glBindBuffer, GL_ELEMENT_ARRAY_BUFFER, m_bufferID);
         glCall(glBufferData, GL_ELEMENT_ARRAY_BUFFER, size, data, GL_STATIC_DRAW);
         m_size = size;
+#if !defined(ROBOT2D_MACOS)
+        labelGLObject(GL_BUFFER, m_bufferID, "IndexBuffer");
+#endif
     }
 
     OpenGLIndexBuffer::~OpenGLIndexBuffer() {

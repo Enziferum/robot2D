@@ -22,24 +22,19 @@ source distribution.
 #pragma once
 
 #include <vector>
-#include <robot2D/Graphics/RenderWindow.hpp>
+#include <imgui/imgui.h>
 #include <robot2D/Core/MessageBus.hpp>
 
 #include "ProjectDescription.hpp"
-#include "EditorCache.hpp"
 
 namespace editor {
 
     struct ProjectInspectorConfiguration {
-        const ImVec2 createButtonSize = ImVec2(200.F, 50.F);
-        const float textOffset = 10.F;
-        const unsigned colID = 0xFFFFFFFF;
-        bool isOpen = true;
         ImGuiWindowFlags windowFlags = ImGuiWindowFlags_NoTitleBar |
-                                       ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar
-                                       | ImGuiWindowFlags_NoResize;
-        ImGuiSelectableFlags_ selectableFlags = ImGuiSelectableFlags_AllowItemOverlap;
-        int m_selectedItem = -1;
+                                       ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize |
+                                       ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDocking |
+                                       ImGuiWindowFlags_NoSavedSettings;
+        int selectedItem = -1;
         bool openAlways = true;
     };
 
@@ -56,22 +51,25 @@ namespace editor {
         ProjectInspector& operator=(ProjectInspector&& other) = delete;
         ~ProjectInspector() = default;
 
-        void setup(robot2D::RenderWindow* window,
-                   const std::vector<ProjectDescription>& descriptions);
+        void setup(const std::vector<ProjectDescription>& descriptions, bool openAlways);
         void render();
     private:
+        void renderProjects(float height);
+        void renderActions(bool compact);
+        void renderDeleteConfirmation();
         void createProject();
         void addProject();
 
         void loadProject(const unsigned& index);
-        void deleteProject(const unsigned& index);
+        void removeProject(const unsigned& index, bool deleteFiles);
+        bool validateProject(const ProjectDescription& description);
     private:
-        robot2D::RenderWindow* m_window;
         robot2D::MessageBus& m_messageBus;
         std::vector<ProjectDescription> m_descriptions;
         ProjectInspectorConfiguration m_configuration;
 
-        std::string m_projectName;
-        std::string m_projectPath;
+        ImGuiTextFilter m_filter;
+        int m_pendingDelete = -1;
+        std::string m_error;
     };
 } // namespace editor

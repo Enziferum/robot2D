@@ -21,6 +21,7 @@ source distribution.
 
 
 #include <filesystem>
+#include <algorithm>
 
 #include <robot2D/imgui/Api.hpp>
 #include <robot2D/imgui/DragDropTarget.hpp>
@@ -95,9 +96,20 @@ namespace editor {
     }
 
 
+    bool ViewportPanel::containsMouse(robot2D::vec2f position) const {
+        return getState() == PanelState::Visible && m_panelHovered
+                && position.x >= m_ViewportBounds.minRegion.x && position.y >= m_ViewportBounds.minRegion.y
+                && position.x < m_ViewportBounds.maxRegion.x && position.y < m_ViewportBounds.maxRegion.y;
+    }
+
     void ViewportPanel::handleEvents(const robot2D::Event& event) {
+        if(getState() != PanelState::Visible)
+            return;
         if(event.type == robot2D::Event::MousePressed && m_panelFocused && m_panelHovered) {
             auto[mx, my] = ImGui::GetMousePos();
+            if(mx < m_ViewportBounds.minRegion.x || my < m_ViewportBounds.minRegion.y
+                    || mx >= m_ViewportBounds.maxRegion.x || my >= m_ViewportBounds.maxRegion.y)
+                return;
             mx -= m_ViewportBounds.minRegion.x;
             my -= m_ViewportBounds.minRegion.y;
             robot2D::vec2f viewportSize = m_ViewportBounds.maxRegion - m_ViewportBounds.minRegion;
@@ -111,6 +123,11 @@ namespace editor {
     }
 
     void ViewportPanel::update(float deltaTime) {
+        if(getState() != PanelState::Visible) {
+            m_guizmo2D.setIsShow(false);
+            m_guizmo2D.setManipulated(nullptr);
+            return;
+        }
         auto[mx, my] = ImGui::GetMousePos();
         mx -= m_ViewportBounds.minRegion.x;
         my -= m_ViewportBounds.minRegion.y;
@@ -119,44 +136,41 @@ namespace editor {
         my = viewportSize.y - my;
 
         if(m_panelFocused && m_panelHovered) {
-            m_editorCamera -> update({mx, my}, deltaTime);
+            if(mx >= 0.f && my >= 0.f && mx < viewportSize.x && my < viewportSize.y)
+                m_editorCamera -> update({mx, my}, deltaTime);
         }
     }
 
     void ViewportPanel::render() {
-        robot2D::createWindow(m_windowOptions, [this]() {
-            auto viewportMinRegion = ImGui::GetWindowContentRegionMin();
-            auto viewportMaxRegion = ImGui::GetWindowContentRegionMax();
-            auto viewportOffset = ImGui::GetWindowPos();
-            m_ViewportBounds.minRegion = { viewportMinRegion.x + viewportOffset.x, viewportMinRegion.y + viewportOffset.y };
-            m_ViewportBounds.maxRegion = { viewportMaxRegion.x + viewportOffset.x, viewportMaxRegion.y + viewportOffset.y };
-
-            m_panelFocused = ImGui::IsWindowFocused();
-            m_panelHovered = ImGui::IsWindowHovered();
-
+        m_panelFocused = false;
+        m_panelHovered = false;
+        bool hasImage = false;
+        renderWindow(m_windowOptions, [this, &hasImage]() {
+            instrumentBar();
+            auto imagePosition = ImGui::GetCursorScreenPos();
             auto ViewPanelSize = ImGui::GetContentRegionAvail();
+            if(!m_frameBuffer || !m_editorCamera || !m_uiInteractor
+                    || ViewPanelSize.x < 1.f || ViewPanelSize.y < 1.f)
+                return;
 
-            if (ImGui::IsWindowDocked()) {
-                toolbarOverlay({ viewportOffset.x, viewportOffset.y }, { ViewPanelSize.x, ViewPanelSize.y });
-                instrumentBar({ viewportOffset.x, viewportOffset.y }, { ViewPanelSize.x, ViewPanelSize.y });
-            }
-            m_editorCamera -> setViewportBounds({viewportOffset.x, viewportOffset.y
-                                                                   + (viewportMaxRegion.y - ViewPanelSize.y)});
-            if(m_ViewportSize != robot2D::vec2u { static_cast<unsigned int>(ViewPanelSize.x), 
-                        static_cast<unsigned int>(ViewPanelSize.y)} || needResetViewport) {
-                m_ViewportSize = {static_cast<unsigned int>(ViewPanelSize.x),
-                                  static_cast<unsigned int>(ViewPanelSize.y)};
+            m_ViewportBounds.minRegion = {imagePosition.x, imagePosition.y};
+            m_editorCamera -> setViewportBounds(m_ViewportBounds.minRegion);
+            robot2D::vec2u viewportSize{static_cast<unsigned int>(ViewPanelSize.x),
+                                      static_cast<unsigned int>(ViewPanelSize.y)};
+            if(m_ViewportSize != viewportSize || needResetViewport) {
+                m_ViewportSize = viewportSize;
                 m_frameBuffer -> Resize(m_ViewportSize);
                 m_editorCamera -> setViewportSize(m_ViewportSize.as<float>());
                 needResetViewport = false;
             }
-
+            m_ViewportBounds.maxRegion = m_ViewportBounds.minRegion + m_ViewportSize.as<float>();
             robot2D::RenderFrameBuffer(m_frameBuffer, m_ViewportSize.as<float>());
-
-            m_guizmo2D.setIsShow(false);
+            hasImage = true;
+            m_panelFocused = ImGui::IsWindowFocused();
+            m_panelHovered = ImGui::IsItemHovered();
             m_CameraCollider.setIsShownDots(false);
 
-            auto& selectedEntities = m_uiInteractor -> getSelectedEntities();
+            auto selectedEntities = m_uiInteractor -> getSelectedEntities();
 
             if(selectedEntities.size() == 1) {
                 auto& selectedEntity = selectedEntities[0];
@@ -187,6 +201,10 @@ namespace editor {
                         selectedEntity.getComponent<CameraComponent>().cameraRect = m_CameraCollider.getCameraRect();
                     }
                 }
+                else {
+                    m_guizmo2D.setIsShow(false);
+                    m_guizmo2D.setManipulated(nullptr);
+                }
             }
             else if(selectedEntities.size() > 1) {
                 std::vector<TransformComponent*> moveTfs;
@@ -196,13 +214,31 @@ namespace editor {
                        moveTfs.emplace_back(&tc);
                    }
                 }
-                m_guizmo2D.setIsShow(true);
+                m_guizmo2D.setIsShow(!moveTfs.empty());
                 m_guizmo2D.setManipulated(moveTfs);
+                std::vector<TransformComponent*> movementRoots;
+                for(auto entity: selectedEntities) {
+                    if(!entity)
+                        continue;
+                    bool selectedAncestor = false;
+                    for(auto parent = entity.getParent(); parent; parent = parent.getParent()) {
+                        if(std::find(selectedEntities.begin(), selectedEntities.end(), parent) != selectedEntities.end()) {
+                            selectedAncestor = true;
+                            break;
+                        }
+                    }
+                    if(!selectedAncestor)
+                        movementRoots.push_back(&entity.getComponent<TransformComponent>());
+                }
+                m_guizmo2D.setMovementRoots(movementRoots);
             }
             else {
+                m_guizmo2D.setIsShow(false);
                 m_guizmo2D.setManipulated(nullptr);
             }
 
+            const auto mousePosition = ImGui::GetMousePos();
+            m_guizmo2D.updateHover({mousePosition.x, mousePosition.y}, m_panelHovered);
             {
                 robot2D::DragDropTarget dragDropTarget{};
                 if(auto&& payloadBuffer = dragDropTarget.unpackPayload2Buffer(contentSceneID,
@@ -230,103 +266,49 @@ namespace editor {
                 }
             }
         });
-    }
-
-
-    void ViewportPanel::toolbarOverlay(robot2D::vec2f windowOffset, robot2D::vec2f windowAvailSize) {
-        static ImGuiWindowFlags window_flags =
-                ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoDocking
-                | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings
-                | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoTitleBar
-                | ImGuiWindowFlags_NoScrollbar;
-        static bool p_open = true;
-        constexpr auto buttonSize = ImVec2{20, 20};
-
-        {
-            const ImGuiViewport* viewport = ImGui::GetWindowViewport();
-            ImVec2 window_pos;
-
-            window_pos = { ( windowAvailSize.x - 100) / 2, 40};
-            window_pos.x += windowOffset.x;
-            window_pos.y += windowOffset.y;
-
-            ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always);
-            ImGui::SetNextWindowViewport(viewport->ID);
-            window_flags |= ImGuiWindowFlags_NoMove;
-        }
-
-
-        {
-            robot2D::ScopedStyleVarF scopedStyleVars{{ImGuiStyleVar_WindowBorderSize, 0.0f},
-                                                           {ImGuiStyleVar_WindowRounding, 8.f}};
-
-            imgui_Window("##Toolbar", &p_open, window_flags) {
-                auto contentSize = ImGui::GetContentRegionAvail();
-
-                ImGui::SetCursorPos({(contentSize.x - buttonSize.x) / 2.F, (contentSize.y - buttonSize.y) / 2.F});
-                IconType iconType;
-
-                if(m_uiInteractor)
-                    iconType = m_uiInteractor -> isRunning() ? IconType::Stop : IconType::Play;
-                else
-                    iconType = IconType::Play;
-                if(robot2D::ImageButton(m_icons[iconType], { buttonSize.x, buttonSize.y })) {
-                    auto* msg = m_messageBus.postMessage<ToolbarMessage>(MessageID::ToolbarPressed);
-                    msg -> type = static_cast<ToolbarMessage::Type>(m_uiInteractor -> isRunning() ? 0 : 1);
-                }
-            }
+        if(!hasImage) {
+            m_guizmo2D.setIsShow(false);
+            m_guizmo2D.setManipulated(nullptr);
         }
     }
 
-    void ViewportPanel::instrumentBar(robot2D::vec2f windowOffset, robot2D::vec2f windowAvailSize) {
-        static ImGuiWindowFlags window_flags =
-                ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoDocking
-                | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings
-                | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoTitleBar
-                | ImGuiWindowFlags_NoScrollbar;
-        static bool p_open = true;
-        constexpr auto buttonSize = ImVec2{ 30, 30 };
-        {
-            const ImGuiViewport* viewport = ImGui::GetWindowViewport();
-            ImVec2 window_pos { 40, 40 };
-            window_pos.x += windowOffset.x;
-            window_pos.y += windowOffset.y;
 
-            ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always);
-            ImGui::SetNextWindowViewport(viewport -> ID);
-            window_flags |= ImGuiWindowFlags_NoMove;
-        }
-
-        {
-            robot2D::ScopedStyleVarF scopedStyleVars{{ImGuiStyleVar_WindowBorderSize, 1.0f},
-                                                           {ImGuiStyleVar_WindowRounding, 8.f}};
-            ImGui::Columns(1, nullptr, false);
-            imgui_Window("##InstrumentBar", &p_open, window_flags) {
-                auto contentSize = ImGui::GetContentRegionAvail();
-
-                robot2D::ScopedStyleColor scopedStyleColor(ImGuiCol_Button,
-                                                           robot2D::Color(255.f, 255.f, 255.f, 127.f));
-                ImGui::SetCursorPosX((contentSize.x - buttonSize.x) / 2.F);
-                if(robot2D::ImageButton(m_icons[IconType::Move], { buttonSize.x, buttonSize.y })) {
-                    auto* msg = m_messageBus.postMessage<InstrumentMessage>(MessageID::InstrumentPressed);
-                    msg -> type = InstrumentMessage::Type::Move;
-
-                    m_guizmo2D.setOperationType(Guizmo2D::Operation::Move);
-                }
-                ImGui::SetCursorPosX((contentSize.x - buttonSize.x) / 2.F);
-                if(robot2D::ImageButton(m_icons[IconType::Scale], { buttonSize.x, buttonSize.y })) {
-                    auto* msg = m_messageBus.postMessage<InstrumentMessage>(MessageID::InstrumentPressed);
-                    msg -> type = InstrumentMessage::Type::Scale;
-                    m_guizmo2D.setOperationType(Guizmo2D::Operation::Scale);
-                }
-                ImGui::SetCursorPosX((contentSize.x - buttonSize.x) / 2.F);
-                if(robot2D::ImageButton(m_icons[IconType::Rotate], { buttonSize.x, buttonSize.y })) {
-                    auto* msg = m_messageBus.postMessage<InstrumentMessage>(MessageID::InstrumentPressed);
-                    msg -> type = InstrumentMessage::Type::Rotate;
-                    m_guizmo2D.setOperationType(Guizmo2D::Operation::Rotate);
-                }
+    void ViewportPanel::instrumentBar() {
+        ImGui::BeginGroup();
+        ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 4.f);
+        ImGui::SetCursorPosX(6.f);
+        struct Tool {
+            IconType icon;
+            Guizmo2D::Operation operation;
+            InstrumentMessage::Type message;
+            const char* tooltip;
+        };
+        const Tool tools[] = {
+            {IconType::Move, Guizmo2D::Operation::Move, InstrumentMessage::Type::Move, "Move (Shift+W)"},
+            {IconType::Scale, Guizmo2D::Operation::Scale, InstrumentMessage::Type::Scale, "Scale (Shift+Q)"},
+            {IconType::Rotate, Guizmo2D::Operation::Rotate, InstrumentMessage::Type::Rotate, "Rotate (Shift+R)"}
+        };
+        for(const auto& tool: tools) {
+            ImGui::PushID(static_cast<int>(tool.icon));
+            const bool active = m_guizmo2D.getOperationType() == tool.operation;
+            if(active)
+                ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_HeaderActive));
+            const float buttonSize = ImGui::GetFrameHeight();
+            if(robot2D::ImageButton(m_icons[tool.icon], {buttonSize, buttonSize})) {
+                m_guizmo2D.setOperationType(tool.operation);
+                auto* message = m_messageBus.postMessage<InstrumentMessage>(MessageID::InstrumentPressed);
+                message -> type = tool.message;
             }
+            if(active)
+                ImGui::PopStyleColor();
+            if(ImGui::IsItemHovered())
+                ImGui::SetTooltip("%s", tool.tooltip);
+            ImGui::PopID();
+            if(tool.icon != IconType::Rotate)
+                ImGui::SameLine();
         }
+        ImGui::EndGroup();
+        ImGui::Separator();
     }
 
 }

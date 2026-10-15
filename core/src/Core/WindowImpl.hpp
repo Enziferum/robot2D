@@ -51,6 +51,7 @@ namespace robot2D::priv {
         virtual bool isOpen() const = 0;
         virtual void setTitle(const std::string& title) const = 0;
         virtual void close() = 0;
+        virtual void cancelClose() = 0;
         virtual void display() = 0;
         virtual bool isMousePressed(const Mouse& button) = 0;
         virtual bool isKeyboardPressed(const Key& key) = 0;

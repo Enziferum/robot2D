@@ -40,6 +40,7 @@ namespace editor {
         OpenScene,
         CreateScene,
         SaveScene,
+        SaveAll,
         EntitySelected,
         EntityDuplicate,
         EntityRemove,
@@ -57,7 +58,8 @@ namespace editor {
         PrefabAssetPressed,
         TileElementSelected,
         PrefabAssetModificated,
-        AnimationPlay
+        AnimationPlay,
+        RemoveRecentProject
     };
 
     struct ProjectMessage {

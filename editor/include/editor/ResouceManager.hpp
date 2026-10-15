@@ -95,6 +95,16 @@ namespace editor {
             std::lock_guard<std::mutex> lockGuard{m_mutex};
             return m_animations.at(uuid);
         }
+        std::vector<Animation> getAnimationsCopy(UUID uuid) const {
+            std::lock_guard<std::mutex> lockGuard{m_mutex};
+            const auto found = m_animations.find(uuid);
+            return found == m_animations.end() ? std::vector<Animation>{} : found -> second;
+        }
+        std::vector<std::string> getAnimationPaths(UUID uuid) const {
+            std::lock_guard<std::mutex> lockGuard{m_mutex};
+            const auto found = m_animationPaths.find(uuid);
+            return found == m_animationPaths.end() ? std::vector<std::string>{} : found -> second;
+        }
     private:
         mutable std::mutex m_mutex;
         robot2D::ResourceHandler<robot2D::Image, std::string> m_images;

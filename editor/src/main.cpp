@@ -21,6 +21,7 @@ source distribution.
 
 #include <robot2D/Engine.hpp>
 #include <editor/Application.hpp>
+#include <editor/BuildInfo.hpp>
 
 int main() {
     robot2D::WindowContext windowContext {
@@ -31,7 +32,7 @@ int main() {
     };
 
     robot2D::EngineConfiguration engineConfiguration;
-    engineConfiguration.windowTitle = "Robot2DEngine";
+    engineConfiguration.windowTitle = editor::buildInfo::getWindowTitle();
     engineConfiguration.windowSize = {800, 600};
     engineConfiguration.windowContext = windowContext;
     ROBOT2D_RUN_ENGINE(editor::Application, engineConfiguration);

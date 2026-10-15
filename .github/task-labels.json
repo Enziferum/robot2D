@@ -1,0 +1,357 @@
+{
+  "definitions": {
+    "area:editor": {
+      "color": "1D76DB",
+      "description": "Редактор, сцены, ресурсы и интеграция движка"
+    },
+    "area:tooling": {
+      "color": "5319E7",
+      "description": "Сборка, CI, анализ и форматирование"
+    },
+    "area:workflow": {
+      "color": "006B75",
+      "description": "Учёт задач, Git-процесс и релизы"
+    },
+    "type:bug": {
+      "color": "D73A4A",
+      "description": "Исправление ошибки или надёжности поведения"
+    },
+    "type:feature": {
+      "color": "A2EEEF",
+      "description": "Новая функциональность"
+    },
+    "type:refactor": {
+      "color": "7057FF",
+      "description": "Изменение структуры кода"
+    },
+    "type:maintenance": {
+      "color": "FBCA04",
+      "description": "Поддержка инфраструктуры и диагностики"
+    },
+    "type:design": {
+      "color": "D4C5F9",
+      "description": "Архитектурное обсуждение и проектирование"
+    },
+    "type:tests": {
+      "color": "0E8A16",
+      "description": "Покрытие поведения автоматическими тестами"
+    },
+    "owner:shared": {
+      "color": "BFDADC",
+      "description": "Совместно: ведущий выбирается перед стартом; второй помогает проектированием и ревью"
+    },
+    "owner:user": {
+      "color": "F9D0C4",
+      "description": "Реализация закреплена за пользователем; ассистент помогает по согласованию"
+    },
+    "area:core": {
+      "color": "0E8A16",
+      "description": "Библиотека Core: ECS, графика и общие контракты движка"
+    },
+    "area:render": {
+      "color": "D876E3",
+      "description": "Рендер, графические ресурсы и контракт отрисовки Core/Editor/player"
+    }
+  },
+  "tasks": {
+    "RENDER-02": [
+      "area:editor",
+      "type:bug",
+      "owner:shared",
+      "area:core",
+      "area:render"
+    ],
+    "RENDER-01": [
+      "area:tooling",
+      "type:maintenance",
+      "owner:shared",
+      "area:core",
+      "area:render"
+    ],
+    "SAVE-01": [
+      "area:editor",
+      "type:bug",
+      "owner:shared"
+    ],
+    "LOAD-01": [
+      "area:editor",
+      "type:bug",
+      "owner:shared"
+    ],
+    "TEST-01": [
+      "area:editor",
+      "type:tests"
+    ],
+    "CMD-01": [
+      "area:editor",
+      "type:feature",
+      "owner:shared"
+    ],
+    "ASSET-01": [
+      "area:editor",
+      "type:feature",
+      "owner:shared"
+    ],
+    "UI-01": [
+      "area:editor",
+      "type:feature",
+      "owner:shared"
+    ],
+    "VIEW-01": [
+      "area:editor",
+      "type:feature",
+      "owner:shared"
+    ],
+    "CODE-01": [
+      "area:editor",
+      "type:refactor",
+      "owner:shared"
+    ],
+    "LOG-01": [
+      "area:editor",
+      "type:maintenance",
+      "owner:shared"
+    ],
+    "TOOL-01": [
+      "area:tooling",
+      "type:maintenance"
+    ],
+    "ARCH-01": [
+      "area:editor",
+      "type:design",
+      "owner:shared"
+    ],
+    "ASYNC-01": [
+      "area:editor",
+      "type:maintenance",
+      "owner:shared"
+    ],
+    "CI-01": [
+      "area:tooling",
+      "type:maintenance"
+    ],
+    "PROCESS-01": [
+      "area:workflow",
+      "type:maintenance"
+    ],
+    "VERSION-01": [
+      "area:workflow",
+      "type:maintenance",
+      "owner:shared"
+    ],
+    "PLAN-01": [
+      "area:workflow",
+      "type:design",
+      "owner:shared"
+    ],
+    "PLAN-02": [
+      "area:workflow",
+      "type:design",
+      "owner:shared"
+    ],
+    "PLAN-03": [
+      "area:workflow",
+      "type:design",
+      "owner:shared"
+    ],
+    "SNAP-01": [
+      "area:editor",
+      "type:design",
+      "owner:user"
+    ],
+    "CANCEL-01": [
+      "area:editor",
+      "type:design",
+      "owner:user"
+    ],
+    "CMD-02": [
+      "area:editor",
+      "type:feature",
+      "owner:shared"
+    ],
+    "CMD-03": [
+      "area:editor",
+      "type:bug",
+      "owner:shared"
+    ],
+    "CMD-04": [
+      "area:editor",
+      "type:bug",
+      "owner:shared"
+    ],
+    "ASSET-02": [
+      "area:editor",
+      "type:feature",
+      "owner:shared"
+    ],
+    "ANIM-01": [
+      "area:editor",
+      "type:feature",
+      "owner:shared"
+    ],
+    "PREFAB-01": [
+      "area:editor",
+      "type:feature",
+      "owner:shared"
+    ],
+    "SCRIPT-01": [
+      "area:tooling",
+      "type:feature",
+      "owner:shared"
+    ],
+    "RUNTIME-01": [
+      "area:editor",
+      "type:feature",
+      "owner:shared"
+    ],
+    "RUNTIME-02": [
+      "area:editor",
+      "type:bug",
+      "owner:shared"
+    ],
+    "PHYS-01": [
+      "area:editor",
+      "type:bug",
+      "owner:shared"
+    ],
+    "INPUT-01": [
+      "area:editor",
+      "type:bug",
+      "owner:shared"
+    ],
+    "HUD-01": [
+      "area:editor",
+      "type:feature",
+      "owner:shared"
+    ],
+    "PLAYER-01": [
+      "area:editor",
+      "type:feature",
+      "owner:shared"
+    ],
+    "RENDER-03": [
+      "area:editor",
+      "type:bug",
+      "owner:shared",
+      "area:core",
+      "area:render"
+    ],
+    "BUILD-01": [
+      "area:tooling",
+      "type:feature",
+      "owner:shared"
+    ],
+    "GAME-01": [
+      "area:editor",
+      "type:feature",
+      "owner:shared"
+    ],
+    "GAME-02": [
+      "area:editor",
+      "type:feature",
+      "owner:shared"
+    ],
+    "GAME-03": [
+      "area:editor",
+      "type:feature",
+      "owner:shared"
+    ],
+    "QA-01": [
+      "area:editor",
+      "type:tests",
+      "owner:shared"
+    ],
+    "ARCH-02": [
+      "area:editor",
+      "type:refactor",
+      "owner:shared"
+    ],
+    "SCENE-01": [
+      "area:editor",
+      "type:feature",
+      "owner:shared"
+    ],
+    "AUDIO-01": [
+      "area:editor",
+      "type:feature",
+      "owner:shared"
+    ],
+    "GUI-01": [
+      "area:editor",
+      "type:feature",
+      "owner:shared"
+    ],
+    "ANIM-02": [
+      "area:editor",
+      "type:bug",
+      "owner:shared"
+    ],
+    "API-01": [
+      "area:editor",
+      "type:design",
+      "owner:shared"
+    ],
+    "RECOVERY-01": [
+      "area:editor",
+      "type:feature",
+      "owner:shared"
+    ],
+    "DOC-01": [
+      "area:workflow",
+      "type:maintenance",
+      "owner:shared"
+    ],
+    "DIST-01": [
+      "area:tooling",
+      "type:feature",
+      "owner:shared"
+    ],
+    "UPDATE-01": [
+      "area:tooling",
+      "type:feature",
+      "owner:shared"
+    ],
+    "QA-02": [
+      "area:editor",
+      "type:tests",
+      "owner:shared"
+    ],
+    "RENDER-04": [
+      "area:core",
+      "area:render",
+      "type:design",
+      "owner:shared"
+    ],
+    "RENDER-05": [
+      "area:core",
+      "area:render",
+      "type:refactor",
+      "owner:shared"
+    ],
+    "ECS-01": [
+      "area:core",
+      "type:design",
+      "owner:shared"
+    ],
+    "ECS-04": [
+      "area:core",
+      "type:refactor",
+      "owner:shared"
+    ],
+    "ECS-05": [
+      "area:core",
+      "type:refactor",
+      "owner:shared"
+    ],
+    "ECS-02": [
+      "area:core",
+      "type:bug",
+      "owner:shared"
+    ],
+    "ECS-03": [
+      "area:core",
+      "type:bug",
+      "owner:shared"
+    ]
+  }
+}

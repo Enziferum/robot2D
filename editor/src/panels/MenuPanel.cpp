@@ -27,9 +27,12 @@ source distribution.
 #include <robot2D/Util/Logger.hpp>
 
 #include <editor/panels/MenuPanel.hpp>
+#include <editor/EditorConfig.hpp>
+#include <editor/UIManager.hpp>
 #include <editor/Messages.hpp>
 #include <editor/PopupManager.hpp>
 #include <editor/FiledialogAdapter.hpp>
+#include <editor/FileApi.hpp>
 #include <editor/Buffer.hpp>
 
 
@@ -41,16 +44,24 @@ namespace editor {
         static bool openPluginMenu = false;
     }
 
-    MenuPanel::MenuPanel(robot2D::MessageBus& messageBus, UIInteractor::Ptr interactor):
+    MenuPanel::MenuPanel(robot2D::MessageBus& messageBus, UIInteractor::Ptr interactor, UIManager* panelManager):
         IPanel(UniqueType(typeid(MenuPanel))),
         m_messageBus{messageBus},
-        m_interactor{interactor}{}
+        m_interactor{interactor},
+        m_panelManager{panelManager}{}
 
     void MenuPanel::render() {
         if(openDeveloperMenu)
             developerMenu();
 
-        ImGui::ShowDemoWindow();
+        if(m_showImGuiDemo)
+            ImGui::ShowDemoWindow(&m_showImGuiDemo);
+        if(m_showPanelDiagnostics) {
+            ImGui::SetNextWindowSize({640.f, 480.f}, ImGuiCond_FirstUseEver);
+            if(ImGui::Begin("Panel diagnostics", &m_showPanelDiagnostics) && m_panelManager)
+                m_panelManager -> renderDiagnostics();
+            ImGui::End();
+        }
 
         imgui_MenuBar {
             imgui_Menu("File")
@@ -68,8 +79,11 @@ namespace editor {
             imgui_Menu("Plugins")
                 pluginsMenu();
 
-            imgui_Menu("Developer")
+            imgui_Menu("Developer") {
                 ImGui::MenuItem("Show Info", nullptr, &openDeveloperMenu);
+                ImGui::MenuItem("ImGui Demo", nullptr, &m_showImGuiDemo);
+                ImGui::MenuItem("Panel diagnostics", nullptr, &m_showPanelDiagnostics);
+            }
 
             imgui_Menu("Help")
                 helpMenu();
@@ -128,29 +142,16 @@ namespace editor {
             }
         }
 
-        imgui_MenuItem("Save", "Ctrl+S") {
-            std::string savePath;
-            std::vector<std::string> saveFilePatterns = {"*.robot2D"};
-
-            // TODO(a.raag): get current project path
-            if(FiledialogAdapter::get() -> saveFile(savePath,
-                                                    "Save Robot2D Project",
-                                                    "",
-                                                    saveFilePatterns,
-                                                    "Scene")) {
-                int allocSize = StringBuffer::calcAllocSize(savePath);
-                void* rawBuffer = m_messageBus.postMessage(MessageID::SaveProject, allocSize);
-                Buffer buffer{ rawBuffer };
-                pack_message_string(savePath, buffer);
-            }
+        imgui_MenuItem("Save Scene", "Ctrl+S") {
+            Buffer buffer{m_messageBus.postMessage(MessageID::SaveScene, StringBuffer::calcAllocSize(""))};
+            pack_message_string("", buffer);
         }
 
-        imgui_MenuItem("Save", "Ctrl+Shift+S") {
+        imgui_MenuItem("Save As...") {
             std::string savePath;
             std::vector<std::string> saveFilePatterns = {"*.scene"};
 
-            // TODO(a.raag): get current project path
-            std::string defaultSavePath = "assets/scenes";
+            const auto defaultSavePath = combinePath(m_interactor -> getAssociatedProjectPath(), "assets/scenes");
 
             if(FiledialogAdapter::get() -> saveFile(savePath,
                                                     "Save Robot2D Scene",
@@ -163,6 +164,10 @@ namespace editor {
                 Buffer buffer{ rawBuffer };
                 pack_message_string(savePath, buffer);
             }
+        }
+        imgui_MenuItem("Save All", "Ctrl+Shift+S") {
+            Buffer buffer{m_messageBus.postMessage(MessageID::SaveAll, StringBuffer::calcAllocSize(""))};
+            pack_message_string("", buffer);
         }
     }
 
@@ -214,7 +219,16 @@ namespace editor {
     }
 
     void MenuPanel::developerMenu() {
-        imgui_Window("Developer Info") {
+        imgui_Window("Developer Info", &openDeveloperMenu) {
+            if(!m_interactor) {
+                ImGui::TextDisabled("No editor context");
+                return;
+            }
+            const auto selected = m_interactor -> getSelectedEntities();
+            ImGui::Text("Selected objects: %zu", selected.size());
+            for(const auto& entity: selected)
+                ImGui::Text("UUID: %llu", static_cast<unsigned long long>(entity.getUUID()));
+            ImGui::Separator();
             const auto& commandStack = m_interactor -> getCommandStack();
 
             imgui_ListBox("CommandsPool") {
@@ -299,49 +313,18 @@ namespace editor {
     }
 
     void MenuPanel::viewMenu() {
-        using PanelPair = std::pair<std::string, bool>;
-        static std::vector<PanelPair> panels = {{"Panel1Panel", true}, {"Panel2", false}};
-        float maxWidth = ImGui::CalcTextSize(panels[0].first.c_str()).x;
-
-        imgui_Menu("Tools") {
-            /// get all registred
-
-            static int flags = ImGuiSelectableFlags_::ImGuiSelectableFlags_DontClosePopups | ImGuiSelectableFlags_SpanAvailWidth;
-
-            //ImGui::MenuItem()
-
-            auto* window = ImGui::GetCurrentWindow();
-            auto* drawList = window -> DrawList;
-            const ImGuiMenuColumns* offsets = &window->DC.MenuColumns;
-            auto context = ImGui::GetCurrentContext();
-            float checkMarkSize =  context -> FontSize * 0.866f;
-            float fullPanelSize = maxWidth + checkMarkSize + 2.f;
-
-
-            for(auto& panel: panels) {
-                ImVec2 pos = window -> DC.CursorPos;
-                if(ImGui::Selectable(panel.first.c_str(), panel.second, flags, {fullPanelSize, 20})) {
-                    panel.second = !panel.second;
-                }
-
-                if(panel.second) {
-                    /*pos + ImVec2(offsets->OffsetMark + stretch_w + context -> FontSize * 0.40f,
-                                               context -> FontSize * 0.134f * 0.5f);*/
-                    ImVec2 tmpPos = pos;
-                    auto textPos = maxWidth;// ImGui::CalcTextSize(panel.first.c_str());
-                    /// offsets -> OffsetMark + stretch_w + context -> FontSize * 0.40f
-                    tmpPos.x += textPos + 3.f;
-                    tmpPos.y += context -> FontSize * 0.134f * 0.5f;
-
-                    // context -> FontSize * 0.866f
-                    ImGui::RenderCheckMark(drawList, tmpPos,
-                                           ImGui::GetColorU32(ImGuiCol_Text), context -> FontSize * 0.866f);
-                }
-
-            }
-
+        if(!m_panelManager)
+            return;
+        for(const auto& entry: m_panelManager -> getPanels()) {
+            bool visible = entry.panel -> getState() == PanelState::Visible;
+            if(ImGui::MenuItem(entry.name.c_str(), nullptr, visible))
+                m_panelManager -> setPanelVisible(entry.key, !visible);
         }
-
+        ImGui::Separator();
+        if(ImGui::MenuItem("Show all panels"))
+            m_panelManager -> showAllPanels();
+        if(ImGui::MenuItem("Restore default layout"))
+            m_panelManager -> restoreDefaultLayout();
     }
 
 }

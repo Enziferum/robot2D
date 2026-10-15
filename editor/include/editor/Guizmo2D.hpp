@@ -33,6 +33,7 @@ source distribution.
 #include "EventBinder.hpp"
 #include "EditorCamera.hpp"
 #include "Quad.hpp"
+#include <functional>
 #include "Components.hpp"
 
 namespace editor {
@@ -97,13 +98,21 @@ namespace editor {
                     m_rect.height = 20;
                 }
             }
+            Manipulator(const Manipulator& other) = delete;
+            Manipulator& operator=(const Manipulator& other) = delete;
+            Manipulator(Manipulator&& other) = delete;
+            Manipulator& operator=(Manipulator&& other) = delete;
             ~Manipulator() override = default;
 
             robot2D::vec2f getSize() const;
 
             bool isPressed(robot2D::vec2f point);
+            bool contains(robot2D::vec2f point) const;
+            void setSize(robot2D::vec2f size);
+            void setScaleHandle(bool scale) { m_scaleHandle = scale; }
 
             bool active() const;
+            void reset() { m_active = false; }
 
             void setPosition(const robot2D::vec2f& position);
             void setColor(robot2D::Color color);
@@ -119,6 +128,7 @@ namespace editor {
             robot2D::Color m_color;
             robot2D::vec2f m_offset;
             bool m_active{false};
+            bool m_scaleHandle{false};
             Axis m_axis;
         };
 
@@ -132,11 +142,17 @@ namespace editor {
 
         void handleEvents(const robot2D::Event& event);
         void update();
+        void updateHover(robot2D::vec2f mousePosition, bool overViewport);
 
         void setManipulated(TransformComponent* transformable);
         void setManipulated(std::vector<TransformComponent*>& transformables);
+        // Move selected roots once; the full selection still determines gizmo placement.
+        void setMovementRoots(const std::vector<TransformComponent*>& transforms);
+        void cancelDrag();
+        void setModificationCallback(std::function<void()> callback) { m_onModified = std::move(callback); }
 
         void setOperationType(Operation type);
+        Operation getOperationType() const { return m_operation; }
         void setCamera(IEditorCamera::Ptr camera);
         void setIsShow(bool flag);
         void draw(robot2D::RenderTarget& target,
@@ -152,12 +168,20 @@ namespace editor {
         void processMouseRelease(robot2D::Event event);
 
         void moveManipulators(const robot2D::vec2f& diff);
+        void updateHandleSizes();
+        void updateColors();
+        bool containsRotation(robot2D::vec2f point) const;
     private:
         bool m_isShown{false};
         bool m_isCollide{false};
         bool m_leftMousePressed{false};
+        enum class Handle { None, X, Y, XY, Rotation };
+        Handle m_hovered {Handle::None};
+        robot2D::vec2f m_unitsPerPixel {1.f, 1.f};
 
         std::vector<TransformComponent*> m_manipulateds;
+        std::vector<TransformComponent*> m_movementRoots;
+        std::function<void()> m_onModified;
 
         EventBinder m_eventBinder;
         Operation m_operation{Operation::Move};
@@ -169,18 +193,6 @@ namespace editor {
         robot2D::Sprite m_rotateSprite;
 
         robot2D::vec2f m_manipulatorLastPos;
-        robot2D::Texture m_manipulatorTexture;
-        robot2D::Texture m_manipulatorRotateTexture;
-
-        enum class TextureType {
-            FreeMove, Move, Scale
-        };
-
-        std::unordered_map<TextureType, robot2D::IntRect> m_textureRects = {
-                {TextureType::FreeMove, {0, 0, 24, 24}},
-                {TextureType::Move, {25, 1, 23, 46}},
-                {TextureType::Scale, {47, 1, 23, 47}},
-        };
 
     };
 }

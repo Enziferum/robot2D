@@ -6,7 +6,8 @@ namespace editor {
         Load,
         Edit,
         Run,
-        Modal
+        Modal,
+        LoadFailed
     };
 
 } // namespace editor
