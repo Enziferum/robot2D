@@ -118,7 +118,8 @@ python scripts/install_git_hooks.py --uncrustify 'C:/path/to/uncrustify.exe' --c
 5. clang-tidy с `-WarningsAsErrors` для изменённых `.cpp` и единиц компиляции,
    включающих изменённые заголовки, по базе зависимостей Ninja.
 
-Изменение CMake, `.clang-tidy`, `uncrustify.cfg` или скрипта запуска анализатора
+Изменение CMake, собственных шаблонов `.hpp.in`/шаблонов в editor/cmake,
+`.clang-tidy`, `uncrustify.cfg` или скрипта запуска анализатора
 вызывает полную сборку, тесты и строгий анализ всей стандартной области.
 Удаление исходника тоже проверяет сборку и тесты. Заголовок или исходник без
 покрытия compile database/dependency database блокирует commit: нужно подключить

@@ -7,7 +7,12 @@ target_link_libraries(robot2D-editor-tests PRIVATE robot2D-editor-objects)
 add_executable(robot2D-scene-tests SceneTests.cpp)
 target_link_libraries(robot2D-scene-tests PRIVATE robot2D-editor-objects)
 
-add_custom_target(robot2D-editor-test-suite DEPENDS robot2D-task-tests robot2D-editor-tests robot2D-scene-tests)
+add_executable(robot2D-version-tests VersionTests.cpp)
+target_link_libraries(robot2D-version-tests PRIVATE robot2D-editor-objects)
+target_include_directories(robot2D-version-tests PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/../generated/$<CONFIG>")
+
+add_custom_target(robot2D-editor-test-suite DEPENDS robot2D-task-tests robot2D-editor-tests
+        robot2D-scene-tests robot2D-version-tests)
 
 function(rb2d_register_test name executable scenario labels)
     set(test_directory "${CMAKE_CURRENT_BINARY_DIR}/scenarios/${name}")
@@ -26,6 +31,8 @@ endfunction()
 foreach(task_case IN ITEMS empty completion shutdown clear callback dispatch)
     rb2d_register_test("task-queue-${task_case}" robot2D-task-tests "${task_case}" "headless;async")
 endforeach()
+
+rb2d_register_test(editor-version robot2D-version-tests version "headless;version")
 
 foreach(editor_case IN ITEMS selection console-stream console-limits yaml-save payload
         config-roundtrip config-invalid cache-roundtrip cache-recovery cache-future cache-migration)
