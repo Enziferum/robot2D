@@ -33,8 +33,8 @@ project(robot2D VERSION 0.8.0)
 По умолчанию `RB2D_VERSION_PRERELEASE=dev`. Стабильная и кандидатная сборки:
 
 ```text
-cmake -S . -B <release-build> -DRB2D_VERSION_PRERELEASE=
-cmake -S . -B <rc-build> -DRB2D_VERSION_PRERELEASE=rc.1
+cmake -S . -B <release-build> "-DRB2D_VERSION_PRERELEASE="
+cmake -S . -B <rc-build> "-DRB2D_VERSION_PRERELEASE=rc.1"
 ```
 
 Использовать выделенные build-каталоги с зависимостями согласно инструкции
