@@ -16,6 +16,10 @@ jobs:
   build:
     name: ${{ matrix.os }} / Release
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+      actions: read
+      checks: write
     timeout-minutes: 40
     defaults:
       run:
@@ -83,3 +87,21 @@ jobs:
             build/editor/tests/scenarios/
           retention-days: 14
           if-no-files-found: warn
+
+      - name: Publish test results in PR Checks
+        if: >-
+          !cancelled() && hashFiles('build/reports/tests.xml') != '' &&
+          (github.event_name != 'pull_request' ||
+           github.event.pull_request.head.repo.full_name == github.repository)
+        uses: dorny/test-reporter@d1b5dff021aa968b288b02285a8bf47471c5928a # v3
+        with:
+          name: Tests (${{ matrix.os }})
+          path: build/reports/tests.xml
+          reporter: java-junit
+          list-suites: all
+          list-tests: all
+          collapsed: never
+          max-annotations: '0'
+          use-actions-summary: 'false'
+          fail-on-error: 'true'
+          fail-on-empty: 'true'
