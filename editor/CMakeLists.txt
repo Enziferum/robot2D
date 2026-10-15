@@ -14,7 +14,7 @@ endif ()
 
 # must be preinstall
 add_subdirectory(extlibs/robot2D-imgui)
-add_subdirectory(extlibs/yaml-cpp)
+include(cmake/YamlCppPatching.cmake)
 add_subdirectory(extlibs/tinyfiledialog)
 add_subdirectory(extlibs/filewatch)
 add_subdirectory(extlibs/TinyXML)
