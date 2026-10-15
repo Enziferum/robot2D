@@ -16,7 +16,7 @@
 namespace {
     using namespace tests;
 
-    struct GraphicsUnavailable: std::runtime_error { using std::runtime_error::runtime_error; };
+    struct GraphicsUnavailable : std::runtime_error { using std::runtime_error::runtime_error; };
 
     class GraphicsContext {
     public:
@@ -38,26 +38,43 @@ namespace {
                 throw GraphicsUnavailable("OpenGL loader unavailable");
             }
         }
-        ~GraphicsContext() { glfwDestroyWindow(m_window); glfwTerminate(); }
+        ~GraphicsContext() {
+            glfwDestroyWindow(m_window); glfwTerminate();
+        }
     private:
         GLFWwindow* m_window { nullptr };
     };
 
-    class ScriptStub: public editor::IScriptInteractorFrom {
+    class ScriptStub : public editor::IScriptInteractorFrom {
     public:
-        bool hasEntityClass(const std::string&) const override { return false; }
-        void setScriptClass(std::string, editor::UUID) override {}
-        bool hasFields(editor::UUID) const override { return !fields.empty(); }
-        FieldMap& getFields(editor::UUID) override { return fields; }
-        std::vector<std::string> getClassesNames() const override { return {}; }
-        void callScriptMethod(editor::UUID, const std::string&) override {}
-        void setEditorCamera(editor::EditorCamera::Ptr) override {}
-        editor::ScriptingEngineService* getScriptingEngine() const override { return nullptr; }
+        bool hasEntityClass(const std::string&) const override {
+            return false;
+        }
+        void setScriptClass(std::string, editor::UUID) override {
+        }
+        bool hasFields(editor::UUID) const override {
+            return !fields.empty();
+        }
+        FieldMap& getFields(editor::UUID) override {
+            return fields;
+        }
+        std::vector<std::string> getClassesNames() const override {
+            return {};
+        }
+        void callScriptMethod(editor::UUID, const std::string&) override {
+        }
+        void setEditorCamera(editor::EditorCamera::Ptr) override {
+        }
+        editor::ScriptingEngineService* getScriptingEngine() const override {
+            return nullptr;
+        }
         FieldMap fields;
     };
 
     struct QueueStop {
-        ~QueueStop() { editor::TaskQueue::GetQueue() -> stop(); }
+        ~QueueStop() {
+            editor::TaskQueue::GetQueue() -> stop();
+        }
     };
 
     std::vector<std::uint64_t> ids(const std::list<editor::SceneEntity>& entities) {
@@ -120,7 +137,7 @@ namespace {
         CHECK(ids(loaded -> getRootEntities()) == ids(source -> getRootEntities()));
         CHECK(loaded -> getEntity(b.getUUID()).getParent() == loaded -> getEntity(a.getUUID()));
         CHECK(loaded -> getEntity(b.getUUID()).getComponent<editor::TransformComponent>().getPosition()
-              == robot2D::vec2f(17, 31));
+            == robot2D::vec2f(17, 31));
         CHECK(loaded -> getEntity(a.getUUID()).getComponent<editor::DrawableComponent>().getDepth() == 7);
         CHECK(!reader.deserialize(file.u8string(), nullptr));
         CHECK(reader.getError() == editor::SceneSerializerError::InvalidScene);
@@ -170,10 +187,10 @@ namespace {
         Directory fixture;
         const auto file = fixture / "legacy.scene";
         write(file, "Scene: Legacy\nEntities:\n- Entity: 100\n  Entity: 100\n  TagComponent: {Tag: Parent}\n"
-              "  TransformComponent:\n    Position: [0, 0]\n    Size: [1, 1]\n    Rotation: 0\n"
-              "    HasChildren: true\n    ChildIDs: [200]\n- Entity: 200\n  TagComponent: {Tag: Child}\n"
-              "  TransformComponent:\n    Position: [0, 0]\n    Size: [1, 1]\n    Rotation: 0\n"
-              "    isChild: true\n    ParentID: 100\n");
+            "  TransformComponent:\n    Position: [0, 0]\n    Size: [1, 1]\n    Rotation: 0\n"
+            "    HasChildren: true\n    ChildIDs: [200]\n- Entity: 200\n  TagComponent: {Tag: Child}\n"
+            "  TransformComponent:\n    Position: [0, 0]\n    Size: [1, 1]\n    Rotation: 0\n"
+            "    isChild: true\n    ParentID: 100\n");
         robot2D::MessageBus bus;
         auto scene = std::make_shared<editor::Scene>(bus);
         editor::SceneSerializer reader(scene);
@@ -196,16 +213,31 @@ namespace {
         const auto originalPath = scene -> getPath();
         entity.markModified();
         CHECK(scene -> hasChanges());
+        CHECK(!manager.save(editor::Scene::Ptr(scene), {}));
+        CHECK(manager.getError() == editor::SceneManagerError::SceneSerialize);
+        CHECK(scene -> hasChanges() && scene -> getPath() == originalPath);
+        CHECK(read(fixture / "saved.scene") == original);
+        const auto rejectedLog = read(logger::Log::getFilePath());
+        CHECK(rejectedLog.find(originalPath) != std::string::npos);
+        CHECK(rejectedLog.find("reason=script interactor unavailable") != std::string::npos);
         CHECK(!manager.save(editor::Scene::Ptr(scene), scripts, (fixture / "missing/failed.scene").u8string()));
         CHECK(scene -> hasChanges() && scene -> getPath() == originalPath);
         CHECK(read(fixture / "saved.scene") == original);
         CHECK(manager.save(editor::Scene::Ptr(scene), scripts, (fixture / "save-as.scene").u8string()));
+        CHECK(manager.getError() == editor::SceneManagerError::None);
         CHECK(!scene -> hasChanges() && scene -> getPath() != originalPath);
         auto& transform = entity.getComponent<editor::TransformComponent>();
         transform.setRotate(std::numeric_limits<float>::quiet_NaN());
         editor::SceneSerializer writer(scene);
         CHECK(!writer.serialize((fixture / "saved.scene").u8string(), "Invalid", nullptr));
         CHECK(read(fixture / "saved.scene") == original);
+        const auto rejectedPath = (fixture / "no-scene.scene").u8string();
+        CHECK(!manager.save({}, scripts, rejectedPath));
+        CHECK(manager.getError() == editor::SceneManagerError::SceneSerialize);
+        CHECK(!fs::exists(fs::u8path(rejectedPath)));
+        const auto noSceneLog = read(logger::Log::getFilePath());
+        CHECK(noSceneLog.find(rejectedPath) != std::string::npos);
+        CHECK(noSceneLog.find("reason=no active scene") != std::string::npos);
     }
 
     void prefab() {
@@ -216,7 +248,7 @@ namespace {
         auto child = source -> createEntity("Template child");
         CHECK(source -> reparent(child, parent));
         auto prefab = std::make_shared<editor::Prefab>((fixture / "tree.prefab").u8string(),
-                                                       parent, editor::UUID{9876});
+                parent, editor::UUID{9876});
         editor::PrefabSerializer serializer;
         CHECK(serializer.serialize(prefab, nullptr));
         auto loaded = std::make_shared<editor::Prefab>();
@@ -267,21 +299,34 @@ namespace {
         CHECK(manager.getActiveScene() == previous);
     }
 
-    class View: public editor::IEditor {
+    class View : public editor::IEditor {
     public:
         editor::Scene::Ptr scene;
         editor::PopupConfiguration* popup { nullptr };
         bool assetDirty { false };
         bool assetSaveOK { true };
         int discarded { 0 };
-        void openScene(editor::Scene::Ptr value, std::string) override { scene = std::move(value); }
-        void prepareView() override {}
-        void clearSelectionOnUI() override {}
-        void showPopup(editor::PopupConfiguration* value) override { popup = value; }
-        void setMainCameraEntity(editor::SceneEntity) override {}
-        bool hasAssetChanges() const override { return assetDirty; }
-        bool saveAssetChanges() override { if(!assetSaveOK) return false; assetDirty = false; return true; }
-        void discardAssetChanges() override { assetDirty = false; ++discarded; }
+        void openScene(editor::Scene::Ptr value, std::string) override {
+            scene = std::move(value);
+        }
+        void prepareView() override {
+        }
+        void clearSelectionOnUI() override {
+        }
+        void showPopup(editor::PopupConfiguration* value) override {
+            popup = value;
+        }
+        void setMainCameraEntity(editor::SceneEntity) override {
+        }
+        bool hasAssetChanges() const override {
+            return assetDirty;
+        }
+        bool saveAssetChanges() override {
+            if(!assetSaveOK) return false; assetDirty = false; return true;
+        }
+        void discardAssetChanges() override {
+            assetDirty = false; ++discarded;
+        }
     };
 
     void closeProject() {
