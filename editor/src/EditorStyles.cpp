@@ -28,6 +28,80 @@ namespace editor {
         ImGuiStyle* style = &ImGui::GetStyle();
 
         switch(editorStyle) {
+            case EditorStyle::SlateBlue: {
+                ImGui::StyleColorsDark(style);
+                auto* colors = style -> Colors;
+                const ImVec4 accent{0.28f, 0.62f, 0.95f, 1.f};
+                colors[ImGuiCol_Text] = {0.86f, 0.89f, 0.94f, 1.f};
+                colors[ImGuiCol_TextDisabled] = {0.44f, 0.49f, 0.56f, 1.f};
+                colors[ImGuiCol_WindowBg] = {0.105f, 0.12f, 0.15f, 1.f};
+                colors[ImGuiCol_ChildBg] = {0.f, 0.f, 0.f, 0.f};
+                colors[ImGuiCol_PopupBg] = {0.12f, 0.14f, 0.18f, 1.f};
+                colors[ImGuiCol_Border] = {0.20f, 0.24f, 0.30f, 0.8f};
+                colors[ImGuiCol_BorderShadow] = {0.f, 0.f, 0.f, 0.f};
+                colors[ImGuiCol_FrameBg] = {0.15f, 0.18f, 0.23f, 1.f};
+                colors[ImGuiCol_FrameBgHovered] = {0.19f, 0.25f, 0.33f, 1.f};
+                colors[ImGuiCol_FrameBgActive] = {0.20f, 0.31f, 0.43f, 1.f};
+                colors[ImGuiCol_TitleBg] = {0.085f, 0.10f, 0.13f, 1.f};
+                colors[ImGuiCol_TitleBgActive] = {0.13f, 0.18f, 0.24f, 1.f};
+                colors[ImGuiCol_TitleBgCollapsed] = colors[ImGuiCol_TitleBg];
+                colors[ImGuiCol_MenuBarBg] = {0.085f, 0.10f, 0.13f, 1.f};
+                colors[ImGuiCol_Button] = {0.17f, 0.21f, 0.27f, 1.f};
+                colors[ImGuiCol_ButtonHovered] = {0.20f, 0.32f, 0.45f, 1.f};
+                colors[ImGuiCol_ButtonActive] = {0.22f, 0.42f, 0.62f, 1.f};
+                colors[ImGuiCol_Header] = {0.15f, 0.19f, 0.25f, 1.f};
+                colors[ImGuiCol_HeaderHovered] = {0.19f, 0.31f, 0.44f, 1.f};
+                colors[ImGuiCol_HeaderActive] = {0.20f, 0.38f, 0.56f, 1.f};
+                colors[ImGuiCol_Tab] = {0.12f, 0.14f, 0.18f, 1.f};
+                colors[ImGuiCol_TabHovered] = {0.18f, 0.33f, 0.49f, 1.f};
+                colors[ImGuiCol_TabActive] = {0.17f, 0.28f, 0.40f, 1.f};
+                colors[ImGuiCol_TabUnfocused] = {0.095f, 0.11f, 0.14f, 1.f};
+                colors[ImGuiCol_TabUnfocusedActive] = {0.15f, 0.22f, 0.31f, 1.f};
+                colors[ImGuiCol_CheckMark] = accent;
+                colors[ImGuiCol_SliderGrab] = accent;
+                colors[ImGuiCol_SliderGrabActive] = {0.42f, 0.74f, 1.f, 1.f};
+                colors[ImGuiCol_Separator] = {0.20f, 0.24f, 0.30f, 1.f};
+                colors[ImGuiCol_SeparatorHovered] = accent;
+                colors[ImGuiCol_SeparatorActive] = accent;
+                colors[ImGuiCol_ResizeGrip] = {0.28f, 0.62f, 0.95f, 0.15f};
+                colors[ImGuiCol_ResizeGripHovered] = {0.28f, 0.62f, 0.95f, 0.5f};
+                colors[ImGuiCol_ResizeGripActive] = accent;
+                colors[ImGuiCol_ScrollbarBg] = {0.08f, 0.095f, 0.12f, 1.f};
+                colors[ImGuiCol_ScrollbarGrab] = {0.24f, 0.28f, 0.35f, 1.f};
+                colors[ImGuiCol_ScrollbarGrabHovered] = {0.32f, 0.38f, 0.46f, 1.f};
+                colors[ImGuiCol_ScrollbarGrabActive] = {0.38f, 0.46f, 0.56f, 1.f};
+                colors[ImGuiCol_TextSelectedBg] = {0.28f, 0.62f, 0.95f, 0.28f};
+                colors[ImGuiCol_DragDropTarget] = accent;
+                colors[ImGuiCol_NavHighlight] = accent;
+                colors[ImGuiCol_DockingPreview] = {0.28f, 0.62f, 0.95f, 0.35f};
+                colors[ImGuiCol_DockingEmptyBg] = colors[ImGuiCol_WindowBg];
+                colors[ImGuiCol_TableHeaderBg] = {0.14f, 0.17f, 0.22f, 1.f};
+                colors[ImGuiCol_TableBorderStrong] = colors[ImGuiCol_Separator];
+                colors[ImGuiCol_TableBorderLight] = {0.18f, 0.21f, 0.26f, 1.f};
+                colors[ImGuiCol_PlotHistogram] = accent;
+                colors[ImGuiCol_PlotHistogramHovered] = colors[ImGuiCol_SliderGrabActive];
+
+                style -> WindowPadding = {10.f, 10.f};
+                style -> FramePadding = {6.f, 4.f};
+                style -> ItemSpacing = {8.f, 6.f};
+                style -> ItemInnerSpacing = {6.f, 4.f};
+                style -> CellPadding = {6.f, 4.f};
+                style -> IndentSpacing = 16.f;
+                style -> ScrollbarSize = 12.f;
+                style -> WindowRounding = 0.f;
+                style -> FrameRounding = 3.f;
+                style -> PopupRounding = 4.f;
+                style -> ScrollbarRounding = 6.f;
+                style -> GrabRounding = 3.f;
+                style -> TabRounding = 3.f;
+                style -> WindowBorderSize = 1.f;
+                style -> FrameBorderSize = 0.f;
+                style -> TabBorderSize = 0.f;
+                style -> DockingSeparatorSize = 3.f;
+                style -> WindowTitleAlign = {0.f, 0.5f};
+                style -> WindowMenuButtonPosition = ImGuiDir_Right;
+                break;
+            }
             case EditorStyle::GoldBlack: {
 
                 ImVec4* colors = style->Colors;

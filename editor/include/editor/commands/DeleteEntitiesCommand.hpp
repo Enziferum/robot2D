@@ -10,8 +10,7 @@ namespace editor {
     class DeleteEntitiesCommand: public ICommand {
     public:
         DeleteEntitiesCommand(UIInteractor::Ptr interactor,
-                              DeletedEntitiesRestoreInformation deletedEntitiesRestoreInformation,
-                              DeletedEntitiesRestoreUIInformation deletedEntitiesRestoreUIInformation);
+                              DeletedEntitiesRestoreInformation deletedEntitiesRestoreInformation);
         ~DeleteEntitiesCommand() = default;
 
         DECLARE_CLASS_ID(DeleteEntitiesCommand)
@@ -20,7 +19,6 @@ namespace editor {
     private:
         UIInteractor::Ptr m_interactor;
         DeletedEntitiesRestoreInformation m_deletedEntitiesRestoreInformation;
-        DeletedEntitiesRestoreUIInformation m_deletedEntitiesRestoreUIInformation;
     };
 
 } // namespace editor

@@ -216,7 +216,7 @@ namespace editor {
             if(entity.hasChildren()) {
                 std::vector<UUID> childIds;
 
-                for(auto& child: ts.getChildren()) {
+                for(auto& child: entity.getChildren()) {
                     if(child)
                         childIds.emplace_back(child.getUUID());
                 }
@@ -228,9 +228,9 @@ namespace editor {
                 }
             }
 
-            if(ts.isChild()) {
+            if(entity.isChild()) {
                 out << YAML::Key << "isChild" << YAML::Value << true;
-                out << YAML::Key << "ParentID" << YAML::Value << ts.getParent().getComponent<IDComponent>().ID;
+                out << YAML::Key << "ParentID" << YAML::Value << entity.getParent().getUUID();
             }
 
             out << YAML::EndMap;

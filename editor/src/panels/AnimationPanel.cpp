@@ -150,10 +150,13 @@ namespace editor {
     void AnimationPanel::render() {
         std::string name = ICON_FA_FILE_VIDEO + std::string{" Animation"} + "###AnimationPanel";
 
-        imgui_Window(name.c_str()) {
+        robot2D::WindowOptions options;
+        options.flagsMask = 0;
+        options.name = name;
+        renderWindow(options, [this]() {
             renderSequencer();
             processDragDrop();
-        }
+        });
 
         if(m_needShowSlicePreview)
             renderSlicePreview();

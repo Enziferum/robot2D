@@ -30,7 +30,6 @@ source distribution.
 
 #include <editor/SceneEntity.hpp>
 
-#include <editor/panels/ITreeItem.hpp>
 #include "Uuid.hpp"
 #include "DeletedEntitesRestoreInformation.hpp"
 #include "CommandStack.hpp"
@@ -39,17 +38,18 @@ source distribution.
 
 namespace editor {
     class IScriptInteractorFrom;
+    class SelectionService;
     class UIInteractor {
     public:
         using Ptr = UIInteractor*;
 
         virtual ~UIInteractor() = 0;
 
-        virtual std::vector<SceneEntity>& getSelectedEntities()  = 0;
+        virtual std::vector<SceneEntity> getSelectedEntities() = 0;
+        virtual SelectionService& getSelectionService() = 0;
         virtual SceneEntity findEntity(const robot2D::vec2i& mousePos) = 0;
 
-        virtual void restoreDeletedEntities(DeletedEntitiesRestoreInformation& restoreInformation,
-                                            DeletedEntitiesRestoreUIInformation& restoreUiInformation) = 0;
+        virtual void restoreDeletedEntities(DeletedEntitiesRestoreInformation& restoreInformation) = 0;
 
 
         virtual std::string getAssociatedProjectPath() const = 0;
@@ -59,12 +59,10 @@ namespace editor {
         virtual SceneEntity createEmptyEntity() = 0;
         virtual SceneEntity duplicateEmptyEntity(SceneEntity entity) = 0;
         virtual bool setBefore(SceneEntity sourceEntity, SceneEntity target) = 0;
-        virtual void removeEntityChild(SceneEntity entity) = 0;
+        virtual bool reparentEntity(SceneEntity entity, SceneEntity parent = {}) = 0;
         virtual bool isRunning() const = 0;
         virtual SceneEntity getEntity(UUID uuid) = 0;
         virtual SceneEntity getEntity(const std::string& name) = 0;
-
-        virtual void uiSelectedEntities(std::set<ITreeItem::Ptr>& uiItems, bool isAll) = 0;
 
         virtual void exportProject(const ExportOptions& exportOptions) = 0;
         virtual const std::vector<class_id>& getCommandStack() const = 0;

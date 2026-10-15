@@ -19,11 +19,13 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 
+#include <type_traits>
 #include <robot2D/imgui/Api.hpp>
 #include <imgui/imgui.h>
 #include <imgui/imgui_internal.h>
 
 #include <editor/panels/InspectorPanel.hpp>
+#include <editor/SelectionService.hpp>
 #include <editor/scripting/ScriptingEngine.hpp>
 #include <editor/panels/ScenePanelUI.hpp>
 #include <editor/FileApi.hpp>
@@ -46,181 +48,55 @@ namespace editor {
 
 
 
-    void DrawLayerRegistryEditor(phys2d::LayerRegistry& LR)
-    {
-        ImGui::TextDisabled("Total Layers: %d (Box2D supports up to 16)", phys2d::kMaxLayers);
-
-        // --- Раздел: создание слоёв в пустых ячейках ---
-        if (ImGui::CollapsingHeader("Layer (registry)")) {
-            ImGui::BeginDisabled(); // имена из LayerRegistry сейчас только читаем (rename не реализован в примере)
-            if (ImGui::BeginTable("layers_list", 3, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg))
-            {
-                ImGui::TableSetupColumn("#", ImGuiTableColumnFlags_WidthFixed, 30.f);
-                ImGui::TableSetupColumn("Name");
-                ImGui::TableSetupColumn("Bit");
-                ImGui::TableHeadersRow();
-
-                for (int i = 0; i < phys2d::kMaxLayers; ++i) {
-                    ImGui::TableNextRow();
-                    ImGui::TableSetColumnIndex(0);
-                    ImGui::Text("%d", i);
-                    ImGui::TableSetColumnIndex(1);
-                    const auto& name = LR.names()[i];
-                    ImGui::TextUnformatted(name.empty() ? "<empty>" : name.c_str());
-                    ImGui::TableSetColumnIndex(2);
-                    if (!name.empty()) ImGui::Text("0x%04X", LR.bit(i));
-                    else ImGui::TextDisabled("-");
-                }
-                ImGui::EndTable();
-            }
-            ImGui::EndDisabled();
-
-            // Быстрое создание слоя в пустой ячейке
-            static int newIndex = 0;
-            static char newName[64] = "";
-            ImGui::Separator();
-            ImGui::Text("CreateNew Layer:");
-            ImGui::SetNextItemWidth(80.f);
-            ImGui::InputInt("Index", &newIndex);
-            if (newIndex < 0)
-                newIndex = 0;
-            if (newIndex >= phys2d::kMaxLayers)
-                newIndex = phys2d::kMaxLayers - 1;
-            ImGui::SameLine();
-            ImGui::SetNextItemWidth(200.f);
-            ImGui::InputText("Name", newName, IM_ARRAYSIZE(newName));
-            bool canDefine = LR.names()[newIndex].empty() && std::string(newName).size() > 0;
-
-            if (!LR.names()[newIndex].empty())
-                ImGui::TextDisabled("Index %d already belongs to layer '%s'", newIndex, LR.names()[newIndex].c_str());
-
-            if (ImGui::Button("Define Layer") && canDefine) {
-                try {
-                    LR.defineLayer(newIndex, std::string(newName));
-                    newName[0] = '\0';
-                } catch (const std::exception& e) {
-                    ImGui::OpenPopup("DefineError");
-                    (void)e;
-                }
-            }
-            if (ImGui::BeginPopup("DefineError")) {
-                ImGui::TextWrapped("Can't create layer. Check is unique name and index.");
-                if (ImGui::Button("OK")) ImGui::CloseCurrentPopup();
-                ImGui::EndPopup();
-            }
-        }
-
-        // --- Раздел: Глобальная матрица столкновений ---
-        if (ImGui::CollapsingHeader("Global collision matrix(default)", ImGuiTreeNodeFlags_DefaultOpen))
-        {
-            // Соберём актуальные имена
-            std::vector<int> idx;
-            std::vector<const char*> names;
-            for (int i = 0; i < phys2d::kMaxLayers; ++i) {
-                const auto& n = LR.names()[i];
-                if (!n.empty()) {
-                    idx.push_back(i); names.push_back(n.c_str());
-                }
-            }
-
-            if (names.empty()) {
-                ImGui::TextDisabled("No specific layers.");
-                return;
-            }
-
-            ImGui::TextDisabled("Checkbox A<->B symmetric. This settings forms default mask for new colliders.");
-            ImGui::PushStyleVar(ImGuiStyleVar_CellPadding, ImVec2(6,4));
-            if (ImGui::BeginTable("coll_matrix", (int)names.size() + 1,
-                                  ImGuiTableFlags_Borders | ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_RowBg | ImGuiTableFlags_Resizable | ImGuiTableFlags_ScrollY,
-                                  ImVec2(0, ImGui::GetTextLineHeightWithSpacing() * (names.size() + 3))))
-            {
-                // Заголовок
-                ImGui::TableSetupColumn("Layer");
-                for (size_t c = 0; c < names.size(); ++c)
-                    ImGui::TableSetupColumn(names[c]);
-                ImGui::TableHeadersRow();
-
-                for (size_t r = 0; r < names.size(); ++r) {
-                    ImGui::TableNextRow();
-                    ImGui::TableSetColumnIndex(0);
-                    ImGui::TextUnformatted(names[r]);
-
-                    for (size_t c = 0; c < names.size(); ++c) {
-                        ImGui::TableSetColumnIndex((int)c + 1);
-
-                        // диагональ — серым
-                        if (r == c) {
-                            ImGui::BeginDisabled();
-                            bool value = false;
-                            ImGui::Checkbox("##self", &value);
-                            ImGui::EndDisabled();
-                            continue;
-                        }
-
-                        bool v = LR.defaultCollides(LR.names()[idx[r]], LR.names()[idx[c]]);
-                        ImGui::PushID((int)(r * names.size() + c));
-                        if (ImGui::Checkbox("##m", &v)) {
-                            // симметрично
-                            LR.setDefaultCollides(LR.names()[idx[r]], LR.names()[idx[c]], v);
-                        }
-                        ImGui::PopID();
-                    }
-                }
-                ImGui::EndTable();
-            }
-            ImGui::PopStyleVar();
-        }
-    }
-
-
     template<typename T, typename UIFunction>
     static void drawComponent(const std::string& name, SceneEntity& entity, UIFunction uiFunction)
     {
         if(!entity || !entity.hasComponent<T>())
             return;
-
-        static const ImGuiTreeNodeFlags treeNodeFlags = ImGuiTreeNodeFlags_DefaultOpen
-                                                 | ImGuiTreeNodeFlags_Framed
-                                                 | ImGuiTreeNodeFlags_SpanAvailWidth
-                                                 | ImGuiTreeNodeFlags_AllowItemOverlap
-                                                 | ImGuiTreeNodeFlags_FramePadding;
-
-        auto& component = entity.getComponent<T>();
-        ImVec2 contentRegionAvailable = ImGui::GetContentRegionAvail();
-        bool removeComponent = false;
-        bool node_open = false;
-        float lineHeight = 0.f;
-
-        {
-            robot2D::ScopedStyleVarVec2 styleVar{ ImGuiStyleVar_FramePadding, ImVec2{ 4, 4 }};
-            lineHeight = GImGui->Font->FontSize + GImGui->Style.FramePadding.y * 2.0f;
-            ImGui::Separator();
-
-            auto hashCode = typeid(T).hash_code();
-            node_open = ImGui::TreeNodeEx(reinterpret_cast<void*>(hashCode), treeNodeFlags, "%s", name.c_str());
-            ImGui::SameLine(contentRegionAvailable.x - lineHeight * 0.5f);
-        }
-
-        imgui_Button("-", ImVec2{ lineHeight, lineHeight }) {
+        ImGui::PushID(typeid(T).name());
+        auto position = ImGui::GetCursorScreenPos();
+        auto width = ImGui::GetContentRegionAvail().x;
+        auto buttonSize = ImGui::GetFrameHeight();
+        auto flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed
+                     | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_AllowItemOverlap
+                     | ImGuiTreeNodeFlags_FramePadding | ImGuiTreeNodeFlags_NoTreePushOnOpen;
+        bool open = ImGui::TreeNodeEx("##Component", flags, "%s", name.c_str());
+        ImGui::SameLine();
+        ImGui::SetCursorScreenPos({position.x + ImMax(0.f, width - buttonSize), position.y});
+        if(ImGui::Button("...", {buttonSize, buttonSize}))
             ImGui::OpenPopup("ComponentSettings");
+        if(ImGui::IsItemHovered())
+            ImGui::SetTooltip("Component settings");
+        bool remove = false;
+        if(ImGui::BeginPopup("ComponentSettings")) {
+            remove = ImGui::MenuItem("Remove component", nullptr, false,
+                                     !std::is_same_v<T, TransformComponent>);
+            if constexpr(std::is_same_v<T, TransformComponent>)
+                ImGui::TextDisabled("Required component");
+            ImGui::EndPopup();
         }
-
-        imgui_Popup("ComponentSettings") {
-            if (ImGui::MenuItem("Remove component"))
-                removeComponent = true;
+        if(open) {
+            ImGui::Indent(8.f);
+            ImGui::Spacing();
+            ImGui::PushItemWidth(ImMax(40.f, ImGui::GetContentRegionAvail().x - 100.f));
+            uiFunction(entity, entity.getComponent<T>());
+            ImGui::PopItemWidth();
+            ImGui::Unindent(8.f);
         }
-
-        if (node_open)
-        {
-            uiFunction(entity, component);
-            ImGui::TreePop();
-        }
-
-        if (removeComponent)
+        ImGui::Spacing();
+        ImGui::PopID();
+        if(remove)
             entity.removeComponent<T>();
     }
 
-
+    template<typename T>
+    static bool addComponentMenuItem(const char* name, SceneEntity& entity) {
+        if(ImGui::MenuItem(name, nullptr, false, !entity.hasComponent<T>())) {
+            entity.addComponent<T>();
+            return true;
+        }
+        return false;
+    }
     void drawScriptFieldInfo(const std::string& text, std::string resultText = "None") {
         ImGui::AlignTextToFramePadding();
         imgui_Text(text.c_str());
@@ -258,6 +134,8 @@ namespace editor {
 
     void InspectorPanel::setInteractor(UIInteractor::Ptr interactor) {
         m_interactor = interactor;
+        m_selectedEntity = {};
+        m_inspectType = InspectType::EditorEntity;
     }
 
     void InspectorPanel::setSelected(SceneEntity entity) {
@@ -285,11 +163,19 @@ namespace editor {
         robot2D::WindowOptions propertiesWindowOptions{};
         propertiesWindowOptions.name = ICON_FA_INFO_CIRCLE + std::string{" Inspector"} + "###InspectorPanel";
 
-        robot2D::createWindow(propertiesWindowOptions, [this]{
+        renderWindow(propertiesWindowOptions, [this]{
+            if(m_interactor && m_inspectType == InspectType::EditorEntity) {
+                auto active = m_interactor -> getSelectionService().lastActive();
+                m_selectedEntity = active ? m_interactor -> getEntity(*active) : SceneEntity{};
+            }
             if(m_selectedEntity && m_inspectType == InspectType::EditorEntity)
                 drawComponentsBase(m_selectedEntity);
             else if(m_inspectType != InspectType::EditorEntity)
                 drawAssetBase();
+            else {
+                ImGui::TextDisabled("No object selected");
+                ImGui::TextWrapped("Select an object in Scene or Viewport.");
+            }
         });
     }
 
@@ -310,120 +196,68 @@ namespace editor {
     }
 
     void InspectorPanel::drawComponentsBase(SceneEntity entity) {
-        DrawLayerRegistryEditor(phys2d::LayerRegistry::I());
-
+        auto entityID = std::to_string(static_cast<std::uint64_t>(entity.getUUID()));
+        ImGui::PushID(entityID.c_str());
         if(m_inspectType == InspectType::EditorEntity) {
-            if(!entity.hasComponent<TagComponent>())
+            if(!entity.hasComponent<TagComponent>()) {
+                ImGui::PopID();
                 return;
-
+            }
+            ImGui::TextDisabled("Name");
             auto tag = entity.getComponent<TagComponent>().getTag();
-            static ImGuiInputTextFlags inputFlags = ImGuiInputTextFlags_EnterReturnsTrue
-                                                    | ImGuiInputTextFlags_AutoSelectAll;
-
-            imgui_InputText("##Tag", &tag, inputFlags) {
+            ImGui::SetNextItemWidth(-1.f);
+            auto flags = ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll;
+            if(robot2D::InputText("##Tag", &tag, flags)) {
                 if(tag.empty())
                     tag = "Untitled Entity";
                 entity.getComponent<TagComponent>().setTag(tag);
             }
-
-            ImGui::Text("UUID: %llu", entity.getComponent<IDComponent>().ID);
         }
         else {
-            if(!entity.hasComponent<PrefabComponent>())
+            if(!entity.hasComponent<PrefabComponent>()) {
+                ImGui::PopID();
                 return;
-            ImGui::Text("Prefab UUID: %llu", entity.getComponent<PrefabComponent>().prefabUUID);
+            }
+            ImGui::TextUnformatted("Prefab");
         }
-
-        ImGui::SameLine();
-        ImGui::PushItemWidth(-1);
-
-        imgui_Button("Add Component")
-            ImGui::OpenPopup("AddComponent");
-
-        imgui_Popup("AddComponent") {
-            imgui_MenuItem("Camera") {
-                if (!m_selectedEntity.hasComponent<CameraComponent>())
-                    m_selectedEntity.addComponent<CameraComponent>();
-                else
-                    RB_EDITOR_WARN("This entity already has the Camera Component!");
-                ImGui::CloseCurrentPopup();
-            }
-            imgui_MenuItem("UtilRender") {
-                if(!m_selectedEntity.hasComponent<DrawableComponent>())
-                    m_selectedEntity.addComponent<DrawableComponent>().isUtil = true;
-                else
-                    RB_EDITOR_WARN("This entity already has the Sprite Renderer Component!");
-                ImGui::CloseCurrentPopup();
-            }
-
-            imgui_MenuItem("SpriteRender") {
-                if (!m_selectedEntity.hasComponent<DrawableComponent>())
-                    m_selectedEntity.addComponent<DrawableComponent>();
-                else {
-                    RB_EDITOR_WARN("This entity already has the Sprite Renderer Component!");
-                }
-
-                ImGui::CloseCurrentPopup();
-            }
-
-            imgui_MenuItem("RigidBody2D") {
-                if (!m_selectedEntity.hasComponent<Physics2DComponent>())
-                    m_selectedEntity.addComponent<Physics2DComponent>();
-                else
-                    RB_EDITOR_WARN("This entity already has the Physics2D Component!");
-                ImGui::CloseCurrentPopup();
-            }
-
-            imgui_MenuItem("Collider2D") {
-                if (!m_selectedEntity.hasComponent<Collider2DComponent>())
-                    m_selectedEntity.addComponent<Collider2DComponent>();
-                else
-                    RB_EDITOR_WARN("This entity already has the Collider2D Component!");
-                ImGui::CloseCurrentPopup();
-            }
-
-            imgui_MenuItem("Scripting") {
-                if (!m_selectedEntity.hasComponent<ScriptComponent>())
-                    m_selectedEntity.addComponent<ScriptComponent>();
-                else
-                    RB_EDITOR_WARN("This entity already has the Scripting Component!");
-                ImGui::CloseCurrentPopup();
-            }
-
-            imgui_MenuItem("Text") {
-                if (!m_selectedEntity.hasComponent<TextComponent>()) {
-                    m_selectedEntity.addComponent<TextComponent>();
-                    m_selectedEntity.getComponent<TransformComponent>().setSize({1.f, 1.f});
-                }
-                else
-                    RB_EDITOR_WARN("This entity already has the Text Component!");
-                ImGui::CloseCurrentPopup();
-            }
-
-            imgui_MenuItem("Animation") {
-                if (!m_selectedEntity.hasComponent<AnimationComponent>()) {
-                    m_selectedEntity.addComponent<AnimationComponent>();
-                }
-                else
-                    RB_EDITOR_WARN("This entity already has the Animation Component!");
-                ImGui::CloseCurrentPopup();
-            }
+        if(ImGui::CollapsingHeader("Details")) {
+            auto uuid = m_inspectType == InspectType::EditorEntity ? entity.getUUID()
+                        : entity.getComponent<PrefabComponent>().prefabUUID;
+            auto value = std::to_string(static_cast<std::uint64_t>(uuid));
+            ImGui::TextDisabled("UUID");
+            ImGui::TextWrapped("%s", value.c_str());
+            if(ImGui::SmallButton("Copy UUID"))
+                ImGui::SetClipboardText(value.c_str());
         }
-
-        ImGui::PopItemWidth();
-
+        ImGui::Spacing();
         drawComponents(entity);
         drawUIComponents(entity);
+        ImGui::Spacing();
+        if(ImGui::Button("Add Component", {ImGui::GetContentRegionAvail().x, 0.f}))
+            ImGui::OpenPopup("AddComponent");
+        if(ImGui::BeginPopup("AddComponent")) {
+            addComponentMenuItem<CameraComponent>("Camera", entity);
+            if(addComponentMenuItem<DrawableComponent>("Utility renderer", entity))
+                entity.getComponent<DrawableComponent>().isUtil = true;
+            addComponentMenuItem<DrawableComponent>("Sprite renderer", entity);
+            addComponentMenuItem<Physics2DComponent>("Rigid body 2D", entity);
+            addComponentMenuItem<Collider2DComponent>("Collider 2D", entity);
+            addComponentMenuItem<ScriptComponent>("Script", entity);
+            if(addComponentMenuItem<TextComponent>("Text", entity))
+                entity.getComponent<TransformComponent>().setSize({1.f, 1.f});
+            addComponentMenuItem<AnimationComponent>("Animation", entity);
+            ImGui::EndPopup();
+        }
+        ImGui::PopID();
     }
-
     void InspectorPanel::drawComponents(SceneEntity entity) {
         drawComponent<TransformComponent>( ICON_FA_WALKING + std::string{" Transform"}, entity, BIND_CLASS_FN(drawTransformComponent));
         drawComponent<CameraComponent>( ICON_FA_CAMERA + std::string{" Camera"}, entity, BIND_CLASS_FN(drawCameraComponent));
-        drawComponent<DrawableComponent>(ICON_FA_PAINT_BRUSH + std::string{"  Drawable"}, entity, BIND_CLASS_FN(drawDrawableComponent));
+        drawComponent<DrawableComponent>(ICON_FA_PAINT_BRUSH + std::string{" Drawable"}, entity, BIND_CLASS_FN(drawDrawableComponent));
         drawComponent<ScriptComponent>(ICON_FA_FILE_CODE + std::string{" Script"}, entity, BIND_CLASS_FN(drawScriptComponent));
-        drawComponent<Physics2DComponent>(ICON_FA_HAMMER + std::string{"  Physics2D"}, entity, BIND_CLASS_FN(drawPhysics2DComponent));
+        drawComponent<Physics2DComponent>(ICON_FA_HAMMER + std::string{" Physics2D"}, entity, BIND_CLASS_FN(drawPhysics2DComponent));
         drawComponent<Collider2DComponent>(ICON_FA_JEDI + std::string{" Collider2D"}, entity, BIND_CLASS_FN(drawCollider2DComponent));
-        drawComponent<TextComponent>(ICON_FA_TEXT_HEIGHT + std::string{"  Text"}, entity, BIND_CLASS_FN(drawTextComponent));
+        drawComponent<TextComponent>(ICON_FA_TEXT_HEIGHT + std::string{" Text"}, entity, BIND_CLASS_FN(drawTextComponent));
         drawComponent<AnimationComponent>(ICON_FA_CAMERA + std::string{" Animation"}, entity, BIND_CLASS_FN(drawAnimationComponent));
     }
 

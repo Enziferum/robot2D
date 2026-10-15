@@ -21,6 +21,7 @@ source distribution.
 
 #include <algorithm>
 #include <editor/Components.hpp>
+#include <editor/Scene.hpp>
 
 
 
@@ -174,64 +175,10 @@ namespace editor {
 
 
     void TransformComponent::setPosition(const robot2D::vec2f& pos) {
-        for(auto child: m_children) {
-            if(!child)
-                continue;
-            auto& transform = child.getComponent<TransformComponent>();
-            robot2D::vec2f offset = m_pos - child.getComponent<TransformComponent>().getPosition();
-            transform.setPosition(pos - offset);
-        }
+        if(m_scene)
+            m_scene -> moveChildren(m_entityID, pos - m_pos, m_context, m_contextVersion);
         Transformable::setPosition(pos);
         m_hasModification = true;
-    }
-
-    bool TransformComponent::hasChildren() const {
-        return !m_children.empty();
-    }
-
-    void TransformComponent::addChild(SceneEntity parent, SceneEntity entity) {
-        auto found = std::find_if(m_children.begin(), m_children.end(),
-                                  [&entity](const SceneEntity& ent) {
-            return entity == ent;
-        });
-
-        if(found == m_children.end()) {
-            entity.getComponent<TransformComponent>().m_childID = entity.getWrappedEntity().getIndex();
-            entity.getComponent<TransformComponent>().m_parent = parent;
-            m_children.emplace_back(entity);
-        }
-    }
-
-    void TransformComponent::removeSelf(bool removeFromScene) {
-        if(!isChild())
-            return;
-
-        if(m_parent)
-            m_parent.getComponent<TransformComponent>().removeChild(m_childID, removeFromScene);
-    }
-
-    void TransformComponent::removeChild(SceneEntity entity, bool removeFromScene ) {
-        auto found = std::remove_if(m_children.begin(), m_children.end(),
-                                    [&entity](const SceneEntity& ent) {
-            return entity == ent;
-        });
-
-        if(found == m_children.end())
-            return;
-
-        if(removeFromScene)
-            found -> getWrappedEntity().removeSelf();
-        m_children.erase(found, m_children.end());
-    }
-
-    void TransformComponent::removeChild(int childID, bool removeFromScene) {
-        auto found = std::find_if(m_children.begin(), m_children.end(),
-                                  [&childID](SceneEntity entity) {
-            return entity.getWrappedEntity().getIndex() == childID;
-        });
-        if(found == m_children.end())
-            return;
-        removeChild(*found, removeFromScene);
     }
 
     void TransformComponent::setScale(const robot2D::vec2f& factor) {

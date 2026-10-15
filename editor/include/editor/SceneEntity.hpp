@@ -23,12 +23,19 @@ source distribution.
 
 #include <vector>
 #include <list>
+#include <optional>
+#include <cassert>
 #include <robot2D/Ecs/Entity.hpp>
 #include <robot2D/Graphics/Rect.hpp>
 #include "Uuid.hpp"
 
 namespace editor {
-    class SceneGraph;
+    class Scene;
+    enum class SceneContext {
+        Editor,
+        Runtime
+    };
+    // A lightweight ECS descriptor. Its owning scene must outlive all copies.
     class SceneEntity {
     public:
         SceneEntity() = default;
@@ -58,64 +65,64 @@ namespace editor {
 
         friend bool operator==(const SceneEntity& left, const SceneEntity& right);
         friend bool operator!=(const SceneEntity& left, const SceneEntity& right);
-        explicit operator bool() const noexcept {
-            if(!m_entity)
-                return false;
-            return !m_entity.destroyed();
-        }
+        explicit operator bool() const noexcept;
 
-        void addChild(SceneEntity& sceneEntity);
+        bool addChild(SceneEntity sceneEntity);
         [[nodiscard]]
         UUID getUUID() const;
 
         bool hasChildren() const;
 
         robot2D::ecs::Entity getWrappedEntity() const { return m_entity; }
-        const std::list<SceneEntity>& getChildren() const;
-        std::list<SceneEntity>& getChildren();
+        std::vector<SceneEntity> getChildren() const;
 
 
-        const SceneEntity& getParent() const { return *m_parent; }
-        SceneEntity* getParent() { return m_parent; }
+        SceneEntity getParent() const;
 
         /// \brief usefull for QuadTree insertion
         robot2D::FloatRect calculateRect() const;
         robot2D::FloatRect getBoundingBox() const;
 
-        bool isChild() const { return m_parent != nullptr; }
+        bool isChild() const;
 
         const std::string& getName() const;
     private:
-        friend class SceneGraph;
+        friend class Scene;
 
         robot2D::ecs::Entity m_entity;
-        SceneEntity* m_parent { nullptr };
-        SceneGraph* m_graph { nullptr };
+        Scene* m_scene { nullptr };
+        SceneContext m_context = SceneContext::Editor;
+        std::uint64_t m_contextVersion { 0 };
+        std::optional<UUID> m_uuid;
     };
 
     template<typename T>
     inline bool SceneEntity::hasComponent() const {
-        return m_entity.hasComponent<T>();
+        return static_cast<bool>(*this) && m_entity.hasComponent<T>();
     }
 
     template<typename T>
     T& SceneEntity::getComponent() {
+        assert(static_cast<bool>(*this) && "Invalid SceneEntity");
         return m_entity.getComponent<T>();
     }
 
     template<typename T>
     const T& SceneEntity::getComponent() const {
+        assert(static_cast<bool>(*this) && "Invalid SceneEntity");
         return m_entity.getComponent<T>();
     }
 
     template<typename T, typename ...Args>
     T& SceneEntity::addComponent(Args&& ... args) {
+        assert(static_cast<bool>(*this) && "Invalid SceneEntity");
         return m_entity.addComponent<T>(std::forward<Args>(args)...);
     }
 
 
     template<typename T>
     void SceneEntity::removeComponent() {
+        assert(static_cast<bool>(*this) && "Invalid SceneEntity");
         m_entity.removeComponent<T>();
     }
 

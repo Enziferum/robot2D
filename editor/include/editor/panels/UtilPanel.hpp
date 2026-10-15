@@ -8,7 +8,7 @@
 
 namespace editor {
     struct UtilPanelConfiguration {
-        const robot2D::Color defaultBackGround = robot2D::Color::fromGL(59.f/255.f, 60.f/255.f, 57.f/255.f, 1);
+        const robot2D::Color defaultBackGround = robot2D::Color::fromGL(0.055f, 0.065f, 0.08f, 1.f);
     };
 
     class UtilPanel: public IPanel {
@@ -24,11 +24,12 @@ namespace editor {
         const robot2D::Color& getColor() const;
 
         void setRenderStats(robot2D::RenderStats&& renderStats);
+        static float getHeight();
         void render() override;
     private:
         IEditorCamera::Ptr m_camera;
         robot2D::Color m_clearColor;
-        robot2D::RenderStats m_renderStats;
+        robot2D::RenderStats m_renderStats {};
         UtilPanelConfiguration m_configuration;
     };
 }

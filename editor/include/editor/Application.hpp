@@ -61,6 +61,8 @@ namespace editor {
         void guiUpdate(float dt)override;
         void render() override;
     private:
+        bool saveEditorLayout();
+
         ApplicationConfiguration m_appConfiguration;
         MessageDispatcher m_messageDispatcher;
         ApplicationLogic m_logic;
@@ -73,6 +75,7 @@ namespace editor {
 
         ProjectInspector m_projectInspector;
         EventBinder m_eventBinder;
+        bool m_editorLayoutActive { false };
     };
 }
 

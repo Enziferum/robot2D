@@ -46,11 +46,13 @@ namespace editor {
         windowOptions.name = ICON_FA_CAMERA + std::string{" Game"} + "###GamePanel";
         windowOptions.flagsMask = ImGuiWindowFlags_NoScrollbar;
 
-        robot2D::createWindow(windowOptions, BIND_CLASS_FN(windowFunction));
+        renderWindow(windowOptions, BIND_CLASS_FN(windowFunction));
     }
 
     void GameViewport::windowFunction() {
         auto ViewPanelSize = ImGui::GetContentRegionAvail();
+        if(!m_frameBuffer || ViewPanelSize.x < 1.f || ViewPanelSize.y < 1.f)
+            return;
         if(m_ViewportSize != robot2D::vec2u { static_cast<unsigned int>(ViewPanelSize.x), static_cast<unsigned int>(ViewPanelSize.y)}) {
             m_ViewportSize = { static_cast<unsigned int>(ViewPanelSize.x), static_cast<unsigned int>(ViewPanelSize.y)};
             m_frameBuffer -> Resize(m_ViewportSize);
