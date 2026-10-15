@@ -1,22 +1,22 @@
 /*********************************************************************
-(c) Alex Raag 2024
-https://github.com/Enziferum
-robot2D - Zlib license.
-This software is provided 'as-is', without any express or
-implied warranty. In no event will the authors be held
-liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute
-it freely, subject to the following restrictions:
-1. The origin of this software must not be misrepresented;
-you must not claim that you wrote the original software.
-If you use this software in a product, an acknowledgment
-in the product documentation would be appreciated but
-is not required.
-2. Altered source versions must be plainly marked as such,
-and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any
-source distribution.
+   (c) Alex Raag 2024
+   https://github.com/Enziferum
+   robot2D - Zlib license.
+   This software is provided 'as-is', without any express or
+   implied warranty. In no event will the authors be held
+   liable for any damages arising from the use of this software.
+   Permission is granted to anyone to use this software for any purpose,
+   including commercial applications, and to alter it and redistribute
+   it freely, subject to the following restrictions:
+   1. The origin of this software must not be misrepresented;
+   you must not claim that you wrote the original software.
+   If you use this software in a product, an acknowledgment
+   in the product documentation would be appreciated but
+   is not required.
+   2. Altered source versions must be plainly marked as such,
+   and must not be misrepresented as being the original software.
+   3. This notice may not be removed or altered from any
+   source distribution.
 *********************************************************************/
 
 #include <vector>
@@ -77,7 +77,7 @@ namespace editor {
         bool containedClick = overBtn && btnRect.Contains(io.MouseClickedPos[0]);
         bool clickedBtn = containedClick && io.MouseReleased[0];
         int btnColor = overBtn ? 0xAAEAFFAA : 0x77A3B2AA;
-        if (containedClick && io.MouseDownDuration[0] > 0)
+        if(containedClick && io.MouseDownDuration[0] > 0)
             btnRect.Expand(2.0f);
 
         draw_list -> AddRect(btnRect.Min, btnRect.Max, btnColor, 4);
@@ -124,7 +124,7 @@ namespace editor {
 
     void Cursor::draw(ImDrawList* drawList, robot2D::vec2f length, int drawFrame) {
         drawList -> AddLine(ImVec2(m_pos.x, length.x),
-                             ImVec2(m_pos.x, length.y), 0xA02A2AFF, cursorWidth);
+            ImVec2(m_pos.x, length.y), 0xA02A2AFF, cursorWidth);
         char tmps[512];
         ImFormatString(tmps, IM_ARRAYSIZE(tmps), "%d", drawFrame);
         /// y offset was 2
@@ -136,15 +136,15 @@ namespace editor {
 
 
     AnimationPanel::AnimationPanel(robot2D::MessageBus& messageBus,
-                                   MessageDispatcher& messageDispatcher, UIInteractor::Ptr interactor):
+        MessageDispatcher& messageDispatcher, UIInteractor::Ptr interactor) :
         IPanel(typeid(AnimationPanel)),
         m_messageBus{messageBus},
         m_messageDispatcher{messageDispatcher},
         m_interactor{interactor} {
 
         m_messageDispatcher.onMessage<PanelEntitySelectedMessage>(
-                MessageID::PanelEntityNeedSelect, BIND_CLASS_FN(onSelectEntity)
-        );
+            MessageID::PanelEntityNeedSelect, BIND_CLASS_FN(onSelectEntity)
+            );
     }
 
     void AnimationPanel::render() {
@@ -179,14 +179,14 @@ namespace editor {
             m_modFrameCount = 10;
             m_frameStep = 1;
 
-            while ((m_modFrameCount * m_framePixelWidth) < 150)
-            {
+            while((m_modFrameCount * m_framePixelWidth) < 150) {
                 m_modFrameCount *= 2;
                 m_frameStep *= 2;
-            };
+            }
+            ;
             m_halfModFrameCount = m_modFrameCount / 2;
 
-            for (int i = m_frameMin; i <= m_frameMax; i += m_frameStep)
+            for(int i = m_frameMin; i <= m_frameMax; i += m_frameStep)
                 drawLine(draw_list, i, itemHeight);
 
             drawLine(draw_list, m_frameMin, itemHeight);
@@ -194,7 +194,7 @@ namespace editor {
         }
 
         if(renderButton(textButtonImages[0], draw_list,
-                        { m_canvas_pos.x + startButtonOffsetX, m_canvas_pos.y + xButtonOffset}, &outButtonWidth)) {
+            { m_canvas_pos.x + startButtonOffsetX, m_canvas_pos.y + xButtonOffset}, &outButtonWidth)) {
             /// TODO(a.raag): move to first frame
         }
 
@@ -202,7 +202,7 @@ namespace editor {
             startButtonOffsetX += outButtonWidth + xButtonOffset;
 
         if(renderButton(textButtonImages[1], draw_list,
-                        {m_canvas_pos.x + startButtonOffsetX, m_canvas_pos.y + xButtonOffset}, &outButtonWidth)) {
+            {m_canvas_pos.x + startButtonOffsetX, m_canvas_pos.y + xButtonOffset}, &outButtonWidth)) {
             m_cursor.prevKeyFrame();
         }
 
@@ -211,12 +211,12 @@ namespace editor {
 
         std::string playButton = m_mode == PlayMode::Play ? textButtonImages[2] : textButtonImages[3];
         if(renderButton(playButton, draw_list,
-                        {m_canvas_pos.x + startButtonOffsetX, m_canvas_pos.y + xButtonOffset}, &outButtonWidth)) {
+            {m_canvas_pos.x + startButtonOffsetX, m_canvas_pos.y + xButtonOffset}, &outButtonWidth)) {
             if(m_interactor -> isRunning() || !m_currentAnimation || !m_animationEntity)
                 return;
 
             auto* msg =
-                    m_messageBus.postMessage<AnimationPlayMessage>(MessageID::AnimationPlay);
+                m_messageBus.postMessage<AnimationPlayMessage>(MessageID::AnimationPlay);
             msg -> entity = m_animationEntity;
             msg -> mode = static_cast<AnimationPlayMessage::Mode>(static_cast<int>(m_mode));
 
@@ -236,7 +236,7 @@ namespace editor {
             startButtonOffsetX += outButtonWidth + xButtonOffset;
 
         if(renderButton(textButtonImages[4], draw_list,
-                        {m_canvas_pos.x + startButtonOffsetX, m_canvas_pos.y + xButtonOffset}, &outButtonWidth)) {
+            {m_canvas_pos.x + startButtonOffsetX, m_canvas_pos.y + xButtonOffset}, &outButtonWidth)) {
             m_cursor.nextKeyFrame();
         }
 
@@ -244,7 +244,7 @@ namespace editor {
             startButtonOffsetX += outButtonWidth + xButtonOffset;
 
         if(renderButton(textButtonImages[5], draw_list,
-                        {m_canvas_pos.x + startButtonOffsetX, m_canvas_pos.y + xButtonOffset}, &outButtonWidth)) {
+            {m_canvas_pos.x + startButtonOffsetX, m_canvas_pos.y + xButtonOffset}, &outButtonWidth)) {
             /// TODO(a.raag): move cursor to last frame
         }
 
@@ -252,7 +252,7 @@ namespace editor {
             startButtonOffsetX += outButtonWidth + xButtonOffset;
 
         if(renderButton(textButtonImages[6], draw_list,
-                        { m_canvas_pos.x + startButtonOffsetX, m_canvas_pos.y + xButtonOffset}, &outButtonWidth)) {
+            { m_canvas_pos.x + startButtonOffsetX, m_canvas_pos.y + xButtonOffset}, &outButtonWidth)) {
             if(!m_currentAnimation)
                 return;
         }
@@ -263,19 +263,19 @@ namespace editor {
 
         imgui_ChildFrame(childFrameID2, { static_cast<float>(headerWidth), contentHeight } ) {
             imgui_Combo("##AnimationList", previewAnimation.c_str()) {
-                if (m_animationEntity &&
+                if(m_animationEntity &&
                     localManager -> hasAnimations(m_animationEntity.getComponent<IDComponent>().ID)) {
-                    for (auto& animation:
-                            localManager -> getAnimations(m_animationEntity.getComponent<IDComponent>().ID)) {
+                    for(auto& animation:
+                        localManager -> getAnimations(m_animationEntity.getComponent<IDComponent>().ID)) {
                         const bool is_selected = (m_currentAnimation->name == animation.name);
-                        if (ImGui::Selectable(animation.name.c_str(), is_selected)) {
+                        if(ImGui::Selectable(animation.name.c_str(), is_selected)) {
                             m_currentAnimation = &animation;
                             m_animationEntity.getComponent<AnimationComponent>().setAnimation(
-                                    m_currentAnimation);
+                                m_currentAnimation);
                             m_keyFrames.clear();
 
                             int frameOffset = 0;
-                            for (auto& frame: m_currentAnimation->frames) {
+                            for(auto& frame: m_currentAnimation->frames) {
                                 UIKeyFrame keyFrame;
                                 keyFrame.getCurrentFrame() = frameOffset;
                                 frameOffset += m_currentAnimation->framesPerSecond;
@@ -284,34 +284,34 @@ namespace editor {
                         }
 
                         // Set the initial focus when opening the combo (scrolling + keyboard navigation focus)
-                        if (is_selected)
+                        if(is_selected)
                             ImGui::SetItemDefaultFocus();
                     }
                 }
-                if (ImGui::Button("Add New")) {
+                if(ImGui::Button("Add New")) {
                     auto* dialogAdapter = FiledialogAdapter::get();
 
-                    if (!m_animationEntity) {
+                    if(!m_animationEntity) {
                         ///// TODO(a.raag): no-op
                     }
 
                     std::string path;
                     std::vector<std::string> savePatterns = {"*.anim"};
-                    if (!dialogAdapter -> saveFile(path, "Save Animation",
-                                                 "",
-                                                 savePatterns)) {
+                    if(!dialogAdapter -> saveFile(path, "Save Animation",
+                        "",
+                        savePatterns)) {
                         RB_EDITOR_ERROR("AnimationPanel: Cant' get Save Path");
                         return;
                     }
 
                     std::string name = getFileName(path);
-                    if (name.empty()) {
+                    if(name.empty()) {
                         RB_EDITOR_ERROR("AnimationPanel: Can't get filename on creation");
                         /// errror
                     }
 
-                    if (!m_animationEntity.hasComponent<AnimationComponent>()) {
-                        if (!m_animationEntity.hasComponent<AnimationComponent>())
+                    if(!m_animationEntity.hasComponent<AnimationComponent>()) {
+                        if(!m_animationEntity.hasComponent<AnimationComponent>())
                             m_animationEntity.addComponent<AnimationComponent>();
                         m_animationEntity.addComponent<AnimationComponent>();
                     }
@@ -319,8 +319,8 @@ namespace editor {
                     auto& animationComponent = m_animationEntity.getComponent<AnimationComponent>();
                     m_currentAnimation = nullptr;
                     m_currentAnimation = localManager -> addAnimation(
-                            m_animationEntity.getComponent<IDComponent>().ID);
-                    if (!m_currentAnimation) {
+                        m_animationEntity.getComponent<IDComponent>().ID);
+                    if(!m_currentAnimation) {
                         /// TODO(a.raag): Error
                     }
 
@@ -332,16 +332,14 @@ namespace editor {
             }
 
             imgui_Text("Frames:");
-            auto textBB = ImGui::CalcTextSize("Frames:");
             ImGui::SameLine();
-            // ImGui::SetNextItemWidth(headerWidth - textBB.x - 20);
         }
     }
 
     void AnimationPanel::processDragDrop() {
 
         robot2D::DragDropTarget dragDropTarget { contentItemID };
-        if(auto&& payloadBuffer = dragDropTarget.unpackPayload2Buffer()) {
+        if(auto && payloadBuffer = dragDropTarget.unpackPayload2Buffer()) {
             auto&& path = payloadBuffer.unpack<std::string>();
             std::filesystem::path fs_path = std::filesystem::path("assets") / path;
             auto realPath = combinePath(m_interactor -> getAssociatedProjectPath(), fs_path.string());
@@ -359,21 +357,20 @@ namespace editor {
     void AnimationPanel::drawLine(ImDrawList* draw_list, int i, int regionHeight) {
         bool baseIndex = ((i % m_modFrameCount) == 0) || (i == m_frameMax || i == m_frameMin);
         bool halfIndex = (i % m_halfModFrameCount) == 0;
-        int px = (int)m_canvas_pos.x + int(i * m_framePixelWidth) + headerWidth - int(m_firstFrameUsed * m_framePixelWidth);
+        int px = (int)m_canvas_pos.x + int(i * m_framePixelWidth) + headerWidth -
+            int(m_firstFrameUsed * m_framePixelWidth);
         int tiretStart = baseIndex ? 4 : (halfIndex ? 10 : 14);
         int tiretEnd = baseIndex ? regionHeight : itemHeight;
 
-        if (px <= (m_canvas_size.x + m_canvas_pos.x) && px >= (m_canvas_pos.x + headerWidth))
-        {
+        if(px <= (m_canvas_size.x + m_canvas_pos.x) && px >= (m_canvas_pos.x + headerWidth)) {
             draw_list -> AddLine(ImVec2((float)px, m_canvas_pos.y + (float)tiretStart),
-                                 ImVec2((float)px, m_canvas_pos.y + (float)tiretEnd - 1), 0xFF606060, 1);
+                ImVec2((float)px, m_canvas_pos.y + (float)tiretEnd - 1), 0xFF606060, 1);
 
             draw_list -> AddLine(ImVec2((float)px, m_canvas_pos.y + (float)itemHeight),
-                                 ImVec2((float)px, m_canvas_pos.y + (float)regionHeight - 1), 0x30606060, 1);
+                ImVec2((float)px, m_canvas_pos.y + (float)regionHeight - 1), 0x30606060, 1);
         }
 
-        if (baseIndex && px > (m_canvas_pos.x + headerWidth))
-        {
+        if(baseIndex && px > (m_canvas_pos.x + headerWidth)) {
             char tmps[512];
             ImFormatString(tmps, IM_ARRAYSIZE(tmps), "%d", i);
             draw_list -> AddText(ImVec2((float)px + 3.f, m_canvas_pos.y), 0xFFBBBBBB, tmps);
@@ -383,15 +380,14 @@ namespace editor {
 
     void AnimationPanel::drawLineContent(ImDrawList* draw_list, int i) {
         int px = static_cast<int>(m_canvas_pos.x) + static_cast<int>(static_cast<float>(i) * m_framePixelWidth) +
-                headerWidth - static_cast<int>(static_cast<float>(m_firstFrameUsed) * m_framePixelWidth);
+            headerWidth - static_cast<int>(static_cast<float>(m_firstFrameUsed) * m_framePixelWidth);
         int tiretStart = static_cast<int>(m_contentMin.y);
         int tiretEnd = static_cast<int>(m_contentMax.y);
 
-        if (static_cast<float>(px) <= (m_canvas_size.x + m_canvas_pos.x) &&
-                static_cast<float>(px) >= (m_canvas_pos.x + headerWidth))
-        {
+        if(static_cast<float>(px) <= (m_canvas_size.x + m_canvas_pos.x) &&
+            static_cast<float>(px) >= (m_canvas_pos.x + headerWidth)) {
             draw_list -> AddLine(ImVec2(static_cast<float>(px), static_cast<float>(tiretStart)),
-                                 ImVec2(static_cast<float>(px), static_cast<float>(tiretEnd)), 0x30606060, 1);
+                ImVec2(static_cast<float>(px), static_cast<float>(tiretEnd)), 0x30606060, 1);
         }
     }
 
@@ -413,8 +409,8 @@ namespace editor {
             m_framePixelWidthTarget = ImClamp(m_framePixelWidthTarget, 0.1f, 50.f);
             m_framePixelWidth = ImLerp(m_framePixelWidth, m_framePixelWidthTarget, 0.33f);
 
-            m_frameCount = m_frameMax -m_frameMin;
-            if (m_visibleFrameCount >= m_frameCount)
+            m_frameCount = m_frameMax - m_frameMin;
+            if(m_visibleFrameCount >= m_frameCount)
                 m_firstFrame = m_frameMin;
 
             m_visibleFrameCount = static_cast<int>(std::floor((m_canvas_size.x - headerWidth) / m_framePixelWidth));
@@ -437,7 +433,7 @@ namespace editor {
                 /// full background
                 draw_list -> AddRectFilled(m_canvas_pos, m_canvas_pos + m_canvas_size, 0xFF242424, 0);
                 draw_list -> AddRectFilled(m_canvas_pos, ImVec2(m_canvas_size.x + m_canvas_pos.x,
-                                                                m_canvas_pos.y + itemHeight), 0xFF3D3837, 0);
+                    m_canvas_pos.y + itemHeight), 0xFF3D3837, 0);
 
                 renderHeader(window, draw_list);
 
@@ -455,11 +451,11 @@ namespace editor {
 
 
                 draw_list -> PushClipRect(m_childFramePos + ImVec2(float(headerWidth), 0.f),
-                                          m_childFramePos + m_childFrameSize, true);
+                    m_childFramePos + m_childFrameSize, true);
 
                 /// Vertical frame lines in content area
                 {
-                    for (int i = m_frameMin; i <= m_frameMax; i += m_frameStep)
+                    for(int i = m_frameMin; i <= m_frameMax; i += m_frameStep)
                         drawLineContent(draw_list, i);
 
                     drawLineContent(draw_list, m_frameMin);
@@ -471,7 +467,7 @@ namespace editor {
                 for(auto& keyFrame: m_keyFrames) {
                     ImVec2 framePos;
                     framePos.x = m_contentMin.x + headerWidth +
-                                 static_cast<float>(keyFrame.getCurrentFrame()) * m_framePixelWidth;
+                        static_cast<float>(keyFrame.getCurrentFrame()) * m_framePixelWidth;
                     framePos.y = m_canvas_pos.y + keyFrameYOffset;
 
                     keyFrame.updatePosition(framePos);
@@ -492,15 +488,14 @@ namespace editor {
                         ImVec2 framePos;
                         m_currentKeyFrame -> getCurrentFrame() += diffFrame;
                         framePos.x = m_contentMin.x + headerWidth +
-                                static_cast<float>(static_cast<float>(m_currentKeyFrame -> getCurrentFrame()) *
-                                                                                                m_framePixelWidth - 8.f);
+                            static_cast<float>(static_cast<float>(m_currentKeyFrame -> getCurrentFrame()) *
+                            m_framePixelWidth - 8.f);
                         framePos.y = m_canvas_pos.y + keyFrameYOffset;
 
                         m_currentKeyFrame -> updatePosition(framePos);
                         movingPosX += static_cast<int>(static_cast<float>(diffFrame) * m_framePixelWidth);
                     }
-                    if (!io.MouseDown[ImGuiMouseButton_Left])
-                    {
+                    if(!io.MouseDown[ImGuiMouseButton_Left]) {
                         m_currentKeyFrame -> setMoving(false);
                         m_currentKeyFrame = nullptr;
                     }
@@ -511,32 +506,30 @@ namespace editor {
                 {
                     // current frame top
                     ImRect topRect(
-                            { m_canvas_pos.x + headerWidth, m_canvas_pos.y },
-                            { m_canvas_pos.x + m_canvas_size.x, m_canvas_pos.y + itemHeight}
-                    );
+                        { m_canvas_pos.x + headerWidth, m_canvas_pos.y },
+                        { m_canvas_pos.x + m_canvas_size.x, m_canvas_pos.y + itemHeight}
+                        );
 
-                    if (!m_MovingCurrentFrame && !m_MovingScrollBar &&
+                    if(!m_MovingCurrentFrame && !m_MovingScrollBar &&
                         m_currentFrame >= 0 && topRect.Contains(io.MousePos) && io.MouseDown[ImGuiMouseButton_Left])
                         m_MovingCurrentFrame = true;
 
-                    if (m_MovingCurrentFrame)
-                    {
-                        if (m_frameCount)
-                        {
-                            m_currentFrame = (int)((io.MousePos.x - topRect.Min.x) / m_framePixelWidth) + m_firstFrameUsed;
-                            if (m_currentFrame < m_frameMin)
+                    if(m_MovingCurrentFrame) {
+                        if(m_frameCount) {
+                            m_currentFrame = (int)((io.MousePos.x - topRect.Min.x) / m_framePixelWidth) +
+                                m_firstFrameUsed;
+                            if(m_currentFrame < m_frameMin)
                                 m_currentFrame = m_frameMin;
-                            if (m_currentFrame >= m_frameMax)
+                            if(m_currentFrame >= m_frameMax)
                                 m_currentFrame = m_frameMax;
                         }
-                        if (!io.MouseDown[ImGuiMouseButton_Left])
+                        if(!io.MouseDown[ImGuiMouseButton_Left])
                             m_MovingCurrentFrame = false;
                     }
 
-                    if (m_currentFrame >= m_firstFrame && m_currentFrame <= m_frameMax)
-                    {
+                    if(m_currentFrame >= m_firstFrame && m_currentFrame <= m_frameMax) {
                         float offset = m_contentMin.x + headerWidth +
-                                    (m_currentFrame - m_firstFrameUsed) * m_framePixelWidth - cursorWidth;
+                            (m_currentFrame - m_firstFrameUsed) * m_framePixelWidth - cursorWidth;
                         m_cursor.moveX(offset);
                         m_cursor.draw(draw_list, { m_canvas_pos.y, m_contentMax.y }, m_currentFrame);
                     }
@@ -565,7 +558,7 @@ namespace editor {
         // ratio = number of frames visible in control / number to total frames
 
         float startFrameOffset = ((float)(m_firstFrameUsed - m_frameMin) /
-                    (float)m_frameCount) * (m_canvas_size.x - headerWidth);
+            (float)m_frameCount) * (m_canvas_size.x - headerWidth);
         ImVec2 scrollBarA(scrollBarMin.x + headerWidth, scrollBarMin.y - 2);
         ImVec2 scrollBarB(scrollBarMin.x + m_canvas_size.x, scrollBarMax.y - 1);
         draw_list -> AddRectFilled(scrollBarA, scrollBarB, 0xFF222222, 0);
@@ -578,7 +571,8 @@ namespace editor {
 
         ImVec2 scrollBarC(scrollBarMin.x + headerWidth + startFrameOffset, scrollBarMin.y);
         ImVec2 scrollBarD(scrollBarMin.x + headerWidth + barWidthInPixels + startFrameOffset, scrollBarMax.y - 2);
-        draw_list -> AddRectFilled(scrollBarC, scrollBarD, (inScrollBar || m_MovingScrollBar) ? 0xFF606060 : 0xFF505050, 6);
+        draw_list -> AddRectFilled(scrollBarC, scrollBarD, (inScrollBar || m_MovingScrollBar) ? 0xFF606060 : 0xFF505050,
+            6);
 
         ImRect barHandleLeft(scrollBarC, ImVec2(scrollBarC.x + 14, scrollBarD.y));
         ImRect barHandleRight(ImVec2(scrollBarD.x - 14, scrollBarC.y), scrollBarD);
@@ -589,15 +583,15 @@ namespace editor {
         static bool sizingRBar = false;
         static bool sizingLBar = false;
 
-        draw_list -> AddRectFilled(barHandleLeft.Min, barHandleLeft.Max, (onLeft || sizingLBar) ? 0xFFAAAAAA : 0xFF666666, 6);
-        draw_list -> AddRectFilled(barHandleRight.Min, barHandleRight.Max, (onRight || sizingRBar) ? 0xFFAAAAAA : 0xFF666666, 6);
+        draw_list -> AddRectFilled(barHandleLeft.Min, barHandleLeft.Max,
+            (onLeft || sizingLBar) ? 0xFFAAAAAA : 0xFF666666, 6);
+        draw_list -> AddRectFilled(barHandleRight.Min, barHandleRight.Max,
+            (onRight || sizingRBar) ? 0xFFAAAAAA : 0xFF666666, 6);
 
         ImRect scrollBarThumb(scrollBarC, scrollBarD);
         static const float MinBarWidth = 44.f;
-        if (sizingRBar)
-        {
-            if (!io.MouseDown[0])
-            {
+        if(sizingRBar) {
+            if(!io.MouseDown[0]) {
                 sizingRBar = false;
             }
             else
@@ -607,31 +601,28 @@ namespace editor {
                 m_framePixelWidthTarget = m_framePixelWidth = m_framePixelWidth / barRatio;
                 int newVisibleFrameCount = int((m_canvas_size.x - headerWidth) / m_framePixelWidthTarget);
                 int lastFrame = m_firstFrame + newVisibleFrameCount;
-                if (lastFrame > m_frameMax)
-                {
-                    m_framePixelWidthTarget = m_framePixelWidth = (m_canvas_size.x - headerWidth) / float(m_frameMax - m_firstFrame);
+                if(lastFrame > m_frameMax) {
+                    m_framePixelWidthTarget = m_framePixelWidth = (m_canvas_size.x - headerWidth) /
+                        float(m_frameMax - m_firstFrame);
                 }
             }
         }
-        else if (sizingLBar)
-        {
-            if (!io.MouseDown[0])
-            {
+        else if(sizingLBar) {
+            if(!io.MouseDown[0]) {
                 sizingLBar = false;
             }
             else
             {
-                if (fabsf(io.MouseDelta.x) > FLT_EPSILON)
-                {
+                if(fabsf(io.MouseDelta.x) > FLT_EPSILON) {
                     float barNewWidth = ImMax(barWidthInPixels - io.MouseDelta.x, MinBarWidth);
                     float barRatio = barNewWidth / barWidthInPixels;
                     float previousFramePixelWidthTarget = m_framePixelWidthTarget;
                     m_framePixelWidthTarget = m_framePixelWidth = m_framePixelWidth / barRatio;
                     int newVisibleFrameCount = int(m_visibleFrameCount / barRatio);
                     int newFirstFrame = m_firstFrame + newVisibleFrameCount - m_visibleFrameCount;
-                    newFirstFrame = ImClamp(newFirstFrame, m_frameMin, ImMax(m_frameMax - m_visibleFrameCount, m_frameMin));
-                    if (newFirstFrame == m_firstFrame)
-                    {
+                    newFirstFrame = ImClamp(newFirstFrame, m_frameMin,
+                            ImMax(m_frameMax - m_visibleFrameCount, m_frameMin));
+                    if(newFirstFrame == m_firstFrame) {
                         m_framePixelWidth = m_framePixelWidthTarget = previousFramePixelWidthTarget;
                     }
                     else
@@ -643,30 +634,29 @@ namespace editor {
         }
         else
         {
-            if (m_MovingScrollBar)
-            {
-                if (!io.MouseDown[0])
-                {
+            if(m_MovingScrollBar) {
+                if(!io.MouseDown[0]) {
                     m_MovingScrollBar = false;
                 }
                 else
                 {
                     float framesPerPixelInBar = barWidthInPixels / (float)m_visibleFrameCount;
-                    m_firstFrame = int((io.MousePos.x - panningViewSource.x) / framesPerPixelInBar) - m_panningViewFrame;
-                    m_firstFrame = ImClamp(m_firstFrame, m_frameMin, ImMax(m_frameMax - m_visibleFrameCount, m_frameMin));
+                    m_firstFrame = int((io.MousePos.x - panningViewSource.x) / framesPerPixelInBar) -
+                        m_panningViewFrame;
+                    m_firstFrame = ImClamp(m_firstFrame, m_frameMin,
+                            ImMax(m_frameMax - m_visibleFrameCount, m_frameMin));
                 }
             }
             else
             {
-                if (scrollBarThumb.Contains(io.MousePos) && ImGui::IsMouseClicked(0)  && !m_MovingCurrentFrame)
-                {
+                if(scrollBarThumb.Contains(io.MousePos) && ImGui::IsMouseClicked(0) && !m_MovingCurrentFrame) {
                     m_MovingScrollBar = true;
                     panningViewSource = io.MousePos;
                     m_panningViewFrame = -m_frameMin;
                 }
-                if (!sizingRBar && onRight && ImGui::IsMouseClicked(0))
+                if(!sizingRBar && onRight && ImGui::IsMouseClicked(0))
                     sizingRBar = true;
-                if (!sizingLBar && onLeft && ImGui::IsMouseClicked(0))
+                if(!sizingLBar && onLeft && ImGui::IsMouseClicked(0))
                     sizingLBar = true;
 
             }
@@ -716,22 +706,23 @@ namespace editor {
                 ImTextureID textureID = (ImTextureID) nullptr;
                 std::memcpy(&textureID, &m_currentAnimation -> texture -> getID(), sizeof(unsigned int));
                 ImRect bb(canvas_p0, canvas_p0 + tSize);
-                drawList -> AddImage(textureID, bb.Min, bb.Max, {0,0}, {1, 1});
+                drawList -> AddImage(textureID, bb.Min, bb.Max, {0, 0}, {1, 1});
             }
 
             int textNumber = 1;
             for(auto& frame: m_currentAnimation -> frames) {
                 ImVec2 tPos{frame.frame.lx + frame.frame.width / 2.f, frame.frame.ly - 20.f};
                 drawList -> AddText({canvas_p0 + tPos},
-                                    IM_COL32(255, 255, 255, 255), std::to_string(textNumber).c_str());
+                    IM_COL32(255, 255, 255, 255), std::to_string(textNumber).c_str());
 
-                ImVec2 lT = canvas_p0 + ImVec2{static_cast<float>(frame.frame.lx - 1), static_cast<float>(frame.frame.ly - 1)};
+                ImVec2 lT = canvas_p0 + ImVec2{static_cast<float>(frame.frame.lx - 1),
+                                               static_cast<float>(frame.frame.ly - 1)};
                 ImVec2 rB = canvas_p0 + ImVec2{static_cast<float>(frame.frame.lx + frame.frame.width + 2),
                                                static_cast<float>(frame.frame.ly + frame.frame.height + 2)};
 
                 /// TODO(a.raag): change color to green default and glue are red //
                 auto found = std::find_if(gluingFrames.begin(), gluingFrames.end(),
-                                          [&frame](const auto& item) {
+                        [&frame](const auto& item) {
                     return frame.frameIndex == item.frameIndex;
                 });
                 drawList -> AddRect(lT, rB, found == gluingFrames.end() ? defaultColor : selectColor);
@@ -768,8 +759,8 @@ namespace editor {
                     robot2D::IntRect gluedRect = robot2D::IntRect::create(minPoint, maxPoint);
                     AnimationFrame animationFrame;
                     animationFrame.addRect(gluedRect);
-                     m_currentAnimation -> replaceFrames(gluingFrames, animationFrame);
-                     gluingFrames.clear();
+                    m_currentAnimation -> replaceFrames(gluingFrames, animationFrame);
+                    gluingFrames.clear();
                 }
             }
 
@@ -794,8 +785,8 @@ namespace editor {
             if(renderButton("Slice", drawList, offsetPos, &outWidth)) {
                 auto name = getFileName(m_loadTexturePath);
                 TaskQueue::GetQueue() -> addAsyncTask<AnimationTextureSliceTask>(
-                        BIND_CLASS_FN(onAnimationSlice), name,  m_loadTexturePath
-                );
+                    BIND_CLASS_FN(onAnimationSlice), name, m_loadTexturePath
+                    );
             }
         }
 
@@ -839,53 +830,53 @@ namespace editor {
     void AnimationPanel::renderSequencer_old() {
         /* ImGui::BeginGroup();
 
-         ImGuiIO& io = ImGui::GetIO();
-         auto window = ImGui::GetCurrentWindow();
-         int cx = (int)(io.MousePos.x);
-         int cy = (int)(io.MousePos.y);
+           ImGuiIO& io = ImGui::GetIO();
+           auto window = ImGui::GetCurrentWindow();
+           int cx = (int)(io.MousePos.x);
+           int cy = (int)(io.MousePos.y);
 
-         robot2D::vec2i mousePos = {
+           robot2D::vec2i mousePos = {
                  static_cast<int>(io.MousePos.x),
                  static_cast<int>(io.MousePos.y),
-         };
+           };
 
-         static int movingPos = -1;
-         static int movingPart = -1;
+           static int movingPos = -1;
+           static int movingPart = -1;
 
-         ImDrawList* draw_list = ImGui::GetWindowDrawList();
-         m_canvas_pos = ImGui::GetCursorScreenPos();            // ImDrawList API uses screen coordinates!
-         m_canvas_size = ImGui::GetContentRegionAvail();        // Resize canvas to what's available
-         m_firstFrameUsed = m_firstFrame;
-         m_customHeight = 0;
-         m_height = m_canvas_size.y;
+           ImDrawList* draw_list = ImGui::GetWindowDrawList();
+           m_canvas_pos = ImGui::GetCursorScreenPos();            // ImDrawList API uses screen coordinates!
+           m_canvas_size = ImGui::GetContentRegionAvail();        // Resize canvas to what's available
+           m_firstFrameUsed = m_firstFrame;
+           m_customHeight = 0;
+           m_height = m_canvas_size.y;
 
-         int controlHeight = m_sequenceCount * m_ItemHeight;
-         for (int i = 0; i < m_sequenceCount; i++)
+           int controlHeight = m_sequenceCount * m_ItemHeight;
+           for (int i = 0; i < m_sequenceCount; i++)
              controlHeight += int(m_height);
-         m_frameCount = ImMax(m_frameMax - m_frameMin, 1);
+           m_frameCount = ImMax(m_frameMax - m_frameMin, 1);
 
-         struct CustomDraw
-         {
+           struct CustomDraw
+           {
              int index;
              ImRect customRect;
              ImRect legendRect;
              ImRect clippingRect;
              ImRect legendClippingRect;
-         };
+           };
 
-         ImVector<CustomDraw> customDraws;
-         ImVector<CustomDraw> compactCustomDraws;
+           ImVector<CustomDraw> customDraws;
+           ImVector<CustomDraw> compactCustomDraws;
 
-         // zoom in/out
-         m_visibleFrameCount = (int)floorf((m_canvas_size.x - m_legendWidth) / m_framePixelWidth);
-         m_barWidthRatio = ImMin(m_visibleFrameCount / (float)m_frameCount, 1.f);
-
-
-         ImRect regionRect(m_canvas_pos, m_canvas_pos + m_canvas_size);
+           // zoom in/out
+           m_visibleFrameCount = (int)floorf((m_canvas_size.x - m_legendWidth) / m_framePixelWidth);
+           m_barWidthRatio = ImMin(m_visibleFrameCount / (float)m_frameCount, 1.f);
 
 
-         if (ImGui::IsWindowFocused() && io.KeyAlt && io.MouseDown[2])
-         {
+           ImRect regionRect(m_canvas_pos, m_canvas_pos + m_canvas_size);
+
+
+           if (ImGui::IsWindowFocused() && io.KeyAlt && io.MouseDown[2])
+           {
              if (!m_panningView)
              {
                  panningViewSource = io.MousePos;
@@ -894,55 +885,55 @@ namespace editor {
              }
              m_firstFrame = m_panningViewFrame - int((io.MousePos.x - panningViewSource.x) / m_framePixelWidth);
              m_firstFrame = ImClamp(m_firstFrame, m_frameMin, m_frameMax - m_visibleFrameCount);
-         }
-         if (m_panningView && !io.MouseDown[2])
-         {
+           }
+           if (m_panningView && !io.MouseDown[2])
+           {
              m_panningView = false;
-         }
+           }
 
-         m_framePixelWidthTarget = ImClamp(m_framePixelWidthTarget, 0.1f, 50.f);
-         m_framePixelWidth = ImLerp(m_framePixelWidth, m_framePixelWidthTarget, 0.33f);
+           m_framePixelWidthTarget = ImClamp(m_framePixelWidthTarget, 0.1f, 50.f);
+           m_framePixelWidth = ImLerp(m_framePixelWidth, m_framePixelWidthTarget, 0.33f);
 
-         m_frameCount = m_frameMax -m_frameMin;
-         if (m_visibleFrameCount >= m_frameCount)
+           m_frameCount = m_frameMax -m_frameMin;
+           if (m_visibleFrameCount >= m_frameCount)
              m_firstFrame = m_frameMin;
 
 
 
-         bool hasScrollBar(true);
+           bool hasScrollBar(true);
 
-         ImVec2 headerSize(m_canvas_size.x, (float)m_ItemHeight);
-         m_scrollBarSize = ImVec2(m_canvas_size.x, 14.f);
-         ImGui::InvisibleButton("topBar", headerSize);
-         draw_list -> AddRectFilled(m_canvas_pos, m_canvas_pos + headerSize, 0xFFFF0000, 0);
-         m_childFramePos = ImGui::GetCursorScreenPos();
-         m_childFrameSize = ImVec2(m_canvas_size.x, m_canvas_size.y - 8.f
+           ImVec2 headerSize(m_canvas_size.x, (float)m_ItemHeight);
+           m_scrollBarSize = ImVec2(m_canvas_size.x, 14.f);
+           ImGui::InvisibleButton("topBar", headerSize);
+           draw_list -> AddRectFilled(m_canvas_pos, m_canvas_pos + headerSize, 0xFFFF0000, 0);
+           m_childFramePos = ImGui::GetCursorScreenPos();
+           m_childFrameSize = ImVec2(m_canvas_size.x, m_canvas_size.y - 8.f
                                      - headerSize.y - (hasScrollBar ? m_scrollBarSize.y : 0));
-         ImGui::PushStyleColor(ImGuiCol_FrameBg, 0);
-         ImGui::BeginChildFrame(889, m_childFrameSize);
-         m_focused = ImGui::IsWindowFocused();
-         m_visible = ImGui::IsWindowHovered();
+           ImGui::PushStyleColor(ImGuiCol_FrameBg, 0);
+           ImGui::BeginChildFrame(889, m_childFrameSize);
+           m_focused = ImGui::IsWindowFocused();
+           m_visible = ImGui::IsWindowHovered();
 
-         ImGui::InvisibleButton("contentBar", ImVec2(m_canvas_size.x, float(controlHeight)));
-         contentMin = ImGui::GetItemRectMin();
-         contentMax = ImGui::GetItemRectMax();
-         const ImRect contentRect(contentMin, contentMax);
-         const float contentHeight = contentMax.y - contentMin.y;
+           ImGui::InvisibleButton("contentBar", ImVec2(m_canvas_size.x, float(controlHeight)));
+           contentMin = ImGui::GetItemRectMin();
+           contentMax = ImGui::GetItemRectMax();
+           const ImRect contentRect(contentMin, contentMax);
+           const float contentHeight = contentMax.y - contentMin.y;
 
-         // full background
-         draw_list -> AddRectFilled(m_canvas_pos, m_canvas_pos + m_canvas_size, 0xFF242424, 0);
+           // full background
+           draw_list -> AddRectFilled(m_canvas_pos, m_canvas_pos + m_canvas_size, 0xFF242424, 0);
 
-         // current frame top
-         ImRect topRect(ImVec2(m_canvas_pos.x + m_legendWidth, m_canvas_pos.y),
+           // current frame top
+           ImRect topRect(ImVec2(m_canvas_pos.x + m_legendWidth, m_canvas_pos.y),
                         ImVec2(m_canvas_pos.x + m_canvas_size.x, m_canvas_pos.y + m_ItemHeight));
 
-         if (!m_MovingCurrentFrame && !m_MovingScrollBar && m_movingEntry == -1
+           if (!m_MovingCurrentFrame && !m_MovingScrollBar && m_movingEntry == -1
              && m_currentFrame >= 0 && topRect.Contains(io.MousePos) && io.MouseDown[0])
-         {
+           {
              m_MovingCurrentFrame = true;
-         }
-         if (m_MovingCurrentFrame)
-         {
+           }
+           if (m_MovingCurrentFrame)
+           {
              if (m_frameCount)
              {
                  m_currentFrame = (int)((io.MousePos.x - topRect.Min.x) / m_framePixelWidth) + m_firstFrameUsed;
@@ -953,13 +944,13 @@ namespace editor {
              }
              if (!io.MouseDown[0])
                  m_MovingCurrentFrame = false;
-         }
+           }
 
-         draw_list -> AddRectFilled(m_canvas_pos, ImVec2(m_canvas_size.x + m_canvas_pos.x,
+           draw_list -> AddRectFilled(m_canvas_pos, ImVec2(m_canvas_size.x + m_canvas_pos.x,
                                                          m_canvas_pos.y + m_ItemHeight), 0xFF3D3837, 0);
 
-         /// render Frame's TimeLine
-         {
+           /// render Frame's TimeLine
+           {
              m_modFrameCount = 10;
              m_frameStep = 1;
 
@@ -976,15 +967,15 @@ namespace editor {
              }
              drawLine(draw_list, m_frameMin, m_ItemHeight);
              drawLine(draw_list, m_frameMax, m_ItemHeight);
-         }
+           }
 
 
-         renderHeader(window, draw_list);
+           renderHeader(window, draw_list);
 
 
-         // slots background
-         for (int i = 0; i < m_sequenceCount; i++)
-         {
+           // slots background
+           for (int i = 0; i < m_sequenceCount; i++)
+           {
              unsigned int col = (i & 1) ? 0xFF3A3636 : 0xFF413D3D;
 
              size_t localCustomHeight = m_height;
@@ -999,35 +990,35 @@ namespace editor {
              }
              draw_list -> AddRectFilled(pos, sz, col, 0);
              m_customHeight += localCustomHeight;
-         }
+           }
 
-         draw_list -> PushClipRect(m_childFramePos + ImVec2(float(m_legendWidth), 0.f),
+           draw_list -> PushClipRect(m_childFramePos + ImVec2(float(m_legendWidth), 0.f),
                                    m_childFramePos + m_childFrameSize, true);
 
-         // vertical frame lines in content area
-         for (int i = m_frameMin; i <= m_frameMax; i += m_frameStep)
-         {
+           // vertical frame lines in content area
+           for (int i = m_frameMin; i <= m_frameMax; i += m_frameStep)
+           {
              drawLineContent(draw_list, i, int(contentHeight));
-         }
-         drawLineContent(draw_list, m_frameMin, int(contentHeight));
-         drawLineContent(draw_list, m_frameMax, int(contentHeight));
+           }
+           drawLineContent(draw_list, m_frameMin, int(contentHeight));
+           drawLineContent(draw_list, m_frameMax, int(contentHeight));
 
 
-         /// selection
-         bool selected = m_selectedEntry;
-         if (selected)
-         {
+           /// selection
+           bool selected = m_selectedEntry;
+           if (selected)
+           {
              m_customHeight = 0;
              for (int i = 0; i < m_selectedEntry; i++)
                  m_customHeight += m_height;
              draw_list -> AddRectFilled(ImVec2(contentMin.x, contentMin.y + m_ItemHeight * m_selectedEntry + m_customHeight),
                                       ImVec2(contentMin.x + m_canvas_size.x, contentMin.y + m_ItemHeight * (m_selectedEntry + 1) + m_customHeight), 0x801080FF, 1.f);
-         }
+           }
 
-         /// slots
-         m_customHeight = 0;
-         for (int i = 0; i < m_sequenceCount; i++)
-         {
+           /// slots
+           m_customHeight = 0;
+           for (int i = 0; i < m_sequenceCount; i++)
+           {
              int* start, * end;
              unsigned int color;
              /// TODO(a.raag): Get
@@ -1113,10 +1104,10 @@ namespace editor {
                  compactCustomDraws.push_back({ i, customRect, ImRect(), clippingRect, ImRect() });
              }
              m_customHeight += localCustomHeight;
-         }
+           }
 
-         /// Key Frames
-         for(auto& keyFrame: m_keyFrames) {
+           /// Key Frames
+           for(auto& keyFrame: m_keyFrames) {
 
              ImVec2 framePos;
              framePos.x = contentMin.x + m_legendWidth +
@@ -1130,10 +1121,10 @@ namespace editor {
              }
 
              keyFrame.draw(draw_list);
-         }
+           }
 
-         /// Move Key Frame
-         if(m_currentKeyFrame) {
+           /// Move Key Frame
+           if(m_currentKeyFrame) {
              ImGui::SetNextFrameWantCaptureMouse(true);
              int diffFrame = int((cx - movingPos) / m_framePixelWidth);
              if(std::abs(diffFrame) > 0) {
@@ -1152,17 +1143,17 @@ namespace editor {
                  m_currentKeyFrame -> m_moving = false;
                  m_currentKeyFrame = nullptr;
              }
-         }
+           }
 
-         if(ImGui::IsKeyPressed(ImGuiKey_Delete, false)) {
+           if(ImGui::IsKeyPressed(ImGuiKey_Delete, false)) {
              if(m_currentKeyFrame)
                  m_currentKeyFrame -> needDel = true;
-         }
+           }
 
 
-         /// moving
-         if (m_movingEntry >= 0)
-         {
+           /// moving
+           if (m_movingEntry >= 0)
+           {
              ImGui::SetNextFrameWantCaptureMouse(true);
 
              int diffFrame = int((cx - movingPos) / m_framePixelWidth);
@@ -1203,13 +1194,13 @@ namespace editor {
                  m_movingEntry = -1;
                  // sequence -> EndEdit();
              }
-         }
+           }
 
 
 
-         /// Red Cursor
-         if (m_currentFrame >= m_firstFrame && m_currentFrame <= m_frameMax)
-         {
+           /// Red Cursor
+           if (m_currentFrame >= m_firstFrame && m_currentFrame <= m_frameMax)
+           {
              static const float cursorWidth = 4.f;
              float cursorOffset = contentMin.x + m_legendWidth +
                      (m_currentFrame - m_firstFrameUsed) * m_framePixelWidth + m_framePixelWidth / 2 - cursorWidth * 0.5f;
@@ -1218,19 +1209,19 @@ namespace editor {
              char tmps[512];
              ImFormatString(tmps, IM_ARRAYSIZE(tmps), "%d", m_currentFrame);
              draw_list -> AddText(ImVec2(cursorOffset + 10, m_canvas_pos.y + 2), 0xFF2A2AFF, tmps);
-         }
+           }
 
-         draw_list -> PopClipRect();
-         draw_list -> PopClipRect();
+           draw_list -> PopClipRect();
+           draw_list -> PopClipRect();
 
-         ImGui::EndChildFrame();
-         ImGui::PopStyleColor();
+           ImGui::EndChildFrame();
+           ImGui::PopStyleColor();
 
-         renderScrollBar(io);
-         ImGui::EndGroup();
+           renderScrollBar(io);
+           ImGui::EndGroup();
 
-         if (regionRect.Contains(io.MousePos))
-         {
+           if (regionRect.Contains(io.MousePos))
+           {
              bool overCustomDraw = false;
              for (auto& custom : customDraws)
              {
@@ -1244,37 +1235,37 @@ namespace editor {
              }
              else
              {
- #if 0
+         #if 0
                  frameOverCursor = *firstFrame + (int)(visibleFrameCount * ((io.MousePos.x - (float)legendWidth - canvas_pos.x) / (canvas_size.x - legendWidth)));
              //frameOverCursor = max(min(*firstFrame - visibleFrameCount / 2, frameCount - visibleFrameCount), 0);
 
-             *//**firstFrame -= frameOverCursor;
-            *firstFrame *= framePixelWidthTarget / framePixelWidth;
-            *firstFrame += frameOverCursor;*//*
+         *//**firstFrame -= frameOverCursor;
+         * firstFrame *= framePixelWidthTarget / framePixelWidth;
+         * firstFrame += frameOverCursor;*//*
             if (io.MouseWheel < -FLT_EPSILON)
             {
-               *firstFrame -= frameOverCursor;
-               *firstFrame = int(*firstFrame * 1.1f);
+         * firstFrame -= frameOverCursor;
+         * firstFrame = int(*firstFrame * 1.1f);
                framePixelWidthTarget *= 0.9f;
-               *firstFrame += frameOverCursor;
+         * firstFrame += frameOverCursor;
             }
 
             if (io.MouseWheel > FLT_EPSILON)
             {
-               *firstFrame -= frameOverCursor;
-               *firstFrame = int(*firstFrame * 0.9f);
+         * firstFrame -= frameOverCursor;
+         * firstFrame = int(*firstFrame * 0.9f);
                framePixelWidthTarget *= 1.1f;
-               *firstFrame += frameOverCursor;
+         * firstFrame += frameOverCursor;
             }
-#endif
+         #endif
             }
-        }
+           }
 
 
-        if(m_currentKeyFrame) {
+           if(m_currentKeyFrame) {
             if(!m_currentKeyFrame -> needDel)
                 return;
-        }
-*/
+           }
+         */
     }
 }

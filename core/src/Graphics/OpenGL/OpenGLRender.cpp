@@ -1,22 +1,22 @@
 /*********************************************************************
-(c) Alex Raag 2021
-https://github.com/Enziferum
-robot2D - Zlib license.
-This software is provided 'as-is', without any express or
-implied warranty. In no event will the authors be held
-liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute
-it freely, subject to the following restrictions:
-1. The origin of this software must not be misrepresented;
-you must not claim that you wrote the original software.
-If you use this software in a product, an acknowledgment
-in the product documentation would be appreciated but
-is not required.
-2. Altered source versions must be plainly marked as such,
-and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any
-source distribution.
+   (c) Alex Raag 2021
+   https://github.com/Enziferum
+   robot2D - Zlib license.
+   This software is provided 'as-is', without any express or
+   implied warranty. In no event will the authors be held
+   liable for any damages arising from the use of this software.
+   Permission is granted to anyone to use this software for any purpose,
+   including commercial applications, and to alter it and redistribute
+   it freely, subject to the following restrictions:
+   1. The origin of this software must not be misrepresented;
+   you must not claim that you wrote the original software.
+   If you use this software in a product, an acknowledgment
+   in the product documentation would be appreciated but
+   is not required.
+   2. Altered source versions must be plainly marked as such,
+   and must not be misrepresented as being the original software.
+   3. This notice may not be removed or altered from any
+   source distribution.
 *********************************************************************/
 
 #include <stdexcept>
@@ -43,7 +43,7 @@ namespace robot2D::priv {
         float sx = float(winW) / virtW;
         float sy = float(winH) / virtH;
         int scale = int(std::floor(std::min(sx, sy)));
-        if (scale < 1)
+        if(scale < 1)
             scale = 1;
 
         int w = virtW * scale;
@@ -56,11 +56,10 @@ namespace robot2D::priv {
 
     struct VirtualSize { int virtW, virtH, scale, viewportX, viewportY, viewportW, viewportH; };
 
-    VirtualSize chooseVirtualSize(int winW, int winH, int aspectNum, int aspectDen, bool integerScale=true)
-    {
+    VirtualSize chooseVirtualSize(int winW, int winH, int aspectNum, int aspectDen, bool integerScale = true) {
         double targetW = winW;
         double targetH = (double)winW * aspectDen / aspectNum;
-        if (targetH > winH) {
+        if(targetH > winH) {
             targetH = winH;
             targetW = (double)winH * aspectNum / aspectDen;
         }
@@ -74,7 +73,7 @@ namespace robot2D::priv {
         int virtW = vpW;
         int virtH = vpH;
 
-        if (integerScale) {
+        if(integerScale) {
             int sW = vpW / aspectNum;
             int sH = vpH / aspectDen;
             scale = std::max(1, std::min(sW, sH));
@@ -85,7 +84,8 @@ namespace robot2D::priv {
             vpH = virtH;
             vpX = (winW - vpW) / 2;
             vpY = (winH - vpH) / 2;
-        } else {
+        }
+        else {
             scale = 0;
         }
 
@@ -104,9 +104,9 @@ namespace robot2D::priv {
     constexpr bool useBlending = true;
 
     const robot2D::vec2f textureCoords[4] = { { 0.0f, 0.0f },
-                                              { 1.0f, 0.0f },
-                                              { 1.0f, 1.0f },
-                                              { 0.0f, 1.0f } };
+        { 1.0f, 0.0f },
+        { 1.0f, 1.0f },
+        { 0.0f, 1.0f } };
 
 
     struct RenderCache {
@@ -115,25 +115,24 @@ namespace robot2D::priv {
 
 #if defined(ROBOT2D_WINDOWS) or defined(ROBOT2D_LINUX)
     void OpenGLMessageCallback(
-            unsigned source,
-            unsigned type,
-            unsigned id,
-            unsigned severity,
-            int length,
-            const char* message,
-            const void* userParam)
-    {
+        unsigned source,
+        unsigned type,
+        unsigned id,
+        unsigned severity,
+        int length,
+        const char* message,
+        const void* userParam) {
         (void) source;
         (void) type;
         (void) id;
         (void) length;
         (void) userParam;
-        switch (severity)
+        switch(severity)
         {
-            case GL_DEBUG_SEVERITY_HIGH:         RB_CORE_CRITICAL(message); return;
-            case GL_DEBUG_SEVERITY_MEDIUM:       RB_CORE_ERROR(message); return;
-            case GL_DEBUG_SEVERITY_LOW:          RB_CORE_WARN(message); return;
-            case GL_DEBUG_SEVERITY_NOTIFICATION: RB_CORE_TRACE(message); return;
+        case GL_DEBUG_SEVERITY_HIGH:         RB_CORE_CRITICAL(message); return;
+        case GL_DEBUG_SEVERITY_MEDIUM:       RB_CORE_ERROR(message); return;
+        case GL_DEBUG_SEVERITY_LOW:          RB_CORE_WARN(message); return;
+        case GL_DEBUG_SEVERITY_NOTIFICATION: RB_CORE_TRACE(message); return;
         }
 
         assert(false && "Unknown severity level!");
@@ -155,10 +154,10 @@ namespace robot2D::priv {
     void OpenGLRender::setupOpenGL() {
 #if defined(ROBOT2D_WINDOWS) or defined(ROBOT2D_LINUX)
         RB_CORE_INFO("OpenGL Info:");
-       // RB_CORE_INFO("Vendor: {0} ", glGetString(GL_VENDOR));
-       // RB_CORE_INFO("Renderer: {0}", glGetString(GL_RENDERER));
-       // RB_CORE_INFO("Version: {0}", glGetString(GL_VERSION));
-       RB_CORE_INFO("Version: {0}", "SomeVersion");
+        // RB_CORE_INFO("Vendor: {0} ", glGetString(GL_VENDOR));
+        // RB_CORE_INFO("Renderer: {0}", glGetString(GL_RENDERER));
+        // RB_CORE_INFO("Version: {0}", glGetString(GL_VERSION));
+        RB_CORE_INFO("Version: {0}", "SomeVersion");
 #endif
 
         m_renderApi = RenderAPI::getOpenGLVersion();
@@ -179,7 +178,8 @@ namespace robot2D::priv {
             glEnable(GL_DEPTH_TEST);
     }
 
-    RenderLayer::~RenderLayer() {}
+    RenderLayer::~RenderLayer() {
+    }
 
     void RenderLayer::destroy() {
         delete[] m_renderBuffer.quadBuffer;
@@ -200,19 +200,18 @@ namespace robot2D::priv {
         m_renderBuffer.vertexBuffer = VertexBuffer::Create(sizeof(RenderVertex) * m_renderBuffer.maxQuadsCount);
         // for OpenGL name - utility only
         m_renderBuffer.vertexBuffer -> setAttributeLayout({
-                                                                  {ElementType::Float3, "Position"},
-                                                                  {ElementType::Float4, "Color(RGBA)"},
-                                                                  {ElementType::Float2, "TextureCoords"},
-                                                                  {ElementType::Float1, "TextureIndex"},
-                                                                  {ElementType::Int1, "EntityID"},
-                                                          });
+            {ElementType::Float3, "Position"},
+            {ElementType::Float4, "Color(RGBA)"},
+            {ElementType::Float2, "TextureCoords"},
+            {ElementType::Float1, "TextureIndex"},
+            {ElementType::Int1, "EntityID"},
+        });
         m_renderBuffer.vertexArray -> setVertexBuffer(m_renderBuffer.vertexBuffer);
 
         auto quadIndices = new uint32_t[m_renderBuffer.maxIndicesCount];
 
         uint32_t offset = 0;
-        for (uint32_t i = 0; i < m_renderBuffer.maxIndicesCount; i += 6)
-        {
+        for(uint32_t i = 0; i < m_renderBuffer.maxIndicesCount; i += 6) {
             quadIndices[i + 0] = offset + 0;
             quadIndices[i + 1] = offset + 1;
             quadIndices[i + 2] = offset + 2;
@@ -224,7 +223,7 @@ namespace robot2D::priv {
             offset += 4;
         }
         auto indexBuffer = IndexBuffer::Create(quadIndices,
-                                               m_renderBuffer.maxIndicesCount);
+                m_renderBuffer.maxIndicesCount);
         m_renderBuffer.vertexArray -> setIndexBuffer(indexBuffer);
 
         delete[] quadIndices;
@@ -244,13 +243,13 @@ namespace robot2D::priv {
         auto openGLFragmentSource = openGLVersion + OpenGL::fragmentSource;
 
         if(!m_quadShader.createShader(ShaderType::Vertex,
-                                      openGLVertexSource, false)) {
+            openGLVertexSource, false)) {
             std::string reason = "Can't load Quad Vertex Shader";
             throw std::runtime_error(reason);
         }
 
         if(!m_quadShader.createShader(ShaderType::Fragment,
-                                      openGLFragmentSource, false)) {
+            openGLFragmentSource, false)) {
             std::string reason = "Can't load Quad Fragment Shader";
             throw std::runtime_error(reason);
         }
@@ -266,14 +265,14 @@ namespace robot2D::priv {
 
         m_quadShader.use();
         m_quadShader.setArray(m_shaderKeys[ShaderKey::TextureSamples],
-                              samples, maxTextureSlots);
+            samples, maxTextureSlots);
 
         for(int it = 1; it < maxTextureSlots; ++it)
             m_renderBuffer.textureSlots[it] = 0;
 
         renderLayer.m_view = m_default;
         m_quadShader.setMatrix(m_shaderKeys[ShaderKey::Projection],
-                               renderLayer.m_view.getTransform().get_matrix());
+            renderLayer.m_view.getTransform().get_matrix());
         if(m_dimensionType == RenderDimensionType::TwoD)
             m_quadShader.set(m_shaderKeys[ShaderKey::is3DRender], false);
         else
@@ -288,8 +287,8 @@ namespace robot2D::priv {
         setupOpenGL();
 
         m_default.reset(FloatRect(0.F, 0.F,
-                                  static_cast<float>(m_size.x),
-                                  static_cast<float>(m_size.y)));
+            static_cast<float>(m_size.x),
+            static_cast<float>(m_size.y)));
 
         for(unsigned int it = 0; it < defaultLayersValue; ++it)
             createLayer();
@@ -309,9 +308,9 @@ namespace robot2D::priv {
     VirtualSize virtSize;
     void OpenGLRender::setViewVirtual(const vec2u& windowSize, const View& view, unsigned int layerID) {
         virtSize = chooseVirtualSize(windowSize.x, windowSize.y,
-                                          16, 9);
+                16, 9);
 
-        glViewport(virtSize.viewportX, virtSize.viewportY, virtSize.viewportW,virtSize.viewportH);
+        glViewport(virtSize.viewportX, virtSize.viewportY, virtSize.viewportW, virtSize.viewportH);
         auto& m_quadShader = m_renderLayers[layerID].m_quadShader;
         m_renderLayers[layerID].m_view = view;
         m_quadShader.use();
@@ -322,14 +321,14 @@ namespace robot2D::priv {
 
 
     IntRect OpenGLRender::getViewport(const View& view) {
-        float width  = static_cast<float>(m_size.x);
+        float width = static_cast<float>(m_size.x);
         float height = static_cast<float>(m_size.y);
         const FloatRect& viewport = view.getViewport();
 
-        return IntRect(static_cast<int>(0.5F + width  * viewport.lx),
-                       static_cast<int>(0.5F + height * viewport.ly),
-                       static_cast<int>(0.5F + width  * viewport.width),
-                       static_cast<int>(0.5F + height * viewport.height));
+        return IntRect(static_cast<int>(0.5F + width * viewport.lx),
+                   static_cast<int>(0.5F + height * viewport.ly),
+                   static_cast<int>(0.5F + width * viewport.width),
+                   static_cast<int>(0.5F + height * viewport.height));
     }
 
 
@@ -345,12 +344,10 @@ namespace robot2D::priv {
         const FloatRect& viewport = m_view.getViewport();
 
         auto size = m_view.getRectangle();
-        IntRect viewport1(static_cast<int>(0.5F + size.width  * viewport.lx),
-                          static_cast<int>(0.5F + size.height * viewport.ly),
-                          static_cast<int>(0.5F + size.width  * viewport.width),
-                          static_cast<int>(0.5F + size.height * viewport.height));
-        int top = static_cast<int>(size.height - (viewport1.ly + viewport1.height));
-        //glViewport(viewport1.lx, top, viewport1.width, viewport1.height);
+        IntRect viewport1(static_cast<int>(0.5F + size.width * viewport.lx),
+            static_cast<int>(0.5F + size.height * viewport.ly),
+            static_cast<int>(0.5F + size.width * viewport.width),
+            static_cast<int>(0.5F + size.height * viewport.height));
 
         if(m_view.isClipping())
             return;
@@ -362,7 +359,7 @@ namespace robot2D::priv {
 
     void OpenGLRender::setView3D(const Matrix3D& projection, const Matrix3D& view) {
         assert(m_dimensionType != RenderDimensionType::TwoD && "To use 3D view function set RenderDimension "
-                                                               "Mode to 3D / Both Mode");
+            "Mode to 3D / Both Mode");
         auto& m_quadShader = m_renderLayers[defaultLayerID].m_quadShader;
         m_quadShader.use();
         m_quadShader.setMatrix(m_shaderKeys[ShaderKey::Projection], projection.getRaw());
@@ -389,7 +386,7 @@ namespace robot2D::priv {
 
     void OpenGLRender::clearScissor(const robot2D::UIntRect rect, const Color& color) {
         glEnable(GL_SCISSOR_TEST);
-        glScissor(virtSize.viewportX, virtSize.viewportY, virtSize.viewportW,virtSize.viewportH);
+        glScissor(virtSize.viewportX, virtSize.viewportY, virtSize.viewportW, virtSize.viewportH);
         auto glColor = color.toGL();
         glClearColor(glColor.red, glColor.green, glColor.blue, glColor.alpha);
         if(m_dimensionType != RenderDimensionType::TwoD)
@@ -429,8 +426,8 @@ namespace robot2D::priv {
     void OpenGLRender::afterRender() const {
         unsigned int index = 0;
         for(auto& it: m_renderLayers) {
-            auto size = uint32_t((uint8_t *) it.m_renderBuffer.quadBufferPtr
-                                 - (uint8_t *) it.m_renderBuffer.quadBuffer);
+            auto size = uint32_t((uint8_t*) it.m_renderBuffer.quadBufferPtr
+                    - (uint8_t*) it.m_renderBuffer.quadBuffer);
             it.m_renderBuffer.vertexBuffer -> setData(it.m_renderBuffer.quadBuffer, size);
 
             if(index == 1)
@@ -465,9 +462,9 @@ namespace robot2D::priv {
 
         m_renderBuffer.vertexArray -> Bind();
         glDrawElements(GL_TRIANGLES,
-                       static_cast<GLsizei>(m_renderBuffer.indexCount),
-                       GL_UNSIGNED_INT,
-                       nullptr);
+            static_cast<GLsizei>(m_renderBuffer.indexCount),
+            GL_UNSIGNED_INT,
+            nullptr);
         m_renderBuffer.vertexArray -> unBind();
         glBindTexture(GL_TEXTURE_2D, 0);
         glActiveTexture(GL_TEXTURE0);
@@ -496,43 +493,43 @@ namespace robot2D::priv {
             const auto& transform = states.transform3D;
 
             quadVertexData = {
-                    {
-                            (transform * m_renderBuffer.quadVertexPositions[0]),
-                            textureCoords[0]
-                    },
-                    {
-                            (transform * m_renderBuffer.quadVertexPositions[1]),
-                            textureCoords[1]
-                    },
-                    {
-                            (transform * m_renderBuffer.quadVertexPositions[2]),
-                            textureCoords[2]
-                    },
-                    {
-                            (transform * m_renderBuffer.quadVertexPositions[3]),
-                            textureCoords[3]
-                    }
+                {
+                    (transform * m_renderBuffer.quadVertexPositions[0]),
+                    textureCoords[0]
+                },
+                {
+                    (transform * m_renderBuffer.quadVertexPositions[1]),
+                    textureCoords[1]
+                },
+                {
+                    (transform * m_renderBuffer.quadVertexPositions[2]),
+                    textureCoords[2]
+                },
+                {
+                    (transform * m_renderBuffer.quadVertexPositions[3]),
+                    textureCoords[3]
+                }
             };
         }
         else {
             const auto& transform = states.transform;
             quadVertexData = {
-                    {
-                            (transform * m_renderBuffer.quadVertexPositions[0].asVec2<float>()),
-                            textureCoords[0]
-                    },
-                    {
-                            (transform * m_renderBuffer.quadVertexPositions[1].asVec2<float>()),
-                            textureCoords[1]
-                    },
-                    {
-                            (transform * m_renderBuffer.quadVertexPositions[2].asVec2<float>()),
-                            textureCoords[2]
-                    },
-                    {
-                            (transform * m_renderBuffer.quadVertexPositions[3].asVec2<float>()),
-                            textureCoords[3]
-                    }
+                {
+                    (transform * m_renderBuffer.quadVertexPositions[0].asVec2<float>()),
+                    textureCoords[0]
+                },
+                {
+                    (transform * m_renderBuffer.quadVertexPositions[1].asVec2<float>()),
+                    textureCoords[1]
+                },
+                {
+                    (transform * m_renderBuffer.quadVertexPositions[2].asVec2<float>()),
+                    textureCoords[2]
+                },
+                {
+                    (transform * m_renderBuffer.quadVertexPositions[3].asVec2<float>()),
+                    textureCoords[3]
+                }
             };
         }
 
@@ -564,18 +561,15 @@ namespace robot2D::priv {
 
         float textureIndex = 0.F;
         if(states.texture) {
-            for (uint32_t i = 1; i < m_renderBuffer.textureSlotIndex; i++)
-            {
-                if (m_renderBuffer.textureSlots[i] == states.texture -> getID())
-                {
+            for(uint32_t i = 1; i < m_renderBuffer.textureSlotIndex; i++) {
+                if(m_renderBuffer.textureSlots[i] == states.texture -> getID()) {
                     textureIndex = static_cast<float>(i);
                     break;
                 }
             }
 
-            if (textureIndex == 0.F)
-            {
-                if (m_renderBuffer.textureSlotIndex >= maxTextureSlots) {
+            if(textureIndex == 0.F) {
+                if(m_renderBuffer.textureSlotIndex >= maxTextureSlots) {
                     afterRender();
                     beforeRender();
                 }
@@ -586,7 +580,7 @@ namespace robot2D::priv {
             }
         }
 
-        for (int i = 0; i < quadVertexSize; ++i) {
+        for(int i = 0; i < quadVertexSize; ++i) {
             m_renderBuffer.quadBufferPtr -> Position = data[i].position;
             m_renderBuffer.quadBufferPtr -> color = states.color.toGL();
             m_renderBuffer.quadBufferPtr -> textureIndex = textureIndex;
@@ -616,14 +610,14 @@ namespace robot2D::priv {
             auto& vertexArray = it.m_vertexArray;
 
             switch(states.blendMode) {
-                default:
-                    break;
-                case BlendMode::AlphaOne:
-                    glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-                    break;
-                case BlendMode::MinusAlphaOne:
-                    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-                    break;
+            default:
+                break;
+            case BlendMode::AlphaOne:
+                glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+                break;
+            case BlendMode::MinusAlphaOne:
+                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+                break;
             }
 
             auto currentShader = states.shader;
@@ -632,10 +626,11 @@ namespace robot2D::priv {
             else
                 currentShader -> use();
             if(states.texture) {
-                if (m_renderApi == RenderApi::OpenGL4_3) {
+                if(m_renderApi == RenderApi::OpenGL4_3) {
                     glActiveTexture(GL_TEXTURE0);
                     glBindTexture(GL_TEXTURE_2D, states.texture->getID());
-                } else if (m_renderApi == RenderApi::OpenGL4_5) {
+                }
+                else if(m_renderApi == RenderApi::OpenGL4_5) {
 #if !defined(ROBOT2D_MACOS)
                     glBindTextureUnit(0, states.texture->getID());
 #endif
@@ -644,27 +639,28 @@ namespace robot2D::priv {
             vertexArray -> Bind();
 
             GLenum drawMode = GL_TRIANGLES;
-            switch (states.renderInfo.renderType) {
-                case PrimitiveRenderType::Point:
-                    drawMode = GL_POINTS;
-                    break;
-                case PrimitiveRenderType::Lines:
-                    drawMode = GL_LINES;
-                    break;
-                case PrimitiveRenderType::Triangles:
-                    break;
-                case PrimitiveRenderType::Quads:
-                    drawMode = GL_QUADS;
-                    break;
+            switch(states.renderInfo.renderType) {
+            case PrimitiveRenderType::Point:
+                drawMode = GL_POINTS;
+                break;
+            case PrimitiveRenderType::Lines:
+                drawMode = GL_LINES;
+                break;
+            case PrimitiveRenderType::Triangles:
+                break;
+            case PrimitiveRenderType::Quads:
+                drawMode = GL_QUADS;
+                break;
             }
 
             GLsizei drawIndexCount = states.renderInfo.indexCount ? static_cast<GLsizei>(states.renderInfo.indexCount)
-                                                                  : static_cast<GLsizei>(vertexArray -> getIndexBuffer() -> getSize() / 4);
+                                                                  : static_cast<GLsizei>(vertexArray -> getIndexBuffer()
+                -> getSize() / 4);
 
             glDrawElements(drawMode,
-                           drawIndexCount,
-                           GL_UNSIGNED_INT,
-                           nullptr);
+                drawIndexCount,
+                GL_UNSIGNED_INT,
+                nullptr);
             vertexArray -> unBind();
             glBindTexture(GL_TEXTURE_2D, 0);
             glActiveTexture(GL_TEXTURE0);
@@ -686,24 +682,25 @@ namespace robot2D::priv {
             return;
 
         switch(states.blendMode) {
-            default:
-                break;
-            case BlendMode::AlphaOne:
-                glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-                break;
-            case BlendMode::MinusAlphaOne:
-                glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-                break;
+        default:
+            break;
+        case BlendMode::AlphaOne:
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE);
+            break;
+        case BlendMode::MinusAlphaOne:
+            glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+            break;
         }
 
         auto currentShader = states.shader;
         currentShader -> use();
 
         if(states.texture) {
-            if (m_renderApi == RenderApi::OpenGL4_3) {
+            if(m_renderApi == RenderApi::OpenGL4_3) {
                 glActiveTexture(GL_TEXTURE0);
                 glBindTexture(GL_TEXTURE_2D, states.texture->getID());
-            } else if (m_renderApi == RenderApi::OpenGL4_5) {
+            }
+            else if(m_renderApi == RenderApi::OpenGL4_5) {
 #if !defined(ROBOT2D_MACOS)
                 glBindTextureUnit(0, states.texture->getID());
 #endif
@@ -712,28 +709,28 @@ namespace robot2D::priv {
         vertexArray -> Bind();
 
         GLenum drawMode = GL_TRIANGLES;
-        switch (states.renderInfo.renderType) {
-            case PrimitiveRenderType::Point:
-                drawMode = GL_POINTS;
-                break;
-            case PrimitiveRenderType::Lines:
-                drawMode = GL_LINES;
-                break;
-            case PrimitiveRenderType::Triangles:
-                break;
-            case PrimitiveRenderType::Quads:
-                drawMode = GL_QUADS;
-                break;
+        switch(states.renderInfo.renderType) {
+        case PrimitiveRenderType::Point:
+            drawMode = GL_POINTS;
+            break;
+        case PrimitiveRenderType::Lines:
+            drawMode = GL_LINES;
+            break;
+        case PrimitiveRenderType::Triangles:
+            break;
+        case PrimitiveRenderType::Quads:
+            drawMode = GL_QUADS;
+            break;
         }
 
         GLsizei drawIndexCount = states.renderInfo.indexCount ?
-                                 static_cast<GLsizei>(states.renderInfo.indexCount):
-                                 static_cast<GLsizei>(vertexArray -> getIndexBuffer() -> getSize() / 4);
+            static_cast<GLsizei>(states.renderInfo.indexCount):
+            static_cast<GLsizei>(vertexArray -> getIndexBuffer() -> getSize() / 4);
 
         glDrawElements(drawMode,
-                       drawIndexCount,
-                       GL_UNSIGNED_INT,
-                       nullptr);
+            drawIndexCount,
+            GL_UNSIGNED_INT,
+            nullptr);
         vertexArray -> unBind();
         glBindTexture(GL_TEXTURE_2D, 0);
         glActiveTexture(GL_TEXTURE0);

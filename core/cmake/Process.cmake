@@ -13,6 +13,10 @@ target_include_directories(${PROJECT_NAME} PUBLIC
         INTERFACE
         "$<INSTALL_INTERFACE:include>")
 
+# Bundled stb/glad are dependencies, even though their sources live under core/src.
+target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/src/Graphics/internal")
+
 if (RB2D_OS_WINDOWS)
     if(RB2D_COMPILER_MSVC)
       GroupSourcesByFolder(${PROJECT_NAME})
