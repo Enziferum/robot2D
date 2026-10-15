@@ -13,6 +13,7 @@ namespace robot2D {
         struct VertexArrayCache {
             VertexArray::Ptr m_vertexArray;
             RenderStates m_states;
+            std::size_t m_batchesBefore = 0;
         };
 
         // TODO: @a.raag Maybe move out layer creation from Render?
