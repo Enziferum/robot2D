@@ -1,22 +1,22 @@
 /*********************************************************************
-(c) Alex Raag 2024
-https://github.com/Enziferum
-robot2D - Zlib license.
-This software is provided 'as-is', without any express or
-implied warranty. In no event will the authors be held
-liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute
-it freely, subject to the following restrictions:
-1. The origin of this software must not be misrepresented;
-you must not claim that you wrote the original software.
-If you use this software in a product, an acknowledgment
-in the product documentation would be appreciated but
-is not required.
-2. Altered source versions must be plainly marked as such,
-and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any
-source distribution.
+   (c) Alex Raag 2024
+   https://github.com/Enziferum
+   robot2D - Zlib license.
+   This software is provided 'as-is', without any express or
+   implied warranty. In no event will the authors be held
+   liable for any damages arising from the use of this software.
+   Permission is granted to anyone to use this software for any purpose,
+   including commercial applications, and to alter it and redistribute
+   it freely, subject to the following restrictions:
+   1. The origin of this software must not be misrepresented;
+   you must not claim that you wrote the original software.
+   If you use this software in a product, an acknowledgment
+   in the product documentation would be appreciated but
+   is not required.
+   2. Altered source versions must be plainly marked as such,
+   and must not be misrepresented as being the original software.
+   3. This notice may not be removed or altered from any
+   source distribution.
 *********************************************************************/
 
 #include <robot2D/Util/Logger.hpp>
@@ -30,18 +30,17 @@ source distribution.
 namespace editor {
 
     void ApplyFilterFromUI(b2FixtureDef& fd,
-                           const std::string& layerName,
-                           const std::vector<std::string>& collidesWith, // пусто => дефолт
-                           int16_t groupIndex,
-                           bool useDefaultMask)
-    {
+        const std::string& layerName,
+        const std::vector<std::string>& collidesWith,                    // пусто => дефолт
+        int16_t groupIndex,
+        bool useDefaultMask) {
         phys2d::FilterBits fb = useDefaultMask
                                 ? phys2d::makeFilterDefault(layerName, groupIndex)
                                 : phys2d::makeFilterCustomMask(layerName, collidesWith, groupIndex);
 
         fd.filter.categoryBits = fb.categoryBits;
-        fd.filter.maskBits     = fb.maskBits;
-        fd.filter.groupIndex   = fb.groupIndex;
+        fd.filter.maskBits = fb.maskBits;
+        fd.filter.groupIndex = fb.groupIndex;
     }
 
     namespace {
@@ -52,48 +51,48 @@ namespace editor {
         constexpr double PI = 3.14159265358979323846;
 
         template<typename T>
-        constexpr T pixel_to_meters(const T& x)
-        {
+        constexpr T pixel_to_meters(const T& x) {
             return x / PIXELS_PER_METERS;
         };
 
         template<typename T>
-        constexpr T meters_to_pixels(const T& x)
-        {
-            return x*PIXELS_PER_METERS;
+        constexpr T meters_to_pixels(const T& x) {
+            return x * PIXELS_PER_METERS;
         }
     }
 
     struct PairKeySimple {
         uint64_t lo, hi;
-        bool operator==(const PairKeySimple& o) const { return lo==o.lo && hi==o.hi; }
+        bool operator==(const PairKeySimple& o) const {
+            return lo == o.lo && hi == o.hi;
+        }
     };
     struct PairKeySimpleHash {
         size_t operator()(const PairKeySimple& k) const {
-            return (size_t)k.lo*1315423911u ^ (size_t)k.hi;
+            return (size_t)k.lo * 1315423911u ^ (size_t)k.hi;
         }
     };
 
-// --- Правила, которыми управляет C#
+    // --- Правила, которыми управляет C#
     struct IgnorePairRule { double untilSec = 0.0; };
     struct IgnoreWithLayerRule { uint16_t layerMask = 0; double untilSec = 0.0; };
 
-// --- Таблицы правил
+    // --- Таблицы правил
     static std::unordered_map<PairKeySimple, IgnorePairRule, PairKeySimpleHash> g_ignorePairs;
     static std::unordered_map<uint64_t, IgnoreWithLayerRule> g_ignoreWithLayer;
 
-// --- UserData на телах (для drop-through)
+    // --- UserData на телах (для drop-through)
     struct BodyUD {
         uint64_t entityId = 0;
-        double   dropThroughUntil = 0.0;
+        double dropThroughUntil = 0.0;
     };
     static inline BodyUD* GetBodyUD(const b2Body* b) {
         return (BodyUD*)b->GetUserData().pointer;
     }
 
-// --- Вспомогалки
+    // --- Вспомогалки
     static inline PairKeySimple MakePair(uint64_t a, uint64_t b) {
-        return (a < b) ? PairKeySimple{a,b} : PairKeySimple{b,a};
+        return (a < b) ? PairKeySimple{a, b} : PairKeySimple{b, a};
     }
 
 
@@ -108,12 +107,13 @@ namespace editor {
     };
 
     struct Box2DContactAdapter {
-        enum class ShapeType{
+        enum class ShapeType {
             A, B
         };
 
 
-        Box2DContactAdapter(b2Contact* contact): m_contact{contact} { }
+        Box2DContactAdapter(b2Contact* contact) : m_contact{contact} {
+        }
         Box2DContactAdapter(const Box2DContactAdapter& other) = delete;
         Box2DContactAdapter& operator=(const Box2DContactAdapter& other) = delete;
         Box2DContactAdapter(Box2DContactAdapter&& other) = delete;
@@ -138,7 +138,7 @@ namespace editor {
             contactShapeData.entityUuid = entity->getUUID();
             contactShapeData.fixtureUuid;
 
-            const auto& c2d =  entity -> getComponent<Collider2DComponent>();
+            const auto& c2d = entity -> getComponent<Collider2DComponent>();
 
             contactShapeData.category = c2d.filter.categoryBits;
             contactShapeData.mask = c2d.filter.maskBits;
@@ -152,7 +152,7 @@ namespace editor {
             return m_shapeA;
         }
 
-        SceneEntity* getContactShapeB()  {
+        SceneEntity* getContactShapeB() {
             m_shapeB = (SceneEntity*)(m_contact -> GetFixtureB() -> GetUserData().getData());
             return m_shapeB;
         }
@@ -162,8 +162,8 @@ namespace editor {
         SceneEntity* m_shapeB { nullptr };
     };
 
-    using ContactCallback = std::function<void(const Box2DContactAdapter&)>;
-    
+    using ContactCallback = std::function<void (const Box2DContactAdapter&)>;
+
     void Box2DPhysicsAdapter::BeginContact([[maybe_unused]] b2Contact* contact) {
         Box2DContactAdapter adapter(contact);
         ContactShapeData contactShapeDataA;
@@ -178,7 +178,7 @@ namespace editor {
             return;
         }
 
-        uint64_t A,B;
+        uint64_t A, B;
         uint64_t fA, fB;
         uint16_t catA, catB, maskA, maskB;
         bool senA, senB;
@@ -212,7 +212,7 @@ namespace editor {
         RB_EDITOR_WARN("Geomerty: Normal {0}:{1}", g.nx, g.ny);
         RB_EDITOR_WARN("Offset ny: {0}", offsetof(PhysicsContact2D, ny));
         ev.pointCount = g.count;
-        for (int i=0; i < g.count; i++)
+        for(int i = 0; i < g.count; i++)
             ev.points[i] = g.pts[i];
         ev.isSensorA = senA;
         ev.isSensorB = senB;
@@ -237,7 +237,7 @@ namespace editor {
             return;
         }
 
-        uint64_t A,B;
+        uint64_t A, B;
         uint64_t fA, fB;
         uint16_t catA, catB, maskA, maskB;
         bool senA, senB;
@@ -253,9 +253,10 @@ namespace editor {
 
         const bool trig = isTrigger(contact);
         PhysicsContact2D ev{};
-        ev.entityA=A; ev.entityB=B; ev.fixtureA=fA; ev.fixtureB=fB;
+        ev.entityA = A; ev.entityB = B; ev.fixtureA = fA; ev.fixtureB = fB;
         ev.type = trig ? PhysicsEventType::ExitTrigger : PhysicsEventType::Exit;
-        ev.isSensorA=senA; ev.isSensorB=senB; ev.categoryA=catA; ev.categoryB=catB; ev.maskA=maskA; ev.maskB=maskB;
+        ev.isSensorA = senA; ev.isSensorB = senB; ev.categoryA = catA; ev.categoryB = catB; ev.maskA = maskA;
+        ev.maskB = maskB;
         m_eventsThisFrame.push_back(ev);
     }
 
@@ -275,38 +276,29 @@ namespace editor {
             return;
         }
 
-        uint64_t A,B;
-        uint64_t fA, fB;
-        uint16_t catA, catB, maskA, maskB;
-        bool senA, senB;
+        uint64_t A, B;
 
         A = contactShapeDataA.entityUuid;
         B = contactShapeDataB.entityUuid;
-        catA = contactShapeDataA.category;
-        catB = contactShapeDataB.category;
-        maskA = contactShapeDataA.mask;
-        maskB = contactShapeDataB.mask;
-        senA = contactShapeDataA.isSensor;
-        senB = contactShapeDataB.isSensor;
 
         {
             /// check MycurrentTimer
 
-//            if ((udA && udA->dropThroughUntil > now) || (udB && udB->dropThroughUntil > now)) {
-//                c->SetEnabled(false);
-//                return;
-//            }
+            //            if ((udA && udA->dropThroughUntil > now) || (udB && udB->dropThroughUntil > now)) {
+            //                c->SetEnabled(false);
+            //                return;
+            //            }
         }
 
         const bool trig = isTrigger(contact);
-        PairKey key{A,B,trig}; //  PairKey key{A < B ? A : B, A < B ? B : A, trig};
+        PairKey key{A, B, trig}; //  PairKey key{A < B ? A : B, A < B ? B : A, trig};
         Geom g;
         FillWorld(contact, g);
         m_geomCache[key] = g;
     }
 
     void Box2DPhysicsAdapter::PostSolve([[maybe_unused]] b2Contact* contact,
-                                        [[maybe_unused]] const b2ContactImpulse* impulse) {
+        [[maybe_unused]] const b2ContactImpulse* impulse) {
         Box2DContactAdapter adapter(contact);
         ContactShapeData contactShapeDataA;
         ContactShapeData contactShapeDataB;
@@ -320,29 +312,20 @@ namespace editor {
             return;
         }
 
-        uint64_t A,B;
-        uint64_t fA, fB;
-        uint16_t catA, catB, maskA, maskB;
-        bool senA, senB;
+        uint64_t A, B;
 
         A = contactShapeDataA.entityUuid;
         B = contactShapeDataB.entityUuid;
-        catA = contactShapeDataA.category;
-        catB = contactShapeDataB.category;
-        maskA = contactShapeDataA.mask;
-        maskB = contactShapeDataB.mask;
-        senA = contactShapeDataA.isSensor;
-        senB = contactShapeDataB.isSensor;
 
         const bool trig = isTrigger(contact);
-        PairKey key{ A, B,trig};
+        PairKey key{ A, B, trig};
 
-        float n=0.f, t=0.f;
-        for (int i=0; i < impulse ->count;i++) {
+        float n = 0.f, t = 0.f;
+        for(int i = 0; i < impulse ->count; i++) {
             n += impulse->normalImpulses[i];
             t += impulse->tangentImpulses[i];
         }
-        m_impulses[key] = {n,t};
+        m_impulses[key] = {n, t};
     }
 
     void Box2DPhysicsAdapter::update(float dt) {
@@ -354,7 +337,7 @@ namespace editor {
         m_eventsThisFrame.clear();
 
         m_physicsWorld -> Step(dt, velocityUpdateIterations,
-                               positionUpdateIterations);
+            positionUpdateIterations);
 
         for(auto& entity: m_entityList)
             updateEntity(entity);
@@ -410,20 +393,20 @@ namespace editor {
 
             b2BodyDef b2BodyDef;
             switch(rb2d.type) {
-                case Physics2DComponent::BodyType::Static:
-                    b2BodyDef.type = b2BodyType::b2_staticBody;
-                    break;
-                case Physics2DComponent::BodyType::Dynamic:
-                    b2BodyDef.type = b2BodyType::b2_dynamicBody;
-                    break;
-                case Physics2DComponent::BodyType::Kinematic:
-                    b2BodyDef.type = b2BodyType::b2_kinematicBody;
-                    break;
+            case Physics2DComponent::BodyType::Static:
+                b2BodyDef.type = b2BodyType::b2_staticBody;
+                break;
+            case Physics2DComponent::BodyType::Dynamic:
+                b2BodyDef.type = b2BodyType::b2_dynamicBody;
+                break;
+            case Physics2DComponent::BodyType::Kinematic:
+                b2BodyDef.type = b2BodyType::b2_kinematicBody;
+                break;
             }
 
 
             b2BodyDef.position.Set(pixel_to_meters<float>(transform.getPosition().x),
-                                   pixel_to_meters<float>(transform.getPosition().y));
+                pixel_to_meters<float>(transform.getPosition().y));
             b2BodyDef.angle = 0; // TODO(a.raag) rotation angle in rodians
             b2BodyDef.userData; // userData на тело — можно положить entityID
 
@@ -442,9 +425,9 @@ namespace editor {
                 auto& c2d = lEntity.getComponent<Collider2DComponent>();
                 b2PolygonShape polygonShape;
 
-                auto center  = robot2D::vec2f {
-                        pixel_to_meters<float>(transform.getSize().x) / 2.F,
-                        pixel_to_meters<float>(transform.getSize().y) / 2.F
+                auto center = robot2D::vec2f {
+                    pixel_to_meters<float>(transform.getSize().x) / 2.F,
+                    pixel_to_meters<float>(transform.getSize().y) / 2.F
                 };
 
                 /// TODO(a.raag): realtime colliders view
@@ -457,13 +440,13 @@ namespace editor {
                 fixtureDef.isSensor = c2d.isTrigger;
                 const auto& fb = c2d.filter;
                 fixtureDef.filter.categoryBits = fb.categoryBits;
-                fixtureDef.filter.maskBits     = c2d.useDefaultMask
+                fixtureDef.filter.maskBits = c2d.useDefaultMask
                                          ? phys2d::LayerRegistry::I().defaultMaskFor(
-                                                 phys2d::layerNameFromCategoryBit(fb.categoryBits) )
+                    phys2d::layerNameFromCategoryBit(fb.categoryBits) )
                                          : fb.maskBits;
-                fixtureDef.filter.groupIndex   = fb.groupIndex;
+                fixtureDef.filter.groupIndex = fb.groupIndex;
 
-                if(b2BodyDef.type !=  b2BodyType::b2_kinematicBody) {
+                if(b2BodyDef.type != b2BodyType::b2_kinematicBody) {
                     fixtureDef.density = c2d.density;
                     fixtureDef.friction = c2d.friction;
                     fixtureDef.restitution = c2d.restitution;
@@ -472,7 +455,7 @@ namespace editor {
 
                 c2d.userData = {
                     .entityId = entity.getUUID(),
-                    .oneWay   = c2d.oneWay,
+                    .oneWay = c2d.oneWay,
                     .oneWayNormal = c2d.oneWayNormal, // в мировых или локальных? лучше в МИРОВЫХ
                     .generateEvents = true
                 };
@@ -502,19 +485,19 @@ namespace editor {
     }
 
     void Box2DPhysicsAdapter::emitStayAndSwap() {
-        for (auto& key : m_currentPairs) {
-            if (m_prevPairs.find(key) != m_prevPairs.end()) {
+        for(auto& key : m_currentPairs) {
+            if(m_prevPairs.find(key) != m_prevPairs.end()) {
                 PhysicsContact2D ev{};
                 ev.entityA = key.a; ev.entityB = key.b;
                 ev.type = key.trigger ? PhysicsEventType::StayTrigger : PhysicsEventType::Stay;
 
-                if (auto it = m_geomCache.find(key); it != m_geomCache.end()) {
+                if(auto it = m_geomCache.find(key); it != m_geomCache.end()) {
                     ev.nx = it->second.nx; ev.ny = it->second.ny;
                     ev.pointCount = it->second.count;
-                    for (int i=0;i<ev.pointCount;i++) ev.points[i] = it->second.pts[i];
+                    for(int i = 0; i < ev.pointCount; i++)ev.points[i] = it->second.pts[i];
                 }
-                if (auto it = m_impulses.find(key); it != m_impulses.end()) {
-                    ev.normalImpulse  = it->second.first;
+                if(auto it = m_impulses.find(key); it != m_impulses.end()) {
+                    ev.normalImpulse = it->second.first;
                     ev.tangentImpulse = it->second.second;
                 }
 
@@ -536,7 +519,7 @@ namespace editor {
         g.nx = wm.normal.x;
         g.ny = wm.normal.y;
         g.count = (uint8_t)c -> GetManifold() -> pointCount;
-        for (int i=0;i<g.count;i++) {
+        for(int i = 0; i < g.count; i++) {
             g.pts[i] = { wm.points[i].x, wm.points[i].y, wm.separations[i] };
         }
     }
