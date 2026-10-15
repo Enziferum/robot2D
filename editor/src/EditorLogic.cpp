@@ -174,7 +174,11 @@ namespace editor {
     }
 
     void EditorLogic::destroy() {
+        RB_EDITOR_INFO("[EditorLogic] Waiting for task queue to stop");
         TaskQueue::GetQueue() -> stop();
+        RB_EDITOR_INFO("[EditorLogic] Task queue stopped");
+        if(m_activeScene && m_activeScene -> isRunning())
+            m_activeScene -> onRuntimeStop(m_scriptInteractor.lock());
     }
 
     void EditorLogic::createProject(Project::Ptr project) {
@@ -203,7 +207,7 @@ namespace editor {
     }
 
     void EditorLogic::loadProject(Project::Ptr project) {
-        m_currentProject = project;
+        m_pendingProject = project;
         m_presenter.switchState(EditorState::Load);
 
         auto path = project -> getPath();
@@ -279,6 +283,16 @@ namespace editor {
     }
 
     void EditorLogic::loadSceneCallback(Scene::Ptr loadedScene) {
+        if(!loadedScene) {
+            m_pendingProject.reset();
+            m_presenter.switchState(m_activeScene ? EditorState::Edit : EditorState::LoadFailed);
+            RB_EDITOR_ERROR("[EditorLogic] Scene load failed; previous scene preserved={}",
+                            static_cast<bool>(m_activeScene));
+            return;
+        }
+        if(m_pendingProject)
+            m_currentProject = std::move(m_pendingProject);
+        RB_EDITOR_INFO("[EditorLogic] Applying scene to editor; path='{}'", loadedScene -> getPath());
         m_selectionService.clear();
         m_commandStack.clear();
         m_copyEntities.clear();
@@ -307,6 +321,8 @@ namespace editor {
         // TODO(a.raag): update project's start scene
         // m_currentProject -> save();
         m_router.openScene(m_activeScene, m_currentProject -> getPath());
+        RB_EDITOR_INFO("[EditorLogic] Scene applied; path='{}'; entities={}",
+                       m_activeScene -> getPath(), m_activeScene -> getEntities().size());
     }
 
 

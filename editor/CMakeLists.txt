@@ -2,6 +2,8 @@ include(${CMAKE_SOURCE_DIR}/cmake/Functions.cmake)
 
 option(RB2D_EDITOR_USE_GLM "Use GLM?" OFF)
 option(RB2D_EDITOR_THREAD_SANITIZER "Using thread sanitizer ?" OFF)
+option(RB2D_BUILD_EDITOR_TESTS "Build editor regression tests" OFF)
+option(RB2D_EDITOR_GRAPHICS_TESTS "Register editor tests requiring an OpenGL context" OFF)
 
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
@@ -31,9 +33,12 @@ set(LIBS robot2D-core robot2D-imgui yaml-cpp tinyfiledialogs FileWatch box2d tin
 file(GLOB_RECURSE INCLS include/editor/*.hpp)
 file(GLOB_RECURSE SRC src/*.cpp)
 
-add_executable(${PROJECT_NAME} ${INCLS} ${SRC})
+list(REMOVE_ITEM SRC "${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp")
+add_library(robot2D-editor-objects OBJECT ${INCLS} ${SRC})
+add_executable(${PROJECT_NAME} src/main.cpp)
 
 include(cmake/BuildInfo.cmake)
+target_include_directories(robot2D-editor-objects PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/generated/$<CONFIG>")
 
 if (RB2D_OS_WINDOWS)
     if(RB2D_COMPILER_MSVC)
@@ -47,11 +52,16 @@ if(UNIX)
     add_definitions(${GCC_COVERAGE_COMPILE_FLAGS})
 endif()
 
-target_include_directories(${PROJECT_NAME} PRIVATE ${MONO_INCLUDE_PATH})
-target_include_directories(${PROJECT_NAME} PUBLIC
+target_include_directories(robot2D-editor-objects PUBLIC ${MONO_INCLUDE_PATH}
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>")
 
-target_link_libraries(${PROJECT_NAME} PRIVATE ${LIBS})
+target_link_libraries(robot2D-editor-objects PUBLIC ${LIBS})
+target_link_libraries(${PROJECT_NAME} PRIVATE robot2D-editor-objects)
+
+if(RB2D_BUILD_EDITOR_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
+endif()
 
 add_custom_command(
         TARGET ${PROJECT_NAME} POST_BUILD

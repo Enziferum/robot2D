@@ -35,6 +35,7 @@ namespace editor {
 
     void ImageLoadTask::execute() {
         if(!m_image.loadFromFile(m_imagePath)) {
+            fail("Could not load image: " + m_imagePath);
             RB_EDITOR_ERROR("Can't load Image async, path = {0}", m_imagePath);
             return;
         }

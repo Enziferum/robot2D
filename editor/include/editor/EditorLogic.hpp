@@ -147,6 +147,7 @@ namespace editor {
         IScriptInteractorFrom::WeakPtr m_scriptInteractor;
 
         Project::Ptr m_currentProject;
+        Project::Ptr m_pendingProject;
         SceneManager m_sceneManager;
         Scene::Ptr m_activeScene;
 

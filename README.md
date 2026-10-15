@@ -56,3 +56,22 @@ Code Guards
   ctest --output-junit engine_tests.xml --output-on-failure --test-dir build/tests
 ```
  - Your output will be inside `build` folder.
+
+## Editor regression tests
+
+Enable `RB2D_BUILD_EDITOR_TESTS=ON`, build `robot2D-editor-test-suite`, then run:
+
+```shell
+ctest --test-dir build -L headless --no-tests=error --output-on-failure
+```
+
+Scene integration tests use a hidden OpenGL 4.5 context and are enabled separately
+with `RB2D_EDITOR_GRAPHICS_TESTS=ON` (`ctest --test-dir build -L graphics`).
+See [editor test setup, coverage and manual UI checks](docs/editor-testing.md).
+
+## CI reports
+
+GitHub Actions → **Engine Build** → select a run → **Summary** shows test results
+and failure details for Linux/Windows. **Artifacts** contains JUnit XML and full
+build/test logs (`test-report-<runner>`, retained for 14 days).
+See [CI setup and local reproduction](docs/ci.md).

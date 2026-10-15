@@ -19,6 +19,7 @@ and must not be misrepresented as being the original software.
 source distribution.
 *********************************************************************/
 #include <filesystem>
+#include <chrono>
 
 #include <editor/async/SceneLoadTask.hpp>
 #include <editor/serializers/SceneSerializer.hpp>
@@ -44,21 +45,33 @@ namespace editor {
 
 
     void SceneLoadTask::execute()  {
-
+        const auto started = std::chrono::steady_clock::now();
+        RB_EDITOR_INFO("[SceneLoad] Started; path='{}'", m_scene -> getPath());
         SceneSerializer serializer{m_scene };
 
         auto interactor = m_scriptInteractorFrom.lock();
         if(!interactor) {
-            RB_EDITOR_ERROR("[SceneLoadTask]: Interactor is nullptr.");
+            fail("Script interactor is unavailable");
+            RB_EDITOR_ERROR("[SceneLoad] Failed; path='{}'; reason=script interactor unavailable",
+                            m_scene -> getPath());
             return;
         }
 
         if(!serializer.deserialize(m_scene -> getPath(), interactor)) {
-            RB_EDITOR_ERROR("SceneLoadTask: Can't Deserialze Scene");
+            fail(serializer.getErrorMessage());
+            RB_EDITOR_ERROR("[SceneLoad] Deserialize failed; path='{}'; reason='{}'; detail='{}'",
+                            m_scene -> getPath(), errorToString(serializer.getError()),
+                            serializer.getErrorMessage());
             return;
         }
 
+        RB_EDITOR_INFO("[SceneLoad] Deserialize completed; path='{}'; entities={}; loading assets",
+                       m_scene -> getPath(), m_scene -> getEntities().size());
         loadAssets();
+        const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::steady_clock::now() - started).count();
+        RB_EDITOR_INFO("[SceneLoad] CPU loading completed; path='{}'; elapsed_ms={}",
+                       m_scene -> getPath(), elapsed);
     }
 
     void SceneLoadTask::loadAssets() {

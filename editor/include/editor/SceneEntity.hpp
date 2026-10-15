@@ -25,7 +25,7 @@ source distribution.
 #include <list>
 #include <optional>
 #include <cassert>
-#include <robot2D/Ecs/Entity.hpp>
+#include <robot2D/Ecs/EntityManager.hpp>
 #include <robot2D/Graphics/Rect.hpp>
 #include "Uuid.hpp"
 

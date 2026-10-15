@@ -21,6 +21,7 @@ source distribution.
 
 #pragma once
 #include <memory>
+#include <utility>
 
 namespace editor {
     class ITaskFunction {

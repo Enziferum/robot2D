@@ -1,0 +1,44 @@
+add_executable(robot2D-task-tests TaskQueueTests.cpp)
+target_link_libraries(robot2D-task-tests PRIVATE robot2D-editor-objects)
+
+add_executable(robot2D-editor-tests EditorTests.cpp)
+target_link_libraries(robot2D-editor-tests PRIVATE robot2D-editor-objects)
+
+add_executable(robot2D-scene-tests SceneTests.cpp)
+target_link_libraries(robot2D-scene-tests PRIVATE robot2D-editor-objects)
+
+add_custom_target(robot2D-editor-test-suite DEPENDS robot2D-task-tests robot2D-editor-tests robot2D-scene-tests)
+
+function(rb2d_register_test name executable scenario labels)
+    set(test_directory "${CMAKE_CURRENT_BINARY_DIR}/scenarios/${name}")
+    file(MAKE_DIRECTORY "${test_directory}")
+    add_test(NAME "${name}" COMMAND "${executable}" "${scenario}")
+    set_tests_properties("${name}" PROPERTIES TIMEOUT 30
+        LABELS "editor;${labels}" WORKING_DIRECTORY "${test_directory}")
+    if(WIN32)
+        get_filename_component(compiler_directory "${CMAKE_CXX_COMPILER}" DIRECTORY)
+        set(test_path "${compiler_directory};${MONO_BINARY_PATH};$ENV{PATH}")
+        string(REPLACE ";" "\;" test_path "${test_path}")
+        set_tests_properties("${name}" PROPERTIES ENVIRONMENT "PATH=${test_path}")
+    endif()
+endfunction()
+
+foreach(task_case IN ITEMS empty completion shutdown clear callback dispatch)
+    rb2d_register_test("task-queue-${task_case}" robot2D-task-tests "${task_case}" "headless;async")
+endforeach()
+
+foreach(editor_case IN ITEMS selection console-stream console-limits yaml-save payload
+        config-roundtrip config-invalid cache-roundtrip cache-recovery cache-future cache-migration)
+    rb2d_register_test("editor-${editor_case}" robot2D-editor-tests "${editor_case}" "headless")
+endforeach()
+
+if(WIN32)
+    rb2d_register_test(editor-cache-write-failure robot2D-editor-tests cache-write-failure "headless;windows")
+endif()
+
+if(RB2D_EDITOR_GRAPHICS_TESTS)
+    foreach(scene_case IN ITEMS hierarchy roundtrip invalid legacy prefab save-dirty async-load close-project startup-failure)
+        rb2d_register_test("editor-scene-${scene_case}" robot2D-scene-tests "${scene_case}" "graphics;integration")
+        set_tests_properties("editor-scene-${scene_case}" PROPERTIES SKIP_RETURN_CODE 77)
+    endforeach()
+endif()

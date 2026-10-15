@@ -61,6 +61,10 @@ namespace robot2D {
 
         m_application = std::move(application);
 
+        RB_CORE_INFO("[Engine] Creating window; title='{}'; size={}x{}; frame_rate={}",
+                     engineConfiguration.windowTitle, engineConfiguration.windowSize.x,
+                     engineConfiguration.windowSize.y, engineConfiguration.maxFrameRate);
+
         RenderWindow renderWindow{engineConfiguration.windowSize,
                                   engineConfiguration.windowTitle,
                                   engineConfiguration.windowContext};
@@ -70,7 +74,9 @@ namespace robot2D {
 
         m_application -> setWindow(&renderWindow);
 
+        RB_CORE_INFO("[Engine] Application setup started");
         setup();
+        RB_CORE_INFO("[Engine] Application setup completed; entering main loop");
         while (m_application -> isRunning() &&
                 renderWindow.isOpen()) {
             float delta = m_frameClock.restart().asSeconds();
@@ -90,7 +96,14 @@ namespace robot2D {
             m_application -> render();
         }
 
+        RB_CORE_INFO("[Engine] Main loop stopped; application_running={}; window_open={}",
+                     m_application -> isRunning(), renderWindow.isOpen());
+        RB_CORE_INFO("[Engine] Application destroy started");
         m_application -> destroy();
+        RB_CORE_INFO("[Engine] Application destroy completed");
+        // GUI and application graphics resources must be released before the local window.
+        m_application.reset();
+        RB_CORE_INFO("[Engine] Application released; window can now be destroyed");
     }
 
     int constructEngine(Application::Ptr application,

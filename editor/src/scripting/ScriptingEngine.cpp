@@ -480,8 +480,16 @@ namespace editor {
     }
 
     void ScriptEngine::Shutdown() {
+        if(!s_Data)
+            return;
+        // Stop the producer before unloading Mono or destroying the state accessed by its callback.
+        s_Data -> resetFilewatcher();
+        s_Data -> m_entityInstances.clear();
+        s_Data -> interactor.reset();
+        s_Data -> camera.reset();
         ShutdownMono();
         delete s_Data;
+        s_Data = nullptr;
     }
 
     void ScriptEngine::ShutdownMono() {

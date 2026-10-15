@@ -258,6 +258,8 @@ namespace editor {
     void Editor::update(float dt) {
         if(m_state == State::LostFocus)
             return;
+        if(m_interactor -> getState() == EditorState::LoadFailed)
+            return;
 
         switch(m_interactor -> getState()) {
             default:
@@ -334,6 +336,13 @@ namespace editor {
     }
 
     void Editor::guiRender() {
+        if(m_interactor -> getState() == EditorState::LoadFailed) {
+            ImGui::Begin("Scene loading failed", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+            ImGui::TextUnformatted("The scene could not be loaded. See robot2D.log for details.");
+            ImGui::TextUnformatted("Close the editor and check the project before reopening it.");
+            ImGui::End();
+            return;
+        }
         auto stats = m_window -> getStats();
         m_panelManager.getPanel<UtilPanel>().setRenderStats(std::move(stats));
         m_panelManager.render();
