@@ -1,22 +1,22 @@
 /*********************************************************************
-(c) Alex Raag 2026
-https://github.com/Enziferum
-robot2D - Zlib license.
-This software is provided 'as-is', without any express or
-implied warranty. In no event will the authors be held
-liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute
-it freely, subject to the following restrictions:
-1. The origin of this software must not be misrepresented;
-you must not claim that you wrote the original software.
-If you use this software in a product, an acknowledgment
-in the product documentation would be appreciated but
-is not required.
-2. Altered source versions must be plainly marked as such,
-and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any
-source distribution.
+   (c) Alex Raag 2026
+   https://github.com/Enziferum
+   robot2D - Zlib license.
+   This software is provided 'as-is', without any express or
+   implied warranty. In no event will the authors be held
+   liable for any damages arising from the use of this software.
+   Permission is granted to anyone to use this software for any purpose,
+   including commercial applications, and to alter it and redistribute
+   it freely, subject to the following restrictions:
+   1. The origin of this software must not be misrepresented;
+   you must not claim that you wrote the original software.
+   If you use this software in a product, an acknowledgment
+   in the product documentation would be appreciated but
+   is not required.
+   2. Altered source versions must be plainly marked as such,
+   and must not be misrepresented as being the original software.
+   3. This notice may not be removed or altered from any
+   source distribution.
 *********************************************************************/
 
 #include <fstream>
@@ -47,10 +47,11 @@ namespace editor {
         };
     }
 
-    SceneSerializer::SceneSerializer(Scene::Ptr scene): m_scene(std::move(scene)) {}
+    SceneSerializer::SceneSerializer(Scene::Ptr scene) : m_scene(std::move(scene)) {
+    }
 
     bool SceneSerializer::serialize(const std::string& path, const std::string& sceneName,
-                                     IScriptInteractorFrom::Ptr scriptingEngine) {
+        IScriptInteractorFrom::Ptr scriptingEngine) {
         m_error = SceneSerializerError::None;
         m_errorMessage.clear();
         if(!m_scene) {
@@ -87,12 +88,12 @@ namespace editor {
             yaml::write(out, "EntityCount", entities.size());
             out << YAML::Key << "RootEntities" << YAML::Value << YAML::Flow << roots;
             out << YAML::Key << "Entities" << YAML::Value << YAML::BeginSeq;
-            EntityYAMLSerializer serializer;
+            EntityYAMLSerializer serializer(m_scene -> getAssociatedProjectPath());
             for(const auto& entity: entities) {
                 if(!serializer.serialize(out, entity, scriptingEngine, false)) {
                     m_error = SceneSerializerError::InvalidData;
                     m_errorMessage = "Entity " + std::to_string(static_cast<EntityID>(entity.getUUID())) +
-                                     ": " + serializer.getErrorMessage();
+                        ": " + serializer.getErrorMessage();
                     return false;
                 }
             }
@@ -179,17 +180,18 @@ namespace editor {
                 if(const auto hierarchy = node["HierarchyComponent"]) {
                     if(!hierarchy.IsMap())
                         return fail(SceneSerializerError::InvalidHierarchy, "HierarchyComponent must be a map");
-                    record.children = yaml::optional<std::vector<EntityID>>(hierarchy, "Children", {});
+                    record.children = yaml::optional<std::vector<EntityID> >(hierarchy, "Children", {});
                 }
                 if(const auto transform = node["TransformComponent"]) {
                     if(!transform.IsMap())
                         return fail(SceneSerializerError::InvalidData, "TransformComponent must be a map");
                     if(!legacy && (transform["ParentID"] || transform["ChildIDs"] ||
-                                   transform["isChild"] || transform["HasChildren"]))
-                        return fail(SceneSerializerError::InvalidHierarchy, "Legacy hierarchy fields in a versioned scene");
+                        transform["isChild"] || transform["HasChildren"]))
+                        return fail(SceneSerializerError::InvalidHierarchy,
+                                   "Legacy hierarchy fields in a versioned scene");
                     if(legacy && !node["HierarchyComponent"]) {
                         if(transform["ChildIDs"])
-                            record.children = yaml::read<std::vector<EntityID>>(transform, "ChildIDs");
+                            record.children = yaml::read<std::vector<EntityID> >(transform, "ChildIDs");
                         else if(yaml::optional<bool>(transform, "HasChildren", false))
                             return fail(SceneSerializerError::InvalidHierarchy, "HasChildren requires ChildIDs");
                         if(yaml::optional<bool>(transform, "isChild", false) || transform["ParentID"])
@@ -203,7 +205,8 @@ namespace editor {
             for(const auto& record: records) {
                 for(const auto child: record.children) {
                     if(!index.count(child) || child == record.id || !parents.emplace(child, record.id).second)
-                        return fail(SceneSerializerError::InvalidHierarchy, "Invalid, repeated or multiply parented child " + std::to_string(child));
+                        return fail(SceneSerializerError::InvalidHierarchy,
+                                   "Invalid, repeated or multiply parented child " + std::to_string(child));
                 }
             }
             if(legacy) {
@@ -229,7 +232,7 @@ namespace editor {
                         roots.push_back(record.id);
             }
             else
-                roots = yaml::read<std::vector<EntityID>>(data, "RootEntities");
+                roots = yaml::read<std::vector<EntityID> >(data, "RootEntities");
             std::unordered_set<EntityID> visited;
             visited.reserve(records.size());
             std::vector<EntityID> pending = roots;
@@ -262,7 +265,7 @@ namespace editor {
                 bool addToScene = true;
                 if(!serializer.deserialize(record.data, entity, addToScene, unusedHierarchy, scriptingEngine))
                     return fail(SceneSerializerError::InvalidData, "Entity " + std::to_string(record.id) +
-                                ": " + serializer.getErrorMessage());
+                               ": " + serializer.getErrorMessage());
                 // Rebind loaded TransformComponent to its owning scene; this does not add an ECS entity twice.
                 if(!m_scene -> attachEntity(entity))
                     return fail(SceneSerializerError::InvalidData, "Could not finalize entity");
@@ -272,7 +275,8 @@ namespace editor {
                     if(!m_scene -> reparent(m_scene -> getEntity(UUID{child}), m_scene -> getEntity(UUID{record.id})))
                         return fail(SceneSerializerError::InvalidHierarchy, "Could not attach child");
             for(std::size_t i = roots.size(); i > 1; --i)
-                if(!m_scene -> setBefore(m_scene -> getEntity(UUID{roots[i - 2]}), m_scene -> getEntity(UUID{roots[i - 1]})))
+                if(!m_scene -> setBefore(m_scene -> getEntity(UUID{roots[i - 2]}),
+                    m_scene -> getEntity(UUID{roots[i - 1]})))
                     return fail(SceneSerializerError::InvalidHierarchy, "Could not restore root order");
             m_scene -> setName(name);
             m_scene -> markSaved();

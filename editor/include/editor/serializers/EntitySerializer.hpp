@@ -9,7 +9,7 @@
 #include <editor/scripting/ScriptingEngineService.hpp>
 
 namespace editor {
-    using ChildPair = std::pair<UUID, std::vector<UUID>>;
+    using ChildPair = std::pair<UUID, std::vector<UUID> >;
 
     struct ChildInfo {
         bool isChild{false};
@@ -17,8 +17,12 @@ namespace editor {
         UUID parentUUID;
         ChildPair childPair;
 
-        bool isEmpty() const { return !isChild && childPair.second.empty(); }
-        bool hasChildren() const { return !childPair.second.empty(); }
+        bool isEmpty() const {
+            return !isChild && childPair.second.empty();
+        }
+        bool hasChildren() const {
+            return !childPair.second.empty();
+        }
     };
 
     class IEntitySerializer {
@@ -28,26 +32,31 @@ namespace editor {
 
 
 
-    class EntityYAMLSerializer final: public IEntitySerializer {
+    class EntityYAMLSerializer final : public IEntitySerializer {
     public:
         EntityYAMLSerializer() = default;
+        explicit EntityYAMLSerializer(std::string projectPath) : m_projectPath(std::move(projectPath)) {
+        }
         EntityYAMLSerializer(const EntityYAMLSerializer& other) = delete;
         EntityYAMLSerializer& operator=(const EntityYAMLSerializer& other) = delete;
         EntityYAMLSerializer(EntityYAMLSerializer&& other) = delete;
         EntityYAMLSerializer& operator=(EntityYAMLSerializer&& other) = delete;
-        ~EntityYAMLSerializer() noexcept override  = default;
+        ~EntityYAMLSerializer() noexcept override = default;
 
 
         bool serialize(YAML::Emitter& out, const SceneEntity& entity,
-                       IScriptInteractorFrom::Ptr scriptInteractor, bool recursive = true);
+            IScriptInteractorFrom::Ptr scriptInteractor, bool recursive = true);
         bool deserialize(const YAML::Node& iterator,
-                         SceneEntity& entity,
-                         bool& addToScene,
-                         std::vector<ChildInfo>& children,
-                         IScriptInteractorFrom::Ptr scriptInteractor);
-        const std::string& getErrorMessage() const { return m_errorMessage; }
+            SceneEntity& entity,
+            bool& addToScene,
+            std::vector<ChildInfo>& children,
+            IScriptInteractorFrom::Ptr scriptInteractor);
+        const std::string& getErrorMessage() const {
+            return m_errorMessage;
+        }
 
     private:
+        std::string m_projectPath;
         std::string m_errorMessage;
     };
 
@@ -55,7 +64,7 @@ namespace editor {
 
     template<typename T, typename ... Args>
     std::unique_ptr<T> getSerializer(Args&& ... args) {
-        static_assert(std::is_base_of_v<IEntitySerializer, T> && "Custom Serializer must be base of IEntitySerializer");
+        static_assert(std::is_base_of_v<IEntitySerializer, T>&& "Custom Serializer must be base of IEntitySerializer");
         return std::make_unique<T>(std::forward<Args>(args)...);
     }
 
