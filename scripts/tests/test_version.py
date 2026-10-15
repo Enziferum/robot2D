@@ -16,6 +16,9 @@ GIT = shutil.which("git")
 
 class VersionTests(unittest.TestCase):
     def setUp(self):
+        self.assertIsNotNone(CMAKE, "Version fixtures require CMake in PATH")
+        self.assertIsNotNone(GIT, "Version fixtures require Git in PATH")
+        self.assertIsNotNone(shutil.which("ninja"), "Version fixtures require Ninja in PATH")
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name).resolve()
