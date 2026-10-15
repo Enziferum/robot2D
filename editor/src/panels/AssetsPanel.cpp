@@ -1,22 +1,22 @@
 /*********************************************************************
-(c) Alex Raag 2024
-https://github.com/Enziferum
-robot2D - Zlib license.
-This software is provided 'as-is', without any express or
-implied warranty. In no event will the authors be held
-liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute
-it freely, subject to the following restrictions:
-1. The origin of this software must not be misrepresented;
-you must not claim that you wrote the original software.
-If you use this software in a product, an acknowledgment
-in the product documentation would be appreciated but
-is not required.
-2. Altered source versions must be plainly marked as such,
-and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any
-source distribution.
+   (c) Alex Raag 2024
+   https://github.com/Enziferum
+   robot2D - Zlib license.
+   This software is provided 'as-is', without any express or
+   implied warranty. In no event will the authors be held
+   liable for any damages arising from the use of this software.
+   Permission is granted to anyone to use this software for any purpose,
+   including commercial applications, and to alter it and redistribute
+   it freely, subject to the following restrictions:
+   1. The origin of this software must not be misrepresented;
+   you must not claim that you wrote the original software.
+   If you use this software in a product, an acknowledgment
+   in the product documentation would be appreciated but
+   is not required.
+   2. Altered source versions must be plainly marked as such,
+   and must not be misrepresented as being the original software.
+   3. This notice may not be removed or altered from any
+   source distribution.
 *********************************************************************/
 
 #include <filesystem>
@@ -47,30 +47,30 @@ namespace editor {
 
     namespace {
         static ImGuiInputTextFlags inputFlags = ImGuiInputTextFlags_EnterReturnsTrue
-                                                | ImGuiInputTextFlags_AutoSelectAll;
+            | ImGuiInputTextFlags_AutoSelectAll;
 
         static std::unordered_map< std::string, AssetsPanelConfiguration::ResourceIconType> resourceTypes = {
-                {".png", AssetsPanelConfiguration::ResourceIconType::Image },
-                {".jpg", AssetsPanelConfiguration::ResourceIconType::Image },
-                {".jpeg", AssetsPanelConfiguration::ResourceIconType::Image },
-                {".scene", AssetsPanelConfiguration::ResourceIconType::Scene },
-                {".cs", AssetsPanelConfiguration::ResourceIconType::Script },
-                {".ttf", AssetsPanelConfiguration::ResourceIconType::Font },
-                {".prefab", AssetsPanelConfiguration::ResourceIconType::Prefab },
-                {".anim", AssetsPanelConfiguration::ResourceIconType::Animation },
+            {".png", AssetsPanelConfiguration::ResourceIconType::Image },
+            {".jpg", AssetsPanelConfiguration::ResourceIconType::Image },
+            {".jpeg", AssetsPanelConfiguration::ResourceIconType::Image },
+            {".scene", AssetsPanelConfiguration::ResourceIconType::Scene },
+            {".cs", AssetsPanelConfiguration::ResourceIconType::Script },
+            {".ttf", AssetsPanelConfiguration::ResourceIconType::Font },
+            {".prefab", AssetsPanelConfiguration::ResourceIconType::Prefab },
+            {".anim", AssetsPanelConfiguration::ResourceIconType::Animation },
         };
 
         const char* resourceIcon(AssetsPanelConfiguration::ResourceIconType type) {
             using Type = AssetsPanelConfiguration::ResourceIconType;
             switch(type) {
-                case Type::Directory: return ICON_FA_FOLDER;
-                case Type::Scene: return ICON_FA_LAYER_GROUP;
-                case Type::Image: return ICON_FA_IMAGE;
-                case Type::Script: return ICON_FA_CODE;
-                case Type::Font: return ICON_FA_FONT;
-                case Type::Prefab: return ICON_FA_CUBES;
-                case Type::Animation: return ICON_FA_FILM;
-                default: return ICON_FA_FILE;
+            case Type::Directory: return ICON_FA_FOLDER;
+            case Type::Scene: return ICON_FA_LAYER_GROUP;
+            case Type::Image: return ICON_FA_IMAGE;
+            case Type::Script: return ICON_FA_CODE;
+            case Type::Font: return ICON_FA_FONT;
+            case Type::Prefab: return ICON_FA_CUBES;
+            case Type::Animation: return ICON_FA_FILM;
+            default: return ICON_FA_FILE;
             }
         }
 
@@ -89,16 +89,16 @@ namespace editor {
 
 
     AssetsPanel::AssetsPanel(robot2D::MessageBus& messageBus,
-                             UIInteractor::Ptr uiInteractor,
-                             IUIManager& iuiManager,
-                             PrefabManager& prefabManager):
-    IPanel(UniqueType(typeid(AssetsPanel))),
-    m_messageBus{messageBus},
-    m_interactor{uiInteractor},
-    m_uiManager(iuiManager),
-    m_prefabManager{prefabManager},
-    m_currentPath(""),
-    m_configuration{} {
+        UIInteractor::Ptr uiInteractor,
+        IUIManager& iuiManager,
+        PrefabManager& prefabManager) :
+        IPanel(UniqueType(typeid(AssetsPanel))),
+        m_messageBus{messageBus},
+        m_interactor{uiInteractor},
+        m_uiManager(iuiManager),
+        m_prefabManager{prefabManager},
+        m_currentPath(""),
+        m_configuration{} {
 
         m_itemEditName.second = false;
         setupIconAtlas();
@@ -131,13 +131,13 @@ namespace editor {
             ImTextCharFromUtf8(&codepoint, resourceIcon(type), nullptr);
             if(auto* glyph = font -> FindGlyphNoFallback(static_cast<ImWchar>(codepoint))) {
                 m_resourceIcons[type] = {{glyph -> U0, glyph -> V0}, {glyph -> U1, glyph -> V1},
-                                        {glyph -> X1 - glyph -> X0, glyph -> Y1 - glyph -> Y0}};
+                    {glyph -> X1 - glyph -> X0, glyph -> Y1 - glyph -> Y0}};
             }
         }
     }
 
     void AssetsPanel::drawResourceIcon(AssetsPanelConfiguration::ResourceIconType type,
-                                       robot2D::vec2f position, float size) {
+        robot2D::vec2f position, float size) {
         auto* drawList = ImGui::GetWindowDrawList();
         const ImVec4 color = type == AssetsPanelConfiguration::ResourceIconType::Directory
                              ? ImVec4{0.55f, 0.76f, 0.96f, 1.f} : ImVec4{0.70f, 0.77f, 0.86f, 1.f};
@@ -148,14 +148,14 @@ namespace editor {
             const auto dimensions = icon.size * scale;
             const auto origin = position + (robot2D::vec2f{size, size} - dimensions) * 0.5f;
             drawList -> AddImage(ImGui::convertTextureHandle(m_iconAtlas.getID()),
-                    {origin.x, origin.y}, {origin.x + dimensions.x, origin.y + dimensions.y},
-                    {icon.uvMin.x, icon.uvMin.y}, {icon.uvMax.x, icon.uvMax.y}, ImGui::GetColorU32(color));
+                {origin.x, origin.y}, {origin.x + dimensions.x, origin.y + dimensions.y},
+                {icon.uvMin.x, icon.uvMin.y}, {icon.uvMax.x, icon.uvMax.y}, ImGui::GetColorU32(color));
         }
         else {
             const char* glyph = resourceIcon(type);
             const auto dimensions = ImGui::CalcTextSize(glyph);
             drawList -> AddText({position.x + (size - dimensions.x) * 0.5f,
-                                position.y + (size - dimensions.y) * 0.5f}, ImGui::GetColorU32(color), glyph);
+                                 position.y + (size - dimensions.y) * 0.5f}, ImGui::GetColorU32(color), glyph);
         }
     }
 
@@ -186,7 +186,7 @@ namespace editor {
             if(ImGui::BeginChild("##AssetBrowser", {0, 0})) {
                 m_visible = m_visible || ImGui::IsWindowFocused();
                 const float cellSize = std::max(96.f, m_configuration.m_thumbnaleSize + m_configuration.m_padding)
-                        + ImGui::GetStyle().CellPadding.x * 2.f;
+                + ImGui::GetStyle().CellPadding.x * 2.f;
                 const auto panelWidth = ImGui::GetContentRegionAvail().x;
                 const int tableCount = std::clamp(static_cast<int>(panelWidth / cellSize), 1, 64);
                 std::error_code error;
@@ -211,7 +211,7 @@ namespace editor {
                     ImGui::TextDisabled("Folder is unavailable");
 
                 if(ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Left)
-                        && !anyItemIsHovered && !ImGui::IsAnyItemHovered()) {
+                && !anyItemIsHovered && !ImGui::IsAnyItemHovered()) {
                     m_itemEditName = {};
                     m_itemClicked = false;
                 }
@@ -222,7 +222,7 @@ namespace editor {
     }
 
     void AssetsPanel::processDragDrop(const std::filesystem::directory_entry& directoryEntry,
-                                      std::filesystem::path& relativePath) {
+        std::filesystem::path& relativePath) {
         {
             robot2D::DragDropTarget dragDropTarget{treeNodeItemID};
             if(auto* uuid = dragDropTarget.unpackPayload<UUID>()) {
@@ -250,9 +250,9 @@ namespace editor {
                     ImGui::SetDragDropPayload(contentSceneID, itemPath, len);
                     ImGui::TextUnformatted(relativePath.filename().string().c_str());
                 }
-                if(extension == ".png" || extension == ".jpg" ||  extension == ".ttf") {
-                   ImGui::SetDragDropPayload(contentItemID, itemPath, len);
-                   ImGui::TextUnformatted(relativePath.filename().string().c_str());
+                if(extension == ".png" || extension == ".jpg" || extension == ".ttf") {
+                    ImGui::SetDragDropPayload(contentItemID, itemPath, len);
+                    ImGui::TextUnformatted(relativePath.filename().string().c_str());
                 }
                 if(extension == ".prefab") {
                     ImGui::SetDragDropPayload(contentPrefabItemID, itemPath, len);
@@ -264,10 +264,9 @@ namespace editor {
     }
 
     void AssetsPanel::uiAssetsCreation() {
-        if (!m_itemClicked &&
+        if(!m_itemClicked &&
             ImGui::BeginPopupContextWindow(nullptr,
-                                           robot2D::mouse2int(robot2D::Mouse::MouseRight)))
-        {
+            robot2D::mouse2int(robot2D::Mouse::MouseRight))) {
             m_itemEditName.second = false;
             imgui_MenuItem("Add Folder") {
                 m_assetItems.emplace_back(AssetItem {AssetType::Folder,
@@ -297,14 +296,15 @@ namespace editor {
                             ? AssetsPanelConfiguration::ResourceIconType::Scene
                             : AssetsPanelConfiguration::ResourceIconType::Directory;
             const auto iconPosition = ImGui::GetCursorScreenPos();
-            ImGui::InvisibleButton("##NewAssetIcon", {m_configuration.m_thumbnaleSize, m_configuration.m_thumbnaleSize});
+            ImGui::InvisibleButton("##NewAssetIcon",
+                {m_configuration.m_thumbnaleSize, m_configuration.m_thumbnaleSize});
             drawResourceIcon(iconType, {iconPosition.x, iconPosition.y}, m_configuration.m_thumbnaleSize);
             ImGui::SetNextItemWidth(m_configuration.m_thumbnaleSize);
             const bool submitted = robot2D::InputText("##NewItemName", &asset.name, inputFlags);
             ImGui::PopID();
             if(submitted) {
                 if(asset.name.empty() || fs::path(asset.name).has_parent_path()
-                        || asset.name == "." || asset.name == "..")
+                    || asset.name == "." || asset.name == "..")
                     continue;
                 auto fullPath = combinePath(asset.absolutePath.string(), asset.name);
                 if(asset.assetType == AssetType::Scene) {
@@ -328,11 +328,11 @@ namespace editor {
                 fs::path fromPath{path};
                 if(is_directory(fromPath))
                     continue;
-                auto toPath = m_currentPath;
-                auto finalPath = combinePath(toPath.string(), fromPath.filename().string());
-                fs::copy_file(fromPath, finalPath);
-            } catch(fs::filesystem_error& e) {
-                RB_EDITOR_ERROR("Assets Panel: Couldn't copy {0}", e.what());
+                importProjectAsset(m_assetsPath.parent_path().u8string(), path,
+                    m_currentPath.u8string());
+            } catch(const std::exception& e) {
+                RB_EDITOR_ERROR("Assets import failed; source='{}'; destination='{}'; reason='{}'",
+                    path, m_currentPath.u8string(), e.what());
             }
         }
     }
@@ -384,7 +384,7 @@ namespace editor {
         ImGui::SetNextItemWidth(std::min(160.f, ImGui::GetContentRegionAvail().x));
         auto& thumbnailSize = EditorConfig::getConfig().assetsThumbnailSize;
         if(ImGui::SliderInt("##PreviewSize", &thumbnailSize, 48, 128, "Preview: %d px",
-                           ImGuiSliderFlags_AlwaysClamp)) {
+            ImGuiSliderFlags_AlwaysClamp)) {
             m_configuration.m_thumbnaleSize = static_cast<float>(thumbnailSize);
             ImGui::GetIO().WantSaveIniSettings = true;
         }
@@ -430,7 +430,7 @@ namespace editor {
                 bool focusRename = false;
                 auto* drawList = ImGui::GetWindowDrawList();
                 drawList -> AddRectFilled(position, {position.x + width, position.y + height},
-                                           ImGui::GetColorU32(ImGuiCol_FrameBg), 4.f);
+                    ImGui::GetColorU32(ImGuiCol_FrameBg), 4.f);
                 const bool clicked = ImGui::Selectable("##Asset", selected,
                         ImGuiSelectableFlags_AllowDoubleClick | ImGuiSelectableFlags_AllowItemOverlap, {width, height});
                 const bool hovered = ImGui::IsItemHovered();
@@ -451,13 +451,13 @@ namespace editor {
                 drawList -> PushClipRect(position, {position.x + width - 3.f, position.y + height}, true);
                 if(!(selected && m_itemEditName.second))
                     ImGui::RenderTextEllipsis(drawList, {position.x + 4.f, textY},
-                            {position.x + width - 4.f, textY + ImGui::GetTextLineHeight()},
-                            position.x + width - 4.f, position.x + width - 4.f,
-                            filename.c_str(), nullptr, nullptr);
+                        {position.x + width - 4.f, textY + ImGui::GetTextLineHeight()},
+                        position.x + width - 4.f, position.x + width - 4.f,
+                        filename.c_str(), nullptr, nullptr);
                 const auto type = directory ? std::string{"Folder"}
                                             : (path.has_extension() ? path.extension().string() : "File");
                 drawList -> AddText({position.x + 4.f, textY + ImGui::GetTextLineHeight()},
-                                    ImGui::GetColorU32(ImGuiCol_TextDisabled), type.c_str());
+                    ImGui::GetColorU32(ImGuiCol_TextDisabled), type.c_str());
                 drawList -> PopClipRect();
 
                 processDragDrop(directoryEntry, relativePath);
@@ -477,7 +477,7 @@ namespace editor {
                     ImGui::EndPopup();
                 }
                 if(selected && ImGui::IsWindowFocused() && !ImGui::GetIO().WantTextInput
-                        && ImGui::IsKeyPressed(ImGuiKey_F2)) {
+                    && ImGui::IsKeyPressed(ImGuiKey_F2)) {
                     m_itemEditName.second = true;
                     m_editName = filename;
                     focusRename = true;
@@ -489,8 +489,8 @@ namespace editor {
                     if(focusRename)
                         ImGui::SetKeyboardFocusHere();
                     if(robot2D::InputText("##ItemName", &m_editName, inputFlags)
-                            && !m_editName.empty() && !fs::path(m_editName).has_parent_path()
-                            && m_editName != "." && m_editName != "..") {
+                        && !m_editName.empty() && !fs::path(m_editName).has_parent_path()
+                        && m_editName != "." && m_editName != "..") {
                         fs::rename(path, path.parent_path() / m_editName, error);
                         if(error)
                             RB_EDITOR_ERROR("AssetsPanel: Can't rename asset: {0}", error.message());

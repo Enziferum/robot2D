@@ -810,10 +810,12 @@ namespace editor {
 
         if(!m_currentAnimation) {
             RB_EDITOR_ERROR("AnimationPanel::onAnimationSlice: No Animation");
+            return;
         }
 
         m_currentAnimation -> texture = texture;
-        m_currentAnimation -> texturePath = cutPath(task.getFilePath(), "assets");
+        m_currentAnimation -> texturePath = projectAssetReference(
+            m_interactor -> getAssociatedProjectPath(), task.getFilePath());
         m_keyFrames.clear();
         m_currentKeyFrame = nullptr;
 

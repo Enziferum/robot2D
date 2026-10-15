@@ -83,6 +83,35 @@ namespace {
         return result;
     }
 
+    void assetRoundtrip() {
+        Directory fixture;
+        robot2D::MessageBus bus;
+        auto source = std::make_shared<editor::Scene>(bus);
+        source -> setAssociatedProjectPath(fixture.path().u8string());
+        auto entity = source -> createEntity("Portable resources");
+        entity.addComponent<editor::TextComponent>().setFontPath("assets/fonts/missing.ttf");
+        entity.addComponent<editor::DrawableComponent>().setTexturePath(
+            (fixture / "assets/textures/missing.png").u8string());
+        auto scripts = std::make_shared<ScriptStub>();
+        editor::SceneSerializer serializer(source);
+        const auto path = fixture / "portable.scene";
+        CHECK(serializer.serialize(path.u8string(), "Portable", scripts));
+        const auto saved = read(path);
+        CHECK(saved.find(fixture.path().u8string()) == std::string::npos);
+        CHECK(saved.find("assets/fonts/missing.ttf") != std::string::npos);
+        CHECK(saved.find("assets/textures/missing.png") != std::string::npos);
+        auto restored = std::make_shared<editor::Scene>(bus);
+        restored -> setAssociatedProjectPath((fixture / "moved project").u8string());
+        editor::SceneSerializer reader(restored);
+        CHECK(reader.deserialize(path.u8string(), scripts));
+        const auto loaded = restored -> getEntity(entity.getUUID());
+        CHECK(loaded.getComponent<editor::TextComponent>().getFontPath() == "assets/fonts/missing.ttf");
+        CHECK(loaded.getComponent<editor::DrawableComponent>().getTexturePath() == "assets/textures/missing.png");
+        entity.getComponent<editor::TextComponent>().setFontPath("../external.ttf");
+        CHECK(!serializer.serialize(path.u8string(), "Portable", scripts));
+        CHECK(read(path) == saved && !serializer.getErrorMessage().empty());
+    }
+
     void hierarchy() {
         robot2D::MessageBus bus;
         editor::Scene scene(bus);
@@ -395,6 +424,41 @@ namespace {
         }));
         CHECK(presenter.getState() == editor::EditorState::LoadFailed && !view.scene);
     }
+
+    void missingAssets() {
+        Directory fixture;
+        robot2D::MessageBus bus;
+        editor::MessageDispatcher dispatcher;
+        auto scripts = std::make_shared<ScriptStub>();
+        View view;
+        editor::EditorPresenter presenter(&view);
+        editor::EditorRouter router(&view);
+        editor::EditorLogic logic(bus, dispatcher, presenter, router);
+        logic.setup(scripts);
+        QueueStop stop;
+        auto project = std::make_shared<editor::Project>();
+        project -> setPath(fixture.path().u8string());
+        project -> setStartScene("missing-assets.scene");
+        fs::create_directories(fixture / "assets/scenes");
+        auto source = std::make_shared<editor::Scene>(bus);
+        source -> setAssociatedProjectPath(fixture.path().u8string());
+        auto entity = source -> createEntity("Missing resources");
+        entity.addComponent<editor::TextComponent>().setFontPath("assets/missing-font.ttf");
+        entity.addComponent<editor::DrawableComponent>().setTexturePath("assets/missing-image.png");
+        editor::SceneSerializer writer(source);
+        CHECK(writer.serialize((fixture / "assets/scenes/missing-assets.scene").u8string(), "Missing", scripts));
+        logic.loadProject(project);
+        CHECK(waitFor([&]() {
+            editor::TaskQueue::GetQueue() -> process();
+            return presenter.getState() != editor::EditorState::Load;
+        }));
+        CHECK(presenter.getState() == editor::EditorState::Edit && view.scene);
+        auto loaded = view.scene -> getEntity(entity.getUUID());
+        CHECK(!loaded.getComponent<editor::TextComponent>().getFont());
+        CHECK(!loaded.getComponent<editor::DrawableComponent>().hasTexture());
+        CHECK(loaded.getComponent<editor::TextComponent>().getFontPath() == "assets/missing-font.ttf");
+        CHECK(glGetError() == GL_NO_ERROR);
+    }
 }
 
 int main(int argc, char** argv) {
@@ -404,6 +468,8 @@ int main(int argc, char** argv) {
         GraphicsContext graphics;
         const std::string name = argv[1];
         if(name == "hierarchy") hierarchy();
+        else if(name == "asset-roundtrip") assetRoundtrip();
+        else if(name == "missing-assets") missingAssets();
         else if(name == "roundtrip") roundtrip();
         else if(name == "invalid") invalid();
         else if(name == "legacy") legacy();

@@ -1,22 +1,22 @@
 /*********************************************************************
-(c) Alex Raag 2026
-https://github.com/Enziferum
-robot2D - Zlib license.
-This software is provided 'as-is', without any express or
-implied warranty. In no event will the authors be held
-liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute
-it freely, subject to the following restrictions:
-1. The origin of this software must not be misrepresented;
-you must not claim that you wrote the original software.
-If you use this software in a product, an acknowledgment
-in the product documentation would be appreciated but
-is not required.
-2. Altered source versions must be plainly marked as such,
-and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any
-source distribution.
+   (c) Alex Raag 2026
+   https://github.com/Enziferum
+   robot2D - Zlib license.
+   This software is provided 'as-is', without any express or
+   implied warranty. In no event will the authors be held
+   liable for any damages arising from the use of this software.
+   Permission is granted to anyone to use this software for any purpose,
+   including commercial applications, and to alter it and redistribute
+   it freely, subject to the following restrictions:
+   1. The origin of this software must not be misrepresented;
+   you must not claim that you wrote the original software.
+   If you use this software in a product, an acknowledgment
+   in the product documentation would be appreciated but
+   is not required.
+   2. Altered source versions must be plainly marked as such,
+   and must not be misrepresented as being the original software.
+   3. This notice may not be removed or altered from any
+   source distribution.
 *********************************************************************/
 
 #include <fstream>
@@ -39,7 +39,8 @@ namespace editor {
         using EntityID = std::uint64_t;
 
         struct PrefabStorage {
-            PrefabStorage(): scene(messages) {}
+            PrefabStorage() : scene(messages) {
+            }
             PrefabStorage(const PrefabStorage&) = delete;
             PrefabStorage& operator=(const PrefabStorage&) = delete;
             PrefabStorage(PrefabStorage&&) = delete;
@@ -80,7 +81,7 @@ namespace editor {
             for(auto node: nodes) {
                 if(const auto hierarchy = node["HierarchyComponent"]) {
                     if(hierarchy["Children"]) {
-                        auto children = yaml::read<std::vector<EntityID>>(hierarchy, "Children");
+                        auto children = yaml::read<std::vector<EntityID> >(hierarchy, "Children");
                         for(auto& child: children) {
                             if(!ids.count(child))
                                 throw YAML::RepresentationException(hierarchy.Mark(), "Unknown prefab child UUID");
@@ -103,7 +104,7 @@ namespace editor {
                             throw YAML::RepresentationException(transform.Mark(), "Unknown prefab parent UUID");
                     }
                     if(transform["ChildIDs"]) {
-                        auto children = yaml::read<std::vector<EntityID>>(transform, "ChildIDs");
+                        auto children = yaml::read<std::vector<EntityID> >(transform, "ChildIDs");
                         for(auto& child: children) {
                             if(!ids.count(child))
                                 throw YAML::RepresentationException(transform.Mark(), "Unknown prefab child UUID");
@@ -148,7 +149,7 @@ namespace editor {
                 return false;
             YAML::Emitter entities;
             entities << YAML::BeginSeq;
-            EntityYAMLSerializer serializer;
+            EntityYAMLSerializer serializer(prefab -> m_projectPath);
             if(!serializer.serialize(entities, entity, scriptInteractor)) {
                 m_errorMessage = serializer.getErrorMessage();
                 return false;
