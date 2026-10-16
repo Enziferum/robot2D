@@ -1,5 +1,6 @@
 #include "TestSupport.hpp"
 #include <editor/EventBinder.hpp>
+#include <editor/EditorLogic.hpp>
 #include <editor/UISystem.hpp>
 #include <editor/Components.hpp>
 #include <editor/components/UIHitBox.hpp>
@@ -206,6 +207,20 @@ namespace {
     }
 
     void capture() {
+        // Editor begins receiving frame cancellation before its scene is ready.
+        // This must also be safe after a failed load and with an empty batch.
+        robot2D::MessageBus bus;
+        editor::MessageDispatcher dispatcher;
+        editor::EditorPresenter presenter(nullptr);
+        editor::EditorRouter sceneRouter(nullptr);
+        editor::EditorLogic logic(bus, dispatcher, presenter, sceneRouter);
+        for(const auto state : {editor::EditorState::Edit, editor::EditorState::Load,
+                                editor::EditorState::LoadFailed}) {
+            presenter.switchState(state);
+            logic.handleEventsRuntime(Event(Event::LostFocus{}));
+            logic.handleEventsRuntime(key(false));
+        }
+
         editor::InputRouter router;
         editor::RoutingContext context{{true, true, true, false}, true, true, false};
         CHECK(router.route(key(true), context).target == InputRoute::Gui);

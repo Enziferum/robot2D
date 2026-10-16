@@ -137,7 +137,9 @@ namespace editor {
 
 
     void EditorLogic::handleEventsRuntime(const robot2D::Event& event) {
-        m_activeScene -> handleEventsRuntime(event);
+        // Focus/mode cancellation can arrive before async scene loading completes.
+        if(m_activeScene)
+            m_activeScene -> handleEventsRuntime(event);
     }
 
     void EditorLogic::update(float dt) {
