@@ -1,22 +1,22 @@
 /*********************************************************************
-(c) Alex Raag 2023
-https://github.com/Enziferum
-robot2D - Zlib license.
-This software is provided 'as-is', without any express or
-implied warranty. In no event will the authors be held
-liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute
-it freely, subject to the following restrictions:
-1. The origin of this software must not be misrepresented;
-you must not claim that you wrote the original software.
-If you use this software in a product, an acknowledgment
-in the product documentation would be appreciated but
-is not required.
-2. Altered source versions must be plainly marked as such,
-and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any
-source distribution.
+   (c) Alex Raag 2023
+   https://github.com/Enziferum
+   robot2D - Zlib license.
+   This software is provided 'as-is', without any express or
+   implied warranty. In no event will the authors be held
+   liable for any damages arising from the use of this software.
+   Permission is granted to anyone to use this software for any purpose,
+   including commercial applications, and to alter it and redistribute
+   it freely, subject to the following restrictions:
+   1. The origin of this software must not be misrepresented;
+   you must not claim that you wrote the original software.
+   If you use this software in a product, an acknowledgment
+   in the product documentation would be appreciated but
+   is not required.
+   2. Altered source versions must be plainly marked as such,
+   and must not be misrepresented as being the original software.
+   3. This notice may not be removed or altered from any
+   source distribution.
 *********************************************************************/
 
 #pragma once
@@ -44,28 +44,58 @@ namespace editor {
     public:
         using Ptr = std::shared_ptr<IEditorCamera>;
 
-        explicit IEditorCamera(EditorCameraType type): m_type(type) {}
+        explicit IEditorCamera(EditorCameraType type) : m_type(type) {
+        }
         virtual ~IEditorCamera() = 0;
 
         virtual void setViewportSize(robot2D::vec2f newSize) = 0;
         virtual void handleEvents(const robot2D::Event& event) = 0;
         virtual void update(robot2D::vec2f mousePos, float deltaTime) = 0;
 
-        virtual robot2D::vec2f convertPixelToCoords(robot2D::vec2f mousePos) const { return robot2D::vec2f{}; }
-        void setFrameBuffer(robot2D::FrameBuffer::Ptr ptr) { m_framebuffer = ptr; }
-        void setViewportBounds(robot2D::vec2f bounds) { m_bounds = bounds; }
+        virtual robot2D::vec2f convertPixelToCoords(robot2D::vec2f mousePos) const {
+            return robot2D::vec2f{};
+        }
+        void setFrameBuffer(robot2D::FrameBuffer::Ptr ptr) {
+            m_framebuffer = ptr;
+        }
+        void setViewportBounds(robot2D::vec2f bounds) {
+            m_bounds = bounds;
+        }
 
-        EditorCameraType getType() const { return m_type; }
+        EditorCameraType getType() const {
+            return m_type;
+        }
 
-        virtual void resetDefaults() {}
-        virtual float getZoom() const { return 0.f; }
+        virtual void resetDefaults() {
+        }
+        virtual float getZoom() const {
+            return 1.f;
+        }
+        virtual bool setZoom(float) {
+            return false;
+        }
+        virtual bool frameBounds(const robot2D::FloatRect&) {
+            return false;
+        }
 
-        robot2D::mat4& getProjectionMatrix() { return m_projectionMatrix; }
-        const robot2D::mat4& getProjectionMatrix() const  { return m_projectionMatrix; }
-        const robot2D::vec3f& getPosition() const { return m_position; }
-        robot2D::mat4 getViewMatrix() const { return m_viewMatrix; }
-        const robot2D::View& getView() const { return m_view; }
-        robot2D::View& getView() { return m_view; }
+        robot2D::mat4& getProjectionMatrix() {
+            return m_projectionMatrix;
+        }
+        const robot2D::mat4& getProjectionMatrix() const {
+            return m_projectionMatrix;
+        }
+        const robot2D::vec3f& getPosition() const {
+            return m_position;
+        }
+        robot2D::mat4 getViewMatrix() const {
+            return m_viewMatrix;
+        }
+        const robot2D::View& getView() const {
+            return m_view;
+        }
+        robot2D::View& getView() {
+            return m_view;
+        }
     protected:
         /// Overhead ///
         robot2D::mat4 m_projectionMatrix;
@@ -79,7 +109,7 @@ namespace editor {
     };
 
 
-    class EditorCamera2D: public IEditorCamera {
+    class EditorCamera2D : public IEditorCamera {
     public:
         EditorCamera2D();
         ~EditorCamera2D() override = default;
@@ -93,16 +123,22 @@ namespace editor {
         }
 
         void resetDefaults() override;
-        float getZoom() const override { return m_zoom; }
+        float getZoom() const override {
+            return m_zoom;
+        }
+        bool setZoom(float zoom) override;
+        bool frameBounds(const robot2D::FloatRect& bounds) override;
     private:
         robot2D::vec2f mapPixelToCoords(const robot2D::vec2f& point) const {
             robot2D::vec2f normalized;
-            auto port = getViewport(m_framebuffer -> getSpecification().size);
+            if(m_viewportSize.x <= 0.f || m_viewportSize.y <= 0.f)
+                return m_view.getCenter();
+            auto port = getViewport({static_cast<int>(m_viewportSize.x), static_cast<int>(m_viewportSize.y)});
             robot2D::FloatRect viewport = {
-                    static_cast<float>(port.lx),
-                    static_cast<float>(port.lx),
-                    static_cast<float>(port.width),
-                    static_cast<float>(port.height)
+                static_cast<float>(port.lx),
+                static_cast<float>(port.ly),
+                static_cast<float>(port.width),
+                static_cast<float>(port.height)
             };
             normalized.x = -1.f + 2.f * (static_cast<float>(point.x) - viewport.lx) / viewport.width;
             normalized.y = 1.f - 2.f * (static_cast<float>(point.y) - viewport.ly) / viewport.height;
@@ -112,25 +148,26 @@ namespace editor {
         }
 
         robot2D::IntRect getViewport(robot2D::vec2i size) const {
-            float width  = static_cast<float>(size.x);
+            float width = static_cast<float>(size.x);
             float height = static_cast<float>(size.y);
             const robot2D::FloatRect& viewport = m_view.getViewport();
 
             return {
-                    static_cast<int>(0.5F + width  * viewport.lx),
-                    static_cast<int>(0.5F + height * viewport.ly),
-                    static_cast<int>(0.5F + width  * viewport.width),
-                    static_cast<int>(0.5F + height * viewport.height)
+                static_cast<int>(0.5F + width * viewport.lx),
+                static_cast<int>(0.5F + height * viewport.ly),
+                static_cast<int>(0.5F + width * viewport.width),
+                static_cast<int>(0.5F + height * viewport.height)
             };
         }
 
     private:
         bool m_leftCntrlPressed{false};
-        float m_zoom = 0.F;
+        float m_zoom = 1.f;
+        robot2D::vec2f m_viewportSize{};
         robot2D::vec2f m_mousePos;
     };
 
-    class EditorCamera: public IEditorCamera {
+    class EditorCamera : public IEditorCamera {
     public:
         EditorCamera();
         ~EditorCamera() override = default;

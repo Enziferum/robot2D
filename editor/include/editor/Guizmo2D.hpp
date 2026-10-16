@@ -1,22 +1,22 @@
 /*********************************************************************
-(c) Alex Raag 2023
-https://github.com/Enziferum
-robot2D - Zlib license.
-This software is provided 'as-is', without any express or
-implied warranty. In no event will the authors be held
-liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute
-it freely, subject to the following restrictions:
-1. The origin of this software must not be misrepresented;
-you must not claim that you wrote the original software.
-If you use this software in a product, an acknowledgment
-in the product documentation would be appreciated but
-is not required.
-2. Altered source versions must be plainly marked as such,
-and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any
-source distribution.
+   (c) Alex Raag 2023
+   https://github.com/Enziferum
+   robot2D - Zlib license.
+   This software is provided 'as-is', without any express or
+   implied warranty. In no event will the authors be held
+   liable for any damages arising from the use of this software.
+   Permission is granted to anyone to use this software for any purpose,
+   including commercial applications, and to alter it and redistribute
+   it freely, subject to the following restrictions:
+   1. The origin of this software must not be misrepresented;
+   you must not claim that you wrote the original software.
+   If you use this software in a product, an acknowledgment
+   in the product documentation would be appreciated but
+   is not required.
+   2. Altered source versions must be plainly marked as such,
+   and must not be misrepresented as being the original software.
+   3. This notice may not be removed or altered from any
+   source distribution.
 *********************************************************************/
 
 #pragma once
@@ -42,7 +42,7 @@ namespace editor {
     public:
         virtual ~DebugDrawable() = 0;
 
-        void debugDraw(robot2D::RenderTarget& target, robot2D::RenderStates states) const  {
+        void debugDraw(robot2D::RenderTarget& target, robot2D::RenderStates states) const {
             std::array<robot2D::Transform, 4> quads;
             quads[0].translate(m_debugRect.lx, m_debugRect.ly);
             quads[0].scale(m_debugRect.width, m_borderSize);
@@ -70,19 +70,19 @@ namespace editor {
     };
 
 
-    class Guizmo2D: public robot2D::Drawable {
+    class Guizmo2D : public robot2D::Drawable {
     public:
         enum class Operation {
             Move, Scale, Rotate
         };
     private:
-        class Manipulator: public robot2D::Drawable, DebugDrawable {
+        class Manipulator : public robot2D::Drawable, DebugDrawable {
         public:
             enum class Axis {
                 X, Y, BOTH
             };
 
-            Manipulator(Axis axis, robot2D::Color color): m_color{color}, m_axis{axis} {
+            Manipulator(Axis axis, robot2D::Color color) : m_color{color}, m_axis{axis} {
                 if(axis == Axis::X) {
                     m_rect.width = 20;
                     m_rect.height = 5;
@@ -109,10 +109,14 @@ namespace editor {
             bool isPressed(robot2D::vec2f point);
             bool contains(robot2D::vec2f point) const;
             void setSize(robot2D::vec2f size);
-            void setScaleHandle(bool scale) { m_scaleHandle = scale; }
+            void setScaleHandle(bool scale) {
+                m_scaleHandle = scale;
+            }
 
             bool active() const;
-            void reset() { m_active = false; }
+            void reset() {
+                m_active = false;
+            }
 
             void setPosition(const robot2D::vec2f& position);
             void setColor(robot2D::Color color);
@@ -121,7 +125,7 @@ namespace editor {
             void moveY(float offset);
 
             void draw(robot2D::RenderTarget& target,
-                      [[maybe_unused]] robot2D::RenderStates states) const override;
+                [[maybe_unused]] robot2D::RenderStates states) const override;
             robot2D::Sprite m_sprite;
         private:
             robot2D::FloatRect m_rect;
@@ -149,16 +153,23 @@ namespace editor {
         // Move selected roots once; the full selection still determines gizmo placement.
         void setMovementRoots(const std::vector<TransformComponent*>& transforms);
         void cancelDrag();
-        void setModificationCallback(std::function<void()> callback) { m_onModified = std::move(callback); }
+        void setModificationCallback(std::function<void()> callback) {
+            m_onModified = std::move(callback);
+        }
 
         void setOperationType(Operation type);
-        Operation getOperationType() const { return m_operation; }
+        void setSnapping(bool enabled, float distance, float angle);
+        Operation getOperationType() const {
+            return m_operation;
+        }
         void setCamera(IEditorCamera::Ptr camera);
         void setIsShow(bool flag);
         void draw(robot2D::RenderTarget& target,
-                    robot2D::RenderStates states) const override;
+            robot2D::RenderStates states) const override;
 
-        bool hasManipulated() const { return !m_manipulateds.empty(); }
+        bool hasManipulated() const {
+            return !m_manipulateds.empty();
+        }
         bool isActive() const {
             return m_leftMousePressed && !m_manipulateds.empty() && m_isCollide;
         }
@@ -193,6 +204,11 @@ namespace editor {
         robot2D::Sprite m_rotateSprite;
 
         robot2D::vec2f m_manipulatorLastPos;
+        robot2D::vec2f m_dragStart{};
+        bool m_snapEnabled{false};
+        float m_snapDistance{16.f};
+        float m_snapAngle{15.f};
+        std::vector<float> m_rotationRemainders;
 
     };
 }

@@ -159,11 +159,15 @@ namespace editor {
         const bool ancestor = !relative.empty() && *relative.begin() != "..";
         if((root && reveal) || (reveal && ancestor))
             ImGui::SetNextItemOpen(true);
-        const bool open = ImGui::TreeNodeEx("##Directory", flags, "    %s", label.c_str());
+        const bool open = ImGui::TreeNodeEx("##Directory", flags);
         const auto rect = ImGui::GetItemRectMin();
         drawEditorIcon(*ImGui::GetWindowDrawList(), EditorIcon::Folder,
             {rect.x + ImGui::GetTreeNodeToLabelSpacing(), rect.y + 2.f}, ImGui::GetFontSize(),
             ImGui::GetColorU32(ImVec4{0.55f, 0.76f, 0.96f, 1.f}));
+        const float labelX = rect.x + ImGui::GetTreeNodeToLabelSpacing()
+            + ImGui::GetFontSize() + ImGui::GetStyle().ItemInnerSpacing.x;
+        ImGui::GetWindowDrawList() -> AddText({labelX, rect.y},
+            ImGui::GetColorU32(ImGuiCol_Text), label.c_str());
         if(ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
             navigateTo(path);
         if(!listing.error.empty() && ImGui::IsItemHovered())
@@ -211,18 +215,25 @@ namespace editor {
             if(m_currentPath != m_browser.current())
                 navigateTo(m_browser.current());
             m_configuration.m_thumbnaleSize = static_cast<float>(EditorConfig::getConfig().assetsThumbnailSize);
-            if(!ImGui::BeginTable("##AssetsLayout", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInnerV))
+            renderViewControls();
+            ImGui::Separator();
+            if(!ImGui::BeginTable("##AssetsLayout", m_showFolders ? 2 : 1,
+            ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInnerV))
                 return;
-            ImGui::TableSetupColumn("Folders", ImGuiTableColumnFlags_WidthFixed, 180.f);
+            if(m_showFolders)
+                ImGui::TableSetupColumn("Folders", ImGuiTableColumnFlags_WidthFixed,
+                std::min(180.f, ImGui::GetContentRegionAvail().x * 0.35f));
             ImGui::TableSetupColumn("Files", ImGuiTableColumnFlags_WidthStretch);
-            ImGui::TableNextColumn();
-            if(ImGui::BeginChild("##FolderTree", {0, 0})) {
-                m_visible = m_visible || ImGui::IsWindowFocused();
-                const bool reveal = m_revealTree;
-                m_revealTree = false;
-                renderDirectoryTree(m_assetsPath, reveal);
+            if(m_showFolders) {
+                ImGui::TableNextColumn();
+                if(ImGui::BeginChild("##FolderTree", {0, 0})) {
+                    m_visible = m_visible || ImGui::IsWindowFocused();
+                    const bool reveal = m_revealTree;
+                    m_revealTree = false;
+                    renderDirectoryTree(m_assetsPath, reveal);
+                }
+                ImGui::EndChild();
             }
-            ImGui::EndChild();
             ImGui::TableNextColumn();
             ImGui::BeginChild("##AssetsContent", {0, 0});
             renderNavigation();
@@ -232,7 +243,7 @@ namespace editor {
                 const float cellSize = std::max(96.f, m_configuration.m_thumbnaleSize + m_configuration.m_padding)
                 + ImGui::GetStyle().CellPadding.x * 2.f;
                 const auto panelWidth = ImGui::GetContentRegionAvail().x;
-                const int tableCount = std::clamp(static_cast<int>(panelWidth / cellSize), 1, 64);
+                const int tableCount = m_listView ? 1 : std::clamp(static_cast<int>(panelWidth / cellSize), 1, 64);
                 std::error_code error;
                 if(fs::is_directory(m_currentPath, error)) {
                     tableRender(tableCount, anyItemIsHovered);
@@ -394,6 +405,35 @@ namespace editor {
         m_assetItems.clear();
     }
 
+    void AssetsPanel::renderViewControls() {
+        const float side = ImGui::GetFrameHeight();
+        const auto button = [side](const char* id, EditorIcon icon, bool active, const char* hint) {
+            if(active)
+                ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_HeaderActive));
+            const bool clicked = ImGui::Button(id, {side, side});
+            if(active)
+                ImGui::PopStyleColor();
+            const auto position = ImGui::GetItemRectMin();
+            const float size = ImGui::GetFontSize();
+            drawEditorIcon(*ImGui::GetWindowDrawList(), icon,
+                {position.x + (side - size) * 0.5f, position.y + (side - size) * 0.5f}, size,
+                ImGui::GetColorU32(ImGuiCol_Text));
+            if(ImGui::IsItemHovered())
+                ImGui::SetTooltip("%s", hint);
+            return clicked;
+        };
+        if(button("##AssetsFolders", EditorIcon::FolderTree, m_showFolders, "Show/hide folder tree")) {
+            m_showFolders = !m_showFolders;
+            m_revealTree = true;
+        }
+        ImGui::SameLine();
+        if(button("##AssetsTiles", EditorIcon::Grid, !m_listView, "Tile view"))
+            m_listView = false;
+        ImGui::SameLine();
+        if(button("##AssetsList", EditorIcon::List, m_listView, "List view"))
+            m_listView = true;
+    }
+
     void AssetsPanel::renderNavigation() {
         ImGui::BeginDisabled(m_currentPath == m_assetsPath);
         if(ImGui::Button(ICON_FA_ARROW_UP "##ParentFolder"))
@@ -476,8 +516,12 @@ namespace editor {
                 ImGui::PushID(itemID.c_str());
                 const auto position = ImGui::GetCursorScreenPos();
                 const float width = std::max(1.f, ImGui::GetContentRegionAvail().x);
-                const float preview = std::max(1.f, std::min(m_configuration.m_thumbnaleSize, width - 12.f));
-                const float height = preview + ImGui::GetTextLineHeight() * 2.f + 14.f;
+                const float preview = std::max(1.f, std::min(m_listView ? ImGui::GetTextLineHeight() * 2.f
+                    : m_configuration.m_thumbnaleSize, width - 12.f));
+                const float height = m_listView ? preview + 10.f
+                    : preview + ImGui::GetTextLineHeight() * 2.f + 14.f;
+                const float previewX = m_listView ? position.x + 4.f : position.x + (width - preview) * 0.5f;
+                const float textX = m_listView ? previewX + preview + 8.f : position.x + 4.f;
                 const bool selected = m_itemEditName.first == relativePath;
                 bool focusRename = false;
                 auto* drawList = ImGui::GetWindowDrawList();
@@ -502,19 +546,19 @@ namespace editor {
                 if(!directory && iconType == AssetsPanelConfiguration::ResourceIconType::Image
                     && ImGui::IsRectVisible(position, {position.x + width, position.y + height}))
                     thumbnail = drawImagePreview(path,
-                            {position.x + (width - preview) * 0.5f, position.y + 5.f}, preview);
+                            {previewX, position.y + 5.f}, preview);
                 if(!thumbnail || thumbnail -> status != PreviewStatus::Ready)
-                    drawResourceIcon(iconType, {position.x + (width - preview) * 0.5f, position.y + 5.f}, preview);
-                const float textY = position.y + preview + 8.f;
+                    drawResourceIcon(iconType, {previewX, position.y + 5.f}, preview);
+                const float textY = m_listView ? position.y + 5.f : position.y + preview + 8.f;
                 drawList -> PushClipRect(position, {position.x + width - 3.f, position.y + height}, true);
                 if(!(selected && m_itemEditName.second))
-                    ImGui::RenderTextEllipsis(drawList, {position.x + 4.f, textY},
+                    ImGui::RenderTextEllipsis(drawList, {textX, textY},
                         {position.x + width - 4.f, textY + ImGui::GetTextLineHeight()},
                         position.x + width - 4.f, position.x + width - 4.f,
                         filename.c_str(), nullptr, nullptr);
                 const auto type = directory ? std::string{"Folder"}
                                             : (path.has_extension() ? path.extension().string() : "File");
-                drawList -> AddText({position.x + 4.f, textY + ImGui::GetTextLineHeight()},
+                drawList -> AddText({textX, textY + ImGui::GetTextLineHeight()},
                     ImGui::GetColorU32(ImGuiCol_TextDisabled), type.c_str());
                 drawList -> PopClipRect();
 
@@ -544,8 +588,8 @@ namespace editor {
                 }
                 if(m_itemEditName.first == relativePath && m_itemEditName.second) {
                     const auto afterCard = ImGui::GetCursorScreenPos();
-                    ImGui::SetCursorScreenPos({position.x + 2.f, textY});
-                    ImGui::SetNextItemWidth(std::max(1.f, width - 4.f));
+                    ImGui::SetCursorScreenPos({textX, textY});
+                    ImGui::SetNextItemWidth(std::max(1.f, position.x + width - textX - 4.f));
                     if(focusRename)
                         ImGui::SetKeyboardFocusHere();
                     if(robot2D::InputText("##ItemName", &m_editName, inputFlags)

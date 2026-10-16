@@ -80,6 +80,7 @@ namespace editor {
         void dropFiles(const std::vector<std::string>& paths);
         void uiAssetsCreation();
         void renderNavigation();
+        void renderViewControls();
         void navigateTo(const std::filesystem::path& path);
         void processAssets();
         void renderDirectoryTree(const std::filesystem::path& path, bool reveal, int depth = 0);
@@ -113,6 +114,8 @@ namespace editor {
         AssetBrowserModel m_browser;
         AssetPreviewCache m_previews;
         bool m_revealTree{true};
+        bool m_showFolders{true};
+        bool m_listView{false};
 
         AssetsPanelConfiguration m_configuration;
         std::vector<AssetItem> m_assetItems;

@@ -225,6 +225,46 @@ namespace {
                 ImGui::Render();
                 CHECK(ImGui::GetDrawData() -> TotalVtxCount > 0);
             }
+            const auto frame = [&]() {
+                ImGui::NewFrame();
+                ImGui::SetNextWindowPos({0.f, 0.f}, ImGuiCond_Always);
+                ImGui::SetNextWindowSize({900.f, 400.f}, ImGuiCond_Always);
+                panel.render();
+                ImGui::Render();
+            };
+            frame();
+            frame();
+            auto* main = ImGui::FindWindowByName("###AssetsPanel");
+            CHECK(main);
+            const float side = ImGui::GetFrameHeight();
+            const auto click = [&](int index) {
+                io.AddMousePosEvent(main -> DC.CursorStartPos.x
+                    + index * (side + ImGui::GetStyle().ItemSpacing.x) + side * 0.5f,
+                    main -> DC.CursorStartPos.y + side * 0.5f);
+                frame();
+                io.AddMouseButtonEvent(0, true);
+                frame();
+                io.AddMouseButtonEvent(0, false);
+                frame();
+            };
+            const auto cards = [&]() {
+                for(auto* window: context -> Windows) {
+                    if(std::strstr(window -> Name, "##AssetBrowser"))
+                        return ImGui::TableFindByID(window -> GetID("##AssetCards"));
+                }
+                return static_cast<ImGuiTable*>(nullptr);
+            };
+            CHECK(cards() && cards() -> ColumnsCount > 1);
+            click(2);
+            CHECK(cards() && cards() -> ColumnsCount == 1);
+            click(1);
+            CHECK(cards() && cards() -> ColumnsCount > 1);
+            click(0);
+            auto* layout = ImGui::TableFindByID(main -> GetID("##AssetsLayout"));
+            CHECK(layout && layout -> ColumnsCount == 1);
+            click(0);
+            layout = ImGui::TableFindByID(main -> GetID("##AssetsLayout"));
+            CHECK(layout && layout -> ColumnsCount == 2);
         }
         ImGui::DestroyContext(context);
     }
@@ -239,7 +279,7 @@ namespace {
         io.Fonts -> GetTexDataAsRGBA32(&pixels, &width, &height);
         ImGui::NewFrame();
         auto* draw = ImGui::GetForegroundDrawList();
-        for(int i = 0; i <= static_cast<int>(editor::EditorIcon::File); ++i) {
+        for(int i = 0; i <= static_cast<int>(editor::EditorIcon::FolderTree); ++i) {
             for(float side: {16.f, 24.f, 48.f}) {
                 const int first = draw -> VtxBuffer.Size;
                 editor::drawEditorIcon(*draw, static_cast<editor::EditorIcon>(i), {50, 50}, side, IM_COL32_WHITE);

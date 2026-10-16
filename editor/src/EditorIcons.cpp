@@ -60,6 +60,14 @@ namespace editor {
                 line(3, y, 7, y); line(17, y, 21, y);
             }
             draw.AddTriangleFilled(point(10, 8), point(15, 12), point(10, 16), color); break;
+        case EditorIcon::List:
+            for(float y: {5.f, 12.f, 19.f}) {
+                rect(3, y - 2, 7, y + 2); line(11, y, 21, y);
+            }
+            break;
+        case EditorIcon::FolderTree:
+            line(5, 4, 5, 19); line(5, 7, 11, 7); line(5, 18, 11, 18);
+            rect(11, 3, 21, 10); rect(11, 14, 21, 21); break;
         case EditorIcon::File:
             line(4, 2, 15, 2); line(15, 2, 20, 7); line(20, 7, 20, 22); line(20, 22, 4, 22); line(4, 22, 4, 2);
             line(15, 2, 15, 7); line(15, 7, 20, 7); line(8, 12, 16, 12); line(8, 16, 16, 16); break;
