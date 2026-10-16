@@ -1,10 +1,51 @@
 # Общий план robot2D
 
-Обновлено: 2026-10-15. Это точка входа для всех направлений и чатов проекта:
+Обновлено: 2026-10-16. Это точка входа для всех направлений и чатов проекта:
 Core, ECS, Render, Editor, runtime/player, пример игры и инструменты выпуска.
 Релизные критерии — [release-roadmap.md](release-roadmap.md). Оперативные статусы,
 выбранные ведущие и результаты находятся в GitHub Issues и
 [Projects](https://github.com/users/Enziferum/projects/5).
+
+## Актуальный план Core и robot2D-imgui — 2026-10-16
+
+По запросу пользователя CORE-01 и CORE-02 объединены в ветке CORE-02 и
+[PR #122](https://github.com/Enziferum/robot2D/pull/122). Изменения
+[PR #112](https://github.com/Enziferum/robot2D/pull/112) сохраняются вместе с историей;
+он заменяется объединённым PR после публикации проверенного результата.
+CORE-01 #110 остаётся общей открытой задачей, не обещанием полного завершения Core.
+Датированные разделы ниже — история; этот блок задаёт текущие границы плана.
+
+| Этап | Что сделано / что остаётся | Статус |
+|---|---|---|
+| CORE-01: согласованный Util и базовые классы | ResourceHandler, MessageBus/типизированная память, Logger/Assert, FileInputStream, Time/Clock, совместимые constexpr/noexcept Vector2/3, регрессии, Doxygen | Объединено с CORE-02 на dev после PHYS-01; локальные проверки пройдены, финальный CI/ревью |
+| CORE-02: события | variant Event, typed EventBinder, GLFW FIFO/frame batch, Add*Event, capture/владельцы Press–Release/cancel, история/Events, потребители, UI clicks/shortcuts, startup crash fix | Реализовано; пользователь подтвердил повторное открытие проекта и GUI на всё окно; финальная интеграция/CI |
+| robot2D-imgui: scopes | Безопасные оконные/style scopes и сохранение dockspace при скрытом canvas | Отдельные IMGUI-01 #121 / PR #123; реализованы в соседней ветке, не входят автоматически в CORE-02 |
+| robot2D-imgui: текущая корректность renderer | OrthoView Y; GL state и active texture/sampler/program/VAO; UserCallback/reset; scissor clamp/empty; GPU-resource RAII/отказ setup; владение memory-font | Открытый следующий объём по аудиту R1/R2/R3/R5/R8/R9; реализация здесь не начата |
+| robot2D-imgui: GuiImpl lifecycle | Собственный ImGuiContext, safe shutdown до setup/после отказа, ready только после успеха; состояния кадра, шрифтовый набор | Согласован контракт, остаются G2/G3 и интеграция font policy; G1/input принят из CORE-02 |
+| robot2D-imgui: обёртки | Typed/size-aware drag/drop и borrowed lifetime; явные ImageButton ID, null framebuffer, sprite UV/zero-size, string InputText, Sugar flags/namespace | A7 обсуждается соседним GUI-чатом без реализации; A2–A6 остаются отдельными согласуемыми шагами; A1 — PR #123 |
+| Core Window/Desktop | Владение native window/GLFW, уничтожение, ошибки создания; logical/framebuffer size, minimized/DPI, источник событий WindowID, signed coordinates, clipboard/IME и contexts | Event/pump отделены от swap в CORE-02; остальной контракт и реализация ещё впереди |
+| Core Graphics для GUI | Явный UI pass/state/cache; точный vertex layout, draw ranges/baseVertex; streaming buffers, texture views/updates/row pitch, context-local VAO/FBO и lifetime | Связано с RENDER-04 #98 / RENDER-05 #99; согласовать минимальный API до переноса GuiRender |
+| Engine / fixed timestep | Общий scheduler editor/player, fixedDt, предел догоняющих шагов, queued Play/Pause/Stop, SessionId | [Контракт согласован](fixed-timestep-contract.md), реализация не начата; сначала завершение CORE-01/02 |
+| Runtime / fixed input | Общая RuntimeSession, OnUpdate/OnFixedUpdate, frame/fixed input и временные границы, Pause/Resume | Последующая интеграция RUNTIME-01/02, INPUT-01 и PHYS-01; не реализовано этим объединением |
+| GUI upstream и несколько окон | Закреплённый docking upstream, texture lifecycle, VtxOffset/большие списки; затем multi-viewports и несколько monitors | После необходимой корректности и Core API; текущая однооконная поддержка не равна готовой multi-window |
+| Диагностика и документация | Crash report; расширение Doxygen Event/Window/Engine и дальнейших публичных API | Требование reporter записано в development-tools.md; справочник ещё не покрывает весь Core |
+
+Подробный аудит и согласованные границы Gui/GuiRender опубликованы в
+[документе IMGUI-01](https://github.com/Enziferum/robot2D/blob/f4fc9c3b7fd290a1bf240d722972bc4ced877792/docs/imgui-backend-review.md).
+Наблюдения аудита требуют воспроизводящих проверок: таблица не объявляет все
+дефекты уже воспроизведёнными и не запускает их реализацию. Изменения соседней
+GUI-ветки и пользовательский основной checkout не копируются и не редактируются.
+
+Последовательность сейчас: объединение/проверки/ревью CORE-01+02 → выбор следующего
+небольшого шага с пользователем. Рекомендуемый кандидат — однооконные исправления
+корректности GuiRender/GuiImpl до обновления upstream. Тайминг согласован, но
+автоматически не запускается; остальные зависимости остаются в своих Issues.
+Оптимизацию uploads/ёмкости и VAO выполняем после измерений, отдельным шагом.
+
+Это не полный аудит всех классов Core: например Cursor/Joystick/Mouse/Keyboard,
+общий WindowContext и отдельные allocator API не объявляются целиком проверенными
+по сборке выбранных изменений. ECS, Snapshot и CancellationToken остаются за
+пользователем; вмешательство в них не входит в этот план.
 
 ## Где находится информация
 
@@ -289,6 +330,27 @@ clang-tidy всех 177 единиц собственного кода. Посл
 Следующий шаг — CI/ревью PR, ручная приёмка и интеграция с RUNTIME-01/BUILD-01.
 
 
+## CORE-02: типизированные события — 2026-10-16
+
+По запросу пользователя реализуется [CORE-02 #119](https://github.com/Enziferum/robot2D/issues/119)
+в отдельном worktree `core-02-events`, ветка `CORE-02` от dev @ 3e3cfe3.
+Event на std::variant, typed EventBinder, GLFW FIFO/frame batch, queued ImGui input,
+владение Press/Release и диагностика Events в редакторе. Потребители core/sandbox,
+robot2D-imgui и editor мигрированы; ECS и INPUT-01 C# fixed-tick API вне объёма.
+Контракт, несовместимые изменения API, тесты и ручная приёмка — [core-events.md](core-events.md).
+Следующий шаг — обязательный pre-commit, PR в dev и UI-приёмка до merge.
+
+Проверки реализации `588d469`: обязательный pre-commit без обхода — Python 47/47,
+Uncrustify, сборка robot2D/core-tests/editor-test-suite, headless CTest 58/58
+(8 новых event-сценариев), строгий clang-tidy всех 179 единиц собственного кода.
+Отдельно проверены формат и строгий анализ трёх изменённых `.cpp` собственного
+robot2D-imgui; upstream ImGui не менялся. Собраны Sandbox, dormant EditorUIScene
+compatibility target и robot2D-imgui-example. Включение проверки Sandbox потребовало
+убрать дублирующий add_subdirectory и исправить include/синтаксис самого примера.
+UI/graphics-приёмка и Linux CI не объявляются выполненными; C# polling API остаётся
+за INPUT-01. Документация проверена по локальным ссылкам и diff.
+
+
 ## ASSET-02: старые сцены с NUL в путях — 2026-10-16
 
 После пользовательского отчёта по Shooter/Scene.scene создана ветка
@@ -305,6 +367,271 @@ CPU-загрузка ресурсов без исключения. Редакт�
 PR в dev и повторное открытие Shooter в пользовательском редакторе.
 
 
+Публикация: [draft PR #122](https://github.com/Enziferum/robot2D/pull/122), ветка
+`CORE-02`. После объединения с dev @ c05a55b (ASSET-02 #118) сохранены обе записи
+roadmap и оба набора тестов. Повторный обязательный pre-commit: Python 47/47,
+сборка редактора/suite, headless CTest 60/60 и строгий clang-tidy 180 единиц.
+UI/graphics-приёмка остаётся перед merge; результаты CI проверяются в PR.
+Дополнительно закреплён порядок runtime UI callbacks между hitbox: воспроизведены неверный payload MouseMoved и группировка кликов по сущности; UISystem переведён на getIf и обход Press по времени, добавлена регрессия в editor-event-order.
+
+
+## Контракт тайминга после CORE-02 — 2026-10-16
+
+Пользователь согласовал [Engine/Application/RuntimeSession](fixed-timestep-contract.md):
+общий Engine для editor/player, единственный fixed scheduler, независимый fixedDt,
+лимиты догоняющих шагов, queued Play/Pause/Resume/Stop, поколения SessionId и сброс
+времени нового запуска. Документ явно отделяет Event-реализацию CORE-02 от будущих
+API и сохраняет границы PHYS-01, INPUT-01 и RUNTIME-01/02. Реализация тайминга
+не начата и сейчас не поручается: сначала завершаем CORE-02 и его приёмку.
+Windows/Linux CI реализации CORE-02 @ 1703688 успешны; это не проверка нового
+контракта. Для этого документационного шага проверены локальные ссылки и diff,
+native сборка/тесты заново не запускались. Следующий шаг — передать контракт
+чату PHYS-01 и продолжить приёмку CORE-02, не расширяя Event PR кодом тайминга.
+
+
+### CORE-02: результат пользовательской приёмки и startup cancellation — 2026-10-16
+
+Пользователь сообщил: остальные проверки работают, но после выбора проекта в
+инспекторе видна малая область GUI слева снизу, затем приложение падает при
+переходе в редактор. Журнал этого запуска содержит layout_restored=false;
+robot2D.ini без сохранённых ImGui секций. Восстановление старого layout не
+подтверждается, resize-приёмка пока остаётся открытой.
+
+Стек GDB в тестовом worktree воспроизвёл SIGSEGV:
+Scene::handleEventsRuntime ← Editor::cancelInput ← Application::handleEventFrame.
+EditorLogic пересылал синтетический LostFocus в ещё отсутствующую m_activeScene
+во время async-load. Добавлена проверка наличия сцены на границе forwarding;
+headless editor-event-capture проверяет отмену/Release без активной сцены в
+Edit/Load/LoadFailed. Повторная интерактивная проверка перехода и resize нужна
+после пересборки; весь ручной сценарий не объявляется пройденным.
+
+CI документационного HEAD cb36f2a: Linux успешен; Windows не дошёл до сборки из-за
+Chocolatey HTTP 504 при скачивании Mono. Повторена только упавшая job. Сбой
+инфраструктуры не считается результатом проверки Event-кода.
+
+Пользовательская потребность на следующий отдельный шаг: локальный crash report.
+Состав и вопросы проектирования записаны в
+[development-tools.md](development-tools.md#будущая-диагностика-crash-report).
+В CORE-02 crash reporter и новый тайминг не реализуются.
+
+
+Повторная приёмка startup fix `36b6a11`: пользователь подтвердил «Открылся,
+GUI на всё окно» на той же сборке и проекте. Журнал подтверждает Resized
+2560x1417 и успешное применение сцены после async-load. Малый GUI перед падением
+не был подтверждённым сохранением layout: после исправления отмены ввода
+переход Inspector → Editor завершается штатно без удаления конфигурации.
+Пользователь также сообщил, что остальные проверки работают нормально.
+
+Проверки исправления: event subset 8/8; обязательный pre-commit — Python 47/47,
+сборка robot2D/core-tests/editor-suite, полный headless CTest 60/60, строгий
+clang-tidy двух изменённых cpp. Ранее успешный полный анализ 180 единиц и CI
+не выдаются за новый прогон. Следующий шаг — CI нового head и финальное ревью
+PR #122; merge пока не выполнялся. Crash report записан как отдельная будущая
+потребность в development-tools.md; тайминг и reporter не реализуются этим fix.
+
+
+## Core без ECS: CORE-01, первый шаг 2026-10-16
+
+Пользователь поручил исправления и улучшения Util, базовых классов и документацию.
+Задача [CORE-01 #110](https://github.com/Enziferum/robot2D/issues/110), ведущий —
+Codex. Изолированная ветка `codex/core-01-util-contracts` от dev `9f131c5`;
+рабочая ветка пользователя ECS-1 и её локальные изменения не изменялись.
+
+Первый шаг: безопасные get/operator[] и find, size/empty в ResourceHandler;
+дубликаты не загружаются и не перемещают аргумент; исправлены требования к
+конструированию. Подключены ранее исключённые Core/Graphics тесты и новые Util
+регрессии. Исправлены создание/разрушение payload MessageBus, выравнивание и
+откат при ошибках, очистка очереди, метаданные StackAllocator и отложенное
+освобождение MemoryManager. Арена уменьшена с 1 GiB до 1 MiB, raw-сообщения
+сохраняют поддержку размеров более 128 байт. Редактор очищает сообщения после
+синхронной доставки batch. В старом тесте Rect исправлена ошибочная геометрия.
+
+Добавлены описания контрактов, [руководство Core API](core-api.md), опция
+RB2D_BUILD_DOCS и цель robot2D-core-docs. HTML генерируется в build-каталоге;
+относительные пути проверены с установленным MSYS Doxygen 1.18.0.
+
+Проверки: отдельная Ninja/Release сборка GCC 16.2.0; robot2D, core-tests и
+editor-test-suite собраны; CTest 73/73 без пропусков, включая 51 Core и 22 editor
+headless теста. HTML сгенерирован. Форматирование — Uncrustify 0.83.0 только для
+изменённых C++ файлов. Строгий clang-tidy выбранных Core-файлов и
+editor/src/Application.cpp пройден. Для запуска обязательного hook устранены
+две ошибки инфраструктуры: тесты review изолируют локальные переменные Git,
+а анализатор использует intrinsic-заголовки соответствующего Clang 23.1.3 перед
+GCC-заголовками. Проверки не отключались. Итог полного hook и публикации
+фиксируется в Issue.
+
+UI/graphics приёмка не выполнялась. Сценарий: открыть проект по длинному пути,
+создать сцену, выполнить выбор/дублирование, открыть другой проект и закрыть
+редактор; сообщения должны доходить без ошибок, повторных действий и роста арены.
+Запуск существующих ECS-тестов не означает ревью или изменение ECS.
+
+Следующий шаг — Logger/Assert, затем FileInputStream, Time/Clock, векторы,
+Window/Engine с отдельными контрактами и регрессиями. Проверка ресурсов Graphics
+связана с RENDER-03/04. ECS, Snapshot и CancellationToken остаются вне CORE-01.
+Первый шаг не завершает весь согласованный план.
+
+## CORE-01: Logger/Assert, второй шаг 2026-10-16
+
+Пользователь поручил продолжение в той же ветке `codex/core-01-util-contracts`
+и [PR #112](https://github.com/Enziferum/robot2D/pull/112). CI первого шага
+8c57da2 подтверждён для Linux/Windows: [run 38894835386](https://github.com/Enziferum/robot2D/actions/runs/38894835386).
+
+Исправлены форматтер vec2f (тип аргумента, const format, f/e) и const format
+для vec2u. Logger допускает безопасный первый вызов через getters, однократный
+Init с явным путём, повтор без очистки журнала, отказ с последующей повторной
+попыткой и одновременную инициализацию. Каналы публикуются после подготовки,
+ошибки регистрации откатываются. Сохранены mutable getter-слоты capture-тестов,
+формат/уровни и flush каждого сообщения для ConsolePanel.
+
+Assertions перенесены в Util/Assert.hpp; Core/Assert.hpp сохраняет совместимость.
+Без NDEBUG включены по умолчанию, RB_ASSERTS явно включает их и в Release.
+Условие проверяется один раз, сообщение вычисляется только при ошибке;
+неуспех пишет выражение/файл/строку/сообщение и завершает через abort, включая
+отказ самого логгера. При отключении ни условие, ни сообщение не вычисляются.
+RB_DEBUGBREAK теперь явно вызывает abort. Исправлен вызов без semicolon в
+ScriptingEngine; соседняя логика scripting не изменялась.
+
+Добавлены постоянные Formatter tests, шесть отдельных Logger-сценариев и
+assertion/death tests для Release override, Debug default и Release disable.
+Исключение внутри варианта std::call_once зависало на повторе в установленном
+MinGW; тесты выявили это, реализация переведена на atomic + mutex, и сценарии
+отказа/повтора затем прошли. Все цели подключены к robot2D-core-tests.
+
+Проверки: Ninja/Release GCC 16.2.0; robot2D, core-tests, editor-test-suite и
+HTML документация собраны. CTest 94/94 без пропусков (72 Core, 22 editor
+headless); отдельно graphics diagnostics/shaders 2/2 на скрытом GL-контексте.
+Строгий clang-tidy выбранных изменённых единиц пройден, Uncrustify 0.83.0
+применён только к изменённым C++ файлам. Полный hook и commit/CI фиксируются
+в CORE-01. Требования и примеры — [core-api.md](core-api.md).
+
+Ручная UI-приёмка ConsolePanel не выполнялась: проверить запуск редактора,
+видимость обычных сообщений/ошибок и сохранность журнала при повторном Init
+в одном процессе. Настоящее нарушение assertion намеренно завершает процесс;
+автоматические death tests проверяют это в дочерних процессах.
+
+Далее — FileInputStream, Time/Clock, векторы, Window/Engine с отдельными
+контрактами и проверками. CORE-01 остаётся открытой; ECS, Snapshot и
+CancellationToken этим шагом не изменялись.
+
+## CORE-01: FileInputStream, третий шаг 2026-10-16
+
+Пользователь поручил отдельный шаг FileInputStream в той же ветке и PR #112.
+Вызовов потока среди текущего собственного Core/Editor/sandbox не найдено.
+Сохранён uint64_t API с именованным Error; EOF отделён от ferror, добавлены
+проверки аргументов, 64-битные файловые операции, UTF-8 пути Windows и проверяемое
+восстановление позиции getSize. Reopen сохраняет прежнюю политику: отказ закрывает
+поток. Контракты, владение, единицы и ограничения описаны в заголовке/core-api.md;
+заголовок включён в Doxygen. Постоянные регрессии — Core/FileInputStreamTests.cpp.
+
+Проверки и публикация этого шага фиксируются после завершения в Issue #110;
+прошлые результаты не считаются повторными проверками. CI второго шага e51c19a
+подтверждён Linux/Windows (run 38912209312). Аппаратные отказы диска не моделируются.
+
+Далее отдельный шаг Time/Clock. Перед пунктом 3 (Vector2/Vector3) и пунктом 4
+(Window/Desktop) обязательно обсудить с пользователем детали и объём до начала
+каждого из этих шагов, даже если он просто просит продолжить. Это прямое указание
+пользователя от 2026-10-16. ECS, Snapshot и CancellationToken исключены.
+
+Локальные проверки FileInputStream: 13/13 регрессий Windows, включая настоящий
+read failure из-за byte-range lock и повтор после seek; sparse >4 GiB без записи
+гигабайтов. Собраны robot2D/core-tests/editor-test-suite, HTML сгенерирован.
+Первый общий CTest: 106/107, единичный отказ editor-cache-roundtrip; отдельный
+повтор и ещё 10 последовательных запусков этого теста прошли. Причина единичного
+отказа не установлена; соседний EditorCache не менялся. Итог повторной общей
+проверки обязательного hook и commit/CI сохраняется в Issue #110.
+
+Итог обязательного pre-commit этого шага: Python 42/42, Uncrustify 0.83.0,
+сборка robot2D/core-tests/editor-test-suite, CTest 107/107 (85 Core и 22 editor
+headless) без пропусков, строгий clang-tidy всех 186 собственных файлов.
+Hook пройден без обхода; повторный общий cache-roundtrip также прошёл.
+HTML FileInputStream сгенерирован. Commit и актуальное состояние удалённого CI —
+в Issue #110/PR #112; локальная проверка Windows не заменяет Linux CI.
+
+## CORE-01: Time/Clock, четвёртый шаг 2026-10-16
+
+Пользователь поручил Time/Clock отдельно в той же ветке/PR #112. Потребитель —
+Engine (restart().asSeconds()); публичные сигнатуры и единицы сохранены. Time
+хранит int64_t микросекунд; преобразования float теперь делят через double до
+округления. Clock использует steady_clock и единый начальный now; duration
+остаётся временем с создания, restart — последним интервалом. Добавлены контракты
+методов, Doxygen и регрессии единиц/точности/интервалов/копирования.
+
+Проверки/публикация фиксируются после завершения в Issue #110. Полная пересборка
+потребителей обязательна, ABI старых бинарных клиентов не гарантируется.
+Проверки не меняют системные часы и не моделируют сон ОС. Engine и ECS не меняются.
+
+Следующая граница — обсуждение Vector2/Vector3 до реализации. Пользовательское
+требование отдельного обсуждения пунктов 3 и 4 сохраняется, в том числе при просьбе
+просто продолжить. Window/Desktop также нельзя начинать без обсуждения деталей.
+
+Результат Time/Clock: 12/12 новых регрессий Windows, HTML обеих API-страниц
+сгенерирован. Полный обязательный hook пройден без обхода: Python 42/42,
+Uncrustify 0.83.0, сборка robot2D/core-tests/editor-test-suite, CTest 119/119
+(97 Core +22 editor headless) без пропусков, строгий clang-tidy 188 собственных
+файлов. Ручная UI/graphics-приёмка этого шага не запускалась. Commit/PR и статус
+нового Linux/Windows CI фиксируются в Issue #110; локальный Windows не заменяет CI.
+Следующий шаг — только обсуждение деталей Vector2/Vector3, без начала реализации.
+
+## CORE-01: constexpr Time и совместимый шаг Vector, 2026-10-16
+
+Пользователь поручил constexpr/noexcept Time со static_assert, Clock оставить
+без изменений. После отдельного обсуждения явно согласован совместимый шаг
+Vector2/Vector3: const conversions, недостающий constexpr, обоснованный noexcept,
+static_assert/runtime tests; тип float dot/cross и смысл <, > сохранены.
+
+Time стал header-only, Time.cpp удалён из CMake. Vector использует noexcept для
+арифметических T/U, а copy/move следует scalar traits; пользовательские scalar
+могут передавать исключения вместо terminate. Существующие потребители — Core
+Graphics/Window, Engine и Editor (viewport/camera/Guizmo2D/animation/UI). Их исходники,
+Clock, ECS, Snapshot и CancellationToken не меняются. Пересборка нужна.
+Контракты/ограничения — core-api.md и Doxygen. Проверки/публикация — после завершения
+в Issue #110. Window/Desktop требует нового отдельного обсуждения до старта.
+
+Итог дополнения constexpr/Vector: C++17 static_assert скомпилированы, выбранные
+Time/Vector runtime tests 23/23, HTML с Time/Vector2/Vector3 сгенерирован.
+Полный обязательный hook пройден без обхода: Python 42/42, Uncrustify 0.83.0,
+сборка robot2D/core-tests/editor-test-suite, CTest 128/128 (106 Core +22 editor
+headless) без пропусков, строгий clang-tidy 187 собственных файлов.
+Первый clang-tidy выявил повторное использование source после move в тесте
+исключений; тест разделён на независимые экземпляры, повторный полный hook прошёл.
+Clock/его тесты не изменены. Ручная UI/graphics-проверка не запускалась.
+Публикация и новый Linux/Windows CI фиксируются в Issue #110/PR #112.
+Далее до начала Window/Desktop — отдельное обсуждение деталей с пользователем.
+
+
+## Объединение CORE-01 и CORE-02 — 2026-10-16
+
+По прямому запросу пользователя история CORE-01 @ c241816 включена в CORE-02
+merge-коммитом 16ec111, затем актуальный dev @ df823bb (PHYS-01 #120) включён
+через b2cb859. Общий результат — PR #122; PR #112 заменяется им после публикации,
+его ветка/история сохраняются. CORE-01 #110 остаётся открытой общей задачей.
+
+Разрешены восемь конфликтов CORE-01/02 и один при включении dev. Сохранены
+типизированный Event/frame/capture и startup fix CORE-02, безопасные ресурсы,
+сообщения/память и Util CORE-01, действующие PHYS-01 callbacks. Обработчик,
+в котором CORE-01 добавлял semicolon к Assert, заменён новой адресной доставкой
+PHYS-01 целиком; старый broadcast не восстановлен. Сохранён фильтр GIT_* из dev
+в синтетических review-тестах. ResourceHandler::clear из актуального dev оставлен,
+его lifetime описан, добавлена регрессия освобождения и повторного ID.
+
+Проверки объединённой версии: Python 47/47, обязательный hook без обхода,
+headless CTest 160/160, строгий clang-tidy 194 единиц собственного кода.
+Отдельный строгий анализ трёх изменённых cpp собственного ImGui-адаптера пройден.
+Собраны редактор, core/editor suite, Sandbox, dormant EditorUIScene compatibility
+target и ImGui example. После включения graphics полный CTest 201/201 без пропусков
+(41 graphics). Doxygen 1.18.0 с WARN_AS_ERROR сгенерировал HTML, в том числе в
+совершенно новом work/core-02-docs-clean: исправлены создание вложенного output
+каталога и ссылка на не включённый в Doxygen Event-документ. Временное отключение
+проверок Doxygen не использовалось. Локальные Markdown-ссылки и реестр проверены.
+
+Ручное подтверждение пользователя startup/GUI относится к CORE-02 до объединения;
+оно не переобъявляется новой ручной приёмкой объединённой сборки. Следующий шаг —
+CI общего head, финальное ревью и короткое открытие проекта этой сборкой.
+В начале roadmap восстановлен полный список оставшихся Core/robot2D-imgui работ;
+новый scheduler, GUI renderer/lifecycle, upstream/multi-window и crash reporter
+этим объединением не реализуются. Основной checkout и ветки соседних чатов,
+Core ECS, Snapshot/CancellationToken и submodule pointers не менялись.
+
 ## SCRIPT-01: пользовательские сборки — 2026-10-16
 
 Пользователь поручил ассистенту SCRIPT-01 → HUD-01 → подготовку BUILD-01 параллельно
@@ -316,3 +643,13 @@ SCRIPT-01 от актуального dev df823bb. Введены общий she
 6 новых Python регрессий генератора прошли. Следующий шаг — CI/review, ручная
 приёмка и использование сервиса в BUILD-01; standalone остаётся PLAYER-01.
 ECS, Snapshot/CancellationToken и согласованный scheduler не изменяются.
+
+
+### CORE-02: подготовка последовательной интеграции — 2026-10-17
+
+Пользователь подтвердил успешную ручную приёмку и поручил merge CORE-02 #122,
+затем IMGUI-02 #130 в dev при зелёном CI. CORE-02 синхронизирован с dev ab0f3a5:
+сохранены типизированные Event/router и Release владельцу за пределами viewport,
+а также error-only popup SCRIPT-01 и изменения HUD/Build. Конфликты Editor.cpp
+и roadmap разрешены без возврата union API. Проверки и CI обновлённого head
+публикуются в Issue #119; merge выполняется только после их успеха.

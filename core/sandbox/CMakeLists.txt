@@ -72,3 +72,5 @@ add_custom_command(
         COMMAND ${CMAKE_COMMAND} -E copy_directory
         ${CMAKE_CURRENT_SOURCE_DIR}/res/
         ${CMAKE_CURRENT_BINARY_DIR}/res/)
+add_library(robot2D-sandbox-event-compat OBJECT source/EditorUIScene.cpp)
+target_link_libraries(robot2D-sandbox-event-compat PRIVATE robot2D-imgui)

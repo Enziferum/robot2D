@@ -49,17 +49,19 @@ namespace robot2D::priv {
     DesktopWindowImpl::~DesktopWindowImpl() = default;
 
     bool DesktopWindowImpl::pollEvents(Event& event) {
-        //TODO: @a.raag sleep/wait some time ?
-        if(m_event_queue.empty()) {
-        }
+        return m_event_queue.poll(event);
+    }
 
-        if(!m_event_queue.empty()) {
-            event = m_event_queue.front();
-            m_event_queue.pop();
-            return true;
-        }
+    std::vector<Event> DesktopWindowImpl::takeEvents() {
+        return m_event_queue.take();
+    }
 
-        return false;
+    void DesktopWindowImpl::processEvents() {
+        glfwPollEvents();
+        if(m_callbackError) {
+            auto error = std::exchange(m_callbackError, {});
+            std::rethrow_exception(error);
+        }
     }
 
     void* DesktopWindowImpl::getRaw() {
@@ -143,12 +145,10 @@ namespace robot2D::priv {
 
     void DesktopWindowImpl::close() {
         glfwSetWindowShouldClose(m_window, true);
-        glfwTerminate();
     }
 
     void DesktopWindowImpl::display() {
         glfwSwapBuffers(m_window);
-        glfwPollEvents();
     }
 
     void DesktopWindowImpl::setup_callbacks() {
@@ -176,74 +176,50 @@ namespace robot2D::priv {
     }
 
     void DesktopWindowImpl::close_callback(GLFWwindow* wnd) {
-        auto window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
-        Event event{};
-        event.type = Event::Closed;
-        window -> m_event_queue.push(event);
+        auto* window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
+        // A request is delivered before Engine decides whether to stop.
+
+        if(window) window -> enqueue(Event::Closed{});
     }
 
-    void DesktopWindowImpl::key_callback(GLFWwindow* wnd, int key, [[maybe_unused]] int scancode,
-        int action, [[maybe_unused]] int mods) {
-        auto window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
-
-        Event event{};
-
-        if(action == GLFW_REPEAT || action == GLFW_PRESS)
-            event.type = Event::KeyPressed;
-        if(action == GLFW_RELEASE)
-            event.type = Event::KeyReleased;
-        event.key.code = Int2Key(key);
-        window -> m_event_queue.push(event);
+    void DesktopWindowImpl::key_callback(GLFWwindow* wnd, int key, int scancode, int action, int mods) {
+        auto* window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
+        if(!window) return;
+        const Event::KeyboardEvent data{Int2Key(key), scancode, static_cast<unsigned>(mods)};
+        if(action == GLFW_PRESS || action == GLFW_REPEAT)
+            window -> enqueue(Event::KeyPressed{data, action == GLFW_REPEAT});
+        else if(action == GLFW_RELEASE)
+            window -> enqueue(Event::KeyReleased{data});
     }
 
     void DesktopWindowImpl::cursor_callback(GLFWwindow* wnd, double xpos, double ypos) {
-        auto window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
-
-        Event event{};
-        event.move.x = static_cast<float>(xpos);
-        event.move.y = static_cast<float>(ypos);
-        event.type = Event::MouseMoved;
-
-        window->m_event_queue.push(event);
+        auto* window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
+        if(window) window -> enqueue(Event::MouseMoved{{static_cast<float>(xpos), static_cast<float>(ypos)}});
     }
 
-    void DesktopWindowImpl::mouseWhell_callback(GLFWwindow* wnd, [[maybe_unused]] double xpos, double ypos) {
-        auto window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
-        Event event{};
-        event.type = Event::MouseWheel;
-        event.wheel.scroll_x = 0;
-        event.wheel.scroll_y = static_cast<float>(ypos);
-        window->m_event_queue.push(event);
+    void DesktopWindowImpl::mouseWhell_callback(GLFWwindow* wnd, double xpos, double ypos) {
+        auto* window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
+        if(!window) return;
+        double x = 0, y = 0;
+        glfwGetCursorPos(wnd, &x, &y);
+        window -> enqueue(Event::MouseWheel{{static_cast<float>(xpos), static_cast<float>(ypos),
+                static_cast<float>(x), static_cast<float>(y)}});
     }
 
-    void DesktopWindowImpl::mouse_callback(GLFWwindow* wnd, int button, int action, [[maybe_unused]] int mods) {
-        auto window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
-
-        double xpos, ypos;
-        glfwGetCursorPos(wnd, &xpos, &ypos);
-
-        Event event{};
-        event.mouse.btn = button;
-        event.mouse.x = static_cast<int>(xpos);
-        event.mouse.y = static_cast<int>(ypos);
-
-        if(action == GLFW_PRESS)
-            event.type = Event::MousePressed;
-
-        if(action == GLFW_RELEASE)
-            event.type = Event::MouseReleased;
-
-        window -> m_event_queue.push(event);
+    void DesktopWindowImpl::mouse_callback(GLFWwindow* wnd, int button, int action, int mods) {
+        auto* window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
+        if(!window) return;
+        double x = 0, y = 0;
+        glfwGetCursorPos(wnd, &x, &y);
+        const Event::MouseButtonEvent data{button, static_cast<float>(x), static_cast<float>(y),
+                                           static_cast<unsigned>(mods)};
+        if(action == GLFW_PRESS) window -> enqueue(Event::MousePressed{data});
+        else if(action == GLFW_RELEASE) window -> enqueue(Event::MouseReleased{data});
     }
 
     void DesktopWindowImpl::size_callback(GLFWwindow* wnd, int w, int h) {
-        auto window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
-        Event event{};
-        event.type = Event::Resized;
-        event.size.widht = w;
-        event.size.heigth = h;
-
-        window -> m_event_queue.push(event);
+        auto* window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
+        if(window) window -> enqueue(Event::Resized{{static_cast<unsigned>(w), static_cast<unsigned>(h)}});
     }
 
     void DesktopWindowImpl::framebuffer_callback([[maybe_unused]] GLFWwindow* window, int width, int height) {
@@ -254,59 +230,36 @@ namespace robot2D::priv {
     }
 
     void DesktopWindowImpl::focus_callback(GLFWwindow* wnd, int focus) {
-        auto window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
-        Event event{};
-        if(focus) {
-            event.type = Event::GainFocus;
-        }
-        else {
-            event.type = Event::LostFocus;
-        }
-
-        window->m_event_queue.push(event);
+        auto* window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
+        if(!window) return;
+        if(focus) window -> enqueue(Event::GainFocus{});
+        else window -> enqueue(Event::LostFocus{});
     }
 
     void DesktopWindowImpl::text_callback(GLFWwindow* wnd, unsigned int symbol) {
-        auto window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
-        Event event{};
-        event.type = Event::TextEntered;
-        event.text.symbol = symbol;
-        window->m_event_queue.push(event);
+        auto* window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
+        if(window) window -> enqueue(Event::TextEntered{{symbol}});
     }
 
     void DesktopWindowImpl::dragdrop_callback(GLFWwindow* wnd, int count, const char** paths) {
-        auto window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
-        std::vector<std::string> outputPaths;
-        for(int i = 0; i < count; ++i) {
-            if(paths[i] != nullptr)
-                outputPaths.emplace_back(paths[i]);
+        auto* window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
+        if(!window) return;
+        try {
+            Event::FilesDropped data;
+            for(int i = 0; i < count; ++i)
+                if(paths[i]) data.paths.emplace_back(paths[i]);
+            window -> enqueue(std::move(data));
         }
-        if(window -> m_dropCallback)
-            window -> m_dropCallback(std::move(outputPaths));
+        catch(...) { window -> m_callbackError = std::current_exception(); }
     }
 
-    void DesktopWindowImpl::joystick_callback(int jid, int evt) {
-        if(evt == GLFW_CONNECTED) {
-            auto window = static_cast<DesktopWindowImpl*>(glfwGetJoystickUserPointer(jid));
-            if(!window || jid != GLFW_JOYSTICK_1)
-                return;
-
-            Event event{};
-            event.type = Event::JoystickConnected;
-            event.joystick.joytickId = jid;
-            event.joystick.isGamepad = glfwJoystickIsGamepad(jid);
-            window -> m_event_queue.push(event);
-        }
-
-        if(evt == GLFW_DISCONNECTED) {
-            auto window = static_cast<DesktopWindowImpl*>(glfwGetJoystickUserPointer(jid));
-            if(!window || jid != GLFW_JOYSTICK_1)
-                return;
-            Event event{};
-            event.type = Event::JoystickDisconnected;
-            event.joystick.joytickId = jid;
-            window -> m_event_queue.push(event);
-        }
+    void DesktopWindowImpl::joystick_callback(int jid, int action) {
+        auto* window = static_cast<DesktopWindowImpl*>(glfwGetJoystickUserPointer(jid));
+        if(!window || jid != GLFW_JOYSTICK_1) return;
+        if(action == GLFW_CONNECTED)
+            window -> enqueue(Event::JoystickConnected{{jid, glfwJoystickIsGamepad(jid) == GLFW_TRUE}});
+        else if(action == GLFW_DISCONNECTED)
+            window -> enqueue(Event::JoystickDisconnected{{jid, false}});
     }
 
     void DesktopWindowImpl::setIcon(Image&& icon) {

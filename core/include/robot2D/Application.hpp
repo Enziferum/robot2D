@@ -17,6 +17,7 @@ namespace robot2D {
         virtual void setup() = 0;
         virtual void destroy();
 
+        virtual void handleEventFrame(const FrameEvents& events);
         virtual void handleEvents(const robot2D::Event& event);
         virtual void handleMessages();
         virtual void update(float deltaTime);

@@ -1,27 +1,28 @@
 /*********************************************************************
-(c) Alex Raag 2023
-https://github.com/Enziferum
-robot2D - Zlib license.
-This software is provided 'as-is', without any express or
-implied warranty. In no event will the authors be held
-liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute
-it freely, subject to the following restrictions:
-1. The origin of this software must not be misrepresented;
-you must not claim that you wrote the original software.
-If you use this software in a product, an acknowledgment
-in the product documentation would be appreciated but
-is not required.
-2. Altered source versions must be plainly marked as such,
-and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any
-source distribution.
+   (c) Alex Raag 2023
+   https://github.com/Enziferum
+   robot2D - Zlib license.
+   This software is provided 'as-is', without any express or
+   implied warranty. In no event will the authors be held
+   liable for any damages arising from the use of this software.
+   Permission is granted to anyone to use this software for any purpose,
+   including commercial applications, and to alter it and redistribute
+   it freely, subject to the following restrictions:
+   1. The origin of this software must not be misrepresented;
+   you must not claim that you wrote the original software.
+   If you use this software in a product, an acknowledgment
+   in the product documentation would be appreciated but
+   is not required.
+   2. Altered source versions must be plainly marked as such,
+   and must not be misrepresented as being the original software.
+   3. This notice may not be removed or altered from any
+   source distribution.
 *********************************************************************/
 
 #pragma once
 
-#include <queue>
+#include <exception>
+#include <robot2D/Core/EventQueue.hpp>
 
 #include <GLFW/glfw3.h>
 #include <robot2D/Core/WindowContext.hpp>
@@ -31,13 +32,15 @@ source distribution.
 namespace robot2D::priv {
 
     /// \brief our desktop backend is GLFW
-    class DesktopWindowImpl: public WindowImpl {
+    class DesktopWindowImpl : public WindowImpl {
     public:
         DesktopWindowImpl();
         DesktopWindowImpl(const vec2u& size, const std::string& name, WindowContext& context);
         ~DesktopWindowImpl();
 
         bool pollEvents(Event& event) override;
+        void processEvents() override;
+        std::vector<Event> takeEvents() override;
         void* getRaw() override;
 
         bool isOpen() const override;
@@ -52,7 +55,7 @@ namespace robot2D::priv {
         bool isJoystickAvailable(const JoystickType& joystickType) override;
         bool JoystickIsGamepad(const JoystickType& joystickType) override;
         bool getJoystickGamepadInput(const JoystickType& joystickType,
-                                     JoystickGamepadInput& gamepadInput) override;
+            JoystickGamepadInput& gamepadInput) override;
 
         void setSize(const robot2D::vec2u& size) override;
 
@@ -65,7 +68,7 @@ namespace robot2D::priv {
         void setPosition(const robot2D::vec2u& position) override;
         robot2D::vec2u getPosition() const override;
 
-        void setResizable(const bool &flag) override;
+        void setResizable(const bool& flag) override;
         void setMaximazed(const bool& flag) override;
 
         void setMousePos(const vec2f& pos) override;
@@ -74,6 +77,13 @@ namespace robot2D::priv {
         void setVsync(bool flag) override;
         void addDropCallback(std::function<void(std::vector<std::string>&&)>&& callback) override;
     private:
+        template<typename Payload>
+        void enqueue(Payload payload) noexcept {
+            if(m_callbackError)
+                return;
+            try { m_event_queue.push(std::move(payload)); }
+            catch(...) { m_callbackError = std::current_exception(); }
+        }
         void setup();
         void setup_callbacks();
     private:
@@ -91,7 +101,8 @@ namespace robot2D::priv {
         static void joystick_callback(int jid, int event);
     private:
         GLFWwindow* m_window;
-        std::queue<Event> m_event_queue;
+        EventQueue m_event_queue;
+        std::exception_ptr m_callbackError;
         vec2u m_size;
         std::string m_name;
         WindowContext m_context;
