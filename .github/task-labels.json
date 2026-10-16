@@ -359,6 +359,10 @@
       "type:refactor",
       "type:tests",
       "owner:shared"
+    ],
+    "CORE-01": [
+      "area:core",
+      "type:bug"
     ]
   }
 }

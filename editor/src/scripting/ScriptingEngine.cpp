@@ -601,7 +601,7 @@ namespace editor {
 
 
                 MonoClass* evClass = mono_class_from_name(s_Data -> m_coreAssemblyImage, "robot2D", "PhysicsContact2D");
-                RB_ASSERT(evClass)
+                RB_ASSERT(evClass);
                 mono_value_box(s_Data -> m_appDomain, evClass, (void*)&contact);
                 void* args[4] = { &selfId, &otherId, &type, (void*)&contact };
 

@@ -13,7 +13,7 @@ namespace {
     };
 }
 
-class CoreMessageBusMock: public ::testing::Test {
+class CoreMessageBusMock : public ::testing::Test {
 public:
     void SetUp() override {
         auto* msg = m_messageBus.postMessage<TestMessage>(TestMessageID::Test);
@@ -27,7 +27,7 @@ protected:
 
 TEST_F(CoreMessageBusMock, Core_Message_Test) {
     robot2D::Message message;
-    m_messageBus.pollMessages(message);
+    ASSERT_TRUE(m_messageBus.pollMessages(message));
     const auto& data = message.getData<TestMessage>();
     EXPECT_EQ(data.a, "42");
     EXPECT_EQ(data.b, 42);
@@ -35,6 +35,6 @@ TEST_F(CoreMessageBusMock, Core_Message_Test) {
 
 TEST_F(CoreMessageBusMock, Core_MessageBadSize_Test) {
     robot2D::Message message;
-    m_messageBus.pollMessages(message);
+    ASSERT_TRUE(m_messageBus.pollMessages(message));
     const auto& data = message.getData<TestMessage>();
 }
