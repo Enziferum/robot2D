@@ -4,6 +4,8 @@
 #include <robot2D/Graphics/GL.hpp>
 #include <robot2D/imgui/Gui.hpp>
 #include <robot2D/Graphics/RenderTarget.hpp>
+#include <robot2D/Graphics/FrameBuffer.hpp>
+#include <robot2D/Graphics/Buffer.hpp>
 #include <robot2D/Graphics/RenderAPI.hpp>
 #include "Render.hpp"
 #include "FontSet.hpp"
@@ -247,6 +249,79 @@ namespace {
         }
     };
 
+    class CoreTarget final : public RenderTarget {
+    public:
+        CoreTarget() : RenderTarget({128, 128}, RenderAPI::getOpenGLVersion() == RenderApi::OpenGL4_5
+                    ? WindowContext::RenderApi::OpenGL4_5 : WindowContext::RenderApi::OpenGL4_3,
+                WindowContext::RenderDimensionType::TwoD) {
+        }
+    };
+
+    void coreInterop(Window& window) {
+        CoreTarget target;
+        Gui gui;
+        CHECK(gui.initialize(configuration(window)));
+        // Resource creation must not replace the index buffer of Core's currently bound VAO.
+        GLint elementBuffer = 0, after = 0;
+        glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &elementBuffer);
+        std::array<uint32_t, 6> indices{0, 1, 2, 2, 3, 0};
+        GLuint uploadBuffer = 0;
+        glGenBuffers(1, &uploadBuffer);
+        glBindBuffer(GL_COPY_WRITE_BUFFER, uploadBuffer);
+        auto foreignIndices = IndexBuffer::Create(indices.data(), sizeof(indices));
+        CHECK(foreignIndices -> getSize() == sizeof(indices));
+        glGetIntegerv(GL_ELEMENT_ARRAY_BUFFER_BINDING, &after);
+        CHECK(elementBuffer != 0 && after == elementBuffer);
+        glGetIntegerv(GL_COPY_WRITE_BUFFER_BINDING, &after);
+        CHECK(static_cast<GLuint>(after) == uploadBuffer);
+        glBindBuffer(GL_COPY_WRITE_BUFFER, 0);
+        glDeleteBuffers(1, &uploadBuffer);
+        GLint vao = 0;
+        glGetIntegerv(GL_VERTEX_ARRAY_BINDING, &vao);
+        glBindVertexArray(0);
+        auto unattachedIndices = IndexBuffer::Create(indices.data(), sizeof(indices));
+        CHECK(unattachedIndices -> getSize() == sizeof(indices));
+        CHECK(glGetError() == GL_NO_ERROR);
+        glBindVertexArray(vao);
+        Surface surface;
+        FrameBufferSpecification specification;
+        specification.size = {128, 128};
+        specification.attachments = {FrameBufferTextureFormat::RGBA8, FrameBufferTextureFormat::RED_INTEGER,
+                                     FrameBufferTextureFormat::Depth};
+        auto scene = FrameBuffer::Create(specification);
+        auto game = FrameBuffer::Create(specification);
+        const VertexData vertices = {{{8, 8}, {0, 0}}, {{24, 8}, {1, 0}},
+            {{24, 24}, {1, 1}}, {{8, 24}, {0, 1}}};
+        RenderStates states;
+        states.color = Color::Red;
+        for(int frame = 0; frame < 3; ++frame) {
+            scene -> Bind();
+            target.beforeRender();
+            target.clear(Color::Black);
+            target.setView(View({0, 0, 128, 128}));
+            target.draw(vertices, states);
+            target.afterRender();
+            expectPixel(12, 12, 255, 0, 0);
+            game -> Bind();
+            target.beforeRender();
+            target.setViewVirtual({128, 128}, View({8, 0, 128, 128}));
+            target.clear(Color::Black);
+            target.draw(vertices, states);
+            target.afterRender();
+            game -> unBind();
+            glBindFramebuffer(GL_FRAMEBUFFER, surface.fbo);
+            CHECK(gui.beginFrame(1.f / 60));
+            ImGui::GetBackgroundDrawList() -> AddImage((ImTextureID)(intptr_t)scene -> getFrameBufferRenderID(),
+                {0, 0}, {128, 128}, {0, 1}, {1, 0});
+            ImGui::GetBackgroundDrawList() -> AddRectFilled({32, 8}, {48, 24}, IM_COL32(0, 255, 0, 255));
+            CHECK(gui.endFrame());
+            CHECK(gui.render());
+            expectPixel(12, 12, 255, 0, 0);
+            expectPixel(36, 12, 0, 255, 0);
+        }
+        gui.shutdown();
+    }
+
     void renderer(Window& window) {
         Context previous;
         Gui gui; CHECK(gui.initialize(configuration(window)));
@@ -360,7 +435,9 @@ int main(int argc, char** argv) {
                 RenderAPI::getOpenGLVersion() = api45 ? RenderApi::OpenGL4_5 : RenderApi::OpenGL4_3;
                 Window window({128, 128}, "GUI backend tests", options);
                 if(scenario == "lifecycle") lifecycle(window);
-                else if(scenario == "renderer") renderer(window);
+                else if(scenario == "renderer") {
+                    coreInterop(window); renderer(window);
+                }
                 else if(scenario == "rollback") rollback(window);
                 else CHECK(false && "unknown scenario");
                 glfwDestroyWindow(static_cast<GLFWwindow*>(window.getRaw()));

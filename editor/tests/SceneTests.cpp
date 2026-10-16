@@ -156,6 +156,97 @@ namespace {
         CHECK(glGetError() == GL_NO_ERROR);
     }
 
+    void editorGuiScene() {
+        Directory fixture;
+        fs::create_directories(fixture / "res");
+        for(const auto* directory : {"textures", "shaders", "icons", "fonts"})
+            fs::copy(fs::path(RB2D_TEST_RESOURCE_DIR) / directory, fixture.path() / "res" / directory,
+                fs::copy_options::recursive);
+        struct WorkingDirectory {
+            fs::path previous = fs::current_path();
+            ~WorkingDirectory() {
+                fs::current_path(previous);
+            }
+        } workingDirectory;
+        fs::current_path(fixture.path());
+        auto* previousContext = glfwGetCurrentContext();
+        robot2D::WindowContext options(false, false, robot2D::WindowContext::RenderApi::OpenGL4_5);
+        auto window = std::make_unique<robot2D::RenderWindow>(robot2D::vec2u{1280, 720}, "Editor integration test",
+                options);
+        struct WindowCleanup {
+            std::unique_ptr<robot2D::RenderWindow>& window;
+            GLFWwindow* previous;
+            ~WindowCleanup() {
+                auto* native = static_cast<GLFWwindow*>(window -> getRaw());
+                window.reset();
+                glfwDestroyWindow(native);
+                glfwMakeContextCurrent(previous);
+            }
+        } windowCleanup{window, previousContext};
+        robot2D::Gui gui;
+        robot2D::GuiConfiguration configuration;
+        configuration.window = window.get();
+        configuration.allowDefaultFallback = true;
+        CHECK(gui.initialize(configuration));
+        robot2D::GuiContextScope scope(gui.context());
+        ImGui::GetIO().IniFilename = nullptr;
+        ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+        robot2D::MessageBus bus;
+        editor::MessageDispatcher dispatcher;
+        editor::Editor view(bus, gui);
+        editor::EditorPresenter presenter(&view);
+        editor::EditorRouter router(&view);
+        editor::EditorLogic logic(bus, dispatcher, presenter, router);
+        auto scripts = std::make_shared<ScriptStub>();
+        logic.setup(scripts);
+        QueueStop stop;
+        view.setup(window.get(), &logic);
+        auto scene = std::make_shared<editor::Scene>(bus);
+        auto camera = scene -> createEntity("Separate game camera");
+        auto& cameraData = camera.addComponent<editor::CameraComponent>();
+        cameraData.isPrimary = true;
+        cameraData.position = {608, 517};
+        cameraData.size = {894, 489};
+        camera.addComponent<editor::DrawableComponent>().setColor(robot2D::Color(255, 255, 255, 0));
+        auto sprite = scene -> createEntity("Visible quad");
+        sprite.getComponent<editor::TransformComponent>().setPosition({100, 100});
+        sprite.getComponent<editor::TransformComponent>().setSize({100, 100});
+        sprite.addComponent<editor::DrawableComponent>().setColor(robot2D::Color::Red);
+        scene -> update(0);
+        fs::create_directories(fixture / "assets/scenes");
+        editor::SceneSerializer serializer(scene);
+        CHECK(serializer.serialize((fixture / "assets/scenes/main.scene").u8string(), "Test", scripts));
+        auto project = std::make_shared<editor::Project>();
+        project -> setPath(fixture.path().u8string());
+        project -> setStartScene("main.scene");
+        logic.loadProject(project);
+        CHECK(waitFor([&]() {
+            editor::TaskQueue::GetQueue() -> process();
+            return presenter.getState() != editor::EditorState::Load;
+        }));
+        CHECK(presenter.getState() == editor::EditorState::Edit);
+        for(int frame = 0; frame < 5; ++frame) {
+            view.update(1.f / 60);
+            CHECK(gui.beginFrame(1.f / 60));
+            window -> clear();
+            view.render();
+            CHECK(gui.endFrame());
+            window -> afterRender();
+            CHECK(gui.render());
+            const auto size = window -> getFramebufferSize();
+            std::vector<unsigned char> pixels(size.x * size.y * 4);
+            glReadPixels(0, 0, size.x, size.y, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+            std::size_t red = 0;
+            for(std::size_t i = 0; i < pixels.size(); i += 4)
+                if(pixels[i] > 250 && pixels[i + 1] < 3 && pixels[i + 2] < 3) ++red;
+            // Docking assigns panel sizes over the first frames; subsequent frames must contain the scene.
+            if(frame >= 3) CHECK(red >= 1000);
+            CHECK(glGetError() == GL_NO_ERROR);
+        }
+        logic.destroy();
+        gui.shutdown();
+    }
+
     void hudText() {
         class Target final : public robot2D::RenderTarget {
         public:
@@ -742,6 +833,7 @@ int main(int argc, char** argv) {
         const std::string name = argv[1];
         if(name == "hierarchy") hierarchy();
         else if(name == "runtime-camera-order") runtimeCameraOrder();
+        else if(name == "editor-gui-scene") editorGuiScene();
         else if(name == "hud-text") hudText();
         else if(name == "asset-roundtrip") assetRoundtrip();
         else if(name == "missing-assets") missingAssets();
