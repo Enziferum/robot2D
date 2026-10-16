@@ -35,8 +35,9 @@ namespace editor {
     };
 
     enum class PhysicsEventType : uint8_t {
-        Enter = 0, Stay=1, Exit=2,
-        EnterTrigger, ExitTrigger, StayTrigger
+        // Shared with ScriptCore PhysicsEventType; keep the numeric ABI stable.
+        Enter = 0, Stay = 1, Exit = 2,
+        EnterTrigger = 3, ExitTrigger = 4, StayTrigger = 5
     };
 
 #pragma pack(push, 1)

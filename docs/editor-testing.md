@@ -114,3 +114,8 @@ headless-запуск для Windows/Linux; удалённый CI и Linux ло�
 невалидные параметры, сериализацию и реальный C++/C# обмен через Mono.
 Managed PhysicsDriver собирается со свежей ScriptCore с warnings-as-errors.
 Контракт и ручной сценарий — [physics.md](physics.md).
+
+Managed-сценарий физики проверяет полный trigger-цикл для обоих получателей:
+Enter, несколько Stay, Exit, отсутствие лишних событий после выхода, повторный
+вход/выход и Stop. Проверки фаз/счётчиков/пакета ловят перестановку StayTrigger
+и ExitTrigger между C++ и C#, а не только размер ABI.

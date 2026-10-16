@@ -256,10 +256,29 @@ namespace {
         f.start(); f.adapter.registerCallback([&](const auto& c, editor::UUID self, editor::UUID other) {
             engine.onPhysicsCallback(c, self, other);
         });
-        f.ticks(3);
-        CHECK(field(ia, "TriggerEnterCount") == 1 && field(ib, "TriggerEnterCount") == 1);
-        CHECK(field(ia, "EnterCount") == 1 && field(ib, "EnterCount") == 1);
-        f.adapter.stop(); engine.onRuntimeStop();
+        const auto checkTriggers = [&](int enters, int stays, int exits, int phase) {
+            for(const auto& instance: {ia, ib}) {
+                CHECK(field(instance, "TriggerEnterCount") == enters);
+                CHECK(field(instance, "TriggerStayCount") == stays);
+                CHECK(field(instance, "TriggerExitCount") == exits);
+                CHECK(field(instance, "TriggerPhase") == phase);
+                CHECK(field(instance, "Errors") == 0);
+                CHECK(field(instance, "EnterCount") == 1);
+                CHECK(field(instance, "StayCount") == 2);
+                CHECK(field(instance, "ExitCount") == 1);
+            }
+        };
+        f.ticks(1); checkTriggers(1, 0, 0, 1);
+        f.ticks(2); checkTriggers(1, 2, 0, 1);
+        body(b) -> SetTransform({4, 0}, 0);
+        f.ticks(3); checkTriggers(1, 2, 1, 2);
+        body(b) -> SetTransform({0.75f, 0.25f}, 0);
+        f.ticks(1); checkTriggers(2, 2, 1, 1);
+        f.ticks(2); checkTriggers(2, 4, 1, 1);
+        body(b) -> SetTransform({4, 0}, 0);
+        f.ticks(3); checkTriggers(2, 4, 2, 2);
+        f.adapter.stop(); checkTriggers(2, 4, 2, 2);
+        engine.onRuntimeStop();
         ia.reset(); ib.reset(); scripts.reset(); ScriptGlue::setService(nullptr); engine.Shutdown();
     }
 }
