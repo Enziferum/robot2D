@@ -855,3 +855,10 @@ Computer-use не использовался и запрещён правила�
 119/119 без пропусков, включая 44 graphics. Прежний launcher
 work/run-ui-preview.cmd запускает актуальный ASSET-01/work/pre-commit-build/editor/robot2D.exe.
 Следующий шаг — обязательный hook, обновление PR #127 и ручная проверка демо.
+
+Интеграция опубликована merge-коммитом 30c7580 (RUNTIME-02 8cffb9e является
+предком ASSET-01). Обязательный hook прошёл: Python 53/53, headless 75/75,
+формат и строгий clang-tidy 186 единиц. Первый hook дал Windows rename failure
+в asset-paths; пять повторов этого теста и следующий полный hook прошли.
+Полная общая проверка с graphics: 119/119 (44 graphics), без пропусков.
+Далее — пользовательская приёмка RobotLabPlatformer с новым UI.
