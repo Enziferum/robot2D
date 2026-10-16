@@ -1,0 +1,35 @@
+@import url('./tokens.css');
+:root,
+:root[data-theme='light'] {
+  color-scheme: dark;
+  --sl-color-white: #dee6ec;
+  --sl-color-gray-1: #dee6ec;
+  --sl-color-gray-2: #bdcbd5;
+  --sl-color-gray-3: #9aabba;
+  --sl-color-gray-4: #526878;
+  --sl-color-gray-5: #354958;
+  --sl-color-gray-6: #1b242d;
+  --sl-color-black: #171e25;
+  --sl-color-accent-low: #173a42;
+  --sl-color-accent: #59b8be;
+  --sl-color-accent-high: #a2eeeb;
+  --sl-color-bg: #171e25;
+  --sl-color-bg-nav: #121920;
+  --sl-color-bg-sidebar: #171e25;
+  --sl-color-text: #dee6ec;
+  --sl-color-text-accent: #7cdbd8;
+  --sl-color-hairline: #354958;
+  --sl-color-hairline-light: #354958;
+  --sl-font: 'Segoe UI', Arial, sans-serif;
+}
+.site-title {
+  letter-spacing: -0.04em;
+}
+.sl-markdown-content a {
+  color: #7cdbd8;
+}
+a:focus-visible,
+button:focus-visible {
+  outline: 3px solid #7cdbd8;
+  outline-offset: 3px;
+}

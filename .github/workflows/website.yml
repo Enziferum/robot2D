@@ -1,0 +1,35 @@
+name: Website
+on:
+  pull_request:
+    paths:
+      - 'website/**'
+      - 'CMakeLists.txt'
+      - '.github/workflows/website.yml'
+permissions:
+  contents: read
+concurrency:
+  group: website-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: website
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm install --global pnpm@11.25.0
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm check
+      - run: pnpm format:check
+      - run: pnpm build
+      - run: pnpm verify
+      - name: Verify hosting in a subdirectory
+        run: pnpm build && pnpm verify
+        env:
+          SITE_BASE: /robot2D/
+          SITE_URL: https://example.invalid

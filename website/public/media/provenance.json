@@ -1,0 +1,9 @@
+{
+  "asset": "robot-lab-editor.png",
+  "source": "User-supplied actual editor screenshot, 2026-10-16",
+  "sha256": "2dbe665b6dbcab75a7878aa22495954e334be238742df3d87dadacf096de22d7",
+  "build": "d77dff3cbd56",
+  "context": "Robot Lab in Play/Game View; SlateTeal and AssetsPanel development in ASSET-01, not a stable release screenshot.",
+  "processing": "Original PNG unchanged. WebP is an optimised derivative of the same pixels.",
+  "art": "Robot Lab contains generated character, platform and background artwork. Screenshot shows the actual editor, not a generated UI concept."
+}
