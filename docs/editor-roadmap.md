@@ -707,3 +707,19 @@ Core-чат передал docs/fixed-timestep-contract.md из CORE-02 @ cb36f2
 согласованный OnFixedUpdate/Step, post-Step события, 0/N ticks за кадр,
 Pause/Resume/Stop и сквозные регрессии. Полный lifecycle связан с RUNTIME-01.
 Эта запись не запускает реализацию scheduler и не закрывает PHYS-01 после merge #120.
+
+
+## SCRIPT-01 — 2026-10-16: генерация, сборка и свежая DLL при Play
+
+От dev df823bb создан отдельный worktree script-01 / ветка SCRIPT-01. Заменён
+склеенный shell-вызов и подавление ошибок генератора: argv, stdout/stderr,
+csproj/исходники без перезаписи автора, повторная сборка с mcs и явный результат.
+Play не использует старую DLL при compile error, проверяет классы сцены;
+Mono обновляется в Edit через новый domain, активный runtime не выгружается.
+Project/Generate/Build Scripts используют общий путь для будущего BUILD-01.
+
+6 новых Python тестов и 3 native/headless сценария прошли; полный Release CTest
+106/106 (41 graphics), редактор и suite собраны. Границы и неисполненная ручная
+приёмка описаны в [csharp-build.md](csharp-build.md). Пользователь поручил затем
+HUD-01 и подготовку BUILD-01 в отдельных worktrees от актуального dev; Core ECS,
+Snapshot/CancellationToken и fixed scheduler не переданы этим поручением.
