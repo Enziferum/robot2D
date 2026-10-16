@@ -32,6 +32,7 @@
 #include <editor/panels/ViewportPanel.hpp>
 #include <editor/Messages.hpp>
 #include <editor/Components.hpp>
+#include <editor/EditorIcons.hpp>
 #include <editor/DragDropIDS.hpp>
 #include <editor/Buffer.hpp>
 
@@ -298,27 +299,45 @@ namespace editor {
                 ImGui::SetTooltip("%s", text);
         };
         struct Tool {
-            const char* icon;
+            EditorIcon icon;
             Guizmo2D::Operation operation;
             InstrumentMessage::Type message;
             const char* tooltip;
         };
         const Tool tools[] = {
-            {ICON_FA_ARROWS_ALT, Guizmo2D::Operation::Move, InstrumentMessage::Type::Move, "Move (Shift+W)"},
-            {ICON_FA_EXPAND_ARROWS_ALT, Guizmo2D::Operation::Scale, InstrumentMessage::Type::Scale, "Scale (Shift+Q)"},
-            {ICON_FA_REDO_ALT, Guizmo2D::Operation::Rotate, InstrumentMessage::Type::Rotate, "Rotate (Shift+R)"}
+            {EditorIcon::Move, Guizmo2D::Operation::Move, InstrumentMessage::Type::Move, "Move (Shift+W)"},
+            {EditorIcon::Scale, Guizmo2D::Operation::Scale, InstrumentMessage::Type::Scale, "Scale (Shift+Q)"},
+            {EditorIcon::Rotate, Guizmo2D::Operation::Rotate, InstrumentMessage::Type::Rotate, "Rotate (Shift+R)"}
         };
         const float buttonSize = ImGui::GetFrameHeight() * 1.35f;
-        const auto iconButton = [buttonSize](const char* id, const char* icon) {
+        const auto iconButton = [buttonSize](const char* id, EditorIcon icon) {
             const bool pressed = ImGui::Button(id, {buttonSize, buttonSize});
-            const float scale = 1.35f;
-            const auto extent = ImGui::CalcTextSize(icon);
             const auto position = ImGui::GetItemRectMin();
-            ImGui::GetWindowDrawList() -> AddText(ImGui::GetFont(), ImGui::GetFontSize() * scale,
-                {position.x + (buttonSize - extent.x * scale) * 0.5f,
-                 position.y + (buttonSize - extent.y * scale) * 0.5f},
-                ImGui::GetColorU32(ImGuiCol_Text), icon);
+            const float side = buttonSize * 0.68f;
+            drawEditorIcon(*ImGui::GetWindowDrawList(), icon,
+                {position.x + (buttonSize - side) * 0.5f, position.y + (buttonSize - side) * 0.5f},
+                side, ImGui::GetColorU32(ImGuiCol_Text));
             return pressed;
+        };
+        const auto toggle = [buttonSize](const char* id, const char* label, EditorIcon icon, bool& enabled) {
+            const auto& style = ImGui::GetStyle();
+            const float width = buttonSize + style.ItemInnerSpacing.x
+                + ImGui::CalcTextSize(label).x + style.FramePadding.x * 2.f;
+            if(enabled)
+                ImGui::PushStyleColor(ImGuiCol_Button, style.Colors[ImGuiCol_HeaderActive]);
+            const bool clicked = ImGui::Button(id, {width, buttonSize});
+            if(enabled)
+                ImGui::PopStyleColor();
+            if(clicked)
+                enabled = !enabled;
+            const auto position = ImGui::GetItemRectMin();
+            const float side = buttonSize * 0.62f;
+            auto* draw = ImGui::GetWindowDrawList();
+            const auto color = ImGui::GetColorU32(ImGuiCol_Text);
+            drawEditorIcon(*draw, icon,
+                {position.x + (buttonSize - side) * 0.5f, position.y + (buttonSize - side) * 0.5f}, side, color);
+            draw -> AddText({position.x + buttonSize + style.ItemInnerSpacing.x + style.FramePadding.x,
+                             position.y + (buttonSize - ImGui::GetFontSize()) * 0.5f}, color, label);
         };
         for(const auto& tool: tools) {
             ImGui::PushID(static_cast<int>(tool.operation));
@@ -348,10 +367,10 @@ namespace editor {
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding,
             {padding.x, (buttonSize - ImGui::GetFontSize()) * 0.5f});
         const auto& style = ImGui::GetStyle();
-        const float gridWidth = ImGui::GetFrameHeight() + style.ItemInnerSpacing.x
-            + ImGui::CalcTextSize(ICON_FA_TH " Grid").x;
-        const float snapWidth = ImGui::GetFrameHeight() + style.ItemInnerSpacing.x
-            + ImGui::CalcTextSize(ICON_FA_MAGNET " Snap").x;
+        const float gridWidth = buttonSize + style.ItemInnerSpacing.x
+            + ImGui::CalcTextSize("Grid").x + style.FramePadding.x * 2.f;
+        const float snapWidth = buttonSize + style.ItemInnerSpacing.x
+            + ImGui::CalcTextSize("Snap").x + style.FramePadding.x * 2.f;
         const float settingsWidth = ImGui::CalcTextSize("...").x + style.FramePadding.x * 2.f;
         constexpr float zoomWidth = 100.f;
         const float groupWidth = gridWidth + snapWidth + settingsWidth + buttonSize + zoomWidth
@@ -366,11 +385,11 @@ namespace editor {
         }
         const bool orthographic = m_editorCamera && m_editorCamera -> getType() == EditorCameraType::Orthographic;
         ImGui::BeginDisabled(!orthographic);
-        ImGui::Checkbox(ICON_FA_TH " Grid", &m_gridVisible);
+        toggle("##GridToggle", "Grid", EditorIcon::Grid, m_gridVisible);
         tooltip("Show the viewport grid (independent from snapping)");
         nextControl(snapWidth);
         ImGui::BeginDisabled(m_guizmo2D.isActive());
-        ImGui::Checkbox(ICON_FA_MAGNET " Snap", &m_snapEnabled);
+        toggle("##SnapToggle", "Snap", EditorIcon::Snap, m_snapEnabled);
         tooltip("Snap drag offsets for Move/Scale, and angle changes for Rotate");
         nextControl(settingsWidth);
         if(ImGui::Button("...##SnapSettings"))
@@ -388,7 +407,7 @@ namespace editor {
         nextControl(buttonSize);
         const bool hasSelection = m_uiInteractor && !m_uiInteractor -> getSelectedEntities().empty();
         ImGui::BeginDisabled(!hasSelection);
-        if(iconButton("##FrameSelected", ICON_FA_CROSSHAIRS))
+        if(iconButton("##FrameSelected", EditorIcon::Frame))
             frameEntities(false);
         tooltip("Frame Selected: center and fit the selected objects");
         ImGui::EndDisabled();
