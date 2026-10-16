@@ -125,31 +125,12 @@ p + p {
 .wordmark > span:last-child {
   color: var(--accent);
 }
-.brand-mark {
-  width: 29px;
-  height: 25px;
-  display: inline-flex;
-  justify-content: center;
-  align-items: center;
-  gap: 5px;
-  border: 2px solid var(--accent);
-  border-radius: 5px;
-  margin-right: 11px;
-  position: relative;
-}
-.brand-mark:before {
-  content: '';
-  position: absolute;
-  width: 2px;
-  height: 6px;
-  background: var(--accent);
-  top: -8px;
-  left: 12px;
-}
-.brand-mark i {
-  width: 5px;
-  height: 6px;
-  background: var(--accent);
+.brand-logo {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+  margin-right: 10px;
+  flex-shrink: 0;
 }
 .site-header nav {
   display: flex;
@@ -661,5 +642,23 @@ p + p {
   }
   .button {
     transition: none;
+  }
+}
+
+/* Width and height HTML attributes describe the original pixels. The rendered
+   image must scale on both axes to keep the screenshot's aspect ratio. */
+.editor-shot picture {
+  display: block;
+}
+.editor-shot img {
+  width: 100%;
+  height: auto;
+}
+.showcase-image {
+  width: min(1600px, calc(100% - 80px));
+}
+@media (max-width: 760px) {
+  .showcase-image {
+    width: calc(100% - 36px);
   }
 }
