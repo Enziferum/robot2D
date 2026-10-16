@@ -27,8 +27,9 @@ def own_cpp(path):
 
 
 def managed_input(path):
-    return ((path.startswith("editor/scripting/") or path.startswith("editor/tests/"))
-            and Path(path).suffix.lower() in {".cs", ".csproj"})
+    return (((path.startswith("editor/scripting/") or path.startswith("editor/tests/"))
+             and Path(path).suffix.lower() in {".cs", ".csproj"})
+            or (path.startswith("editor/res/gen/") and path.endswith(".py")))
 
 
 def build_input(path):

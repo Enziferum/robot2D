@@ -103,6 +103,12 @@ namespace robot2D
         
         #endregion
 
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static string TextComponent_GetText(ulong entityID);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static bool TextComponent_SetText(ulong entityID, string value);
+
         #region Animation
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]

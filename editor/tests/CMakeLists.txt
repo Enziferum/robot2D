@@ -62,11 +62,28 @@ if(RB2D_EDITOR_GRAPHICS_TESTS)
         rb2d_register_test("core-graphics-${graphics_case}" robot2D-graphics-diagnostics-tests "${graphics_case}" "graphics;integration")
         set_tests_properties("core-graphics-${graphics_case}" PROPERTIES SKIP_RETURN_CODE 77)
     endforeach()
-    foreach(scene_case IN ITEMS hierarchy runtime-camera-order asset-roundtrip missing-assets asset-identity animation-resources roundtrip invalid legacy prefab prefab-viewport save-dirty async-load close-project startup-failure)
+    foreach(scene_case IN ITEMS hierarchy runtime-camera-order hud-text asset-roundtrip missing-assets asset-identity animation-resources roundtrip invalid legacy prefab prefab-viewport save-dirty async-load close-project startup-failure)
         rb2d_register_test("editor-scene-${scene_case}" robot2D-scene-tests "${scene_case}" "graphics;integration")
         set_tests_properties("editor-scene-${scene_case}" PROPERTIES SKIP_RETURN_CODE 77)
     endforeach()
 endif()
+
+add_mono_assembly(TARGET robot2D-hud-driver
+    DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/../res/script"
+    SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/HudDriver.cs" "${CMAKE_CURRENT_SOURCE_DIR}/../../docs/examples/HudExample.cs"
+    REFERENCES "${robot2D_ScriptCore_OUTPUT}"
+    ADDITIONAL_ARGS -sdk:4.8 -langversion:7.2 -warnaserror+)
+add_dependencies(robot2D-hud-driver robot2D_ScriptCore)
+add_executable(robot2D-hud-tests HudTests.cpp)
+target_link_libraries(robot2D-hud-tests PRIVATE robot2D-editor-objects)
+target_compile_definitions(robot2D-hud-tests PRIVATE
+    RB2D_TEST_MONO_LIB="${INTERNAL_MONO_ASSEMBLY_DIR}"
+    RB2D_TEST_MONO_ETC="${INTERNAL_MONO_CONFIG_DIR}"
+    RB2D_TEST_SCRIPTCORE="${robot2D_ScriptCore_OUTPUT}"
+    RB2D_TEST_HUD_DRIVER="${robot2D-hud-driver_OUTPUT}")
+add_dependencies(robot2D-hud-tests robot2D-hud-driver)
+add_dependencies(robot2D-editor-test-suite robot2D-hud-tests)
+rb2d_register_test(editor-hud-managed robot2D-hud-tests managed "headless;scripting;hud")
 
 # A managed consumer catches a missing/outdated API assembly in ordinary CI builds.
 add_mono_assembly(TARGET robot2D-managed-api-tests TYPE exe
@@ -153,3 +170,17 @@ if(RB2D_EDITOR_GRAPHICS_TESTS)
         endforeach()
     endforeach()
 endif()
+
+add_executable(robot2D-script-project-tests ScriptProjectTests.cpp)
+target_link_libraries(robot2D-script-project-tests PRIVATE robot2D-editor-objects)
+target_compile_definitions(robot2D-script-project-tests PRIVATE
+    RB2D_TEST_SCRIPT_PYTHON="${Python3_EXECUTABLE}"
+    RB2D_TEST_SCRIPT_GENERATOR="${CMAKE_CURRENT_SOURCE_DIR}/../res/gen/gen_project.py"
+    RB2D_TEST_SCRIPTCORE="${robot2D_ScriptCore_OUTPUT}"
+    RB2D_TEST_SCRIPT_MCS="${MONO_MCS_EXECUTABLE}"
+    RB2D_TEST_SCRIPT_MONO="${MONO_EXECUTABLE}")
+add_dependencies(robot2D-script-project-tests robot2D_ScriptCore)
+add_dependencies(robot2D-editor-test-suite robot2D-script-project-tests)
+foreach(script_case IN ITEMS project errors reload)
+    rb2d_register_test("editor-script-${script_case}" robot2D-script-project-tests "${script_case}" "headless;scripting")
+endforeach()
