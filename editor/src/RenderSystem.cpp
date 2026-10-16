@@ -96,17 +96,16 @@ namespace editor {
 
 
     void RenderSystem::draw(robot2D::RenderTarget& target, robot2D::RenderStates states) const {
+        // Camera selection must not depend on the camera entity's z-order.
+        if(m_runtimeFlag && std::any_of(m_entities.begin(), m_entities.end(), [](const auto& entity) {
+            return entity.template hasComponent<CameraComponent>()
+                   && entity.template getComponent<CameraComponent>().isPrimary;
+        }))
+            target.setViewVirtual(m_runtimeWindowSize, m_cameraView);
         for(auto& ent: m_entities) {
             auto& transform = ent.getComponent<TransformComponent>();
             auto& drawable = ent.getComponent<DrawableComponent>();
             auto t = transform.getTransform();
-
-            if(ent.hasComponent<CameraComponent>() && m_runtimeFlag) {
-                auto camera = ent.getComponent<CameraComponent>();
-                if(camera.isPrimary) {
-                    target.setViewVirtual(m_runtimeWindowSize, m_cameraView);
-                }
-            }
 
             robot2D::RenderStates renderStates;
             renderStates.transform *= t;
