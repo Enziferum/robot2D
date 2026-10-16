@@ -615,3 +615,19 @@ AnimationTextureSliceTask и AnimationPanel. Сохранены нормализ
 полный CTest — 86/86 без пропусков, включая 40 graphics, шесть animation и
 managed API. Следующий шаг — обязательный pre-commit и публикация обновлённого
 PR #114 в dev. UI/игровая приёмка и standalone остаются открытыми.
+
+
+## PREFAB-01: файловый шаблон и фабрика данных — 2026-10-16
+
+Ветка `prefab-01-runtime-templates` от актуального dev @ e7714e2 (после #116),
+без префикса codex/. Добавлены загрузка prefab по assets-пути без UI и создание
+независимых деревьев в Editor/Runtime-контексте по существующему механизму
+копирования persisted-компонентов; внутренние UUID-ссылки переназначаются,
+внешние ссылки чужого дерева отклоняются до вставки. Исправлен пустой обработчик
+PrefabLoad во Viewport. Core ECS, Snapshot и CancellationToken не изменены.
+Собраны robot2D, core-tests и editor-test-suite; полный CTest 91/91 без пропусков,
+включая четыре новых headless и один graphics-сценарий. Подробный контракт,
+границы runtime-активации, упаковка assets и ручная приёмка — [prefabs.md](prefabs.md).
+Следующий шаг — pre-commit/clang-tidy и PR в dev; Issue остаётся открытой до
+UI/игровой приёмки и интеграции RUNTIME-01/BUILD-01/PLAYER-01. C# спавн, физическая
+активация и готовый Game.exe этим шагом не объявляются реализованными.

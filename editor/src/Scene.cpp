@@ -1,22 +1,22 @@
 /*********************************************************************
-(c) Alex Raag 2026
-https://github.com/Enziferum
-robot2D - Zlib license.
-This software is provided 'as-is', without any express or
-implied warranty. In no event will the authors be held
-liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute
-it freely, subject to the following restrictions:
-1. The origin of this software must not be misrepresented;
-you must not claim that you wrote the original software.
-If you use this software in a product, an acknowledgment
-in the product documentation would be appreciated but
-is not required.
-2. Altered source versions must be plainly marked as such,
-and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any
-source distribution.
+   (c) Alex Raag 2026
+   https://github.com/Enziferum
+   robot2D - Zlib license.
+   This software is provided 'as-is', without any express or
+   implied warranty. In no event will the authors be held
+   liable for any damages arising from the use of this software.
+   Permission is granted to anyone to use this software for any purpose,
+   including commercial applications, and to alter it and redistribute
+   it freely, subject to the following restrictions:
+   1. The origin of this software must not be misrepresented;
+   you must not claim that you wrote the original software.
+   If you use this software in a product, an acknowledgment
+   in the product documentation would be appreciated but
+   is not required.
+   2. Altered source versions must be plainly marked as such,
+   and must not be misrepresented as being the original software.
+   3. This notice may not be removed or altered from any
+   source distribution.
 *********************************************************************/
 #include <optional>
 #include <unordered_set>
@@ -47,10 +47,10 @@ namespace editor {
         constexpr robot2D::vec2f defaultSize = {20.f, 20.f};
     }
 
-    Scene::Scene(robot2D::MessageBus &messageBus) :
-            m_scene(messageBus),
-            m_runtimeScene{nullptr},
-            m_messageBus{messageBus} {
+    Scene::Scene(robot2D::MessageBus& messageBus) :
+        m_scene(messageBus),
+        m_runtimeScene{nullptr},
+        m_messageBus{messageBus} {
         initScene();
     }
 
@@ -97,7 +97,7 @@ namespace editor {
         if(!scriptingEngine)
             return;
 
-        for (const auto& entity: m_scriptRuntimeContainer)
+        for(const auto& entity: m_scriptRuntimeContainer)
             scriptingEngine -> onUpdateEntity(entity, dt);
 
         m_physicsAdapter -> update(dt);
@@ -130,7 +130,7 @@ namespace editor {
 
     bool Scene::attachEntity(SceneEntity& entity) {
         if(entity.m_scene != this || !entity || entity.m_context != SceneContext::Editor
-           || !entity.hasComponent<IDComponent>())
+            || !entity.hasComponent<IDComponent>())
             return false;
         auto existing = getEntity(entity.getUUID(), SceneContext::Editor);
         if(existing && existing.getWrappedEntity() != entity.getWrappedEntity())
@@ -198,17 +198,17 @@ namespace editor {
 
 
 
-        for (const auto& entity: m_scriptRuntimeContainer)
+        for(const auto& entity: m_scriptRuntimeContainer)
             scriptingEngine -> onCreateEntity(entity);
 
 
         forEachEntity(std::move([](SceneEntity& sceneEntity) {
-            if (sceneEntity.hasComponent<ButtonComponent>()) {
+            if(sceneEntity.hasComponent<ButtonComponent>()) {
                 auto& hitbox = sceneEntity.getComponent<UIHitbox>();
                 auto& ts = sceneEntity.getComponent<TransformComponent>();
                 // TODO(a.raag) ts.getGlobalBounds();
                 hitbox.m_area = robot2D::FloatRect::create(ts.getPosition(),
-                                                           ts.getSize() + ts.getPosition());
+                ts.getSize() + ts.getPosition());
             }
         }), SceneContext::Runtime);
     }
@@ -243,8 +243,8 @@ namespace editor {
             return;
 
         m_physicsAdapter -> registerCallback(
-                [scriptingEngine](const PhysicsContact2D& contact, UUID self, UUID other) {
-                scriptingEngine -> onPhysicsCallback(contact, self, other);
+            [scriptingEngine](const PhysicsContact2D& contact, UUID self, UUID other) {
+            scriptingEngine -> onPhysicsCallback(contact, self, other);
         });
     }
 
@@ -312,7 +312,7 @@ namespace editor {
         dupEntity.getComponent<TagComponent>().setTag(name);
 
         auto* msg =
-                m_messageBus.postMessage<EntityDuplication>(MessageID::EntityDuplicate);
+            m_messageBus.postMessage<EntityDuplication>(MessageID::EntityDuplicate);
         msg -> entityID = dupEntity.getComponent<IDComponent>().ID;
         m_hasChanges = true;
 
@@ -325,7 +325,7 @@ namespace editor {
             parent.addChild(duplicateSceneEntity);
         }
 
-        if (entity.hasChildren())
+        if(entity.hasChildren())
             duplicateEntityChild(duplicateSceneEntity, entity);
 
         return duplicateSceneEntity;
@@ -345,8 +345,14 @@ namespace editor {
     }
 
     SceneEntity Scene::duplicateEmptyEntity(SceneEntity source, IScriptInteractorFrom::Ptr scriptInteractor) {
-        if(m_running || !source || source.m_context != SceneContext::Editor ||
-           !source.m_scene || source.m_scene -> isRunning())
+        if(m_running)
+            return {};
+        return instantiateTemplate(source, std::move(scriptInteractor));
+    }
+
+    SceneEntity Scene::instantiateTemplate(SceneEntity source, IScriptInteractorFrom::Ptr scriptInteractor) {
+        if(!source || source.m_context != SceneContext::Editor ||
+            !source.m_scene || source.m_scene -> isRunning())
             return {};
         std::vector<SceneEntity> originals;
         std::vector<SceneEntity> pending{source};
@@ -355,7 +361,8 @@ namespace editor {
             auto entity = pending.back();
             pending.pop_back();
             if(!entity || !entity.hasComponent<IDComponent>() || !entity.hasComponent<TagComponent>() ||
-               !visited.insert(entity.getUUID()).second || (entity.hasComponent<ScriptComponent>() && !scriptInteractor))
+                !visited.insert(entity.getUUID()).second ||
+                (entity.hasComponent<ScriptComponent>() && !scriptInteractor))
                 return {};
             originals.push_back(entity);
             const auto children = entity.getChildren();
@@ -363,12 +370,31 @@ namespace editor {
                 pending.push_back(*it);
         }
 
+        // A reusable template cannot retain links to unrelated scene entities.
+        for(const auto& original: originals) {
+            if(source.m_scene != this && original.hasComponent<ButtonComponent>()) {
+                const auto id = original.getComponent<ButtonComponent>().scriptEntity;
+                if(id != UUID{0} && !visited.count(id))
+                    return {};
+            }
+            if(source.m_scene != this && original.hasComponent<ScriptComponent>()) {
+                for(const auto& [name, field]: scriptInteractor -> getFields(original.getUUID())) {
+                    if(field.getType() == FieldType::Entity || field.getType() == FieldType::Transform) {
+                        const auto id = field.getValue<UUID>();
+                        if(id != UUID{0} && !visited.count(id))
+                            return {};
+                    }
+                }
+            }
+        }
+        const auto context = m_running ? SceneContext::Runtime : SceneContext::Editor;
+        auto& ecs = m_running ? *m_runtimeScene : m_scene;
         std::unordered_map<UUID, SceneEntity> copies;
         copies.reserve(originals.size());
         for(const auto& original: originals) {
-            auto copy = createEmptyEntity();
+            auto copy = wrapEntity(ecs.createEmptyEntity(), context);
             auto id = UUID();
-            while(getEntity(id))
+            while(id == UUID{0} || getEntity(id, context))
                 id = UUID();
             copy.addComponent<IDComponent>().ID = id;
             copy.addComponent<TagComponent>() = original.getComponent<TagComponent>();
@@ -403,8 +429,11 @@ namespace editor {
                 copy.addComponent<AnimationComponent>();
                 copy.addComponent<AnimatorComponent>();
             }
-            if(!attachEntity(copy))
+            addRoot(copy);
+            copy = getEntity(id, context);
+            if(!copy)
                 return {};
+            ecs.addEntity(copy.getWrappedEntity());
             copies.emplace(original.getUUID(), copy);
         }
         const auto remap = [&](UUID id) {
@@ -438,12 +467,20 @@ namespace editor {
                     auto* added = resources -> addAnimation(copy.getUUID(), animation.name);
                     if(added)
                         *added = animation;
+                    if(context == SceneContext::Runtime) {
+                        auto* localCopy = localResources -> addAnimation(copy.getUUID());
+                        *localCopy = animation;
+                        if(!copy.getComponent<AnimationComponent>().getAnimation())
+                            copy.getComponent<AnimationComponent>().setAnimation(localCopy);
+                    }
                 }
             }
             for(const auto& child: original.getChildren())
                 if(!reparent(copies.at(child.getUUID()), copy))
                     return {};
         }
+        if(context == SceneContext::Editor)
+            markModified();
         return copies.at(source.getUUID());
     }
 
@@ -473,7 +510,7 @@ namespace editor {
             info.anchorEntity = parent;
             auto siblings = parent ? parent.getChildren()
                                    : std::vector<SceneEntity>(m_editorEntities.roots.begin(),
-                                                              m_editorEntities.roots.end());
+                    m_editorEntities.roots.end());
             auto found = std::find(siblings.begin(), siblings.end(), entity);
             if(found != siblings.end()) {
                 info.first = found == siblings.begin();
@@ -517,7 +554,7 @@ namespace editor {
             cancelPendingRemoval(info.entity);
             if(!info.entity && !m_scene.restoreEntity(info.entity.getWrappedEntity())) {
                 RB_EDITOR_ERROR("EditorScene: Can't restore entity with index {0}",
-                                info.entity.getWrappedEntity().getIndex());
+                    info.entity.getWrappedEntity().getIndex());
                 return;
             }
             if(info.entity.hasComponent<HierarchyComponent>())
@@ -545,10 +582,10 @@ namespace editor {
         entity.addComponent<ButtonComponent>();
         entity.addComponent<UIHitbox>().callbackIDs[UIHitbox::CallbackID::MouseDown] =
             m_scene.getSystem<UISystem>() -> addMousePressedCallback([](robot2D::ecs::Entity entity, std::uint64_t) {
-                auto& button = entity.getComponent<ButtonComponent>();
-                if(button.hasEntity() && button.onClickCallback && !button.clickMethodName.empty())
-                    button.onClickCallback(button.scriptEntity, button.clickMethodName);
-            });
+            auto& button = entity.getComponent<ButtonComponent>();
+            if(button.hasEntity() && button.onClickCallback && !button.clickMethodName.empty())
+                button.onClickCallback(button.scriptEntity, button.clickMethodName);
+        });
         return entity;
     }
 
@@ -559,15 +596,15 @@ namespace editor {
 
     void Scene::registerUICallback(SceneEntity uiEntity) {
         if(!ownsEntity(uiEntity) || uiEntity.m_context != SceneContext::Editor
-           || !uiEntity.hasComponent<ButtonComponent>())
+            || !uiEntity.hasComponent<ButtonComponent>())
             return;
         uiEntity.addComponent<UIHitbox>().callbackIDs[UIHitbox::CallbackID::MouseDown] =
             m_scene.getSystem<UISystem>() -> addMousePressedCallback([](robot2D::ecs::Entity entity, std::uint64_t) {
-                auto& btnComp = entity.getComponent<ButtonComponent>();
-                if (btnComp.hasEntity()
-                    && btnComp.onClickCallback && !btnComp.clickMethodName.empty())
-                    btnComp.onClickCallback(btnComp.scriptEntity, btnComp.clickMethodName);
-            });
+            auto& btnComp = entity.getComponent<ButtonComponent>();
+            if(btnComp.hasEntity()
+            && btnComp.onClickCallback && !btnComp.clickMethodName.empty())
+                btnComp.onClickCallback(btnComp.scriptEntity, btnComp.clickMethodName);
+        });
     }
 
     SceneEntity Scene::duplicateRuntime(SceneEntity entity, robot2D::vec2f position) {
@@ -584,7 +621,7 @@ namespace editor {
         sceneEntity.getComponent<TransformComponent>().setPosition(position);
         m_physicsAdapter -> addRuntime(sceneEntity);
 
-        if (entity.isChild()) {
+        if(entity.isChild()) {
             auto parent = entity.getParent();
             parent.addChild(sceneEntity);
         }
@@ -678,7 +715,7 @@ namespace editor {
             return false;
         auto context = entity.m_context;
         if(context != (m_running ? SceneContext::Runtime : SceneContext::Editor)
-           || (parent && parent.m_context != context))
+            || (parent && parent.m_context != context))
             return false;
         if(parent) {
             std::unordered_set<UUID> visited;
@@ -714,7 +751,7 @@ namespace editor {
 
     bool Scene::reorderEntity(SceneEntity source, SceneEntity target) {
         if(!ownsEntity(source) || !ownsEntity(target) || source == target
-           || source.m_context != target.m_context || source.getParent() != target.getParent())
+            || source.m_context != target.m_context || source.getParent() != target.getParent())
             return false;
         auto parent = source.getParent();
         if(parent) {
@@ -737,7 +774,7 @@ namespace editor {
     }
 
     void Scene::moveChildren(UUID parentID, const robot2D::vec2f& offset,
-                              SceneContext context, std::uint64_t version) {
+        SceneContext context, std::uint64_t version) {
         if(!isContextValid(context, version))
             return;
         auto parent = getEntity(parentID, context);
