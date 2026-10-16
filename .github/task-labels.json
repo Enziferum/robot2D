@@ -352,6 +352,13 @@
       "area:core",
       "type:bug",
       "owner:shared"
+    ],
+    "CORE-02": [
+      "area:core",
+      "area:editor",
+      "type:refactor",
+      "type:tests",
+      "owner:shared"
     ]
   }
 }

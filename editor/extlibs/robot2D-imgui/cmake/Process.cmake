@@ -46,6 +46,7 @@ set(RB2D_IMGUI_INCL
 
 set(RB2D_IMGUI_SRC
         ${SRCROOT}/robot2D/Api.cpp
+        ${SRCROOT}/robot2D/InputEvents.cpp
         ${SRCROOT}/robot2D/Gui.cpp
         ${SRCROOT}/robot2D/GuiImpl.hpp
         ${SRCROOT}/robot2D/GuiImpl.cpp

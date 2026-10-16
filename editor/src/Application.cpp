@@ -177,32 +177,36 @@ namespace editor {
             m_projectInspector.setup(cache.getProjects(), cache.showInspectorOnStartup());
         }
 
-        m_eventBinder.bindEvent(robot2D::Event::Resized, [this](const robot2D::Event& evt) {
-            RB_EDITOR_INFO("Editor's window new size = {0} and {1}", evt.size.widht, evt.size.heigth);
-            m_window -> resize({static_cast<int>(evt.size.widht),
-                                static_cast<int>(evt.size.heigth)});
-            m_window -> setView({{0, 0}, {static_cast<float>(evt.size.widht),
-                                          static_cast<float>(evt.size.heigth)}});
+        m_eventBinder.bind<robot2D::Event::Resized>([this](const robot2D::Event::Resized& evt) {
+            RB_EDITOR_INFO("Editor's window new size = {0} and {1}", evt.width, evt.height);
+            m_window -> resize({static_cast<int>(evt.width),
+                                static_cast<int>(evt.height)});
+            m_window -> setView({{0, 0}, {static_cast<float>(evt.width),
+                                          static_cast<float>(evt.height)}});
         });
         RB_EDITOR_INFO("[Application] Setup completed; editor_active={}",
             m_logic.getState() == AppState::Editor);
     }
 
-    void Application::handleEvents(const robot2D::Event& event) {
-        if(event.type == robot2D::Event::Closed && m_logic.getState() == AppState::Editor) {
-            RB_EDITOR_INFO("[Application] Window close requested; checking project changes");
-            m_window -> cancelClose();
-            m_editorModule -> closeCurrentProject([this]() {
-                RB_EDITOR_INFO("[Application] Project close accepted; stopping main loop");
-                m_running = false;
-            });
-            return;
+    void Application::handleEventFrame(const robot2D::FrameEvents& events) {
+        if(m_logic.getState() == AppState::Editor) m_editorModule -> beginEventFrame();
+        for(const auto& event : events.events) {
+            handleEvents(event);
+            if(!m_running) break;
         }
-        m_eventBinder.handleEvents(event);
+    }
 
+    void Application::handleEvents(const robot2D::Event& event) {
         m_guiWrapper.handleEvents(event);
-        if(m_logic.getState() == AppState::Editor)
-            m_editorModule -> handleEvents(event);
+        m_eventBinder.dispatch(event);
+        if(m_logic.getState() == AppState::Editor) m_editorModule -> handleEvents(event);
+        if(event.getIf<robot2D::Event::Closed>()) {
+            if(m_logic.getState() == AppState::Editor) {
+                m_window -> cancelClose();
+                m_editorModule -> closeCurrentProject([this]() { m_running = false; });
+            }
+            else m_running = false;
+        }
     }
 
     void Application::handleMessages() {
