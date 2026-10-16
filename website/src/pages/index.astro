@@ -1,0 +1,148 @@
+---
+import SiteLayout from '../layouts/SiteLayout.astro';
+import EditorShot from '../components/EditorShot.astro';
+import { path, repo, developmentVersion } from '../lib/site';
+---
+
+<SiteLayout>
+  <section class="hero wrap">
+    <div class="eyebrow">
+      <span class="live-dot"></span> {developmentVersion}{' '}
+      <span class="muted">/ On the road to 1.0</span>
+    </div>
+    <div class="hero-grid">
+      <h1>
+        Small worlds.
+        <br />
+        <em>Real possibilities.</em>
+      </h1>
+      <div class="hero-copy">
+        <p>
+          A 2D game engine built with C++. A visual editor, C# scripting, and a
+          place to turn your curiosity into something playable.
+        </p>
+        <div class="actions">
+          <a class="button" href={path('downloads/')}>
+            Start building <span aria-hidden="true">↗</span>
+          </a>
+          <a class="text-link" href={path('docs/')}>
+            Read the docs <span aria-hidden="true">→</span>
+          </a>
+        </div>
+        <p class="fine">Open source · In active development</p>
+      </div>
+    </div>
+    <EditorShot eager />
+  </section>
+  <div class="stack-strip wrap" aria-label="Technology">
+    <span>Under the hood</span>
+    <strong>C++17</strong>
+    <strong>C# scripting</strong>
+    <strong>OpenGL 4.5</strong>
+    <strong>Box2D</strong>
+    <a href={repo}>Explore the source ↗</a>
+  </div>
+  <section class="section wrap split">
+    <div>
+      <p class="eyebrow">01 / From an idea to a scene</p>
+      <h2>
+        Your world.
+        <br />
+        <em>Piece by piece.</em>
+      </h2>
+      <p class="lede">
+        Arrange a scene, give it behaviour, and see what happens. Keep the tools
+        close and the game at the centre.
+      </p>
+      <a class="text-link" href={path('features/')}>
+        Explore the engine →
+      </a>
+    </div>
+    <div class="steps">
+      <article>
+        <span>01</span>
+        <div>
+          <h3>Build the scene</h3>
+          <p>
+            Organise entities in the hierarchy. Set transforms, choose textures,
+            and shape your level in the viewport.
+          </p>
+        </div>
+      </article>
+      <article>
+        <span>02</span>
+        <div>
+          <h3>Give it a little life</h3>
+          <p>
+            Use C# scripts, 2D physics and animation clips to turn objects into
+            a game.
+          </p>
+        </div>
+      </article>
+      <article>
+        <span>03</span>
+        <div>
+          <h3>Press Play. Keep exploring.</h3>
+          <p>
+            Run the scene inside the editor. Test a jump, inspect a component,
+            then return to editing.
+          </p>
+        </div>
+      </article>
+    </div>
+  </section>
+  <section class="showcase-band">
+    <div class="wrap split">
+      <div>
+        <p class="eyebrow">02 / Made with robot2D</p>
+        <h2>
+          A little robot.
+          <br />
+          <em>A first adventure.</em>
+        </h2>
+      </div>
+      <div>
+        <p class="lede">
+          Robot Lab is our platformer demo: a yellow explorer, a laboratory, and
+          a few carefully placed jumps. It is also a real test of the editor as
+          it grows.
+        </p>
+        <a class="text-link" href={path('showcase/')}>
+          Inside Robot Lab →
+        </a>
+        <p class="fine">
+          Actual editor screenshot above. Demo packaging is still in progress.
+        </p>
+      </div>
+    </div>
+  </section>
+  <section class="section wrap split">
+    <div>
+      <p class="eyebrow">03 / Built in the open</p>
+      <h2>
+        Still growing.
+        <br />
+        <em>Come along.</em>
+      </h2>
+    </div>
+    <div>
+      <p class="lede">
+        robot2D is a personal engine project becoming a tool other developers
+        can explore. The next milestone is 0.8.0; a stable 1.0 is the
+        destination.
+      </p>
+      <p>
+        There is plenty left to do. Follow the roadmap, read the code, or help
+        turn a rough edge into a better tool.
+      </p>
+      <div class="actions">
+        <a class="button secondary" href={path('roadmap/')}>
+          The road ahead →
+        </a>
+        <a class="text-link" href={repo}>
+          View on GitHub ↗
+        </a>
+      </div>
+    </div>
+  </section>
+</SiteLayout>

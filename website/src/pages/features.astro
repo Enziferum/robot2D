@@ -1,0 +1,72 @@
+---
+import SiteLayout from '../layouts/SiteLayout.astro';
+import { path } from '../lib/site';
+const features = [
+  [
+    'A scene you can see',
+    'Arrange entities in a visual viewport and keep them organised in the scene hierarchy. Inspect transforms and components alongside the scene.',
+    'Scene hierarchy / Viewport / Inspector',
+  ],
+  [
+    'Assets within reach',
+    'Work with textures, fonts, scenes and prefab templates. The development editor shown on this site adds texture thumbnails and a folder tree.',
+    'Textures / Fonts / Prefabs',
+  ],
+  [
+    'Behaviour in C#',
+    'Attach scripts to entities. Build scripts from the editor, with Play checking the managed assembly before the scene starts.',
+    'Mono / C# 7.2 / Build Scripts',
+  ],
+  [
+    'A world with weight',
+    'Use 2D rigid bodies and colliders, configure collision layers, and connect gameplay to collision callbacks.',
+    'Box2D / Collision layers / Callbacks',
+  ],
+  [
+    'Motion and interface',
+    'Use animation clips for sprite sequences and text for in-game labels and HUDs. These systems are evolving with the demo projects.',
+    'Sprite animation / Text / HUD',
+  ],
+  [
+    'C++ at the core',
+    'Explore the source behind the editor and renderer. Build with CMake and follow development through public issues and pull requests.',
+    'C++17 / OpenGL 4.5 / CMake',
+  ],
+];
+---
+
+<SiteLayout title="A closer look at the engine">
+  <section class="page-intro wrap">
+    <p class="eyebrow">The engine</p>
+    <h1>
+      Tools for your
+      <br />
+      <em>next small world.</em>
+    </h1>
+    <p class="lede">
+      A focused 2D workflow, with room to understand what happens underneath.
+    </p>
+    <p class="fine">
+      Active development. Some UI shown in screenshots comes from ASSET-01 and
+      is awaiting integration into dev.
+    </p>
+  </section>
+  <section class="feature-list wrap">
+    {features.map(([title, text, tags], i) => (
+      <article>
+        <span class="feature-number">0{i + 1}</span>
+        <div>
+          <h2>{title}</h2>
+          <p>{text}</p>
+          <small>{tags}</small>
+        </div>
+      </article>
+    ))}
+  </section>
+  <section class="closing wrap">
+    <h2>Ready to look under the hood?</h2>
+    <a class="button" href={path('docs/getting-started/')}>
+      Build from source →
+    </a>
+  </section>
+</SiteLayout>

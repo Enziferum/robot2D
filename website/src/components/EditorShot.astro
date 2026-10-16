@@ -1,0 +1,30 @@
+---
+import { path } from '../lib/site';
+const { eager = false } = Astro.props;
+---
+
+<figure class="editor-shot">
+  <a
+    href={path('media/robot-lab-editor.png')}
+    aria-label="Open the original robot2D editor screenshot"
+  >
+    <picture>
+      <source srcset={path('media/robot-lab-editor.webp')} type="image/webp" />
+      <img
+        src={path('media/robot-lab-editor.png')}
+        width="2559"
+        height="1439"
+        loading={eager ? 'eager' : 'lazy'}
+        decoding="async"
+        fetchpriority={eager ? 'high' : 'auto'}
+        alt="robot2D in Play mode: a yellow robot on platforms in a teal laboratory, with the scene hierarchy, Player Inspector and texture thumbnails visible."
+      />
+    </picture>
+  </a>
+  <figcaption>
+    <span class="live-dot"></span> Inside the editor{' '}
+    <span class="caption-detail">
+      Robot Lab · development build d77dff3cbd56 · screenshot by the developer
+    </span>
+  </figcaption>
+</figure>
