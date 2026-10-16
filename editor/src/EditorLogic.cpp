@@ -777,9 +777,16 @@ namespace editor {
 
     void EditorLogic::exportProject(const ExportOptions& exportOptions) {
         auto queue = TaskQueue::GetQueue();
-        queue -> addAsyncTask<ExportTask>([](const ExportTask& exportTask) {
-
+        RB_EDITOR_INFO("[Build] Requested; output='{}'; start_scene='{}'", exportOptions.outputFolder,
+            exportOptions.startScene);
+        auto id = queue -> addAsyncTaskWithCompletion<ExportTask>([options = exportOptions](const ExportTask& task) {
+            if(task.getOutcome() != TaskOutcome::Succeeded)
+                RB_EDITOR_ERROR("[Build] Not created; output='{}'; start_scene='{}'; reason='{}'",
+                options.outputFolder, options.startScene, task.getErrorMessage());
         }, exportOptions);
+        if(id == InvalidTaskId)
+            RB_EDITOR_ERROR("[Build] Not queued; output='{}'; reason='task queue is stopping'",
+                exportOptions.outputFolder);
     }
 
     SceneEntity EditorLogic::getEntity(UUID uuid) {
