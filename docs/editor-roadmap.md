@@ -584,3 +584,34 @@ Python 47/47. Подробности и ограничение Mono MSBuild — 
 79/79 без пропусков, включая 40 graphics. Ветка публикации — ASSET-02,
 по уточнённому правилу имён без codex/. Следующий шаг — CI и merge в dev;
 реальная UI-приёмка и интеграция PLAYER-01/BUILD-01 остаются открытыми.
+
+## ANIM-01: первый путь preview → C# → native — 2026-10-16
+
+На ветке `codex/anim-01-clip-playback` исправлены индекс первого кадра, loop/remainder,
+one-shot на последнем кадре, повторный Play, стабильность указателей при добавлении
+клипов и загрузка XML без частичной замены данных. C# Animator получил TryPlay,
+IsPlaying и Stop() с сохранением прежнего Play/Stop(string). Через настоящий Mono
+проверены native callbacks, неизвестный клип, отсутствие entity/service и detached Animator.
+Добавлены минимальные grid/reorder/delete/seek и сохранение FPS/loop в панели;
+устаревший асинхронный результат сменившегося выделения игнорируется.
+
+Регрессия runtime-clone сначала упала из-за отсутствия AnimatorSystem в копии.
+Два animation system получили cloneSelf по действующему контракту Core; тест
+проверяет сброс preview-state и независимый ход кадров runtime. Сборка редактора,
+core-tests и suite успешна, CTest 84/84 без пропусков. Проверяемые границы и ручная
+приёмка — [animation-playback.md](animation-playback.md). Standalone и интерактивная
+UI/игровая приёмка этим шагом не объявляются выполненными.
+
+
+## ANIM-01: синхронизация с dev после PR #111/#113 — 2026-10-16
+
+В PR #114 объединён dev @ bad871b, содержащий ASSET-02 #111 и SCRIPT-01 #113.
+Разрешены пять конфликтов: история editor-roadmap, контейнеры CPU/GPU managers,
+AnimationTextureSliceTask и AnimationPanel. Сохранены нормализованные полные
+пути ресурсов и публикация только успешно загруженных изображений из ASSET-02,
+а также deque со стабильными адресами клипов, порядок кадров по строкам и защита
+устаревших async-результатов из ANIM-01. Все тесты обеих задач зарегистрированы.
+Повторно собраны robot2D, robot2D-core-tests и robot2D-editor-test-suite;
+полный CTest — 86/86 без пропусков, включая 40 graphics, шесть animation и
+managed API. Следующий шаг — обязательный pre-commit и публикация обновлённого
+PR #114 в dev. UI/игровая приёмка и standalone остаются открытыми.

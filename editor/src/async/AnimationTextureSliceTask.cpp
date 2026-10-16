@@ -76,7 +76,7 @@ namespace editor {
         sortFrames.assign(uniqueFrames.begin(), uniqueFrames.end());
         std::sort(sortFrames.begin(), sortFrames.end(), [](const robot2D::IntRect& l,
             const robot2D::IntRect& r) {
-            return l.lx < r.lx;
+            return l.ly == r.ly ? l.lx < r.lx : l.ly < r.ly;
         });
 
         for(auto& frame: sortFrames)

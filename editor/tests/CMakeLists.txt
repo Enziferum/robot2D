@@ -78,3 +78,22 @@ add_dependencies(robot2D-managed-api-tests robot2D_ScriptCore)
 add_dependencies(robot2D-editor-test-suite robot2D-managed-api-tests)
 add_test(NAME editor-managed-api COMMAND "${MONO_EXECUTABLE}" "${robot2D-managed-api-tests_OUTPUT}")
 set_tests_properties(editor-managed-api PROPERTIES TIMEOUT 30 LABELS "editor;headless;scripting")
+
+add_mono_assembly(TARGET robot2D-animation-driver
+    DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/../res/script"
+    SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/AnimationDriver.cs"
+    REFERENCES "${robot2D_ScriptCore_OUTPUT}"
+    ADDITIONAL_ARGS -sdk:4.8 -langversion:7.2 -warnaserror+)
+add_dependencies(robot2D-animation-driver robot2D_ScriptCore)
+add_executable(robot2D-animation-tests AnimationTests.cpp)
+target_link_libraries(robot2D-animation-tests PRIVATE robot2D-editor-objects)
+target_compile_definitions(robot2D-animation-tests PRIVATE
+    RB2D_TEST_MONO_LIB="${INTERNAL_MONO_ASSEMBLY_DIR}"
+    RB2D_TEST_MONO_ETC="${INTERNAL_MONO_CONFIG_DIR}"
+    RB2D_TEST_SCRIPTCORE="${robot2D_ScriptCore_OUTPUT}"
+    RB2D_TEST_ANIMATION_DRIVER="${robot2D-animation-driver_OUTPUT}")
+add_dependencies(robot2D-animation-tests robot2D-animation-driver)
+add_dependencies(robot2D-editor-test-suite robot2D-animation-tests)
+foreach(animation_case IN ITEMS frames playback clips parser managed runtime-clone)
+    rb2d_register_test("editor-animation-${animation_case}" robot2D-animation-tests "${animation_case}" "headless;animation")
+endforeach()

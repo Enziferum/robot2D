@@ -28,6 +28,7 @@
 #include <robot2D/Graphics/Font.hpp>
 #include <robot2D/Util/ResourceHandler.hpp>
 
+#include <deque>
 #include <editor/Uuid.hpp>
 #include <editor/Animation.hpp>
 
@@ -94,7 +95,7 @@ namespace editor {
         Animation* addAnimation(UUID uuid, const std::string& id) {
             std::lock_guard<std::mutex> lockGuard{m_mutex};
             if(m_animations.find(uuid) == m_animations.end())
-                m_animations[uuid] = std::vector<Animation>();
+                m_animations[uuid] = std::deque<Animation>();
 
             Animation animation;
             animation.name = id;
@@ -102,14 +103,14 @@ namespace editor {
             return &m_animations[uuid].back();
         }
 
-        std::vector<Animation>& getAnimations(UUID uuid) {
+        std::deque<Animation>& getAnimations(UUID uuid) {
             std::lock_guard<std::mutex> lockGuard{m_mutex};
             return m_animations.at(uuid);
         }
-        std::vector<Animation> getAnimationsCopy(UUID uuid) const {
+        std::deque<Animation> getAnimationsCopy(UUID uuid) const {
             std::lock_guard<std::mutex> lockGuard{m_mutex};
             const auto found = m_animations.find(uuid);
-            return found == m_animations.end() ? std::vector<Animation>{} : found -> second;
+            return found == m_animations.end() ? std::deque<Animation>{} : found -> second;
         }
         std::vector<std::string> getAnimationPaths(UUID uuid) const {
             std::lock_guard<std::mutex> lockGuard{m_mutex};
@@ -121,6 +122,6 @@ namespace editor {
         robot2D::ResourceHandler<robot2D::Image, std::string> m_images;
         robot2D::ResourceHandler<robot2D::Font, std::string> m_fonts;
         std::unordered_map<UUID, std::vector<std::string> > m_animationPaths;
-        std::unordered_map<UUID, std::vector<Animation> > m_animations;
+        std::unordered_map<UUID, std::deque<Animation> > m_animations;
     };
 }

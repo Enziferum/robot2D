@@ -27,6 +27,7 @@
 #include <robot2D/Graphics/Font.hpp>
 #include <robot2D/Util/ResourceHandler.hpp>
 
+#include <deque>
 #include <editor/Uuid.hpp>
 #include <editor/Animation.hpp>
 
@@ -75,7 +76,7 @@ namespace editor {
 
         Animation* addAnimation(UUID entityUUID) {
             if(m_animations.find(entityUUID) == m_animations.end())
-                m_animations[entityUUID] = std::vector<Animation>();
+                m_animations[entityUUID] = std::deque<Animation>();
 
             m_animations[entityUUID].emplace_back();
             return &m_animations[entityUUID].back();
@@ -96,10 +97,10 @@ namespace editor {
             return !m_animations[uuid].empty();
         }
 
-        std::vector<Animation>& getAnimations(UUID uuid) {
+        std::deque<Animation>& getAnimations(UUID uuid) {
             return m_animations.at(uuid);
         }
-        const std::vector<Animation>* findAnimations(UUID uuid) const {
+        const std::deque<Animation>* findAnimations(UUID uuid) const {
             const auto found = m_animations.find(uuid);
             return found == m_animations.end() ? nullptr : &found -> second;
         }
@@ -107,6 +108,6 @@ namespace editor {
         robot2D::ResourceHandler<robot2D::Texture, std::string> m_textures;
         robot2D::ResourceHandler<robot2D::Font, std::string> m_fonts;
 
-        std::unordered_map<UUID, std::vector<Animation> > m_animations;
+        std::unordered_map<UUID, std::deque<Animation> > m_animations;
     };
 }
