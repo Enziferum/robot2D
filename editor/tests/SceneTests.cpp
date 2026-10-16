@@ -585,6 +585,65 @@ namespace {
         CHECK(glGetError() == GL_NO_ERROR);
     }
 
+    void prefabViewport() {
+        Directory fixture;
+        fs::create_directories(fixture / "assets/scenes");
+        fs::create_directories(fixture / "assets/prefabs");
+        robot2D::MessageBus bus;
+        editor::MessageDispatcher dispatcher;
+        auto scripts = std::make_shared<ScriptStub>();
+        View view;
+        editor::EditorPresenter presenter(&view);
+        editor::EditorRouter router(&view);
+        editor::EditorLogic logic(bus, dispatcher, presenter, router);
+        logic.setup(scripts);
+        QueueStop stop;
+        auto source = std::make_shared<editor::Scene>(bus);
+        auto root = source -> createEntity("Enemy");
+        auto child = source -> createEntity("Weapon");
+        root.addComponent<editor::DrawableComponent>();
+        CHECK(source -> reparent(child, root));
+        auto asset = std::make_shared<editor::Prefab>((fixture / "assets/prefabs/enemy.prefab").u8string(),
+                root, editor::UUID{9800});
+        editor::PrefabSerializer serializer;
+        CHECK(serializer.serialize(asset, scripts));
+        auto empty = std::make_shared<editor::Scene>(bus);
+        editor::SceneSerializer writer(empty);
+        CHECK(writer.serialize((fixture / "assets/scenes/main.scene").u8string(), "Empty", scripts));
+        auto project = std::make_shared<editor::Project>();
+        project -> setPath(fixture.path().u8string());
+        project -> setStartScene("main.scene");
+        logic.loadProject(project);
+        CHECK(waitFor([&]() {
+            editor::TaskQueue::GetQueue() -> process();
+            return presenter.getState() != editor::EditorState::Load;
+        }));
+        CHECK(view.scene && view.scene -> getRootEntities().empty());
+        const auto send = [&](const std::string& path) {
+            editor::Buffer buffer{bus.postMessage(editor::MessageID::PrefabLoad,
+                                      editor::StringBuffer::calcAllocSize(path))};
+            editor::pack_message_string(path, buffer);
+            robot2D::Message message;
+            while(bus.pollMessages(message))
+                dispatcher.process(message);
+        };
+        send("assets/prefabs/enemy.prefab");
+        CHECK(view.scene -> getRootEntities().size() == 1);
+        const auto first = logic.getSelectedEntities().front();
+        CHECK(first.getChildren().size() == 1);
+        CHECK(first.hasComponent<editor::QuadTreeComponent>());
+        CHECK(first.getChildren().front().hasComponent<editor::QuadTreeComponent>());
+        send("assets/prefabs/enemy.prefab");
+        CHECK(view.scene -> getRootEntities().size() == 2);
+        const auto second = logic.getSelectedEntities().front();
+        CHECK(first != second && first.getChildren().front() != second.getChildren().front());
+        send("assets/prefabs/missing.prefab");
+        CHECK(view.scene -> getRootEntities().size() == 2);
+        CHECK(logic.getSelectedEntities().front() == second);
+        CHECK(view.scene -> hasChanges());
+        logic.destroy();
+    }
+
     void animationResources() {
         Directory fixture;
         const auto first = fixture / "assets/a/sheet.tga";
@@ -622,6 +681,7 @@ int main(int argc, char** argv) {
         else if(name == "missing-assets") missingAssets();
         else if(name == "asset-identity") assetIdentity();
         else if(name == "animation-resources") animationResources();
+        else if(name == "prefab-viewport") prefabViewport();
         else if(name == "roundtrip") roundtrip();
         else if(name == "invalid") invalid();
         else if(name == "legacy") legacy();
