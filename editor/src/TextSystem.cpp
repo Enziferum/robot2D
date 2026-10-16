@@ -94,15 +94,18 @@ namespace editor {
         if(!m_initialized) setupGL();
         std::unordered_map<unsigned int, bool> used;
         for(auto& entity: m_entities) {
+            if(!entity.hasComponent<TextComponent>() || !entity.hasComponent<DrawableComponent>() ||
+                !entity.hasComponent<TransformComponent>()) continue;
             const auto index = entity.getIndex();
             used[index] = true;
             auto& batches = m_batches[index];
             auto& text = entity.getComponent<TextComponent>();
+            auto& drawable = entity.getComponent<DrawableComponent>();
             if(!text.getFont() || text.getFont() -> getImages().empty()) {
+                drawable.setTexture(std::shared_ptr<robot2D::Texture>{});
                 batches.clear(); continue;
             }
-            auto& drawable = entity.getComponent<DrawableComponent>();
-            drawable.setTexture(text.getTexture());
+            drawable.setTexture(text.getTextureHandle());
             auto& tx = entity.getComponent<TransformComponent>();
             const auto& glyphs = text.getFont() -> getGlyphCharacters();
             const auto& cache = text.getGlyphCache();

@@ -75,6 +75,12 @@ namespace editor {
 
     void DrawableComponent::setTexture(const robot2D::Texture& texture) {
         m_texture = &texture;
+        if(m_ownedTexture.get() != &texture) m_ownedTexture.reset();
+    }
+
+    void DrawableComponent::setTexture(std::shared_ptr<robot2D::Texture> texture) {
+        m_ownedTexture = std::move(texture);
+        m_texture = m_ownedTexture.get();
     }
 
     robot2D::Texture& DrawableComponent::getTexture() {
