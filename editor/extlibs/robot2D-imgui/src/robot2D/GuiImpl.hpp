@@ -20,41 +20,48 @@
 *********************************************************************/
 
 #pragma once
-
 #include <array>
 #include <memory>
-
-#include <imgui/imgui.h>
-#include <robot2D/Graphics/RenderWindow.hpp>
-
+#include <robot2D/imgui/Gui.hpp>
 #include "Render.hpp"
-#include <robot2D/imgui/GuiFontConfig.hpp>
+#include "FontSet.hpp"
 
 namespace robot2D::priv {
-
     class GuiImpl {
     public:
-        GuiImpl();
-        GuiImpl(const GuiImpl& other) = delete;
-        GuiImpl& operator=(const GuiImpl& other) = delete;
-        GuiImpl(GuiImpl&& other) = delete;
-        GuiImpl& operator=(GuiImpl&& other) = delete;
         ~GuiImpl() noexcept;
-
-        void setup(robot2D::Window& window, bool createFonts);
-
-        void setupFonts(std::vector<GuiFontConfig>&& fontConfigs);
-        void handleEvents(const robot2D::Event& event);
-        void update(float dt);
-        void render();
+        bool initialize(const GuiConfiguration& configuration);
+        void shutdown() noexcept;
+        void handleEvents(const Event& event);
+        GuiInputCapture inputCapture() const;
+        bool beginFrame(float dt);
+        bool endFrame();
+        bool cancelFrame();
+        bool render();
+        GuiState state() const noexcept {
+            return m_state;
+        }
+        const std::string& lastError() const noexcept {
+            return m_error;
+        }
+        ImGuiContext* context() const noexcept {
+            return m_context;
+        }
+        ImFont* font(FontId id) const noexcept {
+            return m_fonts.get(id);
+        }
     private:
-        void shutdown();
+        bool fail(const std::string& reason);
         void updateMouseCursor();
-    private:
-        robot2D::Window* m_window;
-        std::array<robot2D::Cursor, ImGuiMouseCursor_COUNT> m_cursors;
-
-        bool m_windowHasFocus;
+        Window* m_window = nullptr;
+        ImGuiContext* m_context = nullptr;
+        ImGuiContext* m_previous = nullptr;
+        Cursor m_defaultCursor; // Empty native cursor; shutdown must not allocate.
+        std::array<std::unique_ptr<Cursor>, ImGuiMouseCursor_COUNT> m_cursors;
+        bool m_windowHasFocus = true;
+        GuiState m_state = GuiState::Uninitialized;
+        std::string m_error;
+        FontSet m_fonts;
         GuiRender m_render;
     };
-} // namespace robot2D
+}

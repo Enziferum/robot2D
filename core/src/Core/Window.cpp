@@ -118,6 +118,14 @@ namespace robot2D {
             throw std::runtime_error("Can't create WindowImpl");
     }
 
+    vec2u Window::getLogicalSize() const {
+        return m_windowImpl ? m_windowImpl -> getLogicalSize() : vec2u{};
+    }
+
+    vec2u Window::getFramebufferSize() const {
+        return m_windowImpl ? m_windowImpl -> getFramebufferSize() : vec2u{};
+    }
+
     const vec2u& Window::getSize() {
         return m_win_size;
     }

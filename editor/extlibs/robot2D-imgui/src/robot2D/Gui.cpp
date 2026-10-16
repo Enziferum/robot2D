@@ -23,39 +23,43 @@
 #include "GuiImpl.hpp"
 
 namespace robot2D {
-
-    Gui::Gui() {
-        m_impl = std::make_unique<priv::GuiImpl>();
-        if(!m_impl) {
-            // TODO(a.raag): fatal error
-        }
+    Gui::Gui() : m_impl(std::make_unique<priv::GuiImpl>()) {
     }
-
-    Gui::~Gui() = default;
-
-    void Gui::setup(robot2D::Window& window, bool createFonts) {
-        m_impl -> setup(window, createFonts);
+    Gui::~Gui() noexcept = default;
+    bool Gui::initialize(const GuiConfiguration& configuration) {
+        return m_impl -> initialize(configuration);
     }
-
-    void Gui::setupFonts(std::vector<GuiFontConfig>&& fontConfigs) {
-        m_impl -> setupFonts(std::move(fontConfigs));
+    void Gui::shutdown() noexcept {
+        m_impl -> shutdown();
     }
-
-    void Gui::handleEvents(const robot2D::Event& event) {
+    void Gui::handleEvents(const Event& event) {
         m_impl -> handleEvents(event);
     }
-
     GuiInputCapture Gui::inputCapture() const {
-        return captureGuiInput();
+        return m_impl -> inputCapture();
     }
-
-    void Gui::update(float dt) {
-        m_impl -> update(dt);
+    bool Gui::beginFrame(float dt) {
+        return m_impl -> beginFrame(dt);
     }
-
-    void Gui::render() {
-        m_impl -> render();
+    bool Gui::endFrame() {
+        return m_impl -> endFrame();
     }
-
-
-} // namespace robot2D
+    bool Gui::cancelFrame() {
+        return m_impl -> cancelFrame();
+    }
+    bool Gui::render() {
+        return m_impl -> render();
+    }
+    GuiState Gui::state() const noexcept {
+        return m_impl -> state();
+    }
+    const std::string& Gui::lastError() const noexcept {
+        return m_impl -> lastError();
+    }
+    ImGuiContext* Gui::context() const noexcept {
+        return m_impl -> context();
+    }
+    ImFont* Gui::font(FontId id) const noexcept {
+        return m_impl -> font(id);
+    }
+}

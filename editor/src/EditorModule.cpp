@@ -80,6 +80,7 @@ namespace editor {
     }
 
     void EditorModule::destroy() {
+        m_editor.cancelInput();
         m_interactor -> destroy();
     }
 

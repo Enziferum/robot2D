@@ -20,10 +20,10 @@ CORE-01 #110 остаётся общей открытой задачей, не �
 | CORE-01: согласованный Util и базовые классы | ResourceHandler, MessageBus/типизированная память, Logger/Assert, FileInputStream, Time/Clock, совместимые constexpr/noexcept Vector2/3, регрессии, Doxygen | Объединено с CORE-02 на dev после PHYS-01; локальные проверки пройдены, финальный CI/ревью |
 | CORE-02: события | variant Event, typed EventBinder, GLFW FIFO/frame batch, Add*Event, capture/владельцы Press–Release/cancel, история/Events, потребители, UI clicks/shortcuts, startup crash fix | Реализовано; пользователь подтвердил повторное открытие проекта и GUI на всё окно; финальная интеграция/CI |
 | robot2D-imgui: scopes | Безопасные оконные/style scopes и сохранение dockspace при скрытом canvas | Отдельные IMGUI-01 #121 / PR #123; реализованы в соседней ветке, не входят автоматически в CORE-02 |
-| robot2D-imgui: текущая корректность renderer | OrthoView Y; GL state и active texture/sampler/program/VAO; UserCallback/reset; scissor clamp/empty; GPU-resource RAII/отказ setup; владение memory-font | Открытый следующий объём по аудиту R1/R2/R3/R5/R8/R9; реализация здесь не начата |
-| robot2D-imgui: GuiImpl lifecycle | Собственный ImGuiContext, safe shutdown до setup/после отказа, ready только после успеха; состояния кадра, шрифтовый набор | Согласован контракт, остаются G2/G3 и интеграция font policy; G1/input принят из CORE-02 |
+| robot2D-imgui: текущая корректность renderer | OrthoView Y; GL state и active texture/sampler/program/VAO; UserCallback/reset; scissor clamp/empty; GPU-resource RAII/отказ setup; владение memory-font | IMGUI-02 #126: реализован однооконный шаг; проверки и ограничения — [gui-backend.md](gui-backend.md) |
+| robot2D-imgui: GuiImpl lifecycle | Собственный ImGuiContext, safe shutdown до setup/после отказа, ready только после успеха; состояния кадра, шрифтовый набор | IMGUI-02 #126: lifecycle и фиксированный font set реализованы; G1/input сохранён из CORE-02; ручная приёмка впереди |
 | robot2D-imgui: обёртки | Typed/size-aware drag/drop и borrowed lifetime; явные ImageButton ID, null framebuffer, sprite UV/zero-size, string InputText, Sugar flags/namespace | A7 обсуждается соседним GUI-чатом без реализации; A2–A6 остаются отдельными согласуемыми шагами; A1 — PR #123 |
-| Core Window/Desktop | Владение native window/GLFW, уничтожение, ошибки создания; logical/framebuffer size, minimized/DPI, источник событий WindowID, signed coordinates, clipboard/IME и contexts | Event/pump отделены от swap в CORE-02; остальной контракт и реализация ещё впереди |
+| Core Window/Desktop | Владение native window/GLFW, уничтожение, ошибки создания; logical/framebuffer size, minimized/DPI, источник событий WindowID, signed coordinates, clipboard/IME и contexts | Event/pump отделены от swap в CORE-02; IMGUI-02 добавляет фактические logical/framebuffer sizes; остальное впереди |
 | Core Graphics для GUI | Явный UI pass/state/cache; точный vertex layout, draw ranges/baseVertex; streaming buffers, texture views/updates/row pitch, context-local VAO/FBO и lifetime | Связано с RENDER-04 #98 / RENDER-05 #99; согласовать минимальный API до переноса GuiRender |
 | Engine / fixed timestep | Общий scheduler editor/player, fixedDt, предел догоняющих шагов, queued Play/Pause/Stop, SessionId | [Контракт согласован](fixed-timestep-contract.md), реализация не начата; сначала завершение CORE-01/02 |
 | Runtime / fixed input | Общая RuntimeSession, OnUpdate/OnFixedUpdate, frame/fixed input и временные границы, Pause/Resume | Последующая интеграция RUNTIME-01/02, INPUT-01 и PHYS-01; не реализовано этим объединением |
@@ -36,9 +36,9 @@ CORE-01 #110 остаётся общей открытой задачей, не �
 дефекты уже воспроизведёнными и не запускает их реализацию. Изменения соседней
 GUI-ветки и пользовательский основной checkout не копируются и не редактируются.
 
-Последовательность сейчас: объединение/проверки/ревью CORE-01+02 → выбор следующего
-небольшого шага с пользователем. Рекомендуемый кандидат — однооконные исправления
-корректности GuiRender/GuiImpl до обновления upstream. Тайминг согласован, но
+Последовательность сейчас: интеграция CORE-01+02 / PR #122 → зависимый
+однооконный шаг IMGUI-02 #126 по GuiRender/GuiImpl → ревью и ручная приёмка.
+Следующий Graphics API и обновление upstream согласуются отдельно. Тайминг согласован, но
 автоматически не запускается; остальные зависимости остаются в своих Issues.
 Оптимизацию uploads/ёмкости и VAO выполняем после измерений, отдельным шагом.
 
@@ -609,3 +609,27 @@ CI общего head, финальное ревью и короткое откр
 новый scheduler, GUI renderer/lifecycle, upstream/multi-window и crash reporter
 этим объединением не реализуются. Основной checkout и ветки соседних чатов,
 Core ECS, Snapshot/CancellationToken и submodule pointers не менялись.
+
+## IMGUI-02: однооконный GuiRender/GuiImpl — 2026-10-16
+
+Пользователь поручил реализацию по зафиксированному контракту. Ведущий — Codex,
+отдельный worktree imgui-02-backend, ветка IMGUI-02, Issue [#126](https://github.com/Enziferum/robot2D/issues/126).
+База: актуальный удалённый dev df823bb + зависимость CORE-02 51002de (PR #122 ещё открыт).
+IMGUI-01/scopes и пользовательские незакоммиченные документы не копировались.
+
+Исправлены проекция/scissor, GL isolation, callbacks/reset, rollback и освобождение
+GPU-ресурсов. GuiImpl получил собственный context и согласованные состояния,
+фиксированный владеющий font set с FontId/default/merge/fallback. Потребители
+editor/example адаптированы; Core получил фактические logical/framebuffer size,
+безопасное пустое состояние Texture и явное освобождение ресурсов renderer.
+Engine scheduler не менялся; добавлена только очистка application до local window
+при исключении. Детали и приёмка — [gui-backend.md](gui-backend.md).
+
+Проверки в процессе: первая полная Windows GCC 16.2/Ninja Release suite — 210/210
+без пропусков, включая 47 graphics и 9 новых backend-сценариев. Последующие
+изменения ревью/форматирования ещё проходят финальную сборку/hook.
+Отдельный строгий clang-tidy изменённых пяти backend единиц прошёл.
+Ручная UI-приёмка и CI нового commit ещё не выполнены.
+
+Следующий шаг: завершить проверки и опубликовать зависимый PR в dev, затем
+ручная приёмка; GraphicsCommands, upstream, multi-viewports и тайминг не начаты.
