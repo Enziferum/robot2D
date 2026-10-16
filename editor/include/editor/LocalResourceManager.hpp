@@ -40,6 +40,12 @@ namespace editor {
             return &manager;
         }
 
+        // After scenes and pending callbacks are released, while the GL context is current.
+        void releaseGraphicsResources() {
+            m_animations.clear();
+            m_textures.clear();
+        }
+
         bool hasTexture(const std::string& id) const {
             return m_textures.has(id);
         }

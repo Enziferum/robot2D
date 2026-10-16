@@ -1,22 +1,22 @@
 /*********************************************************************
-(c) Alex Raag 2025
-https://github.com/Enziferum
-robot2D - Zlib license.
-This software is provided 'as-is', without any express or
-implied warranty. In no event will the authors be held
-liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute
-it freely, subject to the following restrictions:
-1. The origin of this software must not be misrepresented;
-you must not claim that you wrote the original software.
-If you use this software in a product, an acknowledgment
-in the product documentation would be appreciated but
-is not required.
-2. Altered source versions must be plainly marked as such,
-and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any
-source distribution.
+   (c) Alex Raag 2025
+   https://github.com/Enziferum
+   robot2D - Zlib license.
+   This software is provided 'as-is', without any express or
+   implied warranty. In no event will the authors be held
+   liable for any damages arising from the use of this software.
+   Permission is granted to anyone to use this software for any purpose,
+   including commercial applications, and to alter it and redistribute
+   it freely, subject to the following restrictions:
+   1. The origin of this software must not be misrepresented;
+   you must not claim that you wrote the original software.
+   If you use this software in a product, an acknowledgment
+   in the product documentation would be appreciated but
+   is not required.
+   2. Altered source versions must be plainly marked as such,
+   and must not be misrepresented as being the original software.
+   3. This notice may not be removed or altered from any
+   source distribution.
 *********************************************************************/
 
 #include <editor/Application.hpp>
@@ -31,6 +31,7 @@ source distribution.
 #include <imgui/imgui.h>
 
 #include <editor/FileApi.hpp>
+#include <editor/LocalResourceManager.hpp>
 #include <robot2D/imgui/GuiFontConfig.hpp>
 #include "IconsFontsAwesome5.hpp"
 
@@ -43,8 +44,7 @@ namespace editor {
     namespace {
         const std::string configPath = "robot2D.ini";
 
-        int getDPI()
-        {
+        int getDPI() {
 #ifdef _WIN32
             const HDC hdc = GetDC(nullptr);
             if(!hdc)
@@ -62,14 +62,14 @@ namespace editor {
 
 
 
-    Application::Application():
-            robot2D::Application(),
-            m_appConfiguration{},
-            m_messageDispatcher{},
-            m_logic{m_messageDispatcher},
-            m_guiWrapper{},
-            m_projectInspector{m_messageBus}
-            {}
+    Application::Application() :
+        robot2D::Application(),
+        m_appConfiguration{},
+        m_messageDispatcher{},
+        m_logic{m_messageDispatcher},
+        m_guiWrapper{},
+        m_projectInspector{m_messageBus} {
+    }
 
 
     void Application::setup() {
@@ -135,7 +135,7 @@ namespace editor {
             if(config.layoutCreated)
                 ImGui::LoadIniSettingsFromMemory(config.layoutSettings.data(), config.layoutSettings.size());
             RB_EDITOR_INFO("[Application] GUI setup completed; config='{}'; layout_restored={}",
-                           configPath, config.layoutCreated);
+                configPath, config.layoutCreated);
         }
 
 
@@ -149,9 +149,9 @@ namespace editor {
 
         RB_EDITOR_INFO("[Application] Creating editor module");
         m_editorModule = EditorAssembly::createEditorModule(m_window,
-                                                            m_messageBus,
-                                                            m_messageDispatcher,
-                                                            m_guiWrapper);
+                m_messageBus,
+                m_messageDispatcher,
+                m_guiWrapper);
 
         if(!m_editorModule)
             RB2D_EXCEPTION("Can't initialize editorModule");
@@ -185,7 +185,7 @@ namespace editor {
                                           static_cast<float>(evt.size.heigth)}});
         });
         RB_EDITOR_INFO("[Application] Setup completed; editor_active={}",
-                       m_logic.getState() == AppState::Editor);
+            m_logic.getState() == AppState::Editor);
     }
 
     void Application::handleEvents(const robot2D::Event& event) {
@@ -207,7 +207,7 @@ namespace editor {
 
     void Application::handleMessages() {
         robot2D::Message message{};
-        while (m_messageBus.pollMessages(message)) {
+        while(m_messageBus.pollMessages(message)) {
             if(m_logic.getState() == AppState::Editor)
                 m_editorModule -> handleMessages(message);
 
@@ -267,6 +267,7 @@ namespace editor {
         RB_EDITOR_INFO("[Application] Editor module destroy started; waiting for background work");
         m_editorModule -> destroy();
         m_editorModule.reset();
+        LocalResourceManager::getManager() -> releaseGraphicsResources();
         RB_EDITOR_INFO("[Application] Editor module released; Mono shutdown started");
         m_scriptingEngine.Shutdown();
         RB_EDITOR_INFO("[Application] Mono shutdown completed");

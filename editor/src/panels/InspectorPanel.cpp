@@ -379,32 +379,30 @@ namespace editor {
             if(auto && payloadBuffer = dragDropTarget.unpackPayload2Buffer()) {
                 auto&& path = payloadBuffer.unpack<std::string>();
                 std::filesystem::path localPath = std::filesystem::path("assets") / path;
-                auto texturePath = combinePath(m_interactor -> getAssociatedProjectPath(), localPath.string());
+                auto texturePath = resourceFileKey(combinePath(m_interactor -> getAssociatedProjectPath(),
+                        localPath.string()));
 
                 if(component.getTexturePath() != localPath.string()) {
                     component.setTexturePath(localPath.string());
                     entity.markModified();
                 }
                 auto manager = ResourceManager::getManager();
-                if(!manager -> hasImage(localPath.filename().string())) {
+                if(!manager -> hasImage(texturePath)) {
                     auto queue = TaskQueue::GetQueue();
                     // Keep a discarded template alive until its pending resource callback finishes.
                     auto owner = m_inspectType == InspectType::AssetPrefab
                             ? m_prefabManager.findPrefab(m_selectedEntity.getComponent<PrefabComponent>().prefabUUID)
                             : nullptr;
-                    queue -> template addAsyncTask<ImageLoadTask>([owner](const ImageLoadTask& task) {
-                        InspectorPanel::onLoadImage(task.getImage(), task.getEntity());
+                    queue -> template addAsyncTask<ImageLoadTask>([owner, texturePath,
+                        reference = localPath.string()](const ImageLoadTask& task) {
+                        auto target = task.getEntity();
+                        if(target.hasComponent<DrawableComponent>() &&
+                        target.getComponent<DrawableComponent>().getTexturePath() == reference)
+                            InspectorPanel::onLoadImage(task.getImage(), target, texturePath);
                     }, texturePath, entity);
                 }
                 else {
-                    auto* localManager = LocalResourceManager::getManager();
-                    auto idComponent = entity.getComponent<IDComponent>();
-                    auto* texture = localManager -> addTexture(std::to_string(idComponent.ID));
-                    if(texture) {
-                        auto image = manager -> getImage(localPath.filename().string());
-                        texture -> create(image);
-                        component.setTexture(*texture);
-                    }
+                    onLoadImage(manager -> getImage(texturePath), entity, texturePath);
                 }
             }
         }
@@ -430,7 +428,8 @@ namespace editor {
             if(auto && payloadBuffer = dragDropTarget.unpackPayload2Buffer()) {
                 auto&& path = payloadBuffer.unpack<std::string>();
                 std::filesystem::path localPath = std::filesystem::path("assets") / path;
-                auto fontPath = combinePath(m_interactor -> getAssociatedProjectPath(), localPath.string());
+                auto fontPath = resourceFileKey(combinePath(m_interactor -> getAssociatedProjectPath(),
+                        localPath.string()));
 
                 if(component.getFontPath() != localPath.string()) {
                     component.setFontPath(localPath.string());
@@ -441,8 +440,12 @@ namespace editor {
                 auto owner = m_inspectType == InspectType::AssetPrefab
                         ? m_prefabManager.findPrefab(m_selectedEntity.getComponent<PrefabComponent>().prefabUUID)
                         : nullptr;
-                queue -> template addAsyncTask<FontLoadTask>([owner](const FontLoadTask& task) {
-                    InspectorPanel::onLoadFont(task.getFont(), task.getEntity());
+                queue -> template addAsyncTask<FontLoadTask>([owner, fontPath,
+                    reference = localPath.string()](const FontLoadTask& task) {
+                    auto target = task.getEntity();
+                    if(target.hasComponent<TextComponent>() &&
+                    target.getComponent<TextComponent>().getFontPath() == reference)
+                        InspectorPanel::onLoadFont(task.getFont(), target, fontPath);
                 }, fontPath, entity);
             }
         }
@@ -837,15 +840,15 @@ namespace editor {
     }
 
 
-    void InspectorPanel::onLoadImage(const robot2D::Image& image, SceneEntity entity) {
+    void InspectorPanel::onLoadImage(const robot2D::Image& image, SceneEntity entity, const std::string& key) {
         if(!entity) {
             RB_EDITOR_WARN("Can't attach texture to Entity, because it's already destroyed");
             return;
         }
 
         auto* localManager = LocalResourceManager::getManager();
-        auto idComponent = entity.getComponent<IDComponent>();
-        auto* texture = localManager -> addTexture(std::to_string(idComponent.ID));
+        auto* texture = localManager -> hasTexture(key) ? &localManager -> getTexture(key)
+                : localManager -> addTexture(key);
         if(!texture)
             return;
         texture -> create(image);
@@ -854,15 +857,19 @@ namespace editor {
             entity.getComponent<DrawableComponent>().setTexture(*texture);
     }
 
-    void InspectorPanel::onLoadFont(const robot2D::Font& font, SceneEntity entity) {
+    void InspectorPanel::onLoadFont(const robot2D::Font& font, SceneEntity entity, const std::string& key) {
         if(!entity) {
             RB_EDITOR_WARN("Can't attach texture to Entity, because it's already destroyed");
             return;
         }
 
         auto* localManager = LocalResourceManager::getManager();
-        auto idComponent = entity.getComponent<IDComponent>();
-        auto* f = localManager -> addFont(std::to_string(idComponent.ID));
+        if(localManager -> hasFont(key)) {
+            if(entity.hasComponent<TextComponent>())
+                entity.getComponent<TextComponent>().setFont(localManager -> getFont(key));
+            return;
+        }
+        auto* f = localManager -> addFont(key);
         if(!f)
             return;
         f -> clone(const_cast<robot2D::Font&>(font));
