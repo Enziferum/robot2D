@@ -546,3 +546,20 @@ consumer и регрессии реальной Mono-сборки; измене�
 Локально: robot2D/core-tests/editor-test-suite собраны, CTest 78/78 без пропусков,
 Python 47/47. Подробности и ограничение Mono MSBuild — [csharp-build.md](csharp-build.md).
 Полная пользовательская C# сборка/Play/Build и игровые callbacks не объявляются готовыми.
+
+## ANIM-01: первый путь preview → C# → native — 2026-10-16
+
+На ветке `codex/anim-01-clip-playback` исправлены индекс первого кадра, loop/remainder,
+one-shot на последнем кадре, повторный Play, стабильность указателей при добавлении
+клипов и загрузка XML без частичной замены данных. C# Animator получил TryPlay,
+IsPlaying и Stop() с сохранением прежнего Play/Stop(string). Через настоящий Mono
+проверены native callbacks, неизвестный клип, отсутствие entity/service и detached Animator.
+Добавлены минимальные grid/reorder/delete/seek и сохранение FPS/loop в панели;
+устаревший асинхронный результат сменившегося выделения игнорируется.
+
+Регрессия runtime-clone сначала упала из-за отсутствия AnimatorSystem в копии.
+Два animation system получили cloneSelf по действующему контракту Core; тест
+проверяет сброс preview-state и независимый ход кадров runtime. Сборка редактора,
+core-tests и suite успешна, CTest 84/84 без пропусков. Проверяемые границы и ручная
+приёмка — [animation-playback.md](animation-playback.md). Standalone и интерактивная
+UI/игровая приёмка этим шагом не объявляются выполненными.

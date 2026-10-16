@@ -5,7 +5,7 @@
 
 namespace editor {
 
-    class AnimationSystem: public robot2D::ecs::System {
+    class AnimationSystem : public robot2D::ecs::System {
     public:
         AnimationSystem(robot2D::MessageBus& messageBus);
         AnimationSystem(const AnimationSystem& other) = delete;
@@ -15,6 +15,9 @@ namespace editor {
         ~AnimationSystem() override = default;
 
         void update(float dt) override;
+    protected:
+        robot2D::ecs::System::Ptr cloneSelf(robot2D::ecs::Scene* scene,
+            const std::vector<robot2D::ecs::Entity>& entities) override;
     };
 
 } // namespace editor

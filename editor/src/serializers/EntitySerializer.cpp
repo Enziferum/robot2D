@@ -245,7 +245,7 @@ namespace editor {
 
         if(entity.hasComponent<AnimationComponent>()) {
             auto* animationManager = LocalResourceManager::getManager();
-            const std::vector<Animation> empty;
+            const std::deque<Animation> empty;
             const auto* found = animationManager -> findAnimations(entity.getUUID());
             const auto& animations = found ? *found : empty;
 

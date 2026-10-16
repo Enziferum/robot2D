@@ -1,22 +1,22 @@
 /*********************************************************************
-(c) Alex Raag 2024
-https://github.com/Enziferum
-robot2D - Zlib license.
-This software is provided 'as-is', without any express or
-implied warranty. In no event will the authors be held
-liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute
-it freely, subject to the following restrictions:
-1. The origin of this software must not be misrepresented;
-you must not claim that you wrote the original software.
-If you use this software in a product, an acknowledgment
-in the product documentation would be appreciated but
-is not required.
-2. Altered source versions must be plainly marked as such,
-and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any
-source distribution.
+   (c) Alex Raag 2024
+   https://github.com/Enziferum
+   robot2D - Zlib license.
+   This software is provided 'as-is', without any express or
+   implied warranty. In no event will the authors be held
+   liable for any damages arising from the use of this software.
+   Permission is granted to anyone to use this software for any purpose,
+   including commercial applications, and to alter it and redistribute
+   it freely, subject to the following restrictions:
+   1. The origin of this software must not be misrepresented;
+   you must not claim that you wrote the original software.
+   If you use this software in a product, an acknowledgment
+   in the product documentation would be appreciated but
+   is not required.
+   2. Altered source versions must be plainly marked as such,
+   and must not be misrepresented as being the original software.
+   3. This notice may not be removed or altered from any
+   source distribution.
 *********************************************************************/
 
 #pragma once
@@ -47,8 +47,7 @@ source distribution.
 
 namespace editor {
 
-    struct IDComponent
-    {
+    struct IDComponent {
         IDComponent() = default;
         ~IDComponent() = default;
         IDComponent(const IDComponent& other) = default;
@@ -59,7 +58,7 @@ namespace editor {
         UUID ID;
     };
 
-    class TransformComponent: public robot2D::Transformable {
+    class TransformComponent : public robot2D::Transformable {
     public:
         DECLARE_COMPONENT_ID()
 
@@ -90,12 +89,24 @@ namespace editor {
     // TODO: @a.raag add Rotation
     class Transform3DComponent {
     public:
-        robot2D::vec3f& getPosition() { return m_position; }
-        const robot2D::vec3f& getPosition() const { return m_position; }
-        robot2D::vec3f& getScale() { return m_scale; }
-        const robot2D::vec3f& getScale() const { return m_scale; }
-        robot2D::vec3f& getRotation() { return m_rotation; }
-        const robot2D::vec3f& getRotation() const { return m_rotation; }
+        robot2D::vec3f& getPosition() {
+            return m_position;
+        }
+        const robot2D::vec3f& getPosition() const {
+            return m_position;
+        }
+        robot2D::vec3f& getScale() {
+            return m_scale;
+        }
+        const robot2D::vec3f& getScale() const {
+            return m_scale;
+        }
+        robot2D::vec3f& getRotation() {
+            return m_rotation;
+        }
+        const robot2D::vec3f& getRotation() const {
+            return m_rotation;
+        }
 
         void setPosition(const robot2D::vec3f& vec) {
             m_position = vec;
@@ -110,9 +121,9 @@ namespace editor {
         }
 
         robot2D::Matrix3D getTransform() const {
-           return robot2D::translate(robot2D::mat4{}, m_position) *
-                  robot2D::toMat4(robot2D::quat(m_rotation)) *
-                  robot2D::scale(robot2D::mat4{}, m_scale);
+            return robot2D::translate(robot2D::mat4{}, m_position) *
+                   robot2D::toMat4(robot2D::quat(m_rotation)) *
+                   robot2D::scale(robot2D::mat4{}, m_scale);
         }
     private:
         robot2D::vec3f m_position;
@@ -122,12 +133,19 @@ namespace editor {
 
     class TagComponent {
     public:
-        TagComponent(const std::string& tag = "Untitled Entity"): m_tag(tag) {}
+        TagComponent(const std::string& tag = "Untitled Entity") : m_tag(tag) {
+        }
         ~TagComponent() = default;
 
-        void setTag(const std::string& tag) {m_tag = tag;}
-        std::string& getTag() {return m_tag;}
-        const std::string& getTag() const {return m_tag;}
+        void setTag(const std::string& tag) {
+            m_tag = tag;
+        }
+        std::string& getTag() {
+            return m_tag;
+        }
+        const std::string& getTag() const {
+            return m_tag;
+        }
     private:
         std::string m_tag;
     };
@@ -144,19 +162,29 @@ namespace editor {
         void setTexture(const robot2D::Texture& texture);
         robot2D::Texture& getTexture();
         const robot2D::Texture& getTexture() const;
-        const robot2D::Texture* getTexturePointer() const {return m_texture;}
+        const robot2D::Texture* getTexturePointer() const {
+            return m_texture;
+        }
 
         void setColor(const robot2D::Color& color);
         const robot2D::Color& getColor() const;
-        bool hasTexture() const { return m_texture != nullptr; }
+        bool hasTexture() const {
+            return m_texture != nullptr;
+        }
 
         void setDepth(int value);
         int getDepth() const;
-        int& getDepth() { return m_depth; }
+        int& getDepth() {
+            return m_depth;
+        }
 
 
-        void setTexturePath(const std::string& path) { m_texturePath = path; }
-        const std::string& getTexturePath() const { return m_texturePath; }
+        void setTexturePath(const std::string& path) {
+            m_texturePath = path;
+        }
+        const std::string& getTexturePath() const {
+            return m_texturePath;
+        }
 
         void setLayerIndex(unsigned int value);
         unsigned int getLayerIndex() const;
@@ -165,13 +193,19 @@ namespace editor {
         const quadVertexArray& getVertices() const;
         quadVertexArray& getVertices();
 
-        void setReorderZBuffer(bool flag) { m_needUpdateZbuffer = flag; }
+        void setReorderZBuffer(bool flag) {
+            m_needUpdateZbuffer = flag;
+        }
         bool isUtil{false};
 
         void FlipTexture();
 
-        bool& drawBoundingBox()  { return m_drawBbox; }
-        const bool& drawBoundingBox() const  { return m_drawBbox; }
+        bool& drawBoundingBox() {
+            return m_drawBbox;
+        }
+        const bool& drawBoundingBox() const {
+            return m_drawBbox;
+        }
     private:
         friend class RenderSystem;
         friend class SceneRender;
@@ -189,8 +223,7 @@ namespace editor {
     };
 
 
-    class SceneCamera
-    {
+    class SceneCamera {
     public:
         enum class ProjectionType { Perspective = 0, Orthographic = 1 };
     public:
@@ -201,15 +234,31 @@ namespace editor {
         void SetOrthographic(float size, float nearClip, float farClip);
         void SetViewportSize(uint32_t width, uint32_t height);
 
-        float GetOrthographicSize() const { return m_OrthographicSize; }
-        void SetOrthographicSize(float size) { m_OrthographicSize = size; RecalculateProjection(); }
-        float GetOrthographicNearClip() const { return m_OrthographicNear; }
-        void SetOrthographicNearClip(float nearClip) { m_OrthographicNear = nearClip; RecalculateProjection(); }
-        float GetOrthographicFarClip() const { return m_OrthographicFar; }
-        void SetOrthographicFarClip(float farClip) { m_OrthographicFar = farClip; RecalculateProjection(); }
+        float GetOrthographicSize() const {
+            return m_OrthographicSize;
+        }
+        void SetOrthographicSize(float size) {
+            m_OrthographicSize = size; RecalculateProjection();
+        }
+        float GetOrthographicNearClip() const {
+            return m_OrthographicNear;
+        }
+        void SetOrthographicNearClip(float nearClip) {
+            m_OrthographicNear = nearClip; RecalculateProjection();
+        }
+        float GetOrthographicFarClip() const {
+            return m_OrthographicFar;
+        }
+        void SetOrthographicFarClip(float farClip) {
+            m_OrthographicFar = farClip; RecalculateProjection();
+        }
 
-        ProjectionType GetProjectionType() const { return m_ProjectionType; }
-        void SetProjectionType(ProjectionType type) { m_ProjectionType = type; RecalculateProjection(); }
+        ProjectionType GetProjectionType() const {
+            return m_ProjectionType;
+        }
+        void SetProjectionType(ProjectionType type) {
+            m_ProjectionType = type; RecalculateProjection();
+        }
 
     private:
         void RecalculateProjection();
@@ -247,8 +296,12 @@ namespace editor {
         ~CameraComponent() = default;
 
 
-        robot2D::vec2f getSize() const { return size; }
-        robot2D::vec2f getPosition() const { return position; }
+        robot2D::vec2f getSize() const {
+            return size;
+        }
+        robot2D::vec2f getPosition() const {
+            return position;
+        }
 
         ScalingMode scalingMode;
         AspectRatio aspectRatio;
@@ -263,8 +316,8 @@ namespace editor {
 
     struct CollisionLayer {
         uint16_t categoryBits = 1 << 0; // Default
-        uint16_t maskBits     = 0xFFFF; // collide with all by default
-        int16_t  groupIndex   = 0;
+        uint16_t maskBits = 0xFFFF;     // collide with all by default
+        int16_t groupIndex = 0;
     };
 
     class Collider2DComponent final {
@@ -280,7 +333,7 @@ namespace editor {
         robot2D::vec2f size = { 0.5f, 0.5f };
 
         float density = 1.0f;
-        float friction =  0.5f;
+        float friction = 0.5f;
         float restitution = 0.0f;
         float restitutionThreshold = 0.5f;
         bool isTrigger = false;
@@ -324,7 +377,7 @@ namespace editor {
         void* runtimeBody{nullptr};
     };
 
-    class TextComponent: public robot2D::Transformable {
+    class TextComponent : public robot2D::Transformable {
     public:
         DECLARE_COMPONENT_ID()
 
@@ -343,8 +396,12 @@ namespace editor {
         void setFont(const robot2D::Font& font);
         const robot2D::Font* getFont() const;
 
-        void setFontPath(const std::string& path) { m_fontPath = path;}
-        const std::string& getFontPath() const { return m_fontPath; }
+        void setFontPath(const std::string& path) {
+            m_fontPath = path;
+        }
+        const std::string& getFontPath() const {
+            return m_fontPath;
+        }
 
         const robot2D::Texture& getTexture() const;
         std::unordered_map<int, robot2D::GlyphQuad>& getGlyphCache();
@@ -391,8 +448,12 @@ namespace editor {
             return m_textureRect;
         }
 
-        void setAnimation(Animation* animation) { m_animation = animation; }
-        Animation* getAnimation() { return m_animation; }
+        void setAnimation(Animation* animation) {
+            m_animation = animation;
+        }
+        Animation* getAnimation() {
+            return m_animation;
+        }
     private:
         friend class AnimationSystem;
 
@@ -407,12 +468,21 @@ namespace editor {
 
         void Play(const std::string& animationName);
         void Stop(const std::string& animationName);
+        bool playing() const {
+            return isPlaying;
+        }
+        std::uint32_t frameIndex() const {
+            return m_frameID;
+        }
+        const std::string& animationName() const {
+            return m_animationName;
+        }
 
 
     private:
         bool isPlaying{false};
         friend class AnimatorSystem;
-        float m_currentFrameTime{0.f};
+        double m_currentFrameTime{0.0};
         std::uint32_t m_frameID{0};
         std::string m_animationName;
     };

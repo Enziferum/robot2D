@@ -185,3 +185,16 @@ Mono, явный output и managed-потребитель API в headless suite.
 `codex/script-01-managed-build` от dev 64dab8f. Контракт, проверки и ограничения —
 [csharp-build.md](csharp-build.md). ANIM-01 и SCRIPT-01 не закрываются этим шагом;
 runtime callbacks, пользовательская сборка и standalone остаются впереди.
+
+## ANIM-01: клипы, воспроизведение и C# — 2026-10-16
+
+Реализован первый проверяемый шаг на ветке `codex/anim-01-clip-playback` от dev
+64dab8f с зависимостью SCRIPT-01 @ 80dbe5c (#113): общий Play/Stop, FPS/loop/one-shot,
+безопасный C# Animator, стабильные адреса клипов, строгий XML, минимальный grid/
+frame preview и перенос двух систем анимации в runtime по существующему cloneSelf.
+Потребители: AnimationPanel, EditorLogic, AnimationSystem/AnimatorSystem, CPU/GPU
+resource managers, EntitySerializer и editor/scripting. Core ECS и пользовательский
+Snapshot не изменены. Полный локальный CTest 84/84 без пропусков; контракт,
+регрессии и конкретная UI/игровая приёмка — [animation-playback.md](animation-playback.md).
+ANIM-01 остаётся открытой: UI/игровая приёмка и проверка в standalone ещё впереди;
+ASSET-02 #111 и SCRIPT-01 #113 интегрируются отдельными PR в dev.
