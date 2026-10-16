@@ -1,22 +1,22 @@
 /*********************************************************************
-(c) Alex Raag 2023
-https://github.com/Enziferum
-robot2D - Zlib license.
-This software is provided 'as-is', without any express or
-implied warranty. In no event will the authors be held
-liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute
-it freely, subject to the following restrictions:
-1. The origin of this software must not be misrepresented;
-you must not claim that you wrote the original software.
-If you use this software in a product, an acknowledgment
-in the product documentation would be appreciated but
-is not required.
-2. Altered source versions must be plainly marked as such,
-and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any
-source distribution.
+   (c) Alex Raag 2023
+   https://github.com/Enziferum
+   robot2D - Zlib license.
+   This software is provided 'as-is', without any express or
+   implied warranty. In no event will the authors be held
+   liable for any damages arising from the use of this software.
+   Permission is granted to anyone to use this software for any purpose,
+   including commercial applications, and to alter it and redistribute
+   it freely, subject to the following restrictions:
+   1. The origin of this software must not be misrepresented;
+   you must not claim that you wrote the original software.
+   If you use this software in a product, an acknowledgment
+   in the product documentation would be appreciated but
+   is not required.
+   2. Altered source versions must be plainly marked as such,
+   and must not be misrepresented as being the original software.
+   3. This notice may not be removed or altered from any
+   source distribution.
 *********************************************************************/
 
 #pragma once
@@ -59,7 +59,8 @@ namespace editor {
         TileElementSelected,
         PrefabAssetModificated,
         AnimationPlay,
-        RemoveRecentProject
+        RemoveRecentProject,
+        BuildScripts
     };
 
     struct ProjectMessage {
@@ -80,7 +81,8 @@ namespace editor {
     struct ShowInspectorMessage {
         bool showAlways;
 
-        void unpack(void* rawBuffer) {}
+        void unpack(void* rawBuffer) {
+        }
     };
 
     struct MenuProjectMessage {
@@ -97,25 +99,29 @@ namespace editor {
     struct EntitySelection {
         uint32_t entityID;
 
-        void unpack(void* rawBuffer) {}
+        void unpack(void* rawBuffer) {
+        }
     };
 
     struct EntityDuplication {
         UUID entityID;
 
-        void unpack(void* rawBuffer) {}
+        void unpack(void* rawBuffer) {
+        }
     };
 
     struct EntityRemovement {
         UUID entityID;
 
-        void unpack(void* rawBuffer) {}
+        void unpack(void* rawBuffer) {
+        }
     };
 
     struct EntityRestorement {
         UUID entityID;
 
-        void unpack(void* rawBuffer) {}
+        void unpack(void* rawBuffer) {
+        }
     };
 
     struct ToolbarMessage {
@@ -125,7 +131,8 @@ namespace editor {
         };
 
         Type type;
-        void unpack(void* rawBuffer) {}
+        void unpack(void* rawBuffer) {
+        }
     };
 
     struct OpenSceneMessage {
@@ -150,9 +157,13 @@ namespace editor {
         }
     };
 
-    struct UndoRedoMessage{};
+    struct UndoRedoMessage {};
 
-    struct GenerateProjectMessage{
+    struct BuildScriptsMessage { void unpack(void*) {
+                                 }
+    };
+
+    struct GenerateProjectMessage {
         std::string genPath;
 
         void unpack(void* rawBuffer) {
@@ -163,7 +174,7 @@ namespace editor {
         }
     };
 
-    struct ExportProjectMessage{
+    struct ExportProjectMessage {
         std::string startSceneID;
 
         void unpack(void* rawBuffer) {
@@ -177,7 +188,8 @@ namespace editor {
     struct PanelEntitySelectedMessage {
         SceneEntity entity;
 
-        void unpack(void* rawBuffer) {}
+        void unpack(void* rawBuffer) {
+        }
     };
 
     struct PrefabLoadMessage {
@@ -206,14 +218,16 @@ namespace editor {
         UUID prefabUUID;
         SceneEntity prefabEntity;
 
-        void unpack(void* rawBuffer) {}
+        void unpack(void* rawBuffer) {
+        }
     };
 
 
     struct TileElementSelectedMessage {
         robot2D::vec2i tileIndex;
 
-        void unpack(void* rawBuffer) {}
+        void unpack(void* rawBuffer) {
+        }
     };
 
     struct AnimationPlayMessage {
@@ -223,7 +237,8 @@ namespace editor {
             Stop = 1
         } mode;
 
-        void unpack(void* rawBuffer) {}
+        void unpack(void* rawBuffer) {
+        }
     };
 
     struct InstrumentMessage {
@@ -233,6 +248,7 @@ namespace editor {
             Rotate
         } type;
 
-        void unpack(void* rawBuffer) {}
+        void unpack(void* rawBuffer) {
+        }
     };
 }
