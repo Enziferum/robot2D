@@ -68,6 +68,23 @@ if(RB2D_EDITOR_GRAPHICS_TESTS)
     endforeach()
 endif()
 
+add_mono_assembly(TARGET robot2D-hud-driver
+    DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/../res/script"
+    SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/HudDriver.cs" "${CMAKE_CURRENT_SOURCE_DIR}/../../docs/examples/HudExample.cs"
+    REFERENCES "${robot2D_ScriptCore_OUTPUT}"
+    ADDITIONAL_ARGS -sdk:4.8 -langversion:7.2 -warnaserror+)
+add_dependencies(robot2D-hud-driver robot2D_ScriptCore)
+add_executable(robot2D-hud-tests HudTests.cpp)
+target_link_libraries(robot2D-hud-tests PRIVATE robot2D-editor-objects)
+target_compile_definitions(robot2D-hud-tests PRIVATE
+    RB2D_TEST_MONO_LIB="${INTERNAL_MONO_ASSEMBLY_DIR}"
+    RB2D_TEST_MONO_ETC="${INTERNAL_MONO_CONFIG_DIR}"
+    RB2D_TEST_SCRIPTCORE="${robot2D_ScriptCore_OUTPUT}"
+    RB2D_TEST_HUD_DRIVER="${robot2D-hud-driver_OUTPUT}")
+add_dependencies(robot2D-hud-tests robot2D-hud-driver)
+add_dependencies(robot2D-editor-test-suite robot2D-hud-tests)
+rb2d_register_test(editor-hud-managed robot2D-hud-tests managed "headless;scripting;hud")
+
 # A managed consumer catches a missing/outdated API assembly in ordinary CI builds.
 add_mono_assembly(TARGET robot2D-managed-api-tests TYPE exe
     DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/../res/script"
@@ -128,20 +145,3 @@ add_dependencies(robot2D-editor-test-suite robot2D-physics-tests)
 foreach(physics_case IN ITEMS geometry walls bullet triggers filters lifecycle callbacks invalid serialization managed)
     rb2d_register_test("editor-physics-${physics_case}" robot2D-physics-tests "${physics_case}" "headless;physics")
 endforeach()
-
-add_mono_assembly(TARGET robot2D-hud-driver
-    DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/../res/script"
-    SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/HudDriver.cs" "${CMAKE_CURRENT_SOURCE_DIR}/../../docs/examples/HudExample.cs"
-    REFERENCES "${robot2D_ScriptCore_OUTPUT}"
-    ADDITIONAL_ARGS -sdk:4.8 -langversion:7.2 -warnaserror+)
-add_dependencies(robot2D-hud-driver robot2D_ScriptCore)
-add_executable(robot2D-hud-tests HudTests.cpp)
-target_link_libraries(robot2D-hud-tests PRIVATE robot2D-editor-objects)
-target_compile_definitions(robot2D-hud-tests PRIVATE
-    RB2D_TEST_MONO_LIB="${INTERNAL_MONO_ASSEMBLY_DIR}"
-    RB2D_TEST_MONO_ETC="${INTERNAL_MONO_CONFIG_DIR}"
-    RB2D_TEST_SCRIPTCORE="${robot2D_ScriptCore_OUTPUT}"
-    RB2D_TEST_HUD_DRIVER="${robot2D-hud-driver_OUTPUT}")
-add_dependencies(robot2D-hud-tests robot2D-hud-driver)
-add_dependencies(robot2D-editor-test-suite robot2D-hud-tests)
-rb2d_register_test(editor-hud-managed robot2D-hud-tests managed "headless;scripting;hud")
