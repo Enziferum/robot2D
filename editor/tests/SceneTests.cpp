@@ -2,6 +2,7 @@
 #include "TestSupport.hpp"
 #include <GLFW/glfw3.h>
 #include <robot2D/Graphics/GL.hpp>
+#include <robot2D/Graphics/RenderTarget.hpp>
 #include <robot2D/Util/Logger.hpp>
 #include <editor/Scene.hpp>
 #include <editor/SceneManager.hpp>
@@ -10,6 +11,7 @@
 #include <editor/serializers/SceneSerializer.hpp>
 #include <editor/serializers/YamlFile.hpp>
 #include <editor/serializers/PrefabSerializer.hpp>
+#include <array>
 #include <iostream>
 #include <limits>
 
@@ -110,6 +112,42 @@ namespace {
         entity.getComponent<editor::TextComponent>().setFontPath("../external.ttf");
         CHECK(!serializer.serialize(path.u8string(), "Portable", scripts));
         CHECK(read(path) == saved && !serializer.getErrorMessage().empty());
+    }
+
+    void runtimeCameraOrder() {
+        class Target final : public robot2D::RenderTarget {
+        public:
+            Target() : RenderTarget({32, 32}, robot2D::WindowContext::RenderApi::OpenGL4_5,
+                    robot2D::WindowContext::RenderDimensionType::TwoD) {
+            }
+            ~Target() override = default;
+        } target;
+        robot2D::MessageBus bus;
+        editor::Scene scene(bus);
+        auto sprite = scene.createEntity("Drawn before camera in z order");
+        sprite.getComponent<editor::TransformComponent>().setPosition({32, 0});
+        sprite.getComponent<editor::TransformComponent>().setSize({8, 8});
+        sprite.addComponent<editor::DrawableComponent>().setColor(robot2D::Color::Red);
+        auto camera = scene.createEntity("Camera after sprite");
+        auto& cameraData = camera.addComponent<editor::CameraComponent>();
+        cameraData.isPrimary = true;
+        cameraData.position = {16, 0};
+        cameraData.size = {64, 64};
+        auto& cameraDraw = camera.addComponent<editor::DrawableComponent>();
+        cameraDraw.setDepth(10);
+        cameraDraw.setReorderZBuffer(true);
+        cameraDraw.setColor(robot2D::Color(0, 0, 0, 0));
+        scene.update(0);
+        scene.setRuntimeCamera(true);
+        scene.setRuntimeWindowSize({32, 32});
+        target.beforeRender();
+        target.clear(robot2D::Color::Black);
+        target.draw(scene);
+        target.afterRender();
+        std::array<unsigned char, 4> pixel {};
+        glReadPixels(9, 23, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixel.data());
+        CHECK(pixel[0] > 250 && pixel[1] < 3 && pixel[2] < 3);
+        CHECK(glGetError() == GL_NO_ERROR);
     }
 
     void hierarchy() {
@@ -468,6 +506,7 @@ int main(int argc, char** argv) {
         GraphicsContext graphics;
         const std::string name = argv[1];
         if(name == "hierarchy") hierarchy();
+        else if(name == "runtime-camera-order") runtimeCameraOrder();
         else if(name == "asset-roundtrip") assetRoundtrip();
         else if(name == "missing-assets") missingAssets();
         else if(name == "roundtrip") roundtrip();

@@ -3,6 +3,7 @@
 #include <GLFW/glfw3.h>
 #include <robot2D/Graphics/GL.hpp>
 #include <robot2D/Graphics/RenderTarget.hpp>
+#include <robot2D/Graphics/RenderWindow.hpp>
 #include <robot2D/Graphics/QuadBatchRender.hpp>
 #include <robot2D/Util/Logger.hpp>
 #include <spdlog/sinks/ostream_sink.h>
@@ -241,8 +242,8 @@ namespace {
             atlas.create({1, 1}, &coverage, 0, ImageColorFormat::RED);
             CHECK(shader.createShader(ShaderType::Vertex,
                 "#version 430 core\nlayout(location=0) in vec2 position; layout(location=1) in vec2 uv;"
-                "layout(location=2) in vec4 color; out vec2 coords; out vec4 tint;"
-                "void main(){coords=uv; tint=color; gl_Position=vec4(position.x/32.-1.,1.-position.y/32.,0,1);}",
+                "layout(location=2) in vec4 color; out vec2 coords; out vec4 tint; uniform mat4 projection;"
+                "void main(){coords=uv; tint=color; gl_Position=projection*vec4(position,0,1);}",
                 false, "mixed-text.vert"));
             CHECK(shader.createShader(ShaderType::Fragment,
                 "#version 430 core\nin vec2 coords; in vec4 tint; out vec4 pixel; uniform sampler2D atlas;"
@@ -261,6 +262,9 @@ namespace {
             glDeleteProgram(shader.getProgram());
         }
         void draw(Target& target, unsigned int layer = 1) {
+            shader.use();
+            shader.setMatrix("projection", target.getView(layer).getTransform().get_matrix());
+            shader.unUse();
             RenderStates states;
             states.layerID = layer;
             states.shader = &shader;
@@ -333,6 +337,146 @@ namespace {
         CHECK(surface.target.getStats().drawCalls == 0);
     }
 
+    void camera(bool api45) {
+        Surface surface(api45);
+        surface.begin();
+        surface.quad(Color::Red);
+        View shifted(FloatRect{16, 0, 64, 64});
+        surface.target.setView(shifted);
+        surface.quad(Color::Blue, 1, 32);
+        surface.target.afterRender();
+        surface.expect(4, 4, 255, 0, 0);
+        surface.expect(20, 4, 0, 0, 255);
+        CHECK(surface.target.getStats().drawCalls == 2);
+        surface.quad(Color::Green, 1, 48);
+        surface.target.setView(shifted);
+        surface.quad(Color::Yellow, 1, 56);
+        surface.target.afterRender();
+        surface.expect(36, 4, 0, 255, 0);
+        surface.expect(44, 4, 255, 255, 0);
+        CHECK(surface.target.getStats().drawCalls == 3);
+        View raw(FloatRect{0, 0, 64, 64});
+        surface.quad(Color::Cyan, 1, 64);
+        surface.target.setRawView(const_cast<float*>(raw.getTransform().get_matrix()));
+        surface.quad(Color::White, 1, 56);
+        surface.target.afterRender();
+        surface.expect(52, 4, 0, 255, 255);
+        surface.expect(60, 4, 255, 255, 255);
+        surface.begin();
+        View half(FloatRect{0, 0, 64, 64});
+        half.setViewport({0.5f, 0, 0.5f, 1});
+        surface.target.setView(half);
+        surface.quad(Color::Green);
+        surface.target.afterRender();
+        surface.expect(34, 4, 0, 255, 0);
+        surface.expect(4, 4, 0, 0, 0);
+        const auto mapped = surface.target.mapPixelToCoords({48, 32});
+        CHECK(std::abs(mapped.x - 32) < 0.01f && std::abs(mapped.y - 32) < 0.01f);
+        surface.begin();
+        surface.target.setView(raw);
+        AtlasGeometry text(Color(0, 255, 0, 128));
+        surface.quad(Color::Red);
+        text.draw(surface.target);
+        surface.target.setView(shifted);
+        // Updating this shared text shader is safe because setView completed the previous segment.
+        text.draw(surface.target);
+        surface.quad(Color::Blue, 1, 32);
+        surface.target.afterRender();
+        surface.expect(4, 4, 127, 128, 0);
+        surface.expect(20, 4, 0, 0, 255);
+        CHECK(surface.target.getStats().drawCalls == 4);
+    }
+
+    void viewportResize(bool api45) {
+        Surface surface(api45);
+        surface.begin();
+        surface.quad(Color::Red);
+        const View view(FloatRect{0, 0, 64, 64});
+        surface.target.setViewVirtual({32, 32}, view);
+        surface.quad(Color::Blue, 1, 32);
+        surface.target.setViewVirtual({64, 64}, view);
+        surface.quad(Color::Green, 1, 48);
+        surface.target.setViewVirtual({64, 64}, view);
+        surface.quad(Color::Yellow, 1, 56);
+        surface.target.afterRender();
+        surface.expect(4, 4, 255, 0, 0);
+        surface.expect(18, 40, 0, 0, 255);
+        surface.expect(52, 16, 0, 255, 0);
+        surface.expect(60, 16, 255, 255, 0);
+        CHECK(surface.target.getStats().drawCalls == 3);
+        const auto middle = surface.target.mapPixelToCoords({32, 32});
+        CHECK(std::abs(middle.x - 32) < 0.01f && std::abs(middle.y - 32) < 0.01f);
+        surface.target.setViewVirtual({32, 64}, view);
+        // Letterbox is 32x18 at GL y=23: top-left pixel (0,23) maps to world origin.
+        const auto corner = surface.target.mapPixelToCoords({0, 23});
+        CHECK(std::abs(corner.x) < 0.01f && std::abs(corner.y) < 0.01f);
+        const auto center = surface.target.mapPixelToCoords({16, 32});
+        CHECK(std::abs(center.x - 32) < 0.01f && std::abs(center.y - 32) < 0.01f);
+        GLint before[4];
+        glGetIntegerv(GL_VIEWPORT, before);
+        surface.target.setViewVirtual({0, 0}, view);
+        GLint after[4];
+        glGetIntegerv(GL_VIEWPORT, after);
+        CHECK(std::equal(before, before + 4, after));
+        surface.target.setViewVirtual({1, 1}, view, 999);
+        const auto tiny = surface.target.mapPixelToCoords({0, 0});
+        CHECK(std::isfinite(tiny.x) && std::isfinite(tiny.y));
+        surface.target.setViewVirtual({64, 64}, view);
+        {
+            Target other(api45);
+            other.setViewVirtual({32, 32}, view);
+            surface.target.clearScissor({0, 0, 64, 64}, Color::Red);
+            surface.expect(60, 32, 255, 0, 0);
+        }
+    }
+
+    class ResizeWindow : public RenderWindow {
+    public:
+        using RenderWindow::RenderWindow;
+        void notifyResize(int width, int height) {
+            onResize(width, height);
+        }
+    };
+
+    void windowResize(bool api45) {
+        auto* original = glfwGetCurrentContext();
+        GLFWwindow* created = nullptr;
+        {
+            ResizeWindow window({64, 64}, "hidden resize regression",
+                WindowContext(false, false, api45 ? WindowContext::RenderApi::OpenGL4_5
+                                                 : WindowContext::RenderApi::OpenGL4_3));
+            created = glfwGetCurrentContext();
+            CHECK(glfwGetWindowAttrib(created, GLFW_VISIBLE) == GLFW_FALSE);
+            window.beforeRender();
+            window.clear(Color::Black);
+            RenderStates red;
+            red.color = Color::Red;
+            window.draw(VertexData{{{0, 0}, {0, 0}}, {{8, 0}, {1, 0}},
+                    {{8, 8}, {1, 1}}, {{0, 8}, {0, 1}}}, red);
+            // GLFW may update the GL viewport before delivering the logical resize event.
+            glViewport(0, 0, 128, 64);
+            window.resize({128, 64});
+            std::array<unsigned char, 4> oldPixel {};
+            glReadPixels(4, 59, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, oldPixel.data());
+            CHECK(oldPixel[0] > 250 && oldPixel[1] < 3 && oldPixel[2] < 3);
+            CHECK(window.getSize() == vec2u{128, 64});
+            View fixed(FloatRect{0, 0, 64, 64});
+            const auto point = window.mapPixelToCoords({64, 32}, fixed);
+            CHECK(std::abs(point.x - 32) < 0.01f && std::abs(point.y - 32) < 0.01f);
+            CHECK(window.getDefaultView().getSize() == vec2f{128, 64});
+            window.notifyResize(32, 64);
+            CHECK(window.getSize() == vec2u{32, 64});
+            const auto next = window.mapPixelToCoords({16, 32}, fixed);
+            CHECK(std::abs(next.x - 32) < 0.01f && std::abs(next.y - 32) < 0.01f);
+            CHECK(window.getDefaultView().getSize() == vec2f{32, 64});
+            window.notifyResize(0, 0);
+            CHECK(window.getDefaultView().getSize() == vec2f{32, 64});
+            CHECK(glGetError() == GL_NO_ERROR);
+        }
+        glfwMakeContextCurrent(original);
+        glfwDestroyWindow(created);
+    }
+
     void malformed(bool api45, std::ostringstream& errors) {
         Surface surface(api45);
         surface.begin();
@@ -384,6 +528,9 @@ int main(int argc, char** argv) {
             else if(name == "three-d") geometry(api45, true);
             else if(name == "mixed") mixed(api45);
             else if(name == "mixed-overflow") mixedOverflow(api45);
+            else if(name == "camera") camera(api45);
+            else if(name == "viewport-resize") viewportResize(api45);
+            else if(name == "window-resize") windowResize(api45);
             else if(name == "malformed") malformed(api45, errors);
             else CHECK(false && "Unknown test case");
             CHECK(glGetError() == GL_NO_ERROR);
