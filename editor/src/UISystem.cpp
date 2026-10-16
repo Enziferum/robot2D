@@ -35,61 +35,26 @@ namespace editor {
     }
 
     void UISystem::handleEvents(const robot2D::Event& event) {
-        if(event.getIf<robot2D::Event::LostFocus>()) {
+        using Event = robot2D::Event;
+        if(event.getIf<Event::LostFocus>()) {
             m_mouseDownEvents.clear();
             m_mouseUpEvents.clear();
             return;
         }
-
-        if(event.type() == robot2D::Event::Type::MousePressed) {
-
-            if(event.get<robot2D::Event::MouseButtonEvent>().btn == mouse2int(robot2D::Mouse::MouseLeft))
-                m_mouseDownEvents.push_back({Flags::LeftMouse, m_editorCamera -> convertPixelToCoords({
-                        event.get<robot2D::Event::MouseButtonEvent>().x,
-                        event.get<robot2D::Event::MouseButtonEvent>().y}).as<int>()});
-            if(event.get<robot2D::Event::MouseButtonEvent>().btn == mouse2int(robot2D::Mouse::MouseRight))
-                m_mouseDownEvents.push_back({Flags::RightMouse, m_editorCamera -> convertPixelToCoords({
-                        event.get<robot2D::Event::MouseButtonEvent>().x,
-                        event.get<robot2D::Event::MouseButtonEvent>().y}).as<int>()});
-            if(event.get<robot2D::Event::MouseButtonEvent>().btn == mouse2int(robot2D::Mouse::MouseMiddle))
-                m_mouseDownEvents.push_back({Flags::MiddleMouse, m_editorCamera -> convertPixelToCoords({
-                        event.get<robot2D::Event::MouseButtonEvent>().x,
-                        event.get<robot2D::Event::MouseButtonEvent>().y}).as<int>()});
-
-            m_eventPosition = m_editorCamera -> convertPixelToCoords( {
-                static_cast<float>(event.get<robot2D::Event::MouseButtonEvent>().x),
-                static_cast<float>(event.get<robot2D::Event::MouseButtonEvent>().y)}
-                    ).as<int>();
+        if(!m_editorCamera) return;
+        if(const auto* button = event.getIf<Event::MouseButtonEvent>()) {
+            const auto position = m_editorCamera -> convertPixelToCoords({button -> x, button -> y}).as<int>();
+            m_eventPosition = position;
+            Flags flag;
+            if(button -> btn == mouse2int(robot2D::Mouse::MouseLeft)) flag = Flags::LeftMouse;
+            else if(button -> btn == mouse2int(robot2D::Mouse::MouseRight)) flag = Flags::RightMouse;
+            else if(button -> btn == mouse2int(robot2D::Mouse::MouseMiddle)) flag = Flags::MiddleMouse;
+            else return;
+            if(event.getIf<Event::MousePressed>()) m_mouseDownEvents.push_back({flag, position});
+            else m_mouseUpEvents.push_back(flag);
         }
-
-        if(event.type() == robot2D::Event::Type::MouseReleased) {
-            if(event.get<robot2D::Event::MouseButtonEvent>().btn == mouse2int(robot2D::Mouse::MouseLeft))
-                m_mouseUpEvents.emplace_back(Flags::LeftMouse);
-            if(event.get<robot2D::Event::MouseButtonEvent>().btn == mouse2int(robot2D::Mouse::MouseRight))
-                m_mouseUpEvents.emplace_back(Flags::RightMouse);
-            if(event.get<robot2D::Event::MouseButtonEvent>().btn == mouse2int(robot2D::Mouse::MouseMiddle))
-                m_mouseUpEvents.emplace_back(Flags::MiddleMouse);
-
-            m_eventPosition = m_editorCamera -> convertPixelToCoords({
-                static_cast<float>(event.get<robot2D::Event::MouseButtonEvent>().x),
-                static_cast<float>(event.get<robot2D::Event::MouseButtonEvent>().y)
-            }).as<int>();
-        }
-
-        if(event.type() == robot2D::Event::Type::MouseMoved) {
-            m_eventPosition = m_editorCamera -> convertPixelToCoords({
-                static_cast<float>(event.get<robot2D::Event::MouseButtonEvent>().x),
-                static_cast<float>(event.get<robot2D::Event::MouseButtonEvent>().y)
-            }).as<int>();
-        }
-
-        if(event.type() == robot2D::Event::Type::MouseWheel) {
-            // no-op //
-        }
-
-        if(event.type() == robot2D::Event::Type::KeyPressed) {
-            // no-op //
-        }
+        else if(const auto* move = event.getIf<Event::MouseMoved>())
+            m_eventPosition = m_editorCamera -> convertPixelToCoords({move -> x, move -> y}).as<int>();
     }
 
     std::uint32_t UISystem::addMousePressedCallback(MousePressedCallback&& callback) {
@@ -133,16 +98,6 @@ namespace editor {
                 }
 
             }
-            for(const auto& downEvent : m_mouseDownEvents) {
-                if(!hitbox.m_area.contains({static_cast<float>(downEvent.position.x),
-                                            static_cast<float>(downEvent.position.y)}))
-                    continue;
-                const auto index = hitbox.callbackIDs[UIHitbox::CallbackID::MouseDown];
-                if(index >= 0 && static_cast<std::size_t>(index) < m_mousePressedCallbacks.size() &&
-                    m_mousePressedCallbacks[index])
-                    m_mousePressedCallbacks[index](ent, downEvent.button);
-            }
-
             if(!hitbox.isHovered) {
                 auto index = hitbox.callbackIDs[UIHitbox::CallbackID::MouseMoved];
                 if(index >= 0)
@@ -151,6 +106,20 @@ namespace editor {
                 hitbox.wasHovered = false;
             }
 
+        }
+
+        // Deliver presses chronologically across hitboxes, not grouped by entity.
+        for(const auto& downEvent : m_mouseDownEvents) {
+            for(auto& ent : m_entities) {
+                auto& hitbox = ent.getComponent<UIHitbox>();
+                if(!hitbox.m_area.contains({static_cast<float>(downEvent.position.x),
+                                            static_cast<float>(downEvent.position.y)}))
+                    continue;
+                const auto index = hitbox.callbackIDs[UIHitbox::CallbackID::MouseDown];
+                if(index >= 0 && static_cast<std::size_t>(index) < m_mousePressedCallbacks.size() &&
+                    m_mousePressedCallbacks[index])
+                    m_mousePressedCallbacks[index](ent, downEvent.button);
+            }
         }
 
         m_mouseDownEvents.clear();

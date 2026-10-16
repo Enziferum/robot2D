@@ -1,5 +1,9 @@
 #include "TestSupport.hpp"
 #include <editor/EventBinder.hpp>
+#include <editor/UISystem.hpp>
+#include <editor/Components.hpp>
+#include <editor/components/UIHitBox.hpp>
+#include <robot2D/Ecs/Scene.hpp>
 #include <editor/EventHistory.hpp>
 #include <editor/ShortCutManager.hpp>
 #include <robot2D/Core/EventQueue.hpp>
@@ -34,7 +38,55 @@ namespace {
         { Event original(Event::FilesDropped{{"a/file.png", "b/font.ttf"}}); copy = original; }
         CHECK(copy.get<Event::FilesDropped>().paths[1] == "b/font.ttf");
     }
+    struct InputCamera final : editor::IEditorCamera {
+        InputCamera() : IEditorCamera(editor::EditorCameraType::Orthographic) {
+        }
+        void setViewportSize(robot2D::vec2f) override {
+        }
+        void handleEvents(const Event&) override {
+        }
+        void update(robot2D::vec2f, float) override {
+        }
+        robot2D::vec2f convertPixelToCoords(robot2D::vec2f value) const override {
+            return value;
+        }
+    };
+    void runtimeClickOrder() {
+        robot2D::MessageBus bus;
+        robot2D::ecs::Scene scene(bus, false);
+        editor::UISystem ui(bus);
+        ui.setCamera(std::make_shared<InputCamera>());
+        std::vector<int> received;
+        const auto callback = ui.addMousePressedCallback([&](robot2D::ecs::Entity entity, std::uint64_t) {
+            received.push_back(static_cast<int>(entity.getIndex()));
+        });
+        const auto add = [&](float x) {
+            auto entity = scene.createEntity();
+            entity.addComponent<editor::TransformComponent>();
+            auto& hitbox = entity.addComponent<editor::UIHitbox>();
+            hitbox.m_area = {x, 0, 20, 20};
+            hitbox.callbackIDs[editor::UIHitbox::MouseDown] = static_cast<std::int32_t>(callback);
+            CHECK(ui.addEntity(entity));
+            return entity;
+        };
+        const auto first = add(0);
+        const auto second = add(100);
+        ui.handleEvents(button(true, 105, 5));
+        ui.handleEvents(button(false, 105, 5));
+        ui.handleEvents(button(true, 5, 5));
+        ui.handleEvents(button(false, 5, 5));
+        ui.handleEvents(Event(Event::MouseMoved{{500, 500}}));
+        ui.update(0.016F);
+        CHECK(received == std::vector<int>({static_cast<int>(second.getIndex()), static_cast<int>(first.getIndex())}));
+        ui.update(0.016F);
+        CHECK(received.size() == 2);
+        ui.handleEvents(button(true, 5, 5));
+        ui.handleEvents(Event(Event::LostFocus{}));
+        ui.update(0.016F);
+        CHECK(received.size() == 2);
+    }
     void order() {
+        runtimeClickOrder();
         robot2D::EventQueue queue;
         queue.push(Event::MousePressed{{0, 1.5F, 2.5F, 0}});
         queue.push(Event::MouseMoved{{3.5F, 4.5F}});
