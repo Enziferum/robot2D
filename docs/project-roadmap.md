@@ -206,3 +206,46 @@ UI/graphics приёмка не выполнялась. Сценарий: отк
 Window/Engine с отдельными контрактами и регрессиями. Проверка ресурсов Graphics
 связана с RENDER-03/04. ECS, Snapshot и CancellationToken остаются вне CORE-01.
 Первый шаг не завершает весь согласованный план.
+
+## CORE-01: Logger/Assert, второй шаг 2026-10-16
+
+Пользователь поручил продолжение в той же ветке `codex/core-01-util-contracts`
+и [PR #112](https://github.com/Enziferum/robot2D/pull/112). CI первого шага
+8c57da2 подтверждён для Linux/Windows: [run 38894835386](https://github.com/Enziferum/robot2D/actions/runs/38894835386).
+
+Исправлены форматтер vec2f (тип аргумента, const format, f/e) и const format
+для vec2u. Logger допускает безопасный первый вызов через getters, однократный
+Init с явным путём, повтор без очистки журнала, отказ с последующей повторной
+попыткой и одновременную инициализацию. Каналы публикуются после подготовки,
+ошибки регистрации откатываются. Сохранены mutable getter-слоты capture-тестов,
+формат/уровни и flush каждого сообщения для ConsolePanel.
+
+Assertions перенесены в Util/Assert.hpp; Core/Assert.hpp сохраняет совместимость.
+Без NDEBUG включены по умолчанию, RB_ASSERTS явно включает их и в Release.
+Условие проверяется один раз, сообщение вычисляется только при ошибке;
+неуспех пишет выражение/файл/строку/сообщение и завершает через abort, включая
+отказ самого логгера. При отключении ни условие, ни сообщение не вычисляются.
+RB_DEBUGBREAK теперь явно вызывает abort. Исправлен вызов без semicolon в
+ScriptingEngine; соседняя логика scripting не изменялась.
+
+Добавлены постоянные Formatter tests, шесть отдельных Logger-сценариев и
+assertion/death tests для Release override, Debug default и Release disable.
+Исключение внутри варианта std::call_once зависало на повторе в установленном
+MinGW; тесты выявили это, реализация переведена на atomic + mutex, и сценарии
+отказа/повтора затем прошли. Все цели подключены к robot2D-core-tests.
+
+Проверки: Ninja/Release GCC 16.2.0; robot2D, core-tests, editor-test-suite и
+HTML документация собраны. CTest 94/94 без пропусков (72 Core, 22 editor
+headless); отдельно graphics diagnostics/shaders 2/2 на скрытом GL-контексте.
+Строгий clang-tidy выбранных изменённых единиц пройден, Uncrustify 0.83.0
+применён только к изменённым C++ файлам. Полный hook и commit/CI фиксируются
+в CORE-01. Требования и примеры — [core-api.md](core-api.md).
+
+Ручная UI-приёмка ConsolePanel не выполнялась: проверить запуск редактора,
+видимость обычных сообщений/ошибок и сохранность журнала при повторном Init
+в одном процессе. Настоящее нарушение assertion намеренно завершает процесс;
+автоматические death tests проверяют это в дочерних процессах.
+
+Далее — FileInputStream, Time/Clock, векторы, Window/Engine с отдельными
+контрактами и проверками. CORE-01 остаётся открытой; ECS, Snapshot и
+CancellationToken этим шагом не изменялись.
