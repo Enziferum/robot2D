@@ -27,6 +27,7 @@
 #include <robot2D/Core/Window.hpp>
 
 #include <mono/metadata/loader.h>
+#include <mono/metadata/appdomain.h>
 #include <mono/metadata/object.h>
 #include <mono/metadata/reflection.h>
 
@@ -298,7 +299,7 @@ namespace editor {
     }
 
 
-    static SceneEntity animationEntity(UUID entityID) {
+    static SceneEntity scriptEntity(UUID entityID) {
         auto* service = ScriptGlue::getService();
         if(!service)
             return {};
@@ -306,11 +307,32 @@ namespace editor {
         return interactor ? interactor -> getEntity(entityID) : SceneEntity{};
     }
 
+    static MonoString* TextComponent_GetText(UUID entityID) {
+        auto entity = scriptEntity(entityID);
+        if(!entity || !entity.hasComponent<TextComponent>())
+            return mono_string_new(mono_domain_get(), "");
+        const auto& text = entity.getComponent<TextComponent>().getText();
+        return mono_string_new_len(mono_domain_get(), text.data(), static_cast<unsigned int>(text.size()));
+    }
+
+    static bool TextComponent_SetText(UUID entityID, MonoString* value) {
+        auto entity = scriptEntity(entityID);
+        if(!entity || !entity.hasComponent<TextComponent>())
+            return false;
+        if(value) {
+            const auto* characters = mono_string_chars(value);
+            for(int i = 0; i < mono_string_length(value); ++i)
+                if(characters[i] == 0) return false;
+        }
+        entity.getComponent<TextComponent>().setText(value ? Utils::MonoStringToString(value) : std::string{});
+        return true;
+    }
+
     static bool AnimationComponent_TryPlay(UUID entityID, MonoString* name) {
         if(!name)
             return false;
         const auto clipName = Utils::MonoStringToString(name);
-        const bool result = playAnimation(animationEntity(entityID), clipName);
+        const bool result = playAnimation(scriptEntity(entityID), clipName);
         if(!result)
             RB_EDITOR_WARN(
                 "Animator::TryPlay: entity={0}, clip={1}, reason=entity, component or clip unavailable/invalid",
@@ -323,11 +345,11 @@ namespace editor {
     }
 
     static void AnimationComponent_Stop(UUID entityID, MonoString* name) {
-        stopAnimation(animationEntity(entityID), name ? Utils::MonoStringToString(name) : std::string{});
+        stopAnimation(scriptEntity(entityID), name ? Utils::MonoStringToString(name) : std::string{});
     }
 
     static bool AnimationComponent_IsPlaying(UUID entityID) {
-        auto entity = animationEntity(entityID);
+        auto entity = scriptEntity(entityID);
         return entity && entity.hasComponent<AnimatorComponent>() &&
                entity.getComponent<AnimatorComponent>().playing();
     }
@@ -466,6 +488,8 @@ namespace editor {
         RB_ADD_INTERNAL_CALL(CameraComponent_GetSize);
         RB_ADD_INTERNAL_CALL(CameraComponent_SetSize);
         RB_ADD_INTERNAL_CALL(DrawableComponent_Flip);
+        RB_ADD_INTERNAL_CALL(TextComponent_GetText);
+        RB_ADD_INTERNAL_CALL(TextComponent_SetText);
         RB_ADD_INTERNAL_CALL(AnimationComponent_Play);
         RB_ADD_INTERNAL_CALL(AnimationComponent_TryPlay);
         RB_ADD_INTERNAL_CALL(AnimationComponent_IsPlaying);
