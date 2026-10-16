@@ -29,6 +29,7 @@ namespace robot2D {
             ShaderHandler m_quadShader;
             robot2D::View m_view;
             bool m_customProjection = false;
+            bool m_followsDefaultView = true;
 
             std::vector<VertexArrayCache> m_vertexArrayCache;
         };
