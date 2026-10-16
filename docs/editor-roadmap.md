@@ -656,3 +656,17 @@ CPU-загрузка ресурсов без исключения. Редакт�
 без пропусков, включая два новых headless сценария совместимости/ошибок и
 проверку пересохранения чистых ссылок. Следующий шаг — обязательный hook,
 PR в dev и повторное открытие Shooter в пользовательском редакторе.
+
+
+## IMGUI-01 оконные scopes 2026-10-16
+
+По поручению пользователя реализован независимый от CORE-02 шаг
+[IMGUI-01 #121](https://github.com/Enziferum/robot2D/issues/121): WindowScope,
+RAII стилей, общая основа createWindow/IPanel и KeepAliveOnly для скрытого
+host dockspace. Ветка IMGUI-01 от удалённого dev @ c05a55b, отдельный worktree;
+GuiImpl и Core не менялись. Редактор/core-tests/suite собраны, CTest 56/56
+без пропусков при выключенных graphics; четыре новых headless-сценария.
+Контракты, границы и ручная приёмка — [разбор robot2D-imgui](imgui-backend-review.md).
+Обязательный hook прошёл: Python 47/47, формат, сборка/CTest и строгий
+clang-tidy 179 собственных единиц; отдельно проверены Api.cpp/WindowScope.cpp
+и заголовки robot2D-imgui. Следующий шаг — PR/CI и ручная проверка панелей/layout.

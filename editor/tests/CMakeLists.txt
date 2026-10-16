@@ -1,3 +1,6 @@
+add_executable(robot2D-window-scope-tests WindowScopeTests.cpp)
+target_link_libraries(robot2D-window-scope-tests PRIVATE robot2D-editor-objects)
+
 add_executable(robot2D-task-tests TaskQueueTests.cpp)
 target_link_libraries(robot2D-task-tests PRIVATE robot2D-editor-objects)
 
@@ -18,7 +21,7 @@ target_link_libraries(robot2D-graphics-diagnostics-tests PRIVATE robot2D-core)
 add_executable(robot2D-batch-render-tests BatchRenderTests.cpp)
 target_link_libraries(robot2D-batch-render-tests PRIVATE robot2D-core)
 
-add_custom_target(robot2D-editor-test-suite DEPENDS robot2D-task-tests robot2D-editor-tests
+add_custom_target(robot2D-editor-test-suite DEPENDS robot2D-window-scope-tests robot2D-task-tests robot2D-editor-tests
         robot2D-scene-tests robot2D-version-tests robot2D-graphics-diagnostics-tests robot2D-batch-render-tests)
 
 function(rb2d_register_test name executable scenario labels)
@@ -34,6 +37,10 @@ function(rb2d_register_test name executable scenario labels)
         set_tests_properties("${name}" PROPERTIES ENVIRONMENT "PATH=${test_path}")
     endif()
 endfunction()
+
+foreach(scope_case IN ITEMS windows unwind panels docking)
+    rb2d_register_test("imgui-scope-${scope_case}" robot2D-window-scope-tests "${scope_case}" "headless;imgui")
+endforeach()
 
 foreach(task_case IN ITEMS empty completion shutdown clear callback dispatch)
     rb2d_register_test("task-queue-${task_case}" robot2D-task-tests "${task_case}" "headless;async")

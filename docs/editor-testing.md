@@ -104,3 +104,14 @@ headless-запуск для Windows/Linux; удалённый CI и Linux ло�
 Затем при настройке CI-01 выполнен отдельный прогон Ninja/Release:
 редактор собран, 17 зарегистрированных core-тестов и 18 headless-сценариев прошли.
 Настройка CI и просмотр отчётов описаны в [CI и отчётах](ci.md).
+
+
+## Оконные scopes ImGui
+
+`imgui-scope-windows`, `imgui-scope-unwind`, `imgui-scope-panels` и
+`imgui-scope-docking` входят в robot2D-editor-test-suite и headless-группу.
+Создают настоящий ImGui context/кадр без native окна и GL: видимость callback,
+стек окон/стилей после раннего выхода/исключения, вложенность, состояние/focus
+IPanel и сохранение docking при скрытом host. Запуск: `ctest --test-dir <build-dir>
+-R imgui-scope --output-on-failure`. Крестик зарегистрированной панели,
+перезапуск с layout и внешний вид проверяются вручную по IMGUI-01.
