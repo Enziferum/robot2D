@@ -7,7 +7,8 @@ namespace robot2D
 
     public enum PhysicsEventType : byte
     {
-        Enter=0, Stay=1, Exit=2, EnterTrigger=3, StayTrigger=4, ExitTrigger=5
+        // Shared with native PhysicsEventType; values are part of the interop ABI.
+        Enter=0, Stay=1, Exit=2, EnterTrigger=3, ExitTrigger=4, StayTrigger=5
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
@@ -172,10 +173,7 @@ namespace robot2D
         public virtual void OnUpdate(float deltaTime) { }
         public virtual void OnCollision2DInternal(ulong self, ulong other, int typeInt, ref PhysicsContact2D ev)
         {
-            Console.WriteLine(Marshal.OffsetOf<PhysicsContact2D>(nameof(PhysicsContact2D.ny)));
-            Console.WriteLine("Entity: OnCollision2DInternal");
             var type = (PhysicsEventType)typeInt;
-            Console.WriteLine($"Collision Type: {type}");
             
             // нормаль "к нам"
             var nToMe = (self == ev.entityA)
