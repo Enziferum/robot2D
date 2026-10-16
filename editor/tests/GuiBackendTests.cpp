@@ -94,7 +94,7 @@ namespace {
     }
 
     void invalidFonts() {
-        for(int kind = 0; kind < 4; ++kind) {
+        for(int kind = 0; kind < 5; ++kind) {
             Context context;
             priv::FontSet fonts;
             GuiConfiguration config;
@@ -105,6 +105,7 @@ namespace {
             if(kind == 1) config.fonts[0].mergeInto = 99;
             if(kind == 2) config.fonts[0].size = NAN;
             if(kind == 3) config.fonts[0].glyphRanges = {10, 5, 0};
+            if(kind == 4) config.fonts[0].glyphRanges = {0};
             std::string error;
             CHECK(!fonts.build(config, error)); CHECK(!error.empty());
         }
@@ -211,6 +212,7 @@ namespace {
                       std::to_string(pixel[0]) + "," + std::to_string(pixel[1]) + "," + std::to_string(pixel[2]));
         CHECK(std::abs(int(pixel[1]) - green) <= 2);
         CHECK(std::abs(int(pixel[2]) - blue) <= 2);
+        CHECK(pixel[3] == 255);
     }
 
     std::vector<int> calls;
@@ -259,6 +261,7 @@ namespace {
         list -> AddRectFilled({16, 0}, {32, 16}, IM_COL32(0, 255, 0, 255));
         list -> AddCallback(ImDrawCallback_ResetRenderState, nullptr);
         list -> AddCallback(mark, nullptr);
+        list -> AddRectFilled({0, 0}, {16, 16}, IM_COL32(0, 255, 0, 128));
         list -> PushClipRect({48, 0}, {56, 16}, true);
         list -> AddRectFilled({48, 0}, {64, 16}, IM_COL32(255, 0, 255, 255));
         list -> PopClipRect();
@@ -311,6 +314,7 @@ namespace {
         CHECK(mask == std::array<GLboolean, 4>{GL_TRUE, GL_FALSE, GL_TRUE, GL_FALSE});
         CHECK(glIsEnabled(GL_DEPTH_TEST)); CHECK(glIsEnabled(GL_SCISSOR_TEST));
         CHECK(!glIsEnabled(GL_RASTERIZER_DISCARD));
+        expectPixel(8, 8, 127, 128, 0);
         expectPixel(40, 8, 0, 0, 255);
         expectPixel(52, 8, 255, 0, 255); expectPixel(60, 8, 0, 0, 0);
         expectPixel(72, 8, 0, 255, 255);
