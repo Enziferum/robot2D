@@ -202,8 +202,12 @@ namespace editor {
         if(m_logic.getState() == AppState::Editor) m_editorModule -> handleEvents(event);
         if(event.getIf<robot2D::Event::Closed>()) {
             if(m_logic.getState() == AppState::Editor) {
+                RB_EDITOR_INFO("[Application] Window close requested; checking project changes");
                 m_window -> cancelClose();
-                m_editorModule -> closeCurrentProject([this]() { m_running = false; });
+                m_editorModule -> closeCurrentProject([this]() {
+                    RB_EDITOR_INFO("[Application] Project close accepted; stopping main loop");
+                    m_running = false;
+                });
             }
             else m_running = false;
         }
@@ -217,6 +221,8 @@ namespace editor {
 
             m_messageDispatcher.process(message);
         }
+        // Dispatch is synchronous; handlers have finished using this batch of payloads.
+        m_messageBus.clear();
     }
 
     void Application::update(float dt) {
