@@ -119,14 +119,15 @@ namespace editor {
                     continue;
 
                 auto textSystem = getScene() -> getSystem<TextSystem>();
-                auto vertexArray = textSystem -> getVertexArray();
                 renderStates.shader = const_cast<robot2D::ShaderHandler*>(&textSystem -> getShader());
                 renderStates.shader -> use();
                 auto view = target.getView(drawable.getLayerIndex()).getTransform();
                 renderStates.shader -> setMatrix("projection", view.get_matrix());
                 renderStates.shader -> unUse();
-                renderStates.renderInfo.indexCount = textSystem -> getIndexCount();
-                target.draw(vertexArray, renderStates);
+                for(const auto& batch: textSystem -> getBatches(ent.getIndex())) {
+                    renderStates.renderInfo.indexCount = batch -> getIndexCount();
+                    target.draw(batch -> getVertexArray(), renderStates);
+                }
             }
             else {
                 auto& vertices = drawable.getVertices();
