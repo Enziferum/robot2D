@@ -2,6 +2,7 @@ import argparse
 import importlib.util
 import io
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -17,6 +18,16 @@ spec.loader.exec_module(review)
 
 class ReviewTests(unittest.TestCase):
     def setUp(self):
+        # Hooks export repository-local variables. Synthetic repositories must
+        # not inherit them or git init/config may modify the calling repository.
+        environment = os.environ.copy()
+        local_variables = subprocess.check_output(
+            ['git', 'rev-parse', '--local-env-vars'], text=True).splitlines()
+        for name in local_variables:
+            environment.pop(name, None)
+        isolated_git = patch.dict(os.environ, environment, clear=True)
+        isolated_git.start()
+        self.addCleanup(isolated_git.stop)
         temporary = review.ROOT / 'work' / 'review-tests'
         temporary.mkdir(parents=True, exist_ok=True)
         self.temporary = tempfile.TemporaryDirectory(dir=temporary)
@@ -150,6 +161,7 @@ class ReviewTests(unittest.TestCase):
     def test_cli_event_stream_and_error_with_zero_exit(self):
         fake = self.root / 'fake_codex.py'
         fake.write_text('''import json
+import os
 import sys
 sys.stdin.read()
 print(json.dumps({'type': 'thread.started', 'thread_id': 'fake-session'}))

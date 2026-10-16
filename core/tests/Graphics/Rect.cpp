@@ -44,16 +44,16 @@ TEST(Graphics, Graphics_RectContainsOtherRect_Test) {
 
 TEST(Graphics, Graphics_RectNotContainsOtherRect_Test) {
     robot2D::IntRect rect{100, 100, 200, 200};
-    robot2D::IntRect insideRect{150, 150, 110, 30};
+    robot2D::IntRect insideRect{150, 150, 151, 30};
     EXPECT_FALSE(rect.contains(insideRect));
 }
 
 TEST(Graphics, Graphics_RectCreateFrom4Anchors_Test) {
-//    robot2D::IntRect expectRect;
-//    std::array<robot2D::vec2i, 4> anchors;
-//    robot2D::IntRect testRect = robot2D::IntRect::create(anchors[0],
-//                                                         anchors[1],
-//                                                         anchors[2],
-//                                                         anchors[3]);
-//    EXPECT_EQ(expectRect, testRect);
+    //    robot2D::IntRect expectRect;
+    //    std::array<robot2D::vec2i, 4> anchors;
+    //    robot2D::IntRect testRect = robot2D::IntRect::create(anchors[0],
+    //                                                         anchors[1],
+    //                                                         anchors[2],
+    //                                                         anchors[3]);
+    //    EXPECT_EQ(expectRect, testRect);
 }
