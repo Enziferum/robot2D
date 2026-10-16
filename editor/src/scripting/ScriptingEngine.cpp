@@ -273,9 +273,13 @@ namespace editor {
 
 
     void ScriptEngine::Init(const std::string& engineDLLPath) {
+        Init(engineDLLPath, INTERNAL_MONO_ASSEMBLY_DIR, INTERNAL_MONO_CONFIG_DIR);
+    }
+
+    void ScriptEngine::Init(const std::string& engineDLLPath, const std::string& monoLib, const std::string& monoEtc) {
         s_Data = new ScriptEngineData();
 
-        InitMono();
+        InitMono(monoLib, monoEtc);
         ScriptGlue::setService(this);
         ScriptGlue::registerFunctions();
 
@@ -466,9 +470,9 @@ namespace editor {
         return true;
     }
 
-    void ScriptEngine::InitMono() {
+    void ScriptEngine::InitMono(const std::string& monoLib, const std::string& monoEtc) {
         bool enableDebug = false;
-        mono_set_dirs(INTERNAL_MONO_ASSEMBLY_DIR, INTERNAL_MONO_CONFIG_DIR);
+        mono_set_dirs(monoLib.c_str(), monoEtc.c_str());
 
         if(enableDebug) {
             const char* options[] =

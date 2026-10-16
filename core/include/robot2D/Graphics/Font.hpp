@@ -38,10 +38,12 @@ namespace robot2D {
         bool loadFromFile(const std::string& path, int charSize = 20);
         vec2f calculateSize(std::string&& text) const;
 
-        const std::string& getPath() const { return m_path; }
+        const std::string& getPath() const {
+            return m_path;
+        }
         std::unordered_map<int, GlyphQuad> getBufferCache(float scale) const;
         const std::unordered_map<int, GlyphCharacter>& getGlyphCharacters() const;
-        const std::vector<std::unique_ptr<robot2D::Image>>& getImages() const;
+        const std::vector<std::unique_ptr<robot2D::Image> >& getImages() const;
     private:
         bool setup(const std::string& path, int charSize);
         void setupAtlas();
@@ -49,9 +51,10 @@ namespace robot2D {
         void* m_library{nullptr};
         void* m_face{nullptr};
 
-        std::vector<std::unique_ptr<robot2D::Image>> m_images;
+        std::vector<std::unique_ptr<robot2D::Image> > m_images;
         std::unordered_map<int, GlyphCharacter> m_glyphCharacters;
         std::string m_path;
+        std::vector<unsigned char> m_sourceBytes;
 
         bool m_initialized{ false };
     };

@@ -25,6 +25,10 @@
 #include <robot2D/Graphics/Image.hpp>
 #include <robot2D/Util/Logger.hpp>
 
+#include <filesystem>
+#include <fstream>
+#include <iterator>
+#include <limits>
 namespace robot2D {
     #define STB_IMAGE_WRITE_IMPLEMENTATION
 
@@ -37,7 +41,15 @@ namespace robot2D {
         int width = 0;
         int height = 0;
         int channels = 0;
-        unsigned char* ptr = stbi_load(path.c_str(), &width, &height, &channels, desiredChannels);
+        std::ifstream input(std::filesystem::u8path(path), std::ios::binary);
+        if(!input) {
+            RB_CORE_ERROR("Failed to open image: {}", path);
+            return false;
+        }
+        const std::vector<unsigned char> bytes{std::istreambuf_iterator<char>(input), std::istreambuf_iterator<char>{}};
+        if(bytes.empty() || bytes.size() > static_cast<std::size_t>(std::numeric_limits<int>::max())) return false;
+        unsigned char* ptr = stbi_load_from_memory(bytes.data(), static_cast<int>(bytes.size()),
+                &width, &height, &channels, desiredChannels);
         if(ptr) {
             // Assign the image properties
             m_size.x = static_cast<unsigned int>(width);

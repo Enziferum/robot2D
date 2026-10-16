@@ -159,3 +159,49 @@ add_dependencies(robot2D-editor-test-suite robot2D-script-project-tests)
 foreach(script_case IN ITEMS project errors reload)
     rb2d_register_test("editor-script-${script_case}" robot2D-script-project-tests "${script_case}" "headless;scripting")
 endforeach()
+
+add_dependencies(robot2D-editor-test-suite robot2D-player)
+
+add_mono_assembly(TARGET robot2D-player-smoke-script
+    DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/../res/script"
+    SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/PlayerSmoke.cs"
+    REFERENCES "${robot2D_ScriptCore_OUTPUT}"
+    ADDITIONAL_ARGS -sdk:4.8 -langversion:7.2 -warnaserror+)
+add_dependencies(robot2D-player-smoke-script robot2D_ScriptCore)
+add_executable(robot2D-player-fixture PlayerFixture.cpp)
+target_link_libraries(robot2D-player-fixture PRIVATE robot2D-runtime)
+target_compile_definitions(robot2D-player-fixture PRIVATE
+    RB2D_TEST_RESOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../res"
+    RB2D_TEST_PLAYER_SCRIPT="${robot2D-player-smoke-script_OUTPUT}")
+add_dependencies(robot2D-player-fixture robot2D-player-smoke-script)
+add_dependencies(robot2D-editor-test-suite robot2D-player-fixture)
+foreach(mode IN ITEMS inputs runtime)
+    if(mode STREQUAL "runtime" AND NOT RB2D_EDITOR_GRAPHICS_TESTS)
+        continue()
+    endif()
+    set(directory "${CMAKE_CURRENT_BINARY_DIR}/scenarios/player-${mode}")
+    file(MAKE_DIRECTORY "${directory}")
+    add_test(NAME "player-${mode}" COMMAND "${Python3_EXECUTABLE}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/player_process.py" "${mode}"
+        --player "$<TARGET_FILE:robot2D-player>" --fixture "$<TARGET_FILE:robot2D-player-fixture>")
+    set_tests_properties("player-${mode}" PROPERTIES TIMEOUT 180
+        LABELS "editor;player;integration" WORKING_DIRECTORY "${directory}")
+    if(mode STREQUAL "runtime")
+        set_property(TEST "player-${mode}" APPEND PROPERTY LABELS graphics)
+    else()
+        set_property(TEST "player-${mode}" APPEND PROPERTY LABELS headless)
+    endif()
+endforeach()
+
+if(WIN32)
+    set(player_fixture_path "${CMAKE_BINARY_DIR}/player;$ENV{PATH}")
+else()
+    set(player_fixture_path "${CMAKE_BINARY_DIR}/player:$ENV{PATH}")
+endif()
+add_custom_target(robot2D-player-arena
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_BINARY_DIR}/player" "${CMAKE_BINARY_DIR}/player-arena"
+    COMMAND ${CMAKE_COMMAND} -E env "PATH=${player_fixture_path}"
+        $<TARGET_FILE:robot2D-player-fixture> "${CMAKE_BINARY_DIR}/player-arena"
+    DEPENDS robot2D-player robot2D-player-fixture
+    COMMENT "Create a standalone diagnostic arena in the build tree"
+    VERBATIM)

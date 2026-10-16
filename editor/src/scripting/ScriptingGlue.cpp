@@ -421,7 +421,7 @@ namespace editor {
 
         robot2D::vec2f dupPosition = *position;
         auto dupEntity = interactor -> duplicateRuntime(entity, dupPosition);
-        service -> onCreateEntity(dupEntity);
+        if(dupEntity) service -> onCreateEntity(dupEntity);
     }
 
     static MonoObject* GetScriptInstance(UUID uuid) {

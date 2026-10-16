@@ -38,6 +38,7 @@
 #include <editor/commands/DeleteEntitiesCommand.hpp>
 #include <editor/commands/PasteCommand.hpp>
 #include <editor/async/ExportTask.hpp>
+#include <editor/runtime/SceneAssets.hpp>
 #include <utility>
 
 
@@ -392,9 +393,6 @@ namespace editor {
             entity.addComponent<QuadTreeComponent>().iterator = iterator;
         }
 
-        auto* manager = ResourceManager::getManager();
-        auto* localManager = LocalResourceManager::getManager();
-
         if(entity.hasComponent<ButtonComponent>()) {
             auto& btnComp = entity.getComponent<ButtonComponent>();
             if(!btnComp.onClickCallback) {
@@ -408,72 +406,7 @@ namespace editor {
             }
         }
 
-        if(entity.hasComponent<DrawableComponent>()) {
-            auto& drawable = entity.getComponent<DrawableComponent>();
-            auto id = drawable.getTexturePath().empty() ? std::string{} : resourceFileKey(
-                combinePath(m_activeScene -> getAssociatedProjectPath(), drawable.getTexturePath()));
-            if(localManager -> hasTexture(id)) {
-                drawable.setTexture(localManager -> getTexture(id));
-            }
-            else {
-                if(manager -> hasImage(id)) {
-                    auto& image = manager -> getImage(id);
-                    auto* texture = image.getSize().x && image.getSize().y
-                            ? localManager -> addTexture(id) : nullptr;
-                    if(texture) {
-                        texture -> create(image);
-                        drawable.setTexture(*texture);
-                    }
-                }
-            }
-
-        }
-
-        if(entity.hasComponent<TextComponent>()) {
-            auto& text = entity.getComponent<TextComponent>();
-            auto id = text.getFontPath().empty() ? std::string{} : resourceFileKey(
-                combinePath(m_activeScene -> getAssociatedProjectPath(), text.getFontPath()));
-            if(localManager -> hasFont(id)) {
-                text.setFont(localManager -> getFont(id));
-            }
-            else if(manager -> hasFont(id)) {
-                auto& font = manager -> getFont(id);
-                auto* localFont = !font.getImages().empty()
-                        ? localManager -> addFont(id) : nullptr;
-                if(localFont) {
-                    localFont -> clone(font);
-                    text.setFont(*localFont);
-                }
-            }
-        }
-
-        if(entity.hasComponent<AnimationComponent>()) {
-            const auto animations = manager -> getAnimationsCopy(entity.getUUID());
-            for(const auto& copyAnimation: animations) {
-                if(copyAnimation.frames.empty())
-                    continue;
-                auto* animation = localManager -> addAnimation(entity.getComponent<IDComponent>().ID);
-                *animation = copyAnimation;
-
-                auto imageId = resourceFileKey(combinePath(m_activeScene -> getAssociatedProjectPath(),
-                        animation -> texturePath));
-
-                if(localManager -> hasTexture(imageId))
-                    animation -> texture = &localManager -> getTexture(imageId);
-                else {
-                    auto& image = manager -> getImage(imageId);
-                    auto* localTexture = localManager -> addTexture(imageId);
-                    if(localTexture) {
-                        localTexture -> create(image);
-                        animation -> texture = localTexture;
-                    }
-                }
-            }
-            auto& animationComponent = entity.getComponent<AnimationComponent>();
-            const auto* localAnimations = localManager -> findAnimations(entity.getUUID());
-            if(localAnimations && !localAnimations -> empty())
-                animationComponent.setAnimation(&localManager -> getAnimations(entity.getUUID()).front());
-        }
+        activateEntityAssets(m_activeScene, entity);
 
         if(entity.hasChildren()) {
             for(auto& child: entity.getChildren())
