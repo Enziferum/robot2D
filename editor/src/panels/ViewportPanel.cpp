@@ -308,13 +308,24 @@ namespace editor {
             {ICON_FA_EXPAND_ARROWS_ALT, Guizmo2D::Operation::Scale, InstrumentMessage::Type::Scale, "Scale (Shift+Q)"},
             {ICON_FA_REDO_ALT, Guizmo2D::Operation::Rotate, InstrumentMessage::Type::Rotate, "Rotate (Shift+R)"}
         };
+        const float buttonSize = ImGui::GetFrameHeight() * 1.35f;
+        const auto iconButton = [buttonSize](const char* id, const char* icon) {
+            const bool pressed = ImGui::Button(id, {buttonSize, buttonSize});
+            const float scale = 1.35f;
+            const auto extent = ImGui::CalcTextSize(icon);
+            const auto position = ImGui::GetItemRectMin();
+            ImGui::GetWindowDrawList() -> AddText(ImGui::GetFont(), ImGui::GetFontSize() * scale,
+                {position.x + (buttonSize - extent.x * scale) * 0.5f,
+                 position.y + (buttonSize - extent.y * scale) * 0.5f},
+                ImGui::GetColorU32(ImGuiCol_Text), icon);
+            return pressed;
+        };
         for(const auto& tool: tools) {
             ImGui::PushID(static_cast<int>(tool.operation));
             const bool active = m_guizmo2D.getOperationType() == tool.operation;
             if(active)
                 ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_HeaderActive));
-            const float size = ImGui::GetFrameHeight();
-            if(ImGui::Button(tool.icon, {size, size})) {
+            if(iconButton("##TransformTool", tool.icon)) {
                 m_guizmo2D.setOperationType(tool.operation);
                 auto* message = m_messageBus.postMessage<InstrumentMessage>(MessageID::InstrumentPressed);
                 message -> type = tool.message;
@@ -332,16 +343,36 @@ namespace editor {
             else
                 ImGui::NewLine();
         };
-        nextControl(85.f);
+        // Match the tools' height and measure the entire right-hand group before placing it.
+        const auto padding = ImGui::GetStyle().FramePadding;
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding,
+            {padding.x, (buttonSize - ImGui::GetFontSize()) * 0.5f});
+        const auto& style = ImGui::GetStyle();
+        const float gridWidth = ImGui::GetFrameHeight() + style.ItemInnerSpacing.x
+            + ImGui::CalcTextSize(ICON_FA_TH " Grid").x;
+        const float snapWidth = ImGui::GetFrameHeight() + style.ItemInnerSpacing.x
+            + ImGui::CalcTextSize(ICON_FA_MAGNET " Snap").x;
+        const float settingsWidth = ImGui::CalcTextSize("...").x + style.FramePadding.x * 2.f;
+        constexpr float zoomWidth = 100.f;
+        const float groupWidth = gridWidth + snapWidth + settingsWidth + buttonSize + zoomWidth
+            + style.ItemSpacing.x * 4.f;
+        const float rightX = ImGui::GetWindowContentRegionMax().x - groupWidth - 6.f;
+        const float toolsEnd = ImGui::GetItemRectMax().x - ImGui::GetWindowPos().x;
+        if(rightX >= toolsEnd + style.ItemSpacing.x * 2.f)
+            ImGui::SameLine(rightX);
+        else {
+            ImGui::NewLine();
+            ImGui::SetCursorPosX(std::max(6.f, rightX));
+        }
         const bool orthographic = m_editorCamera && m_editorCamera -> getType() == EditorCameraType::Orthographic;
         ImGui::BeginDisabled(!orthographic);
         ImGui::Checkbox(ICON_FA_TH " Grid", &m_gridVisible);
         tooltip("Show the viewport grid (independent from snapping)");
-        nextControl(100.f);
+        nextControl(snapWidth);
         ImGui::BeginDisabled(m_guizmo2D.isActive());
         ImGui::Checkbox(ICON_FA_MAGNET " Snap", &m_snapEnabled);
         tooltip("Snap drag offsets for Move/Scale, and angle changes for Rotate");
-        nextControl(36.f);
+        nextControl(settingsWidth);
         if(ImGui::Button("...##SnapSettings"))
             ImGui::OpenPopup("Snap settings");
         if(ImGui::BeginPopup("Snap settings")) {
@@ -354,18 +385,18 @@ namespace editor {
             ImGui::EndPopup();
         }
         m_guizmo2D.setSnapping(m_snapEnabled, m_snapDistance, m_snapAngle);
-        nextControl(36.f);
+        nextControl(buttonSize);
         const bool hasSelection = m_uiInteractor && !m_uiInteractor -> getSelectedEntities().empty();
         ImGui::BeginDisabled(!hasSelection);
-        if(ImGui::Button(ICON_FA_CROSSHAIRS "##FrameSelected"))
+        if(iconButton("##FrameSelected", ICON_FA_CROSSHAIRS))
             frameEntities(false);
         tooltip("Frame Selected: center and fit the selected objects");
         ImGui::EndDisabled();
-        nextControl(90.f);
+        nextControl(zoomWidth);
         char zoomLabel[32];
         const float zoom = m_editorCamera ? m_editorCamera -> getZoom() : 1.f;
         std::snprintf(zoomLabel, sizeof(zoomLabel), "%.0f%%", static_cast<double>(zoom * 100.f));
-        ImGui::SetNextItemWidth(90.f);
+        ImGui::SetNextItemWidth(zoomWidth);
         if(ImGui::BeginCombo("##ViewportZoom", zoomLabel)) {
             for(float scale: {0.25f, 0.5f, 1.f, 2.f, 4.f, 8.f}) {
                 char label[16];
@@ -380,6 +411,7 @@ namespace editor {
         tooltip("100% = one scene unit per viewport pixel. Ctrl+wheel zooms.");
         ImGui::EndDisabled();
         ImGui::EndDisabled();
+        ImGui::PopStyleVar();
         ImGui::EndGroup();
         ImGui::Separator();
     }
