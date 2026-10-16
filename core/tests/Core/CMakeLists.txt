@@ -1,4 +1,6 @@
 set(CORE_SRC
+        Core/TimeTests.cpp
+        Core/ClockTests.cpp
         Core/FileInputStreamTests.cpp
         Core/MessageBusTests.cpp
         Core/MessageTests.cpp
