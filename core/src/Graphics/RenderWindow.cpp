@@ -26,21 +26,25 @@
 
 namespace robot2D {
 
-    RenderWindow::RenderWindow() :
-        Window{}, RenderTarget{m_win_size,
+    RenderWindow::RenderWindow(DesktopRuntime& desktop) :
+        Window{desktop}, RenderTarget{m_win_size,
             m_context.renderApi,
             m_context.renderDimensionType} {
     }
 
-    RenderWindow::RenderWindow(const vec2u& size,
+    RenderWindow::RenderWindow(DesktopRuntime& desktop, const vec2u& size,
         const std::string& name,
         const WindowContext& context) :
-        Window(size, name, context),
+        Window(desktop, size, name, context),
         RenderTarget(m_win_size,
             context.renderApi,
             m_context.renderDimensionType) {
     }
 
+
+    RenderWindow::~RenderWindow() {
+        makeCurrent();
+    }
 
     void RenderWindow::onResize(const int& width, const int& height) {
         resize({width, height});
