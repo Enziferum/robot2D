@@ -64,8 +64,8 @@ namespace robot2D::priv {
             targetW = (double)winH * aspectNum / aspectDen;
         }
 
-        int vpW = (int)std::floor(targetW);
-        int vpH = (int)std::floor(targetH);
+        int vpW = std::max(1, (int)std::floor(targetW));
+        int vpH = std::max(1, (int)std::floor(targetH));
         int vpX = (winW - vpW) / 2;
         int vpY = (winH - vpH) / 2;
 
@@ -115,6 +115,8 @@ namespace robot2D::priv {
 
     OpenGLRender::OpenGLRender(const vec2u& windowSize) {
         m_size = windowSize;
+        m_surfaceSize = windowSize;
+        m_drawViewport = {0, 0, static_cast<int>(windowSize.x), static_cast<int>(windowSize.y)};
 
         m_shaderKeys.insert({ShaderKey::TextureSamples, "textureSamplers"});
         m_shaderKeys.insert({ShaderKey::Projection, "projection"});
@@ -255,65 +257,104 @@ namespace robot2D::priv {
         m_renderLayers.clear();
     }
 
+    namespace {
+        bool sameView(const View& left, const View& right) {
+            const auto& a = left.getViewport();
+            const auto& b = right.getViewport();
+            const auto& ar = left.getRectangle();
+            const auto& br = right.getRectangle();
+            return left.getTransform() == right.getTransform() && left.isClipping() == right.isClipping()
+                   && a.lx == b.lx && a.ly == b.ly && a.width == b.width && a.height == b.height
+                   && ar.lx == br.lx && ar.ly == br.ly && ar.width == br.width && ar.height == br.height;
+        }
+    }
+
     void OpenGLRender::setView(const View& view, unsigned int layerID) {
         if(m_renderLayers.size() <= layerID)
             layerID = m_renderLayers.size() - 1;
-        m_renderLayers[layerID].m_view = view;
+        auto& layer = m_renderLayers[layerID];
+        if(layer.m_customProjection || !sameView(layer.m_view, view))
+            afterRender();
+        layer.m_view = view;
+        layer.m_customProjection = false;
+        layer.m_followsDefaultView = false;
         applyCurrentView(layerID);
     }
-    VirtualSize virtSize;
-    void OpenGLRender::setViewVirtual(const vec2u& windowSize, const View& view, unsigned int layerID) {
-        virtSize = chooseVirtualSize(windowSize.x, windowSize.y,
-                16, 9);
 
-        glViewport(virtSize.viewportX, virtSize.viewportY, virtSize.viewportW, virtSize.viewportH);
-        auto& m_quadShader = m_renderLayers[layerID].m_quadShader;
-        m_renderLayers[layerID].m_view = view;
-        m_quadShader.use();
-        m_quadShader.setMatrix(m_shaderKeys[ShaderKey::Projection], view.getTransform().get_matrix());
-        m_quadShader.unUse();
+    void OpenGLRender::setSize(const vec2u& size) {
+        if(!size.x || !size.y || size == m_size)
+            return;
+        afterRender();
+        m_size = size;
+        m_surfaceSize = size;
+        m_drawViewport = {0, 0, static_cast<int>(size.x), static_cast<int>(size.y)};
+        m_virtualViewport = {};
+        m_default.reset({0, 0, static_cast<float>(size.x), static_cast<float>(size.y)});
+        for(unsigned int layerID = 0; layerID < m_renderLayers.size(); ++layerID) {
+            auto& layer = m_renderLayers[layerID];
+            if(layer.m_followsDefaultView) {
+                layer.m_view = m_default;
+                applyCurrentView(layerID);
+            }
+        }
+        glViewport(0, 0, size.x, size.y);
     }
 
-
+    void OpenGLRender::setViewVirtual(const vec2u& windowSize, const View& view, unsigned int layerID) {
+        if(!windowSize.x || !windowSize.y)
+            return;
+        if(layerID >= m_renderLayers.size())
+            layerID = m_renderLayers.size() - 1;
+        const auto virtualSize = chooseVirtualSize(windowSize.x, windowSize.y, 16, 9,
+                windowSize.x >= 16 && windowSize.y >= 9);
+        const std::array<int, 4> viewport = {virtualSize.viewportX, virtualSize.viewportY,
+                                             virtualSize.viewportW, virtualSize.viewportH};
+        auto& layer = m_renderLayers[layerID];
+        if(layer.m_customProjection || !sameView(layer.m_view, view)
+            || viewport != m_drawViewport || windowSize != m_surfaceSize)
+            afterRender();
+        m_surfaceSize = windowSize;
+        m_drawViewport = viewport;
+        m_virtualViewport = viewport;
+        glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
+        layer.m_view = view;
+        layer.m_customProjection = false;
+        layer.m_followsDefaultView = false;
+        applyCurrentView(layerID);
+    }
 
     IntRect OpenGLRender::getViewport(const View& view) {
-        float width = static_cast<float>(m_size.x);
-        float height = static_cast<float>(m_size.y);
-        const FloatRect& viewport = view.getViewport();
-
-        return IntRect(static_cast<int>(0.5F + width * viewport.lx),
-                   static_cast<int>(0.5F + height * viewport.ly),
-                   static_cast<int>(0.5F + width * viewport.width),
-                   static_cast<int>(0.5F + height * viewport.height));
+        return static_cast<const OpenGLRender&>(*this).getViewport(view);
     }
 
-
-
+    IntRect OpenGLRender::getViewport(const View& view) const {
+        const auto& viewport = view.getViewport();
+        const float width = static_cast<float>(m_drawViewport[2]);
+        const float height = static_cast<float>(m_drawViewport[3]);
+        const int top = static_cast<int>(m_surfaceSize.y) - m_drawViewport[1] - m_drawViewport[3];
+        return {m_drawViewport[0] + static_cast<int>(0.5f + width * viewport.lx),
+                top + static_cast<int>(0.5f + height * viewport.ly),
+                static_cast<int>(0.5f + width * viewport.width),
+                static_cast<int>(0.5f + height * viewport.height)};
+    }
 
     void OpenGLRender::applyCurrentView(unsigned int layerID) {
         auto& m_view = m_renderLayers[layerID].m_view;
-        //IntRect viewport = getViewport(m_view);
-        // int top = static_cast<int>(m_size.y - (viewport.ly + viewport.height));
-        // (void) top;
         auto& m_quadShader = m_renderLayers[layerID].m_quadShader;
-
-        const FloatRect& viewport = m_view.getViewport();
-
-        auto size = m_view.getRectangle();
-        IntRect viewport1(static_cast<int>(0.5F + size.width * viewport.lx),
-            static_cast<int>(0.5F + size.height * viewport.ly),
-            static_cast<int>(0.5F + size.width * viewport.width),
-            static_cast<int>(0.5F + size.height * viewport.height));
 
         if(m_view.isClipping())
             return;
 
         m_quadShader.use();
         m_quadShader.setMatrix(m_shaderKeys[ShaderKey::Projection], m_view.getTransform().get_matrix());
+        m_quadShader.set(m_shaderKeys[ShaderKey::is3DRender], false);
         m_quadShader.unUse();
     }
 
     void OpenGLRender::setView3D(const Matrix3D& projection, const Matrix3D& view) {
+        afterRender();
+        m_renderLayers[defaultLayerID].m_customProjection = true;
+        m_renderLayers[defaultLayerID].m_followsDefaultView = false;
         assert(m_dimensionType != RenderDimensionType::TwoD && "To use 3D view function set RenderDimension "
             "Mode to 3D / Both Mode");
         auto& m_quadShader = m_renderLayers[defaultLayerID].m_quadShader;
@@ -325,6 +366,9 @@ namespace robot2D::priv {
     }
 
     void OpenGLRender::setRawView(float* rawMatrix) {
+        afterRender();
+        m_renderLayers[defaultLayerID].m_customProjection = true;
+        m_renderLayers[defaultLayerID].m_followsDefaultView = false;
         auto& m_quadShader = m_renderLayers[defaultLayerID].m_quadShader;
         m_quadShader.use();
         m_quadShader.setMatrix(m_shaderKeys[ShaderKey::Projection], rawMatrix);
@@ -342,7 +386,10 @@ namespace robot2D::priv {
 
     void OpenGLRender::clearScissor(const robot2D::UIntRect rect, const Color& color) {
         glEnable(GL_SCISSOR_TEST);
-        glScissor(virtSize.viewportX, virtSize.viewportY, virtSize.viewportW, virtSize.viewportH);
+        if(m_virtualViewport[2] && m_virtualViewport[3])
+            glScissor(m_virtualViewport[0], m_virtualViewport[1], m_virtualViewport[2], m_virtualViewport[3]);
+        else
+            glScissor(rect.lx, rect.ly, rect.width, rect.height);
         auto glColor = color.toGL();
         glClearColor(glColor.red, glColor.green, glColor.blue, glColor.alpha);
         if(m_dimensionType != RenderDimensionType::TwoD)
@@ -396,6 +443,12 @@ namespace robot2D::priv {
     }
 
     void OpenGLRender::beforeRender() const {
+        std::array<int, 4> viewport;
+        glGetIntegerv(GL_VIEWPORT, viewport.data());
+        if(viewport[2] > 0 && viewport[3] > 0 && viewport != m_drawViewport) {
+            m_drawViewport = viewport;
+            m_surfaceSize = {static_cast<unsigned int>(viewport[2]), static_cast<unsigned int>(viewport[3])};
+        }
         m_stats = {};
         for(auto& layer: m_renderLayers) {
             resetBatch(layer.m_renderBuffer);
@@ -453,16 +506,29 @@ namespace robot2D::priv {
                 layerID, m_renderLayers.size());
             return;
         }
-        auto& buffer = m_renderLayers[layerID].m_renderBuffer;
-        for(const auto& batch: buffer.pendingBatches)
-            drawBatch(layerID, batch.vertices.data(), static_cast<uint32_t>(batch.vertices.size()),
-                batch.textureSlots.data(), batch.textureSlotCount);
-        buffer.pendingBatches.clear();
+        std::array<int, 4> previousViewport;
+        glGetIntegerv(GL_VIEWPORT, previousViewport.data());
+        const auto viewport = getViewport(m_renderLayers[layerID].m_view);
+        glViewport(viewport.lx, static_cast<int>(m_surfaceSize.y) - viewport.ly - viewport.height,
+            viewport.width, viewport.height);
+        auto& layer = m_renderLayers[layerID];
+        auto& buffer = layer.m_renderBuffer;
+        std::size_t cacheIndex = 0;
+        for(std::size_t batchIndex = 0; batchIndex <= buffer.pendingBatches.size(); ++batchIndex) {
+            renderCache(layerID, cacheIndex, batchIndex);
+            if(batchIndex < buffer.pendingBatches.size()) {
+                const auto& batch = buffer.pendingBatches[batchIndex];
+                drawBatch(layerID, batch.vertices.data(), static_cast<uint32_t>(batch.vertices.size()),
+                    batch.textureSlots.data(), batch.textureSlotCount);
+            }
+        }
         drawBatch(layerID, buffer.quadBuffer.get(),
             static_cast<uint32_t>(buffer.quadBufferPtr - buffer.quadBuffer.get()),
             buffer.textureSlots.data(), buffer.textureSlotIndex);
+        buffer.pendingBatches.clear();
+        layer.m_vertexArrayCache.clear();
         resetBatch(buffer);
-        renderCache(layerID);
+        glViewport(previousViewport[0], previousViewport[1], previousViewport[2], previousViewport[3]);
     }
 
 
@@ -583,11 +649,19 @@ namespace robot2D::priv {
         if(layerID >= m_renderLayers.size())
             layerID = m_renderLayers.size() - 1;
 
-        m_renderLayers[layerID].m_vertexArrayCache.push_back({vertexArray, states});
+        if(!vertexArray)
+            return;
+        // Seal preceding quads without drawing the layer early. Remember where this
+        // geometry belongs among the completed batches, including overflow batches.
+        queueBatch(layerID);
+        auto& layer = m_renderLayers[layerID];
+        layer.m_vertexArrayCache.push_back({vertexArray, states, layer.m_renderBuffer.pendingBatches.size()});
     }
 
-    void OpenGLRender::renderCache(unsigned int layerID) const {
-        for(const auto& it: m_renderLayers[layerID].m_vertexArrayCache) {
+    void OpenGLRender::renderCache(unsigned int layerID, std::size_t& cacheIndex, std::size_t batchIndex) const {
+        const auto& cache = m_renderLayers[layerID].m_vertexArrayCache;
+        while(cacheIndex < cache.size() && cache[cacheIndex].m_batchesBefore == batchIndex) {
+            const auto& it = cache[cacheIndex++];
             if(!it.m_vertexArray)
                 continue;
 
@@ -660,7 +734,6 @@ namespace robot2D::priv {
                 glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         }
 
-        m_renderLayers[layerID].m_vertexArrayCache.clear();
     }
 
     void OpenGLRender::render3D(const VertexArray::Ptr& vertexArray, RenderStates states) const {

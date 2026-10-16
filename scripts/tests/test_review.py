@@ -2,6 +2,7 @@ import argparse
 import importlib.util
 import io
 import json
+import os
 from pathlib import Path
 import subprocess
 import sys
@@ -17,6 +18,13 @@ spec.loader.exec_module(review)
 
 class ReviewTests(unittest.TestCase):
     def setUp(self):
+        # Linked-worktree hooks export absolute Git paths. Fixture repos must not
+        # inherit them or git init/config would act on the caller's repository.
+        environment = patch.dict(os.environ,
+                                 {key: value for key, value in os.environ.items() if not key.startswith('GIT_')},
+                                 clear=True)
+        environment.start()
+        self.addCleanup(environment.stop)
         temporary = review.ROOT / 'work' / 'review-tests'
         temporary.mkdir(parents=True, exist_ok=True)
         self.temporary = tempfile.TemporaryDirectory(dir=temporary)
@@ -39,6 +47,23 @@ class ReviewTests(unittest.TestCase):
         for key, value in kwargs.items():
             setattr(args, key, value)
         return review.snapshot(self.root, args)
+
+    def test_fixture_ignores_inherited_git_environment(self):
+        foreign = self.root / 'foreign-gitdir'
+        with patch.dict(os.environ, {'GIT_DIR': str(foreign),
+                                     'GIT_WORK_TREE': str(self.root / 'foreign-tree'),
+                                     'GIT_INDEX_FILE': str(self.root / 'foreign-index')}):
+            fixture = ReviewTests('test_clean_tree_skips_model')
+            try:
+                fixture.setUp()
+                self.assertEqual(Path(fixture.git('rev-parse', '--show-toplevel').decode().strip()).resolve(),
+                                 fixture.root.resolve())
+                self.assertFalse(any(key.startswith('GIT_') for key in os.environ))
+            finally:
+                fixture.doCleanups()
+        self.assertFalse(foreign.exists())
+        self.assertFalse((self.root / 'foreign-index').exists())
+        self.assertEqual(self.git('rev-parse', 'HEAD').decode().strip(), self.initial)
 
     def test_staged_unstaged_untracked_and_deleted(self):
         (self.root / 'code.txt').write_text('staged\n', encoding='utf-8')

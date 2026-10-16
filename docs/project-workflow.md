@@ -100,8 +100,8 @@ gh project item-edit 5 --owner Enziferum --url https://github.com/Enziferum/robo
 ## Ветки и метки задач
 
 Одна рабочая ветка относится к одной основной задаче. Формат имени:
-`codex/<task-id-в-нижнем-регистре>-<краткое-описание>`, например
-`codex/process-01-task-workflow`. Ветку создаём только при начале работы.
+`TASK-ID`, например `ASSET-02` (уточнение пользователя 2026-10-16: без
+префикса `codex/`). Ветку создаём только при начале работы.
 Базовую удалённую ветку указываем явно; основная интеграционная ветка — `dev`.
 2026-10-15 `october2026_dev` слита в `dev` через PR #43 merge-коммитом e54408f.
 Новые задачи начинаются от актуального `dev`, а их PR направляются в `dev`.
@@ -114,7 +114,7 @@ gh создаёт ветку от удалённого состояния, а н
 
 ```text
 gh issue develop 44 --repo Enziferum/robot2D --list
-gh issue develop 44 --repo Enziferum/robot2D --base dev --name codex/process-01-task-workflow
+gh issue develop 44 --repo Enziferum/robot2D --base dev --name PROCESS-01
 gh issue develop 44 --repo Enziferum/robot2D --list
 ```
 
