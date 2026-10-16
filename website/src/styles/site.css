@@ -662,3 +662,32 @@ p + p {
     width: calc(100% - 36px);
   }
 }
+
+.mascot-section {
+  display: grid;
+  grid-template-columns: 0.65fr 1.35fr;
+  align-items: center;
+  gap: 6rem;
+}
+.mascot-portrait {
+  display: block;
+  width: clamp(180px, 24vw, 280px);
+  margin-inline: auto;
+}
+.mascot-portrait img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.mascot-section .lede {
+  margin-top: 1.6rem;
+}
+@media (max-width: 760px) {
+  .mascot-section {
+    grid-template-columns: 1fr;
+    gap: 2.5rem;
+  }
+  .mascot-portrait {
+    width: 180px;
+  }
+}

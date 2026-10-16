@@ -66,3 +66,15 @@ Next: user review of the visual layout and first SlateTeal logo; packaged demo a
 ## Screenshot proportions
 
 `EditorShot` keeps the source image dimensions for layout but uses CSS `width: 100%; height: auto` so the rendered image retains its aspect ratio. Showcase has a wider image container (up to 1600 px). Manual acceptance: check the editor screenshot at desktop and mobile widths; square controls and the robot should retain their proportions, with no cropping or horizontal overflow.
+
+## Selected Robot Lab branding
+
+The user selected logo **02** as the primary mark and character **03** as the site mascot.
+Active assets are in `public/brand/robot2d-logo-02-*` and `robot2d-mascot-03-*`;
+masters and exact generation prompts are in `../logo/robotlab-slateteal/`.
+The provenance manifest records original master hashes. These are transparent raster assets,
+not vector stand-ins. Header, footer, Starlight and favicon use 02. The home page uses 03,
+with WebP and PNG fallback, explicit dimensions and lazy loading. Old v1 candidates remain archived.
+Editor integration is a separate worktree/PR, BRAND-01/#135, using the same selected source.
+Manual acceptance: logo at 100/150/200% scaling, mascot against the site background,
+responsive page layout and screenshot aspect ratio. No browser automation is used.

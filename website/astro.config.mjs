@@ -19,8 +19,8 @@ export default defineConfig({
   integrations: [
     starlight({
       title: 'robot2D',
-      favicon: '/brand/robot2d-mark-v1.svg',
-      logo: { src: './public/brand/robot2d-mark-v1.svg' },
+      favicon: '/brand/robot2d-logo-02-32.png',
+      logo: { src: './public/brand/robot2d-logo-02-512.png' },
       disable404Route: true,
       description: 'Build small worlds. Learn how they work.',
       social: [
