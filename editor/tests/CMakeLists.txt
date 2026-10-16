@@ -111,3 +111,20 @@ add_dependencies(robot2D-editor-test-suite robot2D-scene-asset-tests)
 foreach(asset_case IN ITEMS compatibility invalid)
     rb2d_register_test("editor-scene-assets-${asset_case}" robot2D-scene-asset-tests "${asset_case}" "headless;assets")
 endforeach()
+
+add_mono_assembly(TARGET robot2D-physics-driver
+    DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/../res/script"
+    SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/PhysicsDriver.cs"
+    REFERENCES "${robot2D_ScriptCore_OUTPUT}"
+    ADDITIONAL_ARGS -sdk:4.8 -langversion:7.2 -warnaserror+)
+add_dependencies(robot2D-physics-driver robot2D_ScriptCore)
+add_executable(robot2D-physics-tests PhysicsTests.cpp)
+target_link_libraries(robot2D-physics-tests PRIVATE robot2D-editor-objects)
+target_compile_definitions(robot2D-physics-tests PRIVATE
+    RB2D_TEST_SCRIPTCORE="${robot2D_ScriptCore_OUTPUT}"
+    RB2D_TEST_PHYSICS_DRIVER="${robot2D-physics-driver_OUTPUT}")
+add_dependencies(robot2D-physics-tests robot2D-physics-driver)
+add_dependencies(robot2D-editor-test-suite robot2D-physics-tests)
+foreach(physics_case IN ITEMS geometry walls bullet triggers filters lifecycle callbacks invalid serialization managed)
+    rb2d_register_test("editor-physics-${physics_case}" robot2D-physics-tests "${physics_case}" "headless;physics")
+endforeach()

@@ -104,3 +104,13 @@ headless-запуск для Windows/Linux; удалённый CI и Linux ло�
 Затем при настройке CI-01 выполнен отдельный прогон Ninja/Release:
 редактор собран, 17 зарегистрированных core-тестов и 18 headless-сценариев прошли.
 Настройка CI и просмотр отчётов описаны в [CI и отчётах](ci.md).
+
+
+## Регрессии физики PHYS-01
+
+`robot2D-physics-tests` входит в `robot2D-editor-test-suite`: 10 сценариев
+`editor-physics-*` с метками headless/physics. Они проверяют стены/пули,
+геометрию, сенсоры/фильтры, жизненный цикл тел, мутации из callback,
+невалидные параметры, сериализацию и реальный C++/C# обмен через Mono.
+Managed PhysicsDriver собирается со свежей ScriptCore с warnings-as-errors.
+Контракт и ручной сценарий — [physics.md](physics.md).
