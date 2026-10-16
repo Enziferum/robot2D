@@ -6,6 +6,47 @@ Core, ECS, Render, Editor, runtime/player, пример игры и инстру
 выбранные ведущие и результаты находятся в GitHub Issues и
 [Projects](https://github.com/users/Enziferum/projects/5).
 
+## Актуальный план Core и robot2D-imgui — 2026-10-16
+
+По запросу пользователя CORE-01 и CORE-02 объединяются в ветке CORE-02 и
+[PR #122](https://github.com/Enziferum/robot2D/pull/122). Изменения
+[PR #112](https://github.com/Enziferum/robot2D/pull/112) сохраняются вместе с историей;
+он заменяется объединённым PR после публикации проверенного результата.
+CORE-01 #110 остаётся общей открытой задачей, не обещанием полного завершения Core.
+Датированные разделы ниже — история; этот блок задаёт текущие границы плана.
+
+| Этап | Что сделано / что остаётся | Статус |
+|---|---|---|
+| CORE-01: согласованный Util и базовые классы | ResourceHandler, MessageBus/типизированная память, Logger/Assert, FileInputStream, Time/Clock, совместимые constexpr/noexcept Vector2/3, регрессии, Doxygen | Реализовано; объединяется с CORE-02 и проверяется на актуальном dev |
+| CORE-02: события | variant Event, typed EventBinder, GLFW FIFO/frame batch, Add*Event, capture/владельцы Press–Release/cancel, история/Events, потребители, UI clicks/shortcuts, startup crash fix | Реализовано; пользователь подтвердил повторное открытие проекта и GUI на всё окно; финальная интеграция/CI |
+| robot2D-imgui: scopes | Безопасные оконные/style scopes и сохранение dockspace при скрытом canvas | Отдельные IMGUI-01 #121 / PR #123; реализованы в соседней ветке, не входят автоматически в CORE-02 |
+| robot2D-imgui: текущая корректность renderer | OrthoView Y; GL state и active texture/sampler/program/VAO; UserCallback/reset; scissor clamp/empty; GPU-resource RAII/отказ setup; владение memory-font | Открытый следующий объём по аудиту R1/R2/R3/R5/R8/R9; реализация здесь не начата |
+| robot2D-imgui: GuiImpl lifecycle | Собственный ImGuiContext, safe shutdown до setup/после отказа, ready только после успеха; состояния кадра, шрифтовый набор | Согласован контракт, остаются G2/G3 и интеграция font policy; G1/input принят из CORE-02 |
+| robot2D-imgui: обёртки | Typed/size-aware drag/drop и borrowed lifetime; явные ImageButton ID, null framebuffer, sprite UV/zero-size, string InputText, Sugar flags/namespace | A7 обсуждается соседним GUI-чатом без реализации; A2–A6 остаются отдельными согласуемыми шагами; A1 — PR #123 |
+| Core Window/Desktop | Владение native window/GLFW, уничтожение, ошибки создания; logical/framebuffer size, minimized/DPI, источник событий WindowID, signed coordinates, clipboard/IME и contexts | Event/pump отделены от swap в CORE-02; остальной контракт и реализация ещё впереди |
+| Core Graphics для GUI | Явный UI pass/state/cache; точный vertex layout, draw ranges/baseVertex; streaming buffers, texture views/updates/row pitch, context-local VAO/FBO и lifetime | Связано с RENDER-04 #98 / RENDER-05 #99; согласовать минимальный API до переноса GuiRender |
+| Engine / fixed timestep | Общий scheduler editor/player, fixedDt, предел догоняющих шагов, queued Play/Pause/Stop, SessionId | [Контракт согласован](fixed-timestep-contract.md), реализация не начата; сначала завершение CORE-01/02 |
+| Runtime / fixed input | Общая RuntimeSession, OnUpdate/OnFixedUpdate, frame/fixed input и временные границы, Pause/Resume | Последующая интеграция RUNTIME-01/02, INPUT-01 и PHYS-01; не реализовано этим объединением |
+| GUI upstream и несколько окон | Закреплённый docking upstream, texture lifecycle, VtxOffset/большие списки; затем multi-viewports и несколько monitors | После необходимой корректности и Core API; текущая однооконная поддержка не равна готовой multi-window |
+| Диагностика и документация | Crash report; расширение Doxygen Event/Window/Engine и дальнейших публичных API | Требование reporter записано в development-tools.md; справочник ещё не покрывает весь Core |
+
+Подробный аудит и согласованные границы Gui/GuiRender опубликованы в
+[документе IMGUI-01](https://github.com/Enziferum/robot2D/blob/f4fc9c3b7fd290a1bf240d722972bc4ced877792/docs/imgui-backend-review.md).
+Наблюдения аудита требуют воспроизводящих проверок: таблица не объявляет все
+дефекты уже воспроизведёнными и не запускает их реализацию. Изменения соседней
+GUI-ветки и пользовательский основной checkout не копируются и не редактируются.
+
+Последовательность сейчас: объединение/проверки/ревью CORE-01+02 → выбор следующего
+небольшого шага с пользователем. Рекомендуемый кандидат — однооконные исправления
+корректности GuiRender/GuiImpl до обновления upstream. Тайминг согласован, но
+автоматически не запускается; остальные зависимости остаются в своих Issues.
+Оптимизацию uploads/ёмкости и VAO выполняем после измерений, отдельным шагом.
+
+Это не полный аудит всех классов Core: например Cursor/Joystick/Mouse/Keyboard,
+общий WindowContext и отдельные allocator API не объявляются целиком проверенными
+по сборке выбранных изменений. ECS, Snapshot и CancellationToken остаются за
+пользователем; вмешательство в них не входит в этот план.
+
 ## Где находится информация
 
 | Информация | Источник |
@@ -32,6 +73,26 @@ PR #43 (e54408f); новые задачи идут от актуального d
 Большой несовместимый объём 0.9 интегрируется после отделения релиза 0.8 либо
 отдельными согласованными совместимыми шагами. Правила —
 [project-workflow.md](project-workflow.md), версия — [versioning.md](versioning.md).
+
+## PHYS-01: физика и C# события, 2026-10-16
+
+После merge PR #118 создан отдельный worktree `phys-01`, ветка `PHYS-01`
+от актуального `dev` @ `c05a55b`; основной checkout пользователя не переключался.
+Реализованы стабильные Enter/Stay/Exit, фильтры, геометрия BoxCollider,
+безопасные очереди добавления/удаления тел, очистка Stop и доставка одному
+C# получателю с отдельным экземпляром скрипта на сущность.
+Контракт, учебный вводный материал и пять практических опытов — [physics.md](physics.md).
+Документ расширяется вместе с физическим API; текущий fixed accumulator Engine
+отделён от согласованного, но ещё не реализованного OnFixedUpdate.
+Ссылка на единый контракт тайминга Core добавлена после сверки 2026-10-16.
+В PR #120 добавлена сквозная C# регрессия полного trigger-цикла и согласован enum.
+Пройдены 103 CTest, включая 10 новых physics и 41 graphics; собран редактор.
+PR #120 остаётся отдельным шагом исправлений. После завершения CORE-02 #119
+и его приёмки — интеграция PHYS-01 в единый fixed tick Engine/RuntimeSession
+совместно с RUNTIME-01 #77 и INPUT-01 #79: один OnFixedUpdate/Step на tick,
+контакты после каждого Step, регрессии 0/N ticks, паузы и безопасных переходов.
+План и checklist зафиксированы в Issue #78; scheduler в PR #120 не добавляется.
+Полное C# Instantiate/Destroy этим шагом не реализовано; #78 остаётся открытой.
 
 ## Направления проекта
 

@@ -227,3 +227,16 @@ Engine получает delta прежним способом; результа�
 Vector2/Vector3 (const conversions, constexpr/noexcept, тесты/документация).
 Типы dot/cross и семантика сравнений сохранены. Перед Window/Desktop по-прежнему
 обязательно отдельное обсуждение до начала реализации.
+
+
+### Объединение Core и оставшиеся GUI-исправления — 2026-10-16
+
+CORE-01/02 объединяются в PR #122 по запросу пользователя; PR #112 заменяется
+общим результатом после проверок. Полный текущий список расположен в начале
+[project-roadmap.md](project-roadmap.md#актуальный-план-core-и-robot2d-imgui--2026-10-16).
+CORE-01 не закрывает весь Core и DOC-01: остаются Window/GLFW lifecycle,
+Engine/fixed timestep, расширение справочника и отдельный crash report.
+Для robot2D-imgui отдельно учитываются IMGUI-01 scopes (#121/PR #123), renderer
+correctness, GuiImpl/context/fonts, API/payload, Core Graphics/Window, upstream
+и multi-viewports. Эти задачи не считаются выполненными по миграции ввода CORE-02.
+Исполнитель и конкретный следующий объём выбираются перед реализацией.

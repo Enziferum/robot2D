@@ -202,6 +202,9 @@ namespace editor {
             yaml::write(out, "BodyType", RigidBody2DBodyTypeToString(rb2dComponent.type));
             yaml::write(out, "FixedRotation", rb2dComponent.fixedRotation);
             yaml::write(out, "Bullet", rb2dComponent.bullet);
+            yaml::write(out, "GravityScale", rb2dComponent.gravityScale);
+            yaml::write(out, "LinearDamping", rb2dComponent.linearDamping);
+            yaml::write(out, "AngularDamping", rb2dComponent.angularDamping);
 
             out << YAML::EndMap; // Rigidbody2DComponent
         }
@@ -217,7 +220,11 @@ namespace editor {
             yaml::write(out, "Friction", bc2dComponent.friction);
             yaml::write(out, "Restitution", bc2dComponent.restitution);
             yaml::write(out, "RestitutionThreshold", bc2dComponent.restitutionThreshold);
+            yaml::write(out, "IsTrigger", bc2dComponent.isTrigger);
             yaml::write(out, "UseDefaultMask", bc2dComponent.useDefaultMask);
+            yaml::write(out, "CategoryBits", bc2dComponent.filter.categoryBits);
+            yaml::write(out, "MaskBits", bc2dComponent.filter.maskBits);
+            yaml::write(out, "GroupIndex", bc2dComponent.filter.groupIndex);
             yaml::write(out, "FilterLayer", bc2dComponent.filter.name);
 
             out << YAML::EndMap; // BoxCollider2DComponent
@@ -479,6 +486,9 @@ namespace editor {
                 auto& rb2d = deserializedEntity.addComponent<Physics2DComponent>();
                 rb2d.type = RigidBody2DBodyTypeFromString(yaml::read<std::string>(rigidbody2DComponent, "BodyType"));
                 rb2d.fixedRotation = yaml::read<bool>(rigidbody2DComponent, "FixedRotation");
+                rb2d.gravityScale = yaml::optional<float>(rigidbody2DComponent, "GravityScale", 1.f);
+                rb2d.linearDamping = yaml::optional<float>(rigidbody2DComponent, "LinearDamping", 0.f);
+                rb2d.angularDamping = yaml::optional<float>(rigidbody2DComponent, "AngularDamping", 0.f);
                 if(rigidbody2DComponent["Bullet"])
                     rb2d.bullet = yaml::read<bool>(rigidbody2DComponent, "Bullet");
             }
@@ -486,6 +496,7 @@ namespace editor {
             auto boxCollider2DComponent = entity["BoxCollider2DComponent"];
             if(boxCollider2DComponent) {
                 auto& bc2d = deserializedEntity.addComponent<Collider2DComponent>();
+                bc2d.isTrigger = yaml::optional<bool>(boxCollider2DComponent, "IsTrigger", false);
                 bc2d.offset = yaml::read<robot2D::vec2f>(boxCollider2DComponent, "Offset");
                 bc2d.size = yaml::read<robot2D::vec2f>(boxCollider2DComponent, "Size");
                 bc2d.density = yaml::read<float>(boxCollider2DComponent, "Density");
@@ -502,6 +513,12 @@ namespace editor {
                     }) != registry.names().end())
                         bc2d.filter = phys2d::makeFilterDefault(filterLayer);
                 }
+                bc2d.filter.categoryBits = yaml::optional<std::uint16_t>(boxCollider2DComponent, "CategoryBits",
+                        bc2d.filter.categoryBits);
+                bc2d.filter.maskBits = yaml::optional<std::uint16_t>(boxCollider2DComponent, "MaskBits",
+                        bc2d.filter.maskBits);
+                bc2d.filter.groupIndex = yaml::optional<std::int16_t>(boxCollider2DComponent, "GroupIndex",
+                        bc2d.filter.groupIndex);
             }
 
             auto prefabComponent = entity["PrefabComponent"];

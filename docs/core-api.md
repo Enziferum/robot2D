@@ -1,7 +1,8 @@
 # robot2D Core API
 
-Документированы `robot2D/Util/ResourceHandler.hpp`, `Core/Message.hpp` и
-`Core/MessageBus.hpp`, а также `Util/Logger.hpp` и `Util/Assert.hpp`.
+Документированы ResourceHandler, Message/MessageBus и их память, Logger/Assert,
+FileInputStream, Time/Clock и Vector2/Vector3. В Doxygen включены эти Core-заголовки
+и каталог Util; подробности событий отдельно в [core-events.md](core-events.md).
 ECS, внутренние реализации и сторонние библиотеки в этот справочник не входят.
 
 ## ResourceHandler
@@ -10,7 +11,9 @@ ECS, внутренние реализации и сторонние библи�
 отклоняется без повторной загрузки и без изменения существующего ресурса.
 `get()` и `operator[]` бросают `std::out_of_range`, если ID отсутствует.
 `find()` возвращает указатель либо `nullptr`, не меняя контейнер.
-Вставка сохраняет выданные ссылки; они действительны до уничтожения контейнера.
+Вставка сохраняет выданные ссылки; clear() или уничтожение контейнера освобождают
+ресурсы и делают эти ссылки недействительными. clear() допускает повторный вызов
+и повторное добавление тех же ID; требования ресурсов к GL-контексту сохраняются.
 Требования к потоку и графическому контексту определяет ресурс. При одновременной
 модификации контейнера требуется внешняя синхронизация.
 
@@ -48,8 +51,10 @@ cmake --build <build-dir> --target robot2D-core-docs
 
 ## План расширения
 
-Следующие модули: файловый ввод, время и векторы, окно и Engine. Подключение документации не означает исправление этих
-модулей. Задача [CORE-01](https://github.com/Enziferum/robot2D/issues/110), общий
+FileInputStream, Time/Clock и совместимый шаг Vector2/Vector3 реализованы в CORE-01.
+Event и часть Window/Engine реализованы в CORE-02; общий статус и оставшийся объём
+ведутся в project-roadmap.md. Следующее расширение справочника — Event/Window/Engine
+после стабилизации их контрактов. Генератор ещё не покрывает все публичные API Core. Задача [CORE-01](https://github.com/Enziferum/robot2D/issues/110), общий
 маршрут — [project-roadmap.md](https://github.com/Enziferum/robot2D/blob/dev/docs/project-roadmap.md).
 
 ## Сообщения и память
