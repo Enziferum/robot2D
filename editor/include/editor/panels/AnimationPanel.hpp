@@ -1,22 +1,22 @@
 /*********************************************************************
-(c) Alex Raag 2024
-https://github.com/Enziferum
-robot2D - Zlib license.
-This software is provided 'as-is', without any express or
-implied warranty. In no event will the authors be held
-liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute
-it freely, subject to the following restrictions:
-1. The origin of this software must not be misrepresented;
-you must not claim that you wrote the original software.
-If you use this software in a product, an acknowledgment
-in the product documentation would be appreciated but
-is not required.
-2. Altered source versions must be plainly marked as such,
-and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any
-source distribution.
+   (c) Alex Raag 2024
+   https://github.com/Enziferum
+   robot2D - Zlib license.
+   This software is provided 'as-is', without any express or
+   implied warranty. In no event will the authors be held
+   liable for any damages arising from the use of this software.
+   Permission is granted to anyone to use this software for any purpose,
+   including commercial applications, and to alter it and redistribute
+   it freely, subject to the following restrictions:
+   1. The origin of this software must not be misrepresented;
+   you must not claim that you wrote the original software.
+   If you use this software in a product, an acknowledgment
+   in the product documentation would be appreciated but
+   is not required.
+   2. Altered source versions must be plainly marked as such,
+   and must not be misrepresented as being the original software.
+   3. This notice may not be removed or altered from any
+   source distribution.
 *********************************************************************/
 
 
@@ -56,11 +56,15 @@ namespace editor {
 
         void draw(ImDrawList* drawList) {
             drawList -> AddQuadFilled(m_bb.GetTL(), m_bb.GetBL(), m_bb.GetBR(), m_bb.GetTR(),
-                                      m_moving ? m_selectColor : m_color);
+                m_moving ? m_selectColor : m_color);
         }
 
-        int& getCurrentFrame() noexcept { return m_currentFrame; }
-        void setMoving(bool flag) { m_moving = flag; }
+        int& getCurrentFrame() noexcept {
+            return m_currentFrame;
+        }
+        void setMoving(bool flag) {
+            m_moving = flag;
+        }
     private:
         int m_currentFrame { 0 };
 
@@ -95,10 +99,10 @@ namespace editor {
     };
 
 
-    class AnimationPanel final: public IPanel {
+    class AnimationPanel final : public IPanel {
     public:
         AnimationPanel(robot2D::MessageBus& messageBus,
-                       MessageDispatcher& messageDispatcher, UIInteractor::Ptr interactor);
+            MessageDispatcher& messageDispatcher, UIInteractor::Ptr interactor);
         AnimationPanel(const AnimationPanel& other) = delete;
         AnimationPanel& operator=(const AnimationPanel& other) = delete;
         AnimationPanel(AnimationPanel&& other) = delete;
@@ -115,6 +119,8 @@ namespace editor {
         void renderSlicePreview();
 
 
+        void refreshFrames();
+        void seekFrame(int index);
         void onAnimationSlice(const AnimationTextureSliceTask& task);
         void onSelectEntity(const PanelEntitySelectedMessage& message);
 
@@ -131,6 +137,9 @@ namespace editor {
         Animation* m_currentAnimation{nullptr};
         bool m_needShowSlicePreview{false};
         std::string m_loadTexturePath;
+        std::uint64_t m_sliceRevision{0};
+        robot2D::vec2i m_cellSize{32, 32};
+        std::vector<AnimationFrame> m_sliceSelectedFrames;
         SceneEntity m_animationEntity;
 
         enum class PlayMode: int {

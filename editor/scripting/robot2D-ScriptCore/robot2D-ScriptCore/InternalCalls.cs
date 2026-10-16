@@ -111,6 +111,12 @@ namespace robot2D
         [MethodImplAttribute(MethodImplOptions.InternalCall)]
         internal extern static void AnimationComponent_Stop(ulong entityID, string animation);
 
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static bool AnimationComponent_TryPlay(ulong entityID, string animation);
+
+        [MethodImplAttribute(MethodImplOptions.InternalCall)]
+        internal extern static bool AnimationComponent_IsPlaying(ulong entityID);
+
         #endregion
 
         [MethodImplAttribute(MethodImplOptions.InternalCall)]

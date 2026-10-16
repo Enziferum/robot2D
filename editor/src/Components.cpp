@@ -252,6 +252,8 @@ namespace editor {
 
 
     void AnimatorComponent::Play(const std::string& animationName) {
+        if(isPlaying && m_animationName == animationName)
+            return;
         isPlaying = true;
         m_animationName = animationName;
         m_frameID = 0;
@@ -259,8 +261,8 @@ namespace editor {
     }
 
     void AnimatorComponent::Stop(const std::string& animationName) {
-        isPlaying = false;
-        m_animationName = animationName;
+        if(animationName.empty() || m_animationName == animationName)
+            isPlaying = false;
     }
 
 }

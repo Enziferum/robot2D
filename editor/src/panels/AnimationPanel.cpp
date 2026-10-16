@@ -31,6 +31,7 @@
 
 #include <editor/panels/AnimationPanel.hpp>
 #include <editor/AnimationManager.hpp>
+#include <editor/AnimationPlayback.hpp>
 #include <editor/FiledialogAdapter.hpp>
 #include <editor/FileApi.hpp>
 #include <editor/Macro.hpp>
@@ -148,12 +149,29 @@ namespace editor {
     }
 
     void AnimationPanel::render() {
+        if(!m_animationEntity || !m_animationEntity.hasComponent<AnimationComponent>()) {
+            m_currentAnimation = nullptr;
+            m_keyFrames.clear();
+            m_needShowSlicePreview = false;
+            m_mode = PlayMode::Play;
+        }
+        else if(m_animationEntity.hasComponent<AnimatorComponent>()) {
+            const auto& animator = m_animationEntity.getComponent<AnimatorComponent>();
+            if(animator.playing())
+                m_currentFrame = static_cast<int>(animator.frameIndex());
+            else
+                m_mode = PlayMode::Play;
+        }
         std::string name = ICON_FA_FILE_VIDEO + std::string{" Animation"} + "###AnimationPanel";
 
         robot2D::WindowOptions options;
         options.flagsMask = 0;
         options.name = name;
         renderWindow(options, [this]() {
+            if(m_interactor -> isRunning()) {
+                ImGui::TextUnformatted("Animation editing is unavailable during Play");
+                return;
+            }
             renderSequencer();
             processDragDrop();
         });
@@ -195,7 +213,7 @@ namespace editor {
 
         if(renderButton(textButtonImages[0], draw_list,
             { m_canvas_pos.x + startButtonOffsetX, m_canvas_pos.y + xButtonOffset}, &outButtonWidth)) {
-            /// TODO(a.raag): move to first frame
+            seekFrame(0);
         }
 
         if(outButtonWidth != 0)
@@ -203,7 +221,7 @@ namespace editor {
 
         if(renderButton(textButtonImages[1], draw_list,
             {m_canvas_pos.x + startButtonOffsetX, m_canvas_pos.y + xButtonOffset}, &outButtonWidth)) {
-            m_cursor.prevKeyFrame();
+            seekFrame(m_currentFrame - 1);
         }
 
         if(outButtonWidth != 0)
@@ -222,11 +240,11 @@ namespace editor {
 
             if(m_mode == PlayMode::Play) {
                 m_mode = PlayMode::Stop;
-                m_currentAnimation -> isLooped = true;
+
             }
             else if(m_mode == PlayMode::Stop) {
                 m_mode = PlayMode::Play;
-                m_currentAnimation -> isLooped = false;
+
             }
 
             /// Start Move cursor from start to end looping
@@ -237,7 +255,7 @@ namespace editor {
 
         if(renderButton(textButtonImages[4], draw_list,
             {m_canvas_pos.x + startButtonOffsetX, m_canvas_pos.y + xButtonOffset}, &outButtonWidth)) {
-            m_cursor.nextKeyFrame();
+            seekFrame(m_currentFrame + 1);
         }
 
         if(outButtonWidth != 0)
@@ -245,7 +263,8 @@ namespace editor {
 
         if(renderButton(textButtonImages[5], draw_list,
             {m_canvas_pos.x + startButtonOffsetX, m_canvas_pos.y + xButtonOffset}, &outButtonWidth)) {
-            /// TODO(a.raag): move cursor to last frame
+            if(m_currentAnimation)
+                seekFrame(static_cast<int>(m_currentAnimation -> frames.size()) - 1);
         }
 
         if(outButtonWidth != 0)
@@ -255,6 +274,8 @@ namespace editor {
             { m_canvas_pos.x + startButtonOffsetX, m_canvas_pos.y + xButtonOffset}, &outButtonWidth)) {
             if(!m_currentAnimation)
                 return;
+            if(!AnimationManager::getManager() -> saveAnimation(m_currentAnimation))
+                RB_EDITOR_ERROR("AnimationPanel: save failed, path={0}", m_currentAnimation -> filePath);
         }
 
         draw_list -> PushClipRect(m_childFramePos, m_childFramePos + m_childFrameSize, true);
@@ -267,18 +288,22 @@ namespace editor {
                     localManager -> hasAnimations(m_animationEntity.getComponent<IDComponent>().ID)) {
                     for(auto& animation:
                         localManager -> getAnimations(m_animationEntity.getComponent<IDComponent>().ID)) {
-                        const bool is_selected = (m_currentAnimation->name == animation.name);
+                        const bool is_selected = (m_currentAnimation && m_currentAnimation->name == animation.name);
                         if(ImGui::Selectable(animation.name.c_str(), is_selected)) {
+                            stopAnimation(m_animationEntity);
+                            ++m_sliceRevision;
+                            m_sliceSelectedFrames.clear();
                             m_currentAnimation = &animation;
                             m_animationEntity.getComponent<AnimationComponent>().setAnimation(
                                 m_currentAnimation);
+                            seekFrame(0);
                             m_keyFrames.clear();
 
                             int frameOffset = 0;
                             for(auto& frame: m_currentAnimation->frames) {
                                 UIKeyFrame keyFrame;
                                 keyFrame.getCurrentFrame() = frameOffset;
-                                frameOffset += m_currentAnimation->framesPerSecond;
+                                ++frameOffset;
                                 m_keyFrames.emplace_back(keyFrame);
                             }
                         }
@@ -291,9 +316,8 @@ namespace editor {
                 if(ImGui::Button("Add New")) {
                     auto* dialogAdapter = FiledialogAdapter::get();
 
-                    if(!m_animationEntity) {
-                        ///// TODO(a.raag): no-op
-                    }
+                    if(!m_animationEntity)
+                        return;
 
                     std::string path;
                     std::vector<std::string> savePatterns = {"*.anim"};
@@ -304,18 +328,23 @@ namespace editor {
                         return;
                     }
 
-                    std::string name = getFileName(path);
+                    std::string name = std::filesystem::path(path).stem().string();
                     if(name.empty()) {
                         RB_EDITOR_ERROR("AnimationPanel: Can't get filename on creation");
-                        /// errror
+                        return;
+                    }
+                    if(localManager -> getAnimation(m_animationEntity.getUUID(), name)) {
+                        RB_EDITOR_WARN("AnimationPanel: duplicate clip name={0}", name);
+                        return;
                     }
 
-                    if(!m_animationEntity.hasComponent<AnimationComponent>()) {
-                        if(!m_animationEntity.hasComponent<AnimationComponent>())
-                            m_animationEntity.addComponent<AnimationComponent>();
+                    if(!m_animationEntity.hasComponent<AnimationComponent>())
                         m_animationEntity.addComponent<AnimationComponent>();
-                    }
-
+                    if(!m_animationEntity.hasComponent<AnimatorComponent>())
+                        m_animationEntity.addComponent<AnimatorComponent>();
+                    stopAnimation(m_animationEntity);
+                    ++m_sliceRevision;
+                    m_sliceSelectedFrames.clear();
                     auto& animationComponent = m_animationEntity.getComponent<AnimationComponent>();
                     m_currentAnimation = nullptr;
                     m_currentAnimation = localManager -> addAnimation(
@@ -331,12 +360,45 @@ namespace editor {
                 }
             }
 
+            if(m_currentAnimation) {
+                if(ImGui::InputInt("FPS", &m_currentAnimation -> framesPerSecond)) {
+                    m_currentAnimation -> framesPerSecond = std::max(1, m_currentAnimation -> framesPerSecond);
+                    m_animationEntity.markModified();
+                }
+                if(ImGui::Checkbox("Loop", &m_currentAnimation -> isLooped))
+                    m_animationEntity.markModified();
+                if(ImGui::Button("Move left")) {
+                    if(m_currentAnimation -> moveFrame(m_currentFrame, m_currentFrame - 1)) {
+                        m_sliceSelectedFrames.clear();
+                        refreshFrames();
+                        m_animationEntity.markModified();
+                        seekFrame(m_currentFrame - 1);
+                    }
+                }
+                ImGui::SameLine();
+                if(ImGui::Button("Move right")) {
+                    if(m_currentAnimation -> moveFrame(m_currentFrame, m_currentFrame + 1)) {
+                        m_sliceSelectedFrames.clear();
+                        refreshFrames();
+                        m_animationEntity.markModified();
+                        seekFrame(m_currentFrame + 1);
+                    }
+                }
+                if(ImGui::Button("Delete frame") && m_currentAnimation -> removeFrame(m_currentFrame)) {
+                    stopAnimation(m_animationEntity);
+                    refreshFrames();
+                    m_animationEntity.markModified();
+                    seekFrame(m_currentFrame);
+                }
+            }
             imgui_Text("Frames:");
             ImGui::SameLine();
         }
     }
 
     void AnimationPanel::processDragDrop() {
+        if(!m_currentAnimation || !m_animationEntity || m_interactor -> isRunning())
+            return;
 
         robot2D::DragDropTarget dragDropTarget { contentItemID };
         if(auto && payloadBuffer = dragDropTarget.unpackPayload2Buffer()) {
@@ -348,6 +410,8 @@ namespace editor {
             if(getFileExtension(realPath) != ".png")
                 return;
 
+            ++m_sliceRevision;
+            m_sliceSelectedFrames.clear();
             m_loadTexturePath = realPath;
             m_needShowSlicePreview = true;
         }
@@ -522,6 +586,7 @@ namespace editor {
                                 m_currentFrame = m_frameMin;
                             if(m_currentFrame >= m_frameMax)
                                 m_currentFrame = m_frameMax;
+                            seekFrame(m_currentFrame);
                         }
                         if(!io.MouseDown[ImGuiMouseButton_Left])
                             m_MovingCurrentFrame = false;
@@ -663,39 +728,88 @@ namespace editor {
         }
     }
 
-    void AnimationPanel::onSelectEntity(const editor::PanelEntitySelectedMessage& message) {
-        m_animationEntity = message.entity;
-        m_currentAnimation = nullptr;
+    void AnimationPanel::refreshFrames() {
         m_keyFrames.clear();
-
-        if(!m_animationEntity.hasComponent<AnimationComponent>())
+        m_currentKeyFrame = nullptr;
+        if(!m_currentAnimation)
             return;
-
-        m_currentAnimation = m_animationEntity.getComponent<AnimationComponent>().getAnimation();
-        int frameOffset = 0;
-        for(auto& frame: m_currentAnimation -> frames) {
+        int index = 0;
+        for([[maybe_unused]] const auto& frame: m_currentAnimation -> frames) {
             UIKeyFrame keyFrame;
-            keyFrame.getCurrentFrame() = frameOffset;
-            frameOffset += m_currentAnimation -> framesPerSecond;
+            keyFrame.getCurrentFrame() = index++;
             m_keyFrames.emplace_back(keyFrame);
         }
     }
 
+    void AnimationPanel::seekFrame(int index) {
+        if(!m_currentAnimation || !m_animationEntity || m_interactor -> isRunning() ||
+            m_currentAnimation -> frames.empty())
+            return;
+        stopAnimation(m_animationEntity);
+        m_mode = PlayMode::Play;
+        m_currentFrame = std::clamp(index, 0, static_cast<int>(m_currentAnimation -> frames.size()) - 1);
+        if(const auto* rect = m_currentAnimation -> getFrame(m_currentFrame))
+            m_animationEntity.getComponent<AnimationComponent>().setTextureRect(*rect);
+    }
 
+    void AnimationPanel::onSelectEntity(const editor::PanelEntitySelectedMessage& message) {
+        if(!m_interactor -> isRunning())
+            stopAnimation(m_animationEntity);
+        ++m_sliceRevision;
+        m_sliceSelectedFrames.clear();
+        m_needShowSlicePreview = false;
+        m_mode = PlayMode::Play;
+        m_currentFrame = 0;
+        m_animationEntity = message.entity;
+        m_currentAnimation = nullptr;
+        m_currentKeyFrame = nullptr;
+        m_keyFrames.clear();
+        if(!m_animationEntity || !m_animationEntity.hasComponent<AnimationComponent>())
+            return;
+        m_currentAnimation = m_animationEntity.getComponent<AnimationComponent>().getAnimation();
+        if(!m_currentAnimation)
+            return;
+        int frameOffset = 0;
+        for([[maybe_unused]] auto& frame: m_currentAnimation -> frames) {
+            UIKeyFrame keyFrame;
+            keyFrame.getCurrentFrame() = frameOffset++;
+            m_keyFrames.emplace_back(keyFrame);
+        }
+    }
 
     void AnimationPanel::renderSlicePreview() {
+        if(!m_currentAnimation || !m_animationEntity || m_interactor -> isRunning()) {
+            m_needShowSlicePreview = false;
+            return;
+        }
         if(!ImGui::Begin("AnimationSlice", &m_needShowSlicePreview, ImGuiWindowFlags_NoDocking)) {
             ImGui::End();
             return;
         }
 
+        if(m_currentAnimation -> texture) {
+            ImGui::InputInt("Cell width", &m_cellSize.x);
+            ImGui::InputInt("Cell height", &m_cellSize.y);
+            if(ImGui::Button("Slice Grid")) {
+                const auto size = m_currentAnimation -> texture -> getSize().as<int>();
+                if(m_currentAnimation -> sliceGrid(size, m_cellSize)) {
+                    stopAnimation(m_animationEntity);
+                    m_sliceSelectedFrames.clear();
+                    refreshFrames();
+                    m_animationEntity.markModified();
+                    seekFrame(0);
+                }
+                else
+                    RB_EDITOR_WARN("AnimationPanel: grid requires positive divisible dimensions, at most 65536 frames");
+            }
+        }
         auto drawList = ImGui::GetWindowDrawList();
         ImVec2 canvas_p0 = ImGui::GetCursorScreenPos();
         ImGuiIO& io = ImGui::GetIO();
 
         static ImU32 defaultColor = IM_COL32(0, 255, 0, 255);
         static ImU32 selectColor = 0xA02A2AFF;
-        static std::vector<AnimationFrame> gluingFrames;
+        auto& gluingFrames = m_sliceSelectedFrames;
 
         if(m_currentAnimation -> texture) {
             auto textureSize = m_currentAnimation -> texture -> getSize();
@@ -768,11 +882,16 @@ namespace editor {
                 /// TODO(a.raag): confirm button if only slice done
                 if(renderButton("Confirm", drawList, offsetPos + ImVec2(outWidth, 0.f))) {
                     m_currentAnimation -> setFrameIndices();
+                    m_keyFrames.clear();
+                    m_currentKeyFrame = nullptr;
+                    m_needShowSlicePreview = false;
+                    m_animationEntity.markModified();
+                    seekFrame(0);
                     int frameOffset = 0;
                     for(auto& frame: m_currentAnimation -> frames) {
                         UIKeyFrame keyFrame;
                         keyFrame.getCurrentFrame() = frameOffset;
-                        frameOffset += m_currentAnimation -> framesPerSecond;
+                        ++frameOffset;
                         m_keyFrames.emplace_back(keyFrame);
                     }
                 }
@@ -785,7 +904,10 @@ namespace editor {
             if(renderButton("Slice", drawList, offsetPos, &outWidth)) {
                 auto name = getFileName(m_loadTexturePath);
                 TaskQueue::GetQueue() -> addAsyncTask<AnimationTextureSliceTask>(
-                    BIND_CLASS_FN(onAnimationSlice), name, m_loadTexturePath
+                    [this, revision = m_sliceRevision](const AnimationTextureSliceTask& task) {
+                    if(revision == m_sliceRevision)
+                        onAnimationSlice(task);
+                }, name, m_loadTexturePath
                     );
             }
         }
@@ -794,13 +916,16 @@ namespace editor {
     }
 
     void AnimationPanel::onAnimationSlice(const AnimationTextureSliceTask& task) {
+        if(!m_currentAnimation || !m_animationEntity || m_interactor -> isRunning())
+            return;
         auto& frames = task.getRects();
         constexpr int framesPerSecond = 12;
 
         auto* localManager = LocalResourceManager::getManager();
         auto* manager = ResourceManager::getManager();
 
-        auto* texture = localManager -> addTexture(task.getFileName());
+        auto* texture = localManager -> hasTexture(task.getFileName()) ?
+            &localManager -> getTexture(task.getFileName()) : localManager -> addTexture(task.getFileName());
         if(!texture) {
             RB_EDITOR_ERROR("AnimationPanel::onAnimationSlice: Can't create texture");
             return;
@@ -821,10 +946,13 @@ namespace editor {
 
         int frameOffset = 0;
 
+        m_currentAnimation -> frames.clear();
         for(auto& frame: frames)
             m_currentAnimation -> addFrame(frame);
 
-        m_currentAnimation -> framesPerSecond = 10.f; // HardCode only for Test
+        m_currentAnimation -> framesPerSecond = framesPerSecond;
+        m_animationEntity.markModified();
+        seekFrame(0);
     }
 
 
