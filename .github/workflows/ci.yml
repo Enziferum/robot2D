@@ -42,7 +42,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y ninja-build g++ pkg-config libglfw3-dev libspdlog-dev libfreetype-dev libgl1-mesa-dev mono-devel xvfb xauth libgl1-mesa-dri
+          sudo apt-get install -y ninja-build g++ pkg-config libglfw3-dev libspdlog-dev libfreetype-dev libgl1-mesa-dev mono-devel xvfb xauth libgl1-mesa-dri gdb
 
       - name: Install Windows dependencies
         if: runner.os == 'Windows'
