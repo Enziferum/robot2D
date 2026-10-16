@@ -126,3 +126,11 @@ roadmap и оба набора тестов. Повторный обязател
 сборка редактора/suite, headless CTest 60/60 и строгий clang-tidy 180 единиц.
 UI/graphics-приёмка остаётся перед merge; результаты CI проверяются в PR.
 Регрессия runtime UI: два клика по разным hitbox и последующий MouseMoved до update сохраняют координаты и порядок callback; повторный update не повторяет команды, LostFocus отменяет накопленный ввод. Тест подтверждён падением до исправления и проходит после него.
+
+
+## Согласованный следующий контракт
+
+2026-10-16 пользователь согласовал [fixed timestep и RuntimeSession](fixed-timestep-contract.md).
+Там отдельно перечислены существующие возможности и будущие API. Сначала
+завершаем CORE-02; этот документ не добавляет в Event PR реализацию scheduler,
+OnFixedUpdate, Pause/Resume или fixed-tick InputState.
