@@ -91,14 +91,29 @@ namespace robot2D
 
     public class Animator : Component
     {
+        public bool IsPlaying => Entity != null && InternalCalls.AnimationComponent_IsPlaying(Entity.ID);
+
+        // Repeating the active clip does not restart it. Unknown/invalid clips preserve playback.
+        public bool TryPlay(string animation)
+        {
+            return Entity != null && !string.IsNullOrWhiteSpace(animation) &&
+                   InternalCalls.AnimationComponent_TryPlay(Entity.ID, animation);
+        }
+
+        public void Stop()
+        {
+            Stop(null);
+        }
+
         public void Play(string animation)
         {
-            InternalCalls.AnimationComponent_Play(Entity.ID, animation);
+            TryPlay(animation);
         }
 
         public void Stop(string animation)
         {
-            InternalCalls.AnimationComponent_Stop(Entity.ID, animation);
+            if(Entity != null)
+                InternalCalls.AnimationComponent_Stop(Entity.ID, animation);
         }
     }
     

@@ -20,6 +20,7 @@
 *********************************************************************/
 
 #include <editor/EditorLogic.hpp>
+#include <editor/AnimationPlayback.hpp>
 #include <editor/Editor.hpp>
 #include <editor/FileApi.hpp>
 #include <editor/Messages.hpp>
@@ -115,12 +116,15 @@ namespace editor {
         m_messageDispatcher.onMessage<AnimationPlayMessage>(MessageID::AnimationPlay,
             [](const AnimationPlayMessage& message) {
             auto entity = message.entity;
-            auto& animator = entity.getComponent<AnimatorComponent>();
-            auto& animationComponent = entity.getComponent<AnimationComponent>();
+            if(!entity || !entity.hasComponent<AnimationComponent>())
+                return;
+            auto* animation = entity.getComponent<AnimationComponent>().getAnimation();
+            if(!animation)
+                return;
             if(message.mode == AnimationPlayMessage::Mode::Play)
-                animator.Play(animationComponent.getAnimation() -> name);
+                playAnimation(entity, animation -> name);
             else
-                animator.Stop(animationComponent.getAnimation() -> name);
+                stopAnimation(entity);
         });
 
 

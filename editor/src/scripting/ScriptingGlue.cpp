@@ -34,6 +34,7 @@
 #include <editor/scripting/ScriptingEngine.hpp>
 #include <editor/Scene.hpp>
 #include <editor/Components.hpp>
+#include <editor/AnimationPlayback.hpp>
 #include <editor/Uuid.hpp>
 
 namespace editor {
@@ -297,20 +298,38 @@ namespace editor {
     }
 
 
-    static void AnimationComponent_Play(UUID entityID, MonoString* name) {
-        auto service = ScriptGlue::getService();
+    static SceneEntity animationEntity(UUID entityID) {
+        auto* service = ScriptGlue::getService();
+        if(!service)
+            return {};
         auto interactor = service -> getInteractor();
-        RB_CORE_ASSERT(interactor);
-        [[maybe_unused]] SceneEntity entity = interactor -> getEntity(entityID);
-        RB_CORE_ASSERT(entity);
+        return interactor ? interactor -> getEntity(entityID) : SceneEntity{};
+    }
+
+    static bool AnimationComponent_TryPlay(UUID entityID, MonoString* name) {
+        if(!name)
+            return false;
+        const auto clipName = Utils::MonoStringToString(name);
+        const bool result = playAnimation(animationEntity(entityID), clipName);
+        if(!result)
+            RB_EDITOR_WARN(
+                "Animator::TryPlay: entity={0}, clip={1}, reason=entity, component or clip unavailable/invalid",
+                static_cast<std::uint64_t>(entityID), clipName);
+        return result;
+    }
+
+    static void AnimationComponent_Play(UUID entityID, MonoString* name) {
+        AnimationComponent_TryPlay(entityID, name);
     }
 
     static void AnimationComponent_Stop(UUID entityID, MonoString* name) {
-        auto service = ScriptGlue::getService();
-        auto interactor = service -> getInteractor();
-        RB_CORE_ASSERT(interactor);
-        [[maybe_unused]] SceneEntity entity = interactor -> getEntity(entityID);
-        RB_CORE_ASSERT(entity);
+        stopAnimation(animationEntity(entityID), name ? Utils::MonoStringToString(name) : std::string{});
+    }
+
+    static bool AnimationComponent_IsPlaying(UUID entityID) {
+        auto entity = animationEntity(entityID);
+        return entity && entity.hasComponent<AnimatorComponent>() &&
+               entity.getComponent<AnimatorComponent>().playing();
     }
 
     static bool Input_IsKeyDown(std::uint16_t keycode) {
@@ -448,6 +467,8 @@ namespace editor {
         RB_ADD_INTERNAL_CALL(CameraComponent_SetSize);
         RB_ADD_INTERNAL_CALL(DrawableComponent_Flip);
         RB_ADD_INTERNAL_CALL(AnimationComponent_Play);
+        RB_ADD_INTERNAL_CALL(AnimationComponent_TryPlay);
+        RB_ADD_INTERNAL_CALL(AnimationComponent_IsPlaying);
         RB_ADD_INTERNAL_CALL(AnimationComponent_Stop);
         RB_ADD_INTERNAL_CALL(SceneManager_LoadScene);
         RB_ADD_INTERNAL_CALL(SceneManager_LoadSceneAsync);
