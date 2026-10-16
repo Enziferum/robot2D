@@ -26,9 +26,14 @@ def own_cpp(path):
             and Path(path).suffix.lower() in SOURCES | HEADERS)
 
 
+def managed_input(path):
+    return ((path.startswith("editor/scripting/") or path.startswith("editor/tests/"))
+            and Path(path).suffix.lower() in {".cs", ".csproj"})
+
+
 def build_input(path):
     template = path.endswith(".in") and (own_cpp(path[:-3]) or path.startswith("editor/cmake/"))
-    return (own_cpp(path) or template or path.endswith("CMakeLists.txt") or path.endswith(".cmake")
+    return (own_cpp(path) or managed_input(path) or template or path.endswith("CMakeLists.txt") or path.endswith(".cmake")
             or path in {".clang-tidy", "uncrustify.cfg", "scripts/run_clang_tidy.ps1"})
 
 
@@ -130,7 +135,7 @@ def check(changed, *, plan=False):
                           "python_tests": python_checks}, ensure_ascii=False, indent=2))
         return
     if not native and not python_checks:
-        print("pre-commit: no C++ or Python changes to check.")
+        print("pre-commit: no C++, C# or Python changes to check.")
         return
     # Check the worktree/index agreement before running tests against worktree files.
     unstaged = git_paths("diff", "--name-only", "--ignore-submodules=all")
@@ -177,7 +182,8 @@ def check(changed, *, plan=False):
 
     entries = json.loads((build / "compile_commands.json").read_text(encoding="utf-8"))
     entries = own_entries(entries)
-    config_changed = any(build_input(path) and not own_cpp(path) for path in changed)
+    config_changed = any(build_input(path) and not own_cpp(path) and not managed_input(path)
+                         for path in changed)
     if config_changed:
         units = [str(source_path(entry)) for entry in entries]
     elif cpp:

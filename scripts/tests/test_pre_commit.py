@@ -34,6 +34,23 @@ class PreCommitTests(unittest.TestCase):
                 hook.check(paths)
                 run.assert_not_called()
 
+    def test_managed_api_and_consumer_trigger_build_and_tests(self):
+        for path in ("editor/scripting/robot2D-ScriptCore/robot2D-ScriptCore/Scene/Component.cs",
+                     "editor/scripting/robot2D-ScriptCore/robot2D-ScriptCore/robot2D-ScriptCore.csproj",
+                     "editor/tests/ManagedApiTests.cs"):
+            with self.subTest(path=path), patch("sys.stdout", new_callable=io.StringIO) as output:
+                hook.check([path], plan=True)
+                plan = json.loads(output.getvalue())
+                self.assertTrue(plan["native_build_and_tests"])
+                self.assertTrue(plan["python_tests"])
+                self.assertEqual(plan["format"], [])
+
+    def test_partial_staging_of_managed_sources_blocks_checks(self):
+        path = "editor/scripting/robot2D-ScriptCore/robot2D-ScriptCore/Scene/Component.cs"
+        with patch.object(hook, "execute"), patch.object(hook, "git_paths", side_effect=[[path], []]):
+            with self.assertRaisesRegex(hook.CheckError, "Stage or set aside"):
+                hook.check([path])
+
     def test_python_changes_run_regressions_without_native_tools(self):
         with patch.object(hook, "execute") as run, patch.object(hook, "git_paths", return_value=[]), \
                 patch.object(hook, "executable") as tool:
