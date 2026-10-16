@@ -20,10 +20,10 @@ CORE-01 #110 остаётся общей открытой задачей, не �
 | CORE-01: согласованный Util и базовые классы | ResourceHandler, MessageBus/типизированная память, Logger/Assert, FileInputStream, Time/Clock, совместимые constexpr/noexcept Vector2/3, регрессии, Doxygen | Объединено с CORE-02 на dev после PHYS-01; локальные проверки пройдены, финальный CI/ревью |
 | CORE-02: события | variant Event, typed EventBinder, GLFW FIFO/frame batch, Add*Event, capture/владельцы Press–Release/cancel, история/Events, потребители, UI clicks/shortcuts, startup crash fix | Реализовано; пользователь подтвердил повторное открытие проекта и GUI на всё окно; финальная интеграция/CI |
 | robot2D-imgui: scopes | Безопасные оконные/style scopes и сохранение dockspace при скрытом canvas | Отдельные IMGUI-01 #121 / PR #123; реализованы в соседней ветке, не входят автоматически в CORE-02 |
-| robot2D-imgui: текущая корректность renderer | OrthoView Y; GL state и active texture/sampler/program/VAO; UserCallback/reset; scissor clamp/empty; GPU-resource RAII/отказ setup; владение memory-font | Открытый следующий объём по аудиту R1/R2/R3/R5/R8/R9; реализация здесь не начата |
-| robot2D-imgui: GuiImpl lifecycle | Собственный ImGuiContext, safe shutdown до setup/после отказа, ready только после успеха; состояния кадра, шрифтовый набор | Согласован контракт, остаются G2/G3 и интеграция font policy; G1/input принят из CORE-02 |
+| robot2D-imgui: текущая корректность renderer | OrthoView Y; GL state и active texture/sampler/program/VAO; UserCallback/reset; scissor clamp/empty; GPU-resource RAII/отказ setup; владение memory-font | IMGUI-02 #126: реализован однооконный шаг; проверки и ограничения — [gui-backend.md](gui-backend.md) |
+| robot2D-imgui: GuiImpl lifecycle | Собственный ImGuiContext, safe shutdown до setup/после отказа, ready только после успеха; состояния кадра, шрифтовый набор | IMGUI-02 #126: lifecycle и фиксированный font set реализованы; G1/input сохранён из CORE-02; ручная приёмка впереди |
 | robot2D-imgui: обёртки | Typed/size-aware drag/drop и borrowed lifetime; явные ImageButton ID, null framebuffer, sprite UV/zero-size, string InputText, Sugar flags/namespace | A7 обсуждается соседним GUI-чатом без реализации; A2–A6 остаются отдельными согласуемыми шагами; A1 — PR #123 |
-| Core Window/Desktop | Владение native window/GLFW, уничтожение, ошибки создания; logical/framebuffer size, minimized/DPI, источник событий WindowID, signed coordinates, clipboard/IME и contexts | Event/pump отделены от swap в CORE-02; остальной контракт и реализация ещё впереди |
+| Core Window/Desktop | Владение native window/GLFW, уничтожение, ошибки создания; logical/framebuffer size, minimized/DPI, источник событий WindowID, signed coordinates, clipboard/IME и contexts | Event/pump отделены от swap в CORE-02; IMGUI-02 добавляет фактические logical/framebuffer sizes; остальное впереди |
 | Core Graphics для GUI | Явный UI pass/state/cache; точный vertex layout, draw ranges/baseVertex; streaming buffers, texture views/updates/row pitch, context-local VAO/FBO и lifetime | Связано с RENDER-04 #98 / RENDER-05 #99; согласовать минимальный API до переноса GuiRender |
 | Engine / fixed timestep | Общий scheduler editor/player, fixedDt, предел догоняющих шагов, queued Play/Pause/Stop, SessionId | [Контракт согласован](fixed-timestep-contract.md), реализация не начата; сначала завершение CORE-01/02 |
 | Runtime / fixed input | Общая RuntimeSession, OnUpdate/OnFixedUpdate, frame/fixed input и временные границы, Pause/Resume | Последующая интеграция RUNTIME-01/02, INPUT-01 и PHYS-01; не реализовано этим объединением |
@@ -36,9 +36,9 @@ CORE-01 #110 остаётся общей открытой задачей, не �
 дефекты уже воспроизведёнными и не запускает их реализацию. Изменения соседней
 GUI-ветки и пользовательский основной checkout не копируются и не редактируются.
 
-Последовательность сейчас: объединение/проверки/ревью CORE-01+02 → выбор следующего
-небольшого шага с пользователем. Рекомендуемый кандидат — однооконные исправления
-корректности GuiRender/GuiImpl до обновления upstream. Тайминг согласован, но
+Последовательность сейчас: интеграция CORE-01+02 / PR #122 → зависимый
+однооконный шаг IMGUI-02 #126 по GuiRender/GuiImpl → ревью и ручная приёмка.
+Следующий Graphics API и обновление upstream согласуются отдельно. Тайминг согласован, но
 автоматически не запускается; остальные зависимости остаются в своих Issues.
 Оптимизацию uploads/ёмкости и VAO выполняем после измерений, отдельным шагом.
 
@@ -632,6 +632,36 @@ CI общего head, финальное ревью и короткое откр
 этим объединением не реализуются. Основной checkout и ветки соседних чатов,
 Core ECS, Snapshot/CancellationToken и submodule pointers не менялись.
 
+## IMGUI-02: однооконный GuiRender/GuiImpl — 2026-10-16
+
+Пользователь поручил реализацию по зафиксированному контракту. Ведущий — Codex,
+отдельный worktree imgui-02-backend, ветка IMGUI-02, Issue [#126](https://github.com/Enziferum/robot2D/issues/126).
+База: актуальный удалённый dev df823bb + зависимость CORE-02 51002de (PR #122 ещё открыт).
+IMGUI-01/scopes и пользовательские незакоммиченные документы не копировались.
+
+Исправлены проекция/scissor, GL isolation, callbacks/reset, rollback и освобождение
+GPU-ресурсов. GuiImpl получил собственный context и согласованные состояния,
+фиксированный владеющий font set с FontId/default/merge/fallback. Потребители
+editor/example адаптированы; Core получил фактические logical/framebuffer size,
+безопасное пустое состояние Texture и явное освобождение ресурсов renderer.
+Engine scheduler не менялся; добавлена только очистка application до local window
+при исключении. Детали и приёмка — [gui-backend.md](gui-backend.md).
+
+Windows GCC 16.2/Ninja Release: editor, core-tests, suite и imgui example собраны;
+полная suite 210/210 без пропусков, включая 47 graphics и 9 новых backend-сценариев.
+Обязательный hook прошёл: Python 47/47, формат, сборка, 163 headless и строгий
+clang-tidy 186 единиц. Отдельный строгий анализ пяти backend единиц и example
+прошёл. Реальный editor прошёл скрытый startup/shutdown smoke с exit 0.
+Основной commit fae3cb5; ревью/регрессия glyph ranges и alpha overlap — 65b43de,
+повторная полная suite 210/210, обязательный hook 163/163 и строгий анализ прошли.
+Опубликован [draft PR #130](https://github.com/Enziferum/robot2D/pull/130) в dev.
+Ручная UI-приёмка остаётся; результат CI фиксируется по конкретному head ниже.
+
+Следующий шаг: проверить CI PR #130 и пройти ручную приёмку; перед merge
+интегрировать зависимость PR #122. GraphicsCommands, upstream, multi-viewports
+и тайминг не начаты.
+
+
 ## SCRIPT-01: пользовательские сборки — 2026-10-16
 
 Пользователь поручил ассистенту SCRIPT-01 → HUD-01 → подготовку BUILD-01 параллельно
@@ -644,6 +674,58 @@ SCRIPT-01 от актуального dev df823bb. Введены общий she
 приёмка и использование сервиса в BUILD-01; standalone остаётся PLAYER-01.
 ECS, Snapshot/CancellationToken и согласованный scheduler не изменяются.
 
+### IMGUI-02: синхронизация с новым dev
+
+CI исходного head 02f2ad0: Windows/Ubuntu Release и оба Tests check SUCCESS,
+run 38957772053. Во время CI в dev слиты SCRIPT-01 #125, HUD-01 #128 и BUILD-01 #129.
+Для устранения конфликтов объединён dev ab0f3a5. Сохранены оба набора roadmap/tests,
+типизированные события и router CORE-02, а также новый error-only popup SCRIPT-01.
+Прежний union доступ не возвращался; guard на Press уже обеспечивает InputRouter,
+Release сохраняет доставку владельцу за пределами viewport.
+Проверки объединённого результата записываются отдельно; прежний CI не считается
+проверкой нового merge. Timing и multi-viewports не затронуты.
+
+После разрешения конфликтов: editor/core-tests/suite/example собраны, CTest 215/215
+без пропусков (48 graphics), повторный startup/shutdown smoke editor — exit 0.
+Обязательный hook merge-коммита 8fda451 прошёл: Python 53/53, headless 167/167,
+строгий clang-tidy 189 единиц. Новый CI запускается после публикации;
+зелёный результат 02f2ad0 не считается проверкой этого merge.
+
+
+### IMGUI-02: блокер ручной приёмки — пропавшие объекты
+
+Повторный CI head 7ed90b2: run 38960807727 SUCCESS. Приёмка пользователем
+обнаружила видимую сетку/GUI при отсутствующих объектах Shooter, несмотря на
+ненулевые Quads/Draw calls. Исправлен побочный эффект OpenGLIndexBuffer:
+создание через ELEMENT_ARRAY_BUFFER меняло EBO чужого VAO; SceneGrid заменял
+индексы Core буфером на один quad. Upload переведён на COPY_WRITE_BUFFER
+с восстановлением binding; существующий API привязки к VAO сохранён.
+
+Добавлен полный Editor/SceneGrid/GUI pixel-test с прозрачной камерой перед
+объектом; renderer 4.3/4.5 дополнен Core/FBO/GUI interop и проверками EBO/upload.
+Все три проверки падали до исправления, проходят после него. Локальная сборка
+editor/core-tests/suite и CTest 216/216 без пропусков (49 graphics) успешны.
+Детали — [gui-backend.md](gui-backend.md). Исправление — commit 7e45d6e.
+Обязательный hook прошёл: Python 53/53, headless 167/167, строгий clang-tidy
+189 единиц. Три графические регрессии повторно прошли на окончательном коде.
+Следующий шаг: CI нового head и остальные пункты ручной UI-приёмки; merge не выполнен.
+Тайминг, multi-viewports и ECS не изменялись.
+
+Повторная ручная проверка пользователем исправленного robot2D.exe: Shooter открыт,
+объекты видны. Остальные пункты GUI/capture/layout проверяются отдельно перед merge.
+
+
+### Ручная приёмка и подготовка merge — 2026-10-17
+
+Пользователь подтвердил: вся ручная приёмка пройдена, всё работает; поручено
+последовательно слить CORE-02 #122 и IMGUI-02 #130 в dev при зелёных проверках.
+CI 4836bc1: Windows SUCCESS, Linux FAIL в новом editor-gui-scene pixel-test.
+Тест больше не зависит от асинхронного resize скрытого native back buffer:
+обрабатывает GLFW events и компонует GUI в явный framebuffer, сохраняя проверку
+объекта после прозрачной камеры. Локальная регрессия прошла; новый Linux CI
+обязателен до merge. CORE-02 синхронизируется с dev отдельно, с сохранением
+типизированного routing и новых SCRIPT/HUD/Build изменений.
+
 
 ### CORE-02: подготовка последовательной интеграции — 2026-10-17
 
@@ -653,3 +735,19 @@ ECS, Snapshot/CancellationToken и согласованный scheduler не и�
 а также error-only popup SCRIPT-01 и изменения HUD/Build. Конфликты Editor.cpp
 и roadmap разрешены без возврата union API. Проверки и CI обновлённого head
 публикуются в Issue #119; merge выполняется только после их успеха.
+
+
+IMGUI-02 включает CORE-02 c16f00e после его синхронизации с dev ab0f3a5.
+Конфликт затронул только roadmap, сохранены обе записи; исходники объединились
+без конфликтов. CORE-02 hook: Python 53/53, headless 164/164, strict clang-tidy
+197 единиц — успешно. Ручная приёмка всех пунктов подтверждена пользователем;
+перед последовательным merge остаётся зелёный CI актуальных head #122/#130.
+
+
+CORE-02 c16f00e: Windows/Linux Release и оба Tests check SUCCESS,
+run 38967673929. До последовательного merge остаётся Linux shutdown-проверка
+IMGUI-02: после успешной проверки пикселей завершается GL-контекст. Статические
+иконки EditorResourceManager теперь явно освобождаются в Application::destroy
+после editor module и в тесте после потребителей, до уничтожения GL context;
+проверены удаление GPU-текстуры и повторный release. Диагностический CI собирает
+стек прежнего отказа; новый head должен пройти обе платформы до merge.

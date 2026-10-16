@@ -98,6 +98,8 @@ namespace editor {
 
         void setup(robot2D::RenderWindow* window, EditorInteractor* editorInteractor);
         void beginEventFrame();
+        /// Cancel owned input before shutdown or a change of interaction mode.
+        void cancelInput();
         void handleEvents(const robot2D::Event& event);
         void handleMessages(const robot2D::Message& message);
         void update(float dt);
@@ -117,7 +119,6 @@ namespace editor {
     private:
         void guiRender();
         void setupBindings();
-        void cancelInput();
         void setupShortCuts();
         void setupSpinner();
 
