@@ -178,6 +178,7 @@ namespace {
             GLFWwindow* previous;
             ~WindowCleanup() {
                 auto* native = static_cast<GLFWwindow*>(window -> getRaw());
+                editor::LocalResourceManager::getManager() -> releaseGraphicsResources();
                 window.reset();
                 glfwDestroyWindow(native);
                 glfwMakeContextCurrent(previous);
@@ -225,24 +226,39 @@ namespace {
             return presenter.getState() != editor::EditorState::Load;
         }));
         CHECK(presenter.getState() == editor::EditorState::Edit);
+        robot2D::FrameBufferSpecification outputSpecification;
+        outputSpecification.size = window -> getFramebufferSize().as<int>();
+        outputSpecification.attachments = {robot2D::FrameBufferTextureFormat::RGBA8,
+                                           robot2D::FrameBufferTextureFormat::Depth};
+        auto output = robot2D::FrameBuffer::Create(outputSpecification);
         for(int frame = 0; frame < 5; ++frame) {
+            window -> processEvents();
+            (void)window -> takeEvents(static_cast<std::uint64_t>(frame));
             view.update(1.f / 60);
             CHECK(gui.beginFrame(1.f / 60));
             window -> clear();
             view.render();
             CHECK(gui.endFrame());
             window -> afterRender();
-            CHECK(gui.render());
             const auto size = window -> getFramebufferSize();
+            if(output -> getSpecification().size != size.as<int>()) output -> Resize(size);
+            // Hidden native back buffers resize asynchronously under X11/Xvfb.
+            // Compose to an explicit target matching the GUI framebuffer scale instead.
+            output -> Bind();
+            window -> clear();
+            CHECK(gui.render());
             std::vector<unsigned char> pixels(size.x * size.y * 4);
             glReadPixels(0, 0, size.x, size.y, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
             std::size_t red = 0;
             for(std::size_t i = 0; i < pixels.size(); i += 4)
                 if(pixels[i] > 250 && pixels[i + 1] < 3 && pixels[i + 2] < 3) ++red;
             // Docking assigns panel sizes over the first frames; subsequent frames must contain the scene.
-            if(frame >= 3) CHECK(red >= 1000);
+            if(frame >= 3 && red < 1000)
+                throw std::runtime_error("Editor GUI scene pixels: red=" + std::to_string(red) +
+                          "; target=" + std::to_string(size.x) + "x" + std::to_string(size.y));
             CHECK(glGetError() == GL_NO_ERROR);
         }
+        output -> unBind();
         logic.destroy();
         gui.shutdown();
     }
