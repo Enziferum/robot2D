@@ -1,4 +1,5 @@
 #include <robot2D/Engine.hpp>
+#include <stdexcept>
 #include <robot2D/imgui/Gui.hpp>
 #include <robot2D/imgui/Sugar.hpp>
 
@@ -8,7 +9,7 @@ namespace {
     bool demoWindowOpen = false;
 }
 
-class MyApplication: public robot2D::Application {
+class MyApplication : public robot2D::Application {
 public:
     MyApplication();
     MyApplication(const MyApplication& other) = delete;
@@ -23,16 +24,23 @@ public:
     /// Make ImGui Update / Rendering only in guiUpdate method.
     void guiUpdate(float deltaTime) override;
     void render() override;
+    void destroy() override {
+        m_gui.shutdown();
+    }
 private:
     void guiRender();
 private:
     robot2D::Gui m_gui;
 };
 
-MyApplication::MyApplication(): m_gui{} {}
+MyApplication::MyApplication() : m_gui{} {
+}
 
 void MyApplication::setup() {
-    m_gui.setup(*m_window);
+    robot2D::GuiConfiguration configuration;
+    configuration.window = m_window;
+    configuration.allowDefaultFallback = true;
+    if(!m_gui.initialize(configuration)) throw std::runtime_error(m_gui.lastError());
 }
 
 void MyApplication::handleEvents(const robot2D::Event& event) {
@@ -40,7 +48,7 @@ void MyApplication::handleEvents(const robot2D::Event& event) {
 }
 
 void MyApplication::guiUpdate(float deltaTime) {
-    m_gui.update(deltaTime);
+    if(!m_gui.beginFrame(deltaTime)) throw std::runtime_error(m_gui.lastError());
     guiRender();
 }
 
@@ -59,13 +67,15 @@ void MyApplication::guiRender() {
 
 void MyApplication::render() {
     m_window -> clear();
-    m_gui.render();
+    m_gui.endFrame();
+    m_window -> afterRender();
+    if(!m_gui.render()) throw std::runtime_error(m_gui.lastError());
     m_window -> display();
 }
 
 #define SIMPLE_MAIN 0
 #if SIMPLE_MAIN == 1
-    ROBOT2D_MAIN(MyApplication)
+ROBOT2D_MAIN(MyApplication)
 #elif SIMPLE_MAIN == 0
 int main() {
     robot2D::EngineConfiguration engineConfiguration{

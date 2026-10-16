@@ -35,7 +35,6 @@ set(CORE_SOURCE_FILES
         ${SRCROOT}/Mouse.cpp
         ${SRCROOT}/Joystick.cpp
         ${SRCROOT}/Clock.cpp
-        ${SRCROOT}/Time.cpp
  
         ${SRCROOT}/memory/IAllocator.cpp
         ${SRCROOT}/memory/StackAllocator.cpp

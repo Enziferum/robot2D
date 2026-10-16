@@ -39,7 +39,9 @@
 #include <editor/panels/UtilPanel.hpp>
 #include <editor/panels/ViewportPanel.hpp>
 #include <editor/panels/GameViewport.hpp>
+#include <editor/PopupManager.hpp>
 #include <editor/panels/ConsolePanel.hpp>
+#include <editor/panels/EventMonitorPanel.hpp>
 ///////////////////////////// PANELS /////////////////////////////
 
 #include <editor/Components.hpp>
@@ -61,6 +63,7 @@ namespace editor {
     Editor::Editor(robot2D::MessageBus& messageBus, robot2D::Gui& gui) :
         m_window{nullptr},
         m_messageBus{messageBus},
+        m_gui{gui},
         m_panelManager{gui},
         m_configuration{},
         m_frameBuffer{nullptr},
@@ -68,21 +71,26 @@ namespace editor {
     }
 
     void Editor::setupBindings() {
-        auto dropCallback = [this](std::vector<std::string>&& paths) {
-            for(auto& observer: m_observers)
-                observer -> notify(paths);
-        };
-        m_window -> addDropCallback(std::move(dropCallback));
         m_observers.emplace_back(&m_panelManager.getPanel<AssetsPanel>());
 
-        m_eventBinder.bindEvent(robot2D::Event::KeyPressed, BIND_CLASS_FN(onKeyPressed));
-        m_eventBinder.bindEvent(robot2D::Event::KeyReleased, BIND_CLASS_FN(onKeyReleased));
-        m_eventBinder.bindEvent(robot2D::Event::Resized, [this](const robot2D::Event& evt) {
-            m_frameBuffer -> Resize({evt.size.widht, evt.size.heigth});
+        m_eventBinder.bind<robot2D::Event::KeyPressed>([this](const robot2D::Event::KeyPressed& event) {
+            onKeyPressed(event);
         });
-        m_eventBinder.bindEvent(robot2D::Event::MousePressed, BIND_CLASS_FN(onMousePressed));
-        m_eventBinder.bindEvent(robot2D::Event::MouseReleased, BIND_CLASS_FN(onMouseReleased));
-        m_eventBinder.bindEvent(robot2D::Event::MouseMoved, BIND_CLASS_FN(onMouseMoved));
+        m_eventBinder.bind<robot2D::Event::KeyReleased>([this](const robot2D::Event::KeyReleased& event) {
+            onKeyReleased(event);
+        });
+        m_eventBinder.bind<robot2D::Event::Resized>([this](const robot2D::Event::Resized& evt) {
+            m_frameBuffer -> Resize({evt.width, evt.height});
+        });
+        m_eventBinder.bind<robot2D::Event::MousePressed>([this](const robot2D::Event::MousePressed& event) {
+            onMousePressed(event);
+        });
+        m_eventBinder.bind<robot2D::Event::MouseReleased>([this](const robot2D::Event::MouseReleased& event) {
+            onMouseReleased(event);
+        });
+        m_eventBinder.bind<robot2D::Event::MouseMoved>([this](const robot2D::Event::MouseMoved& event) {
+            onMouseMoved(event);
+        });
 
         /*      m_cameraManipulator.setButtonCallback([this](SceneEntity entity) {
                   m_interactor -> setMainCamera(entity);
@@ -189,6 +197,7 @@ namespace editor {
         m_panelManager.addPanel<ScenePanel>(m_messageBus, m_messageDispather, m_prefabManager);
         m_panelManager.addPanel<AssetsPanel>(m_messageBus, m_interactor, m_panelManager, m_prefabManager);
         m_panelManager.addPanel<ConsolePanel>(logger::Log::getFilePath());
+        m_panelManager.addPanel<EventMonitorPanel>(m_eventHistory);
         m_panelManager.addPanel<InspectorPanel>(m_messageDispather, m_messageBus, m_prefabManager, m_panelManager);
         m_panelManager.addPanel<SceneSettingsPanel>();
         m_panelManager.addPanel<UtilPanel>(m_editorCamera);
@@ -212,6 +221,7 @@ namespace editor {
             "Scene Settings");
         m_panelManager.registerPanel(m_panelManager.getPanel<AssetsPanel>(), "AssetsPanel", "Assets");
         m_panelManager.registerPanel(m_panelManager.getPanel<ConsolePanel>(), "ConsolePanel", "Console");
+        m_panelManager.registerPanel(m_panelManager.getPanel<EventMonitorPanel>(), "EventMonitorPanel", "Events");
         m_panelManager.registerPanel(m_panelManager.getPanel<AnimationPanel>(), "AnimationPanel", "Animation");
         m_panelManager.registerPanel(m_panelManager.getPanel<UtilPanel>(), "StatusBar", "Status bar",
             "##EditorStatusBar");
@@ -224,32 +234,70 @@ namespace editor {
     }
 
 
+    void Editor::cancelInput() {
+        m_guizmo2D.cancelDrag();
+        m_leftMousePressed = false;
+        m_configuration.m_leftCtrlPressed = false;
+        m_selectionCollider.setIsShown(false);
+        m_selectionCollider.reset();
+        const robot2D::Event lost(robot2D::Event::LostFocus{});
+        m_shortcutManager.handleEvents(lost);
+        m_editorCamera -> handleEvents(lost);
+        m_cameraManipulator.handleEvents(lost);
+        m_interactor -> handleEventsRuntime(lost);
+    }
+
+    void Editor::beginEventFrame() {
+        m_frameCapture = m_gui.inputCapture();
+        m_frameCapture.popup = m_frameCapture.popup || PopupManager::getManager() -> isActive();
+        const auto decision = m_inputRouter.route(robot2D::Event{}, {m_frameCapture, false, false,
+                                                                     m_interactor -> getState() == EditorState::Run});
+        if(decision.cancelInputs) cancelInput();
+    }
+
     void Editor::handleEvents(const robot2D::Event& event) {
-        if(event.type == robot2D::Event::LostFocus) {
-            m_guizmo2D.cancelDrag();
-            m_state = State::LostFocus;
+        auto& viewport = m_panelManager.getPanel<ViewportPanel>();
+        bool inside = false;
+        if(const auto* p = event.getIf<robot2D::Event::MouseButtonEvent>()) inside = viewport.containsMouse({p -> x,
+                                                                                                             p -> y});
+        else if(const auto* p = event.getIf<robot2D::Event::MouseMoved>()) inside = viewport.containsMouse({p -> x,
+                                                                                                            p -> y});
+        else if(const auto* p = event.getIf<robot2D::Event::MouseWheel>()) inside = viewport.containsMouse({p -> x,
+                                                                                                            p -> y});
+        auto capture = m_frameCapture;
+        capture.popup = capture.popup || PopupManager::getManager() -> isActive();
+        const bool runtime = m_interactor -> getState() == EditorState::Run;
+        if(runtime) {
+            auto& game = m_panelManager.getPanel<GameViewport>();
+            if(const auto* p = event.getIf<robot2D::Event::MouseButtonEvent>()) inside = game.containsMouse({p -> x,
+                                                                                                             p -> y});
+            else if(const auto* p = event.getIf<robot2D::Event::MouseMoved>()) inside = game.containsMouse({p -> x,
+                                                                                                            p -> y});
+            else if(const auto* p = event.getIf<robot2D::Event::MouseWheel>()) inside = game.containsMouse({p -> x,
+                                                                                                            p -> y});
         }
-        if(event.type == robot2D::Event::GainFocus) {
-            m_state = State::HasFocus;
-        }
-
-        if(m_state == State::LostFocus)
+        const bool focused = runtime ? m_panelManager.getPanel<GameViewport>().isInputFocused() : viewport.isActive();
+        const auto decision = m_inputRouter.route(event, {capture, inside, focused, runtime});
+        m_eventHistory.record(event, decision);
+        if(decision.cancelInputs) cancelInput();
+        if(event.getIf<robot2D::Event::LostFocus>()) m_state = State::LostFocus;
+        if(event.getIf<robot2D::Event::GainFocus>()) m_state = State::HasFocus;
+        if(const auto* drop = event.getIf<robot2D::Event::FilesDropped>()) {
+            for(auto* observer : m_observers) observer -> notify(drop -> paths);
             return;
-
+        }
+        if(m_state == State::LostFocus || decision.target == InputRoute::Gui || decision.target == InputRoute::Ignored)
+            return;
         if(m_interactor -> getState() == EditorState::Edit) {
             m_editorCamera -> handleEvents(event);
             m_shortcutManager.handleEvents(event);
-            auto& viewport = m_panelManager.getPanel<ViewportPanel>();
-            if(event.type != robot2D::Event::MousePressed
-                || viewport.containsMouse({static_cast<float>(event.mouse.x), static_cast<float>(event.mouse.y)}))
-                m_guizmo2D.handleEvents(event);
+            m_guizmo2D.handleEvents(event);
             m_cameraManipulator.handleEvents(event);
-            m_panelManager.getPanel<ViewportPanel>().handleEvents(event);
-            m_eventBinder.handleEvents(event);
+            viewport.handleEvents(event);
+            m_eventBinder.dispatch(event);
         }
-        else if(m_interactor -> getState() == EditorState::Run) {
+        else if(m_interactor -> getState() == EditorState::Run)
             m_interactor -> handleEventsRuntime(event);
-        }
     }
 
     void Editor::handleMessages(const robot2D::Message& message) {
@@ -428,25 +476,24 @@ namespace editor {
         m_interactor -> setEditorCamera(m_editorCamera);
     }
 
-    void Editor::onKeyPressed(const robot2D::Event& event) {
-        if(event.key.code == robot2D::Key::LEFT_CONTROL)
+    void Editor::onKeyPressed(const robot2D::Event::KeyPressed& event) {
+        if(event.code == robot2D::Key::LEFT_CONTROL)
             m_configuration.m_leftCtrlPressed = true;
-        if(event.key.code == robot2D::Key::DEL) {
+        if(event.code == robot2D::Key::DEL) {
             m_interactor -> removeSelectedEntities();
         }
     }
 
-    void Editor::onKeyReleased(const robot2D::Event& event) {
-        if(event.key.code == robot2D::Key::LEFT_CONTROL)
+    void Editor::onKeyReleased(const robot2D::Event::KeyReleased& event) {
+        if(event.code == robot2D::Key::LEFT_CONTROL)
             m_configuration.m_leftCtrlPressed = false;
 
     }
 
 
-    void Editor::onMouseMoved(const robot2D::Event& event) {
-        auto& viewportPanel = m_panelManager.getPanel<ViewportPanel>();
-        if(m_leftMousePressed && viewportPanel.isActive()) {
-            robot2D::vec2f movePos{event.move.x, event.move.y};
+    void Editor::onMouseMoved(const robot2D::Event::MouseMoved& event) {
+        if(m_leftMousePressed) {
+            robot2D::vec2f movePos{event.x, event.y};
             movePos = m_editorCamera -> convertPixelToCoords(movePos);
             auto pos = m_selectionCollider.getPosition();
             m_selectionCollider.setSize({movePos.x - pos.x, movePos.y - pos.y});
@@ -454,23 +501,22 @@ namespace editor {
 
     }
 
-    void Editor::onMousePressed(const robot2D::Event& event) {
+    void Editor::onMousePressed(const robot2D::Event::MousePressed& event) {
         auto& viewportPanel = m_panelManager.getPanel<ViewportPanel>();
-        if(event.mouse.btn == robot2D::mouse2int(robot2D::Mouse::MouseLeft)
+        if(event.btn == robot2D::mouse2int(robot2D::Mouse::MouseLeft)
             && !m_interactor -> hasSelectedEntities() && !m_guizmo2D.isActive() && viewportPanel.isActive()) {
             m_leftMousePressed = true;
             auto mousePos = m_editorCamera -> convertPixelToCoords(
-                {static_cast<float>(event.mouse.x), static_cast<float>(event.mouse.y)
+                {static_cast<float>(event.x), static_cast<float>(event.y)
                 });
             m_selectionCollider.setPosition(mousePos);
             m_selectionCollider.setIsShown(true);
         }
     }
 
-    void Editor::onMouseReleased(const robot2D::Event& event) {
-        auto& viewportPanel = m_panelManager.getPanel<ViewportPanel>();
+    void Editor::onMouseReleased(const robot2D::Event::MouseReleased& event) {
         if(m_leftMousePressed &&
-            event.mouse.btn == robot2D::mouse2int(robot2D::Mouse::MouseLeft) && viewportPanel.isActive()
+            event.btn == robot2D::mouse2int(robot2D::Mouse::MouseLeft)
             && !m_guizmo2D.isActive()) {
             m_leftMousePressed = false;
             m_selectionCollider.setIsShown(false);

@@ -1,22 +1,22 @@
 /*********************************************************************
-(c) Alex Raag 2023
-https://github.com/Enziferum
-robot2D - Zlib license.
-This software is provided 'as-is', without any express or
-implied warranty. In no event will the authors be held
-liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute
-it freely, subject to the following restrictions:
-1. The origin of this software must not be misrepresented;
-you must not claim that you wrote the original software.
-If you use this software in a product, an acknowledgment
-in the product documentation would be appreciated but
-is not required.
-2. Altered source versions must be plainly marked as such,
-and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any
-source distribution.
+   (c) Alex Raag 2023
+   https://github.com/Enziferum
+   robot2D - Zlib license.
+   This software is provided 'as-is', without any express or
+   implied warranty. In no event will the authors be held
+   liable for any damages arising from the use of this software.
+   Permission is granted to anyone to use this software for any purpose,
+   including commercial applications, and to alter it and redistribute
+   it freely, subject to the following restrictions:
+   1. The origin of this software must not be misrepresented;
+   you must not claim that you wrote the original software.
+   If you use this software in a product, an acknowledgment
+   in the product documentation would be appreciated but
+   is not required.
+   2. Altered source versions must be plainly marked as such,
+   and must not be misrepresented as being the original software.
+   3. This notice may not be removed or altered from any
+   source distribution.
 *********************************************************************/
 
 #pragma once
@@ -26,6 +26,8 @@ source distribution.
 #include <memory>
 #include <functional>
 
+#include <robot2D/Core/Mouse.hpp>
+#include <robot2D/Core/Joystick.hpp>
 #include <robot2D/Graphics/Color.hpp>
 #include <robot2D/Graphics/Image.hpp>
 
@@ -63,14 +65,18 @@ namespace robot2D {
         ///
         ////////////////////////////////////////////////////////////////
         Window(const vec2u& size,
-               const std::string& name,
-               const WindowContext& windowContext = robot2D::WindowContext::Default);
+            const std::string& name,
+            const WindowContext& windowContext = robot2D::WindowContext::Default);
         ~Window();
 
         ////
         //// \brief process OS events and puts it to robot2D::Event
         ////
         bool pollEvents(Event& event);
+        /// Pump GLFW on the window thread. User callbacks are not invoked by GLFW callbacks.
+        void processEvents();
+        /// Drain the ordered queue into an owning batch and stamp its frame number.
+        FrameEvents takeEvents(std::uint64_t frame);
 
         ////
         //// \brief check if window is opened just now
@@ -94,6 +100,10 @@ namespace robot2D {
         void setSize(const robot2D::vec2u& size);
 
         const vec2u& getSize();
+        /// Physical drawable size; may be zero while minimized.
+        vec2u getFramebufferSize() const;
+        /// Actual client size in logical coordinates, including OS size constraints.
+        vec2u getLogicalSize() const;
 
         /// \brief allow you to set big/small icons to your app
         void setIcon(robot2D::Image&& icon);
@@ -139,5 +149,6 @@ namespace robot2D {
         vec2u m_win_size;
         std::string m_name;
         WindowContext m_context;
+        std::function<void(std::vector<std::string>&&)> m_dropCallback;
     };
 }
