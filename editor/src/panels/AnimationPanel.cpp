@@ -924,14 +924,15 @@ namespace editor {
         auto* localManager = LocalResourceManager::getManager();
         auto* manager = ResourceManager::getManager();
 
-        auto* texture = localManager -> hasTexture(task.getFileName()) ?
-            &localManager -> getTexture(task.getFileName()) : localManager -> addTexture(task.getFileName());
+        const auto key = resourceFileKey(task.getFilePath());
+        auto* texture = localManager -> hasTexture(key) ? &localManager -> getTexture(key)
+                : localManager -> addTexture(key);
         if(!texture) {
             RB_EDITOR_ERROR("AnimationPanel::onAnimationSlice: Can't create texture");
             return;
         }
 
-        texture -> create(manager -> getImage(task.getFileName()));
+        texture -> create(manager -> getImage(key));
 
         if(!m_currentAnimation) {
             RB_EDITOR_ERROR("AnimationPanel::onAnimationSlice: No Animation");

@@ -407,8 +407,8 @@ namespace editor {
 
         if(entity.hasComponent<DrawableComponent>()) {
             auto& drawable = entity.getComponent<DrawableComponent>();
-            std::filesystem::path texturePath{ drawable.getTexturePath() };
-            auto id = texturePath.filename().string();
+            auto id = drawable.getTexturePath().empty() ? std::string{} : resourceFileKey(
+                combinePath(m_activeScene -> getAssociatedProjectPath(), drawable.getTexturePath()));
             if(localManager -> hasTexture(id)) {
                 drawable.setTexture(localManager -> getTexture(id));
             }
@@ -416,7 +416,7 @@ namespace editor {
                 if(manager -> hasImage(id)) {
                     auto& image = manager -> getImage(id);
                     auto* texture = image.getSize().x && image.getSize().y
-                            ? localManager -> addTexture(texturePath.filename().string()) : nullptr;
+                            ? localManager -> addTexture(id) : nullptr;
                     if(texture) {
                         texture -> create(image);
                         drawable.setTexture(*texture);
@@ -428,15 +428,15 @@ namespace editor {
 
         if(entity.hasComponent<TextComponent>()) {
             auto& text = entity.getComponent<TextComponent>();
-            std::filesystem::path fontPath{ text.getFontPath() };
-            auto id = fontPath.filename().string();
+            auto id = text.getFontPath().empty() ? std::string{} : resourceFileKey(
+                combinePath(m_activeScene -> getAssociatedProjectPath(), text.getFontPath()));
             if(localManager -> hasFont(id)) {
                 text.setFont(localManager -> getFont(id));
             }
             else if(manager -> hasFont(id)) {
                 auto& font = manager -> getFont(id);
                 auto* localFont = !font.getImages().empty()
-                        ? localManager -> addFont(fontPath.filename().string()) : nullptr;
+                        ? localManager -> addFont(id) : nullptr;
                 if(localFont) {
                     localFont -> clone(font);
                     text.setFont(*localFont);
@@ -452,8 +452,8 @@ namespace editor {
                 auto* animation = localManager -> addAnimation(entity.getComponent<IDComponent>().ID);
                 *animation = copyAnimation;
 
-                std::filesystem::path imagePath { animation -> texturePath };
-                auto imageId = imagePath.filename().string();
+                auto imageId = resourceFileKey(combinePath(m_activeScene -> getAssociatedProjectPath(),
+                        animation -> texturePath));
 
                 if(localManager -> hasTexture(imageId))
                     animation -> texture = &localManager -> getTexture(imageId);

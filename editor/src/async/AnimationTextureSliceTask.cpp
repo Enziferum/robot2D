@@ -21,6 +21,7 @@
 #include <unordered_set>
 #include <editor/async/AnimationTextureSliceTask.hpp>
 #include <editor/ResouceManager.hpp>
+#include <editor/FileApi.hpp>
 #include "robot2D/Util/Logger.hpp"
 
 namespace util {
@@ -53,13 +54,14 @@ namespace editor {
 
     void AnimationTextureSliceTask::execute() {
         auto* manager = ResourceManager::getManager();
-        auto* image =
-            manager -> hasImage(m_fileName) ? &manager -> getImage(m_fileName) : manager -> addImage(m_fileName);
-        if(!image || !image -> loadFromFile(m_filePath)) {
+        const auto key = resourceFileKey(m_filePath);
+        if(!manager -> loadImage(key)) {
             fail("Could not load animation image: " + m_filePath);
             RB_EDITOR_ERROR("AnimationTextureSliceTask: Can't loadImage by path {0}", m_filePath);
             return;
         }
+
+        auto* image = &manager -> getImage(key);
 
 
         auto imageSize = image -> getSize();

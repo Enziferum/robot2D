@@ -41,6 +41,17 @@ namespace editor {
             return &resourceManager;
         }
 
+        // Callers pass a resourceFileKey. Publish only fully loaded CPU resources.
+        bool loadImage(const std::string& path) {
+            std::lock_guard<std::mutex> lockGuard{m_mutex};
+            return m_images.has(path) || m_images.loadFromFile(path, path);
+        }
+
+        bool loadFont(const std::string& path) {
+            std::lock_guard<std::mutex> lockGuard{m_mutex};
+            return m_fonts.has(path) || m_fonts.loadFromFile(path, path);
+        }
+
         robot2D::Image* addImage(const std::string& id) {
             std::lock_guard<std::mutex> lockGuard{m_mutex};
             return m_images.add(id);
