@@ -1,22 +1,22 @@
 /*********************************************************************
-(c) Alex Raag 2024
-https://github.com/Enziferum
-robot2D - Zlib license.
-This software is provided 'as-is', without any express or
-implied warranty. In no event will the authors be held
-liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute
-it freely, subject to the following restrictions:
-1. The origin of this software must not be misrepresented;
-you must not claim that you wrote the original software.
-If you use this software in a product, an acknowledgment
-in the product documentation would be appreciated but
-is not required.
-2. Altered source versions must be plainly marked as such,
-and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any
-source distribution.
+   (c) Alex Raag 2024
+   https://github.com/Enziferum
+   robot2D - Zlib license.
+   This software is provided 'as-is', without any express or
+   implied warranty. In no event will the authors be held
+   liable for any damages arising from the use of this software.
+   Permission is granted to anyone to use this software for any purpose,
+   including commercial applications, and to alter it and redistribute
+   it freely, subject to the following restrictions:
+   1. The origin of this software must not be misrepresented;
+   you must not claim that you wrote the original software.
+   If you use this software in a product, an acknowledgment
+   in the product documentation would be appreciated but
+   is not required.
+   2. Altered source versions must be plainly marked as such,
+   and must not be misrepresented as being the original software.
+   3. This notice may not be removed or altered from any
+   source distribution.
 *********************************************************************/
 
 #include <robot2D/imgui/Api.hpp>
@@ -25,10 +25,10 @@ source distribution.
 namespace editor {
     #define  ICON u8"\ue000"
 
-    UtilPanel::UtilPanel(IEditorCamera::Ptr sceneCamera):
-            IPanel(UniqueType(typeid(UtilPanel))),
-            m_camera{sceneCamera},
-            m_configuration{} {
+    UtilPanel::UtilPanel(IEditorCamera::Ptr sceneCamera) :
+        IPanel(UniqueType(typeid(UtilPanel))),
+        m_camera{sceneCamera},
+        m_configuration{} {
         m_clearColor = m_configuration.defaultBackGround;
     }
 
@@ -53,14 +53,14 @@ namespace editor {
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {10.f, 4.f});
         ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.f);
         auto flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoDocking
-                     | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings
-                     | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
+            | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings
+            | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
         ImGui::Begin("##EditorStatusBar", nullptr, flags);
         auto fps = ImGui::GetIO().Framerate;
         ImGui::AlignTextToFramePadding();
         if(viewport -> WorkSize.x >= 900.f)
             ImGui::TextDisabled("%.1f ms  |  %.0f FPS  |  Quads: %u  |  Draw calls: %u",
-                                fps > 0.f ? 1000.f / fps : 0.f, fps, m_renderStats.drawQuads, m_renderStats.drawCalls);
+                fps > 0.f ? 1000.f / fps : 0.f, fps, m_renderStats.drawQuads, m_renderStats.drawCalls);
         else
             ImGui::TextDisabled("Quads: %u  |  Draw calls: %u", m_renderStats.drawQuads, m_renderStats.drawCalls);
         if(m_camera && viewport -> WorkSize.x >= 900.f) {
@@ -76,9 +76,10 @@ namespace editor {
                     auto position = m_camera -> getView().getCenter();
                     auto size = m_camera -> getView().getSize();
                     ImGui::Text("Center: %.2f, %.2f", position.x, position.y);
-                    int viewSize[2] = {static_cast<int>(size.x), static_cast<int>(size.y)};
-                    if(ImGui::InputInt2("Viewport size", viewSize) && viewSize[0] > 0 && viewSize[1] > 0)
-                        m_camera -> getView().setSize(viewSize[0], viewSize[1]);
+                    ImGui::Text("Visible size: %.2f, %.2f", size.x, size.y);
+                    float percent = m_camera -> getZoom() * 100.f;
+                    if(ImGui::InputFloat("Zoom (%)", &percent, 25.f, 100.f, "%.0f"))
+                        m_camera -> setZoom(percent / 100.f);
                 }
                 else {
                     auto position = m_camera -> getPosition();

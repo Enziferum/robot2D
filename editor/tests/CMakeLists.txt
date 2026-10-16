@@ -41,7 +41,7 @@ endforeach()
 
 rb2d_register_test(editor-version robot2D-version-tests version "headless;version")
 
-foreach(editor_case IN ITEMS selection asset-paths asset-import asset-package console-stream console-limits yaml-save payload
+foreach(editor_case IN ITEMS camera-tools gizmo-snap slate-teal selection asset-paths asset-import asset-package console-stream console-limits yaml-save payload
         config-roundtrip config-invalid cache-roundtrip cache-recovery cache-future cache-migration)
     rb2d_register_test("editor-${editor_case}" robot2D-editor-tests "${editor_case}" "headless")
 endforeach()

@@ -6,6 +6,12 @@
 #include <editor/ConsoleLog.hpp>
 #include <editor/EditorCache.hpp>
 #include <editor/EditorConfig.hpp>
+#include <editor/EditorCamera.hpp>
+#include <editor/Guizmo2D.hpp>
+#include <editor/EditorStyles.hpp>
+#include <imgui/imgui.h>
+#include <cmath>
+#include <limits>
 #include <editor/FileApi.hpp>
 #include <editor/Messages.hpp>
 #include <editor/serializers/YamlFile.hpp>
@@ -16,6 +22,157 @@
 
 namespace {
     using namespace tests;
+
+    bool nearlyEqual(float left, float right) {
+        return std::abs(left - right) < 0.001f;
+    }
+
+    void cameraTools() {
+        editor::EditorCamera2D camera;
+        CHECK(!camera.setZoom(2.f));
+        camera.setViewportSize({800.f, 600.f});
+        CHECK(nearlyEqual(camera.getZoom(), 1.f));
+        camera.getView().setCenter({120.f, -30.f});
+        CHECK(camera.setZoom(2.f));
+        CHECK(nearlyEqual(camera.getView().getSize().x, 400.f));
+        CHECK(nearlyEqual(camera.getView().getCenter().x, 120.f));
+        camera.setViewportSize({1000.f, 800.f});
+        CHECK(nearlyEqual(camera.getView().getSize().x, 500.f));
+        CHECK(nearlyEqual(camera.getView().getCenter().y, -30.f));
+        camera.setViewportBounds({30.f, 40.f});
+        const auto center = camera.convertPixelToCoords({530.f, 440.f});
+        CHECK(nearlyEqual(center.x, 120.f) && nearlyEqual(center.y, -30.f));
+        CHECK(camera.frameBounds({-100.f, -50.f, 400.f, 200.f}));
+        CHECK(nearlyEqual(camera.getView().getCenter().x, 100.f));
+        CHECK(nearlyEqual(camera.getView().getCenter().y, 50.f));
+        CHECK(camera.getView().getSize().x >= 400.f * 1.25f);
+        CHECK(camera.getView().getSize().y >= 200.f * 1.25f);
+        const auto zoom = camera.getZoom();
+        CHECK(!camera.setZoom(0.f));
+        CHECK(!camera.setZoom(std::numeric_limits<float>::quiet_NaN()));
+        CHECK(!camera.frameBounds({0.f, 0.f, -1.f, 2.f}));
+        CHECK(!camera.frameBounds({0.f, 0.f, std::numeric_limits<float>::infinity(), 2.f}));
+        CHECK(nearlyEqual(camera.getZoom(), zoom));
+        camera.setViewportSize({0.f, 0.f});
+        CHECK(nearlyEqual(camera.getZoom(), zoom));
+        CHECK(camera.setZoom(100.f) && nearlyEqual(camera.getZoom(), 8.f));
+        CHECK(camera.setZoom(0.001f) && nearlyEqual(camera.getZoom(), 0.05f));
+        camera.resetDefaults();
+        CHECK(nearlyEqual(camera.getZoom(), 1.f));
+        CHECK(nearlyEqual(camera.getView().getCenter().x, 500.f));
+        CHECK(camera.frameBounds({20.f, 40.f, 0.f, 0.f}));
+        CHECK(nearlyEqual(camera.getView().getCenter().x, 20.f));
+        robot2D::Event key{};
+        key.type = robot2D::Event::KeyPressed;
+        key.key.code = robot2D::Key::LEFT_CONTROL;
+        camera.handleEvents(key);
+        robot2D::Event wheel{};
+        wheel.type = robot2D::Event::MouseWheel;
+        wheel.wheel.scroll_y = -1000.f;
+        camera.handleEvents(wheel);
+        CHECK(nearlyEqual(camera.getZoom(), 0.05f));
+        key.type = robot2D::Event::LostFocus;
+        camera.handleEvents(key);
+        wheel.wheel.scroll_y = 1.f;
+        camera.handleEvents(wheel);
+        CHECK(nearlyEqual(camera.getZoom(), 0.05f));
+    }
+
+    class IdentityCamera final : public editor::IEditorCamera {
+    public:
+        IdentityCamera() : IEditorCamera(editor::EditorCameraType::Orthographic) {
+        }
+        void setViewportSize(robot2D::vec2f) override {
+        }
+        void handleEvents(const robot2D::Event&) override {
+        }
+        void update(robot2D::vec2f, float) override {
+        }
+        robot2D::vec2f convertPixelToCoords(robot2D::vec2f point) const override {
+            return point;
+        }
+    };
+
+    void gizmoSnap() {
+        editor::Guizmo2D gizmo;
+        gizmo.setCamera(std::make_shared<IdentityCamera>());
+        editor::TransformComponent transform;
+        transform.setPosition({100.f, 100.f});
+        transform.setSize({20.f, 20.f});
+        gizmo.setManipulated(&transform);
+        gizmo.setIsShow(true);
+        gizmo.setSnapping(true, 16.f, 15.f);
+        int modifications = 0;
+        gizmo.setModificationCallback([&]() { ++modifications; });
+        const auto press = [&](int x, int y) {
+            robot2D::Event event{};
+            event.type = robot2D::Event::MousePressed;
+            event.mouse = {0, x, y};
+            gizmo.handleEvents(event);
+            CHECK(gizmo.isActive());
+        };
+        const auto move = [&](float x, float y) {
+            robot2D::Event event{};
+            event.type = robot2D::Event::MouseMoved;
+            event.move = {x, y};
+            gizmo.handleEvents(event);
+        };
+        press(125, 95);
+        move(131.f, 101.f);
+        CHECK(nearlyEqual(transform.getPosition().x, 100.f) && modifications == 0);
+        move(134.f, 104.f);
+        CHECK(nearlyEqual(transform.getPosition().x, 116.f) && nearlyEqual(transform.getPosition().y, 116.f));
+        CHECK(modifications == 1);
+        move(135.f, 105.f);
+        CHECK(modifications == 1);
+        move(121.f, 91.f);
+        CHECK(nearlyEqual(transform.getPosition().x, 100.f));
+        gizmo.setSnapping(false, 16.f, 15.f);
+        CHECK(!gizmo.isActive());
+        gizmo.setManipulated(&transform);
+        press(125, 95);
+        move(126.f, 96.f);
+        CHECK(nearlyEqual(transform.getPosition().x, 101.f));
+        gizmo.cancelDrag();
+        transform.setPosition({100.f, 100.f});
+        gizmo.setOperationType(editor::Guizmo2D::Operation::Scale);
+        gizmo.setManipulated(&transform);
+        gizmo.setSnapping(true, 16.f, 15.f);
+        press(125, 95);
+        move(134.f, 104.f);
+        CHECK(nearlyEqual(transform.getSize().x, 36.f) && nearlyEqual(transform.getSize().y, 36.f));
+        gizmo.cancelDrag();
+        transform.setPosition({0.f, 0.f});
+        transform.setSize({20.f, 20.f});
+        gizmo.setOperationType(editor::Guizmo2D::Operation::Rotate);
+        gizmo.setManipulated(&transform);
+        press(60, 10);
+        const float start = std::atan2(10.f, 60.f);
+        const float radius = std::sqrt(3700.f);
+        for(int step = 1; step <= 20; ++step) {
+            const float angle = start + static_cast<float>(step) * 0.0174532925f;
+            move(radius * std::cos(angle), radius * std::sin(angle));
+        }
+        CHECK(nearlyEqual(std::abs(transform.getRotation()), 15.f) || nearlyEqual(transform.getRotation(), 345.f));
+        robot2D::Event lost{};
+        lost.type = robot2D::Event::LostFocus;
+        gizmo.handleEvents(lost);
+        CHECK(!gizmo.isActive());
+        gizmo.setIsShow(false);
+    }
+
+    void slateTeal() {
+        auto* context = ImGui::CreateContext();
+        editor::applyStyle(editor::EditorStyle::SlateTeal);
+        const auto first = ImGui::GetStyle().Colors[ImGuiCol_CheckMark];
+        CHECK(first.y > first.x && first.z > first.x);
+        editor::applyStyle(editor::EditorStyle::GoldBlack);
+        editor::applyStyle(editor::EditorStyle::SlateTeal);
+        const auto second = ImGui::GetStyle().Colors[ImGuiCol_CheckMark];
+        CHECK(nearlyEqual(first.x, second.x) && nearlyEqual(first.y, second.y) && nearlyEqual(first.z, second.z));
+        CHECK(nearlyEqual(ImGui::GetStyle().FramePadding.x, 6.f));
+        ImGui::DestroyContext(context);
+    }
 
     void assetPaths() {
         Directory fixture;
@@ -135,7 +292,7 @@ namespace {
         log.clear();
         log.poll();
         CHECK(log.getEntries().empty() && read(path) == unchanged);
-        const std::string utf8 = u8"[12:00:02] [error] Editor: Ошибка";
+        const std::string utf8 = u8"[12:00:02] [error] Editor: РћС€РёР±РєР°";
         write(path, utf8.substr(0, utf8.size() - 1), true);
         log.poll();
         CHECK(log.getEntries().empty());
@@ -376,7 +533,10 @@ int main(int argc, char** argv) {
     try {
         CHECK(argc == 2);
         const std::string name = argv[1];
-        if(name == "selection") selection();
+        if(name == "camera-tools") cameraTools();
+        else if(name == "gizmo-snap") gizmoSnap();
+        else if(name == "slate-teal") slateTeal();
+        else if(name == "selection") selection();
         else if(name == "asset-paths") assetPaths();
         else if(name == "asset-import") assetImport();
         else if(name == "asset-package") assetPackage();

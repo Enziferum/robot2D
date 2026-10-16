@@ -1,27 +1,29 @@
 /*********************************************************************
-(c) Alex Raag 2024
-https://github.com/Enziferum
-robot2D - Zlib license.
-This software is provided 'as-is', without any express or
-implied warranty. In no event will the authors be held
-liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute
-it freely, subject to the following restrictions:
-1. The origin of this software must not be misrepresented;
-you must not claim that you wrote the original software.
-If you use this software in a product, an acknowledgment
-in the product documentation would be appreciated but
-is not required.
-2. Altered source versions must be plainly marked as such,
-and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any
-source distribution.
+   (c) Alex Raag 2024
+   https://github.com/Enziferum
+   robot2D - Zlib license.
+   This software is provided 'as-is', without any express or
+   implied warranty. In no event will the authors be held
+   liable for any damages arising from the use of this software.
+   Permission is granted to anyone to use this software for any purpose,
+   including commercial applications, and to alter it and redistribute
+   it freely, subject to the following restrictions:
+   1. The origin of this software must not be misrepresented;
+   you must not claim that you wrote the original software.
+   If you use this software in a product, an acknowledgment
+   in the product documentation would be appreciated but
+   is not required.
+   2. Altered source versions must be plainly marked as such,
+   and must not be misrepresented as being the original software.
+   3. This notice may not be removed or altered from any
+   source distribution.
 *********************************************************************/
 
 
 #include <filesystem>
 #include <algorithm>
+#include <cmath>
+#include <cstdio>
 
 #include <robot2D/imgui/Api.hpp>
 #include <robot2D/imgui/DragDropTarget.hpp>
@@ -30,46 +32,29 @@ source distribution.
 #include <editor/panels/ViewportPanel.hpp>
 #include <editor/Messages.hpp>
 #include <editor/Components.hpp>
+#include <editor/EditorIcons.hpp>
 #include <editor/DragDropIDS.hpp>
 #include <editor/Buffer.hpp>
 
 #include "../IconsFontsAwesome5.hpp"
 
 namespace editor {
-    namespace {
-        std::string iconPath = "res/icons";
-
-        static std::unordered_map<IconType, std::string> iconNames = {
-                { IconType::Play, "PlayButton.png" },
-                { IconType::Stop, "StopButton.png" },
-                { IconType::Pause, "PauseButton.png" },
-                { IconType::Step, "StepButton.png" },
-                { IconType::Simulate, "SimulateButton.png" },
-                { IconType::Move, "move.png" },
-                { IconType::Scale, "scale.png" },
-                { IconType::Rotate, "rotate.png" },
-        };
-
-        constexpr int frameBufferAttachmentIndex = 1;
-    }
-
     ViewportPanel::ViewportPanel(
-            UIInteractor* uiInteractor,
-            IEditorCamera::Ptr editorCamera,
-            robot2D::MessageBus& messageBus,
-            MessageDispatcher& messageDispatcher,
-            Guizmo2D& guizmo2D,
-            CameraManipulator& collider,
-            SelectionCollider& selectionCollider):
-            IPanel(UniqueType(typeid(ViewportPanel))),
-            m_uiInteractor{uiInteractor},
-            m_editorCamera{editorCamera},
-            m_messageBus{messageBus},
-            m_messageDispatcher{messageDispatcher},
-            m_selectionCollider{selectionCollider},
-            m_guizmo2D{guizmo2D},
-            m_CameraCollider{collider}
-    {
+        UIInteractor* uiInteractor,
+        IEditorCamera::Ptr editorCamera,
+        robot2D::MessageBus& messageBus,
+        MessageDispatcher& messageDispatcher,
+        Guizmo2D& guizmo2D,
+        CameraManipulator& collider,
+        SelectionCollider& selectionCollider) :
+        IPanel(UniqueType(typeid(ViewportPanel))),
+        m_uiInteractor{uiInteractor},
+        m_editorCamera{editorCamera},
+        m_messageBus{messageBus},
+        m_messageDispatcher{messageDispatcher},
+        m_selectionCollider{selectionCollider},
+        m_guizmo2D{guizmo2D},
+        m_CameraCollider{collider} {
         m_windowOptions = robot2D::WindowOptions {
             {
                 {ImGuiStyleVar_WindowPadding, {0, 0}}
@@ -79,14 +64,6 @@ namespace editor {
         m_windowOptions.flagsMask = ImGuiWindowFlags_NoScrollbar;
         m_windowOptions.name = ICON_FA_ETHERNET + std::string{" Viewport"} + "###ViewportPanel";
 
-        for(const auto& [type, name]: iconNames) {
-            std::filesystem::path path{iconPath};
-            path.append(name);
-            if(!m_icons.loadFromFile(type, path.string())) {
-                RB_EDITOR_ERROR("Can't load icon");
-                // TODO(a.raag) throw exception
-            }
-        }
 
     }
 
@@ -98,8 +75,8 @@ namespace editor {
 
     bool ViewportPanel::containsMouse(robot2D::vec2f position) const {
         return getState() == PanelState::Visible && m_panelHovered
-                && position.x >= m_ViewportBounds.minRegion.x && position.y >= m_ViewportBounds.minRegion.y
-                && position.x < m_ViewportBounds.maxRegion.x && position.y < m_ViewportBounds.maxRegion.y;
+               && position.x >= m_ViewportBounds.minRegion.x && position.y >= m_ViewportBounds.minRegion.y
+               && position.x < m_ViewportBounds.maxRegion.x && position.y < m_ViewportBounds.maxRegion.y;
     }
 
     void ViewportPanel::handleEvents(const robot2D::Event& event) {
@@ -108,14 +85,14 @@ namespace editor {
         if(event.type == robot2D::Event::MousePressed && m_panelFocused && m_panelHovered) {
             auto[mx, my] = ImGui::GetMousePos();
             if(mx < m_ViewportBounds.minRegion.x || my < m_ViewportBounds.minRegion.y
-                    || mx >= m_ViewportBounds.maxRegion.x || my >= m_ViewportBounds.maxRegion.y)
+                || mx >= m_ViewportBounds.maxRegion.x || my >= m_ViewportBounds.maxRegion.y)
                 return;
             mx -= m_ViewportBounds.minRegion.x;
             my -= m_ViewportBounds.minRegion.y;
             robot2D::vec2f viewportSize = m_ViewportBounds.maxRegion - m_ViewportBounds.minRegion;
             my = viewportSize.y - my;
 
-            if( !m_guizmo2D.isActive() && !m_CameraCollider.isActive() ) {
+            if(!m_guizmo2D.isActive() && !m_CameraCollider.isActive() ) {
                 robot2D::vec2i mousePos = { static_cast<int>(mx), static_cast<int>(my) };
                 m_uiInteractor -> findEntity(mousePos);
             }
@@ -150,13 +127,13 @@ namespace editor {
             auto imagePosition = ImGui::GetCursorScreenPos();
             auto ViewPanelSize = ImGui::GetContentRegionAvail();
             if(!m_frameBuffer || !m_editorCamera || !m_uiInteractor
-                    || ViewPanelSize.x < 1.f || ViewPanelSize.y < 1.f)
+            || ViewPanelSize.x < 1.f || ViewPanelSize.y < 1.f)
                 return;
 
             m_ViewportBounds.minRegion = {imagePosition.x, imagePosition.y};
             m_editorCamera -> setViewportBounds(m_ViewportBounds.minRegion);
             robot2D::vec2u viewportSize{static_cast<unsigned int>(ViewPanelSize.x),
-                                      static_cast<unsigned int>(ViewPanelSize.y)};
+                                        static_cast<unsigned int>(ViewPanelSize.y)};
             if(m_ViewportSize != viewportSize || needResetViewport) {
                 m_ViewportSize = viewportSize;
                 m_frameBuffer -> Resize(m_ViewportSize);
@@ -190,8 +167,8 @@ namespace editor {
                         auto frame = m_CameraCollider.getRect();
 
                         robot2D::vec2f colliderPosition = {
-                                position.x - frame.width / 2.f,
-                                position.y - frame.height / 2.f,
+                            position.x - frame.width / 2.f,
+                            position.y - frame.height / 2.f,
                         };
 
                         // m_CameraCollider.setSize(m_selectedEntity.getComponent<CameraComponent>().orthoSize);
@@ -209,10 +186,10 @@ namespace editor {
             else if(selectedEntities.size() > 1) {
                 std::vector<TransformComponent*> moveTfs;
                 for(auto& entity: selectedEntities) {
-                   if(entity) {
-                       auto &tc = entity.getComponent<TransformComponent>();
-                       moveTfs.emplace_back(&tc);
-                   }
+                    if(entity) {
+                        auto& tc = entity.getComponent<TransformComponent>();
+                        moveTfs.emplace_back(&tc);
+                    }
                 }
                 m_guizmo2D.setIsShow(!moveTfs.empty());
                 m_guizmo2D.setManipulated(moveTfs);
@@ -222,7 +199,8 @@ namespace editor {
                         continue;
                     bool selectedAncestor = false;
                     for(auto parent = entity.getParent(); parent; parent = parent.getParent()) {
-                        if(std::find(selectedEntities.begin(), selectedEntities.end(), parent) != selectedEntities.end()) {
+                        if(std::find(selectedEntities.begin(), selectedEntities.end(),
+                        parent) != selectedEntities.end()) {
                             selectedAncestor = true;
                             break;
                         }
@@ -241,8 +219,8 @@ namespace editor {
             m_guizmo2D.updateHover({mousePosition.x, mousePosition.y}, m_panelHovered);
             {
                 robot2D::DragDropTarget dragDropTarget{};
-                if(auto&& payloadBuffer = dragDropTarget.unpackPayload2Buffer(contentSceneID,
-                                                                          ImGuiDragDropFlags_AcceptNoDrawDefaultRect)) {
+                if(auto && payloadBuffer = dragDropTarget.unpackPayload2Buffer(contentSceneID,
+                ImGuiDragDropFlags_AcceptNoDrawDefaultRect)) {
                     auto&& path = payloadBuffer.unpack<std::string>();
                     std::filesystem::path scenePath = std::filesystem::path("assets") / path;
 
@@ -253,8 +231,8 @@ namespace editor {
                     pack_message_string(messagePath, buffer);
                 }
 
-                if(auto&& payloadBuffer = dragDropTarget.unpackPayload2Buffer(contentPrefabItemID,
-                                                                          ImGuiDragDropFlags_AcceptNoDrawDefaultRect)) {
+                if(auto && payloadBuffer = dragDropTarget.unpackPayload2Buffer(contentPrefabItemID,
+                ImGuiDragDropFlags_AcceptNoDrawDefaultRect)) {
                     auto&& path = payloadBuffer.unpack<std::string>();
                     std::filesystem::path prefabPath = std::filesystem::path("assets") / path;
 
@@ -273,40 +251,186 @@ namespace editor {
     }
 
 
+    bool ViewportPanel::frameEntities(bool wholeScene) {
+        if(!m_uiInteractor || !m_editorCamera || m_guizmo2D.isActive())
+            return false;
+        std::vector<SceneEntity> entities;
+        if(wholeScene) {
+            const auto& sceneEntities = m_uiInteractor -> getEntities();
+            entities.assign(sceneEntities.begin(), sceneEntities.end());
+        }
+        else
+            entities = m_uiInteractor -> getSelectedEntities();
+        bool found = false;
+        robot2D::FloatRect bounds;
+        for(const auto& entity: entities) {
+            if(!entity || !entity.hasComponent<TransformComponent>())
+                continue;
+            const auto rect = entity.getComponent<TransformComponent>().getGlobalBounds();
+            if(!std::isfinite(rect.lx) || !std::isfinite(rect.ly) || !std::isfinite(rect.width)
+                || !std::isfinite(rect.height) || rect.width < 0.f || rect.height < 0.f)
+                continue;
+            const float right = rect.lx + rect.width;
+            const float bottom = rect.ly + rect.height;
+            if(!std::isfinite(right) || !std::isfinite(bottom))
+                continue;
+            if(!found) {
+                bounds = rect;
+                found = true;
+            }
+            else {
+                const float maxX = std::max(bounds.lx + bounds.width, right);
+                const float maxY = std::max(bounds.ly + bounds.height, bottom);
+                bounds.lx = std::min(bounds.lx, rect.lx);
+                bounds.ly = std::min(bounds.ly, rect.ly);
+                bounds.width = maxX - bounds.lx;
+                bounds.height = maxY - bounds.ly;
+            }
+        }
+        return found && m_editorCamera -> frameBounds(bounds);
+    }
+
     void ViewportPanel::instrumentBar() {
         ImGui::BeginGroup();
         ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 4.f);
         ImGui::SetCursorPosX(6.f);
+        const auto tooltip = [](const char* text) {
+            if(ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+                ImGui::SetTooltip("%s", text);
+        };
         struct Tool {
-            IconType icon;
+            EditorIcon icon;
             Guizmo2D::Operation operation;
             InstrumentMessage::Type message;
             const char* tooltip;
         };
         const Tool tools[] = {
-            {IconType::Move, Guizmo2D::Operation::Move, InstrumentMessage::Type::Move, "Move (Shift+W)"},
-            {IconType::Scale, Guizmo2D::Operation::Scale, InstrumentMessage::Type::Scale, "Scale (Shift+Q)"},
-            {IconType::Rotate, Guizmo2D::Operation::Rotate, InstrumentMessage::Type::Rotate, "Rotate (Shift+R)"}
+            {EditorIcon::Move, Guizmo2D::Operation::Move, InstrumentMessage::Type::Move, "Move (Shift+W)"},
+            {EditorIcon::Scale, Guizmo2D::Operation::Scale, InstrumentMessage::Type::Scale, "Scale (Shift+Q)"},
+            {EditorIcon::Rotate, Guizmo2D::Operation::Rotate, InstrumentMessage::Type::Rotate, "Rotate (Shift+R)"}
+        };
+        const float buttonSize = ImGui::GetFrameHeight() * 1.35f;
+        const auto iconButton = [buttonSize](const char* id, EditorIcon icon) {
+            const bool pressed = ImGui::Button(id, {buttonSize, buttonSize});
+            const auto position = ImGui::GetItemRectMin();
+            const float side = buttonSize * 0.68f;
+            drawEditorIcon(*ImGui::GetWindowDrawList(), icon,
+                {position.x + (buttonSize - side) * 0.5f, position.y + (buttonSize - side) * 0.5f},
+                side, ImGui::GetColorU32(ImGuiCol_Text));
+            return pressed;
+        };
+        const auto toggle = [buttonSize](const char* id, const char* label, EditorIcon icon, bool& enabled) {
+            const auto& style = ImGui::GetStyle();
+            const float width = buttonSize + style.ItemInnerSpacing.x
+                + ImGui::CalcTextSize(label).x + style.FramePadding.x * 2.f;
+            if(enabled)
+                ImGui::PushStyleColor(ImGuiCol_Button, style.Colors[ImGuiCol_HeaderActive]);
+            const bool clicked = ImGui::Button(id, {width, buttonSize});
+            if(enabled)
+                ImGui::PopStyleColor();
+            if(clicked)
+                enabled = !enabled;
+            const auto position = ImGui::GetItemRectMin();
+            const float side = buttonSize * 0.62f;
+            auto* draw = ImGui::GetWindowDrawList();
+            const auto color = ImGui::GetColorU32(ImGuiCol_Text);
+            drawEditorIcon(*draw, icon,
+                {position.x + (buttonSize - side) * 0.5f, position.y + (buttonSize - side) * 0.5f}, side, color);
+            draw -> AddText({position.x + buttonSize + style.ItemInnerSpacing.x + style.FramePadding.x,
+                             position.y + (buttonSize - ImGui::GetFontSize()) * 0.5f}, color, label);
         };
         for(const auto& tool: tools) {
-            ImGui::PushID(static_cast<int>(tool.icon));
+            ImGui::PushID(static_cast<int>(tool.operation));
             const bool active = m_guizmo2D.getOperationType() == tool.operation;
             if(active)
                 ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_HeaderActive));
-            const float buttonSize = ImGui::GetFrameHeight();
-            if(robot2D::ImageButton(m_icons[tool.icon], {buttonSize, buttonSize})) {
+            if(iconButton("##TransformTool", tool.icon)) {
                 m_guizmo2D.setOperationType(tool.operation);
                 auto* message = m_messageBus.postMessage<InstrumentMessage>(MessageID::InstrumentPressed);
                 message -> type = tool.message;
             }
             if(active)
                 ImGui::PopStyleColor();
-            if(ImGui::IsItemHovered())
-                ImGui::SetTooltip("%s", tool.tooltip);
+            tooltip(tool.tooltip);
             ImGui::PopID();
-            if(tool.icon != IconType::Rotate)
-                ImGui::SameLine();
+            ImGui::SameLine();
         }
+        const auto nextControl = [](float width) {
+            const float right = ImGui::GetWindowPos().x + ImGui::GetWindowContentRegionMax().x;
+            if(ImGui::GetItemRectMax().x + ImGui::GetStyle().ItemSpacing.x + width <= right)
+                ImGui::SameLine();
+            else
+                ImGui::NewLine();
+        };
+        // Match the tools' height and measure the entire right-hand group before placing it.
+        const auto padding = ImGui::GetStyle().FramePadding;
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding,
+            {padding.x, (buttonSize - ImGui::GetFontSize()) * 0.5f});
+        const auto& style = ImGui::GetStyle();
+        const float gridWidth = buttonSize + style.ItemInnerSpacing.x
+            + ImGui::CalcTextSize("Grid").x + style.FramePadding.x * 2.f;
+        const float snapWidth = buttonSize + style.ItemInnerSpacing.x
+            + ImGui::CalcTextSize("Snap").x + style.FramePadding.x * 2.f;
+        const float settingsWidth = ImGui::CalcTextSize("...").x + style.FramePadding.x * 2.f;
+        constexpr float zoomWidth = 100.f;
+        const float groupWidth = gridWidth + snapWidth + settingsWidth + buttonSize + zoomWidth
+            + style.ItemSpacing.x * 4.f;
+        const float rightX = ImGui::GetWindowContentRegionMax().x - groupWidth - 6.f;
+        const float toolsEnd = ImGui::GetItemRectMax().x - ImGui::GetWindowPos().x;
+        if(rightX >= toolsEnd + style.ItemSpacing.x * 2.f)
+            ImGui::SameLine(rightX);
+        else {
+            ImGui::NewLine();
+            ImGui::SetCursorPosX(std::max(6.f, rightX));
+        }
+        const bool orthographic = m_editorCamera && m_editorCamera -> getType() == EditorCameraType::Orthographic;
+        ImGui::BeginDisabled(!orthographic);
+        toggle("##GridToggle", "Grid", EditorIcon::Grid, m_gridVisible);
+        tooltip("Show the viewport grid (independent from snapping)");
+        nextControl(snapWidth);
+        ImGui::BeginDisabled(m_guizmo2D.isActive());
+        toggle("##SnapToggle", "Snap", EditorIcon::Snap, m_snapEnabled);
+        tooltip("Snap drag offsets for Move/Scale, and angle changes for Rotate");
+        nextControl(settingsWidth);
+        if(ImGui::Button("...##SnapSettings"))
+            ImGui::OpenPopup("Snap settings");
+        if(ImGui::BeginPopup("Snap settings")) {
+            ImGui::SetNextItemWidth(150.f);
+            ImGui::DragFloat("Move / size step", &m_snapDistance, 1.f, 1.f, 1024.f, "%.0f",
+                ImGuiSliderFlags_AlwaysClamp);
+            ImGui::SetNextItemWidth(150.f);
+            ImGui::DragFloat("Angle step", &m_snapAngle, 1.f, 1.f, 180.f, "%.0f deg", ImGuiSliderFlags_AlwaysClamp);
+            ImGui::TextDisabled("Offsets from drag start; not absolute grid alignment.");
+            ImGui::EndPopup();
+        }
+        m_guizmo2D.setSnapping(m_snapEnabled, m_snapDistance, m_snapAngle);
+        nextControl(buttonSize);
+        const bool hasSelection = m_uiInteractor && !m_uiInteractor -> getSelectedEntities().empty();
+        ImGui::BeginDisabled(!hasSelection);
+        if(iconButton("##FrameSelected", EditorIcon::Frame))
+            frameEntities(false);
+        tooltip("Frame Selected: center and fit the selected objects");
+        ImGui::EndDisabled();
+        nextControl(zoomWidth);
+        char zoomLabel[32];
+        const float zoom = m_editorCamera ? m_editorCamera -> getZoom() : 1.f;
+        std::snprintf(zoomLabel, sizeof(zoomLabel), "%.0f%%", static_cast<double>(zoom * 100.f));
+        ImGui::SetNextItemWidth(zoomWidth);
+        if(ImGui::BeginCombo("##ViewportZoom", zoomLabel)) {
+            for(float scale: {0.25f, 0.5f, 1.f, 2.f, 4.f, 8.f}) {
+                char label[16];
+                std::snprintf(label, sizeof(label), "%.0f%%", static_cast<double>(scale * 100.f));
+                if(ImGui::Selectable(label, std::abs(zoom - scale) < 0.001f))
+                    m_editorCamera -> setZoom(scale);
+            }
+            if(ImGui::Selectable("Frame scene"))
+                frameEntities(true);
+            ImGui::EndCombo();
+        }
+        tooltip("100% = one scene unit per viewport pixel. Ctrl+wheel zooms.");
+        ImGui::EndDisabled();
+        ImGui::EndDisabled();
+        ImGui::PopStyleVar();
         ImGui::EndGroup();
         ImGui::Separator();
     }

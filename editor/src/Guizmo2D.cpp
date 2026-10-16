@@ -314,6 +314,16 @@ namespace editor {
     }
 
 
+    void Guizmo2D::setSnapping(bool enabled, float distance, float angle) {
+        if(!std::isfinite(distance) || !std::isfinite(angle) || distance <= 0.f || angle <= 0.f)
+            return;
+        if(m_snapEnabled != enabled || m_snapDistance != distance || m_snapAngle != angle)
+            cancelDrag();
+        m_snapEnabled = enabled;
+        m_snapDistance = distance;
+        m_snapAngle = angle;
+    }
+
     void Guizmo2D::processMouseMoved(robot2D::Event event) {
         if(!m_leftMousePressed) return;
         struct TransformState {
@@ -326,6 +336,12 @@ namespace editor {
             previous.push_back({transform -> getPosition(), transform -> getSize(), transform -> getRotation()});
         robot2D::vec2f moveVector{event.move.x, event.move.y};
         moveVector = m_camera -> convertPixelToCoords(moveVector);
+        if(m_snapEnabled && m_operation != Operation::Rotate) {
+            auto offset = moveVector - m_dragStart;
+            offset.x = std::round(offset.x / m_snapDistance) * m_snapDistance;
+            offset.y = std::round(offset.y / m_snapDistance) * m_snapDistance;
+            moveVector = m_dragStart + offset;
+        }
 
         robot2D::vec2f diff{};
         switch(m_operation) {
@@ -398,10 +414,16 @@ namespace editor {
             break;
         }
         case Operation::Rotate: {
-            for(auto& transform: m_manipulateds) {
+            for(std::size_t index = 0; index < m_manipulateds.size(); ++index) {
+                auto* transform = m_manipulateds[index];
                 auto pos = transform -> getPosition();
-
                 float diffAngle = angleBetweenVectorInDegress(pos, moveVector, m_manipulatorLastPos);
+                if(m_snapEnabled) {
+                    auto& remainder = m_rotationRemainders[index];
+                    remainder += diffAngle;
+                    diffAngle = std::round(remainder / m_snapAngle) * m_snapAngle;
+                    remainder -= diffAngle;
+                }
                 transform -> rotate(diffAngle);
             }
             m_manipulatorLastPos = moveVector;
@@ -432,6 +454,8 @@ namespace editor {
             if(hit) {
                 m_leftMousePressed = true;
                 m_manipulatorLastPos = mousePoint;
+                m_dragStart = mousePoint;
+                m_rotationRemainders.assign(m_manipulateds.size(), 0.f);
                 m_isCollide = true;
             }
             else
