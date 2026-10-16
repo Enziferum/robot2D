@@ -371,6 +371,10 @@
       "type:bug",
       "type:tests",
       "owner:shared"
+    ],
+    "BRAND-01": [
+      "area:editor",
+      "type:feature"
     ]
   }
 }
