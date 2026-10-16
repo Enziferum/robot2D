@@ -582,35 +582,30 @@ namespace editor {
     }
 
     void ScriptEngine::onPhysicsCallback(const PhysicsContact2D& contact, UUID self, UUID other) {
-        for(auto& [uuid, instance]: s_Data -> m_entityInstances) {
-            auto klass = instance -> getClassWrapper();
-
-            if(contact.entityA == uuid || contact.entityB == uuid) {
-
-                UUID ownContact = (contact.entityA == uuid) ? contact.entityA : contact.entityB;
-                UUID otherContact = (contact.entityA != uuid) ? contact.entityA : contact.entityB;
-
-                auto regMethods = s_Data -> m_entityClass -> getRegisterMethods();
-
-                if(regMethods.find("OnCollision2DInternal") == regMethods.end())
-                    continue;
-
-                uint64_t selfId = self;
-                uint64_t otherId = other;
-                int type = static_cast<int>(contact.type);
-
-
-                MonoClass* evClass = mono_class_from_name(s_Data -> m_coreAssemblyImage, "robot2D", "PhysicsContact2D");
-                RB_ASSERT(evClass)
-                mono_value_box(s_Data -> m_appDomain, evClass, (void*)&contact);
-                void* args[4] = { &selfId, &otherId, &type, (void*)&contact };
-
-                mono_runtime_invoke(regMethods["OnCollision2DInternal"],
-                    klass -> getInstance(), args, nullptr);
-            }
-
-        }
-
+        if(!s_Data || !s_Data -> m_entityClass ||
+            !((contact.entityA == self && contact.entityB == other) ||
+            (contact.entityB == self && contact.entityA == other)))
+            return;
+        const auto found = s_Data -> m_entityInstances.find(self);
+        if(found == s_Data -> m_entityInstances.end() || !found -> second)
+            return;
+        // Hold the selected instance across a callback; never broadcast to the other side.
+        auto instance = found -> second;
+        auto klass = instance -> getClassWrapper();
+        const auto& methods = s_Data -> m_entityClass -> getRegisterMethods();
+        const auto method = methods.find("OnCollision2DInternal");
+        if(!klass || !klass -> getInstance() || method == methods.end())
+            return;
+        std::uint64_t selfID = self, otherID = other;
+        int type = static_cast<int>(contact.type);
+        auto payload = contact;
+        void* args[4] = {&selfID, &otherID, &type, &payload};
+        MonoObject* exception = nullptr;
+        mono_runtime_invoke(method -> second, klass -> getInstance(), args, &exception);
+        if(exception)
+            RB_EDITOR_ERROR("[Physics] Managed callback failed; entity={}; other={}; type={}; reason={}", selfID,
+                otherID, type,
+                mono_class_get_name(mono_object_get_class(exception)));
     }
 
     MonoImage* ScriptEngine::GetCoreAssemblyImage() const {
