@@ -74,8 +74,12 @@ SVG-мастера — [editor/res/icons/outline](../editor/res/icons/outline).
 Graphics-сценарий asset-preview проверяет создание GL texture и отложенное
 удаление при invalidate. Все включены в существующий editor-test-suite.
 
-Перед публикацией: сборка редактора/core-tests/editor-suite, полный CTest,
-обязательный hook с Python, форматом, headless и строгим clang-tidy.
+Выполнено: сборка редактора/core-tests/editor-suite; полный CTest ASSET-01
+109/109 до последней защиты деления на ноль, затем targeted decode и hook:
+Python 47/47, headless 67/67, формат, строгий clang-tidy 183 единиц.
+Финальные native-исходники вместе с VIEW-01 107c3be собраны отдельно:
+112/112 CTest, включая 42 graphics, без пропусков. Это локальная интеграционная
+сборка, оба PR остаются независимыми и не слиты. ASSET-01: 32e90e5.
 Ручная UI-приёмка ещё не выполнена; тест layout не доказывает визуальное
 качество на конкретном DPI и не заменяет пользовательский сценарий ниже.
 
