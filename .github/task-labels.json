@@ -352,6 +352,9 @@
       "area:core",
       "type:bug",
       "owner:shared"
+    ],
+    "WEB-01": [
+      "type:maintenance"
     ]
   }
 }
