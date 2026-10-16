@@ -227,6 +227,8 @@ namespace editor {
     void Editor::handleEvents(const robot2D::Event& event) {
         if(event.type == robot2D::Event::LostFocus) {
             m_guizmo2D.cancelDrag();
+            if(m_editorCamera)
+                m_editorCamera -> handleEvents(event);
             m_state = State::LostFocus;
         }
         if(event.type == robot2D::Event::GainFocus) {
