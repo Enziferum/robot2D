@@ -209,6 +209,15 @@ namespace {
         second.getComponent<editor::TextComponent>().setText(u8"Игрок\nH"); render();
         second.getComponent<editor::TextComponent>().setFont(regular); render();
         CHECK(first.getComponent<editor::TransformComponent>().getPosition().x == 1);
+        std::weak_ptr<robot2D::Texture> texture = first.getComponent<editor::TextComponent>().getTextureHandle();
+        first.removeComponent<editor::TextComponent>(); render();
+        CHECK(!texture.expired());
+        CHECK(first.getComponent<editor::DrawableComponent>().getTexture().getSize().x > 0);
+        first.getComponent<editor::DrawableComponent>().setTexture(std::shared_ptr<robot2D::Texture>{});
+        CHECK(!first.getComponent<editor::DrawableComponent>().hasTexture());
+        robot2D::Font empty;
+        second.getComponent<editor::TextComponent>().setFont(empty); render();
+        CHECK(!second.getComponent<editor::DrawableComponent>().hasTexture());
     }
 
     void hierarchy() {

@@ -161,6 +161,7 @@ namespace editor {
         ~DrawableComponent() = default;
 
         void setTexture(const robot2D::Texture& texture);
+        void setTexture(std::shared_ptr<robot2D::Texture> texture);
         robot2D::Texture& getTexture();
         const robot2D::Texture& getTexture() const;
         const robot2D::Texture* getTexturePointer() const {
@@ -217,6 +218,7 @@ namespace editor {
         unsigned int m_layerIndex{1};
 
         const robot2D::Texture* m_texture{nullptr};
+        std::shared_ptr<robot2D::Texture> m_ownedTexture;
         robot2D::Color m_color;
         bool m_needUpdateZbuffer{false};
         std::string m_texturePath{""};
@@ -405,6 +407,9 @@ namespace editor {
         }
 
         const robot2D::Texture& getTexture() const;
+        std::shared_ptr<robot2D::Texture> getTextureHandle() const {
+            return m_texture;
+        }
         std::unordered_map<int, robot2D::GlyphQuad>& getGlyphCache();
     private:
         friend class TextSystem;
