@@ -630,8 +630,11 @@ Windows GCC 16.2/Ninja Release: editor, core-tests, suite и imgui example со�
 Обязательный hook прошёл: Python 47/47, формат, сборка, 163 headless и строгий
 clang-tidy 186 единиц. Отдельный строгий анализ пяти backend единиц и example
 прошёл. Реальный editor прошёл скрытый startup/shutdown smoke с exit 0.
-Основной commit fae3cb5; финальная регрессия glyph ranges фиксируется отдельно.
+Основной commit fae3cb5; ревью/регрессия glyph ranges и alpha overlap — 65b43de,
+повторная полная suite 210/210, обязательный hook 163/163 и строгий анализ прошли.
+Опубликован [draft PR #130](https://github.com/Enziferum/robot2D/pull/130) в dev.
 Ручная UI-приёмка и CI опубликованного head ещё впереди.
 
-Следующий шаг: завершить проверки и опубликовать зависимый PR в dev, затем
-ручная приёмка; GraphicsCommands, upstream, multi-viewports и тайминг не начаты.
+Следующий шаг: проверить CI PR #130 и пройти ручную приёмку; перед merge
+интегрировать зависимость PR #122. GraphicsCommands, upstream, multi-viewports
+и тайминг не начаты.

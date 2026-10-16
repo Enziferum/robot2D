@@ -2,6 +2,7 @@
 
 IMGUI-02 [#126](https://github.com/Enziferum/robot2D/issues/126), 2026-10-16.
 Реализация первого шага по [согласованному контракту IMGUI-01](https://github.com/Enziferum/robot2D/blob/f4fc9c3b7fd290a1bf240d722972bc4ced877792/docs/imgui-backend-review.md).
+Результат — [draft PR #130](https://github.com/Enziferum/robot2D/pull/130), ветка IMGUI-02.
 Зависимость — CORE-02 / [PR #122](https://github.com/Enziferum/robot2D/pull/122).
 Это текущий однооконный GL backend; GraphicsCommands и multi-viewports ещё не реализованы.
 
