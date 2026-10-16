@@ -1,24 +1,25 @@
 /*********************************************************************
-(c) Alex Raag 2026
-https://github.com/Enziferum
-robot2D - Zlib license.
-This software is provided 'as-is', without any express or
-implied warranty. In no event will the authors be held
-liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute
-it freely, subject to the following restrictions:
-1. The origin of this software must not be misrepresented;
-you must not claim that you wrote the original software.
-If you use this software in a product, an acknowledgment
-in the product documentation would be appreciated but
-is not required.
-2. Altered source versions must be plainly marked as such,
-and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any
-source distribution.
+   (c) Alex Raag 2026
+   https://github.com/Enziferum
+   robot2D - Zlib license.
+   This software is provided 'as-is', without any express or
+   implied warranty. In no event will the authors be held
+   liable for any damages arising from the use of this software.
+   Permission is granted to anyone to use this software for any purpose,
+   including commercial applications, and to alter it and redistribute
+   it freely, subject to the following restrictions:
+   1. The origin of this software must not be misrepresented;
+   you must not claim that you wrote the original software.
+   If you use this software in a product, an acknowledgment
+   in the product documentation would be appreciated but
+   is not required.
+   2. Altered source versions must be plainly marked as such,
+   and must not be misrepresented as being the original software.
+   3. This notice may not be removed or altered from any
+   source distribution.
 *********************************************************************/
 
+#include <stdexcept>
 #include <robot2D/Util/Logger.hpp>
 #include <robot2D/Ecs/EntityManager.hpp>
 
@@ -71,14 +72,29 @@ namespace editor {
     Prefab::Ptr PrefabManager::loadPrefab(UIInteractor::Ptr interactor, const std::string& path) {
         if(!interactor)
             return nullptr;
-        if(auto cached = findPrefab(path))
+        return loadPrefab(interactor -> getAssociatedProjectPath(), path, interactor -> getScriptInteractor());
+    }
+
+    Prefab::Ptr PrefabManager::loadPrefab(const std::string& projectPath, const std::string& path,
+        IScriptInteractorFrom::Ptr scripts) {
+        std::string resolved;
+        try {
+            resolved = resolveProjectAsset(projectPath, path);
+            if(std::filesystem::u8path(resolved).extension() != ".prefab")
+                throw std::invalid_argument("Expected .prefab asset");
+        }
+        catch(const std::exception& error) {
+            RB_EDITOR_ERROR("Can't load prefab: path='{}'; reason='{}'", path, error.what());
+            return nullptr;
+        }
+        if(auto cached = findPrefab(resolved))
             return cached;
         auto prefab = std::make_shared<Prefab>();
-        prefab -> setPath(path);
-        prefab -> setProjectPath(interactor -> getAssociatedProjectPath());
+        prefab -> setPath(resolved);
+        prefab -> setProjectPath(projectPath);
         PrefabSerializer serializer;
-        if(!serializer.deserialize(prefab, interactor -> getScriptInteractor())) {
-            RB_EDITOR_ERROR("Can't load prefab: {0}", serializer.getErrorMessage());
+        if(!serializer.deserialize(prefab, scripts)) {
+            RB_EDITOR_ERROR("Can't load prefab: path='{}'; reason='{}'", resolved, serializer.getErrorMessage());
             return nullptr;
         }
         const auto found = m_prefabs.find(prefab -> getUUID());
@@ -100,7 +116,7 @@ namespace editor {
         for(const auto& prefab: m_prefabs) {
             std::error_code error;
             if(std::filesystem::equivalent(std::filesystem::u8path(prefab.second -> getPath()),
-                                           std::filesystem::u8path(path), error) && !error)
+                std::filesystem::u8path(path), error) && !error)
                 return prefab.second;
         }
 
