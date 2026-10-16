@@ -1,22 +1,22 @@
 /*********************************************************************
-(c) Alex Raag 2024
-https://github.com/Enziferum
-robot2D - Zlib license.
-This software is provided 'as-is', without any express or
-implied warranty. In no event will the authors be held
-liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute
-it freely, subject to the following restrictions:
-1. The origin of this software must not be misrepresented;
-you must not claim that you wrote the original software.
-If you use this software in a product, an acknowledgment
-in the product documentation would be appreciated but
-is not required.
-2. Altered source versions must be plainly marked as such,
-and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any
-source distribution.
+   (c) Alex Raag 2024
+   https://github.com/Enziferum
+   robot2D - Zlib license.
+   This software is provided 'as-is', without any express or
+   implied warranty. In no event will the authors be held
+   liable for any damages arising from the use of this software.
+   Permission is granted to anyone to use this software for any purpose,
+   including commercial applications, and to alter it and redistribute
+   it freely, subject to the following restrictions:
+   1. The origin of this software must not be misrepresented;
+   you must not claim that you wrote the original software.
+   If you use this software in a product, an acknowledgment
+   in the product documentation would be appreciated but
+   is not required.
+   2. Altered source versions must be plainly marked as such,
+   and must not be misrepresented as being the original software.
+   3. This notice may not be removed or altered from any
+   source distribution.
 *********************************************************************/
 
 #pragma once
@@ -43,7 +43,7 @@ namespace editor {
     class Scene : public robot2D::Drawable {
     public:
         using Ptr = std::shared_ptr<Scene>;
-        using TraverseFunction = std::function<void(SceneEntity&)>;
+        using TraverseFunction = std::function<void (SceneEntity&)>;
 
     public:
         explicit Scene(robot2D::MessageBus& messageBus);
@@ -93,10 +93,16 @@ namespace editor {
         SceneEntity getEntity(UUID uuid, SceneContext context) const;
         SceneEntity getEntity(const std::string& name) const;
 
-        bool isRunning() const { return m_running; }
+        bool isRunning() const {
+            return m_running;
+        }
 
-        void setPath(const std::string& path) { m_path = path; }
-        void setAssociatedProjectPath(const std::string& path) { m_associatedProjectPath = path;}
+        void setPath(const std::string& path) {
+            m_path = path;
+        }
+        void setAssociatedProjectPath(const std::string& path) {
+            m_associatedProjectPath = path;
+        }
 
         const std::string& getAssociatedProjectPath() const {
             return m_associatedProjectPath;
@@ -107,27 +113,43 @@ namespace editor {
         [[maybe_unused]]
         SceneEntity duplicateEmptyEntity(SceneEntity entity, IScriptInteractorFrom::Ptr scriptInteractor = {});
 
+        // Materialize persisted template data in the active context. Runtime lifecycle
+        // (physics bodies, managed instances/callbacks) belongs to the runtime caller.
+        SceneEntity instantiateTemplate(SceneEntity source, IScriptInteractorFrom::Ptr scriptInteractor = {});
+
         [[maybe_unused]]
         SceneEntity duplicateRuntime(SceneEntity entity, robot2D::vec2f position);
 
-        const std::string& getPath() const {return m_path;}
-        std::string& getPath()  {return m_path;}
+        const std::string& getPath() const {
+            return m_path;
+        }
+        std::string& getPath() {
+            return m_path;
+        }
 
         void setEditorCamera(EditorCamera::Ptr editorCamera);
 
-        bool hasChanges() const { return m_hasChanges; }
-        void markModified() { if(!m_running) m_hasChanges = true; }
-        void markSaved() { m_hasChanges = false; }
+        bool hasChanges() const {
+            return m_hasChanges;
+        }
+        void markModified() {
+            if(!m_running) m_hasChanges = true;
+        }
+        void markSaved() {
+            m_hasChanges = false;
+        }
         void setName(const std::string& name) {
             if(m_name != name) {
                 m_name = name;
                 markModified();
             }
         }
-        const std::string& getName() const { return m_name; }
+        const std::string& getName() const {
+            return m_name;
+        }
 
         void forEachEntity(TraverseFunction&& traverseFunction,
-                           SceneContext context = SceneContext::Editor);
+            SceneContext context = SceneContext::Editor);
     protected:
         void draw(robot2D::RenderTarget& target, robot2D::RenderStates states) const override;
     private:
@@ -162,7 +184,7 @@ namespace editor {
         void processRemovals(SceneContext context);
         void cancelPendingRemoval(SceneEntity entity);
         void moveChildren(UUID parentID, const robot2D::vec2f& offset,
-                          SceneContext context, std::uint64_t version);
+            SceneContext context, std::uint64_t version);
         void forEachChild(TraverseFunction& traverseFunction, SceneEntity parent);
     private:
         friend class SceneEntity;

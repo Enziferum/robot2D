@@ -76,7 +76,11 @@ namespace editor {
             nodes = normalized;
             const auto remap = [&](EntityID id) {
                 const auto found = ids.find(id);
-                return found == ids.end() ? id : found -> second;
+                if(id == 0)
+                    return id;
+                if(found == ids.end())
+                    throw std::runtime_error("Prefab reference points outside its subtree: " + std::to_string(id));
+                return found -> second;
             };
             for(auto node: nodes) {
                 if(const auto hierarchy = node["HierarchyComponent"]) {
@@ -158,6 +162,9 @@ namespace editor {
             if(!entities.good())
                 return false;
             auto nodes = YAML::Load(entities.c_str());
+            // Validate closure before replacing an existing file; validation remaps a copy.
+            auto validation = YAML::Clone(nodes);
+            remapTemplateIDs(validation, false);
             nodes[0]["PrefabComponent"]["UUID"] = static_cast<EntityID>(prefab -> getUUID());
             YAML::Node data(YAML::NodeType::Map);
             data["PrefabVersion"] = prefabVersion;

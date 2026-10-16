@@ -21,6 +21,7 @@
 
 #include <editor/EditorLogic.hpp>
 #include <editor/AnimationPlayback.hpp>
+#include <editor/PrefabManager.hpp>
 #include <editor/Editor.hpp>
 #include <editor/FileApi.hpp>
 #include <editor/Messages.hpp>
@@ -498,8 +499,19 @@ namespace editor {
     }
 
     void EditorLogic::addPrefabEntity(const PrefabLoadMessage& message) {
-        auto path = m_currentProject -> getPath();
-        auto prefabPath = combinePath(path, message.path);
+        if(!m_currentProject || !m_activeScene || m_activeScene -> isRunning())
+            return;
+        PrefabManager manager;
+        auto prefab = manager.loadPrefab(m_currentProject -> getPath(), message.path, getScriptInteractor());
+        if(!prefab)
+            return;
+        auto instance = duplicateEmptyEntity(prefab -> getEntity());
+        if(!instance) {
+            RB_EDITOR_ERROR("Can't instantiate prefab: path='{}'", message.path);
+            return;
+        }
+        m_selectionService.selectEntity(instance.getUUID());
+        notifySelection();
     }
 
 
