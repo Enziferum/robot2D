@@ -1,7 +1,10 @@
 # CI и отчёты
 
-Workflow [Engine Build](../.github/workflows/ci.yml) запускается на push,
-каждое обновление PR и вручную через Actions → Engine Build → Run workflow.
+Workflow [Engine Build](../.github/workflows/ci.yml) запускается только для pull request: при открытии, повторном
+открытии и обновлении коммитов PR. Отдельные push, merge в dev и ручной запуск
+workflow не создают дополнительных прогонов. Повторный запуск существующей
+проверки доступен через Re-run jobs в Actions. Новый коммит в PR отменяет
+предыдущий незавершённый прогон этого PR через concurrency.
 
 Две независимые Release-сборки используют Ninja:
 
