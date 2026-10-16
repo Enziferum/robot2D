@@ -1,6 +1,6 @@
 # Общий план robot2D
 
-Обновлено: 2026-10-15. Это точка входа для всех направлений и чатов проекта:
+Обновлено: 2026-10-16. Это точка входа для всех направлений и чатов проекта:
 Core, ECS, Render, Editor, runtime/player, пример игры и инструменты выпуска.
 Релизные критерии — [release-roadmap.md](release-roadmap.md). Оперативные статусы,
 выбранные ведущие и результаты находятся в GitHub Issues и
@@ -8,7 +8,7 @@ Core, ECS, Render, Editor, runtime/player, пример игры и инстру
 
 ## Актуальный план Core и robot2D-imgui — 2026-10-16
 
-По запросу пользователя CORE-01 и CORE-02 объединяются в ветке CORE-02 и
+По запросу пользователя CORE-01 и CORE-02 объединены в ветке CORE-02 и
 [PR #122](https://github.com/Enziferum/robot2D/pull/122). Изменения
 [PR #112](https://github.com/Enziferum/robot2D/pull/112) сохраняются вместе с историей;
 он заменяется объединённым PR после публикации проверенного результата.
@@ -17,7 +17,7 @@ CORE-01 #110 остаётся общей открытой задачей, не �
 
 | Этап | Что сделано / что остаётся | Статус |
 |---|---|---|
-| CORE-01: согласованный Util и базовые классы | ResourceHandler, MessageBus/типизированная память, Logger/Assert, FileInputStream, Time/Clock, совместимые constexpr/noexcept Vector2/3, регрессии, Doxygen | Реализовано; объединяется с CORE-02 и проверяется на актуальном dev |
+| CORE-01: согласованный Util и базовые классы | ResourceHandler, MessageBus/типизированная память, Logger/Assert, FileInputStream, Time/Clock, совместимые constexpr/noexcept Vector2/3, регрессии, Doxygen | Объединено с CORE-02 на dev после PHYS-01; локальные проверки пройдены, финальный CI/ревью |
 | CORE-02: события | variant Event, typed EventBinder, GLFW FIFO/frame batch, Add*Event, capture/владельцы Press–Release/cancel, история/Events, потребители, UI clicks/shortcuts, startup crash fix | Реализовано; пользователь подтвердил повторное открытие проекта и GUI на всё окно; финальная интеграция/CI |
 | robot2D-imgui: scopes | Безопасные оконные/style scopes и сохранение dockspace при скрытом canvas | Отдельные IMGUI-01 #121 / PR #123; реализованы в соседней ветке, не входят автоматически в CORE-02 |
 | robot2D-imgui: текущая корректность renderer | OrthoView Y; GL state и active texture/sampler/program/VAO; UserCallback/reset; scissor clamp/empty; GPU-resource RAII/отказ setup; владение memory-font | Открытый следующий объём по аудиту R1/R2/R3/R5/R8/R9; реализация здесь не начата |
@@ -575,3 +575,37 @@ headless) без пропусков, строгий clang-tidy 187 собств�
 Clock/его тесты не изменены. Ручная UI/graphics-проверка не запускалась.
 Публикация и новый Linux/Windows CI фиксируются в Issue #110/PR #112.
 Далее до начала Window/Desktop — отдельное обсуждение деталей с пользователем.
+
+
+## Объединение CORE-01 и CORE-02 — 2026-10-16
+
+По прямому запросу пользователя история CORE-01 @ c241816 включена в CORE-02
+merge-коммитом 16ec111, затем актуальный dev @ df823bb (PHYS-01 #120) включён
+через b2cb859. Общий результат — PR #122; PR #112 заменяется им после публикации,
+его ветка/история сохраняются. CORE-01 #110 остаётся открытой общей задачей.
+
+Разрешены восемь конфликтов CORE-01/02 и один при включении dev. Сохранены
+типизированный Event/frame/capture и startup fix CORE-02, безопасные ресурсы,
+сообщения/память и Util CORE-01, действующие PHYS-01 callbacks. Обработчик,
+в котором CORE-01 добавлял semicolon к Assert, заменён новой адресной доставкой
+PHYS-01 целиком; старый broadcast не восстановлен. Сохранён фильтр GIT_* из dev
+в синтетических review-тестах. ResourceHandler::clear из актуального dev оставлен,
+его lifetime описан, добавлена регрессия освобождения и повторного ID.
+
+Проверки объединённой версии: Python 47/47, обязательный hook без обхода,
+headless CTest 160/160, строгий clang-tidy 194 единиц собственного кода.
+Отдельный строгий анализ трёх изменённых cpp собственного ImGui-адаптера пройден.
+Собраны редактор, core/editor suite, Sandbox, dormant EditorUIScene compatibility
+target и ImGui example. После включения graphics полный CTest 201/201 без пропусков
+(41 graphics). Doxygen 1.18.0 с WARN_AS_ERROR сгенерировал HTML, в том числе в
+совершенно новом work/core-02-docs-clean: исправлены создание вложенного output
+каталога и ссылка на не включённый в Doxygen Event-документ. Временное отключение
+проверок Doxygen не использовалось. Локальные Markdown-ссылки и реестр проверены.
+
+Ручное подтверждение пользователя startup/GUI относится к CORE-02 до объединения;
+оно не переобъявляется новой ручной приёмкой объединённой сборки. Следующий шаг —
+CI общего head, финальное ревью и короткое открытие проекта этой сборкой.
+В начале roadmap восстановлен полный список оставшихся Core/robot2D-imgui работ;
+новый scheduler, GUI renderer/lifecycle, upstream/multi-window и crash reporter
+этим объединением не реализуются. Основной checkout и ветки соседних чатов,
+Core ECS, Snapshot/CancellationToken и submodule pointers не менялись.
