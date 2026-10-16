@@ -464,13 +464,21 @@ namespace {
             const auto point = window.mapPixelToCoords({64, 32}, fixed);
             CHECK(std::abs(point.x - 32) < 0.01f && std::abs(point.y - 32) < 0.01f);
             CHECK(window.getDefaultView().getSize() == vec2f{128, 64});
+            window.setView(window.getDefaultView());
             window.notifyResize(32, 64);
+            CHECK(window.getView().getSize() == vec2f{128, 64});
+            CHECK(window.getView(0).getSize() == vec2f{32, 64});
             CHECK(window.getSize() == vec2u{32, 64});
             const auto next = window.mapPixelToCoords({16, 32}, fixed);
             CHECK(std::abs(next.x - 32) < 0.01f && std::abs(next.y - 32) < 0.01f);
             CHECK(window.getDefaultView().getSize() == vec2f{32, 64});
+            glViewport(0, 0, 0, 0);
             window.notifyResize(0, 0);
+            window.beforeRender();
+            const auto minimized = window.mapPixelToCoords({16, 32}, fixed);
+            CHECK(std::abs(minimized.x - 32) < 0.01f && std::abs(minimized.y - 32) < 0.01f);
             CHECK(window.getDefaultView().getSize() == vec2f{32, 64});
+            window.afterRender();
             CHECK(glGetError() == GL_NO_ERROR);
         }
         glfwMakeContextCurrent(original);

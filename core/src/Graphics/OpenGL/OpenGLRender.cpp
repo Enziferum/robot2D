@@ -277,6 +277,7 @@ namespace robot2D::priv {
             afterRender();
         layer.m_view = view;
         layer.m_customProjection = false;
+        layer.m_followsDefaultView = false;
         applyCurrentView(layerID);
     }
 
@@ -284,7 +285,6 @@ namespace robot2D::priv {
         if(!size.x || !size.y || size == m_size)
             return;
         afterRender();
-        const auto previousDefault = m_default;
         m_size = size;
         m_surfaceSize = size;
         m_drawViewport = {0, 0, static_cast<int>(size.x), static_cast<int>(size.y)};
@@ -292,7 +292,7 @@ namespace robot2D::priv {
         m_default.reset({0, 0, static_cast<float>(size.x), static_cast<float>(size.y)});
         for(unsigned int layerID = 0; layerID < m_renderLayers.size(); ++layerID) {
             auto& layer = m_renderLayers[layerID];
-            if(!layer.m_customProjection && sameView(layer.m_view, previousDefault)) {
+            if(layer.m_followsDefaultView) {
                 layer.m_view = m_default;
                 applyCurrentView(layerID);
             }
@@ -319,6 +319,7 @@ namespace robot2D::priv {
         glViewport(viewport[0], viewport[1], viewport[2], viewport[3]);
         layer.m_view = view;
         layer.m_customProjection = false;
+        layer.m_followsDefaultView = false;
         applyCurrentView(layerID);
     }
 
@@ -353,6 +354,7 @@ namespace robot2D::priv {
     void OpenGLRender::setView3D(const Matrix3D& projection, const Matrix3D& view) {
         afterRender();
         m_renderLayers[defaultLayerID].m_customProjection = true;
+        m_renderLayers[defaultLayerID].m_followsDefaultView = false;
         assert(m_dimensionType != RenderDimensionType::TwoD && "To use 3D view function set RenderDimension "
             "Mode to 3D / Both Mode");
         auto& m_quadShader = m_renderLayers[defaultLayerID].m_quadShader;
@@ -366,6 +368,7 @@ namespace robot2D::priv {
     void OpenGLRender::setRawView(float* rawMatrix) {
         afterRender();
         m_renderLayers[defaultLayerID].m_customProjection = true;
+        m_renderLayers[defaultLayerID].m_followsDefaultView = false;
         auto& m_quadShader = m_renderLayers[defaultLayerID].m_quadShader;
         m_quadShader.use();
         m_quadShader.setMatrix(m_shaderKeys[ShaderKey::Projection], rawMatrix);
@@ -442,7 +445,7 @@ namespace robot2D::priv {
     void OpenGLRender::beforeRender() const {
         std::array<int, 4> viewport;
         glGetIntegerv(GL_VIEWPORT, viewport.data());
-        if(viewport != m_drawViewport) {
+        if(viewport[2] > 0 && viewport[3] > 0 && viewport != m_drawViewport) {
             m_drawViewport = viewport;
             m_surfaceSize = {static_cast<unsigned int>(viewport[2]), static_cast<unsigned int>(viewport[3])};
         }
