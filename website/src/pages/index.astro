@@ -116,7 +116,21 @@ import { path, repo, developmentVersion } from '../lib/site';
       </div>
     </div>
   </section>
-  <section class="section wrap split">
+  <section class="section wrap mascot-section">
+    <picture class="mascot-portrait">
+      <source
+        srcset={path('brand/robot2d-mascot-03-web.webp')}
+        type="image/webp"
+      />
+      <img
+        src={path('brand/robot2d-mascot-03-768h.png')}
+        width="512"
+        height="768"
+        loading="lazy"
+        decoding="async"
+        alt="The Robot Lab mascot: a small teal robot with a rounded helmet, cyan visor and sturdy boots."
+      />
+    </picture>
     <div>
       <p class="eyebrow">03 / Built in the open</p>
       <h2>
@@ -124,8 +138,6 @@ import { path, repo, developmentVersion } from '../lib/site';
         <br />
         <em>Come along.</em>
       </h2>
-    </div>
-    <div>
       <p class="lede">
         robot2D is a personal engine project becoming a tool other developers
         can explore. The next milestone is 0.8.0; a stable 1.0 is the
