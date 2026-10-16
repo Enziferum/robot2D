@@ -42,7 +42,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y ninja-build g++ pkg-config libglfw3-dev libspdlog-dev libfreetype-dev libgl1-mesa-dev mono-devel xvfb xauth libgl1-mesa-dri
+          sudo apt-get install -y ninja-build g++ pkg-config libglfw3-dev libspdlog-dev libfreetype-dev libgl1-mesa-dev mono-devel xvfb xauth libgl1-mesa-dri gdb
 
       - name: Install Windows dependencies
         if: runner.os == 'Windows'
@@ -92,6 +92,16 @@ jobs:
         env:
           LIBGL_ALWAYS_SOFTWARE: '1'
         run: ${{ matrix.command }}
+
+      - name: Diagnose scene integration crash
+        if: failure() && runner.os == 'Linux'
+        run: |
+          test_binary="$GITHUB_WORKSPACE/build/editor/tests/robot2D-scene-tests"
+          test_directory="$GITHUB_WORKSPACE/build/editor/tests/scenarios/editor-scene-editor-gui-scene"
+          if command -v gdb >/dev/null && test -x "$test_binary" && test -d "$test_directory"; then
+            cd "$test_directory"
+            xvfb-run -a gdb --batch -ex run -ex 'thread apply all bt' --args "$test_binary" editor-gui-scene
+          fi
 
       - name: Upload test reports and diagnostic logs
         if: always()

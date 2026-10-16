@@ -51,6 +51,8 @@ namespace robot2D::priv {
             const std::string& name, WindowContext& context);
 
         virtual void* getRaw() = 0;
+        virtual vec2u getFramebufferSize() const = 0;
+        virtual vec2u getLogicalSize() const = 0;
 
         virtual bool isOpen() const = 0;
         virtual void setTitle(const std::string& title) const = 0;

@@ -32,6 +32,7 @@
 
 #include <editor/FileApi.hpp>
 #include <editor/LocalResourceManager.hpp>
+#include <editor/EditorResourceManager.hpp>
 #include <robot2D/imgui/GuiFontConfig.hpp>
 #include "IconsFontsAwesome5.hpp"
 
@@ -90,36 +91,27 @@ namespace editor {
             float scaleFactor = static_cast<float>(getDPI()) / 96.f;
 
             RB_EDITOR_INFO("[Application] GUI setup started; dpi_scale={}", scaleFactor);
-            m_guiWrapper.setup(*m_window, false);
-            std::vector<robot2D::GuiFontConfig> guiFontConfigs;
+            robot2D::GuiConfiguration guiConfiguration;
+            guiConfiguration.window = m_window;
+            guiConfiguration.defaultFont = 1;
+            robot2D::GuiFontConfig defaultFont;
+            defaultFont.id = 1;
+            defaultFont.path = defaultFontPath;
+            defaultFont.size = fontSize * scaleFactor;
+            guiConfiguration.fonts.push_back(defaultFont);
+            for(const auto& path : {fontPath1, fontPath2}) {
+                robot2D::GuiFontConfig icons;
+                icons.id = static_cast<robot2D::FontId>(guiConfiguration.fonts.size() + 1);
+                icons.mergeInto = defaultFont.id;
+                icons.path = path;
+                icons.size = fontSize * scaleFactor * 0.75f;
+                icons.glyphRanges = {ICON_MIN_FA, ICON_MAX_FA, 0};
+                guiConfiguration.fonts.push_back(std::move(icons));
+            }
+            if(!m_guiWrapper.initialize(guiConfiguration))
+                RB2D_EXCEPTION(m_guiWrapper.lastError());
 
-            robot2D::GuiFontConfig defaultFontConfig;
-            defaultFontConfig.mode = robot2D::GuiFontConfig::Mode::File;
-            defaultFontConfig.isDefault = true;
-            defaultFontConfig.path = defaultFontPath;
-            defaultFontConfig.size = fontSize * scaleFactor;
-
-            robot2D::GuiFontConfig iconFontConfig1;
-            iconFontConfig1.mode = robot2D::GuiFontConfig::Mode::File;
-            iconFontConfig1.isDefault = false;
-            iconFontConfig1.mergeFont = true;
-            iconFontConfig1.path = fontPath1;
-            iconFontConfig1.size = fontSize * scaleFactor * 0.75f;
-
-            robot2D::GuiFontConfig iconFontConfig2;
-            iconFontConfig2.mode = robot2D::GuiFontConfig::Mode::File;
-            iconFontConfig2.isDefault = false;
-            iconFontConfig2.mergeFont = true;
-            iconFontConfig2.path = fontPath2;
-            iconFontConfig2.size = fontSize * scaleFactor * 0.75f;
-
-
-            guiFontConfigs.push_back(defaultFontConfig);
-            guiFontConfigs.push_back(iconFontConfig1);
-            guiFontConfigs.push_back(iconFontConfig2);
-
-            m_guiWrapper.setupFonts(std::move(guiFontConfigs));
-
+            robot2D::GuiContextScope guiContext(m_guiWrapper.context());
             auto& io = ImGui::GetIO();
             io.IniFilename = nullptr;
 
@@ -138,6 +130,8 @@ namespace editor {
                 configPath, config.layoutCreated);
         }
 
+
+        robot2D::GuiContextScope setupContext(m_guiWrapper.context());
 
         //////////////////////////////////// Load C# Mono ////////////////////////////////////
         std::string scriptingEngineDLLPath = "res/script/robot2D_ScriptCore";
@@ -189,6 +183,7 @@ namespace editor {
     }
 
     void Application::handleEventFrame(const robot2D::FrameEvents& events) {
+        robot2D::GuiContextScope guiContext(m_guiWrapper.context());
         if(m_logic.getState() == AppState::Editor) m_editorModule -> beginEventFrame();
         for(const auto& event : events.events) {
             handleEvents(event);
@@ -197,6 +192,7 @@ namespace editor {
     }
 
     void Application::handleEvents(const robot2D::Event& event) {
+        robot2D::GuiContextScope guiContext(m_guiWrapper.context());
         m_guiWrapper.handleEvents(event);
         m_eventBinder.dispatch(event);
         if(m_logic.getState() == AppState::Editor) m_editorModule -> handleEvents(event);
@@ -214,6 +210,7 @@ namespace editor {
     }
 
     void Application::handleMessages() {
+        robot2D::GuiContextScope guiContext(m_guiWrapper.context());
         robot2D::Message message{};
         while(m_messageBus.pollMessages(message)) {
             if(m_logic.getState() == AppState::Editor)
@@ -226,6 +223,7 @@ namespace editor {
     }
 
     void Application::update(float dt) {
+        robot2D::GuiContextScope guiContext(m_guiWrapper.context());
         TaskQueue::GetQueue() -> process();
         if(m_logic.getState() == AppState::Editor)
             m_editorModule -> update(dt);
@@ -236,12 +234,14 @@ namespace editor {
             if(saveEditorLayout())
                 m_editorLayoutActive = false;
         }
-        m_guiWrapper.update(dt);
+        if(!m_guiWrapper.beginFrame(dt))
+            RB2D_EXCEPTION(m_guiWrapper.lastError());
         if(ImGui::GetIO().WantSaveIniSettings && m_logic.getState() == AppState::Editor)
             saveEditorLayout();
     }
 
     bool Application::saveEditorLayout() {
+        robot2D::GuiContextScope guiContext(m_guiWrapper.context());
         auto& config = EditorConfig::getConfig();
         if(!config.layoutCreated)
             return false;
@@ -266,18 +266,27 @@ namespace editor {
         else if(m_logic.getState() == AppState::ProjectInspector)
             m_projectInspector.render();
         PopupManager::getManager() -> onRender();
-        m_guiWrapper.render();
+        if(!m_guiWrapper.endFrame())
+            RB2D_EXCEPTION(m_guiWrapper.lastError());
+        m_window -> afterRender();
+        if(!m_guiWrapper.render())
+            RB_EDITOR_ERROR("[Application] GUI frame failed: {}", m_guiWrapper.lastError());
         m_window -> display();
     }
 
     void Application::destroy() {
+        robot2D::GuiContextScope guiContext(m_guiWrapper.context());
         RB_EDITOR_INFO("[Application] Destroy started");
         if(m_editorLayoutActive)
             saveEditorLayout();
         RB_EDITOR_INFO("[Application] Editor module destroy started; waiting for background work");
-        m_editorModule -> destroy();
-        m_editorModule.reset();
+        if(m_editorModule) {
+            m_editorModule -> destroy();
+            m_editorModule.reset();
+        }
+        m_guiWrapper.shutdown();
         LocalResourceManager::getManager() -> releaseGraphicsResources();
+        EditorResourceManager::getManager() -> releaseGraphicsResources();
         RB_EDITOR_INFO("[Application] Editor module released; Mono shutdown started");
         m_scriptingEngine.Shutdown();
         RB_EDITOR_INFO("[Application] Mono shutdown completed");

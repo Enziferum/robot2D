@@ -30,31 +30,57 @@
 #include "InputEvents.hpp"
 
 namespace robot2D {
+    namespace priv { class GuiImpl; }
 
-    namespace priv {
-        class GuiImpl;
-    }
+    struct GuiConfiguration {
+        Window* window = nullptr; ///< Borrowed; must outlive shutdown.
+        std::vector<GuiFontConfig> fonts;
+        FontId defaultFont = 0;
+        bool allowDefaultFallback = false;
+    };
 
+    enum class GuiState { Uninitialized, Ready, BuildingFrame, DrawDataReady };
 
+    /// Select an explicitly owned context for non-frame configuration/settings calls.
+    class GuiContextScope {
+    public:
+        explicit GuiContextScope(ImGuiContext* context) : m_previous(ImGui::GetCurrentContext()) {
+            ImGui::SetCurrentContext(context);
+        }
+        ~GuiContextScope() {
+            ImGui::SetCurrentContext(m_previous);
+        }
+        GuiContextScope(const GuiContextScope&) = delete;
+        GuiContextScope& operator=(const GuiContextScope&) = delete;
+    private:
+        ImGuiContext* m_previous;
+    };
+
+    /// One UI thread. Explicit shutdown must precede destruction of the GL context/window.
     class Gui {
     public:
         Gui();
-        Gui(const Gui& other) = delete;
-        Gui& operator=(const Gui& other) = delete;
-        Gui(Gui&& other) = delete;
-        Gui& operator=(Gui&& other) = delete;
+        Gui(const Gui&) = delete;
+        Gui& operator=(const Gui&) = delete;
+        Gui(Gui&&) = delete;
+        Gui& operator=(Gui&&) = delete;
         ~Gui() noexcept;
 
-        void setup(robot2D::Window& window, bool createFonts = false);
-
-        void setupFonts(std::vector<GuiFontConfig>&& fontConfigs);
-
-        void handleEvents(const robot2D::Event& event);
+        bool initialize(const GuiConfiguration& configuration);
+        void shutdown() noexcept;
+        void handleEvents(const Event& event);
         GuiInputCapture inputCapture() const;
-        void update(float dt);
-        void render();
+        bool beginFrame(float deltaSeconds);
+        bool endFrame();
+        bool cancelFrame();
+        /// Consumes DrawDataReady even on failure or a minimized target. Does not clear/swap.
+        bool render();
+        GuiState state() const noexcept;
+        const std::string& lastError() const noexcept;
+        ImGuiContext* context() const noexcept;
+        /// Valid only until shutdown; use FontId rather than retaining the returned pointer.
+        ImFont* font(FontId id) const noexcept;
     private:
-        std::unique_ptr<priv::GuiImpl> m_impl{nullptr};
+        std::unique_ptr<priv::GuiImpl> m_impl;
     };
-
-} // namespace robot2D
+}

@@ -42,6 +42,8 @@ namespace robot2D::priv {
         void processEvents() override;
         std::vector<Event> takeEvents() override;
         void* getRaw() override;
+        vec2u getFramebufferSize() const override;
+        vec2u getLogicalSize() const override;
 
         bool isOpen() const override;
         void setTitle(const std::string& title) const override;

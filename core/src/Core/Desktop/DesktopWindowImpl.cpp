@@ -222,6 +222,18 @@ namespace robot2D::priv {
         if(window) window -> enqueue(Event::Resized{{static_cast<unsigned>(w), static_cast<unsigned>(h)}});
     }
 
+    vec2u DesktopWindowImpl::getLogicalSize() const {
+        int width = 0, height = 0;
+        if(m_window) glfwGetWindowSize(m_window, &width, &height);
+        return {static_cast<unsigned>(width), static_cast<unsigned>(height)};
+    }
+
+    vec2u DesktopWindowImpl::getFramebufferSize() const {
+        int width = 0, height = 0;
+        if(m_window) glfwGetFramebufferSize(m_window, &width, &height);
+        return {static_cast<unsigned>(width), static_cast<unsigned>(height)};
+    }
+
     void DesktopWindowImpl::framebuffer_callback([[maybe_unused]] GLFWwindow* window, int width, int height) {
         glViewport(0, 0, width, height);
     }
