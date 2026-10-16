@@ -76,9 +76,14 @@ namespace {
             CHECK(calls == 1);
             before.check();
             bool open = false;
+            ImGui::SetNextWindowSize({333.f, 222.f});
             {
                 robot2D::WindowScope closed{options("Closed"), &open};
                 CHECK(!closed);
+                // Closed on entry must not submit a title bar or push a window.
+                before.check();
+                CHECK(ImGui::FindWindowByName("Closed") == nullptr);
+                CHECK(GImGui -> NextWindowData.Flags == 0);
             }
             before.check();
             ImGui::EndFrame();
@@ -168,7 +173,7 @@ namespace {
         ImGui::EndFrame();
     }
 
-    void docking() {
+    void dockingScenario(bool submitHiddenPanel) {
         Context context;
         ImGuiID dock = 0;
         ImGuiID left = 0;
@@ -195,7 +200,7 @@ namespace {
             });
             CHECK(called != hidden);
             before.check();
-            {
+            if(!hidden || submitHiddenPanel) {
                 robot2D::WindowScope child{options("DockedPanel")};
                 if(child)
                     ImGui::TextUnformatted("docked content");
@@ -206,6 +211,11 @@ namespace {
             before.check();
             ImGui::EndFrame();
         }
+    }
+
+    void docking() {
+        dockingScenario(true);
+        dockingScenario(false);
     }
 }
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <optional>
 #include "WindowOptions.hpp"
 
 namespace robot2D {
@@ -17,7 +18,8 @@ namespace robot2D {
         int m_colors;
     };
 
-    /// Always ends Begin, including a collapsed/clipped window. Styles outlive End.
+    /// Skips an already closed window and consumes its SetNextWindow parameters.
+    /// Otherwise always ends Begin, even if clipped/collapsed. Styles outlive End.
     /// Requires the creating ImGui context to remain current for this scope.
     class WindowScope {
     public:
@@ -31,7 +33,8 @@ namespace robot2D {
             return m_visible;
         }
     private:
-        WindowStyleScope m_style;
-        bool m_visible;
+        std::optional<WindowStyleScope> m_style;
+        bool m_begun{false};
+        bool m_visible{false};
     };
 }
