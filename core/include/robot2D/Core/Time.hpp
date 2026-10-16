@@ -28,30 +28,32 @@ namespace robot2D {
     /** @brief A signed duration stored as an exact count of microseconds.
      * This is an interval, not a calendar timestamp. Negative values are allowed.
      * Floating-point conversions are approximate; use asMicroSeconds() for the
-     * exact stored value. Copies are independent values.
+     * exact stored value. Construction, copying and conversions are constexpr
+     * and non-throwing. Copies are independent values.
      */
     class ROBOT2D_EXPORT_API Time {
     public:
         /// Constructs from microseconds; the default value is zero.
-        Time(std::int64_t microseconds = 0LL);
-        Time(const Time& other) = default;
-        Time& operator=(const Time& other) = default;
-        Time(Time&& other) = default;
-        Time& operator=(Time&& other) = default;
-        ~Time() = default;
+        constexpr Time(std::int64_t microseconds = 0LL) noexcept : m_time(microseconds) {
+        }
+        constexpr Time(const Time& other) noexcept = default;
+        constexpr Time& operator=(const Time& other) noexcept = default;
+        constexpr Time(Time&& other) noexcept = default;
+        constexpr Time& operator=(Time&& other) noexcept = default;
+        ~Time() noexcept = default;
 
         /// Converts to seconds, rounding to float after division in double.
-        float asSeconds() const {
+        constexpr float asSeconds() const noexcept {
             return static_cast<float>(static_cast<double>(m_time) / 1000000.0);
         }
 
         /// Converts to milliseconds, rounding to float after division in double.
-        float asMilliSeconds() const {
+        constexpr float asMilliSeconds() const noexcept {
             return static_cast<float>(static_cast<double>(m_time) / 1000.0);
         }
 
         /// Returns the exact signed count of microseconds, without conversion.
-        std::int64_t asMicroSeconds() const {
+        constexpr std::int64_t asMicroSeconds() const noexcept {
             return m_time;
         }
     private:
