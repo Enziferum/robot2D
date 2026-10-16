@@ -1,22 +1,22 @@
 /*********************************************************************
-(c) Alex Raag 2026
-https://github.com/Enziferum
-robot2D - Zlib license.
-This software is provided 'as-is', without any express or
-implied warranty. In no event will the authors be held
-liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute
-it freely, subject to the following restrictions:
-1. The origin of this software must not be misrepresented;
-you must not claim that you wrote the original software.
-If you use this software in a product, an acknowledgment
-in the product documentation would be appreciated but
-is not required.
-2. Altered source versions must be plainly marked as such,
-and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any
-source distribution.
+   (c) Alex Raag 2026
+   https://github.com/Enziferum
+   robot2D - Zlib license.
+   This software is provided 'as-is', without any express or
+   implied warranty. In no event will the authors be held
+   liable for any damages arising from the use of this software.
+   Permission is granted to anyone to use this software for any purpose,
+   including commercial applications, and to alter it and redistribute
+   it freely, subject to the following restrictions:
+   1. The origin of this software must not be misrepresented;
+   you must not claim that you wrote the original software.
+   If you use this software in a product, an acknowledgment
+   in the product documentation would be appreciated but
+   is not required.
+   2. Altered source versions must be plainly marked as such,
+   and must not be misrepresented as being the original software.
+   3. This notice may not be removed or altered from any
+   source distribution.
 *********************************************************************/
 
 #include <robot2D/Ecs/EntityManager.hpp>
@@ -27,13 +27,28 @@ source distribution.
 
 namespace editor {
 
-    UISystem::UISystem(robot2D::MessageBus& bus):
-            robot2D::ecs::System{bus, typeid(UISystem)} {
+    UISystem::UISystem(robot2D::MessageBus& bus) :
+        robot2D::ecs::System{bus, typeid(UISystem)} {
         addRequirement<TransformComponent>();
         addRequirement<UIHitbox>();
     }
 
+    robot2D::ecs::System::Ptr UISystem::cloneSelf(robot2D::ecs::Scene* scene,
+        const std::vector<robot2D::ecs::Entity>& entities) {
+        auto copy = std::make_shared<UISystem>(m_messageBus);
+        if(!cloneBase(copy, scene, entities))
+            return nullptr;
+        copy -> m_editorCamera = m_editorCamera;
+        copy -> m_mousePressedCallbacks = m_mousePressedCallbacks;
+        copy -> m_mouseHoverCallbacks = m_mouseHoverCallbacks;
+        copy -> m_mouseUnHoverCallbacks = m_mouseUnHoverCallbacks;
+        // Input queues and hover position belong to one scene run, never to its clone.
+        return copy;
+    }
+
     void UISystem::handleEvents(const robot2D::Event& event) {
+        if(!m_editorCamera)
+            return;
 
         if(event.type == robot2D::Event::MousePressed) {
 
@@ -44,10 +59,10 @@ namespace editor {
             if(event.mouse.btn == mouse2int(robot2D::Mouse::MouseMiddle))
                 m_mouseDownEvents.emplace_back(Flags::MiddleMouse);
 
-            m_eventPosition = m_editorCamera -> convertPixelToCoords( { 
-                static_cast<float>(event.mouse.x), 
+            m_eventPosition = m_editorCamera -> convertPixelToCoords( {
+                static_cast<float>(event.mouse.x),
                 static_cast<float>(event.mouse.y)}
-            ).as<int>();
+                    ).as<int>();
         }
 
         if(event.type == robot2D::Event::MouseReleased) {
@@ -65,7 +80,7 @@ namespace editor {
 
         if(event.type == robot2D::Event::MouseMoved) {
             m_eventPosition = m_editorCamera -> convertPixelToCoords({
-                static_cast<float>(event.mouse.x), static_cast<float>(event.mouse.y)
+                event.move.x, event.move.y
             }).as<int>();
         }
 
@@ -85,12 +100,12 @@ namespace editor {
 
     std::uint32_t UISystem::addMouseHoverCallback(MouseHoverCallback&& callback) {
         m_mouseHoverCallbacks.emplace_back(callback);
-        return static_cast<std::uint32_t>(m_mousePressedCallbacks.size() - 1);
+        return static_cast<std::uint32_t>(m_mouseHoverCallbacks.size() - 1);
     }
 
     std::uint32_t UISystem::addMouseUnHoverCallback(MouseHoverCallback&& callback) {
         m_mouseUnHoverCallbacks.emplace_back(callback);
-        return static_cast<std::uint32_t>(m_mousePressedCallbacks.size() - 1);
+        return static_cast<std::uint32_t>(m_mouseUnHoverCallbacks.size() - 1);
     }
 
 
@@ -108,11 +123,12 @@ namespace editor {
             else
                 hitbox.isHovered = false;
 
-            if (contains) {
+            if(contains) {
                 if(hitbox.isHovered) {
                     if(hitbox.onHoverOnce && !hitbox.wasHovered) {
                         auto index = hitbox.callbackIDs[UIHitbox::CallbackID::MouseMoved];
-                        if (index >= 0)
+                        if(index >= 0 && static_cast<std::size_t>(index) < m_mouseHoverCallbacks.size()
+                            && m_mouseHoverCallbacks[index])
                             m_mouseHoverCallbacks[index](ent);
                     }
                     hitbox.wasHovered = true;
@@ -120,14 +136,16 @@ namespace editor {
 
                 for(auto downEvent: m_mouseDownEvents) {
                     auto index = hitbox.callbackIDs[UIHitbox::CallbackID::MouseDown];
-                    if(m_mousePressedCallbacks[index])
+                    if(index >= 0 && static_cast<std::size_t>(index) < m_mousePressedCallbacks.size()
+                        && m_mousePressedCallbacks[index])
                         m_mousePressedCallbacks[index](ent, downEvent);
                 }
             }
 
             if(!hitbox.isHovered) {
                 auto index = hitbox.callbackIDs[UIHitbox::CallbackID::MouseMoved];
-                if(index >= 0)
+                if(index >= 0 && static_cast<std::size_t>(index) < m_mouseUnHoverCallbacks.size()
+                    && m_mouseUnHoverCallbacks[index])
                     m_mouseUnHoverCallbacks[index](ent);
 
                 hitbox.wasHovered = false;

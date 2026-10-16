@@ -7,10 +7,10 @@
 
 namespace editor {
 
-    using MousePressedCallback = std::function<void(robot2D::ecs::Entity, std::uint64_t)>;
-    using MouseHoverCallback = std::function<void(robot2D::ecs::Entity)>;
+    using MousePressedCallback = std::function<void (robot2D::ecs::Entity, std::uint64_t)>;
+    using MouseHoverCallback = std::function<void (robot2D::ecs::Entity)>;
 
-    class UISystem: public robot2D::ecs::System {
+    class UISystem : public robot2D::ecs::System {
     public:
         enum Flags
         {
@@ -29,8 +29,12 @@ namespace editor {
 
         void handleEvents(const robot2D::Event& event);
         void update(float dt) override;
+        robot2D::ecs::System::Ptr cloneSelf(robot2D::ecs::Scene* scene,
+            const std::vector<robot2D::ecs::Entity>& entities) override;
 
-        void setCamera(IEditorCamera::Ptr camera) { m_editorCamera = camera; }
+        void setCamera(IEditorCamera::Ptr camera) {
+            m_editorCamera = camera;
+        }
 
         std::uint32_t addMousePressedCallback(MousePressedCallback&& callback);
         std::uint32_t addMouseHoverCallback(MouseHoverCallback&& callback);

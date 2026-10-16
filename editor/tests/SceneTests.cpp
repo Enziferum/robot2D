@@ -120,6 +120,35 @@ namespace {
         CHECK(read(path) == saved && !serializer.getErrorMessage().empty());
     }
 
+    void runtimeUIEvents() {
+        robot2D::MessageBus bus;
+        auto scene = std::make_shared<editor::Scene>(bus);
+        auto entity = scene -> createEntity("Runtime input regression");
+        entity.addComponent<editor::DrawableComponent>();
+        scene -> update(0);
+        scene -> markSaved();
+        const auto position = entity.getComponent<editor::TransformComponent>().getPosition();
+        auto scripts = std::make_shared<ScriptStub>();
+        robot2D::Event event{};
+        for(int run = 0; run < 3; ++run) {
+            scene -> onRuntimeStart(scripts);
+            CHECK(scene -> isRunning());
+            event.type = robot2D::Event::MouseMoved;
+            event.move = {12.f, 16.f};
+            scene -> handleEventsRuntime(event);
+            event.type = robot2D::Event::MousePressed;
+            event.mouse = {0, 12, 16};
+            scene -> handleEventsRuntime(event);
+            event.type = robot2D::Event::MouseReleased;
+            scene -> handleEventsRuntime(event);
+            scene -> onRuntimeStop(scripts);
+            CHECK(!scene -> isRunning());
+            scene -> handleEventsRuntime(event);
+            CHECK(scene -> getRootEntities().size() == 1);
+            CHECK(entity.getComponent<editor::TransformComponent>().getPosition() == position);
+        }
+    }
+
     void runtimeCameraOrder() {
         class Target final : public robot2D::RenderTarget {
         public:
@@ -740,7 +769,8 @@ int main(int argc, char** argv) {
         CHECK(argc == 2);
         GraphicsContext graphics;
         const std::string name = argv[1];
-        if(name == "hierarchy") hierarchy();
+        if(name == "runtime-ui-events") runtimeUIEvents();
+        else if(name == "hierarchy") hierarchy();
         else if(name == "runtime-camera-order") runtimeCameraOrder();
         else if(name == "hud-text") hudText();
         else if(name == "asset-roundtrip") assetRoundtrip();

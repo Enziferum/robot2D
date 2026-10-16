@@ -41,7 +41,7 @@ endforeach()
 
 rb2d_register_test(editor-version robot2D-version-tests version "headless;version")
 
-foreach(editor_case IN ITEMS selection asset-paths asset-import asset-package console-stream console-limits yaml-save payload
+foreach(editor_case IN ITEMS runtime-ui selection asset-paths asset-import asset-package console-stream console-limits yaml-save payload
         config-roundtrip config-invalid cache-roundtrip cache-recovery cache-future cache-migration)
     rb2d_register_test("editor-${editor_case}" robot2D-editor-tests "${editor_case}" "headless")
 endforeach()
@@ -62,7 +62,7 @@ if(RB2D_EDITOR_GRAPHICS_TESTS)
         rb2d_register_test("core-graphics-${graphics_case}" robot2D-graphics-diagnostics-tests "${graphics_case}" "graphics;integration")
         set_tests_properties("core-graphics-${graphics_case}" PROPERTIES SKIP_RETURN_CODE 77)
     endforeach()
-    foreach(scene_case IN ITEMS hierarchy runtime-camera-order hud-text asset-roundtrip missing-assets asset-identity animation-resources roundtrip invalid legacy prefab prefab-viewport save-dirty async-load close-project startup-failure)
+    foreach(scene_case IN ITEMS runtime-ui-events hierarchy runtime-camera-order hud-text asset-roundtrip missing-assets asset-identity animation-resources roundtrip invalid legacy prefab prefab-viewport save-dirty async-load close-project startup-failure)
         rb2d_register_test("editor-scene-${scene_case}" robot2D-scene-tests "${scene_case}" "graphics;integration")
         set_tests_properties("editor-scene-${scene_case}" PROPERTIES SKIP_RETURN_CODE 77)
     endforeach()
