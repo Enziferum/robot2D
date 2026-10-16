@@ -19,508 +19,271 @@
    source distribution.
 *********************************************************************/
 
+#include <algorithm>
+#include <cmath>
 #include <robot2D/Util/Logger.hpp>
-#include <robot2D/Ecs/Entity.hpp>
-#include <robot2D/Ecs/EntityManager.hpp>
-
 #include <editor/physics/Box2DPhysicsAdapter.hpp>
-#include <editor/physics/Layers2D.hpp>
 #include <editor/Components.hpp>
 
 namespace editor {
-
-    void ApplyFilterFromUI(b2FixtureDef& fd,
-        const std::string& layerName,
-        const std::vector<std::string>& collidesWith,                    // пусто => дефолт
-        int16_t groupIndex,
-        bool useDefaultMask) {
-        phys2d::FilterBits fb = useDefaultMask
-                                ? phys2d::makeFilterDefault(layerName, groupIndex)
-                                : phys2d::makeFilterCustomMask(layerName, collidesWith, groupIndex);
-
-        fd.filter.categoryBits = fb.categoryBits;
-        fd.filter.maskBits = fb.maskBits;
-        fd.filter.groupIndex = fb.groupIndex;
-    }
-
     namespace {
-        constexpr int velocityUpdateIterations = 6;
-        constexpr int positionUpdateIterations = 2;
-
-        constexpr double PIXELS_PER_METERS = 32.0;
-        constexpr double PI = 3.14159265358979323846;
-
-        template<typename T>
-        constexpr T pixel_to_meters(const T& x) {
-            return x / PIXELS_PER_METERS;
-        };
-
-        template<typename T>
-        constexpr T meters_to_pixels(const T& x) {
-            return x * PIXELS_PER_METERS;
+        constexpr float pixelsPerMeter = 32.f;
+        constexpr float radiansPerDegree = 3.14159265358979323846f / 180.f;
+        bool finite(float value) {
+            return std::isfinite(value);
+        }
+        bool exitEvent(const PhysicsContact2D& e) {
+            return e.type == PhysicsEventType::Exit || e.type == PhysicsEventType::ExitTrigger;
+        }
+        PhysicsContact2D exiting(PhysicsContact2D e) {
+            e.type = e.isSensorA || e.isSensorB ? PhysicsEventType::ExitTrigger : PhysicsEventType::Exit;
+            e.pointCount = 0; e.normalImpulse = 0.f; e.tangentImpulse = 0.f;
+            return e;
+        }
+        b2Filter filterFor(const Collider2DComponent& c) {
+            b2Filter filter;
+            filter.categoryBits = c.filter.categoryBits;
+            filter.maskBits = c.useDefaultMask ? phys2d::LayerRegistry::I().defaultMaskFor(
+                phys2d::layerNameFromCategoryBit(c.filter.categoryBits)) : c.filter.maskBits;
+            filter.groupIndex = c.filter.groupIndex;
+            return filter;
         }
     }
-
-    struct PairKeySimple {
-        uint64_t lo, hi;
-        bool operator==(const PairKeySimple& o) const {
-            return lo == o.lo && hi == o.hi;
-        }
-    };
-    struct PairKeySimpleHash {
-        size_t operator()(const PairKeySimple& k) const {
-            return (size_t)k.lo * 1315423911u ^ (size_t)k.hi;
-        }
-    };
-
-    // --- Правила, которыми управляет C#
-    struct IgnorePairRule { double untilSec = 0.0; };
-    struct IgnoreWithLayerRule { uint16_t layerMask = 0; double untilSec = 0.0; };
-
-    // --- Таблицы правил
-    static std::unordered_map<PairKeySimple, IgnorePairRule, PairKeySimpleHash> g_ignorePairs;
-    static std::unordered_map<uint64_t, IgnoreWithLayerRule> g_ignoreWithLayer;
-
-    // --- UserData на телах (для drop-through)
-    struct BodyUD {
-        uint64_t entityId = 0;
-        double dropThroughUntil = 0.0;
-    };
-    static inline BodyUD* GetBodyUD(const b2Body* b) {
-        return (BodyUD*)b->GetUserData().pointer;
+    Box2DPhysicsAdapter::~Box2DPhysicsAdapter() {
+        clearWorld();
     }
-
-    // --- Вспомогалки
-    static inline PairKeySimple MakePair(uint64_t a, uint64_t b) {
-        return (a < b) ? PairKeySimple{a, b} : PairKeySimple{b, a};
+    Box2DPhysicsAdapter::PairKey Box2DPhysicsAdapter::key(const PhysicsContact2D& e) {
+        return {e.fixtureA, e.fixtureB};
     }
-
-
-
-
-    struct ContactShapeData {
-        UUID entityUuid;
-        UUID fixtureUuid; /// optional just now
-        std::uint16_t category;
-        std::uint16_t mask;
-        bool isSensor;
-    };
-
-    struct Box2DContactAdapter {
-        enum class ShapeType {
-            A, B
-        };
-
-
-        Box2DContactAdapter(b2Contact* contact) : m_contact{contact} {
+    bool Box2DPhysicsAdapter::readContact(b2Contact* c, PhysicsContact2D& e) const {
+        auto* a = static_cast<BodyEntry*>(c -> GetFixtureA() -> GetUserData().getData());
+        auto* b = static_cast<BodyEntry*>(c -> GetFixtureB() -> GetUserData().getData());
+        if(!a || !b || !a -> entity || !b -> entity) return false;
+        e = PhysicsContact2D{};
+        e.entityA = a -> id; e.entityB = b -> id;
+        e.fixtureA = a -> fixtureID; e.fixtureB = b -> fixtureID;
+        e.isSensorA = c -> GetFixtureA() -> IsSensor(); e.isSensorB = c -> GetFixtureB() -> IsSensor();
+        const auto fa = c -> GetFixtureA() -> GetFilterData(), fb = c -> GetFixtureB() -> GetFilterData();
+        e.categoryA = fa.categoryBits; e.categoryB = fb.categoryBits; e.maskA = fa.maskBits; e.maskB = fb.maskBits;
+        e.type = e.isSensorA || e.isSensorB ? PhysicsEventType::EnterTrigger : PhysicsEventType::Enter;
+        e.pointCount = static_cast<std::uint8_t>(c -> GetManifold() -> pointCount);
+        if(e.pointCount) {
+            b2WorldManifold manifold{}; c -> GetWorldManifold(&manifold);
+            e.nx = manifold.normal.x; e.ny = manifold.normal.y;
+            for(unsigned i = 0; i < e.pointCount; ++i)
+                e.points[i] = {manifold.points[i].x, manifold.points[i].y, manifold.separations[i]};
         }
-        Box2DContactAdapter(const Box2DContactAdapter& other) = delete;
-        Box2DContactAdapter& operator=(const Box2DContactAdapter& other) = delete;
-        Box2DContactAdapter(Box2DContactAdapter&& other) = delete;
-        Box2DContactAdapter& operator=(Box2DContactAdapter&& other) = delete;
-        ~Box2DContactAdapter() = default;
-
-        void setEnabled(bool flag) {
-            m_contact -> SetEnabled(flag);
+        // Stable orientation; the normal points A -> B, independently of Box2D ordering.
+        if(e.entityB < e.entityA) {
+            std::swap(e.entityA, e.entityB); std::swap(e.fixtureA, e.fixtureB);
+            std::swap(e.categoryA, e.categoryB); std::swap(e.maskA, e.maskB);
+            std::swap(e.isSensorA, e.isSensorB); e.nx = -e.nx; e.ny = -e.ny;
         }
-
-
-
-        bool getShapeData(ContactShapeData& contactShapeData, ShapeType type) {
-            SceneEntity* entity = nullptr;
-            if(type == ShapeType::A)
-                entity = getContactShapeA();
-            if(type == ShapeType::B)
-                entity = getContactShapeB();
-            if(!entity)
-                return false;
-
-            contactShapeData.entityUuid = entity->getUUID();
-            contactShapeData.fixtureUuid;
-
-            const auto& c2d = entity -> getComponent<Collider2DComponent>();
-
-            contactShapeData.category = c2d.filter.categoryBits;
-            contactShapeData.mask = c2d.filter.maskBits;
-            contactShapeData.isSensor = c2d.isTrigger;
-
-            return true;
-        }
-    private:
-        SceneEntity* getContactShapeA() {
-            m_shapeA = (SceneEntity*)(m_contact -> GetFixtureA() -> GetUserData().getData());
-            return m_shapeA;
-        }
-
-        SceneEntity* getContactShapeB() {
-            m_shapeB = (SceneEntity*)(m_contact -> GetFixtureB() -> GetUserData().getData());
-            return m_shapeB;
-        }
-    private:
-        b2Contact* m_contact{nullptr};
-        SceneEntity* m_shapeA { nullptr };
-        SceneEntity* m_shapeB { nullptr };
-    };
-
-    using ContactCallback = std::function<void (const Box2DContactAdapter&)>;
-
-    void Box2DPhysicsAdapter::BeginContact([[maybe_unused]] b2Contact* contact) {
-        Box2DContactAdapter adapter(contact);
-        ContactShapeData contactShapeDataA;
-        ContactShapeData contactShapeDataB;
-        if(!adapter.getShapeData(contactShapeDataA, Box2DContactAdapter::ShapeType::A)) {
-            RB_EDITOR_WARN("Box2DPhysicsAdapter::Error GetShapeDataA");
-            return;
-        }
-
-        if(!adapter.getShapeData(contactShapeDataB, Box2DContactAdapter::ShapeType::B)) {
-            RB_EDITOR_WARN("Box2DPhysicsAdapter::Error GetShapeDataB");
-            return;
-        }
-
-        uint64_t A, B;
-        uint64_t fA, fB;
-        uint16_t catA, catB, maskA, maskB;
-        bool senA, senB;
-
-        A = contactShapeDataA.entityUuid;
-        B = contactShapeDataB.entityUuid;
-        catA = contactShapeDataA.category;
-        catB = contactShapeDataB.category;
-        maskA = contactShapeDataA.mask;
-        maskB = contactShapeDataB.mask;
-        senA = contactShapeDataA.isSensor;
-        senB = contactShapeDataB.isSensor;
-
-
-        const bool trig = isTrigger(contact);
-        PairKey key{A, B, trig};
-        m_currentPairs.insert(key);
-
-        Geom g;
-        FillWorld(contact, g);
-        m_geomCache[key] = g;
-
-        PhysicsContact2D ev{};
-        ev.entityA = A;
-        ev.entityB = B;
-        ev.fixtureA = fA;
-        ev.fixtureB = fB;
-        ev.type = trig ? PhysicsEventType::EnterTrigger : PhysicsEventType::Enter;
-        ev.nx = g.nx;
-        ev.ny = g.ny;
-        RB_EDITOR_WARN("Geomerty: Normal {0}:{1}", g.nx, g.ny);
-        RB_EDITOR_WARN("Offset ny: {0}", offsetof(PhysicsContact2D, ny));
-        ev.pointCount = g.count;
-        for(int i = 0; i < g.count; i++)
-            ev.points[i] = g.pts[i];
-        ev.isSensorA = senA;
-        ev.isSensorB = senB;
-        ev.categoryA = catA;
-        ev.categoryB = catB;
-        ev.maskA = maskA;
-        ev.maskB = maskB;
-        m_eventsThisFrame.push_back(ev);
+        return true;
     }
-
-    void Box2DPhysicsAdapter::EndContact([[maybe_unused]] b2Contact* contact) {
-        Box2DContactAdapter adapter(contact);
-        ContactShapeData contactShapeDataA;
-        ContactShapeData contactShapeDataB;
-        if(!adapter.getShapeData(contactShapeDataA, Box2DContactAdapter::ShapeType::A)) {
-            RB_EDITOR_WARN("Box2DPhysicsAdapter::Error GetShapeDataA");
-            return;
-        }
-
-        if(!adapter.getShapeData(contactShapeDataB, Box2DContactAdapter::ShapeType::B)) {
-            RB_EDITOR_WARN("Box2DPhysicsAdapter::Error GetShapeDataB");
-            return;
-        }
-
-        uint64_t A, B;
-        uint64_t fA, fB;
-        uint16_t catA, catB, maskA, maskB;
-        bool senA, senB;
-
-        A = contactShapeDataA.entityUuid;
-        B = contactShapeDataB.entityUuid;
-        catA = contactShapeDataA.category;
-        catB = contactShapeDataB.category;
-        maskA = contactShapeDataA.mask;
-        maskB = contactShapeDataB.mask;
-        senA = contactShapeDataA.isSensor;
-        senB = contactShapeDataB.isSensor;
-
-        const bool trig = isTrigger(contact);
-        PhysicsContact2D ev{};
-        ev.entityA = A; ev.entityB = B; ev.fixtureA = fA; ev.fixtureB = fB;
-        ev.type = trig ? PhysicsEventType::ExitTrigger : PhysicsEventType::Exit;
-        ev.isSensorA = senA; ev.isSensorB = senB; ev.categoryA = catA; ev.categoryB = catB; ev.maskA = maskA;
-        ev.maskB = maskB;
-        m_eventsThisFrame.push_back(ev);
+    void Box2DPhysicsAdapter::BeginContact(b2Contact* c) {
+        PhysicsContact2D e{};
+        if(!readContact(c, e) || !m_contacts.emplace(key(e), e).second) return;
+        m_entered.insert(key(e)); m_events.push_back(e);
     }
-
-
-
-    void Box2DPhysicsAdapter::PreSolve([[maybe_unused]] b2Contact* contact, const b2Manifold* oldManifold) {
-        Box2DContactAdapter adapter(contact);
-        ContactShapeData contactShapeDataA;
-        ContactShapeData contactShapeDataB;
-        if(!adapter.getShapeData(contactShapeDataA, Box2DContactAdapter::ShapeType::A)) {
-            RB_EDITOR_WARN("Box2DPhysicsAdapter::Error GetShapeDataA");
-            return;
-        }
-
-        if(!adapter.getShapeData(contactShapeDataB, Box2DContactAdapter::ShapeType::B)) {
-            RB_EDITOR_WARN("Box2DPhysicsAdapter::Error GetShapeDataB");
-            return;
-        }
-
-        uint64_t A, B;
-
-        A = contactShapeDataA.entityUuid;
-        B = contactShapeDataB.entityUuid;
-
-        {
-            /// check MycurrentTimer
-
-            //            if ((udA && udA->dropThroughUntil > now) || (udB && udB->dropThroughUntil > now)) {
-            //                c->SetEnabled(false);
-            //                return;
-            //            }
-        }
-
-        const bool trig = isTrigger(contact);
-        PairKey key{A, B, trig}; //  PairKey key{A < B ? A : B, A < B ? B : A, trig};
-        Geom g;
-        FillWorld(contact, g);
-        m_geomCache[key] = g;
+    void Box2DPhysicsAdapter::EndContact(b2Contact* c) {
+        PhysicsContact2D e{}; if(!readContact(c, e)) return;
+        const auto it = m_contacts.find(key(e)); if(it == m_contacts.end()) return;
+        m_events.push_back(exiting(it -> second)); m_contacts.erase(it);
     }
-
-    void Box2DPhysicsAdapter::PostSolve([[maybe_unused]] b2Contact* contact,
-        [[maybe_unused]] const b2ContactImpulse* impulse) {
-        Box2DContactAdapter adapter(contact);
-        ContactShapeData contactShapeDataA;
-        ContactShapeData contactShapeDataB;
-        if(!adapter.getShapeData(contactShapeDataA, Box2DContactAdapter::ShapeType::A)) {
-            RB_EDITOR_WARN("Box2DPhysicsAdapter::Error GetShapeDataA");
-            return;
-        }
-
-        if(!adapter.getShapeData(contactShapeDataB, Box2DContactAdapter::ShapeType::B)) {
-            RB_EDITOR_WARN("Box2DPhysicsAdapter::Error GetShapeDataB");
-            return;
-        }
-
-        uint64_t A, B;
-
-        A = contactShapeDataA.entityUuid;
-        B = contactShapeDataB.entityUuid;
-
-        const bool trig = isTrigger(contact);
-        PairKey key{ A, B, trig};
-
-        float n = 0.f, t = 0.f;
-        for(int i = 0; i < impulse ->count; i++) {
-            n += impulse->normalImpulses[i];
-            t += impulse->tangentImpulses[i];
-        }
-        m_impulses[key] = {n, t};
+    void Box2DPhysicsAdapter::PreSolve(b2Contact* c, const b2Manifold*) {
+        PhysicsContact2D e{}; if(!readContact(c, e)) return;
+        const auto it = m_contacts.find(key(e)); if(it != m_contacts.end()) it -> second = e;
     }
-
+    void Box2DPhysicsAdapter::PostSolve(b2Contact* c, const b2ContactImpulse* impulse) {
+        PhysicsContact2D e{}; if(!readContact(c, e)) return;
+        const auto it = m_contacts.find(key(e)); if(it == m_contacts.end()) return;
+        for(int i = 0; i < impulse -> count; ++i) {
+            it -> second.normalImpulse += impulse -> normalImpulses[i];
+            it -> second.tangentImpulse += impulse -> tangentImpulses[i];
+        }
+    }
+    bool Box2DPhysicsAdapter::alive(std::uint64_t id) const {
+        return !m_pendingRemovals.count(id) && std::any_of(m_bodies.begin(), m_bodies.end(), [id](const auto& b) {
+            return b.id == id && static_cast<bool>(b.entity);
+        });
+    }
     void Box2DPhysicsAdapter::update(float dt) {
-        if(!m_physicsWorld) {
-            RB_EDITOR_ERROR("Can't create Physics2D World inside Box2DPhysicsAdapter");
-            //TODO(a.raag) make exception
+        if(!m_world || m_dispatching || !finite(dt) || dt <= 0.f) return;
+        for(const auto& b: m_bodies) if(!b.entity) m_pendingRemovals.insert(b.id);
+        flushOperations(); if(!m_world) return;
+        for(auto& b: m_bodies) {
+            if(!b.fixture || !b.entity.hasComponent<Collider2DComponent>()) continue;
+            auto& c = b.entity.getComponent<Collider2DComponent>();
+            if(c.markFilterDirty) {
+                try { b.fixture -> SetFilterData(filterFor(c)); }
+                catch(const std::exception& error) {
+                    RB_EDITOR_WARN("[Physics] Filter rejected; entity={}; reason={}", b.id, error.what());
+                }
+                c.markFilterDirty = false;
+            }
         }
-
-        m_eventsThisFrame.clear();
-
-        m_physicsWorld -> Step(dt, velocityUpdateIterations,
-            positionUpdateIterations);
-
-        for(auto& entity: m_entityList)
-            updateEntity(entity);
-
-        emitStayAndSwap();
-
-        /// \brief send events to both sides
-        for(const auto& ev: m_eventsThisFrame) {
-            m_callback(ev, ev.entityA, ev.entityB);
-            m_callback(ev, ev.entityB, ev.entityA);
+        m_events = std::move(m_pendingEvents); m_pendingEvents.clear(); m_entered.clear();
+        for(auto& [pair, e]: m_contacts) {
+            e.normalImpulse = 0.f; e.tangentImpulse = 0.f;
         }
+        m_world -> Step(dt, 6, 2);
+        // Sensors and sleeping contacts do not necessarily receive PreSolve.
+        for(auto* contact = m_world -> GetContactList(); contact; contact = contact -> GetNext()) {
+            if(!contact -> IsTouching()) continue;
+            PhysicsContact2D current{};
+            if(!readContact(contact, current)) continue;
+            const auto found = m_contacts.find(key(current));
+            if(found == m_contacts.end()) continue;
+            current.normalImpulse = found -> second.normalImpulse;
+            current.tangentImpulse = found -> second.tangentImpulse;
+            found -> second = current;
+        }
+        for(auto& b: m_bodies) updateEntity(b);
+        for(auto& e: m_events) {
+            const auto it = m_contacts.find(key(e)); if(!exitEvent(e) && it != m_contacts.end()) e = it -> second;
+        }
+        for(const auto& [pair, contact]: m_contacts) {
+            if(m_entered.count(pair)) continue;
+            auto e = contact;
+            e.type = e.isSensorA || e.isSensorB ? PhysicsEventType::StayTrigger : PhysicsEventType::Stay;
+            m_events.push_back(e);
+        }
+        auto events = std::move(m_events); m_events.clear(); auto callback = m_callback;
+        m_dispatching = true;
+        try {
+            for(const auto& e: events) {
+                if(m_stopRequested) break;
+                if(!callback) continue;
+                if(alive(e.entityA) && (exitEvent(e) || alive(e.entityB))) callback(e, UUID{e.entityA},
+                        UUID{e.entityB});
+                if(m_stopRequested) break;
+                if(alive(e.entityB) && (exitEvent(e) || alive(e.entityA))) callback(e, UUID{e.entityB},
+                        UUID{e.entityA});
+            }
+        }
+        catch(...) { m_dispatching = false; flushOperations(); throw; }
+        m_dispatching = false; flushOperations();
     }
-
-    void Box2DPhysicsAdapter::updateEntity(SceneEntity entity) {
-        if(!entity)
-            return;
-
-        auto& transform = entity.getComponent<TransformComponent>();
-        if(entity.hasComponent<Physics2DComponent>()) {
-            auto& p2c = entity.getComponent<Physics2DComponent>();
-
-            auto* body = static_cast<b2Body*>(p2c.runtimeBody);
-            const auto& position = body -> GetPosition();
-            const float& angle = body -> GetAngle();
-
-            transform.setPosition({meters_to_pixels(position.x), meters_to_pixels(position.y) });
-            transform.rotate(angle);
-        }
+    void Box2DPhysicsAdapter::updateEntity(BodyEntry& b) {
+        if(!b.entity || !b.entity.hasComponent<TransformComponent>()) return;
+        auto& t = b.entity.getComponent<TransformComponent>(); const auto p = b.body -> GetPosition();
+        t.setPosition({p.x * pixelsPerMeter, p.y * pixelsPerMeter});
+        t.setRotate(b.body -> GetAngle() / radiansPerDegree);
     }
-
-    void Box2DPhysicsAdapter::start(editorEntityList& entityList) {
-        m_physicsWorld = std::make_unique<b2World>(b2Vec2{0.f, 9.8f});
-        if(!m_physicsWorld) {
-            RB_EDITOR_ERROR("Can't create Physics2D World inside Box2DPhysicsAdapter");
-            //TODO(a.raag) make exception
+    void Box2DPhysicsAdapter::start(editorEntityList& entities) {
+        if(m_dispatching) {
+            RB_EDITOR_WARN("[Physics] Start rejected; reason=callback dispatch in progress"); return;
         }
-
-        m_physicsWorld -> SetContactListener(this);
-
-        for(auto& item: entityList)
-            addEntity(item);
-
+        clearWorld(); m_world = std::make_unique<b2World>(b2Vec2{0.f, 9.8f}); m_world -> SetContactListener(this);
+        for(auto entity: entities) addEntity(entity);
     }
-
     void Box2DPhysicsAdapter::addEntity(SceneEntity entity) {
-        if(!entity)
-            return;
-
-        auto& transform = entity.getComponent<TransformComponent>();
-        if(entity.hasComponent<Physics2DComponent>()) {
-            auto& lEntity = m_entityList.emplace_back(entity);
-            auto& rb2d = lEntity.getComponent<Physics2DComponent>();
-
-            b2BodyDef b2BodyDef;
-            switch(rb2d.type) {
-            case Physics2DComponent::BodyType::Static:
-                b2BodyDef.type = b2BodyType::b2_staticBody;
-                break;
-            case Physics2DComponent::BodyType::Dynamic:
-                b2BodyDef.type = b2BodyType::b2_dynamicBody;
-                break;
-            case Physics2DComponent::BodyType::Kinematic:
-                b2BodyDef.type = b2BodyType::b2_kinematicBody;
-                break;
+        if(!entity || !m_world) return;
+        if(entity.hasComponent<Physics2DComponent>() && entity.hasComponent<TransformComponent>() &&
+            !std::any_of(m_bodies.begin(), m_bodies.end(), [&](const auto& b) { return b.id == entity.getUUID(); })) {
+            auto& t = entity.getComponent<TransformComponent>(); auto& p = entity.getComponent<Physics2DComponent>();
+            const auto position = t.getPosition(), size = t.getSize();
+            if(!finite(position.x) || !finite(position.y) || !finite(t.getRotation()) || !finite(p.gravityScale) ||
+                !finite(p.linearDamping) || p.linearDamping < 0.f || !finite(p.angularDamping) ||
+                p.angularDamping < 0.f) {
+                RB_EDITOR_WARN("[Physics] Body rejected; entity={}; reason=invalid transform or body settings",
+                    std::uint64_t(entity.getUUID()));
+                return;
             }
-
-
-            b2BodyDef.position.Set(pixel_to_meters<float>(transform.getPosition().x),
-                pixel_to_meters<float>(transform.getPosition().y));
-            b2BodyDef.angle = 0; // TODO(a.raag) rotation angle in rodians
-            b2BodyDef.userData; // userData на тело — можно положить entityID
-
-            auto* b2body = m_physicsWorld -> CreateBody(&b2BodyDef);
-            b2body -> SetFixedRotation(rb2d.fixedRotation);
-            b2body -> SetBullet(rb2d.bullet);
-
-            b2body -> SetGravityScale(rb2d.gravityScale);
-            b2body -> SetLinearDamping(rb2d.linearDamping);
-            b2body -> SetAngularDamping(rb2d.angularDamping);
-
-            rb2d.runtimeBody = b2body;
-
-
-            if(lEntity.hasComponent<Collider2DComponent>()) {
-                auto& c2d = lEntity.getComponent<Collider2DComponent>();
-                b2PolygonShape polygonShape;
-
-                auto center = robot2D::vec2f {
-                    pixel_to_meters<float>(transform.getSize().x) / 2.F,
-                    pixel_to_meters<float>(transform.getSize().y) / 2.F
-                };
-
-                /// TODO(a.raag): realtime colliders view
-                polygonShape.SetAsBox(center.x, center.y, {center.x, center.y}, 0);
-                //polygonShape.SetAsBox(center.x, center.y);
-
-                b2FixtureDef fixtureDef;
-                fixtureDef.shape = &polygonShape;
-
-                fixtureDef.isSensor = c2d.isTrigger;
-                const auto& fb = c2d.filter;
-                fixtureDef.filter.categoryBits = fb.categoryBits;
-                fixtureDef.filter.maskBits = c2d.useDefaultMask
-                                         ? phys2d::LayerRegistry::I().defaultMaskFor(
-                    phys2d::layerNameFromCategoryBit(fb.categoryBits) )
-                                         : fb.maskBits;
-                fixtureDef.filter.groupIndex = fb.groupIndex;
-
-                if(b2BodyDef.type != b2BodyType::b2_kinematicBody) {
-                    fixtureDef.density = c2d.density;
-                    fixtureDef.friction = c2d.friction;
-                    fixtureDef.restitution = c2d.restitution;
-                    fixtureDef.restitutionThreshold = c2d.restitutionThreshold;
+            b2PolygonShape shape; b2Filter filter;
+            if(entity.hasComponent<Collider2DComponent>()) {
+                const auto& c = entity.getComponent<Collider2DComponent>(); const auto origin = t.getOrigin();
+                const float hx = size.x * c.size.x / pixelsPerMeter, hy = size.y * c.size.y / pixelsPerMeter;
+                if(!finite(hx) || !finite(hy) || hx <= b2_epsilon || hy <= b2_epsilon ||
+                    !finite(c.offset.x) || !finite(c.offset.y) || !finite(origin.x) || !finite(origin.y) ||
+                    !finite(c.density) || c.density < 0.f || !finite(c.friction) || c.friction < 0.f ||
+                    !finite(c.restitution) || c.restitution < 0.f || !finite(c.restitutionThreshold) ||
+                    c.restitutionThreshold < 0.f) {
+                    RB_EDITOR_WARN("[Physics] Body rejected; entity={}; reason=invalid box geometry or material",
+                        std::uint64_t(entity.getUUID()));
+                    return;
                 }
-
-                c2d.userData = {
-                    .entityId = entity.getUUID(),
-                    .oneWay = c2d.oneWay,
-                    .oneWayNormal = c2d.oneWayNormal, // в мировых или локальных? лучше в МИРОВЫХ
-                    .generateEvents = true
-                };
-
-                fixtureDef.userData.setData((void*)&lEntity);
-                auto fixture = b2body -> CreateFixture(&fixtureDef);
-
-                c2d.runtimeFixture = fixture;
+                try { filter = filterFor(c); }
+                catch(const std::exception& error) {
+                    RB_EDITOR_WARN("[Physics] Body rejected; entity={}; reason={}", std::uint64_t(entity.getUUID()),
+                        error.what()); return;
+                }
+                shape.SetAsBox(hx, hy, {(size.x * (0.5f - origin.x) + c.offset.x) / pixelsPerMeter,
+                                        (size.y * (0.5f - origin.y) + c.offset.y) / pixelsPerMeter}, 0.f);
+            }
+            b2BodyDef definition;
+            switch(p.type) {
+            case Physics2DComponent::BodyType::Static: definition.type = b2_staticBody; break;
+            case Physics2DComponent::BodyType::Dynamic: definition.type = b2_dynamicBody; break;
+            case Physics2DComponent::BodyType::Kinematic: definition.type = b2_kinematicBody; break;
+            default: return;
+            }
+            definition.position.Set(position.x / pixelsPerMeter, position.y / pixelsPerMeter);
+            definition.angle = t.getRotation() * radiansPerDegree; definition.fixedRotation = p.fixedRotation;
+            definition.bullet = p.bullet; definition.gravityScale = p.gravityScale;
+            definition.linearDamping = p.linearDamping; definition.angularDamping = p.angularDamping;
+            auto* body = m_world -> CreateBody(&definition);
+            m_bodies.push_back({entity, entity.getUUID(), body, nullptr, m_nextFixtureID++});
+            auto& entry = m_bodies.back(); p.runtimeBody = body;
+            if(entity.hasComponent<Collider2DComponent>()) {
+                auto& c = entity.getComponent<Collider2DComponent>(); b2FixtureDef fixture;
+                fixture.shape = &shape; fixture.isSensor = c.isTrigger; fixture.density = c.density;
+                fixture.friction = c.friction; fixture.restitution = c.restitution;
+                fixture.restitutionThreshold = c.restitutionThreshold; fixture.filter = filter;
+                fixture.userData.setData(&entry); entry.fixture = body -> CreateFixture(&fixture);
+                c.runtimeFixture = entry.fixture; c.markFilterDirty = false;
+                c.userData = {entity.getUUID(), c.oneWay, c.oneWayNormal, true};
             }
         }
-
-        for(auto& child: entity.getChildren())
-            addEntity(child);
+        for(auto child: entity.getChildren()) addEntity(child);
     }
-
-    void Box2DPhysicsAdapter::stop() {
-        m_entityList.clear();
-        m_physicsWorld.reset();
+    void Box2DPhysicsAdapter::removeEntity(std::uint64_t id) {
+        const auto it = std::find_if(m_bodies.begin(), m_bodies.end(), [id](const auto& b) { return b.id == id; });
+        if(it == m_bodies.end()) return;
+        for(auto contact = m_contacts.begin(); contact != m_contacts.end();) {
+            if(contact -> second.entityA == id || contact -> second.entityB == id) {
+                m_pendingEvents.push_back(exiting(contact -> second)); contact = m_contacts.erase(contact);
+            }
+            else ++contact;
+        }
+        if(it -> entity.hasComponent<Physics2DComponent>()) it -> entity.getComponent<Physics2DComponent>().runtimeBody
+                = nullptr;
+        if(it -> entity.hasComponent<Collider2DComponent>()) it -> entity.getComponent<Collider2DComponent>().
+            runtimeFixture = nullptr;
+        m_world -> DestroyBody(it -> body); m_bodies.erase(it);
     }
-
+    void Box2DPhysicsAdapter::flushOperations() {
+        if(m_stopRequested) {
+            clearWorld(); return;
+        }
+        auto removals = std::move(m_pendingRemovals); m_pendingRemovals.clear();
+        for(auto id: removals) removeEntity(id);
+        auto additions = std::move(m_pendingAdditions); m_pendingAdditions.clear();
+        for(auto entity: additions) if(entity && !removals.count(entity.getUUID())) addEntity(entity);
+    }
     void Box2DPhysicsAdapter::addRuntime(SceneEntity entity) {
-        addEntity(entity);
+        if(m_dispatching) m_pendingAdditions.push_back(entity); else addEntity(entity);
     }
-
-    bool Box2DPhysicsAdapter::isTrigger(const b2Contact* contact) {
-        return contact -> GetFixtureA() -> IsSensor() || contact -> GetFixtureB() -> IsSensor();
+    void Box2DPhysicsAdapter::removeRuntime(SceneEntity entity) {
+        if(!entity) return;
+        m_pendingRemovals.insert(entity.getUUID());
+        for(auto child: entity.getChildren()) removeRuntime(child);
+        if(!m_dispatching && m_world) flushOperations();
     }
-
-    void Box2DPhysicsAdapter::emitStayAndSwap() {
-        for(auto& key : m_currentPairs) {
-            if(m_prevPairs.find(key) != m_prevPairs.end()) {
-                PhysicsContact2D ev{};
-                ev.entityA = key.a; ev.entityB = key.b;
-                ev.type = key.trigger ? PhysicsEventType::StayTrigger : PhysicsEventType::Stay;
-
-                if(auto it = m_geomCache.find(key); it != m_geomCache.end()) {
-                    ev.nx = it->second.nx; ev.ny = it->second.ny;
-                    ev.pointCount = it->second.count;
-                    for(int i = 0; i < ev.pointCount; i++)ev.points[i] = it->second.pts[i];
-                }
-                if(auto it = m_impulses.find(key); it != m_impulses.end()) {
-                    ev.normalImpulse = it->second.first;
-                    ev.tangentImpulse = it->second.second;
-                }
-
-                // category/mask/sensor для Stay — можно вытянуть из кэша фикстур (если хранишь) или опустить
-
-                m_eventsThisFrame.push_back(ev);
-            }
+    void Box2DPhysicsAdapter::clearWorld() {
+        if(m_world) m_world -> SetContactListener(nullptr);
+        for(auto& b: m_bodies) {
+            if(b.entity.hasComponent<Physics2DComponent>()) b.entity.getComponent<Physics2DComponent>().runtimeBody =
+                    nullptr;
+            if(b.entity.hasComponent<Collider2DComponent>()) b.entity.getComponent<Collider2DComponent>().runtimeFixture
+                    = nullptr;
         }
-
-        m_prevPairs.swap(m_currentPairs);
-        m_currentPairs.clear();
-        m_geomCache.clear();
-        m_impulses.clear();
+        m_world.reset(); m_bodies.clear(); m_contacts.clear(); m_entered.clear(); m_events.clear();
+        m_pendingEvents.clear(); m_pendingAdditions.clear(); m_pendingRemovals.clear();
+        m_callback = {}; m_nextFixtureID = 1; m_stopRequested = false;
     }
-
-    void Box2DPhysicsAdapter::FillWorld(b2Contact* c, editor::Box2DPhysicsAdapter::Geom& g) {
-        b2WorldManifold wm;
-        c -> GetWorldManifold(&wm);
-        g.nx = wm.normal.x;
-        g.ny = wm.normal.y;
-        g.count = (uint8_t)c -> GetManifold() -> pointCount;
-        for(int i = 0; i < g.count; i++) {
-            g.pts[i] = { wm.points[i].x, wm.points[i].y, wm.separations[i] };
-        }
+    void Box2DPhysicsAdapter::stop() {
+        if(m_dispatching) m_stopRequested = true; else clearWorld();
     }
 }
