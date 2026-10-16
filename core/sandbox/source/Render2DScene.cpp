@@ -173,7 +173,6 @@ std::vector<Quad> quads;
 std::vector<BoundingBox> bbs;
 
 robot2D::Font g_font;
-robot2D::Text g_text;
 
 Render2DScene::Render2DScene(robot2D::RenderWindow& window) : Scene(window), m_scene(messageBus) {
 }
@@ -263,8 +262,8 @@ void Render2DScene::setup() {
 
     m_textures.loadFromFile(ResourceID::Logo, texturePath);
     g_font.loadFromFile("res/fonts/font.ttf");
-    g_text.setText("Ожидание чтения карты");
-    g_text.setFont(g_font);
+    m_text.setText("Ожидание чтения карты");
+    m_text.setFont(g_font);
     {
         Quad q;
         q.setPosition({400, 400});
@@ -367,11 +366,11 @@ void Render2DScene::handleEvents(const robot2D::Event& event) {
 void Render2DScene::update(float dt) {
     constexpr float speed = 100.F;
 
-    if(robot2D::isJoystickAvailable(robot2D::JoystickType::One)
-        && robot2D::joystickIsGamepad(robot2D::JoystickType::One)) {
+    if(robot2D::isJoystickAvailable(m_window.desktop(), robot2D::JoystickType::One)
+        && robot2D::joystickIsGamepad(m_window.desktop(), robot2D::JoystickType::One)) {
 
         robot2D::JoystickGamepadInput gamepadInput{};
-        if(robot2D::getJoystickGamepadInput(robot2D::JoystickType::One, gamepadInput)) {
+        if(robot2D::getJoystickGamepadInput(m_window.desktop(), robot2D::JoystickType::One, gamepadInput)) {
             auto leftManipulator = gamepadInput.leftManipulatorOffset;
 
             if((-1.F <= leftManipulator.x && leftManipulator.x <= 1.F)
@@ -402,7 +401,7 @@ void Render2DScene::render() {
         m_window.draw(q);
     for(const auto& b: bbs)
         m_window.draw(b);
-    m_window.draw(g_text);
+    m_window.draw(m_text);
     m_window.afterRender();
 }
 

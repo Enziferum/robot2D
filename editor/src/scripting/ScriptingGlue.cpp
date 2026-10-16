@@ -355,11 +355,15 @@ namespace editor {
     }
 
     static bool Input_IsKeyDown(std::uint16_t keycode) {
-        return robot2D::Keyboard::isKeyPressed(robot2D::Int2Key(keycode));
+        auto service = ScriptGlue::getService();
+        auto* window = service ? service -> GetWindow() : nullptr;
+        return window && window -> isKeyPressed(robot2D::Int2Key(keycode));
     }
 
     static bool Input_IsMousePressed(std::uint16_t button) {
-        return robot2D::isMousePressed(robot2D::int2mouse(button));
+        auto service = ScriptGlue::getService();
+        auto* window = service ? service -> GetWindow() : nullptr;
+        return window && window -> isMouseButtonPressed(robot2D::int2mouse(button));
     }
 
     static void Input_GetMousePosition(robot2D::vec2f* position) {

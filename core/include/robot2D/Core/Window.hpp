@@ -35,6 +35,7 @@
 #include "Event.hpp"
 #include "WindowContext.hpp"
 #include "Cursor.hpp"
+#include "DesktopRuntime.hpp"
 
 namespace robot2D {
 
@@ -55,19 +56,29 @@ namespace robot2D {
         /// To specify custom options use other Constructors.
         ///
         ////////////////////////////////////////////////////////////////
-        Window();
+        explicit Window(DesktopRuntime& desktop);
         ////////////////////////////////////////////////////////////////
         /// \brief Special Constructor. Allow to specify options.
         ///
+        /// \param desktop Runtime that outlives this window; use on its creating main thread.
         /// \param size Specify window size in 2D Space
         /// \param name Specify custom name or use setTitle method.
         /// \param windowContext Specify options to Window. Check WindowContext for detail information.
         ///
         ////////////////////////////////////////////////////////////////
-        Window(const vec2u& size,
+        Window(DesktopRuntime& desktop, const vec2u& size,
             const std::string& name,
             const WindowContext& windowContext = robot2D::WindowContext::Default);
-        ~Window();
+        Window(const Window&) = delete;
+        Window& operator=(const Window&) = delete;
+        Window(Window&&) = delete;
+        Window& operator=(Window&&) = delete;
+        virtual ~Window() noexcept;
+        DesktopRuntime& desktop() const noexcept {
+            return m_desktop;
+        }
+        /// Select this window's GL context before graphics work and shutdown.
+        void makeCurrent();
 
         ////
         //// \brief process OS events and puts it to robot2D::Event
@@ -108,6 +119,7 @@ namespace robot2D {
         /// \brief allow you to set big/small icons to your app
         void setIcon(robot2D::Image&& icon);
 
+        /// Borrowed handle valid until destruction. Do not destroy it or replace backend callbacks/user pointer.
         WindowHandle getRaw() const;
 
         void setCursor(const Cursor& cursor);
@@ -132,18 +144,16 @@ namespace robot2D {
         void setMousePos(const vec2f& pos);
         vec2f getMousePos() const;
 
-        static bool isMousePressed(const Mouse& button);
-        static bool isKeyboardPressed(const Key& key);
-        static bool isJoystickAvailable(const JoystickType& joystickType);
-        static bool JoystickIsGamepad(const JoystickType& joystickType);
-
-        static bool getJoystickGamepadInput(const JoystickType& joystickType, JoystickGamepadInput& gamepadInput);
+        /// Raw per-window state; GUI routing and fixed-step transitions belong to higher layers.
+        bool isMouseButtonPressed(Mouse button) const;
+        bool isKeyPressed(Key key) const;
     protected:
         virtual void onResize(const int& w, const int& h);
     private:
         void create();
     protected:
-        static std::unique_ptr<priv::WindowImpl> m_windowImpl;
+        DesktopRuntime& m_desktop;
+        std::unique_ptr<priv::WindowImpl> m_windowImpl;
 
         /// window settings
         vec2u m_win_size;
