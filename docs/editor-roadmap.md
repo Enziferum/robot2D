@@ -707,3 +707,16 @@ Core-чат передал docs/fixed-timestep-contract.md из CORE-02 @ cb36f2
 согласованный OnFixedUpdate/Step, post-Step события, 0/N ticks за кадр,
 Pause/Resume/Stop и сквозные регрессии. Полный lifecycle связан с RUNTIME-01.
 Эта запись не запускает реализацию scheduler и не закрывает PHYS-01 после merge #120.
+
+## ASSET-01: Preview, дерево папок и иконки — 2026-10-16
+
+По поручению пользователя реализован первый UI-шаг ASSET-01 #47 в отдельной
+ветке/worktree ASSET-01 от dev df823bb. Дерево папок, общий путь с breadcrumbs,
+реальные alpha-preview, ограниченный асинхронный cache и оригинальные векторные
+иконки. Контракт, лимиты и ручная приёмка — [asset-browser.md](asset-browser.md).
+Toolbar получает тот же набор отдельным обновлением открытого VIEW-01 / PR #124;
+две задачи не подменяют друг другу base и критерии завершения.
+Проверки: сборка editor/core-tests/suite; новые постоянные navigation/decode/cache/
+icons/panel и graphics asset-preview. Ручная UI-приёмка остаётся открытой.
+Следующий шаг — обязательный hook, публикация PR в dev, затем ручная приёмка.
+Перенос ссылок при rename/delete и общий asset lifecycle этим шагом не завершены.

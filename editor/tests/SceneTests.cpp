@@ -1,5 +1,6 @@
 #define GLFW_INCLUDE_NONE
 #include "TestSupport.hpp"
+#include <editor/AssetPreviewCache.hpp>
 #include <GLFW/glfw3.h>
 #include <robot2D/Graphics/GL.hpp>
 #include <robot2D/Graphics/RenderTarget.hpp>
@@ -644,6 +645,30 @@ namespace {
         logic.destroy();
     }
 
+    void assetPreview() {
+        Directory fixture;
+        const auto root = fixture / "assets";
+        writeImage(root / "preview.tga", 32, 70);
+        editor::AssetPreviewCache cache;
+        cache.setRoot(fs::weakly_canonical(root));
+        CHECK(cache.request(root / "preview.tga"));
+        CHECK(waitFor([&]() {
+            editor::TaskQueue::GetQueue() -> process();
+            auto* item = cache.request(root / "preview.tga");
+            return item && item -> status == editor::PreviewStatus::Decoded;
+        }));
+        auto* item = cache.request(root / "preview.tga");
+        auto* texture = cache.texture(*item);
+        CHECK(texture && texture -> getSize().x == 32);
+        const auto id = texture -> getID();
+        CHECK(glIsTexture(id) == GL_TRUE);
+        cache.invalidate(root / "preview.tga");
+        CHECK(glIsTexture(id) == GL_TRUE);
+        cache.beginFrame();
+        CHECK(glIsTexture(id) == GL_FALSE);
+        CHECK(glGetError() == GL_NO_ERROR);
+    }
+
     void animationResources() {
         Directory fixture;
         const auto first = fixture / "assets/a/sheet.tga";
@@ -675,7 +700,8 @@ int main(int argc, char** argv) {
         CHECK(argc == 2);
         GraphicsContext graphics;
         const std::string name = argv[1];
-        if(name == "hierarchy") hierarchy();
+        if(name == "asset-preview") assetPreview();
+        else if(name == "hierarchy") hierarchy();
         else if(name == "runtime-camera-order") runtimeCameraOrder();
         else if(name == "asset-roundtrip") assetRoundtrip();
         else if(name == "missing-assets") missingAssets();
