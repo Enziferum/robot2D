@@ -230,8 +230,13 @@ namespace editor {
 
     void TextComponent::setFont(const robot2D::Font& font) {
         m_font = &font;
-        m_texture = new robot2D::Texture();
-        m_texture -> create(*(m_font -> getImages()[0]));
+        m_bufferCache.clear();
+        m_needUpdate = true;
+        m_texture.reset();
+        if(!font.getImages().empty()) {
+            m_texture = std::make_shared<robot2D::Texture>();
+            m_texture -> create(*font.getImages().front());
+        }
     }
 
     const robot2D::Font* TextComponent::getFont() const {
