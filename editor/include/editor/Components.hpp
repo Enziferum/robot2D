@@ -24,6 +24,7 @@
 #include <unordered_map>
 #include <vector>
 #include <list>
+#include <memory>
 
 #include <robot2D/Graphics/Transformable.hpp>
 #include <robot2D/Graphics/Texture.hpp>
@@ -412,7 +413,7 @@ namespace editor {
         std::string m_text{"Hello"};
         unsigned int m_characterSize;
         const robot2D::Font* m_font;
-        robot2D::Texture* m_texture;
+        std::shared_ptr<robot2D::Texture> m_texture;
 
         bool m_needUpdate;
         std::unordered_map<int, robot2D::GlyphQuad> m_bufferCache;

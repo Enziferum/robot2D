@@ -85,7 +85,17 @@ namespace robot2D
 
     public class TextComponent : Component
     {
-        
+        // A detached or stale component reads empty; TrySetText reports failure.
+        public string Text
+        {
+            get => Entity == null ? string.Empty : InternalCalls.TextComponent_GetText(Entity.ID);
+            set => TrySetText(value);
+        }
+
+        public bool TrySetText(string value)
+        {
+            return Entity != null && InternalCalls.TextComponent_SetText(Entity.ID, value);
+        }
     }
 
 

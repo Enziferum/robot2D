@@ -707,3 +707,14 @@ Core-чат передал docs/fixed-timestep-contract.md из CORE-02 @ cb36f2
 согласованный OnFixedUpdate/Step, post-Step события, 0/N ticks за кадр,
 Pause/Resume/Stop и сквозные регрессии. Полный lifecycle связан с RUNTIME-01.
 Эта запись не запускает реализацию scheduler и не закрывает PHYS-01 после merge #120.
+
+
+## HUD-01: C# текст и порядок надписей — 2026-10-16
+
+Ведущий — ассистент по поручению пользователя. Ветка HUD-01 в отдельном worktree
+от dev df823bb. Добавлен TextComponent.Text/TrySetText; отдельные GPU batches
+для надписей, безопасные отсутствующие шрифты и владение текстурой при копии.
+Пример Health/Wave/Game Over/reset компилируется и проверяется через Mono.
+Редактор и suite собраны; полный CTest 105/105 (42 graphics). Контракт и ручная
+приёмка — [hud.md](hud.md). Следующий шаг — CI/review и приёмка Inspector/Play;
+полный restart мира остаётся RUNTIME-01, standalone — PLAYER-01/BUILD-01.
