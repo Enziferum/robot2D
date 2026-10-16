@@ -14,6 +14,7 @@
 #include <editor/FileApi.hpp>
 #include <editor/ResouceManager.hpp>
 #include <editor/LocalResourceManager.hpp>
+#include <editor/EditorResourceManager.hpp>
 #include <editor/TextSystem.hpp>
 #include <editor/async/AnimationTextureSliceTask.hpp>
 #include <array>
@@ -47,6 +48,7 @@ namespace {
         }
         ~GraphicsContext() {
             editor::LocalResourceManager::getManager() -> releaseGraphicsResources();
+            editor::EditorResourceManager::getManager() -> releaseGraphicsResources();
             glfwDestroyWindow(m_window); glfwTerminate();
         }
     private:
@@ -179,6 +181,7 @@ namespace {
             ~WindowCleanup() {
                 auto* native = static_cast<GLFWwindow*>(window -> getRaw());
                 editor::LocalResourceManager::getManager() -> releaseGraphicsResources();
+                editor::EditorResourceManager::getManager() -> releaseGraphicsResources();
                 window.reset();
                 glfwDestroyWindow(native);
                 glfwMakeContextCurrent(previous);
@@ -189,78 +192,88 @@ namespace {
         configuration.window = window.get();
         configuration.allowDefaultFallback = true;
         CHECK(gui.initialize(configuration));
-        robot2D::GuiContextScope scope(gui.context());
-        ImGui::GetIO().IniFilename = nullptr;
-        ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-        robot2D::MessageBus bus;
-        editor::MessageDispatcher dispatcher;
-        editor::Editor view(bus, gui);
-        editor::EditorPresenter presenter(&view);
-        editor::EditorRouter router(&view);
-        editor::EditorLogic logic(bus, dispatcher, presenter, router);
-        auto scripts = std::make_shared<ScriptStub>();
-        logic.setup(scripts);
-        QueueStop stop;
-        view.setup(window.get(), &logic);
-        auto scene = std::make_shared<editor::Scene>(bus);
-        auto camera = scene -> createEntity("Separate game camera");
-        auto& cameraData = camera.addComponent<editor::CameraComponent>();
-        cameraData.isPrimary = true;
-        cameraData.position = {608, 517};
-        cameraData.size = {894, 489};
-        camera.addComponent<editor::DrawableComponent>().setColor(robot2D::Color(255, 255, 255, 0));
-        auto sprite = scene -> createEntity("Visible quad");
-        sprite.getComponent<editor::TransformComponent>().setPosition({100, 100});
-        sprite.getComponent<editor::TransformComponent>().setSize({100, 100});
-        sprite.addComponent<editor::DrawableComponent>().setColor(robot2D::Color::Red);
-        scene -> update(0);
-        fs::create_directories(fixture / "assets/scenes");
-        editor::SceneSerializer serializer(scene);
-        CHECK(serializer.serialize((fixture / "assets/scenes/main.scene").u8string(), "Test", scripts));
-        auto project = std::make_shared<editor::Project>();
-        project -> setPath(fixture.path().u8string());
-        project -> setStartScene("main.scene");
-        logic.loadProject(project);
-        CHECK(waitFor([&]() {
-            editor::TaskQueue::GetQueue() -> process();
-            return presenter.getState() != editor::EditorState::Load;
-        }));
-        CHECK(presenter.getState() == editor::EditorState::Edit);
-        robot2D::FrameBufferSpecification outputSpecification;
-        outputSpecification.size = window -> getFramebufferSize().as<int>();
-        outputSpecification.attachments = {robot2D::FrameBufferTextureFormat::RGBA8,
-                                           robot2D::FrameBufferTextureFormat::Depth};
-        auto output = robot2D::FrameBuffer::Create(outputSpecification);
-        for(int frame = 0; frame < 5; ++frame) {
-            window -> processEvents();
-            (void)window -> takeEvents(static_cast<std::uint64_t>(frame));
-            view.update(1.f / 60);
-            CHECK(gui.beginFrame(1.f / 60));
-            window -> clear();
-            view.render();
-            CHECK(gui.endFrame());
-            window -> afterRender();
-            const auto size = window -> getFramebufferSize();
-            if(output -> getSpecification().size != size.as<int>()) output -> Resize(size);
-            // Hidden native back buffers resize asynchronously under X11/Xvfb.
-            // Compose to an explicit target matching the GUI framebuffer scale instead.
-            output -> Bind();
-            window -> clear();
-            CHECK(gui.render());
-            std::vector<unsigned char> pixels(size.x * size.y * 4);
-            glReadPixels(0, 0, size.x, size.y, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
-            std::size_t red = 0;
-            for(std::size_t i = 0; i < pixels.size(); i += 4)
-                if(pixels[i] > 250 && pixels[i + 1] < 3 && pixels[i + 2] < 3) ++red;
-            // Docking assigns panel sizes over the first frames; subsequent frames must contain the scene.
-            if(frame >= 3 && red < 1000)
-                throw std::runtime_error("Editor GUI scene pixels: red=" + std::to_string(red) +
-                          "; target=" + std::to_string(size.x) + "x" + std::to_string(size.y));
-            CHECK(glGetError() == GL_NO_ERROR);
+        {
+            robot2D::GuiContextScope scope(gui.context());
+            ImGui::GetIO().IniFilename = nullptr;
+            ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+            robot2D::MessageBus bus;
+            editor::MessageDispatcher dispatcher;
+            editor::Editor view(bus, gui);
+            editor::EditorPresenter presenter(&view);
+            editor::EditorRouter router(&view);
+            editor::EditorLogic logic(bus, dispatcher, presenter, router);
+            auto scripts = std::make_shared<ScriptStub>();
+            logic.setup(scripts);
+            QueueStop stop;
+            view.setup(window.get(), &logic);
+            auto scene = std::make_shared<editor::Scene>(bus);
+            auto camera = scene -> createEntity("Separate game camera");
+            auto& cameraData = camera.addComponent<editor::CameraComponent>();
+            cameraData.isPrimary = true;
+            cameraData.position = {608, 517};
+            cameraData.size = {894, 489};
+            camera.addComponent<editor::DrawableComponent>().setColor(robot2D::Color(255, 255, 255, 0));
+            auto sprite = scene -> createEntity("Visible quad");
+            sprite.getComponent<editor::TransformComponent>().setPosition({100, 100});
+            sprite.getComponent<editor::TransformComponent>().setSize({100, 100});
+            sprite.addComponent<editor::DrawableComponent>().setColor(robot2D::Color::Red);
+            scene -> update(0);
+            fs::create_directories(fixture / "assets/scenes");
+            editor::SceneSerializer serializer(scene);
+            CHECK(serializer.serialize((fixture / "assets/scenes/main.scene").u8string(), "Test", scripts));
+            auto project = std::make_shared<editor::Project>();
+            project -> setPath(fixture.path().u8string());
+            project -> setStartScene("main.scene");
+            logic.loadProject(project);
+            CHECK(waitFor([&]() {
+                editor::TaskQueue::GetQueue() -> process();
+                return presenter.getState() != editor::EditorState::Load;
+            }));
+            CHECK(presenter.getState() == editor::EditorState::Edit);
+            robot2D::FrameBufferSpecification outputSpecification;
+            outputSpecification.size = window -> getFramebufferSize().as<int>();
+            outputSpecification.attachments = {robot2D::FrameBufferTextureFormat::RGBA8,
+                                               robot2D::FrameBufferTextureFormat::Depth};
+            auto output = robot2D::FrameBuffer::Create(outputSpecification);
+            for(int frame = 0; frame < 5; ++frame) {
+                window -> processEvents();
+                (void)window -> takeEvents(static_cast<std::uint64_t>(frame));
+                view.update(1.f / 60);
+                CHECK(gui.beginFrame(1.f / 60));
+                window -> clear();
+                view.render();
+                CHECK(gui.endFrame());
+                window -> afterRender();
+                const auto size = window -> getFramebufferSize();
+                if(output -> getSpecification().size != size.as<int>()) output -> Resize(size);
+                // Hidden native back buffers resize asynchronously under X11/Xvfb.
+                // Compose to an explicit target matching the GUI framebuffer scale instead.
+                output -> Bind();
+                window -> clear();
+                CHECK(gui.render());
+                std::vector<unsigned char> pixels(size.x * size.y * 4);
+                glReadPixels(0, 0, size.x, size.y, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+                std::size_t red = 0;
+                for(std::size_t i = 0; i < pixels.size(); i += 4)
+                    if(pixels[i] > 250 && pixels[i + 1] < 3 && pixels[i + 2] < 3) ++red;
+                // Docking assigns panel sizes over the first frames; subsequent frames must contain the scene.
+                if(frame >= 3 && red < 1000)
+                    throw std::runtime_error("Editor GUI scene pixels: red=" + std::to_string(red) +
+                              "; target=" + std::to_string(size.x) + "x" + std::to_string(size.y));
+                CHECK(glGetError() == GL_NO_ERROR);
+            }
+            output -> unBind();
+            logic.destroy();
+            gui.shutdown();
         }
-        output -> unBind();
-        logic.destroy();
-        gui.shutdown();
+        auto* icons = editor::EditorResourceManager::getManager();
+        const auto icon = icons -> getTexture(editor::EditorResourceID::Movie).getID();
+        CHECK(glIsTexture(icon));
+        icons -> releaseGraphicsResources();
+        icons -> releaseGraphicsResources();
+        CHECK(!icons -> hasTexture(editor::EditorResourceID::Movie));
+        CHECK(!glIsTexture(icon));
+        CHECK(glGetError() == GL_NO_ERROR);
     }
 
     void hudText() {

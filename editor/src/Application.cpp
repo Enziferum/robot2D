@@ -32,6 +32,7 @@
 
 #include <editor/FileApi.hpp>
 #include <editor/LocalResourceManager.hpp>
+#include <editor/EditorResourceManager.hpp>
 #include <robot2D/imgui/GuiFontConfig.hpp>
 #include "IconsFontsAwesome5.hpp"
 
@@ -285,6 +286,7 @@ namespace editor {
         }
         m_guiWrapper.shutdown();
         LocalResourceManager::getManager() -> releaseGraphicsResources();
+        EditorResourceManager::getManager() -> releaseGraphicsResources();
         RB_EDITOR_INFO("[Application] Editor module released; Mono shutdown started");
         m_scriptingEngine.Shutdown();
         RB_EDITOR_INFO("[Application] Mono shutdown completed");
