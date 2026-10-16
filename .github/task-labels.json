@@ -363,6 +363,14 @@
     "CORE-01": [
       "area:core",
       "type:bug"
+    ],
+    "IMGUI-02": [
+      "area:core",
+      "area:editor",
+      "area:render",
+      "type:bug",
+      "type:tests",
+      "owner:shared"
     ]
   }
 }

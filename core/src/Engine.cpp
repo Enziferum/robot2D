@@ -70,6 +70,13 @@ namespace robot2D {
                                   engineConfiguration.windowTitle,
                                   engineConfiguration.windowContext};
 
+        struct ApplicationLifetime {
+            Application::Ptr& application;
+            ~ApplicationLifetime() {
+                application.reset();
+            }
+        } applicationLifetime{m_application};
+
         float timePerFrame = 1.F / static_cast<float>(engineConfiguration.maxFrameRate);
         float timeProcessed = 0.F;
 

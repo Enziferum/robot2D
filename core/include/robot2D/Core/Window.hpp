@@ -100,6 +100,10 @@ namespace robot2D {
         void setSize(const robot2D::vec2u& size);
 
         const vec2u& getSize();
+        /// Physical drawable size; may be zero while minimized.
+        vec2u getFramebufferSize() const;
+        /// Actual client size in logical coordinates, including OS size constraints.
+        vec2u getLogicalSize() const;
 
         /// \brief allow you to set big/small icons to your app
         void setIcon(robot2D::Image&& icon);

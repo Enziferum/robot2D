@@ -1,21 +1,20 @@
 #pragma once
-#include <string_view>
+#include <cstdint>
+#include <string>
 #include <vector>
+#include <imgui/imgui.h>
 
 namespace robot2D {
+    using FontId = std::uint32_t;
 
+    /// Owning source. Size is logical pixels; merge targets must precede this entry.
     struct GuiFontConfig {
-        enum class Mode {
-            File,
-            Memory
-        };
-
-        bool isDefault{ false };
-        bool mergeFont{ false };
-        float size{ 10.f };
-        Mode mode{ Mode::File };
-        std::string_view path;
-        std::vector<unsigned char>* buffer{ nullptr };
+        FontId id = 0;
+        FontId mergeInto = 0;
+        std::string path;
+        std::vector<unsigned char> bytes;
+        std::vector<ImWchar> glyphRanges;
+        float size = 18.f;
+        bool required = true;
     };
-
 }
