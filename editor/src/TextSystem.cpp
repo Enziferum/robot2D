@@ -150,4 +150,11 @@ namespace editor {
             else ++it;
         }
     }
+    robot2D::ecs::System::Ptr TextSystem::cloneSelf(robot2D::ecs::Scene* scene,
+        const std::vector<robot2D::ecs::Entity>& newEntities) {
+        auto clone = std::make_shared<TextSystem>(m_messageBus);
+        if(!cloneBase(clone, scene, newEntities)) return nullptr;
+        return clone;
+    }
+
 }

@@ -1,22 +1,22 @@
 /*********************************************************************
-(c) Alex Raag 2026
-https://github.com/Enziferum
-robot2D - Zlib license.
-This software is provided 'as-is', without any express or
-implied warranty. In no event will the authors be held
-liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute
-it freely, subject to the following restrictions:
-1. The origin of this software must not be misrepresented;
-you must not claim that you wrote the original software.
-If you use this software in a product, an acknowledgment
-in the product documentation would be appreciated but
-is not required.
-2. Altered source versions must be plainly marked as such,
-and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any
-source distribution.
+   (c) Alex Raag 2026
+   https://github.com/Enziferum
+   robot2D - Zlib license.
+   This software is provided 'as-is', without any express or
+   implied warranty. In no event will the authors be held
+   liable for any damages arising from the use of this software.
+   Permission is granted to anyone to use this software for any purpose,
+   including commercial applications, and to alter it and redistribute
+   it freely, subject to the following restrictions:
+   1. The origin of this software must not be misrepresented;
+   you must not claim that you wrote the original software.
+   If you use this software in a product, an acknowledgment
+   in the product documentation would be appreciated but
+   is not required.
+   2. Altered source versions must be plainly marked as such,
+   and must not be misrepresented as being the original software.
+   3. This notice may not be removed or altered from any
+   source distribution.
 *********************************************************************/
 
 #include <robot2D/Ecs/EntityManager.hpp>
@@ -27,8 +27,8 @@ source distribution.
 
 namespace editor {
 
-    UISystem::UISystem(robot2D::MessageBus& bus):
-            robot2D::ecs::System{bus, typeid(UISystem)} {
+    UISystem::UISystem(robot2D::MessageBus& bus) :
+        robot2D::ecs::System{bus, typeid(UISystem)} {
         addRequirement<TransformComponent>();
         addRequirement<UIHitbox>();
     }
@@ -44,10 +44,10 @@ namespace editor {
             if(event.mouse.btn == mouse2int(robot2D::Mouse::MouseMiddle))
                 m_mouseDownEvents.emplace_back(Flags::MiddleMouse);
 
-            m_eventPosition = m_editorCamera -> convertPixelToCoords( { 
-                static_cast<float>(event.mouse.x), 
+            m_eventPosition = m_editorCamera -> convertPixelToCoords( {
+                static_cast<float>(event.mouse.x),
                 static_cast<float>(event.mouse.y)}
-            ).as<int>();
+                    ).as<int>();
         }
 
         if(event.type == robot2D::Event::MouseReleased) {
@@ -108,11 +108,11 @@ namespace editor {
             else
                 hitbox.isHovered = false;
 
-            if (contains) {
+            if(contains) {
                 if(hitbox.isHovered) {
                     if(hitbox.onHoverOnce && !hitbox.wasHovered) {
                         auto index = hitbox.callbackIDs[UIHitbox::CallbackID::MouseMoved];
-                        if (index >= 0)
+                        if(index >= 0)
                             m_mouseHoverCallbacks[index](ent);
                     }
                     hitbox.wasHovered = true;
@@ -137,6 +137,17 @@ namespace editor {
 
         m_mouseDownEvents.clear();
         m_mouseUpEvents.clear();
+    }
+
+    robot2D::ecs::System::Ptr UISystem::cloneSelf(robot2D::ecs::Scene* scene,
+        const std::vector<robot2D::ecs::Entity>& newEntities) {
+        auto clone = std::make_shared<UISystem>(m_messageBus);
+        if(!cloneBase(clone, scene, newEntities)) return nullptr;
+        clone -> m_editorCamera = m_editorCamera;
+        clone -> m_mousePressedCallbacks = m_mousePressedCallbacks;
+        clone -> m_mouseHoverCallbacks = m_mouseHoverCallbacks;
+        clone -> m_mouseUnHoverCallbacks = m_mouseUnHoverCallbacks;
+        return clone;
     }
 
 }

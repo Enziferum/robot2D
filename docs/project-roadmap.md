@@ -33,6 +33,18 @@ PR #43 (e54408f); новые задачи идут от актуального d
 отдельными согласованными совместимыми шагами. Правила —
 [project-workflow.md](project-workflow.md), версия — [versioning.md](versioning.md).
 
+## PLAYER-01: standalone consumer — 2026-10-16
+
+Ведущий — ассистент по поручению пользователя. Ветка PLAYER-01 от dev ab0f3a5,
+отдельный worktree player-01. Game использует общий robot2D-runtime без Editor/UI
+objects; launch manifest v1 разрешает относительные package paths независимо от cwd.
+Mono/native template, общие SceneAssets, clone Text/UI systems и UTF-8 загрузка
+ресурсов проверяются настоящим перенесённым процессом Game/C#.
+Редактор/Game/suite и диагностическая арена собраны; полный CTest 110/110
+(43 graphics) после финального ревью. Контракт и запуск — [player.md](player.md). Следующий шаг — hook/CI/review,
+ручная приёмка и BUILD-01. Full runtime lifecycle, Core ECS и fixed scheduler
+этим шагом не объявляются завершёнными.
+
 ## HUD-01: C# текст и порядок надписей — 2026-10-16
 
 Ведущий — ассистент по поручению пользователя. Ветка HUD-01 в отдельном worktree
