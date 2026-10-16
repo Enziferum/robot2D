@@ -1,22 +1,22 @@
 /*********************************************************************
-(c) Alex Raag 2024
-https://github.com/Enziferum
-robot2D - Zlib license.
-This software is provided 'as-is', without any express or
-implied warranty. In no event will the authors be held
-liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute
-it freely, subject to the following restrictions:
-1. The origin of this software must not be misrepresented;
-you must not claim that you wrote the original software.
-If you use this software in a product, an acknowledgment
-in the product documentation would be appreciated but
-is not required.
-2. Altered source versions must be plainly marked as such,
-and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any
-source distribution.
+   (c) Alex Raag 2024
+   https://github.com/Enziferum
+   robot2D - Zlib license.
+   This software is provided 'as-is', without any express or
+   implied warranty. In no event will the authors be held
+   liable for any damages arising from the use of this software.
+   Permission is granted to anyone to use this software for any purpose,
+   including commercial applications, and to alter it and redistribute
+   it freely, subject to the following restrictions:
+   1. The origin of this software must not be misrepresented;
+   you must not claim that you wrote the original software.
+   If you use this software in a product, an acknowledgment
+   in the product documentation would be appreciated but
+   is not required.
+   2. Altered source versions must be plainly marked as such,
+   and must not be misrepresented as being the original software.
+   3. This notice may not be removed or altered from any
+   source distribution.
 *********************************************************************/
 
 #include <robot2D/imgui/Api.hpp>
@@ -27,10 +27,10 @@ source distribution.
 
 namespace editor {
 
-    GameViewport::GameViewport(robot2D::MessageBus& messageBus):
-    IPanel(UniqueType(typeid(GameViewport))),
-    m_messageBus{messageBus}
-    {}
+    GameViewport::GameViewport(robot2D::MessageBus& messageBus) :
+        IPanel(UniqueType(typeid(GameViewport))),
+        m_messageBus{messageBus} {
+    }
 
     void GameViewport::render() {
         const auto& colors = ::ImGui::GetStyle().Colors;
@@ -38,10 +38,10 @@ namespace editor {
         const auto& buttonActive = colors[ImGuiCol_ButtonActive];
 
         static robot2D::WindowOptions windowOptions {
-                {
-                        {ImGuiStyleVar_WindowPadding, {0, 0}},
-                },
-                {}
+            {
+                {ImGuiStyleVar_WindowPadding, {0, 0}},
+            },
+            {}
         };
         windowOptions.name = ICON_FA_CAMERA + std::string{" Game"} + "###GamePanel";
         windowOptions.flagsMask = ImGuiWindowFlags_NoScrollbar;
@@ -53,10 +53,16 @@ namespace editor {
         auto ViewPanelSize = ImGui::GetContentRegionAvail();
         if(!m_frameBuffer || ViewPanelSize.x < 1.f || ViewPanelSize.y < 1.f)
             return;
-        if(m_ViewportSize != robot2D::vec2u { static_cast<unsigned int>(ViewPanelSize.x), static_cast<unsigned int>(ViewPanelSize.y)}) {
+        if(m_ViewportSize != robot2D::vec2u { static_cast<unsigned int>(ViewPanelSize.x),
+                                              static_cast<unsigned int>(ViewPanelSize.y)}) {
             m_ViewportSize = { static_cast<unsigned int>(ViewPanelSize.x), static_cast<unsigned int>(ViewPanelSize.y)};
             m_frameBuffer -> Resize(m_ViewportSize);
         }
+        const auto origin = ImGui::GetCursorScreenPos();
+        m_min = {origin.x, origin.y};
+        m_max = {origin.x + ViewPanelSize.x, origin.y + ViewPanelSize.y};
+        m_hovered = ImGui::IsWindowHovered();
+        m_focused = ImGui::IsWindowFocused();
         robot2D::RenderFrameBuffer(m_frameBuffer, m_ViewportSize.as<float>());
     }
 

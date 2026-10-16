@@ -245,3 +245,14 @@ clang-tidy всех 177 единиц собственного кода. Посл
 вернул ошибку writeFile; десять целевых повторов и следующий полный прогон прошли.
 Причина разового сбоя записи не установлена, YAML writer в PREFAB-01 не менялся.
 Следующий шаг — CI/ревью PR, ручная приёмка и интеграция с RUNTIME-01/BUILD-01.
+
+
+## CORE-02: типизированные события — 2026-10-16
+
+По запросу пользователя реализуется [CORE-02 #119](https://github.com/Enziferum/robot2D/issues/119)
+в отдельном worktree `core-02-events`, ветка `CORE-02` от dev @ 3e3cfe3.
+Event на std::variant, typed EventBinder, GLFW FIFO/frame batch, queued ImGui input,
+владение Press/Release и диагностика Events в редакторе. Потребители core/sandbox,
+robot2D-imgui и editor мигрированы; ECS и INPUT-01 C# fixed-tick API вне объёма.
+Контракт, несовместимые изменения API, тесты и ручная приёмка — [core-events.md](core-events.md).
+Следующий шаг — обязательный pre-commit, PR в dev и UI-приёмка до merge.
