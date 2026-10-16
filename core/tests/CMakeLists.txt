@@ -19,7 +19,7 @@ enable_testing()
 
 set(CMAKE_CXX_STANDARD 17)
 set(TESTS_NAME robot2D-core-tests)
-set(SRC ${ECS_SRC} main.cpp)
+set(SRC ${CORE_SRC} ${ECS_SRC} ${GRAPHICS_SRC} ${UTIL_SRC} main.cpp)
 
 add_executable(${TESTS_NAME} ${SRC})
 target_link_libraries(${TESTS_NAME} PUBLIC GTest::gtest_main PRIVATE robot2D-core)
