@@ -38,7 +38,9 @@ inputCapture и доставка Event сами выбирают собстве�
 
 GuiFontConfig владеет string path либо vector bytes, glyph ranges, FontId, размером
 и mergeInto. ID ненулевые и уникальные; merge target должен быть объявлен раньше.
-GuiConfiguration выбирает defaultFont. Источники копируются внутрь библиотеки;
+GuiConfiguration выбирает defaultFont. Пустой набор с явно разрешённым
+allowDefaultFallback и defaultFont=0 выбирает встроенный шрифт; такой сценарий
+использует example. Для именованных шрифтов defaultFont указывается явно. Источники копируются внутрь библиотеки;
 исходную конфигурацию можно уничтожить сразу после initialize. Набор фиксирован
 до shutdown. font(id) возвращает временный указатель для текущего набора;
 потребитель хранит FontId. Поддержаны отдельные SFNT TTF/OTF, не коллекции TTC.
@@ -99,7 +101,7 @@ scheduler. Гарантия не распространяется на прои�
 - graphics lifecycle 4.3/4.5: previous/own context, finite dt, cancel/end/render,
   пустые draw data, повторный initialize/shutdown, отказ font setup и повторный успех;
 - graphics renderer 4.3/4.5: реальные pixels, negative DisplayPos/scale 2,
-  несколько lists/textures, clipping, callbacks/reset и восстановление GL-state,
+  несколько lists/textures, alpha overlap, clipping, callbacks/reset и восстановление GL-state,
   исключение callback и следующий кадр, отрисовка после GUI;
 - graphics rollback 4.3/4.5: отказ fragment shader после создания vertex/program/buffers,
   отсутствие оставшихся GPU объектов, повторный initialize и освобождение atlas.

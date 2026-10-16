@@ -49,7 +49,8 @@ namespace robot2D::priv {
             if(source.mergeInto != 0 && !get(source.mergeInto)) return fail("merge target must precede source");
             if(!source.glyphRanges.empty()) {
                 const auto& ranges = source.glyphRanges;
-                if(ranges.size() % 2 != 1 || ranges.back() != 0) return fail("invalid glyph ranges");
+                if(ranges.size() < 3 || ranges.size() % 2 != 1 ||
+                    ranges.back() != 0) return fail("invalid glyph ranges");
                 for(std::size_t i = 0; i + 1 < ranges.size(); i += 2)
                     if(ranges[i] == 0 || ranges[i] > ranges[i + 1]) return fail("invalid glyph range");
             }

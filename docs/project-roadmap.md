@@ -625,11 +625,13 @@ editor/example адаптированы; Core получил фактическ�
 Engine scheduler не менялся; добавлена только очистка application до local window
 при исключении. Детали и приёмка — [gui-backend.md](gui-backend.md).
 
-Проверки в процессе: первая полная Windows GCC 16.2/Ninja Release suite — 210/210
-без пропусков, включая 47 graphics и 9 новых backend-сценариев. Последующие
-изменения ревью/форматирования ещё проходят финальную сборку/hook.
-Отдельный строгий clang-tidy изменённых пяти backend единиц прошёл.
-Ручная UI-приёмка и CI нового commit ещё не выполнены.
+Windows GCC 16.2/Ninja Release: editor, core-tests, suite и imgui example собраны;
+полная suite 210/210 без пропусков, включая 47 graphics и 9 новых backend-сценариев.
+Обязательный hook прошёл: Python 47/47, формат, сборка, 163 headless и строгий
+clang-tidy 186 единиц. Отдельный строгий анализ пяти backend единиц и example
+прошёл. Реальный editor прошёл скрытый startup/shutdown smoke с exit 0.
+Основной commit fae3cb5; финальная регрессия glyph ranges фиксируется отдельно.
+Ручная UI-приёмка и CI опубликованного head ещё впереди.
 
 Следующий шаг: завершить проверки и опубликовать зависимый PR в dev, затем
 ручная приёмка; GraphicsCommands, upstream, multi-viewports и тайминг не начаты.
