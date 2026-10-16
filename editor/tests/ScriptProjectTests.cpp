@@ -50,7 +50,9 @@ namespace {
         source(code, "public sealed class Probe : robot2D.Entity { public int Value = 1; }");
         auto built = generateProjectScripts(root, "ReloadGame", sources, tools()); CHECK(built.success);
         ScriptEngine engine;
-        auto core = fs::path(RB2D_TEST_SCRIPTCORE); core.replace_extension(); engine.Init(core.u8string());
+        auto coreFile = directory / "robot2D_ScriptCore.dll";
+        fs::copy_file(fs::path(RB2D_TEST_SCRIPTCORE), coreFile);
+        auto core = coreFile; core.replace_extension(); engine.Init(core.u8string());
         CHECK(engine.runtimeInit(built.assembly.u8string()));
         robot2D::MessageBus bus; Scene scene(bus); auto entity = scene.createEntity("Probe");
         entity.addComponent<ScriptComponent>().name = "Probe";
@@ -73,6 +75,9 @@ namespace {
         CHECK(!engine.hasEntityClass("Probe") && engine.hasEntityClass("Renamed"));
         CHECK(!engine.runtimeInit((root / "missing.dll").u8string()));
         CHECK(!engine.hasEntityClass("Renamed"));
+        fs::remove(coreFile);
+        CHECK(!engine.runtimeInit(built.assembly.u8string()));
+        CHECK(engine.GetCoreAssemblyImage() == nullptr && engine.getClasses().empty());
         scripts.reset(); ScriptGlue::setService(nullptr); engine.Shutdown();
     }
 }
