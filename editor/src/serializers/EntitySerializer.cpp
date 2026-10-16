@@ -404,7 +404,9 @@ namespace editor {
                 auto& drawable = deserializedEntity.addComponent<DrawableComponent>();
                 drawable.setColor(yaml::read<robot2D::Color>(spriteComponent, "Color"));
                 if(spriteComponent["TexturePath"])
-                    drawable.setTexturePath(yaml::read<std::string>(spriteComponent, "TexturePath"));
+                    drawable.setTexturePath(yaml::assetReference(yaml::read<std::string>(spriteComponent,
+                        "TexturePath"),
+                        spriteComponent["TexturePath"]));
                 if(spriteComponent["zDepth"])
                     drawable.setDepth(yaml::read<int>(spriteComponent, "zDepth"));
                 drawable.setReorderZBuffer(true);
@@ -415,7 +417,8 @@ namespace editor {
                 auto& text = deserializedEntity.addComponent<TextComponent>();
                 text.setText(yaml::read<std::string>(textComponent, "Text"));
                 if(textComponent["FontPath"])
-                    text.setFontPath(yaml::read<std::string>(textComponent, "FontPath"));
+                    text.setFontPath(yaml::assetReference(yaml::read<std::string>(textComponent, "FontPath"),
+                        textComponent["FontPath"]));
             }
 
             auto scriptComponent = entity["ScriptComponent"];
@@ -511,6 +514,8 @@ namespace editor {
             if(animationComponent) {
                 auto resourceManager = ResourceManager::getManager();
                 auto animationPaths = yaml::read<std::vector<std::string> >(animationComponent, "Animations");
+                for(auto& path: animationPaths)
+                    path = yaml::assetReference(std::move(path), animationComponent["Animations"]);
                 resourceManager -> setAnimationPathsToLoad(uuid, std::move(animationPaths));
                 deserializedEntity.addComponent<AnimationComponent>();
                 deserializedEntity.addComponent<AnimatorComponent>();
