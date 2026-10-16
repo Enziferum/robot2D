@@ -745,3 +745,21 @@ Project/Generate/Build Scripts используют общий путь для �
 приёмка описаны в [csharp-build.md](csharp-build.md). Пользователь поручил затем
 HUD-01 и подготовку BUILD-01 в отдельных worktrees от актуального dev; Core ECS,
 Snapshot/CancellationToken и fixed scheduler не переданы этим поручением.
+
+
+## BRAND-01: Robot Lab 02 — иконка редактора — 2026-10-17
+
+По прямому выбору пользователя: 02 — основной знак и иконка, 03 — маскот сайта.
+Ветка BRAND-01 в отдельном worktree brand-01 от remote dev f4121a7;
+[Issue #135](https://github.com/Enziferum/robot2D/issues/135). Заменён runtime PNG
+res/textures/logo.png; для Windows robot2D.exe подключён RC-ресурс с ICO.
+CMake следит за ICO через OBJECT_DEPENDS; Linux использует существующий PNG-путь.
+Исходный мастер, prompt и происхождение — [logo/robotlab-slateteal](../logo/robotlab-slateteal/README.md).
+Сайт и маскот независимо подключены в WEB-02/#133, без зависимости от merge BRAND-01.
+
+Редактор, core-tests и editor-test-suite собраны в Ninja/Release, headless CTest
+167/167. PE-ресурс содержит 7 изображений, байты каждого совпадают с выбранным
+ICO; runtime PNG 512x512 и ICO в build/res совпадают с исходными ресурсами.
+Computer-use и запуск GUI не выполнялись: иконки окна/taskbar/Explorer на разных
+DPI и визуальная приёмка остаются за пользователем. Следующий шаг — обязательный
+hook, PR/CI и ручная приёмка. Основной checkout и сборка ASSET-01 не менялись.
