@@ -172,10 +172,7 @@ namespace robot2D
         public virtual void OnUpdate(float deltaTime) { }
         public virtual void OnCollision2DInternal(ulong self, ulong other, int typeInt, ref PhysicsContact2D ev)
         {
-            Console.WriteLine(Marshal.OffsetOf<PhysicsContact2D>(nameof(PhysicsContact2D.ny)));
-            Console.WriteLine("Entity: OnCollision2DInternal");
             var type = (PhysicsEventType)typeInt;
-            Console.WriteLine($"Collision Type: {type}");
             
             // нормаль "к нам"
             var nToMe = (self == ev.entityA)
