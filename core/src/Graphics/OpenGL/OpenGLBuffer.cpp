@@ -77,8 +77,13 @@ namespace robot2D {
 
     OpenGLIndexBuffer::OpenGLIndexBuffer(uint32_t* data, const uint32_t& size) {
         glCall(glGenBuffers, 1, &m_bufferID);
-        glCall(glBindBuffer, GL_ELEMENT_ARRAY_BUFFER, m_bufferID);
-        glCall(glBufferData, GL_ELEMENT_ARRAY_BUFFER, size, data, GL_STATIC_DRAW);
+        // ELEMENT_ARRAY_BUFFER belongs to the bound VAO. Upload through a neutral
+        // target so creating an index buffer cannot overwrite another VAO's attachment.
+        GLint previous = 0;
+        glGetIntegerv(GL_COPY_WRITE_BUFFER_BINDING, &previous);
+        glCall(glBindBuffer, GL_COPY_WRITE_BUFFER, m_bufferID);
+        glCall(glBufferData, GL_COPY_WRITE_BUFFER, size, data, GL_STATIC_DRAW);
+        glCall(glBindBuffer, GL_COPY_WRITE_BUFFER, previous);
         m_size = size;
 #if !defined(ROBOT2D_MACOS)
         labelGLObject(GL_BUFFER, m_bufferID, "IndexBuffer");

@@ -99,6 +99,19 @@ try {
         # CMake's database omits the GCC driver's implicit include directories.
         # Use the configured compiler's ordered search list, not local version guesses.
         $taskArguments += "--extra-arg=--target=$taskTarget"
+        # Clang must parse its own intrinsic headers before GCC's builtin headers.
+        # Resolve the matching driver beside the selected clang-tidy installation.
+        $taskTidyExecutable = (Get-Command $ClangTidy -ErrorAction Stop).Source
+        $taskClangDriver = Join-Path (Split-Path $taskTidyExecutable -Parent) ('clang' + [IO.Path]::GetExtension($taskTidyExecutable))
+        if(Test-Path -LiteralPath $taskClangDriver -PathType Leaf) {
+            $taskResourceDirectory = (& $taskClangDriver -print-resource-dir 2>$null | Select-Object -First 1)
+            if($LASTEXITCODE -ne 0) { throw 'Could not read the Clang resource directory.' }
+            $taskResourceIncludes = Join-Path $taskResourceDirectory 'include'
+            if(!(Test-Path -LiteralPath $taskResourceIncludes -PathType Container)) {
+                throw "Clang resource headers not found: $taskResourceIncludes"
+            }
+            $taskArguments += "--extra-arg=-isystem$taskResourceIncludes"
+        }
         $taskSearch = @(& $taskCompiler -E -x c++ -v NUL 2>&1 | ForEach-Object { "$_" })
         if($LASTEXITCODE -ne 0) {
             throw 'Could not read MinGW include search paths.'

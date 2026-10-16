@@ -174,21 +174,27 @@ namespace editor {
         m_xAxisManipulator{Manipulator::Axis::X, robot2D::Color::Red},
         m_yAxisManipulator{Manipulator::Axis::Y, robot2D::Color::Green},
         m_XYAxisManipulator{Manipulator::Axis::BOTH, robot2D::Color::Blue} {
-        m_eventBinder.bindEvent(robot2D::Event::MousePressed, BIND_CLASS_FN(processMousePressed));
-        m_eventBinder.bindEvent(robot2D::Event::MouseReleased, BIND_CLASS_FN(processMouseRelease));
-        m_eventBinder.bindEvent(robot2D::Event::MouseMoved, BIND_CLASS_FN(processMouseMoved));
+        m_eventBinder.bind<robot2D::Event::MousePressed>([this](const robot2D::Event::MousePressed& event) {
+            processMousePressed(event);
+        });
+        m_eventBinder.bind<robot2D::Event::MouseReleased>([this](const robot2D::Event::MouseReleased& event) {
+            processMouseRelease(event);
+        });
+        m_eventBinder.bind<robot2D::Event::MouseMoved>([this](const robot2D::Event::MouseMoved& event) {
+            processMouseMoved(event);
+        });
     }
 
     void Guizmo2D::handleEvents(const robot2D::Event& event) {
-        if(event.type == robot2D::Event::LostFocus || event.type == robot2D::Event::MouseReleased) {
-            if(event.type == robot2D::Event::LostFocus
-                || event.mouse.btn == robot2D::mouse2int(robot2D::Mouse::MouseLeft))
+        if(event.type() == robot2D::Event::Type::LostFocus || event.type() == robot2D::Event::Type::MouseReleased) {
+            if(event.type() == robot2D::Event::Type::LostFocus
+                || event.get<robot2D::Event::MouseButtonEvent>().btn == robot2D::mouse2int(robot2D::Mouse::MouseLeft))
                 cancelDrag();
             return;
         }
         if(!m_isShown || !m_camera || m_manipulateds.empty())
             return;
-        m_eventBinder.handleEvents(event);
+        m_eventBinder.dispatch(event);
     }
 
     void Guizmo2D::update() {
@@ -314,7 +320,7 @@ namespace editor {
     }
 
 
-    void Guizmo2D::processMouseMoved(robot2D::Event event) {
+    void Guizmo2D::processMouseMoved(const robot2D::Event::MouseMoved& event) {
         if(!m_leftMousePressed) return;
         struct TransformState {
             robot2D::vec2f position;
@@ -324,7 +330,7 @@ namespace editor {
         std::vector<TransformState> previous;
         for(const auto* transform: m_manipulateds)
             previous.push_back({transform -> getPosition(), transform -> getSize(), transform -> getRotation()});
-        robot2D::vec2f moveVector{event.move.x, event.move.y};
+        robot2D::vec2f moveVector{event.x, event.y};
         moveVector = m_camera -> convertPixelToCoords(moveVector);
 
         robot2D::vec2f diff{};
@@ -420,10 +426,10 @@ namespace editor {
         }
     }
 
-    void Guizmo2D::processMousePressed(robot2D::Event event) {
-        if(event.mouse.btn == robot2D::mouse2int(robot2D::Mouse::MouseLeft)) {
+    void Guizmo2D::processMousePressed(const robot2D::Event::MousePressed& event) {
+        if(event.btn == robot2D::mouse2int(robot2D::Mouse::MouseLeft)) {
             cancelDrag();
-            robot2D::vec2f mousePoint{static_cast<float>(event.mouse.x), static_cast<float>(event.mouse.y)};
+            robot2D::vec2f mousePoint{static_cast<float>(event.x), static_cast<float>(event.y)};
             mousePoint = m_camera -> convertPixelToCoords(mousePoint);
             const bool hit = m_operation == Operation::Rotate ? containsRotation(mousePoint)
                     : (m_xAxisManipulator.isPressed(mousePoint)
@@ -440,8 +446,8 @@ namespace editor {
         }
     }
 
-    void Guizmo2D::processMouseRelease(robot2D::Event event) {
-        if(event.mouse.btn == robot2D::mouse2int(robot2D::Mouse::MouseLeft)) {
+    void Guizmo2D::processMouseRelease(const robot2D::Event::MouseReleased& event) {
+        if(event.btn == robot2D::mouse2int(robot2D::Mouse::MouseLeft)) {
             m_leftMousePressed = false;
             m_isCollide = false;
         }

@@ -357,6 +357,25 @@
       "type:bug",
       "owner:shared"
     ],
+    "CORE-02": [
+      "area:core",
+      "area:editor",
+      "type:refactor",
+      "type:tests",
+      "owner:shared"
+    ],
+    "CORE-01": [
+      "area:core",
+      "type:bug"
+    ],
+    "IMGUI-02": [
+      "area:core",
+      "area:editor",
+      "area:render",
+      "type:bug",
+      "type:tests",
+      "owner:shared"
+    ],
     "WEB-02": [
       "area:web",
       "type:feature"

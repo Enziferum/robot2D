@@ -321,26 +321,30 @@ void Render2DScene::setup() {
 
 
 void Render2DScene::handleEvents(const robot2D::Event& event) {
-    if(event.type == robot2D::Event::Resized) {
-        RB_INFO("New Size = {0} and {1}", event.size.widht, event.size.heigth);
-        m_window.resize({static_cast<int>(event.size.widht),
-                         static_cast<int>(event.size.heigth)});
+    if(event.type() == robot2D::Event::Type::Resized) {
+        RB_INFO("New Size = {0} and {1}", event.get<robot2D::Event::SizeEvent>().width,
+            event.get<robot2D::Event::SizeEvent>().height);
+        m_window.resize({static_cast<int>(event.get<robot2D::Event::SizeEvent>().width),
+                         static_cast<int>(event.get<robot2D::Event::SizeEvent>().height)});
         m_window.setView(robot2D::View(robot2D::FloatRect{0, 0,
-                                                          static_cast<float>(event.size.widht),
-                                                          static_cast<float>(event.size.heigth)
+                                                          static_cast<float>(event.get<robot2D::Event::SizeEvent>().
+                                                          width),
+                                                          static_cast<float>(event.get<robot2D::Event::SizeEvent>().
+                                                          height)
             }));
     }
 
-    if(event.type == robot2D::Event::JoystickConnected) {
-        RB_INFO("Joysick Connected ID = {0}", event.joystick.joytickId);
+    if(event.type() == robot2D::Event::Type::JoystickConnected) {
+        RB_INFO("Joysick Connected ID = {0}", event.get<robot2D::Event::JoystickEvent>().joystickId);
     }
 
-    if(event.type == robot2D::Event::JoystickDisconnected) {
-        RB_INFO("Joysick Disconnected ID = {0}", event.joystick.joytickId);
+    if(event.type() == robot2D::Event::Type::JoystickDisconnected) {
+        RB_INFO("Joysick Disconnected ID = {0}", event.get<robot2D::Event::JoystickEvent>().joystickId);
     }
 
-    if(event.type == robot2D::Event::MousePressed) {
-        robot2D::vec2f mousePoint = {static_cast<float>(event.mouse.x), static_cast<float>(event.mouse.y)};
+    if(event.type() == robot2D::Event::Type::MousePressed) {
+        robot2D::vec2f mousePoint = {static_cast<float>(event.get<robot2D::Event::MouseButtonEvent>().x),
+                                     static_cast<float>(event.get<robot2D::Event::MouseButtonEvent>().y)};
         const auto& q = quads[0];
 
 
@@ -354,7 +358,7 @@ void Render2DScene::handleEvents(const robot2D::Event& event) {
             quads[0].color = robot2D::Color::White;
     }
 
-    if(event.type == robot2D::Event::MouseReleased) {
+    if(event.type() == robot2D::Event::Type::MouseReleased) {
         quads[0].color = robot2D::Color::Cyan;
     }
 
