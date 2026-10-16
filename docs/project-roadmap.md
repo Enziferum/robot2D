@@ -256,3 +256,13 @@ Event на std::variant, typed EventBinder, GLFW FIFO/frame batch, queued ImGui 
 robot2D-imgui и editor мигрированы; ECS и INPUT-01 C# fixed-tick API вне объёма.
 Контракт, несовместимые изменения API, тесты и ручная приёмка — [core-events.md](core-events.md).
 Следующий шаг — обязательный pre-commit, PR в dev и UI-приёмка до merge.
+
+Проверки реализации `588d469`: обязательный pre-commit без обхода — Python 47/47,
+Uncrustify, сборка robot2D/core-tests/editor-test-suite, headless CTest 58/58
+(8 новых event-сценариев), строгий clang-tidy всех 179 единиц собственного кода.
+Отдельно проверены формат и строгий анализ трёх изменённых `.cpp` собственного
+robot2D-imgui; upstream ImGui не менялся. Собраны Sandbox, dormant EditorUIScene
+compatibility target и robot2D-imgui-example. Включение проверки Sandbox потребовало
+убрать дублирующий add_subdirectory и исправить include/синтаксис самого примера.
+UI/graphics-приёмка и Linux CI не объявляются выполненными; C# polling API остаётся
+за INPUT-01. Документация проверена по локальным ссылкам и diff.
