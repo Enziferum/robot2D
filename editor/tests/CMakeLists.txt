@@ -128,3 +128,17 @@ add_dependencies(robot2D-editor-test-suite robot2D-physics-tests)
 foreach(physics_case IN ITEMS geometry walls bullet triggers filters lifecycle callbacks invalid serialization managed)
     rb2d_register_test("editor-physics-${physics_case}" robot2D-physics-tests "${physics_case}" "headless;physics")
 endforeach()
+
+add_executable(robot2D-script-project-tests ScriptProjectTests.cpp)
+target_link_libraries(robot2D-script-project-tests PRIVATE robot2D-editor-objects)
+target_compile_definitions(robot2D-script-project-tests PRIVATE
+    RB2D_TEST_SCRIPT_PYTHON="${Python3_EXECUTABLE}"
+    RB2D_TEST_SCRIPT_GENERATOR="${CMAKE_CURRENT_SOURCE_DIR}/../res/gen/gen_project.py"
+    RB2D_TEST_SCRIPTCORE="${robot2D_ScriptCore_OUTPUT}"
+    RB2D_TEST_SCRIPT_MCS="${MONO_MCS_EXECUTABLE}"
+    RB2D_TEST_SCRIPT_MONO="${MONO_EXECUTABLE}")
+add_dependencies(robot2D-script-project-tests robot2D_ScriptCore)
+add_dependencies(robot2D-editor-test-suite robot2D-script-project-tests)
+foreach(script_case IN ITEMS project errors reload)
+    rb2d_register_test("editor-script-${script_case}" robot2D-script-project-tests "${script_case}" "headless;scripting")
+endforeach()
