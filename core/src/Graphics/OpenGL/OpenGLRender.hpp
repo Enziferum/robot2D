@@ -45,6 +45,7 @@ namespace robot2D {
             ~OpenGLRender();
 
             void setup() override;
+            void setSize(const vec2u& size) override;
             void createLayer() override;
             unsigned int getLayerCount() const override;
 
@@ -77,6 +78,7 @@ namespace robot2D {
             virtual void flushRender(unsigned int layerID) const override;
 
             IntRect getViewport(const View& view) override;
+            IntRect getViewport(const View& view) const;
 
             void applyCurrentView(unsigned int layerID);
 
@@ -89,6 +91,9 @@ namespace robot2D {
         private:
             mutable std::vector<RenderLayer> m_renderLayers;
             View m_default;
+            mutable std::array<int, 4> m_drawViewport {};
+            mutable vec2u m_surfaceSize;
+            std::array<int, 4> m_virtualViewport {};
             mutable RenderStats m_stats {};
             RenderApi m_renderApi;
             RenderDimensionType m_dimensionType;

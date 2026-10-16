@@ -28,6 +28,7 @@ namespace robot2D {
             RenderBuffer m_renderBuffer;
             ShaderHandler m_quadShader;
             robot2D::View m_view;
+            bool m_customProjection = false;
 
             std::vector<VertexArrayCache> m_vertexArrayCache;
         };
