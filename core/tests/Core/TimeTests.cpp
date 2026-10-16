@@ -3,6 +3,8 @@
 
 #include <cmath>
 #include <limits>
+#include <type_traits>
+#include <utility>
 
 TEST(Time, DefaultIsZeroInAllUnits) {
     const robot2D::Time value;
@@ -55,4 +57,39 @@ TEST(Time, ExtremeConversionsRemainFiniteAndKeepSign) {
     EXPECT_GT(maximum.asSeconds(), 0.F);
     EXPECT_LT(minimum.asMilliSeconds(), 0.F);
     EXPECT_GT(maximum.asMilliSeconds(), 0.F);
+}
+
+namespace {
+    constexpr robot2D::Time zero;
+    constexpr robot2D::Time fraction(1250000);
+    static_assert(zero.asMicroSeconds() == 0 && zero.asSeconds() == 0.F);
+    static_assert(fraction.asMicroSeconds() == 1250000);
+    static_assert(fraction.asSeconds() == 1.25F && fraction.asMilliSeconds() == 1250.F);
+    static_assert(robot2D::Time(-1250000).asSeconds() == -1.25F);
+    static_assert(robot2D::Time(16008000000LL).asSeconds() == 16008.F);
+    static_assert(robot2D::Time(134219000LL).asMilliSeconds() == 134219.F);
+    static_assert(robot2D::Time(std::numeric_limits<std::int64_t>::min()).asMicroSeconds() ==
+        std::numeric_limits<std::int64_t>::min());
+    static_assert(robot2D::Time(std::numeric_limits<std::int64_t>::max()).asMicroSeconds() ==
+        std::numeric_limits<std::int64_t>::max());
+
+    constexpr robot2D::Time copyAndMoveTime() {
+        robot2D::Time source(-1250000);
+        robot2D::Time copied(source);
+        robot2D::Time moved(std::move(copied));
+        robot2D::Time result;
+        result = source;
+        result = std::move(moved);
+        return result;
+    }
+
+    static_assert(copyAndMoveTime().asMicroSeconds() == -1250000);
+    static_assert(std::is_nothrow_constructible_v<robot2D::Time, std::int64_t>);
+    static_assert(std::is_nothrow_default_constructible_v<robot2D::Time>);
+    static_assert(std::is_nothrow_copy_constructible_v<robot2D::Time>);
+    static_assert(std::is_nothrow_copy_assignable_v<robot2D::Time>);
+    static_assert(std::is_nothrow_move_constructible_v<robot2D::Time>);
+    static_assert(std::is_nothrow_move_assignable_v<robot2D::Time>);
+    static_assert(noexcept(fraction.asMicroSeconds()) && noexcept(fraction.asMilliSeconds()) &&
+        noexcept(fraction.asSeconds()));
 }

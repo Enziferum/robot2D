@@ -308,3 +308,29 @@ Uncrustify 0.83.0, сборка robot2D/core-tests/editor-test-suite, CTest 119/
 файлов. Ручная UI/graphics-приёмка этого шага не запускалась. Commit/PR и статус
 нового Linux/Windows CI фиксируются в Issue #110; локальный Windows не заменяет CI.
 Следующий шаг — только обсуждение деталей Vector2/Vector3, без начала реализации.
+
+## CORE-01: constexpr Time и совместимый шаг Vector, 2026-10-16
+
+Пользователь поручил constexpr/noexcept Time со static_assert, Clock оставить
+без изменений. После отдельного обсуждения явно согласован совместимый шаг
+Vector2/Vector3: const conversions, недостающий constexpr, обоснованный noexcept,
+static_assert/runtime tests; тип float dot/cross и смысл <, > сохранены.
+
+Time стал header-only, Time.cpp удалён из CMake. Vector использует noexcept для
+арифметических T/U, а copy/move следует scalar traits; пользовательские scalar
+могут передавать исключения вместо terminate. Существующие потребители — Core
+Graphics/Window, Engine и Editor (viewport/camera/Guizmo2D/animation/UI). Их исходники,
+Clock, ECS, Snapshot и CancellationToken не меняются. Пересборка нужна.
+Контракты/ограничения — core-api.md и Doxygen. Проверки/публикация — после завершения
+в Issue #110. Window/Desktop требует нового отдельного обсуждения до старта.
+
+Итог дополнения constexpr/Vector: C++17 static_assert скомпилированы, выбранные
+Time/Vector runtime tests 23/23, HTML с Time/Vector2/Vector3 сгенерирован.
+Полный обязательный hook пройден без обхода: Python 42/42, Uncrustify 0.83.0,
+сборка robot2D/core-tests/editor-test-suite, CTest 128/128 (106 Core +22 editor
+headless) без пропусков, строгий clang-tidy 187 собственных файлов.
+Первый clang-tidy выявил повторное использование source после move в тесте
+исключений; тест разделён на независимые экземпляры, повторный полный hook прошёл.
+Clock/его тесты не изменены. Ручная UI/graphics-проверка не запускалась.
+Публикация и новый Linux/Windows CI фиксируются в Issue #110/PR #112.
+Далее до начала Window/Desktop — отдельное обсуждение деталей с пользователем.
