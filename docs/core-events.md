@@ -134,3 +134,24 @@ UI/graphics-приёмка остаётся перед merge; результат
 Там отдельно перечислены существующие возможности и будущие API. Сначала
 завершаем CORE-02; этот документ не добавляет в Event PR реализацию scheduler,
 OnFixedUpdate, Pause/Resume или fixed-tick InputState.
+
+
+### CORE-02: результат пользовательской приёмки и startup cancellation — 2026-10-16
+
+Пользователь сообщил: остальные проверки работают, но после выбора проекта в
+инспекторе видна малая область GUI слева снизу, затем приложение падает при
+переходе в редактор. Журнал этого запуска содержит layout_restored=false;
+robot2D.ini без сохранённых ImGui секций. Восстановление старого layout не
+подтверждается, resize-приёмка пока остаётся открытой.
+
+Стек GDB в тестовом worktree воспроизвёл SIGSEGV:
+Scene::handleEventsRuntime ← Editor::cancelInput ← Application::handleEventFrame.
+EditorLogic пересылал синтетический LostFocus в ещё отсутствующую m_activeScene
+во время async-load. Добавлена проверка наличия сцены на границе forwarding;
+headless editor-event-capture проверяет отмену/Release без активной сцены в
+Edit/Load/LoadFailed. Повторная интерактивная проверка перехода и resize нужна
+после пересборки; весь ручной сценарий не объявляется пройденным.
+
+CI документационного HEAD cb36f2a: Linux успешен; Windows не дошёл до сборки из-за
+Chocolatey HTTP 504 при скачивании Mono. Повторена только упавшая job. Сбой
+инфраструктуры не считается результатом проверки Event-кода.
