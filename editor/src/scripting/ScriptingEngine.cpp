@@ -301,6 +301,7 @@ namespace editor {
         }
         const auto corePath = s_Data -> m_coreAssemblyFilepath;
         s_Data -> m_entityClasses.clear();
+        s_Data -> m_entityClassesNames.clear();
         s_Data -> m_entityClass.reset();
         s_Data -> m_entityScriptFields.clear();
         if(s_Data -> m_appDomain) {
@@ -308,8 +309,11 @@ namespace editor {
             mono_domain_unload(s_Data -> m_appDomain);
             s_Data -> m_appDomain = nullptr;
         }
+        s_Data -> m_coreAssebly = nullptr;
+        s_Data -> m_coreAssemblyImage = nullptr;
         s_Data -> m_appAssebly = nullptr;
         s_Data -> m_appAssemblyImage = nullptr;
+        s_Data -> m_appAssemblyFilepath.clear();
         if(!loadCoreAssembly(corePath) || filePath.empty()) return false;
         bool status = loadAppAssembly(filePath);
         if(!status) {
