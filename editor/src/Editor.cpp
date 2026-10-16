@@ -1,22 +1,22 @@
 /*********************************************************************
-(c) Alex Raag 2026
-https://github.com/Enziferum
-robot2D - Zlib license.
-This software is provided 'as-is', without any express or
-implied warranty. In no event will the authors be held
-liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute
-it freely, subject to the following restrictions:
-1. The origin of this software must not be misrepresented;
-you must not claim that you wrote the original software.
-If you use this software in a product, an acknowledgment
-in the product documentation would be appreciated but
-is not required.
-2. Altered source versions must be plainly marked as such,
-and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any
-source distribution.
+   (c) Alex Raag 2026
+   https://github.com/Enziferum
+   robot2D - Zlib license.
+   This software is provided 'as-is', without any express or
+   implied warranty. In no event will the authors be held
+   liable for any damages arising from the use of this software.
+   Permission is granted to anyone to use this software for any purpose,
+   including commercial applications, and to alter it and redistribute
+   it freely, subject to the following restrictions:
+   1. The origin of this software must not be misrepresented;
+   you must not claim that you wrote the original software.
+   If you use this software in a product, an acknowledgment
+   in the product documentation would be appreciated but
+   is not required.
+   2. Altered source versions must be plainly marked as such,
+   and must not be misrepresented as being the original software.
+   3. This notice may not be removed or altered from any
+   source distribution.
 *********************************************************************/
 
 #include <stdexcept>
@@ -58,14 +58,14 @@ namespace editor {
 
     IEditor::~IEditor() = default;
 
-    Editor::Editor(robot2D::MessageBus& messageBus, robot2D::Gui& gui):
-    m_window{nullptr},
-    m_messageBus{messageBus},
-    m_panelManager{gui},
-    m_configuration{},
-    m_frameBuffer{nullptr},
-    m_cameraManipulator{messageBus}
-    {}
+    Editor::Editor(robot2D::MessageBus& messageBus, robot2D::Gui& gui) :
+        m_window{nullptr},
+        m_messageBus{messageBus},
+        m_panelManager{gui},
+        m_configuration{},
+        m_frameBuffer{nullptr},
+        m_cameraManipulator{messageBus} {
+    }
 
     void Editor::setupBindings() {
         auto dropCallback = [this](std::vector<std::string>&& paths) {
@@ -78,17 +78,17 @@ namespace editor {
         m_eventBinder.bindEvent(robot2D::Event::KeyPressed, BIND_CLASS_FN(onKeyPressed));
         m_eventBinder.bindEvent(robot2D::Event::KeyReleased, BIND_CLASS_FN(onKeyReleased));
         m_eventBinder.bindEvent(robot2D::Event::Resized, [this](const robot2D::Event& evt) {
-            m_frameBuffer -> Resize({evt.size.widht,evt.size.heigth});
+            m_frameBuffer -> Resize({evt.size.widht, evt.size.heigth});
         });
         m_eventBinder.bindEvent(robot2D::Event::MousePressed, BIND_CLASS_FN(onMousePressed));
         m_eventBinder.bindEvent(robot2D::Event::MouseReleased, BIND_CLASS_FN(onMouseReleased));
         m_eventBinder.bindEvent(robot2D::Event::MouseMoved, BIND_CLASS_FN(onMouseMoved));
 
-  /*      m_cameraManipulator.setButtonCallback([this](SceneEntity entity) {
-            m_interactor -> setMainCamera(entity);
-            auto* msg = m_messageBus.postMessage<PanelEntitySelectedMessage>(MessageID::PanelEntitySelected);
-            msg -> entity = entity;
-        });*/
+        /*      m_cameraManipulator.setButtonCallback([this](SceneEntity entity) {
+                  m_interactor -> setMainCamera(entity);
+                  auto* msg = m_messageBus.postMessage<PanelEntitySelectedMessage>(MessageID::PanelEntitySelected);
+                  msg -> entity = entity;
+              });*/
     }
 
     void Editor::setupShortCuts() {
@@ -113,7 +113,7 @@ namespace editor {
         ShortCut saveScene{robot2D::Key::LEFT_CONTROL, robot2D::Key::S};
         saveScene.setCallback([this]() {
             if(robot2D::Window::isKeyboardPressed(robot2D::Key::LEFT_SHIFT) ||
-               robot2D::Window::isKeyboardPressed(robot2D::Key::RIGHT_SHIFT))
+            robot2D::Window::isKeyboardPressed(robot2D::Key::RIGHT_SHIFT))
                 m_interactor -> saveAll();
             else
                 m_interactor -> saveScene();
@@ -194,12 +194,12 @@ namespace editor {
         m_panelManager.addPanel<UtilPanel>(m_editorCamera);
         m_panelManager.addPanel<MenuPanel>(m_messageBus, m_interactor, &m_panelManager);
         m_panelManager.addPanel<ViewportPanel>(m_interactor,
-                                               m_editorCamera,
-                                               m_messageBus,
-                                               m_messageDispather,
-                                               m_guizmo2D,
-                                               m_cameraManipulator,
-                                               m_selectionCollider);
+            m_editorCamera,
+            m_messageBus,
+            m_messageDispather,
+            m_guizmo2D,
+            m_cameraManipulator,
+            m_selectionCollider);
 
         m_panelManager.addPanel<GameViewport>(m_messageBus);
         m_panelManager.addPanel<AnimationPanel>(m_messageBus, m_messageDispather, m_interactor);
@@ -208,11 +208,13 @@ namespace editor {
         m_panelManager.registerPanel(m_panelManager.getPanel<ViewportPanel>(), "ViewportPanel", "Viewport");
         m_panelManager.registerPanel(m_panelManager.getPanel<GameViewport>(), "GamePanel", "Game");
         m_panelManager.registerPanel(m_panelManager.getPanel<InspectorPanel>(), "InspectorPanel", "Inspector");
-        m_panelManager.registerPanel(m_panelManager.getPanel<SceneSettingsPanel>(), "SceneSettingsPanel", "Scene Settings");
+        m_panelManager.registerPanel(m_panelManager.getPanel<SceneSettingsPanel>(), "SceneSettingsPanel",
+            "Scene Settings");
         m_panelManager.registerPanel(m_panelManager.getPanel<AssetsPanel>(), "AssetsPanel", "Assets");
         m_panelManager.registerPanel(m_panelManager.getPanel<ConsolePanel>(), "ConsolePanel", "Console");
         m_panelManager.registerPanel(m_panelManager.getPanel<AnimationPanel>(), "AnimationPanel", "Animation");
-        m_panelManager.registerPanel(m_panelManager.getPanel<UtilPanel>(), "StatusBar", "Status bar", "##EditorStatusBar");
+        m_panelManager.registerPanel(m_panelManager.getPanel<UtilPanel>(), "StatusBar", "Status bar",
+            "##EditorStatusBar");
 
         setupBindings();
         setupShortCuts();
@@ -239,7 +241,7 @@ namespace editor {
             m_shortcutManager.handleEvents(event);
             auto& viewport = m_panelManager.getPanel<ViewportPanel>();
             if(event.type != robot2D::Event::MousePressed
-                    || viewport.containsMouse({static_cast<float>(event.mouse.x), static_cast<float>(event.mouse.y)}))
+                || viewport.containsMouse({static_cast<float>(event.mouse.x), static_cast<float>(event.mouse.y)}))
                 m_guizmo2D.handleEvents(event);
             m_cameraManipulator.handleEvents(event);
             m_panelManager.getPanel<ViewportPanel>().handleEvents(event);
@@ -262,21 +264,21 @@ namespace editor {
             return;
 
         switch(m_interactor -> getState()) {
-            default:
-                break;
-            case EditorState::Load:
-                break;
-            case EditorState::Edit: {
-                m_interactor -> update(dt);
-                m_panelManager.getPanel<ViewportPanel>().update(dt);
-                m_cameraManipulator.update(m_window -> getMousePos(), dt);
-                m_shortcutManager.update();
-                break;
-            }
-            case EditorState::Run: {
-                m_interactor -> update(dt);
-                break;
-            }
+        default:
+            break;
+        case EditorState::Load:
+            break;
+        case EditorState::Edit: {
+            m_interactor -> update(dt);
+            m_panelManager.getPanel<ViewportPanel>().update(dt);
+            m_cameraManipulator.update(m_window -> getMousePos(), dt);
+            m_shortcutManager.update();
+            break;
+        }
+        case EditorState::Run: {
+            m_interactor -> update(dt);
+            break;
+        }
         }
         m_panelManager.update(dt);
     }
@@ -290,11 +292,13 @@ namespace editor {
             m_window -> clear(clearColor);
         }
 
-        m_sceneGrid.render(m_frameBuffer -> getSpecification().size);
+        if(m_panelManager.getPanel<ViewportPanel>().isGridVisible()
+            && m_editorCamera -> getType() == EditorCameraType::Orthographic)
+            m_sceneGrid.render(m_frameBuffer -> getSpecification().size);
         m_window -> beforeRender();
-        if (m_editorCamera -> getType() == EditorCameraType::Orthographic)
+        if(m_editorCamera -> getType() == EditorCameraType::Orthographic)
             m_window -> setView(m_editorCamera -> getView());
-        else if (m_editorCamera -> getType() == EditorCameraType::Perspective)
+        else if(m_editorCamera -> getType() == EditorCameraType::Perspective)
             m_window -> setView3D(m_editorCamera -> getProjectionMatrix(), m_editorCamera -> getViewMatrix());
 
         if(m_activeScene) {
@@ -357,8 +361,7 @@ namespace editor {
             size *= 2.f;
             ImGui::SetNextWindowSize(size, ImGuiCond_Appearing);
 
-            if (ImGui::BeginPopupModal("LoadingProject", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-            {
+            if(ImGui::BeginPopupModal("LoadingProject", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
                 auto contentSize = ImGui::GetContentRegionAvail();
                 g_spinner.setPosition({ (contentSize.x) / 2.f, (contentSize.y) / 2.f});
                 g_spinner.setAngle(270.f / 360.f * 2 * IM_PI);
@@ -374,9 +377,9 @@ namespace editor {
 
         robot2D::FrameBufferSpecification frameBufferSpecification;
         frameBufferSpecification.attachments = {
-                robot2D::FrameBufferTextureFormat::RGBA8,
-                robot2D::FrameBufferTextureFormat::RED_INTEGER,
-                robot2D::FrameBufferTextureFormat::Depth
+            robot2D::FrameBufferTextureFormat::RGBA8,
+            robot2D::FrameBufferTextureFormat::RED_INTEGER,
+            robot2D::FrameBufferTextureFormat::Depth
         };
         frameBufferSpecification.size = windowSize.as<int>();
 
@@ -389,7 +392,7 @@ namespace editor {
         m_cameraManipulator.setCamera(m_editorCamera);
         m_editorCamera -> setViewportSize(windowSize.as<float>());
 
-        applyStyle(EditorStyle::SlateBlue);
+        applyStyle(EditorStyle::SlateTeal);
 
 #ifdef ROBOT2D_LINUX
         m_window -> setResizable(true);
@@ -438,7 +441,7 @@ namespace editor {
     void Editor::onKeyReleased(const robot2D::Event& event) {
         if(event.key.code == robot2D::Key::LEFT_CONTROL)
             m_configuration.m_leftCtrlPressed = false;
-        
+
     }
 
 
@@ -456,11 +459,11 @@ namespace editor {
     void Editor::onMousePressed(const robot2D::Event& event) {
         auto& viewportPanel = m_panelManager.getPanel<ViewportPanel>();
         if(event.mouse.btn == robot2D::mouse2int(robot2D::Mouse::MouseLeft)
-                        && !m_interactor -> hasSelectedEntities() && !m_guizmo2D.isActive() && viewportPanel.isActive()) {
+            && !m_interactor -> hasSelectedEntities() && !m_guizmo2D.isActive() && viewportPanel.isActive()) {
             m_leftMousePressed = true;
             auto mousePos = m_editorCamera -> convertPixelToCoords(
                 {static_cast<float>(event.mouse.x), static_cast<float>(event.mouse.y)
-            });
+                });
             m_selectionCollider.setPosition(mousePos);
             m_selectionCollider.setIsShown(true);
         }
@@ -470,7 +473,7 @@ namespace editor {
         auto& viewportPanel = m_panelManager.getPanel<ViewportPanel>();
         if(m_leftMousePressed &&
             event.mouse.btn == robot2D::mouse2int(robot2D::Mouse::MouseLeft) && viewportPanel.isActive()
-                                                                                && !m_guizmo2D.isActive()) {
+            && !m_guizmo2D.isActive()) {
             m_leftMousePressed = false;
             m_selectionCollider.setIsShown(false);
             m_interactor -> findSelectEntities(m_selectionCollider.getRect());
@@ -525,22 +528,21 @@ namespace editor {
         ImGui::OpenPopup(m_popupConfiguration -> title.c_str());
         auto* manager = PopupManager::getManager();
 
-        if (ImGui::BeginPopupModal(m_popupConfiguration -> title.c_str(), nullptr,
-                                   ImGuiWindowFlags_AlwaysAutoResize))
-        {
+        if(ImGui::BeginPopupModal(m_popupConfiguration -> title.c_str(), nullptr,
+            ImGuiWindowFlags_AlwaysAutoResize)) {
             ImGui::TextUnformatted("Scene or prefab assets have unsaved changes.");
             if(!m_popupConfiguration -> error.empty())
                 ImGui::TextWrapped("%s", m_popupConfiguration -> error.c_str());
             ImGui::Separator();
 
             bool close = false;
-            if (ImGui::Button("Save", ImVec2(120, 0))) {
+            if(ImGui::Button("Save", ImVec2(120, 0))) {
                 close = m_popupConfiguration -> onYes();
             }
 
             ImGui::SetItemDefaultFocus();
             ImGui::SameLine();
-            if (ImGui::Button("Discard", ImVec2(120, 0))) {
+            if(ImGui::Button("Discard", ImVec2(120, 0))) {
                 m_popupConfiguration -> onNo();
                 close = true;
             }

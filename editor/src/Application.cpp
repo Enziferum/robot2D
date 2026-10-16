@@ -172,7 +172,7 @@ namespace editor {
             m_window -> setResizable(false);
             m_window -> setSize(m_appConfiguration.inspectorSize);
 
-            applyStyle(EditorStyle::SlateBlue);
+            applyStyle(EditorStyle::SlateTeal);
             const auto& cache = m_logic.getCache();
             m_projectInspector.setup(cache.getProjects(), cache.showInspectorOnStartup());
         }
