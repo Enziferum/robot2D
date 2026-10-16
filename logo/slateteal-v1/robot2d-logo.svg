@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 490 128" role="img" aria-label="robot2D"><title>robot2D SlateTeal</title><g fill="#59b8be">
+  <rect x="59" y="24" width="10" height="21" rx="3"/>
+  <circle cx="64" cy="17" r="10"/>
+  <rect x="7" y="60" width="25" height="37" rx="7"/>
+  <rect x="96" y="60" width="25" height="37" rx="7"/>
+  <path d="M32 40H96L110 54V100L96 114H67L61 119H47V114H32L18 100V54Z"/>
+</g>
+<g fill="#7cdbd8"><circle cx="64" cy="17" r="6"/><rect x="11" y="66" width="9" height="24" rx="3"/><rect x="108" y="66" width="9" height="24" rx="3"/></g>
+<path d="M37 55H91L101 65V90L87 104H76V99H37L27 89V65Z" fill="#171e25"/>
+<g fill="#dee6ec"><rect x="42" y="69" width="14" height="23" rx="3"/><rect x="74" y="69" width="14" height="23" rx="3"/></g><text x="145" y="94" font-family="Segoe UI,Arial,sans-serif" font-size="84" font-weight="600" letter-spacing="-3" fill="#dee6ec">robot<tspan fill="#7cdbd8">2D</tspan></text></svg>

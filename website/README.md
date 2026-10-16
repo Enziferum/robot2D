@@ -53,7 +53,7 @@ Website navigation and media URLs use `src/lib/site.ts`; Starlight handles its o
 
 The image shows ASSET-01 development UI, including SlateTeal, toolbar and AssetsPanel work, not the historical v0.7 release. It contains generated game artwork inside a real running editor. No generated UI mockups are presented as product screenshots.
 
-Shared palette tokens are in `src/styles/tokens.css`, with separate marketing and Starlight styles. Widget SlateTeal colours come from ASSET-01 EditorStyles.cpp; website copy uses brighter accent and muted colours for contrast. The simple outline favicon and wordmark are provisional, not an approved replacement logo. The first version uses a fixed dark theme and system fonts; there are no external font services.
+Shared palette tokens are in `src/styles/tokens.css`, with separate marketing and Starlight styles. Widget SlateTeal colours come from ASSET-01 EditorStyles.cpp; website copy uses brighter accent and muted colours for contrast. The SlateTeal robot mark is in `../logo/slateteal-v1/`, with editable SVG, PNG and Windows ICO exports. Its generated concept and prompt are preserved alongside the clean geometric reconstruction. The site uses the SVG mark and live text; see that directory for editor integration boundaries. The first version uses a fixed dark theme and system fonts; there are no external font services.
 
 ## Checks and remaining acceptance
 
@@ -61,4 +61,8 @@ Shared palette tokens are in `src/styles/tokens.css`, with separate marketing an
 
 The layout includes responsive breakpoints, a skip link, visible keyboard focus, image alternatives and reduced-motion support. Visual, keyboard and search interaction acceptance is manual: inspect the home and docs pages at desktop and narrow mobile widths, follow main navigation, open the original screenshot, use docs search, and verify the 404 page. No computer-use is permitted for this project; user acceptance remains necessary.
 
-Next: user review of the visual layout; packaged demo and a short real gameplay recording; approved logo; hosting choice and a deployment workflow. Donations are omitted until a real destination is agreed.
+Next: user review of the visual layout and first SlateTeal logo; packaged demo and a short real gameplay recording; editor icon integration; hosting choice and a deployment workflow. Donations are omitted until a real destination is agreed.
+
+## Screenshot proportions
+
+`EditorShot` keeps the source image dimensions for layout but uses CSS `width: 100%; height: auto` so the rendered image retains its aspect ratio. Showcase has a wider image container (up to 1600 px). Manual acceptance: check the editor screenshot at desktop and mobile widths; square controls and the robot should retain their proportions, with no cropping or horizontal overflow.
