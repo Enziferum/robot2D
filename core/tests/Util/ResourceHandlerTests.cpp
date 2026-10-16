@@ -132,3 +132,21 @@ TEST(ResourceHandler, DestructionReleasesOwnedResources) {
     }
     EXPECT_EQ(Resource::alive, alive);
 }
+
+
+TEST(ResourceHandler, ClearReleasesResourcesAndAllowsIdReuse) {
+    const auto alive = Resource::alive;
+    robot2D::ResourceHandler<Resource> resources;
+    ASSERT_TRUE(resources.loadFromFile("first", "before"));
+    ASSERT_NE(resources.add("second"), nullptr);
+    ASSERT_EQ(Resource::alive, alive + 2);
+    resources.clear();
+    EXPECT_TRUE(resources.empty());
+    EXPECT_EQ(Resource::alive, alive);
+    EXPECT_EQ(resources.find("first"), nullptr);
+    EXPECT_THROW(resources.get("first"), std::out_of_range);
+    resources.clear();
+    EXPECT_EQ(Resource::alive, alive);
+    ASSERT_TRUE(resources.loadFromFile("first", "after"));
+    EXPECT_EQ(resources.get("first").value, "after");
+}

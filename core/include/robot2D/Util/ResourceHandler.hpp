@@ -34,7 +34,7 @@ namespace robot2D {
     /**
      * @brief Owns resources indexed by unique identifiers.
      * @details Loading is synchronous. Duplicate IDs never replace resources.
-     * Insertion preserves pointers and references until this handler is destroyed.
+     * Insertion preserves pointers and references; clear() or destruction invalidates them.
      * Concurrent access involving a mutation requires external synchronization.
      * Resource operations may impose additional requirements, such as a current GL context.
      * @tparam T Owned resource type.
