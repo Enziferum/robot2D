@@ -574,6 +574,16 @@ namespace editor {
 
         if(ImGui::BeginPopupModal(m_popupConfiguration -> title.c_str(), nullptr,
             ImGuiWindowFlags_AlwaysAutoResize)) {
+            if(!m_popupConfiguration -> onYes && !m_popupConfiguration -> onNo) {
+                ImGui::TextWrapped("%s", m_popupConfiguration -> error.c_str());
+                if(ImGui::Button("Close") || ImGui::IsKeyPressed(ImGuiKey_Escape)) {
+                    m_popupConfiguration = nullptr;
+                    manager -> endPopup();
+                    ImGui::CloseCurrentPopup();
+                }
+                ImGui::EndPopup();
+                return;
+            }
             ImGui::TextUnformatted("Scene or prefab assets have unsaved changes.");
             if(!m_popupConfiguration -> error.empty())
                 ImGui::TextWrapped("%s", m_popupConfiguration -> error.c_str());

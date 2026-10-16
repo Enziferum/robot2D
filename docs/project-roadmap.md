@@ -74,6 +74,16 @@ PR #43 (e54408f); новые задачи идут от актуального d
 отдельными согласованными совместимыми шагами. Правила —
 [project-workflow.md](project-workflow.md), версия — [versioning.md](versioning.md).
 
+## HUD-01: C# текст и порядок надписей — 2026-10-16
+
+Ведущий — ассистент по поручению пользователя. Ветка HUD-01 в отдельном worktree
+от dev df823bb. Добавлен TextComponent.Text/TrySetText; отдельные GPU batches
+для надписей, безопасные отсутствующие шрифты и владение текстурой при копии.
+Пример Health/Wave/Game Over/reset компилируется и проверяется через Mono.
+Редактор и suite собраны; полный CTest 105/105 (42 graphics). Контракт и ручная
+приёмка — [hud.md](hud.md). Следующий шаг — CI/review и приёмка Inspector/Play;
+полный restart мира остаётся RUNTIME-01, standalone — PLAYER-01/BUILD-01.
+
 ## PHYS-01: физика и C# события, 2026-10-16
 
 После merge PR #118 создан отдельный worktree `phys-01`, ветка `PHYS-01`
@@ -93,6 +103,18 @@ PR #120 остаётся отдельным шагом исправлений. �
 контакты после каждого Step, регрессии 0/N ticks, паузы и безопасных переходов.
 План и checklist зафиксированы в Issue #78; scheduler в PR #120 не добавляется.
 Полное C# Instantiate/Destroy этим шагом не реализовано; #78 остаётся открытой.
+
+## BUILD-01: подготовка конвейера — 2026-10-16
+
+Поручено ассистенту после SCRIPT-01/HUD-01. Отдельный worktree build-01, ветка
+BUILD-01 от dev df823bb. Заглушка ExportTask больше не завершает пустой экспорт
+успехом; владеет копией ExportOptions, возвращает ошибку с диагностикой в Console.
+Постоянная регрессия очереди проверяет причины и сохранение output.
+Редактор и suite собраны, полный CTest 103/103 (41 graphics).
+[build-pipeline.md](build-pipeline.md) фиксирует текущие границы, предлагаемые
+staging/layout/manifest, стыки со SCRIPT-01 PR #125 и PLAYER-01 и матрицу приёмки.
+Следующий шаг — интеграция общего C# сборщика после merge и consumer-контракт player.
+Game.exe, переносимый Mono bundle и готовая поставка этим шагом не реализованы.
 
 ## Направления проекта
 
@@ -638,3 +660,30 @@ clang-tidy 186 единиц. Отдельный строгий анализ пя
 Следующий шаг: проверить CI PR #130 и пройти ручную приёмку; перед merge
 интегрировать зависимость PR #122. GraphicsCommands, upstream, multi-viewports
 и тайминг не начаты.
+
+## SCRIPT-01: пользовательские сборки — 2026-10-16
+
+Пользователь поручил ассистенту SCRIPT-01 → HUD-01 → подготовку BUILD-01 параллельно
+с собственной работой над ECS. SCRIPT-01: отдельный worktree script-01, ветка
+SCRIPT-01 от актуального dev df823bb. Введены общий shell-free генератор/сборщик,
+фоновый Build Scripts и gate Play на актуальную DLL/классы; Mono reload только в Edit.
+Контракт, ограничения и ручная приёмка — [csharp-build.md](csharp-build.md).
+Полный CTest 106/106, в том числе 3 новых native script-сценария и 41 graphics;
+6 новых Python регрессий генератора прошли. Следующий шаг — CI/review, ручная
+приёмка и использование сервиса в BUILD-01; standalone остаётся PLAYER-01.
+ECS, Snapshot/CancellationToken и согласованный scheduler не изменяются.
+
+### IMGUI-02: синхронизация с новым dev
+
+CI исходного head 02f2ad0: Windows/Ubuntu Release и оба Tests check SUCCESS,
+run 38957772053. Во время CI в dev слиты SCRIPT-01 #125, HUD-01 #128 и BUILD-01 #129.
+Для устранения конфликтов объединён dev ab0f3a5. Сохранены оба набора roadmap/tests,
+типизированные события и router CORE-02, а также новый error-only popup SCRIPT-01.
+Прежний union доступ не возвращался; guard на Press уже обеспечивает InputRouter,
+Release сохраняет доставку владельцу за пределами viewport.
+Проверки объединённого результата записываются отдельно; прежний CI не считается
+проверкой нового merge. Timing и multi-viewports не затронуты.
+
+После разрешения конфликтов: editor/core-tests/suite/example собраны, CTest 215/215
+без пропусков (48 graphics), повторный startup/shutdown smoke editor — exit 0.
+Обязательный hook merge-коммита выполняется; новый CI потребуется после публикации.
