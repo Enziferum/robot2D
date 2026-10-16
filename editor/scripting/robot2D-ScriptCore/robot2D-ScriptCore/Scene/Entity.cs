@@ -7,7 +7,8 @@ namespace robot2D
 
     public enum PhysicsEventType : byte
     {
-        Enter=0, Stay=1, Exit=2, EnterTrigger=3, StayTrigger=4, ExitTrigger=5
+        // Shared with native PhysicsEventType; values are part of the interop ABI.
+        Enter=0, Stay=1, Exit=2, EnterTrigger=3, ExitTrigger=4, StayTrigger=5
     }
 
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
