@@ -1,22 +1,22 @@
 /*********************************************************************
-(c) Alex Raag 2024
-https://github.com/Enziferum
-robot2D - Zlib license.
-This software is provided 'as-is', without any express or
-implied warranty. In no event will the authors be held
-liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute
-it freely, subject to the following restrictions:
-1. The origin of this software must not be misrepresented;
-you must not claim that you wrote the original software.
-If you use this software in a product, an acknowledgment
-in the product documentation would be appreciated but
-is not required.
-2. Altered source versions must be plainly marked as such,
-and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any
-source distribution.
+   (c) Alex Raag 2024
+   https://github.com/Enziferum
+   robot2D - Zlib license.
+   This software is provided 'as-is', without any express or
+   implied warranty. In no event will the authors be held
+   liable for any damages arising from the use of this software.
+   Permission is granted to anyone to use this software for any purpose,
+   including commercial applications, and to alter it and redistribute
+   it freely, subject to the following restrictions:
+   1. The origin of this software must not be misrepresented;
+   you must not claim that you wrote the original software.
+   If you use this software in a product, an acknowledgment
+   in the product documentation would be appreciated but
+   is not required.
+   2. Altered source versions must be plainly marked as such,
+   and must not be misrepresented as being the original software.
+   3. This notice may not be removed or altered from any
+   source distribution.
 *********************************************************************/
 
 #pragma once
@@ -25,6 +25,7 @@ source distribution.
 #include <unordered_map>
 
 #include <robot2D/Core/Keyboard.hpp>
+#include <robot2D/Core/Window.hpp>
 
 namespace editor {
 
@@ -53,17 +54,19 @@ namespace editor {
         }
 
         void handleEvents(const robot2D::Event& event) {
-            switch(event.type) {
-                default:
-                    break;
-                case robot2D::Event::KeyPressed:
-                case robot2D::Event::KeyReleased:
-                    if(m_keys.find(event.key.code) != m_keys.end())
-                        m_keys[event.key.code] = (event.type == robot2D::Event::KeyPressed);
-                    if(event.type == robot2D::Event::KeyReleased)
-                        m_wasExec = false;
-                    break;
+            if(event.getIf<robot2D::Event::LostFocus>()) {
+                for(auto& entry : m_keys) entry.second = false;
+                m_wasExec = false;
+                return;
             }
+            const auto* key = event.getIf<robot2D::Event::KeyboardEvent>();
+            if(!key) return;
+            auto found = m_keys.find(key -> code);
+            if(found == m_keys.end()) return;
+            const auto* pressed = event.getIf<robot2D::Event::KeyPressed>();
+            found -> second = pressed != nullptr;
+            if(!pressed) m_wasExec = false;
+            else if(!pressed -> repeat && isDown()) (*this)();
         }
 
         bool isDown() const {

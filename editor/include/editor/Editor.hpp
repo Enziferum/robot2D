@@ -1,22 +1,22 @@
 /*********************************************************************
-(c) Alex Raag 2023
-https://github.com/Enziferum
-robot2D - Zlib license.
-This software is provided 'as-is', without any express or
-implied warranty. In no event will the authors be held
-liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute
-it freely, subject to the following restrictions:
-1. The origin of this software must not be misrepresented;
-you must not claim that you wrote the original software.
-If you use this software in a product, an acknowledgment
-in the product documentation would be appreciated but
-is not required.
-2. Altered source versions must be plainly marked as such,
-and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any
-source distribution.
+   (c) Alex Raag 2023
+   https://github.com/Enziferum
+   robot2D - Zlib license.
+   This software is provided 'as-is', without any express or
+   implied warranty. In no event will the authors be held
+   liable for any damages arising from the use of this software.
+   Permission is granted to anyone to use this software for any purpose,
+   including commercial applications, and to alter it and redistribute
+   it freely, subject to the following restrictions:
+   1. The origin of this software must not be misrepresented;
+   you must not claim that you wrote the original software.
+   If you use this software in a product, an acknowledgment
+   in the product documentation would be appreciated but
+   is not required.
+   2. Altered source versions must be plainly marked as such,
+   and must not be misrepresented as being the original software.
+   3. This notice may not be removed or altered from any
+   source distribution.
 *********************************************************************/
 
 #pragma once
@@ -44,6 +44,8 @@ source distribution.
 #include "ObjectManipulator.hpp"
 
 #include "EventBinder.hpp"
+#include "InputRouter.hpp"
+#include "EventHistory.hpp"
 #include "Guizmo2D.hpp"
 #include "SceneGrid.hpp"
 #include "CameraManipulator.hpp"
@@ -64,9 +66,9 @@ namespace editor {
         bool opt_padding = true;
         bool dockspace_open = false;
         std::unordered_map<TextureID, std::string> texturePaths = {
-                {TextureID::Logo, "logo.png"},
-                {TextureID::EditButton, "StopButton.png"},
-                {TextureID::RunButton, "PlayButton.png"},
+            {TextureID::Logo, "logo.png"},
+            {TextureID::EditButton, "StopButton.png"},
+            {TextureID::RunButton, "PlayButton.png"},
         };
     };
 
@@ -85,16 +87,17 @@ namespace editor {
         virtual void discardAssetChanges() = 0;
     };
 
-    class Editor: public IEditor, public PopupDelegate {
+    class Editor : public IEditor, public PopupDelegate {
     public:
         Editor(robot2D::MessageBus& messageBus, robot2D::Gui& gui);
-        Editor(const Editor&)=delete;
-        Editor(const Editor&&)=delete;
-        Editor& operator=(const Editor&)=delete;
-        Editor& operator=(const Editor&&)=delete;
+        Editor(const Editor&) = delete;
+        Editor(const Editor&&) = delete;
+        Editor& operator=(const Editor&) = delete;
+        Editor& operator=(const Editor&&) = delete;
         ~Editor() override = default;
 
         void setup(robot2D::RenderWindow* window, EditorInteractor* editorInteractor);
+        void beginEventFrame();
         void handleEvents(const robot2D::Event& event);
         void handleMessages(const robot2D::Message& message);
         void update(float dt);
@@ -114,14 +117,15 @@ namespace editor {
     private:
         void guiRender();
         void setupBindings();
+        void cancelInput();
         void setupShortCuts();
         void setupSpinner();
 
-        void onKeyPressed(const robot2D::Event& event);
-        void onKeyReleased(const robot2D::Event& event);
-        void onMousePressed (const robot2D::Event& event);
-        void onMouseReleased(const robot2D::Event& event);
-        void onMouseMoved(const robot2D::Event& event);
+        void onKeyPressed(const robot2D::Event::KeyPressed& event);
+        void onKeyReleased(const robot2D::Event::KeyReleased& event);
+        void onMousePressed(const robot2D::Event::MousePressed& event);
+        void onMouseReleased(const robot2D::Event::MouseReleased& event);
+        void onMouseMoved(const robot2D::Event::MouseMoved& event);
 
         void onPopupRender() override;
     private:
@@ -146,6 +150,10 @@ namespace editor {
         MessageDispatcher m_messageDispather;
         EditorInteractor* m_interactor{nullptr};
 
+        robot2D::Gui& m_gui;
+        InputRouter m_inputRouter;
+        robot2D::GuiInputCapture m_frameCapture;
+        EventHistory m_eventHistory;
         UIManager m_panelManager;
         EventBinder m_eventBinder;
 
@@ -157,7 +165,7 @@ namespace editor {
         EditorConfiguration m_configuration;
 
         robot2D::ResourceHandler<robot2D::Texture,
-                        EditorConfiguration::TextureID> m_textures;
+            EditorConfiguration::TextureID> m_textures;
 
         ShortCutManager<EditorShortCutType> m_shortcutManager;
         SceneGrid m_sceneGrid;
