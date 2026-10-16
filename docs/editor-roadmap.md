@@ -536,3 +536,13 @@ robot2D-editor-test-suite собраны; все 24 batch-сценария и п
 beforeRender сохраняет положительные параметры и корректный mapPixelToCoords.
 Явно установленная камера не начинает следовать default view при resize только
 из-за совпадения размеров. Эти случаи добавлены в window-resize-43/45.
+
+## SCRIPT-01: актуальная сборка C# API — 2026-10-16
+
+Пользователь поручил минимально упорядочить C# сборку перед ANIM-01. ScriptCore
+теперь производится CMake-правилом OUTPUT/DEPENDS, является зависимостью редактора
+и suite; hardcoded копирование csproj в каталог IDE убрано. Добавлены managed API
+consumer и регрессии реальной Mono-сборки; изменения C# включены в pre-commit.
+Локально: robot2D/core-tests/editor-test-suite собраны, CTest 78/78 без пропусков,
+Python 47/47. Подробности и ограничение Mono MSBuild — [csharp-build.md](csharp-build.md).
+Полная пользовательская C# сборка/Play/Build и игровые callbacks не объявляются готовыми.

@@ -190,3 +190,10 @@ hook сообщает расхождения и ничего не исправл
 
 Официальные справочники: [clang-tidy](https://clang.llvm.org/extra/clang-tidy/),
 [Uncrustify](https://github.com/uncrustify/uncrustify).
+
+### Изменения C#
+
+Собственные `.cs`/`.csproj` в editor/scripting и managed-тестах также запускают
+Python-регрессии, сборку и headless suite через обязательный hook. C++ форматтер
+к ним не применяется, изменение только C# не выбирает все C++ файлы для clang-tidy.
+Подробности — [сборка C#](csharp-build.md).

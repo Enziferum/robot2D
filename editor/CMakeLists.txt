@@ -37,6 +37,8 @@ list(REMOVE_ITEM SRC "${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp")
 add_library(robot2D-editor-objects OBJECT ${INCLS} ${SRC})
 add_executable(${PROJECT_NAME} src/main.cpp)
 
+include(cmake/ScriptCore.cmake)
+
 include(cmake/BuildInfo.cmake)
 target_include_directories(robot2D-editor-objects PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/generated/$<CONFIG>")
 

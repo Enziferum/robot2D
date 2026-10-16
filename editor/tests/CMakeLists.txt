@@ -66,3 +66,14 @@ if(RB2D_EDITOR_GRAPHICS_TESTS)
         set_tests_properties("editor-scene-${scene_case}" PROPERTIES SKIP_RETURN_CODE 77)
     endforeach()
 endif()
+
+# A managed consumer catches a missing/outdated API assembly in ordinary CI builds.
+add_mono_assembly(TARGET robot2D-managed-api-tests TYPE exe
+    DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/../res/script"
+    SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/ManagedApiTests.cs"
+    REFERENCES "${robot2D_ScriptCore_OUTPUT}"
+    ADDITIONAL_ARGS -sdk:4.8 -langversion:7.2 -warnaserror+)
+add_dependencies(robot2D-managed-api-tests robot2D_ScriptCore)
+add_dependencies(robot2D-editor-test-suite robot2D-managed-api-tests)
+add_test(NAME editor-managed-api COMMAND "${MONO_EXECUTABLE}" "${robot2D-managed-api-tests_OUTPUT}")
+set_tests_properties(editor-managed-api PROPERTIES TIMEOUT 30 LABELS "editor;headless;scripting")
