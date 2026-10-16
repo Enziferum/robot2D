@@ -316,3 +316,14 @@ SCRIPT-01 от актуального dev df823bb. Введены общий she
 6 новых Python регрессий генератора прошли. Следующий шаг — CI/review, ручная
 приёмка и использование сервиса в BUILD-01; standalone остаётся PLAYER-01.
 ECS, Snapshot/CancellationToken и согласованный scheduler не изменяются.
+
+
+## RUNTIME-02: UISystem в Play — 2026-10-16
+
+По поручению пользователя исправлено падение MouseMoved в Game View: runtime
+не получал UISystem из-за отсутствующего cloneSelf. Worktree/ветка RUNTIME-02
+от актуального удалённого dev ab0f3a5. Диагноз WER/адрес, контракт исправления
+и регрессии — [runtime-ui-crash.md](runtime-ui-crash.md). Полный CTest 110/110
+(43 graphics) прошёл; обязательный hook и публикация впереди.
+Полная ручная приёмка Play не завершена. Computer-use запрещён пользователем
+для проекта; UI проверяет пользователь. Общий объём RUNTIME-02 не закрывается.

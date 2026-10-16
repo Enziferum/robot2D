@@ -3,6 +3,10 @@
 #endif
 #include "TestSupport.hpp"
 #include <editor/SelectionService.hpp>
+#include <editor/UISystem.hpp>
+#include <editor/Components.hpp>
+#include <editor/components/UIHitBox.hpp>
+#include <robot2D/Ecs/Scene.hpp>
 #include <editor/ConsoleLog.hpp>
 #include <editor/EditorCache.hpp>
 #include <editor/EditorConfig.hpp>
@@ -16,6 +20,73 @@
 
 namespace {
     using namespace tests;
+
+    class InputCamera final : public editor::IEditorCamera {
+    public:
+        InputCamera() : IEditorCamera(editor::EditorCameraType::Orthographic) {
+        }
+        void setViewportSize(robot2D::vec2f) override {
+        }
+        void handleEvents(const robot2D::Event&) override {
+        }
+        void update(robot2D::vec2f, float) override {
+        }
+        robot2D::vec2f convertPixelToCoords(robot2D::vec2f point) const override {
+            return point + robot2D::vec2f{100.f, 200.f};
+        }
+    };
+
+    void runtimeUI() {
+        robot2D::MessageBus bus;
+        robot2D::ecs::Scene source(bus);
+        source.addSystem<editor::UISystem>(bus);
+        auto entity = source.createEntity();
+        entity.addComponent<editor::TransformComponent>();
+        auto& hitbox = entity.addComponent<editor::UIHitbox>();
+        hitbox.m_area = robot2D::FloatRect::create({100, 200}, {120, 220});
+        auto* original = source.getSystem<editor::UISystem>();
+        int clicks = 0;
+        hitbox.callbackIDs[editor::UIHitbox::MouseDown] = original -> addMousePressedCallback(
+            [&](robot2D::ecs::Entity, std::uint64_t) { ++clicks; });
+        source.update(0);
+        original -> setCamera(std::make_shared<InputCamera>());
+        robot2D::Event press{};
+        press.type = robot2D::Event::MousePressed;
+        press.mouse = {0, 5, 6};
+        original -> handleEvents(press);
+        for(int cycle = 0; cycle < 3; ++cycle) {
+            robot2D::ecs::Scene runtime(bus);
+            std::vector<robot2D::ecs::Entity> copies;
+            CHECK(source.cloneSelf(runtime, copies, true));
+            auto* ui = runtime.getSystem<editor::UISystem>();
+            CHECK(ui);
+            runtime.update(0);
+            CHECK(clicks == cycle);
+            robot2D::Event move{};
+            move.type = robot2D::Event::MouseMoved;
+            move.move = {5.f, 6.f};
+            ui -> handleEvents(move);
+            runtime.update(0);
+            CHECK(copies[0].getComponent<editor::UIHitbox>().isHovered);
+            ui -> handleEvents(press);
+            runtime.update(0);
+            CHECK(clicks == cycle + 1);
+            for(int invalid: {-1, 1000}) {
+                copies[0].getComponent<editor::UIHitbox>().callbackIDs[editor::UIHitbox::MouseDown] = invalid;
+                ui -> handleEvents(press);
+                runtime.update(0);
+                CHECK(clicks == cycle + 1);
+            }
+            // Missing camera and unassigned callbacks must be safe as well.
+            ui -> setCamera(nullptr);
+            ui -> handleEvents(move);
+            ui -> handleEvents(press);
+            runtime.update(0);
+            CHECK(clicks == cycle + 1);
+        }
+        source.update(0);
+        CHECK(clicks == 4);
+    }
 
     void assetPaths() {
         Directory fixture;
@@ -376,7 +447,8 @@ int main(int argc, char** argv) {
     try {
         CHECK(argc == 2);
         const std::string name = argv[1];
-        if(name == "selection") selection();
+        if(name == "runtime-ui") runtimeUI();
+        else if(name == "selection") selection();
         else if(name == "asset-paths") assetPaths();
         else if(name == "asset-import") assetImport();
         else if(name == "asset-package") assetPackage();

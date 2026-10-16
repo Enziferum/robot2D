@@ -745,3 +745,14 @@ Project/Generate/Build Scripts используют общий путь для �
 приёмка описаны в [csharp-build.md](csharp-build.md). Пользователь поручил затем
 HUD-01 и подготовку BUILD-01 в отдельных worktrees от актуального dev; Core ECS,
 Snapshot/CancellationToken и fixed scheduler не переданы этим поручением.
+
+
+## RUNTIME-02: UISystem в Play — 2026-10-16
+
+По поручению пользователя исправлено падение MouseMoved в Game View: runtime
+не получал UISystem из-за отсутствующего cloneSelf. Worktree/ветка RUNTIME-02
+от актуального удалённого dev ab0f3a5. Диагноз WER/адрес, контракт исправления
+и регрессии — [runtime-ui-crash.md](runtime-ui-crash.md). Полный CTest 110/110
+(43 graphics) прошёл; обязательный hook и публикация впереди.
+Полная ручная приёмка Play не завершена. Computer-use запрещён пользователем
+для проекта; UI проверяет пользователь. Общий объём RUNTIME-02 не закрывается.
