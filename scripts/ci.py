@@ -84,6 +84,7 @@ def main():
         ("build", ["cmake", "--build", str(build), "--parallel", str(args.parallel),
                    "--target", "robot2D", "robot2D-core-tests", "robot2D-editor-test-suite",
                    "robot2D-first-sprite", "robot2D-keyboard-movement", "robot2D-keyboard-movement-test",
+                   "robot2D-bounded-sprite", "robot2D-sprite-animation", "robot2D-camera-view", "robot2D-core-lessons-test",
                    *(["robot2D-first-sprite-test"] if args.graphics else [])]),
         ("test", ["ctest", "--test-dir", str(build), "-C", "Release", "--no-tests=error",
                   "--output-on-failure", "--timeout", "60", "--output-junit", str(junit)]),

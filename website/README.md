@@ -85,4 +85,13 @@ responsive page layout and screenshot aspect ratio. No browser automation is use
 
 Core and Learn now have their own sidebar groups. Core lifecycle contracts are pinned to a checked source commit; the course is explicitly incremental. See [CONTENT.md](CONTENT.md) and [content-templates/lesson.md](content-templates/lesson.md) for authoring. The primary deployment is **GitHub Pages**: [setup and manual publication](deploy/github-pages.md). The prepared **Linux + Nginx** alternative remains available in [deploy/README.md](deploy/README.md), covering immutable release directories, atomic current-switching and rollback.
 
+Core lessons 03–05 target the integrated `0.8.0-dev` API (Window metrics baseline
+79369b2): sprite bounds, atlas animation, then View/camera and mouse coordinates.
+Their complete sources live in `public/examples/bounded-sprite`, `sprite-animation`
+and `camera-view`. Enable `RB2D_BUILD_CORE_EXAMPLES=ON` in the native checkout;
+the examples and five headless regression scenarios are also built by native CI.
+The animation/camera examples generate a small teaching atlas in code, with no
+extra art downloads. Visible rendering, real resize/DPI and mouse acceptance remain
+manual; computer-use is not part of the verification workflow.
+
 `pnpm test` checks the public release policy. CI also tests activation/rollback on Linux and saves the root-path preview artifact. `deploy/activate-release.sh` is Linux-only; do not invoke it on a real server until the host, permissions and domain are prepared. Nginx/HTTPS have not been validated on a purchased server yet.

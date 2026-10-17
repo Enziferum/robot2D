@@ -1,0 +1,102 @@
+---
+title: 'Lesson 04: texture rectangles and animation'
+description: Animate a four-frame texture atlas using elapsed time without changing sprite size.
+---
+
+import { Code } from '@astrojs/starlight/components';
+import clock from '../../../../../public/examples/sprite-animation/AtlasAnimation.hpp?raw';
+import atlas from '../../../../../public/examples/sprite-animation/BeaconAtlas.hpp?raw';
+import application from '../../../../../public/examples/sprite-animation/AnimatedSprite.hpp?raw';
+import main from '../../../../../public/examples/sprite-animation/main.cpp?raw';
+
+Starting from [lesson 03](../sprite-bounds/), replace the static PNG with a small
+animated SlateTeal beacon. WASD/arrows still move it and the same boundary helper
+keeps it inside the window. This uses the **0.8.0-dev / 79369b2** Core API.
+
+## Three different sizes
+
+Our texture is **256 × 64 pixels**. It contains four **64 × 64 pixel** cells in a
+single row. The sprite is still **160 × 160 world units**. A texture rectangle
+selects source pixels; it does not choose the displayed size.
+
+| Frame | `IntRect(left, top, width, height)` |
+| ----- | ----------------------------------- |
+| 0     | `(0, 0, 64, 64)`                    |
+| 1     | `(64, 0, 64, 64)`                   |
+| 2     | `(128, 0, 64, 64)`                  |
+| 3     | `(192, 0, 64, 64)`                  |
+
+Always supply an explicit rectangle when first assigning the texture. Then use
+`setTextureRect()` to change frames without loading a new file or recreating a GPU
+texture. Keep every cell within the texture dimensions; this sample uses uniform
+cells without atlas rotation, trimming or packing metadata.
+
+## A reproducible teaching atlas
+
+The example creates its RGBA atlas from code: a bright light advances across a
+dark panel in four steps. It needs no downloaded art or additional PNG. Transparent
+pixels surround each panel. This is a texture-animation exercise, not a walking
+animation for the Robot Lab character.
+
+<Code code={atlas} lang="cpp" title="BeaconAtlas.hpp" />
+
+The pixel buffer is uploaded once with `Texture::create()` in `setup()`, after the
+GL context exists. To use your own atlas later, replace this creation with
+`loadFromFile()`, check its return value and adjust the frame dimensions. Keep the
+texture alive while any sprite borrows it.
+
+## Advance by time
+
+At eight frames per second, one frame lasts `1 / 8 = 0.125` seconds. The full
+four-frame cycle takes `0.5` seconds. Accumulate `deltaTime` and wrap at the cycle
+length. Advancing once per rendered frame would make animation speed depend on the
+display frame rate. In Engine, the current `update()` step is fixed by the configured
+update rate; accumulating that step still measures simulation time.
+
+<Code code={clock} lang="cpp" title="AtlasAnimation.hpp" />
+
+The remainder preserves partial frame time and handles a step spanning several
+frames or cycles. Reducing a long step before adding avoids an unbounded catch-up
+loop. Zero, negative and non-finite time values do not advance the animation.
+
+## Connect it to the sprite
+
+<Code code={application} lang="cpp" title="AnimatedSprite.hpp" />
+
+Only movement and the selected source rectangle change during `update()`. Normal
+drawing comes from `FirstSprite`. While minimized, this example's boundary movement
+stops but its animation clock continues; on restore it displays the current frame.
+This is an explicit sample policy, not an automatic Engine pause.
+
+`destroy()` releases the atlas while the window context is still alive. It also
+calls the inherited cleanup, which safely handles the unused empty PNG texture.
+Never release the atlas after destroying the GL context or copy its ownership
+through a `Sprite`: sprites only borrow textures.
+
+<Code code={main} lang="cpp" title="main.cpp" />
+
+## Build and verify
+
+```sh
+cmake -S . -B build -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DRB2D_BUILD_CORE_EXAMPLES=ON
+cmake --build build --config Release --target robot2D-sprite-animation robot2D-core-lessons-test
+ctest --test-dir build -C Release -R '^core-lesson\.animation$' --output-on-failure
+```
+
+Run `build/examples/sprite-animation/Release/robot2D-sprite-animation` (add `.exe`
+on Windows). No asset path or special working directory is needed. Move with
+WASD/arrows, observe the light loop and exit with Escape.
+
+Headless tests check frame order, wraparound, a long update, invalid time, equivalent
+split updates, rectangle dimensions and differing atlas pixels. They do not prove
+GPU sampling or visible playback. If the beacon stretches, check `setSize()`; if it
+shows the whole strip, check the 64 × 64 source rectangle.
+
+Download [AnimatedSprite.hpp](../../../examples/sprite-animation/AnimatedSprite.hpp),
+[AtlasAnimation.hpp](../../../examples/sprite-animation/AtlasAnimation.hpp),
+[BeaconAtlas.hpp](../../../examples/sprite-animation/BeaconAtlas.hpp),
+[main.cpp](../../../examples/sprite-animation/main.cpp) and
+[CMakeLists.txt](../../../examples/sprite-animation/CMakeLists.txt).
+Keep the lesson 01–03 directories alongside it, or build from the complete checkout.
+
+Next: [Lesson 05 — camera and mouse coordinates](../camera-view/).

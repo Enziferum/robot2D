@@ -42,3 +42,9 @@ For engine users starting with the editor, the [Robot Lab learning path](../lear
 Start with [Lesson 01: your first sprite](first-sprite/) for a buildable window, PNG and sprite example.
 
 Continue with [Lesson 02: keyboard movement](keyboard-movement/) for typed input events, held state and time-based movement.
+
+Then follow the buildable examples in order:
+
+- [Lesson 03: coordinates, origin and bounds](sprite-bounds/) — logical window size and keeping a sprite inside it.
+- [Lesson 04: texture rectangles and animation](sprite-animation/) — a four-frame procedural atlas and elapsed-time playback.
+- [Lesson 05: camera and mouse coordinates](camera-view/) — a larger world, aspect-aware View and client-to-world mapping.
