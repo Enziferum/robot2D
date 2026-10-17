@@ -1,0 +1,101 @@
+---
+title: 'Lesson 03: coordinates, origin and bounds'
+description: Position a sprite by its origin and keep its rendered rectangle inside the logical window.
+---
+
+import { Code } from '@astrojs/starlight/components';
+import application from '../../../../../public/examples/bounded-sprite/BoundedSprite.hpp?raw';
+import main from '../../../../../public/examples/bounded-sprite/main.cpp?raw';
+
+Continue [keyboard movement](../keyboard-movement/) with a robot that stops at the
+window edges. This example targets **0.8.0-dev**, including Window metrics from
+Core baseline **79369b2**. Keep the preceding examples alongside this directory:
+the application reuses their input handling, PNG loading and resource lifetime.
+
+## Coordinates and size
+
+With the default view, `(0, 0)` is the top-left of the logical client area: X grows
+right, Y grows down. `setSize({160, 160})` makes the sprite's complete textured quad
+160 by 160 world units. The PNG's transparent padding is part of that quad; the
+visible robot may occupy less space. Collision shapes and trimming are separate topics.
+
+`WindowMetrics.logicalSize` defines our movement area. `framebufferSize` describes
+physical output pixels, which may differ on a high-DPI display. `contentScale` is
+platform scaling information, not a substitute for either size. Engine synchronizes
+the native renderer before drawing; do not call `RenderWindow::resize()` to resize
+the OS window. That method changes render sizing only.
+
+## Origin is the anchor
+
+Use normalized origins for this API:
+
+| Origin         | What `setPosition()` places |
+| -------------- | --------------------------- |
+| `{0, 0}`       | Top-left corner             |
+| `{0.5f, 0.5f}` | Center                      |
+| `{1, 1}`       | Bottom-right corner         |
+
+For a centered 160-unit sprite at X = 400, the left edge is 320 and the right
+edge is 480. Changing origin alone changes where the quad appears relative to its
+position. It does not change its size. Use setters rather than modifying the
+references returned by getters: setters invalidate the cached transform.
+
+The current implementation also attempts conversion for origin components greater
+than one. Avoid that legacy convenience here: `{0.5f, 0.5f}` unambiguously means center.
+
+## Derive the limits
+
+For positive size, no rotation and the default scale:
+
+```text
+left   = position.x - origin.x * width
+right  = position.x + (1 - origin.x) * width
+minimum position.x = origin.x * width
+maximum position.x = area.width - (1 - origin.x) * width
+```
+
+Apply the same calculation on Y, then clamp the position **after movement**.
+For origin `{0.5f, 0.5f}`, the X interval in an 800-wide window is `[80, 720]`.
+Clamping the center to `[0, 800]` would let half the sprite escape.
+
+`Sprite::getLocalBounds()` still has an unfinished arbitrary-origin calculation in
+this baseline. This lesson uses the explicit quad formula instead. It is not a
+general collision algorithm for rotated, scaled or negatively sized sprites.
+
+<Code code={application} lang="cpp" title="BoundedSprite.hpp" />
+
+The update reads **current** metrics rather than replaying old resize payloads.
+When the window shrinks, the next update brings the sprite back inside. If an axis
+becomes smaller than the sprite, full containment is impossible: the helper centers
+the overflowing quad on that axis. It never passes a reversed interval to `std::clamp`.
+Unavailable/minimized surfaces skip this lesson's movement and clamping; they do
+not stop Engine's event pump. No stale input is restored after focus loss.
+
+<Code code={main} lang="cpp" title="main.cpp" />
+
+## Build and try
+
+Use the native dependencies and toolchain from [lesson 01](../first-sprite/).
+From the repository root:
+
+```sh
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DRB2D_BUILD_CORE_EXAMPLES=ON
+cmake --build build --config Release --target robot2D-bounded-sprite robot2D-core-lessons-test
+ctest --test-dir build -C Release -R '^core-lesson\.(origins|edges|resize)$' --output-on-failure
+```
+
+Run `build/examples/bounded-sprite/Release/robot2D-bounded-sprite` (add `.exe` on
+Windows) with that directory as the working directory. CMake copies `assets/robot.png`
+beside it; an optional first argument supplies another texture path.
+
+Hold WASD/arrows against each edge, resize the window, then try a window smaller
+than 160 units. Escape exits. Headless tests check the actual transformed quad
+corners for four origins, sustained movement, shrinking, equal-size and oversized
+cases. They do not simulate the desktop or verify visible rendering.
+
+[Download the application](../../../examples/bounded-sprite/BoundedSprite.hpp),
+[entry point](../../../examples/bounded-sprite/main.cpp) and
+[CMake file](../../../examples/bounded-sprite/CMakeLists.txt).
+These files are examples inside a configured robot2D checkout, not an installed SDK.
+
+Next: [Lesson 04 — atlas animation](../sprite-animation/).

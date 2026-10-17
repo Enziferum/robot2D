@@ -29,7 +29,7 @@ def own_cpp(path):
 def managed_input(path):
     return (((path.startswith("editor/scripting/") or path.startswith("editor/tests/"))
              and Path(path).suffix.lower() in {".cs", ".csproj"})
-            or (path.startswith("editor/res/gen/") and path.endswith(".py")))
+            or ((path.startswith("editor/res/gen/") or path.startswith("editor/tests/")) and path.endswith(".py")))
 
 
 def build_input(path):
@@ -67,7 +67,7 @@ def executable(value):
         return path
     if Path(value).is_file():
         return str(Path(value).resolve())
-    raise CheckError(f"Missing tool: {value}. See docs/development-tools.md.")
+    raise CheckError(f"Missing tool: {value}. See AGENTS.md and scripts/install_git_hooks.py --help.")
 
 
 def normal(path):

@@ -1,0 +1,21 @@
+---
+import SiteLayout from '../layouts/SiteLayout.astro';
+import { path } from '../lib/site';
+---
+
+<SiteLayout title="Scene not found">
+  <section class="page-intro wrap">
+    <p class="eyebrow">404 / Scene not found</p>
+    <h1>
+      A little
+      <br />
+      <em>off the map.</em>
+    </h1>
+    <p class="lede">
+      This page could not be found. Let’s get back to familiar ground.
+    </p>
+    <a class="button" href={path()}>
+      Back to robot2D →
+    </a>
+  </section>
+</SiteLayout>

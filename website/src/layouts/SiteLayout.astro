@@ -1,0 +1,111 @@
+---
+import '../styles/site.css';
+import { path, repo, developmentVersion } from '../lib/site';
+interface Props {
+  title?: string;
+  description?: string;
+}
+const {
+  title = 'Small worlds. Real possibilities.',
+  description = 'robot2D is an open-source 2D game engine and editor built with C++, with C# scripting. Follow the journey toward 1.0.',
+} = Astro.props;
+const links = [
+  ['Features', 'features/'],
+  ['Showcase', 'showcase/'],
+  ['Docs', 'docs/'],
+  ['Releases', 'releases/'],
+  ['Roadmap', 'roadmap/'],
+];
+const current = Astro.url.pathname;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="description" content={description} />
+    <meta name="theme-color" content="#171e25" />
+    <meta property="og:title" content={`${title} — robot2D`} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    {Astro.site && (
+      <meta
+        property="og:image"
+        content={new URL(path('media/robot-lab-editor.png'), Astro.site)}
+      />
+    )}
+    {Astro.site && (
+      <link rel="canonical" href={new URL(Astro.url.pathname, Astro.site)} />
+    )}
+    <link
+      rel="icon"
+      href={path('brand/robot2d-logo-02-32.png')}
+      type="image/png"
+    />
+    <title>{title} — robot2D</title>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">
+      Skip to content
+    </a>
+    <header class="site-header">
+      <div class="nav-shell">
+        <a class="wordmark" href={path()} aria-label="robot2D home">
+          <img
+            class="brand-logo"
+            src={path('brand/robot2d-logo-02-128.png')}
+            width="34"
+            height="34"
+            alt=""
+          />
+          robot<span>2D</span>
+        </a>
+        <nav aria-label="Main navigation">
+          {links.map(([label, href]) => (
+            <a
+              href={path(href)}
+              aria-current={current === path(href) ? 'page' : undefined}
+            >
+              {label}
+            </a>
+          ))}
+        </nav>
+        <a class="button small" href={path('downloads/')}>
+          Get robot2D <span aria-hidden="true">↗</span>
+        </a>
+      </div>
+    </header>
+    <main id="main">
+      <slot />
+    </main>
+    <footer class="site-footer wrap">
+      <div>
+        <a class="wordmark" href={path()}>
+          <img
+            class="brand-logo"
+            src={path('brand/robot2d-logo-02-128.png')}
+            width="34"
+            height="34"
+            alt=""
+            loading="lazy"
+          />
+          robot<span>2D</span>
+        </a>
+        <p>A small engine. An ongoing adventure.</p>
+        <small>{developmentVersion} · Built in the open.</small>
+      </div>
+      <nav aria-label="Footer navigation">
+        <a href={repo}>GitHub ↗</a>
+        <a href={path('docs/')}>Documentation</a>
+        <a href={path('downloads/')}>Downloads</a>
+        <a href={`${repo}/issues`}>Contribute ↗</a>
+      </nav>
+      <p class="footer-note">
+        Made by Alex Raag and contributors.
+        <br />
+        Website in SlateTeal.
+      </p>
+    </footer>
+  </body>
+</html>

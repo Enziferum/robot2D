@@ -40,6 +40,8 @@ namespace editor {
         ~TextSystem() override = default;
 
         void update(float dt);
+        robot2D::ecs::System::Ptr cloneSelf(robot2D::ecs::Scene* scene,
+            const std::vector<robot2D::ecs::Entity>& newEntities) override;
 
         using Batch = robot2D::QuadBatchRender<robot2D::Vertex>;
         const std::vector<std::unique_ptr<Batch> >& getBatches(unsigned int entityIndex) const;

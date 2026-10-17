@@ -1,22 +1,22 @@
 /*********************************************************************
-(c) Alex Raag 2023
-https://github.com/Enziferum
-robot2D - Zlib license.
-This software is provided 'as-is', without any express or
-implied warranty. In no event will the authors be held
-liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute
-it freely, subject to the following restrictions:
-1. The origin of this software must not be misrepresented;
-you must not claim that you wrote the original software.
-If you use this software in a product, an acknowledgment
-in the product documentation would be appreciated but
-is not required.
-2. Altered source versions must be plainly marked as such,
-and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any
-source distribution.
+   (c) Alex Raag 2023
+   https://github.com/Enziferum
+   robot2D - Zlib license.
+   This software is provided 'as-is', without any express or
+   implied warranty. In no event will the authors be held
+   liable for any damages arising from the use of this software.
+   Permission is granted to anyone to use this software for any purpose,
+   including commercial applications, and to alter it and redistribute
+   it freely, subject to the following restrictions:
+   1. The origin of this software must not be misrepresented;
+   you must not claim that you wrote the original software.
+   If you use this software in a product, an acknowledgment
+   in the product documentation would be appreciated but
+   is not required.
+   2. Altered source versions must be plainly marked as such,
+   and must not be misrepresented as being the original software.
+   3. This notice may not be removed or altered from any
+   source distribution.
 *********************************************************************/
 
 #pragma once
@@ -52,15 +52,15 @@ namespace editor {
         Rotate
     };
 
-    class ViewportPanel final: public IPanel {
+    class ViewportPanel final : public IPanel {
     public:
         ViewportPanel(UIInteractor* uiInteractor,
-                      IEditorCamera::Ptr editorCamera,
-                      robot2D::MessageBus& messageBus,
-                      MessageDispatcher& messageDispatcher,
-                      Guizmo2D& guizmo2D,
-                      CameraManipulator& collider,
-                      SelectionCollider& selectionCollider);
+            IEditorCamera::Ptr editorCamera,
+            robot2D::MessageBus& messageBus,
+            MessageDispatcher& messageDispatcher,
+            Guizmo2D& guizmo2D,
+            CameraManipulator& collider,
+            SelectionCollider& selectionCollider);
         ViewportPanel(const ViewportPanel& other) = delete;
         ViewportPanel& operator=(const ViewportPanel& other) = delete;
         ViewportPanel(ViewportPanel&& other) = delete;
@@ -74,12 +74,16 @@ namespace editor {
         void handleEvents(const robot2D::Event& event);
         bool containsMouse(robot2D::vec2f position) const;
         void setFramebuffer(robot2D::FrameBuffer::Ptr frameBuffer);
+        bool isGridVisible() const {
+            return m_gridVisible;
+        }
 
 
         void update(float deltaTime) override;
         void render() override;
     private:
         void instrumentBar();
+        bool frameEntities(bool wholeScene);
     private:
         UIInteractor* m_uiInteractor;
 
@@ -90,11 +94,14 @@ namespace editor {
         SelectionCollider& m_selectionCollider;
         Guizmo2D& m_guizmo2D;
 
-        robot2D::ResourceHandler<robot2D::Texture, IconType> m_icons;
+        bool m_gridVisible{true};
+        bool m_snapEnabled{false};
+        float m_snapDistance{16.f};
+        float m_snapAngle{15.f};
 
         std::vector<robot2D::ecs::Entity> m_selectedEntities;
         robot2D::FrameBuffer::Ptr m_frameBuffer{ nullptr };
-        robot2D::vec2u  m_ViewportSize{};
+        robot2D::vec2u m_ViewportSize{};
         robot2D::WindowOptions m_windowOptions;
 
         struct ViewportBounds {

@@ -73,7 +73,13 @@ namespace editor {
         virtual void resetDefaults() {
         }
         virtual float getZoom() const {
-            return 0.f;
+            return 1.f;
+        }
+        virtual bool setZoom(float) {
+            return false;
+        }
+        virtual bool frameBounds(const robot2D::FloatRect&) {
+            return false;
         }
 
         robot2D::mat4& getProjectionMatrix() {
@@ -125,13 +131,17 @@ namespace editor {
         float getZoom() const override {
             return m_zoom;
         }
+        bool setZoom(float zoom) override;
+        bool frameBounds(const robot2D::FloatRect& bounds) override;
     private:
         robot2D::vec2f mapPixelToCoords(const robot2D::vec2f& point) const {
             robot2D::vec2f normalized;
-            auto port = getViewport(m_framebuffer -> getSpecification().size);
+            if(m_viewportSize.x <= 0.f || m_viewportSize.y <= 0.f)
+                return m_view.getCenter();
+            auto port = getViewport({static_cast<int>(m_viewportSize.x), static_cast<int>(m_viewportSize.y)});
             robot2D::FloatRect viewport = {
                 static_cast<float>(port.lx),
-                static_cast<float>(port.lx),
+                static_cast<float>(port.ly),
                 static_cast<float>(port.width),
                 static_cast<float>(port.height)
             };
@@ -157,7 +167,8 @@ namespace editor {
 
     private:
         bool m_leftCntrlPressed{false};
-        float m_zoom = 0.F;
+        float m_zoom = 1.f;
+        robot2D::vec2f m_viewportSize{};
         robot2D::vec2f m_mousePos;
     };
 

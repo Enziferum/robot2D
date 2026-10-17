@@ -1,5 +1,6 @@
 #define GLFW_INCLUDE_NONE
 #include "TestSupport.hpp"
+#include <editor/AssetPreviewCache.hpp>
 #include <GLFW/glfw3.h>
 #include <robot2D/Graphics/GL.hpp>
 #include <robot2D/Graphics/RenderTarget.hpp>
@@ -120,6 +121,33 @@ namespace {
         entity.getComponent<editor::TextComponent>().setFontPath("../external.ttf");
         CHECK(!serializer.serialize(path.u8string(), "Portable", scripts));
         CHECK(read(path) == saved && !serializer.getErrorMessage().empty());
+    }
+
+    void runtimeUIEvents() {
+        robot2D::MessageBus bus;
+        auto scene = std::make_shared<editor::Scene>(bus);
+        auto entity = scene -> createEntity("Runtime input regression");
+        entity.addComponent<editor::DrawableComponent>();
+        scene -> update(0);
+        scene -> markSaved();
+        const auto position = entity.getComponent<editor::TransformComponent>().getPosition();
+        auto scripts = std::make_shared<ScriptStub>();
+        robot2D::Event event{};
+        for(int run = 0; run < 3; ++run) {
+            scene -> onRuntimeStart(scripts);
+            CHECK(scene -> isRunning());
+            event = robot2D::Event{robot2D::Event::MouseMoved{{12.f, 16.f}}};
+            scene -> handleEventsRuntime(event);
+            event = robot2D::Event{robot2D::Event::MousePressed{{0, 12, 16}}};
+            scene -> handleEventsRuntime(event);
+            event = robot2D::Event{robot2D::Event::MouseReleased{{0, 12, 16}}};
+            scene -> handleEventsRuntime(event);
+            scene -> onRuntimeStop(scripts);
+            CHECK(!scene -> isRunning());
+            scene -> handleEventsRuntime(event);
+            CHECK(scene -> getRootEntities().size() == 1);
+            CHECK(entity.getComponent<editor::TransformComponent>().getPosition() == position);
+        }
     }
 
     void runtimeCameraOrder() {
@@ -829,6 +857,30 @@ namespace {
         logic.destroy();
     }
 
+    void assetPreview() {
+        Directory fixture;
+        const auto root = fixture / "assets";
+        writeImage(root / "preview.tga", 32, 70);
+        editor::AssetPreviewCache cache;
+        cache.setRoot(fs::weakly_canonical(root));
+        CHECK(cache.request(root / "preview.tga"));
+        CHECK(waitFor([&]() {
+            editor::TaskQueue::GetQueue() -> process();
+            auto* item = cache.request(root / "preview.tga");
+            return item && item -> status == editor::PreviewStatus::Decoded;
+        }));
+        auto* item = cache.request(root / "preview.tga");
+        auto* texture = cache.texture(*item);
+        CHECK(texture && texture -> getSize().x == 32);
+        const auto id = texture -> getID();
+        CHECK(glIsTexture(id) == GL_TRUE);
+        cache.invalidate(root / "preview.tga");
+        CHECK(glIsTexture(id) == GL_TRUE);
+        cache.beginFrame();
+        CHECK(glIsTexture(id) == GL_FALSE);
+        CHECK(glGetError() == GL_NO_ERROR);
+    }
+
     void animationResources() {
         Directory fixture;
         const auto first = fixture / "assets/a/sheet.tga";
@@ -860,7 +912,9 @@ int main(int argc, char** argv) {
         CHECK(argc == 2);
         GraphicsContext graphics;
         const std::string name = argv[1];
-        if(name == "hierarchy") hierarchy();
+        if(name == "asset-preview") assetPreview();
+        else if(name == "runtime-ui-events") runtimeUIEvents();
+        else if(name == "hierarchy") hierarchy();
         else if(name == "runtime-camera-order") runtimeCameraOrder();
         else if(name == "editor-gui-scene") editorGuiScene();
         else if(name == "hud-text") hudText();

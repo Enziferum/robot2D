@@ -1,3 +1,6 @@
+add_executable(robot2D-window-scope-tests WindowScopeTests.cpp)
+target_link_libraries(robot2D-window-scope-tests PRIVATE robot2D-editor-objects)
+
 add_executable(robot2D-task-tests TaskQueueTests.cpp)
 target_link_libraries(robot2D-task-tests PRIVATE robot2D-editor-objects)
 
@@ -18,7 +21,7 @@ target_link_libraries(robot2D-graphics-diagnostics-tests PRIVATE robot2D-core)
 add_executable(robot2D-batch-render-tests BatchRenderTests.cpp)
 target_link_libraries(robot2D-batch-render-tests PRIVATE robot2D-core)
 
-add_custom_target(robot2D-editor-test-suite DEPENDS robot2D-task-tests robot2D-editor-tests
+add_custom_target(robot2D-editor-test-suite DEPENDS robot2D-window-scope-tests robot2D-task-tests robot2D-editor-tests
         robot2D-scene-tests robot2D-version-tests robot2D-graphics-diagnostics-tests robot2D-batch-render-tests)
 
 function(rb2d_register_test name executable scenario labels)
@@ -35,13 +38,17 @@ function(rb2d_register_test name executable scenario labels)
     endif()
 endfunction()
 
+foreach(scope_case IN ITEMS windows unwind panels docking)
+    rb2d_register_test("imgui-scope-${scope_case}" robot2D-window-scope-tests "${scope_case}" "headless;imgui")
+endforeach()
+
 foreach(task_case IN ITEMS empty completion shutdown clear callback dispatch)
     rb2d_register_test("task-queue-${task_case}" robot2D-task-tests "${task_case}" "headless;async")
 endforeach()
 
 rb2d_register_test(editor-version robot2D-version-tests version "headless;version")
 
-foreach(editor_case IN ITEMS selection asset-paths asset-import asset-package console-stream console-limits yaml-save payload
+foreach(editor_case IN ITEMS runtime-ui camera-tools gizmo-snap slate-teal selection asset-paths asset-import asset-package console-stream console-limits yaml-save payload
         config-roundtrip config-invalid cache-roundtrip cache-recovery cache-future cache-migration)
     rb2d_register_test("editor-${editor_case}" robot2D-editor-tests "${editor_case}" "headless")
 endforeach()
@@ -49,6 +56,26 @@ endforeach()
 if(WIN32)
     rb2d_register_test(editor-cache-write-failure robot2D-editor-tests cache-write-failure "headless;windows")
 endif()
+
+# Compile and exercise the actual sample controller against the current public C# API.
+set(platformer_project "${CMAKE_SOURCE_DIR}/examples/RobotLabPlatformer")
+add_mono_assembly(TARGET robot2D-platformer-scripts
+    DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/../res/script"
+    SOURCES "${platformer_project}/assets/scripts/PlayerController.cs"
+    REFERENCES "${robot2D_ScriptCore_OUTPUT}"
+    ADDITIONAL_ARGS -sdk:4.8 -langversion:7.2 -warnaserror+)
+add_dependencies(robot2D-platformer-scripts robot2D_ScriptCore)
+add_executable(robot2D-platformer-tests PlatformerTests.cpp)
+target_link_libraries(robot2D-platformer-tests PRIVATE robot2D-editor-objects)
+target_compile_definitions(robot2D-platformer-tests PRIVATE
+    RB2D_TEST_SCRIPTCORE="${robot2D_ScriptCore_OUTPUT}"
+    RB2D_TEST_PLATFORMER_ASSEMBLY="${robot2D-platformer-scripts_OUTPUT}"
+    RB2D_TEST_PLATFORMER_PROJECT="${platformer_project}")
+add_dependencies(robot2D-platformer-tests robot2D-platformer-scripts)
+add_dependencies(robot2D-editor-test-suite robot2D-platformer-tests)
+foreach(platformer_case IN ITEMS route recovery contacts boundaries)
+    rb2d_register_test("editor-platformer-${platformer_case}" robot2D-platformer-tests "${platformer_case}" "headless;scripting;physics;game")
+endforeach()
 
 if(RB2D_EDITOR_GRAPHICS_TESTS)
     foreach(batch_api IN ITEMS 43 45)
@@ -62,7 +89,7 @@ if(RB2D_EDITOR_GRAPHICS_TESTS)
         rb2d_register_test("core-graphics-${graphics_case}" robot2D-graphics-diagnostics-tests "${graphics_case}" "graphics;integration")
         set_tests_properties("core-graphics-${graphics_case}" PROPERTIES SKIP_RETURN_CODE 77)
     endforeach()
-    foreach(scene_case IN ITEMS hierarchy runtime-camera-order editor-gui-scene hud-text asset-roundtrip missing-assets asset-identity animation-resources roundtrip invalid legacy prefab prefab-viewport save-dirty async-load close-project startup-failure)
+    foreach(scene_case IN ITEMS runtime-ui-events hud-text asset-preview hierarchy runtime-camera-order asset-roundtrip missing-assets asset-identity animation-resources roundtrip invalid legacy prefab prefab-viewport save-dirty async-load close-project startup-failure)
         rb2d_register_test("editor-scene-${scene_case}" robot2D-scene-tests "${scene_case}" "graphics;integration")
         set_tests_properties("editor-scene-${scene_case}" PROPERTIES SKIP_RETURN_CODE 77)
     endforeach()
@@ -70,7 +97,7 @@ endif()
 
 add_mono_assembly(TARGET robot2D-hud-driver
     DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/../res/script"
-    SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/HudDriver.cs" "${CMAKE_CURRENT_SOURCE_DIR}/../../docs/examples/HudExample.cs"
+    SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/HudDriver.cs" "${CMAKE_CURRENT_SOURCE_DIR}/HudExample.cs"
     REFERENCES "${robot2D_ScriptCore_OUTPUT}"
     ADDITIONAL_ARGS -sdk:4.8 -langversion:7.2 -warnaserror+)
 add_dependencies(robot2D-hud-driver robot2D_ScriptCore)
@@ -170,6 +197,13 @@ if(RB2D_EDITOR_GRAPHICS_TESTS)
         endforeach()
     endforeach()
 endif()
+add_executable(robot2D-asset-browser-tests AssetBrowserTests.cpp)
+target_link_libraries(robot2D-asset-browser-tests PRIVATE robot2D-editor-objects)
+add_dependencies(robot2D-editor-test-suite robot2D-asset-browser-tests)
+foreach(asset_browser_case IN ITEMS navigation decode cache icons panel)
+    rb2d_register_test("editor-asset-browser-${asset_browser_case}" robot2D-asset-browser-tests
+        "${asset_browser_case}" "headless;assets")
+endforeach()
 
 add_executable(robot2D-script-project-tests ScriptProjectTests.cpp)
 target_link_libraries(robot2D-script-project-tests PRIVATE robot2D-editor-objects)
@@ -185,13 +219,67 @@ foreach(script_case IN ITEMS project errors reload)
     rb2d_register_test("editor-script-${script_case}" robot2D-script-project-tests "${script_case}" "headless;scripting")
 endforeach()
 
+add_dependencies(robot2D-editor-test-suite robot2D-player)
+
+add_mono_assembly(TARGET robot2D-player-smoke-script
+    DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/../res/script"
+    SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/PlayerSmoke.cs"
+    REFERENCES "${robot2D_ScriptCore_OUTPUT}"
+    ADDITIONAL_ARGS -sdk:4.8 -langversion:7.2 -warnaserror+)
+add_dependencies(robot2D-player-smoke-script robot2D_ScriptCore)
+add_executable(robot2D-player-fixture PlayerFixture.cpp)
+target_link_libraries(robot2D-player-fixture PRIVATE robot2D-runtime)
+target_compile_definitions(robot2D-player-fixture PRIVATE
+    RB2D_TEST_RESOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../res"
+    RB2D_TEST_PLAYER_SCRIPT="${robot2D-player-smoke-script_OUTPUT}")
+add_dependencies(robot2D-player-fixture robot2D-player-smoke-script)
+add_dependencies(robot2D-editor-test-suite robot2D-player-fixture)
+add_executable(robot2D-player-presentation-tests PlayerPresentationTests.cpp)
+target_link_libraries(robot2D-player-presentation-tests PRIVATE robot2D-runtime)
+if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    target_link_options(robot2D-player-presentation-tests PRIVATE "LINKER:--wrap=glfwSwapBuffers")
+endif()
+add_dependencies(robot2D-editor-test-suite robot2D-player-presentation-tests)
+foreach(mode IN ITEMS inputs runtime)
+    if(mode STREQUAL "runtime" AND NOT RB2D_EDITOR_GRAPHICS_TESTS)
+        continue()
+    endif()
+    set(directory "${CMAKE_CURRENT_BINARY_DIR}/scenarios/player-${mode}")
+    file(MAKE_DIRECTORY "${directory}")
+    add_test(NAME "player-${mode}" COMMAND "${Python3_EXECUTABLE}"
+        "${CMAKE_CURRENT_SOURCE_DIR}/player_process.py" "${mode}"
+        --player "$<TARGET_FILE:robot2D-player>" --fixture "$<TARGET_FILE:robot2D-player-fixture>"
+        --presentation "$<TARGET_FILE:robot2D-player-presentation-tests>")
+    set_tests_properties("player-${mode}" PROPERTIES TIMEOUT 180
+        LABELS "editor;player;integration" WORKING_DIRECTORY "${directory}")
+    if(mode STREQUAL "runtime")
+        set_property(TEST "player-${mode}" APPEND PROPERTY LABELS graphics)
+    else()
+        set_property(TEST "player-${mode}" APPEND PROPERTY LABELS headless)
+    endif()
+endforeach()
+
+if(WIN32)
+    set(player_fixture_path "${CMAKE_BINARY_DIR}/player;$ENV{PATH}")
+else()
+    set(player_fixture_path "${CMAKE_BINARY_DIR}/player:$ENV{PATH}")
+endif()
+add_custom_target(robot2D-player-arena
+    COMMAND ${CMAKE_COMMAND} -E copy_directory "${CMAKE_BINARY_DIR}/player" "${CMAKE_BINARY_DIR}/player-arena"
+    COMMAND ${CMAKE_COMMAND} -E env "PATH=${player_fixture_path}"
+        $<TARGET_FILE:robot2D-player-fixture> "${CMAKE_BINARY_DIR}/player-arena"
+    DEPENDS robot2D-player robot2D-player-fixture
+    COMMENT "Create a standalone diagnostic arena in the build tree"
+    VERBATIM)
+
 add_executable(robot2D-desktop-window-tests DesktopWindowTests.cpp)
 target_link_libraries(robot2D-desktop-window-tests PRIVATE robot2D-editor-objects)
 add_dependencies(robot2D-editor-test-suite robot2D-desktop-window-tests)
+rb2d_register_test(core-desktop-metrics-values robot2D-desktop-window-tests metrics-values "headless;core;desktop")
 rb2d_register_test(core-desktop-uninitialized robot2D-desktop-window-tests uninitialized "headless;core;desktop")
 rb2d_register_test(core-desktop-editor-shutdown robot2D-desktop-window-tests editor-shutdown "headless;core;desktop")
 if(RB2D_EDITOR_GRAPHICS_TESTS)
-    foreach(desktop_case IN ITEMS lifetime render-lifetime rollback borrowed events engine)
+    foreach(desktop_case IN ITEMS lifetime render-lifetime rollback borrowed events engine metrics metrics-events)
         rb2d_register_test("core-desktop-${desktop_case}" robot2D-desktop-window-tests "${desktop_case}" "graphics;core;desktop")
         set_tests_properties("core-desktop-${desktop_case}" PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 60)
     endforeach()

@@ -28,9 +28,6 @@
 #include <editor/AnimationParser.hpp>
 
 namespace editor {
-    namespace {
-        void loadEntityAssets(const Scene::Ptr& scene, SceneEntity entity);
-    }
     namespace fs = std::filesystem;
 
     SceneLoadTask::SceneLoadTask(ITaskFunction::Ptr function,
@@ -78,70 +75,4 @@ namespace editor {
         loadSceneAssets(m_scene);
     }
 
-    void loadSceneAssets(const Scene::Ptr& scene) {
-        if(!scene) return;
-        for(auto entity: scene -> getRootEntities())
-            loadEntityAssets(scene, entity);
-    }
-
-    namespace {
-        void loadEntityAssets(const Scene::Ptr& scene, SceneEntity entity) {
-            if(entity.hasComponent<DrawableComponent>()) {
-                auto& drawable = entity.getComponent<DrawableComponent>();
-                auto& localTexturePath = drawable.getTexturePath();
-                if(!localTexturePath.empty()) {
-                    const auto key = resourceFileKey(combinePath(scene -> getAssociatedProjectPath(),
-                            localTexturePath));
-                    if(!ResourceManager::getManager() -> loadImage(key))
-                        RB_EDITOR_WARN("SceneLoadTask::loadAssets: can't load image by path {0}", key);
-                }
-            }
-            if(entity.hasComponent<TextComponent>()) {
-                auto& text = entity.getComponent<TextComponent>();
-                auto& localFontPath = text.getFontPath();
-                if(!localFontPath.empty()) {
-                    const auto key = resourceFileKey(combinePath(scene -> getAssociatedProjectPath(), localFontPath));
-                    if(!ResourceManager::getManager() -> loadFont(key))
-                        RB_EDITOR_WARN("SceneLoadTask::loadAssets: can't load font by path {0}", key);
-                }
-            }
-            if(entity.hasComponent<AnimationComponent>()) {
-                auto resourceManager = ResourceManager::getManager();
-                if(!resourceManager)
-                    return;
-
-                auto& animationPaths = resourceManager
-                    -> getAnimationsPathToLoad(entity.getComponent<IDComponent>().ID);
-                AnimationParser animationParser;
-                for(auto& localAnimationPath: animationPaths) {
-                    fs::path animationPath{localAnimationPath};
-                    auto id = animationPath.filename().string();
-                    auto absolutePath = combinePath(scene -> getAssociatedProjectPath(),
-                            animationPath.string());
-                    Animation loaded;
-                    if(!animationParser.loadFromFile(absolutePath, &loaded)) {
-                        RB_EDITOR_WARN("SceneLoadTask::loadAssets: can't load animation by path {0}", absolutePath);
-                        continue;
-                    }
-                    loaded.filePath = absolutePath;
-
-                    const auto imageId = resourceFileKey(combinePath(scene -> getAssociatedProjectPath(),
-                            loaded.texturePath));
-                    if(!resourceManager -> loadImage(imageId)) {
-                        RB_EDITOR_WARN("SceneLoadTask::loadAssets: can't load animation's image by path {0}", imageId);
-                        continue;
-                    }
-                    auto* animation = resourceManager -> addAnimation(entity.getUUID(), id);
-                    if(animation)
-                        *animation = std::move(loaded);
-                }
-
-            }
-
-            if(entity.hasChildren()) {
-                for(auto& child: entity.getChildren())
-                    loadEntityAssets(scene, child);
-            }
-        }
-    }
 }

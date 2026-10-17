@@ -1,22 +1,22 @@
 /*********************************************************************
-(c) Alex Raag 2024
-https://github.com/Enziferum
-robot2D - Zlib license.
-This software is provided 'as-is', without any express or
-implied warranty. In no event will the authors be held
-liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute
-it freely, subject to the following restrictions:
-1. The origin of this software must not be misrepresented;
-you must not claim that you wrote the original software.
-If you use this software in a product, an acknowledgment
-in the product documentation would be appreciated but
-is not required.
-2. Altered source versions must be plainly marked as such,
-and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any
-source distribution.
+   (c) Alex Raag 2024
+   https://github.com/Enziferum
+   robot2D - Zlib license.
+   This software is provided 'as-is', without any express or
+   implied warranty. In no event will the authors be held
+   liable for any damages arising from the use of this software.
+   Permission is granted to anyone to use this software for any purpose,
+   including commercial applications, and to alter it and redistribute
+   it freely, subject to the following restrictions:
+   1. The origin of this software must not be misrepresented;
+   you must not claim that you wrote the original software.
+   If you use this software in a product, an acknowledgment
+   in the product documentation would be appreciated but
+   is not required.
+   2. Altered source versions must be plainly marked as such,
+   and must not be misrepresented as being the original software.
+   3. This notice may not be removed or altered from any
+   source distribution.
 *********************************************************************/
 
 #include <filesystem>
@@ -26,6 +26,8 @@ source distribution.
 #include <robot2D/Graphics/Texture.hpp>
 #include <robot2D/Core/MessageBus.hpp>
 #include <editor/Observer.hpp>
+#include <editor/AssetBrowserModel.hpp>
+#include <editor/AssetPreviewCache.hpp>
 #include <editor/UIManager.hpp>
 #include <editor/PrefabManager.hpp>
 #include <editor/UIInteractor.hpp>
@@ -46,18 +48,13 @@ namespace editor {
             Animation
         };
 
-        const std::string iconFontPath = "res/fonts/fa-solid-900.ttf";
         const float m_padding = 16.F;
         float m_thumbnaleSize = 64.F;
-        const std::array<ResourceIconType, 8> iconTypes = {
-                ResourceIconType::File, ResourceIconType::Directory, ResourceIconType::Scene,
-                ResourceIconType::Image, ResourceIconType::Script, ResourceIconType::Font,
-                ResourceIconType::Prefab, ResourceIconType::Animation
-        };
+
     };
 
 
-    class AssetsPanel: public IPanel, public Observer {
+    class AssetsPanel : public IPanel, public Observer {
     public:
         enum class State {
             Loading,
@@ -65,30 +62,34 @@ namespace editor {
         };
     public:
         AssetsPanel(robot2D::MessageBus& messageBus,
-                    UIInteractor::Ptr uiInteractor,
-                    IUIManager& iuiManager,
-                    PrefabManager& prefabManager);
+            UIInteractor::Ptr uiInteractor,
+            IUIManager& iuiManager,
+            PrefabManager& prefabManager);
         AssetsPanel(const AssetsPanel& other) = delete;
         AssetsPanel& operator=(const AssetsPanel& other) = delete;
         AssetsPanel(AssetsPanel&& other) = delete;
         AssetsPanel& operator=(AssetsPanel&& other) = delete;
         ~AssetsPanel() override = default;
 
-        void switchState(State state) { m_state = state; }
+        void switchState(State state) {
+            if(state == State::Loading) m_previews.clear(); m_state = state;
+        }
         void setAssetsPath(const std::string& path);
         void render() override;
     private:
         void dropFiles(const std::vector<std::string>& paths);
         void uiAssetsCreation();
         void renderNavigation();
+        void renderViewControls();
         void navigateTo(const std::filesystem::path& path);
         void processAssets();
-        void setupIconAtlas();
+        void renderDirectoryTree(const std::filesystem::path& path, bool reveal, int depth = 0);
+        AssetPreview* drawImagePreview(const std::filesystem::path& path, robot2D::vec2f position, float size);
         void drawResourceIcon(AssetsPanelConfiguration::ResourceIconType type,
-                              robot2D::vec2f position, float size);
+            robot2D::vec2f position, float size);
         /// \brief in panel drag and out of panel
         void processDragDrop(const std::filesystem::directory_entry& directoryEntry,
-                             std::filesystem::path& path);
+            std::filesystem::path& path);
 
         void tableRender(int tableCount, bool& anyItemIsHovered);
     private:
@@ -110,13 +111,11 @@ namespace editor {
 
         std::filesystem::path m_currentPath;
         std::filesystem::path m_assetsPath;
-        struct ResourceIcon {
-            robot2D::vec2f uvMin;
-            robot2D::vec2f uvMax;
-            robot2D::vec2f size;
-        };
-        robot2D::Texture m_iconAtlas;
-        std::unordered_map<AssetsPanelConfiguration::ResourceIconType, ResourceIcon> m_resourceIcons;
+        AssetBrowserModel m_browser;
+        AssetPreviewCache m_previews;
+        bool m_revealTree{true};
+        bool m_showFolders{true};
+        bool m_listView{false};
 
         AssetsPanelConfiguration m_configuration;
         std::vector<AssetItem> m_assetItems;

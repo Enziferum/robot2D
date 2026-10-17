@@ -1,0 +1,33 @@
+{
+  "name": "robot2d-website",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@11.25.0",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "astro dev --host 127.0.0.1",
+    "build": "astro build --force",
+    "preview": "astro preview --host 127.0.0.1",
+    "check": "astro check",
+    "verify": "node scripts/verify-build.mjs",
+    "sync:releases": "node scripts/sync-releases.mjs",
+    "format:check": "prettier --check .",
+    "format": "prettier --write .",
+    "test": "node --test tests/release-policy.test.mjs"
+  },
+  "dependencies": {
+    "@astrojs/markdown-remark": "7.3.0",
+    "@astrojs/starlight": "0.42.6",
+    "astro": "7.4.0"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "parse5": "8.0.0",
+    "prettier": "3.8.3",
+    "prettier-plugin-astro": "1.1.1",
+    "typescript": "^6.0.3"
+  }
+}

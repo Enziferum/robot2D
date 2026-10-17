@@ -1,0 +1,40 @@
+#pragma once
+
+#include <optional>
+#include "WindowOptions.hpp"
+
+namespace robot2D {
+    /// Owns the style pushes from WindowOptions without retaining the options.
+    class WindowStyleScope {
+    public:
+        explicit WindowStyleScope(const WindowOptions& options);
+        WindowStyleScope(const WindowStyleScope&) = delete;
+        WindowStyleScope& operator=(const WindowStyleScope&) = delete;
+        WindowStyleScope(WindowStyleScope&&) = delete;
+        WindowStyleScope& operator=(WindowStyleScope&&) = delete;
+        ~WindowStyleScope();
+    private:
+        int m_variables;
+        int m_colors;
+    };
+
+    /// Skips an already closed window and consumes its SetNextWindow parameters.
+    /// Otherwise always ends Begin, even if clipped/collapsed. Styles outlive End.
+    /// Requires the creating ImGui context to remain current for this scope.
+    class WindowScope {
+    public:
+        explicit WindowScope(const WindowOptions& options, bool* open = nullptr);
+        WindowScope(const WindowScope&) = delete;
+        WindowScope& operator=(const WindowScope&) = delete;
+        WindowScope(WindowScope&&) = delete;
+        WindowScope& operator=(WindowScope&&) = delete;
+        ~WindowScope();
+        explicit operator bool() const noexcept {
+            return m_visible;
+        }
+    private:
+        std::optional<WindowStyleScope> m_style;
+        bool m_begun{false};
+        bool m_visible{false};
+    };
+}

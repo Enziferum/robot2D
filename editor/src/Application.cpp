@@ -46,18 +46,7 @@ namespace editor {
     namespace {
         const std::string configPath = "robot2D.ini";
 
-        int getDPI() {
-#ifdef _WIN32
-            const HDC hdc = GetDC(nullptr);
-            if(!hdc)
-                return 96;
-            const int dpi = GetDeviceCaps(hdc, LOGPIXELSX);
-            ReleaseDC(nullptr, hdc);
-            return dpi > 0 ? dpi : 96;
-#else
-            return 96;
-#endif
-        }
+
 
 
     }
@@ -89,7 +78,7 @@ namespace editor {
             std::string fontPath1 = std::string{"res/fonts/fa-regular-400.ttf"};
             std::string fontPath2 = std::string{"res/fonts/fa-solid-900.ttf"};
             float fontSize = 18.f;
-            float scaleFactor = static_cast<float>(getDPI()) / 96.f;
+            float scaleFactor = m_window -> getContentScale().x;
 
             RB_EDITOR_INFO("[Application] GUI setup started; dpi_scale={}", scaleFactor);
             robot2D::GuiConfiguration guiConfiguration;
@@ -167,18 +156,11 @@ namespace editor {
             m_window -> setResizable(false);
             m_window -> setSize(m_appConfiguration.inspectorSize);
 
-            applyStyle(EditorStyle::SlateBlue);
+            applyStyle(EditorStyle::SlateTeal);
             const auto& cache = m_logic.getCache();
             m_projectInspector.setup(cache.getProjects(), cache.showInspectorOnStartup());
         }
 
-        m_eventBinder.bind<robot2D::Event::Resized>([this](const robot2D::Event::Resized& evt) {
-            RB_EDITOR_INFO("Editor's window new size = {0} and {1}", evt.width, evt.height);
-            m_window -> resize({static_cast<int>(evt.width),
-                                static_cast<int>(evt.height)});
-            m_window -> setView({{0, 0}, {static_cast<float>(evt.width),
-                                          static_cast<float>(evt.height)}});
-        });
         RB_EDITOR_INFO("[Application] Setup completed; editor_active={}",
             m_logic.getState() == AppState::Editor);
     }
@@ -259,6 +241,10 @@ namespace editor {
     }
 
     void Application::render() {
+        if(!m_window -> synchronizeSize()) {
+            if(!m_guiWrapper.cancelFrame()) RB2D_EXCEPTION(m_guiWrapper.lastError());
+            return;
+        }
         m_window -> clear();
         if(m_logic.getState() == AppState::Editor) {
             m_editorModule -> render();

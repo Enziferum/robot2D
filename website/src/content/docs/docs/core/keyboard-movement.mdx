@@ -1,0 +1,219 @@
+---
+title: 'Lesson 02: keyboard movement'
+description: Move the Robot Lab sprite with held keys, a speed in units per second and the Core update timestep.
+---
+
+import { Code } from '@astrojs/starlight/components';
+import inputSource from '../../../../../public/examples/keyboard-movement/KeyboardMovement.hpp?raw';
+import applicationSource from '../../../../../public/examples/keyboard-movement/MovingSprite.hpp?raw';
+import mainSource from '../../../../../public/examples/keyboard-movement/main.cpp?raw';
+
+## What you will build
+
+Extend [Lesson 01: your first sprite](../first-sprite/) so the robot moves with
+**WASD or the arrow keys**, at **180 world units per second**. Releasing a key
+stops that direction. Diagonal movement has the same speed as horizontal movement.
+Escape or the window's close button exits.
+
+Use the same **0.8.0 development checkout**, checked against Core baseline
+**79369b2**, native dependencies and GL requirements as lesson 01. You should
+already be able to build and display its sprite. This lesson adds no physics,
+collisions, animation or camera. The robot can move beyond the window boundaries.
+
+## Start and finished files
+
+The starting project is `website/public/examples/first-sprite/`. The finished
+version adds the neighbouring `keyboard-movement/` directory:
+
+```text
+website/public/examples/
+  first-sprite/
+    FirstSprite.hpp
+    assets/robot.png
+  keyboard-movement/
+    KeyboardMovement.hpp
+    MovingSprite.hpp
+    main.cpp
+    CMakeLists.txt
+    README.md
+    LICENSE.txt
+```
+
+Download the [input state](../../../examples/keyboard-movement/KeyboardMovement.hpp),
+[application](../../../examples/keyboard-movement/MovingSprite.hpp),
+[entry point](../../../examples/keyboard-movement/main.cpp),
+[CMake target](../../../examples/keyboard-movement/CMakeLists.txt) and
+[README](../../../examples/keyboard-movement/README.md).
+Keep lesson 01's [base application](../../../examples/first-sprite/FirstSprite.hpp)
+and [PNG](../../../examples/first-sprite/assets/robot.png) too. Its resource
+ownership, texture rectangle, batching and cleanup are reused. The only extension
+point added to `FirstSprite` is a protected `sprite()` accessor. The texture stays
+owned by the base application, and the sprite still borrows it.
+
+The [source license](../../../examples/keyboard-movement/LICENSE.txt) and
+[art provenance](../../../examples/first-sprite/README.md)
+are included.
+
+## 1. Separate events from held state
+
+A `KeyPressed` event describes a transition. It does **not** mean “move once per
+frame until release”. Conversely, a held key need not generate a new press event
+on every update. Operating-system autorepeat is for repeated key notifications;
+its delay and frequency should not determine movement speed.
+
+We keep one boolean per bound key:
+
+| Event                      | What the example changes                               |
+| -------------------------- | ------------------------------------------------------ |
+| `KeyPressed`, not a repeat | Mark that key as held.                                 |
+| `KeyReleased`              | Clear that key.                                        |
+| `LostFocus`                | Clear all held keys and suspend movement.              |
+| `GainFocus`                | Accept new presses; do not restore the old held state. |
+| `TextEntered`              | Nothing here: text input is a separate task.           |
+
+After returning to the window, release and press movement keys again. This
+prevents a missed release during a focus switch from leaving the robot moving.
+Repeated presses are ignored, including a stale repeat after focus returns.
+
+<Code code={inputSource} lang="cpp" title="KeyboardMovement.hpp" />
+
+`event.getIf<Event::KeyPressed>()` returns a pointer for that specific payload,
+or `nullptr` for another event. Access `code` and `repeat` only after the pointer
+check. A `KeyReleased` payload has `code`; it does not have a `repeat` flag.
+The switch ignores unbound or unknown keys without using their values as array
+indices. Use `TextEntered` for entering characters into a text box; a movement
+binding is not a text editor.
+
+A and Left are tracked separately, then combined into the left action. Holding
+both and releasing A must still leave Left active. Right/left and up/down cancel
+on each axis when both directions are held.
+
+## 2. Convert speed into displacement
+
+For a non-zero input direction, normalize it, then calculate:
+
+```cpp
+// direction has length 1; speed is world units / second; deltaTime is seconds.
+displacement = direction * speed * deltaTime;
+```
+
+At 180 units/second, a `1 / 60` second step moves 3 units along a horizontal axis.
+Sixty such updates cover 180 units. Multiplying by time is what turns a speed
+into a distance. Adding `speed` every render would instead make distance depend
+on how many frames were drawn.
+
+Without normalization, `(1, 1)` has length about 1.414 and diagonal movement would
+be faster. Dividing by the vector's length preserves the intended total speed.
+Check for a zero vector before dividing. Negative, zero or non-finite time steps
+return zero displacement in this example; normal Engine updates use a positive
+fixed step. We do not silently cap positive time or change Engine's scheduler.
+
+### What deltaTime means in today's Core
+
+At the checked baseline, Engine pumps events, sends the ordered batch through
+`handleEventFrame()`, then accumulates elapsed time. For each simulation step it
+calls `update(timePerFrame)`, where `timePerFrame = 1 / maxFrameRate`.
+With the configuration below, that is `1 / 60` second, **not the elapsed time of
+the latest rendered frame**.
+
+A rendered frame can have zero, one or several updates. Use the parameter passed
+to `update()`; do not start a second clock in the player, and do not multiply by
+time again in `render()`. Equal simulated time with the same held direction gives
+the same distance, up to floating-point rounding, regardless of its subdivision.
+This does not imply perfect input timing or an unlimited catch-up guarantee.
+The final simulation/input scheduler is separate engine development work.
+
+## 3. Apply input during update
+
+<Code code={applicationSource} lang="cpp" title="MovingSprite.hpp" />
+
+`MovingSprite` inherits the first lesson's loading, rendering and cleanup.
+Its event handler first preserves `FirstSprite::handleEvents()` so the window's
+close event still stops the program. It then updates input state and handles
+Escape as an immediate exit action.
+
+`update(deltaTime)` moves the existing sprite using the calculated displacement.
+`render()` remains inherited and only draws the latest position. There is no
+loading in the update loop and no movement inside a key callback.
+
+The default `Application::handleEventFrame()` calls `handleEvents()` for each
+ordered event. You do not need to poll native events again inside this class.
+This is a **held-state movement example**: a complete press and release delivered
+before an update leave the key up, so a very short tap may cause no displacement.
+For one-shot actions such as jump or menu confirm, consume a press transition or
+queue an action explicitly rather than relying only on the final held state.
+
+## 4. Build and run
+
+<Code code={mainSource} lang="cpp" title="main.cpp" />
+
+From the repository root, with the same configured native environment as lesson 01:
+
+```sh
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DRB2D_BUILD_CORE_EXAMPLES=ON
+cmake --build build --config Release --target robot2D-keyboard-movement robot2D-keyboard-movement-test -j 4
+ctest --test-dir build -C Release -R '^core-lesson.keyboard' --output-on-failure
+```
+
+Reuse an existing build's directory, generator, compiler and dependency options.
+The root still checks repository dependencies; this is not an installed SDK.
+CMake copies the shared `assets/` beside the executable. For another configuration,
+replace `Release` below with its name. Keep matching runtime DLLs on `PATH` on
+Windows, or use an MSYS2 MinGW64 terminal for a MinGW build.
+
+Windows PowerShell:
+
+```powershell
+Set-Location build/examples/keyboard-movement/Release
+.\robot2D-keyboard-movement.exe
+```
+
+Linux:
+
+```sh
+cd build/examples/keyboard-movement/Release
+./robot2D-keyboard-movement
+```
+
+The default PNG path is still relative to the process working directory. Pass an
+explicit PNG path as the first argument to run from somewhere else. Reuse the
+first lesson's [asset-path diagnostics](../first-sprite/#if-the-screen-is-empty)
+if loading fails.
+
+## Check the result
+
+1. Hold D or Right: the robot moves right continuously. Release it: movement stops.
+2. Hold W and D: the robot moves diagonally without a speed boost. Y increases
+   downward in the default 2D view, so W/Up use a negative Y direction.
+3. Hold A and Left, then release A: the robot keeps moving left until Left is released.
+4. Hold a movement key and switch focus away. The robot stops; after returning,
+   release and press the key again to resume.
+5. Press Escape, or close the window: the program exits normally.
+
+The five headless checks use the **published application code** and typed event
+values. They verify movement over equal simulated time, release/repeat, diagonal
+speed, opposing/alias keys, focus transitions, unknown/text events and exits.
+They create neither a window nor a texture, and do not simulate physical keyboard
+input. Visible-window and OS input acceptance remain manual.
+
+## If movement feels wrong
+
+| Symptom                                 | Check                                                                                                                     |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| It moves once, pauses, then repeats     | Keep held state and move in `update()`, not once per press event.                                                         |
+| Speed changes with rendering rate       | Multiply the speed by `update()`'s time step once; do not move in `render()`.                                             |
+| Diagonal movement is faster             | Normalize the non-zero direction vector.                                                                                  |
+| Releasing A cancels a held Left arrow   | Store each physical binding separately before combining actions.                                                          |
+| It keeps moving after switching windows | Clear held keys on `LostFocus`; do not restore stale state on `GainFocus`.                                                |
+| A short tap did nothing                 | Held-state motion can miss a tap that ends before an update. Use transitions for discrete actions.                        |
+| The robot disappeared                   | It can leave the visible area; this lesson deliberately has no boundary clamp. Restart or move in the opposite direction. |
+
+## Try a small change
+
+Change the speed to 90 units per second. Check that moving for one simulated second
+covers half the previous distance. Then try removing normalization temporarily:
+compare the distance travelled horizontally and diagonally, and restore it.
+
+Continue with [Lesson 03: coordinates, origin and bounds](../sprite-bounds/). Read
+[Application and events](../application-events/) for the event delivery and lifetime
+contracts used here; physics-based movement belongs to a later lesson.

@@ -139,6 +139,10 @@ class ReviewTests(unittest.TestCase):
         self.assertEqual((directory / entry['snapshot']).read_bytes(), b'\x00\xffdata')
         self.assertEqual(manifest['status'], 'prepared')
         self.assertIn('[Review]', (directory / 'chat-prompt.txt').read_text(encoding='utf-8'))
+        for name in ('review-prompt.txt', 'chat-prompt.txt'):
+            prompt = (directory / name).read_text(encoding='utf-8')
+            self.assertIn('AGENTS.md', prompt)
+            self.assertNotIn('docs/', prompt)
         self.assertFalse((directory / 'report.md').exists())
 
     def test_model_success_and_concurrent_change(self):

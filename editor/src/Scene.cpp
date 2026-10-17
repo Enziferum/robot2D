@@ -249,7 +249,7 @@ namespace editor {
     }
 
     void Scene::onPhysics2DStop() {
-        m_physicsAdapter -> stop();
+        if(m_physicsAdapter) m_physicsAdapter -> stop();
         m_physicsAdapter.reset();
     }
 
