@@ -91,7 +91,8 @@ namespace editor {
                 if(hitbox.isHovered) {
                     if(hitbox.onHoverOnce && !hitbox.wasHovered) {
                         auto index = hitbox.callbackIDs[UIHitbox::CallbackID::MouseMoved];
-                        if(index >= 0)
+                        if(index >= 0 && static_cast<std::size_t>(index) < m_mouseHoverCallbacks.size() &&
+                            m_mouseHoverCallbacks[index])
                             m_mouseHoverCallbacks[index](ent);
                     }
                     hitbox.wasHovered = true;
@@ -100,7 +101,8 @@ namespace editor {
             }
             if(!hitbox.isHovered) {
                 auto index = hitbox.callbackIDs[UIHitbox::CallbackID::MouseMoved];
-                if(index >= 0)
+                if(index >= 0 && static_cast<std::size_t>(index) < m_mouseUnHoverCallbacks.size() &&
+                    m_mouseUnHoverCallbacks[index])
                     m_mouseUnHoverCallbacks[index](ent);
 
                 hitbox.wasHovered = false;

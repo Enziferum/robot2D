@@ -158,6 +158,7 @@ namespace editor {
         }
 
         void setOperationType(Operation type);
+        void setSnapping(bool enabled, float distance, float angle);
         Operation getOperationType() const {
             return m_operation;
         }
@@ -203,6 +204,11 @@ namespace editor {
         robot2D::Sprite m_rotateSprite;
 
         robot2D::vec2f m_manipulatorLastPos;
+        robot2D::vec2f m_dragStart{};
+        bool m_snapEnabled{false};
+        float m_snapDistance{16.f};
+        float m_snapAngle{15.f};
+        std::vector<float> m_rotationRemainders;
 
     };
 }

@@ -20,6 +20,7 @@
 *********************************************************************/
 
 #include <cmath>
+#include <algorithm>
 #include <editor/EditorCamera.hpp>
 #include <robot2D/Core/Window.hpp>
 
@@ -50,13 +51,6 @@ namespace editor {
     constexpr float Fov = 45.F;
     constexpr float zNear = 0.1f;
     constexpr float zFar = 1000.f;
-    namespace {
-        constexpr const float zoomOffset = 1.F;
-        constexpr const float zoomMultiplier = 0.1F;
-    }
-
-
-
     IEditorCamera::~IEditorCamera() = default;
 
     EditorCamera2D::EditorCamera2D() :
@@ -65,23 +59,30 @@ namespace editor {
 
 
     void EditorCamera2D::setViewportSize(robot2D::vec2f newSize) {
-        constexpr float zoomScale = 1.f;
-        m_view.reset({0, 0, newSize.x / zoomScale, newSize.y / zoomScale});
+        if(!std::isfinite(newSize.x) || !std::isfinite(newSize.y) || newSize.x < 1.f || newSize.y < 1.f)
+            return;
+        const bool firstSize = m_viewportSize.x == 0.f;
+        m_viewportSize = newSize;
+        if(firstSize)
+            m_view.setCenter(newSize * 0.5f);
+        setZoom(m_zoom);
     }
 
     void EditorCamera2D::handleEvents(const robot2D::Event& event) {
         if(event.getIf<robot2D::Event::LostFocus>()) m_leftCntrlPressed = false;
 
-        if(event.type() == robot2D::Event::Type::MouseWheel && m_leftCntrlPressed) {
-            m_zoom = zoomOffset + -event.get<robot2D::Event::MouseWheelEvent>().scroll_y * zoomMultiplier;
-            m_view.zoom(m_zoom);
+        if(event.getIf<robot2D::Event::MouseWheel>() && m_leftCntrlPressed) {
+            setZoom(m_zoom * std::pow(1.1f, event.get<robot2D::Event::MouseWheel>().scroll_y));
         }
 
-        if(event.type() == robot2D::Event::Type::KeyPressed &&
+        if(event.getIf<robot2D::Event::LostFocus>())
+            m_leftCntrlPressed = false;
+
+        if(event.getIf<robot2D::Event::KeyPressed>() &&
             event.get<robot2D::Event::KeyboardEvent>().code == robot2D::Key::LEFT_CONTROL)
             m_leftCntrlPressed = true;
 
-        if(event.type() == robot2D::Event::Type::KeyReleased &&
+        if(event.getIf<robot2D::Event::KeyReleased>() &&
             event.get<robot2D::Event::KeyboardEvent>().code == robot2D::Key::LEFT_CONTROL)
             m_leftCntrlPressed = false;
     }
@@ -89,7 +90,7 @@ namespace editor {
     void EditorCamera2D::update(robot2D::vec2f mousePos, [[maybe_unused]] float deltaTime) {
         constexpr float deltaOffset = 0.5F;
 
-        robot2D::vec2f delta = (mousePos - m_mousePos) * deltaOffset;
+        robot2D::vec2f delta = (mousePos - m_mousePos) * (deltaOffset / m_zoom);
         m_mousePos = mousePos;
 
         if(m_window && m_window -> isMouseButtonPressed(robot2D::Mouse::MouseMiddle) && m_leftCntrlPressed) {
@@ -101,10 +102,34 @@ namespace editor {
     }
 
     void EditorCamera2D::resetDefaults() {
-        m_zoom = 0.F;
-        m_view.reset(m_view.getRectangle());
+        setZoom(1.f);
+        m_view.setCenter(m_viewportSize * 0.5f);
     }
 
+
+    bool EditorCamera2D::setZoom(float zoom) {
+        if(!std::isfinite(zoom) || zoom <= 0.f || m_viewportSize.x <= 0.f || m_viewportSize.y <= 0.f)
+            return false;
+        m_zoom = std::clamp(zoom, 0.05f, 8.f);
+        // Use the scalar overload: it keeps View's cached rectangle in sync.
+        m_view.setSize(m_viewportSize.x / m_zoom, m_viewportSize.y / m_zoom);
+        return true;
+    }
+
+    bool EditorCamera2D::frameBounds(const robot2D::FloatRect& bounds) {
+        if(!std::isfinite(bounds.lx) || !std::isfinite(bounds.ly) || !std::isfinite(bounds.width)
+            || !std::isfinite(bounds.height) || bounds.width < 0.f || bounds.height < 0.f)
+            return false;
+        const auto center = bounds.centerPoint();
+        if(!std::isfinite(center.x) || !std::isfinite(center.y))
+            return false;
+        const float zoom = std::min(m_viewportSize.x / std::max(1.f, bounds.width) / 1.25f,
+                m_viewportSize.y / std::max(1.f, bounds.height) / 1.25f);
+        if(!setZoom(zoom))
+            return false;
+        m_view.setCenter(center);
+        return true;
+    }
 
     EditorCamera::EditorCamera() :
         IEditorCamera(EditorCameraType::Perspective),
