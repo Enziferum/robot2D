@@ -1,0 +1,102 @@
+---
+title: 'Lesson 05: camera and mouse coordinates'
+description: Follow a sprite through a larger world with View and convert logical mouse input to world coordinates.
+---
+
+import { Code } from '@astrojs/starlight/components';
+import camera from '../../../../../public/examples/camera-view/Camera.hpp?raw';
+import application from '../../../../../public/examples/camera-view/CameraSprite.hpp?raw';
+import main from '../../../../../public/examples/camera-view/main.cpp?raw';
+
+Take the [animated beacon](../sprite-animation/) into a **2000 × 1200 world**.
+The camera follows it; small stationary beacons make scrolling visible. Left-click
+to place the player at a point in the currently drawn view. This example targets
+**0.8.0-dev**, including the **79369b2** Window metrics API.
+
+## A view chooses what you see
+
+A `View` describes a world-space center and visible size. Moving the camera does
+not change entity positions. `setView()` selects that view for drawing; it is not
+a replacement for moving the player.
+
+The camera shows 600 world units vertically. Its width follows the logical window
+aspect ratio: an 800 × 600 window sees 800 × 600 world units; a 1600 × 600 window
+sees 1600 × 600. This prevents stretching while making wide windows reveal more
+world. A different game might instead use a fixed field of view and letterboxing.
+
+<Code code={camera} lang="cpp" title="Camera.hpp" />
+
+We clamp the camera center by **half its visible size** so its edges stay inside
+the world. If the view is wider than the world, it centers on the world and exposes
+background on both sides. A zero logical size preserves the last valid view.
+`reset()` establishes a complete unrotated view, including its rectangle, before
+we change its center. The sample uses the full-window viewport.
+
+## Player bounds and camera bounds differ
+
+Lesson 03 limited movement to the window. Here, the player's movement limits are
+the fixed world dimensions, independent of resize or camera position. The camera
+follows after movement. Resizing changes the visible region, not the world and
+not the player's coordinates.
+
+Engine's native-surface synchronization preserves custom views; this application
+updates its own camera aspect explicitly each drawable frame. Do not scale the
+world by Windows DPI or use framebuffer pixels as world coordinates.
+
+## Mouse input has its own coordinate space
+
+`Event::MousePressed` supplies logical client X/Y coordinates. Once a camera has
+moved, assigning those numbers directly to a sprite position is wrong.
+
+Use `RenderWindow::mapClientToCoords(point, view)`. It accounts for the actual
+logical-to-framebuffer ratio, the viewport and the view's inverse transform.
+`mapPixelToCoords()` expects physical target pixels instead; do not feed it logical
+mouse coordinates. Neither helper is a complete conversion for the editor's
+embedded Scene/Game framebuffer.
+
+At the initial camera center `(1000, 600)`, clicking the center of an 800 × 600
+client area maps to world `(1000, 600)`, not `(400, 300)`.
+
+<Code code={application} lang="cpp" title="CameraSprite.hpp" />
+
+The event handler records the latest left click. `render()` consumes that one-shot
+placement command after Engine synchronizes the native surface and this frame's
+camera has been selected. This deliberately maps against the view being drawn;
+held keyboard movement and animation remain in `update(deltaTime)`. The camera
+follows a click's new position on the next frame. Multiple clicks before a draw
+collapse to the last one; focus loss or an unavailable surface discards the command.
+For a game with simulation replay, convert input into explicit simulation commands
+and define its timing separately.
+
+Landmarks and the player borrow the atlas owned by `AnimatedSprite`. Drawing the
+landmarks first puts the player over them. The application keeps one camera for
+the entire pass; a HUD in window space would need its own view/pass.
+
+<Code code={main} lang="cpp" title="main.cpp" />
+
+## Build and try
+
+```sh
+cmake -S . -B build -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DRB2D_BUILD_CORE_EXAMPLES=ON
+cmake --build build --config Release --target robot2D-camera-view robot2D-core-lessons-test
+ctest --test-dir build -C Release -R '^core-lesson\.camera$' --output-on-failure
+```
+
+Run `build/examples/camera-view/Release/robot2D-camera-view` (add `.exe` on Windows).
+Use WASD/arrows, left-click to reposition and Escape to exit. Move toward each world
+edge: the camera should stop before the player does. Resize wide/tall and try a
+different Windows display scale; clicks should still land under the pointer.
+
+The headless test checks real `View` projection/inverse projection, edge following,
+aspect changes, zero size and a view larger than the world. It does not exercise
+native mouse events, actual high-DPI output or the complete GL rendering path;
+those remain manual checks, without computer-use.
+
+Download [CameraSprite.hpp](../../../examples/camera-view/CameraSprite.hpp),
+[Camera.hpp](../../../examples/camera-view/Camera.hpp),
+[main.cpp](../../../examples/camera-view/main.cpp) and
+[CMakeLists.txt](../../../examples/camera-view/CMakeLists.txt).
+Build inside the repository with the preceding lesson directories available.
+
+For API context, see [graphics and resources](../graphics-resources/) and
+[application events](../application-events/).

@@ -53,6 +53,15 @@ export default defineConfig({
               slug: 'docs/core/keyboard-movement',
             },
             {
+              label: '03 — Coordinates and bounds',
+              slug: 'docs/core/sprite-bounds',
+            },
+            {
+              label: '04 — Atlas animation',
+              slug: 'docs/core/sprite-animation',
+            },
+            { label: '05 — Camera and mouse', slug: 'docs/core/camera-view' },
+            {
               label: 'Application and events',
               slug: 'docs/core/application-events',
             },
