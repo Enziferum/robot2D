@@ -1,0 +1,6 @@
+{
+  "Name": "RobotLabPlatformer",
+  "Path": ".",
+  "Editor Version": "0.8.0-dev",
+  "Start Scene": "Platformer.scene"
+}

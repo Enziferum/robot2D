@@ -15,7 +15,7 @@ stops the application and releases its texture before the graphics context ends.
 You do not need to launch the editor or create an editor project.
 
 This lesson targets the **0.8.0 development API**, checked against Core baseline
-**4132acf**. It is not an installed SDK or a promise of a frozen 1.0 API. You need
+**79369b2**. It is not an installed SDK or a promise of a frozen 1.0 API. You need
 a configured [source checkout](../../getting-started/), C++17, CMake 3.21+, the
 repository's native dependencies and an OpenGL 4.3-capable desktop context for this
 example. Repository/editor requirements can be higher. Keep compiler and native
@@ -102,6 +102,8 @@ If you choose a non-square PNG, adjust the destination size to preserve its aspe
 ratio. Transparent padding also affects how large the visible character appears.
 
 ### Submit and present a frame
+
+Before drawing, `getMetrics().drawable()` checks the actual window metrics. A minimized or zero-framebuffer window skips rendering and presentation; Engine keeps pumping events and updates. This guard uses the Window metrics API from Core baseline **79369b2**.
 
 The frame has five operations:
 

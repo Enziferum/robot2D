@@ -31,7 +31,7 @@ per second. Diagonals are normalized, opposing keys cancel, repeat events do not
 move the sprite, and focus loss clears held keys. After focus returns, release
 and press the movement keys again. There are no world bounds or collisions.
 
-Current Core baseline: 4132acf. Engine calls `update()` with a fixed timestep
+Current Core baseline: 79369b2. Engine calls `update()` with a fixed timestep
 `1 / maxFrameRate`, possibly several times between renders. This parameter is
 in seconds. It is not a newly measured render delta or a guarantee of final
 scheduler semantics. The formula remains `direction * speed * deltaTime`.
