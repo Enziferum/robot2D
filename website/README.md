@@ -101,4 +101,12 @@ published application. It requires positive unrotated quads, static obstacles an
 a non-overlapping start; it is not a general physics solver. Native CI builds the
 example/tests and runs the GL check in its graphics job.
 
+Lesson 07 adds `public/examples/collect-items`: five once-only pickup triggers,
+ten points per item, a Core Font/Text HUD and R to restart round state. The example
+bundles the repository's unchanged Source Sans Pro with its OFL notice and supplies
+the uploaded font atlas through RenderStates. Five headless cases include a complete
+input-driven route; two optional GL checks cover HUD pixels, item disappearance/reset
+and missing-font cleanup. The collision lesson exposes an empty drawExtras hook
+to keep the extension inside one render pass, without changing its own scene.
+
 `pnpm test` checks the public release policy. CI also tests activation/rollback on Linux and saves the root-path preview artifact. `deploy/activate-release.sh` is Linux-only; do not invoke it on a real server until the host, permissions and domain are prepared. Nginx/HTTPS have not been validated on a purchased server yet.

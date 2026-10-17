@@ -45,6 +45,7 @@ public:
             ? robot2D::Color(230.F, 174.F, 76.F) : robot2D::Color(35.F, 65.F, 75.F));
         m_window -> draw(m_hitbox); // Makes the complete collision quad visible.
         m_window -> draw(sprite());
+        drawExtras();
         m_window -> afterRender();
         m_window -> display();
     }
@@ -55,6 +56,9 @@ public:
     }
 
 protected:
+    // Later lessons can add triggers/HUD inside the same render pass.
+    virtual void drawExtras() {}
+
     void configureGeometry() {
         sprite().setSize({96.F, 96.F});
         sprite().setOrigin({0.5F, 0.5F});

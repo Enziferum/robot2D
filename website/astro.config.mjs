@@ -65,6 +65,7 @@ export default defineConfig({
               label: '06 — Sprite collisions',
               slug: 'docs/core/sprite-collisions',
             },
+            { label: '07 — Items and score', slug: 'docs/core/collect-items' },
             {
               label: 'Application and events',
               slug: 'docs/core/application-events',

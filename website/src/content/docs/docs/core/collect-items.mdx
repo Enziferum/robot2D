@@ -1,0 +1,183 @@
+---
+title: 'Lesson 07: items and score'
+description: Collect overlapping items once, update a visible score counter and restart a round without reloading resources.
+---
+
+import { Code } from '@astrojs/starlight/components';
+import state from '../../../../../public/examples/collect-items/CollectionState.hpp?raw';
+import application from '../../../../../public/examples/collect-items/CollectItems.hpp?raw';
+import main from '../../../../../public/examples/collect-items/main.cpp?raw';
+
+Turn the [collision arena from lesson 06](../sprite-collisions/) into a small
+collection game: pick up five gold squares, earn ten points for each, and read the
+score inside the window. Press R to start another round. This example targets
+**0.8.0-dev**, based on **8b998ee**, including Window metrics baseline **79369b2**.
+
+## Solid walls and pickup triggers
+
+A wall blocks movement. A pickup uses the same rectangle overlap query but does
+not block movement: it is a **trigger**. Keep these responses separate. Items are
+not passed into `moveAndSlide()` and they never push the player out.
+
+Each update performs these steps:
+
+1. Resolve player movement against solid walls using lesson 06's solver.
+2. Compare the player's resulting AABB with each active item's AABB.
+3. Mark every overlapping item as collected.
+4. Refresh the HUD if the collection state changed.
+
+This order means triggers use the position the player actually reached, rather
+than a desired position beyond a wall. Detection uses positive, unrotated sprite
+quads and normalized origins, as before. Transparent PNG padding still belongs
+to the player's box. Merely touching an item's edge does not collect it; interiors
+must overlap.
+
+## Award points exactly once
+
+Do not add ten points every frame while the boxes overlap. A collected item must
+stop participating in detection as well as drawing. We keep a fixed array of five
+active flags; collecting an already inactive index does nothing. No array element
+is erased while we iterate.
+
+<Code code={state} lang="cpp" title="CollectionState.hpp" />
+
+Score is derived from the number of collected flags, multiplied by ten. That avoids
+keeping an unrelated score counter and item count in sync. The maximum is 50 in
+this small example, so there is no unbounded score accumulation. `collect()` returns
+whether it changed the state; callers can use that transition for feedback later.
+Several items can be collected in one update. `complete()` means all five are gone.
+
+This is round state, not persistence. Closing the application loses the score.
+Save files, achievements, sounds, inventory and general event dispatch belong to
+later lessons.
+
+## Add the items and the HUD
+
+<Code code={application} lang="cpp" title="CollectItems.hpp" />
+
+`CollectItems` inherits the existing walls, movement input, PNG and render pass.
+Lesson 06 now exposes an empty `drawExtras()` hook just before flushing and
+presenting the frame. This application overrides it to draw active items and the
+HUD. The lesson 06 application itself still draws the same scene. No extra
+`beforeRender()`/`display()` pair is introduced, and Core API is unchanged.
+
+The items are centered 28 × 28 quads colored gold. A one-pixel white texture is
+created once in `setup()` and shared by all five sprites. Their positions are
+outside the walls and reachable by the 96 × 96 player. The world remains the fixed
+800 × 600 arena; use at least that logical client size to see the whole layout.
+
+### Text needs both a font and a texture
+
+The repository already includes Source Sans Pro. This example bundles an unchanged
+copy with its [OFL notice](../../../examples/collect-items/assets/OFL.txt), and loads
+it at character size 24. There are two distinct parts:
+
+- `Font` loads metrics and builds CPU atlas images.
+- `Texture::create(*font.getImages().front())` uploads that atlas to the GPU.
+
+`Text::setFont()` borrows the font and initializes its rendering data. In this Core
+baseline, the atlas texture is supplied explicitly through `RenderStates.texture`
+when drawing the text. Setting the font alone is not enough to display its pixels.
+The example checks that the atlas has one page; it does not pretend to support
+arbitrary multi-page fonts. All HUD strings use ASCII, matching the current font
+character range. Unicode shaping and localization are separate work.
+
+The first line is `Score: 0    Items: 0/5`. The second line shows the controls,
+then changes to `All collected! Press R to restart.` on completion. The game still
+allows movement after completion; collecting everything is not an Engine pause.
+`setText()` runs only after a pickup or reset, not on every frame. Drawing happens
+inside the same batch/pass after the world sprites.
+
+`destroy()` resets the text objects while their font and the GL context still
+exist, releases the atlas/item textures, resets the font, and calls the inherited
+cleanup. It also handles a partially completed setup, such as a missing font file.
+Repeated cleanup is safe. The font path failure includes its absolute path.
+
+### Restart the state, not the resources
+
+R restores the player spawn, reactivates all five items and returns the score to
+zero. It does not load the PNG/font again or allocate new textures. An autorepeated
+R event is ignored, and R is ignored while unfocused. Movement bindings retain
+lesson 02's focus handling: losing focus clears held directions and regaining it
+does not restore stale keys. Holding a movement key while restarting deliberately
+continues movement from the spawn on the next update.
+
+## Build and run
+
+Use the dependencies and toolchain from [lesson 01](../first-sprite/), preserving
+an existing build's generator and compiler. From the repository root:
+
+```sh
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DRB2D_BUILD_CORE_EXAMPLES=ON
+cmake --build build --config Release --target robot2D-collect-items robot2D-collect-items-test -j 4
+ctest --test-dir build -C Release -R '^core-lesson\.items-' --output-on-failure
+```
+
+CMake copies the PNG, font and OFL notice into `assets/` beside the executable.
+Run from that output directory. On Windows, use matching runtime DLLs on PATH
+(for MinGW, the matching MSYS2 MinGW64 environment).
+
+```powershell
+Set-Location build/examples/collect-items/Release
+.\robot2D-collect-items.exe
+```
+
+On Linux:
+
+```sh
+cd build/examples/collect-items/Release
+./robot2D-collect-items
+```
+
+The first optional argument overrides the PNG path; the second overrides the font:
+
+```sh
+./robot2D-collect-items assets/robot.png assets/SourceSansPro-Regular.ttf
+```
+
+<Code code={main} lang="cpp" title="main.cpp" />
+
+## Try the round
+
+Move with WASD/arrows, collect the five gold items and check that the score reaches
+50 exactly. Stay where an item disappeared: it must not keep awarding points.
+Return to that location later, then press R and collect it again in the new round.
+Escape exits. Minimized/unavailable surfaces skip updates and drawing in this
+application while Engine continues pumping events.
+
+One possible route is across the top, down the right side to above the right-hand
+obstacle, left into the corridor beside the central wall, then down and across the
+bottom. The tests also drive an actual input-based route through all five items.
+
+Collection tests the **final resolved position**, not the swept path. A deliberately
+huge update or a teleport can jump over a pickup without collecting it. Lesson 06's
+per-axis wall sweep does not automatically provide swept trigger detection. Normal
+180-unit/second movement at the configured 60 updates per second advances only
+three units per update; swept triggers are a separate extension for faster games.
+
+## Checks and a small exercise
+
+Five headless scenarios cover duplicate pickup attempts, touch versus overlap,
+several pickups in one update, origin, final score/completion/reset, restart repeat
+and focus handling, and the full playable route at 30/60/120 updates per second.
+Two optional hidden-window GL checks verify visible HUD glyphs, changed score
+pixels, disappearing/restored item quads, repeated cleanup and missing-font failure.
+See the [example README](../../../examples/collect-items/README.md) for commands.
+They require working OpenGL; a skipped check is not a rendering pass. Visible UI,
+physical keyboard input and display-scale acceptance remain manual, without
+computer-use.
+
+Change `pointsPerItem` to 25 and predict the final score before running. Then add
+one more item: update the fixed count and position array together, ensure it does
+not overlap a wall, and extend the route test to reach it. When item types start
+having different values, replace the fixed multiplier with explicit item data.
+Update the expected scores and item counts in the tests when changing those rules.
+
+Download [CollectionState.hpp](../../../examples/collect-items/CollectionState.hpp),
+[CollectItems.hpp](../../../examples/collect-items/CollectItems.hpp),
+[main.cpp](../../../examples/collect-items/main.cpp),
+[CMakeLists.txt](../../../examples/collect-items/CMakeLists.txt),
+[font](../../../examples/collect-items/assets/SourceSansPro-Regular.ttf) and
+[OFL notice](../../../examples/collect-items/assets/OFL.txt).
+Build inside the full checkout, or keep the lesson 01/02/06 directories alongside
+this example. This is not an installed SDK.
