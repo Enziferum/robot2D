@@ -1,7 +1,6 @@
 name: Website
 on:
   pull_request:
-    types: [opened, synchronize, reopened, labeled]
     paths:
       - 'website/**'
       - 'CMakeLists.txt'
@@ -15,15 +14,13 @@ on:
   workflow_dispatch:
 permissions:
   contents: read
-# A label is a one-shot manual publication, not an automatic PR preview.
 env:
-  PUBLISH_PAGES: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' || (github.event.action == 'labeled' && github.event.label.name == 'deploy-pages' && github.event.pull_request.head.repo.full_name == github.repository) }}
+  PUBLISH_PAGES: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
 concurrency:
-  group: website-${{ github.event_name }}-${{ github.ref }}-${{ github.event.action == 'labeled' && 'publish' || 'check' }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' && github.event.action != 'labeled' }}
+  group: website-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 jobs:
   check:
-    if: github.event.action != 'labeled' || (github.event.label.name == 'deploy-pages' && github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-24.04
     timeout-minutes: 10
     permissions:
