@@ -240,3 +240,12 @@ Engine/fixed timestep, расширение справочника и отдел
 correctness, GuiImpl/context/fonts, API/payload, Core Graphics/Window, upstream
 и multi-viewports. Эти задачи не считаются выполненными по миграции ввода CORE-02.
 Исполнитель и конкретный следующий объём выбираются перед реализацией.
+
+### CORE-01: Window/Desktop, 2026-10-17
+
+Первый согласованный шаг реализован в codex/core-01-window-desktop: явный
+DesktopRuntime, единоличное владение окном, корректный GL/native shutdown,
+ошибки создания и polling с явным окном. Контракт — [core-api.md](core-api.md),
+проверки и ограничения — [project-roadmap.md](project-roadmap.md).
+Это не завершение всего CORE-01: timing/RuntimeSession только согласованы,
+multi-viewports/WindowID/DPI/IME/clipboard и crash reports остаются отдельно.

@@ -1,29 +1,30 @@
 # Общий план robot2D
 
-Обновлено: 2026-10-16. Это точка входа для всех направлений и чатов проекта:
+Обновлено: 2026-10-17. Это точка входа для всех направлений и чатов проекта:
 Core, ECS, Render, Editor, runtime/player, пример игры и инструменты выпуска.
 Релизные критерии — [release-roadmap.md](release-roadmap.md). Оперативные статусы,
 выбранные ведущие и результаты находятся в GitHub Issues и
 [Projects](https://github.com/users/Enziferum/projects/5).
 
-## Актуальный план Core и robot2D-imgui — 2026-10-16
+## Актуальный план Core и robot2D-imgui — 2026-10-17
 
 По запросу пользователя CORE-01 и CORE-02 объединены в ветке CORE-02 и
 [PR #122](https://github.com/Enziferum/robot2D/pull/122). Изменения
 [PR #112](https://github.com/Enziferum/robot2D/pull/112) сохраняются вместе с историей;
-он заменяется объединённым PR после публикации проверенного результата.
+он заменён объединённым PR. CORE-02 #122 и затем IMGUI-02 #130 слиты в dev
+после зелёного CI и подтверждённой пользователем ручной приёмки.
 CORE-01 #110 остаётся общей открытой задачей, не обещанием полного завершения Core.
 Датированные разделы ниже — история; этот блок задаёт текущие границы плана.
 
 | Этап | Что сделано / что остаётся | Статус |
 |---|---|---|
-| CORE-01: согласованный Util и базовые классы | ResourceHandler, MessageBus/типизированная память, Logger/Assert, FileInputStream, Time/Clock, совместимые constexpr/noexcept Vector2/3, регрессии, Doxygen | Объединено с CORE-02 на dev после PHYS-01; локальные проверки пройдены, финальный CI/ревью |
-| CORE-02: события | variant Event, typed EventBinder, GLFW FIFO/frame batch, Add*Event, capture/владельцы Press–Release/cancel, история/Events, потребители, UI clicks/shortcuts, startup crash fix | Реализовано; пользователь подтвердил повторное открытие проекта и GUI на всё окно; финальная интеграция/CI |
+| CORE-01: согласованный Util и базовые классы | ResourceHandler, MessageBus/типизированная память, Logger/Assert, FileInputStream, Time/Clock, совместимые constexpr/noexcept Vector2/3, регрессии, Doxygen | В dev через CORE-02 #122; общий CORE-01 остаётся открыт |
+| CORE-02: события | variant Event, typed EventBinder, GLFW FIFO/frame batch, Add*Event, capture/владельцы Press–Release/cancel, история/Events, потребители, UI clicks/shortcuts, startup crash fix | В dev через #122; CI и ручная приёмка пройдены |
 | robot2D-imgui: scopes | Безопасные оконные/style scopes и сохранение dockspace при скрытом canvas | Отдельные IMGUI-01 #121 / PR #123; реализованы в соседней ветке, не входят автоматически в CORE-02 |
-| robot2D-imgui: текущая корректность renderer | OrthoView Y; GL state и active texture/sampler/program/VAO; UserCallback/reset; scissor clamp/empty; GPU-resource RAII/отказ setup; владение memory-font | IMGUI-02 #126: реализован однооконный шаг; проверки и ограничения — [gui-backend.md](gui-backend.md) |
-| robot2D-imgui: GuiImpl lifecycle | Собственный ImGuiContext, safe shutdown до setup/после отказа, ready только после успеха; состояния кадра, шрифтовый набор | IMGUI-02 #126: lifecycle и фиксированный font set реализованы; G1/input сохранён из CORE-02; ручная приёмка впереди |
+| robot2D-imgui: текущая корректность renderer | OrthoView Y; GL state и active texture/sampler/program/VAO; UserCallback/reset; scissor clamp/empty; GPU-resource RAII/отказ setup; владение memory-font | IMGUI-02 #126 / PR #130 merged; проверки и ограничения — [gui-backend.md](gui-backend.md) |
+| robot2D-imgui: GuiImpl lifecycle | Собственный ImGuiContext, safe shutdown до setup/после отказа, ready только после успеха; состояния кадра, шрифтовый набор | IMGUI-02 #126 / PR #130 merged; lifecycle/font set и G1/input приняты пользователем |
 | robot2D-imgui: обёртки | Typed/size-aware drag/drop и borrowed lifetime; явные ImageButton ID, null framebuffer, sprite UV/zero-size, string InputText, Sugar flags/namespace | A7 обсуждается соседним GUI-чатом без реализации; A2–A6 остаются отдельными согласуемыми шагами; A1 — PR #123 |
-| Core Window/Desktop | Владение native window/GLFW, уничтожение, ошибки создания; logical/framebuffer size, minimized/DPI, источник событий WindowID, signed coordinates, clipboard/IME и contexts | Event/pump отделены от swap в CORE-02; IMGUI-02 добавляет фактические logical/framebuffer sizes; остальное впереди |
+| Core Window/Desktop | Владение native window/GLFW, уничтожение, ошибки создания; logical/framebuffer size, minimized/DPI, источник событий WindowID, signed coordinates, clipboard/IME и contexts | CORE-01: первый шаг lifetime/runtime/polling реализован локально, проверки/PR; размеры из IMGUI-02 сохранены; остальные пункты отдельно |
 | Core Graphics для GUI | Явный UI pass/state/cache; точный vertex layout, draw ranges/baseVertex; streaming buffers, texture views/updates/row pitch, context-local VAO/FBO и lifetime | Связано с RENDER-04 #98 / RENDER-05 #99; согласовать минимальный API до переноса GuiRender |
 | Engine / fixed timestep | Общий scheduler editor/player, fixedDt, предел догоняющих шагов, queued Play/Pause/Stop, SessionId | [Контракт согласован](fixed-timestep-contract.md), реализация не начата; сначала завершение CORE-01/02 |
 | Runtime / fixed input | Общая RuntimeSession, OnUpdate/OnFixedUpdate, frame/fixed input и временные границы, Pause/Resume | Последующая интеграция RUNTIME-01/02, INPUT-01 и PHYS-01; не реализовано этим объединением |
@@ -36,8 +37,8 @@ CORE-01 #110 остаётся общей открытой задачей, не �
 дефекты уже воспроизведёнными и не запускает их реализацию. Изменения соседней
 GUI-ветки и пользовательский основной checkout не копируются и не редактируются.
 
-Последовательность сейчас: интеграция CORE-01+02 / PR #122 → зависимый
-однооконный шаг IMGUI-02 #126 по GuiRender/GuiImpl → ревью и ручная приёмка.
+Последовательность сейчас: CORE-02 #122 и IMGUI-02 #130 уже в dev →
+согласованный первый шаг Window/Desktop в CORE-01 → проверки/PR/ручная приёмка.
 Следующий Graphics API и обновление upstream согласуются отдельно. Тайминг согласован, но
 автоматически не запускается; остальные зависимости остаются в своих Issues.
 Оптимизацию uploads/ёмкости и VAO выполняем после измерений, отдельным шагом.
@@ -751,3 +752,44 @@ IMGUI-02: после успешной проверки пикселей заве
 после editor module и в тесте после потребителей, до уничтожения GL context;
 проверены удаление GPU-текстуры и повторный release. Диагностический CI собирает
 стек прежнего отказа; новый head должен пройти обе платформы до merge.
+
+## CORE-01: первый шаг Window/Desktop — 2026-10-17
+
+После отдельного обсуждения пользователь согласовал реализацию: явный
+DesktopRuntime, владение native window, порядок освобождения, ошибки создания,
+polling через окно. Ведущий — Codex; отдельный worktree core-01-window-desktop,
+ветка codex/core-01-window-desktop от dev f4121a7. CORE-01 #110 остаётся общей
+открытой задачей. CORE-02 #122 и IMGUI-02 #130 уже merged; их прежние отметки
+«ручная приёмка впереди» выше — история, пользователь подтвердил приёмку.
+
+Реализация: WindowImpl перестал быть static, native window удаляется RAII;
+DesktopRuntime owned/borrowed управляет GLFW и глобальным pump/joystick callback.
+Window/RenderWindow требуют runtime, polling клавиш/мыши требует окно; мигрированы
+Editor, EditorCamera, ShortCut, C# glue, sandbox и существующие graphics-тесты.
+GUI cursors явно связаны с runtime. Отказ конструктора откатывает native window
+и текущий контекст, exit/terminate из создания окна убраны. RenderWindow выбирает
+контекст перед удалением GPU-ресурсов; Engine завершает приложение и при ошибке
+setup/цикла, редактор поддерживает частичный и повторный shutdown.
+
+Контракт и миграция: [core-api.md](core-api.md#windowdesktop-явное-владение-и-polling).
+Добавлены постоянные DesktopWindowTests: borrowed без init; повторное создание,
+два независимых backend, close/cancel; GL cleanup в правильном контексте;
+реальный native failure и внедрённый loader failure; borrowed/thread/callback
+restore; порядок событий/joystick IDs; исключения setup/кадра/shutdown Engine.
+Локально Windows Ninja/Release GCC 16.2.0: собраны robot2D, Core tests и editor
+suite; CTest 224/224, включая 55 graphics и восемь новых Desktop-сценариев,
+без пропусков. Дополнительно собраны robot2D-Sandbox и sandbox-event-compat. Doxygen 1.18.0 с Window/Desktop/Cursor/RenderWindow сгенерирован
+со строгими предупреждениями. В тесте учтены фактические ограничения размеров ОС.
+Ручная UI-приёмка этого нового шага и удалённый CI ещё не выполнялись.
+Полный обязательный hook: Python 53/53, формат, сборка, CTest 169/169 без graphics,
+строгий clang-tidy всех 191 единиц собственного кода пройдены. Финальное дополнение
+проверяет откат GLAD при снятом current context. В sandbox Text с GPU-ресурсами
+перенесён из static в Scene, чтобы освобождаться до окна; ECS не изменяется.
+После дополнения снова пройдены CTest 224/224 (55 graphics, без пропусков),
+сборка редактора/sandbox/compat и Doxygen. Финальный обязательный hook дополнения также пройден: Python 53/53,
+CTest 169/169, формат и строгий clang-tidy затронутых единиц. Hook не обходился.
+
+Границы: один active runtime с явным сроком жизни клиентов; полноценные
+multi-viewports/WindowID, signed coordinates/DPI/IME/clipboard, новый timing и
+runtime input routing остаются последующим задачам. ECS не меняется.
+Следующий шаг после проверок — PR в dev и ручная приёмка editor shutdown/input.
