@@ -27,6 +27,8 @@
 #include <robot2D/imgui/Api.hpp>
 #include <robot2D/imgui/Util.hpp>
 #include <editor/EditorConfig.hpp>
+#include <editor/EditorIcons.hpp>
+#include <cctype>
 #include <imgui/imgui_internal.h>
 #include <robot2D/Core/Mouse.hpp>
 
@@ -53,26 +55,14 @@ namespace editor {
             {".png", AssetsPanelConfiguration::ResourceIconType::Image },
             {".jpg", AssetsPanelConfiguration::ResourceIconType::Image },
             {".jpeg", AssetsPanelConfiguration::ResourceIconType::Image },
+            {".bmp", AssetsPanelConfiguration::ResourceIconType::Image },
+            {".tga", AssetsPanelConfiguration::ResourceIconType::Image },
             {".scene", AssetsPanelConfiguration::ResourceIconType::Scene },
             {".cs", AssetsPanelConfiguration::ResourceIconType::Script },
             {".ttf", AssetsPanelConfiguration::ResourceIconType::Font },
             {".prefab", AssetsPanelConfiguration::ResourceIconType::Prefab },
             {".anim", AssetsPanelConfiguration::ResourceIconType::Animation },
         };
-
-        const char* resourceIcon(AssetsPanelConfiguration::ResourceIconType type) {
-            using Type = AssetsPanelConfiguration::ResourceIconType;
-            switch(type) {
-            case Type::Directory: return ICON_FA_FOLDER;
-            case Type::Scene: return ICON_FA_LAYER_GROUP;
-            case Type::Image: return ICON_FA_IMAGE;
-            case Type::Script: return ICON_FA_CODE;
-            case Type::Font: return ICON_FA_FONT;
-            case Type::Prefab: return ICON_FA_CUBES;
-            case Type::Animation: return ICON_FA_FILM;
-            default: return ICON_FA_FILE;
-            }
-        }
 
         void itemDeleteMenuEntry(const std::filesystem::directory_entry& entry) {
             if(ImGui::MenuItem("Delete")) {
@@ -101,66 +91,103 @@ namespace editor {
         m_configuration{} {
 
         m_itemEditName.second = false;
-        setupIconAtlas();
         addObserverCallback(BIND_CLASS_FN(dropFiles));
-    }
-
-    void AssetsPanel::setupIconAtlas() {
-        const auto& fontPath = m_configuration.iconFontPath;
-        std::error_code error;
-        if(!fs::is_regular_file(fontPath, error)) {
-            RB_EDITOR_WARN("AssetsPanel: Can't load icon font: {0}", fontPath);
-            return;
-        }
-
-        ImFontAtlas atlas;
-        ImFontGlyphRangesBuilder builder;
-        for(auto type: m_configuration.iconTypes)
-            builder.AddText(resourceIcon(type));
-        ImVector<ImWchar> ranges;
-        builder.BuildRanges(&ranges);
-        auto* font = atlas.AddFontFromFileTTF(fontPath.c_str(), 128.f, nullptr, ranges.Data);
-        if(!font || !atlas.Build())
-            return;
-        unsigned char* pixels = nullptr;
-        int width = 0, height = 0;
-        atlas.GetTexDataAsRGBA32(&pixels, &width, &height);
-        m_iconAtlas.create({static_cast<unsigned int>(width), static_cast<unsigned int>(height)}, pixels);
-        for(auto type: m_configuration.iconTypes) {
-            unsigned int codepoint = 0;
-            ImTextCharFromUtf8(&codepoint, resourceIcon(type), nullptr);
-            if(auto* glyph = font -> FindGlyphNoFallback(static_cast<ImWchar>(codepoint))) {
-                m_resourceIcons[type] = {{glyph -> U0, glyph -> V0}, {glyph -> U1, glyph -> V1},
-                    {glyph -> X1 - glyph -> X0, glyph -> Y1 - glyph -> Y0}};
-            }
-        }
     }
 
     void AssetsPanel::drawResourceIcon(AssetsPanelConfiguration::ResourceIconType type,
         robot2D::vec2f position, float size) {
-        auto* drawList = ImGui::GetWindowDrawList();
+        static constexpr std::array<EditorIcon, 8> icons = {
+            EditorIcon::File, EditorIcon::Scene, EditorIcon::Image, EditorIcon::Script,
+            EditorIcon::Folder, EditorIcon::Font, EditorIcon::Prefab, EditorIcon::Animation
+        };
         const ImVec4 color = type == AssetsPanelConfiguration::ResourceIconType::Directory
-                             ? ImVec4{0.55f, 0.76f, 0.96f, 1.f} : ImVec4{0.70f, 0.77f, 0.86f, 1.f};
-        auto found = m_resourceIcons.find(type);
-        if(found != m_resourceIcons.end()) {
-            const auto& icon = found -> second;
-            const float scale = size * 0.75f / std::max(icon.size.x, icon.size.y);
-            const auto dimensions = icon.size * scale;
-            const auto origin = position + (robot2D::vec2f{size, size} - dimensions) * 0.5f;
-            drawList -> AddImage(ImGui::convertTextureHandle(m_iconAtlas.getID()),
-                {origin.x, origin.y}, {origin.x + dimensions.x, origin.y + dimensions.y},
-                {icon.uvMin.x, icon.uvMin.y}, {icon.uvMax.x, icon.uvMax.y}, ImGui::GetColorU32(color));
+            ? ImVec4{0.55f, 0.76f, 0.96f, 1.f} : ImGui::GetStyleColorVec4(ImGuiCol_Text);
+        const float side = size * 0.72f;
+        drawEditorIcon(*ImGui::GetWindowDrawList(), icons[static_cast<std::size_t>(type)],
+            {position.x + (size - side) * 0.5f, position.y + (size - side) * 0.5f}, side,
+            ImGui::GetColorU32(color));
+    }
+
+    AssetPreview* AssetsPanel::drawImagePreview(const fs::path& path, robot2D::vec2f position, float size) {
+        auto* preview = m_previews.request(path);
+        if(!preview)
+            return nullptr;
+        auto* texture = m_previews.texture(*preview);
+        if(!texture)
+            return preview;
+        const auto imageSize = texture -> getSize();
+        if(imageSize.x == 0 || imageSize.y == 0)
+            return preview;
+        const float factor = size / static_cast<float>(std::max(imageSize.x, imageSize.y));
+        const ImVec2 dimensions{imageSize.x * factor, imageSize.y * factor};
+        const ImVec2 origin{position.x + (size - dimensions.x) * 0.5f,
+                            position.y + (size - dimensions.y) * 0.5f};
+        auto* draw = ImGui::GetWindowDrawList();
+        for(int y = 0; y < static_cast<int>(dimensions.y); y += 8) {
+            for(int x = 0; x < static_cast<int>(dimensions.x); x += 8) {
+                const auto color = (x / 8 + y / 8) % 2 == 0 ? IM_COL32(52, 61, 69, 255) : IM_COL32(33, 41, 48, 255);
+                draw -> AddRectFilled({origin.x + x, origin.y + y},
+                    {origin.x + std::min(dimensions.x, static_cast<float>(x + 8)),
+                     origin.y + std::min(dimensions.y, static_cast<float>(y + 8))}, color);
+            }
         }
-        else {
-            const char* glyph = resourceIcon(type);
-            const auto dimensions = ImGui::CalcTextSize(glyph);
-            drawList -> AddText({position.x + (size - dimensions.x) * 0.5f,
-                                 position.y + (size - dimensions.y) * 0.5f}, ImGui::GetColorU32(color), glyph);
+        draw -> AddImage(ImGui::convertTextureHandle(texture -> getID()), origin,
+            {origin.x + dimensions.x, origin.y + dimensions.y});
+        return preview;
+    }
+
+    void AssetsPanel::renderDirectoryTree(const fs::path& path, bool reveal, int depth) {
+        if(depth > 32)
+            return;
+        const auto listing = m_browser.list(path);
+        std::vector<fs::path> folders;
+        for(const auto& entry: listing.entries) {
+            std::error_code error;
+            if(!entry.is_symlink(error) && entry.is_directory(error))
+                folders.push_back(entry.path());
         }
+        const bool root = path == m_assetsPath;
+        const auto label = root ? std::string{"Assets"} : path.filename().u8string();
+        const auto id = path.generic_u8string();
+        ImGui::PushID(id.c_str());
+        auto flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
+        if(path == m_currentPath)
+            flags |= ImGuiTreeNodeFlags_Selected;
+        if(folders.empty())
+            flags |= ImGuiTreeNodeFlags_Leaf;
+        const auto relative = m_currentPath.lexically_relative(path);
+        const bool ancestor = !relative.empty() && *relative.begin() != "..";
+        if((root && reveal) || (reveal && ancestor))
+            ImGui::SetNextItemOpen(true);
+        const bool open = ImGui::TreeNodeEx("##Directory", flags);
+        const auto rect = ImGui::GetItemRectMin();
+        drawEditorIcon(*ImGui::GetWindowDrawList(), EditorIcon::Folder,
+            {rect.x + ImGui::GetTreeNodeToLabelSpacing(), rect.y + 2.f}, ImGui::GetFontSize(),
+            ImGui::GetColorU32(ImVec4{0.55f, 0.76f, 0.96f, 1.f}));
+        const float labelX = rect.x + ImGui::GetTreeNodeToLabelSpacing()
+            + ImGui::GetFontSize() + ImGui::GetStyle().ItemInnerSpacing.x;
+        ImGui::GetWindowDrawList() -> AddText({labelX, rect.y},
+            ImGui::GetColorU32(ImGuiCol_Text), label.c_str());
+        if(ImGui::IsItemClicked() && !ImGui::IsItemToggledOpen())
+            navigateTo(path);
+        if(!listing.error.empty() && ImGui::IsItemHovered())
+            ImGui::SetTooltip("%s", listing.error.c_str());
+        if(open) {
+            for(const auto& folder: folders)
+                renderDirectoryTree(folder, reveal, depth + 1);
+            if(depth == 32 && !folders.empty())
+                ImGui::TextDisabled("Use the card view to navigate deeper");
+            ImGui::TreePop();
+        }
+        ImGui::PopID();
     }
 
     void AssetsPanel::setAssetsPath(const std::string& path) {
-        m_assetsPath = fs::path(path);
+        m_browser.setRoot(fs::path(path));
+        m_assetsPath = m_browser.root();
+        m_currentPath = m_browser.current();
+        m_previews.setRoot(m_assetsPath);
+        m_revealTree = true;
         navigateTo(m_assetsPath);
     }
 
@@ -180,7 +207,35 @@ namespace editor {
             if(m_state == State::Loading)
                 return;
 
+            m_previews.beginFrame();
+            if(m_assetsPath.empty() || !m_browser.recoverCurrent()) {
+                ImGui::TextDisabled("Assets folder is unavailable");
+                return;
+            }
+            if(m_currentPath != m_browser.current())
+                navigateTo(m_browser.current());
             m_configuration.m_thumbnaleSize = static_cast<float>(EditorConfig::getConfig().assetsThumbnailSize);
+            renderViewControls();
+            ImGui::Separator();
+            if(!ImGui::BeginTable("##AssetsLayout", m_showFolders ? 2 : 1,
+            ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInnerV))
+                return;
+            if(m_showFolders)
+                ImGui::TableSetupColumn("Folders", ImGuiTableColumnFlags_WidthFixed,
+                std::min(180.f, ImGui::GetContentRegionAvail().x * 0.35f));
+            ImGui::TableSetupColumn("Files", ImGuiTableColumnFlags_WidthStretch);
+            if(m_showFolders) {
+                ImGui::TableNextColumn();
+                if(ImGui::BeginChild("##FolderTree", {0, 0})) {
+                    m_visible = m_visible || ImGui::IsWindowFocused();
+                    const bool reveal = m_revealTree;
+                    m_revealTree = false;
+                    renderDirectoryTree(m_assetsPath, reveal);
+                }
+                ImGui::EndChild();
+            }
+            ImGui::TableNextColumn();
+            ImGui::BeginChild("##AssetsContent", {0, 0});
             renderNavigation();
             ImGui::Separator();
             if(ImGui::BeginChild("##AssetBrowser", {0, 0})) {
@@ -188,7 +243,7 @@ namespace editor {
                 const float cellSize = std::max(96.f, m_configuration.m_thumbnaleSize + m_configuration.m_padding)
                 + ImGui::GetStyle().CellPadding.x * 2.f;
                 const auto panelWidth = ImGui::GetContentRegionAvail().x;
-                const int tableCount = std::clamp(static_cast<int>(panelWidth / cellSize), 1, 64);
+                const int tableCount = m_listView ? 1 : std::clamp(static_cast<int>(panelWidth / cellSize), 1, 64);
                 std::error_code error;
                 if(fs::is_directory(m_currentPath, error)) {
                     tableRender(tableCount, anyItemIsHovered);
@@ -218,6 +273,8 @@ namespace editor {
                 uiAssetsCreation();
             }
             ImGui::EndChild();
+            ImGui::EndChild();
+            ImGui::EndTable();
         });
     }
 
@@ -338,11 +395,43 @@ namespace editor {
     }
 
     void AssetsPanel::navigateTo(const std::filesystem::path& path) {
-        m_currentPath = path;
+        if(!m_browser.navigate(path))
+            return;
+        m_currentPath = m_browser.current();
+        m_revealTree = true;
         m_itemEditName = {};
         m_itemClicked = false;
         m_editName.clear();
         m_assetItems.clear();
+    }
+
+    void AssetsPanel::renderViewControls() {
+        const float side = ImGui::GetFrameHeight();
+        const auto button = [side](const char* id, EditorIcon icon, bool active, const char* hint) {
+            if(active)
+                ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_HeaderActive));
+            const bool clicked = ImGui::Button(id, {side, side});
+            if(active)
+                ImGui::PopStyleColor();
+            const auto position = ImGui::GetItemRectMin();
+            const float size = ImGui::GetFontSize();
+            drawEditorIcon(*ImGui::GetWindowDrawList(), icon,
+                {position.x + (side - size) * 0.5f, position.y + (side - size) * 0.5f}, size,
+                ImGui::GetColorU32(ImGuiCol_Text));
+            if(ImGui::IsItemHovered())
+                ImGui::SetTooltip("%s", hint);
+            return clicked;
+        };
+        if(button("##AssetsFolders", EditorIcon::FolderTree, m_showFolders, "Show/hide folder tree")) {
+            m_showFolders = !m_showFolders;
+            m_revealTree = true;
+        }
+        ImGui::SameLine();
+        if(button("##AssetsTiles", EditorIcon::Grid, !m_listView, "Tile view"))
+            m_listView = false;
+        ImGui::SameLine();
+        if(button("##AssetsList", EditorIcon::List, m_listView, "List view"))
+            m_listView = true;
     }
 
     void AssetsPanel::renderNavigation() {
@@ -352,6 +441,13 @@ namespace editor {
         if(ImGui::IsItemHovered())
             ImGui::SetTooltip("Parent folder");
         ImGui::EndDisabled();
+        ImGui::SameLine();
+        if(ImGui::Button(ICON_FA_SYNC_ALT "##RefreshAssets")) {
+            m_browser.refresh();
+            m_previews.clear();
+        }
+        if(ImGui::IsItemHovered())
+            ImGui::SetTooltip("Refresh folders and previews");
         ImGui::SameLine();
         const bool wide = ImGui::GetContentRegionAvail().x > 400.f;
         const float pathWidth = std::max(1.f, ImGui::GetContentRegionAvail().x - (wide ? 180.f : 0.f));
@@ -394,17 +490,10 @@ namespace editor {
 
     void AssetsPanel::tableRender(int tableCount, bool& anyItemIsHovered) {
         std::error_code error;
-        std::vector<fs::directory_entry> entries;
-        for(fs::directory_iterator it(m_currentPath, error), end; !error && it != end; it.increment(error))
-            entries.push_back(*it);
-        std::stable_sort(entries.begin(), entries.end(), [](const auto& left, const auto& right) {
-            std::error_code leftError, rightError;
-            auto leftDirectory = left.is_directory(leftError);
-            auto rightDirectory = right.is_directory(rightError);
-            if(leftDirectory != rightDirectory)
-                return leftDirectory;
-            return left.path().filename() < right.path().filename();
-        });
+        const auto listing = m_browser.list(m_currentPath);
+        const auto& entries = listing.entries;
+        if(!listing.error.empty())
+            ImGui::TextDisabled("Folder error: %s", listing.error.c_str());
         fs::path nextPath;
         if(ImGui::BeginTable("##AssetCards", tableCount, ImGuiTableFlags_SizingStretchSame)) {
             for(const auto& directoryEntry: entries) {
@@ -417,15 +506,22 @@ namespace editor {
                 auto iconType = directory ? AssetsPanelConfiguration::ResourceIconType::Directory
                                           : AssetsPanelConfiguration::ResourceIconType::File;
                 if(!directory) {
-                    auto found = resourceTypes.find(path.extension().string());
+                    auto extension = path.extension().string();
+                    std::transform(extension.begin(), extension.end(), extension.begin(),
+                        [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+                    auto found = resourceTypes.find(extension);
                     if(found != resourceTypes.end())
                         iconType = found -> second;
                 }
                 ImGui::PushID(itemID.c_str());
                 const auto position = ImGui::GetCursorScreenPos();
                 const float width = std::max(1.f, ImGui::GetContentRegionAvail().x);
-                const float preview = std::max(1.f, std::min(m_configuration.m_thumbnaleSize, width - 12.f));
-                const float height = preview + ImGui::GetTextLineHeight() * 2.f + 14.f;
+                const float preview = std::max(1.f, std::min(m_listView ? ImGui::GetTextLineHeight() * 2.f
+                    : m_configuration.m_thumbnaleSize, width - 12.f));
+                const float height = m_listView ? preview + 10.f
+                    : preview + ImGui::GetTextLineHeight() * 2.f + 14.f;
+                const float previewX = m_listView ? position.x + 4.f : position.x + (width - preview) * 0.5f;
+                const float textX = m_listView ? previewX + preview + 8.f : position.x + 4.f;
                 const bool selected = m_itemEditName.first == relativePath;
                 bool focusRename = false;
                 auto* drawList = ImGui::GetWindowDrawList();
@@ -446,17 +542,23 @@ namespace editor {
                         pack_message_string(itemID, buffer);
                     }
                 }
-                drawResourceIcon(iconType, {position.x + (width - preview) * 0.5f, position.y + 5.f}, preview);
-                const float textY = position.y + preview + 8.f;
+                AssetPreview* thumbnail = nullptr;
+                if(!directory && iconType == AssetsPanelConfiguration::ResourceIconType::Image
+                    && ImGui::IsRectVisible(position, {position.x + width, position.y + height}))
+                    thumbnail = drawImagePreview(path,
+                            {previewX, position.y + 5.f}, preview);
+                if(!thumbnail || thumbnail -> status != PreviewStatus::Ready)
+                    drawResourceIcon(iconType, {previewX, position.y + 5.f}, preview);
+                const float textY = m_listView ? position.y + 5.f : position.y + preview + 8.f;
                 drawList -> PushClipRect(position, {position.x + width - 3.f, position.y + height}, true);
                 if(!(selected && m_itemEditName.second))
-                    ImGui::RenderTextEllipsis(drawList, {position.x + 4.f, textY},
+                    ImGui::RenderTextEllipsis(drawList, {textX, textY},
                         {position.x + width - 4.f, textY + ImGui::GetTextLineHeight()},
                         position.x + width - 4.f, position.x + width - 4.f,
                         filename.c_str(), nullptr, nullptr);
                 const auto type = directory ? std::string{"Folder"}
                                             : (path.has_extension() ? path.extension().string() : "File");
-                drawList -> AddText({position.x + 4.f, textY + ImGui::GetTextLineHeight()},
+                drawList -> AddText({textX, textY + ImGui::GetTextLineHeight()},
                     ImGui::GetColorU32(ImGuiCol_TextDisabled), type.c_str());
                 drawList -> PopClipRect();
 
@@ -464,7 +566,9 @@ namespace editor {
                 if(doubleClicked && directory)
                     nextPath = path;
                 if(hovered && ImGui::IsItemHovered(ImGuiHoveredFlags_DelayNormal))
-                    ImGui::SetTooltip("%s", itemID.c_str());
+                    ImGui::SetTooltip("%s%s%s", itemID.c_str(),
+                        thumbnail && !thumbnail -> error.empty() ? "\nPreview: " : "",
+                        thumbnail ? thumbnail -> error.c_str() : "");
                 if(rightClicked)
                     ImGui::OpenPopup("##AssetActions");
                 if(ImGui::BeginPopup("##AssetActions")) {
@@ -484,8 +588,8 @@ namespace editor {
                 }
                 if(m_itemEditName.first == relativePath && m_itemEditName.second) {
                     const auto afterCard = ImGui::GetCursorScreenPos();
-                    ImGui::SetCursorScreenPos({position.x + 2.f, textY});
-                    ImGui::SetNextItemWidth(std::max(1.f, width - 4.f));
+                    ImGui::SetCursorScreenPos({textX, textY});
+                    ImGui::SetNextItemWidth(std::max(1.f, position.x + width - textX - 4.f));
                     if(focusRename)
                         ImGui::SetKeyboardFocusHere();
                     if(robot2D::InputText("##ItemName", &m_editName, inputFlags)
@@ -494,8 +598,11 @@ namespace editor {
                         fs::rename(path, path.parent_path() / m_editName, error);
                         if(error)
                             RB_EDITOR_ERROR("AssetsPanel: Can't rename asset: {0}", error.message());
-                        else
+                        else {
+                            m_previews.invalidate(path);
+                            m_browser.refresh();
                             m_itemEditName.first = relativePath.parent_path() / m_editName;
+                        }
                         m_itemEditName.second = false;
                     }
                     if(ImGui::IsKeyPressed(ImGuiKey_Escape))
