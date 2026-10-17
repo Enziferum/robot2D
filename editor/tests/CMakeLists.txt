@@ -97,7 +97,7 @@ endif()
 
 add_mono_assembly(TARGET robot2D-hud-driver
     DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/../res/script"
-    SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/HudDriver.cs" "${CMAKE_CURRENT_SOURCE_DIR}/../../docs/examples/HudExample.cs"
+    SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/HudDriver.cs" "${CMAKE_CURRENT_SOURCE_DIR}/HudExample.cs"
     REFERENCES "${robot2D_ScriptCore_OUTPUT}"
     ADDITIONAL_ARGS -sdk:4.8 -langversion:7.2 -warnaserror+)
 add_dependencies(robot2D-hud-driver robot2D_ScriptCore)

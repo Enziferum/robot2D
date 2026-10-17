@@ -23,4 +23,4 @@ Entity scripts use the `robot2D` namespace and derive from `Entity`. The managed
 
 ## Know the boundaries
 
-Managed API reload happens in Edit mode. This guide does not promise hot reload during Play or standalone game packaging. The exact configuration, build artifacts and diagnostics are documented in the [C# build contract](https://github.com/Enziferum/robot2D/blob/dev/docs/csharp-build.md).
+Managed API reload happens in Edit mode. This guide does not promise hot reload during Play. See the repository README for [standalone packaging](https://github.com/Enziferum/robot2D#standalone-player); the editor's managed API build is defined in [ScriptCore.cmake](https://github.com/Enziferum/robot2D/blob/dev/editor/cmake/ScriptCore.cmake).

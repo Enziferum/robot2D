@@ -89,8 +89,9 @@ def make_prompt(root, directory, args):
                   f'{args.build_directory}. Сначала прочитай CMakeCache.txt; не меняй конфигурацию. '
                   'Не запускай форматтеры, исправления анализаторов или интерактивный GUI.')
     return f'''Этот запуск создан исключительно для code review проекта robot2D.
-Прочитай AGENTS.md, docs/editor-roadmap.md и docs/code-review.md.
-Следуй разделу «Правила ревьюера» в docs/code-review.md.
+Прочитай AGENTS.md и следуй правилам ревью в нём.
+Каждое замечание обоснуй условием возникновения, последствиями и актуальным кодом;
+отделяй подтверждённые ошибки от вопросов к требованиям и необязательных предложений.
 Материалы запуска: {directory.as_posix()}
 Прочитай manifest.json и changes.patch; новые файлы сохранены в untracked/ с соответствием в manifest.json.
 Область задаётся manifest.json. Для base проверяй только baseline..tip (без локальных правок),
@@ -190,7 +191,7 @@ def main(argv=None):
     (directory / 'review-prompt.txt').write_text(prompt, encoding='utf-8')
     (directory / 'chat-prompt.txt').write_text(f'''Этот чат создан для обсуждения code review robot2D.
 Предлагаемое название: [Review] robot2D — {directory.name}
-Прочитай AGENTS.md, docs/editor-roadmap.md, docs/code-review.md и материалы:
+Прочитай AGENTS.md и материалы:
 {directory.as_posix()}/manifest.json
 {directory.as_posix()}/report.md
 Если запуск не завершён, не считай его отчётом выполненного ревью.

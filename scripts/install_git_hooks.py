@@ -23,7 +23,7 @@ def main():
         return current.returncode
     if current.stdout.strip() not in ("", ".githooks"):
         print(f"Existing core.hooksPath={current.stdout.strip()} was preserved. "
-              "Integrate the hooks manually; see docs/project-workflow.md.", file=sys.stderr)
+              "Integrate the hooks manually; see AGENTS.md and .githooks/.", file=sys.stderr)
         return 1
     # POSIX needs the executable bit; Windows Git recognizes the shell shebang.
     for name in ("commit-msg", "pre-commit"):

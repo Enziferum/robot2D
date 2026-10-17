@@ -15,7 +15,7 @@ The public release catalogue starts with 0.8.0. Screenshots show development wor
 - **0.9.0:** evolve runtime architecture, scene transitions, game UI and audio.
 - **1.0.0:** a stable public tool with compatibility, documentation and distribution.
 
-These are goals, not a list of completed features. No release dates are announced here. Track acceptance criteria in the [release roadmap](https://github.com/Enziferum/robot2D/blob/dev/docs/release-roadmap.md) and [issues](https://github.com/Enziferum/robot2D/issues).
+These are goals, not a list of completed features. No release dates are announced here. Track acceptance criteria in [release milestones](https://github.com/Enziferum/robot2D/milestones) and [issues](https://github.com/Enziferum/robot2D/issues).
 
 ## Help the project
 

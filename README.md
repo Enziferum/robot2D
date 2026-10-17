@@ -5,7 +5,7 @@
   <p>A personal project for learning, experimenting, and making games.</p>
   <p>
     <a href="https://github.com/Enziferum/robot2D/actions/workflows/ci.yml?query=branch%3Adev"><img src="https://github.com/Enziferum/robot2D/actions/workflows/ci.yml/badge.svg?branch=dev" alt="Windows and Linux build"></a>
-    <a href="docs/release-roadmap.md"><img src="https://img.shields.io/badge/status-in%20development-238b83" alt="In development"></a>
+    <a href="https://github.com/Enziferum/robot2D/milestones"><img src="https://img.shields.io/badge/status-in%20development-238b83" alt="In development"></a>
   </p>
   <p>
     <a href="https://enziferum.github.io/robot2D/">Website</a> ·
@@ -52,12 +52,12 @@ in progress. APIs and project formats may change before 1.0.
 - **[Your first scene](https://enziferum.github.io/robot2D/docs/first-scene/)** and
   **[C# scripting](https://enziferum.github.io/robot2D/docs/scripting/)** —
   introductory editor and gameplay guides.
-- **[Standalone player](docs/player.md)** — launch manifest, build commands,
+- **[Standalone player](#standalone-player)** — launch manifest, build commands,
   packaging, and current limits. The test arena is an infrastructure diagnostic.
 
 These describe existing systems; release acceptance is still in progress.
 Undo/Redo, runtime object lifecycle, resource handling, and standalone builds have
-[tracked work and acceptance criteria](docs/release-roadmap.md).
+[tracked work and acceptance criteria](https://github.com/Enziferum/robot2D/issues).
 
 ## Road to 1.0
 
@@ -68,8 +68,8 @@ Undo/Redo, runtime object lifecycle, resource handling, and standalone builds ha
 | **1.0** | Deliver a stable public tool with documented compatibility, project recovery, a reproducible example, and an installer. |
 
 These are planned outcomes; release dates have not been set. See the
-[project roadmap](docs/project-roadmap.md),
-[release criteria](docs/release-roadmap.md), and
+[public roadmap](https://enziferum.github.io/robot2D/roadmap/),
+[release milestones](https://github.com/Enziferum/robot2D/milestones), and
 [development board](https://github.com/users/Enziferum/projects/5).
 
 ## Build from source
@@ -102,7 +102,7 @@ python scripts/install_git_hooks.py
 
 If you already have a checkout, initialize its dependencies with
 `git submodule update --init --recursive`.
-See the [development tools guide](docs/development-tools.md) before making changes.
+See [AGENTS.md](AGENTS.md) for contributor commands, formatting and required hooks.
 
 ### Configure and build
 
@@ -130,10 +130,41 @@ ctest --test-dir build -C Release --no-tests=error --output-on-failure
 ```
 
 Editor tests that need an OpenGL context are opt-in through
-`RB2D_EDITOR_GRAPHICS_TESTS=ON`. See the
-[editor testing guide](docs/editor-testing.md) for headless/graphics runs and
-manual UI checks. To reproduce the CI build and reports, follow the
-[CI guide](docs/ci.md).
+`RB2D_EDITOR_GRAPHICS_TESTS=ON`; run headless cases with `ctest --test-dir build -L headless --output-on-failure`
+and graphics cases with `ctest --test-dir build -L graphics --output-on-failure`.
+Graphics tests need a working display and OpenGL context. Successful compilation
+does not replace manual editor and gameplay acceptance. The
+[CI script](scripts/ci.py) and [workflow](.github/workflows/ci.yml) provide the
+reproducible Windows/Linux build and report commands.
+
+### Standalone player
+
+```sh
+cmake --build build --target robot2D-player --parallel 4
+```
+
+The target stages `Game.exe` on Windows (`Game` on Linux) under `build/player`,
+with runtime dependencies. Copy this template into a separate game directory,
+add the project's assets and compiled C# assembly, and create `game-launch.yaml`
+beside the executable:
+
+```yaml
+Version: 1
+Title: My game
+StartScene: assets/scenes/main.scene
+ScriptAssembly: assets/scripts/bin/MyGame.dll
+ScriptCore: runtime/robot2D_ScriptCore.dll
+MonoLib: runtime/mono/lib
+MonoEtc: runtime/mono/etc
+Window:
+  Width: 1280
+  Height: 720
+  Fullscreen: false
+```
+
+Paths are relative to the manifest directory. `Game.exe --check` validates the
+package inputs without opening a window; `--manifest <path>` selects another
+manifest. A complete editor export workflow is still in development.
 
 ## Documentation
 
@@ -143,18 +174,10 @@ for getting started, editor/C# guides, and Core lessons. The
 connects the demo to the systems behind it. These guides are growing alongside
 the engine; a stable public API reference remains a goal for 1.0.
 
-Contributor instructions and implementation contracts remain in `docs/`:
-
-| Development reference | What you will find |
-| --- | --- |
-| [Project roadmap](docs/project-roadmap.md) | Shared direction for Core, ECS, rendering, Editor, and runtime. |
-| [Release roadmap](docs/release-roadmap.md) | Goals, dependencies, and acceptance criteria for 0.8–1.0. |
-| [Project assets](docs/project-assets.md) | Current asset path, import, and packaging contracts and limitations. |
-| [Development tools](docs/development-tools.md) | Formatting, static analysis, and required commit checks. |
-| [Editor tests](docs/editor-testing.md) | Automated coverage, configuration, and manual scenarios. |
-| [CI and reports](docs/ci.md) | Windows/Linux builds, test reports, and local reproduction. |
-| [Project workflow](docs/project-workflow.md) | Task IDs, branches, contribution workflow, and Git hooks. |
-| [Versioning](docs/versioning.md) | Development, release-candidate, and stable version rules. |
+Contributor commands and repository conventions are in [AGENTS.md](AGENTS.md).
+Public headers, managed API sources and tests describe the implementation;
+[Core API reference generation](core/README.md) is available through Doxygen.
+Issues and milestones track planned work and release acceptance.
 
 ## Repository layout
 
@@ -165,10 +188,14 @@ cmake/          Shared build configuration
 scripts/        Build, validation, and development tools
 examples/       Robot Lab source project and preparation instructions
 website/        Public website, guides, Core lesson sources, and branding
-docs/           Development contracts, workflow, design notes, and release plans
 ```
 
 ## Follow the project
+
+robot2D is a personal project by [Enziferum](https://github.com/Enziferum), who
+leads its design and development. AI assistance is used for selected UI work,
+Git hooks, infrastructure and development support; design decisions and final
+review remain with the author.
 
 Follow progress on the [development board](https://github.com/users/Enziferum/projects/5),
 browse [issues](https://github.com/Enziferum/robot2D/issues), or report a problem

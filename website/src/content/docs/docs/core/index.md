@@ -35,7 +35,7 @@ From a configured repository checkout:
 cmake --build build --target robot2D-core -j 4
 ```
 
-Core tests require `RB2D_BUILD_CORE_TESTS=ON`; build `robot2D-core-tests`, then run CTest in `build/core/tests`. See the repository's [testing guide](https://github.com/Enziferum/robot2D/blob/dev/docs/editor-testing.md) for editor headless versus graphics coverage. A compiled example is not proof that its window or rendering was exercised.
+Core tests require `RB2D_BUILD_CORE_TESTS=ON`; build `robot2D-core-tests`, then run CTest in `build/core/tests`. See the repository's [test commands](https://github.com/Enziferum/robot2D#run-the-tests) for editor headless versus graphics coverage. A compiled example is not proof that its window or rendering was exercised.
 
 For engine users starting with the editor, the [Robot Lab learning path](../learn/) is a better first stop than extending Core.
 

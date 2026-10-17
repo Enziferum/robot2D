@@ -6,8 +6,8 @@ build_debug/
 cmake-build-debug/
 cmake-build-release/
 cmake/generated/
-docs/html
-docs/latex
+# Private project notes; public guides are maintained in website/.
+/docs/
 venv/
 editor/ext/glm
 # C# stuff

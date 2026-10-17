@@ -26,7 +26,7 @@ class PreCommitTests(unittest.TestCase):
                 self.assertEqual(plan["format"], [])
 
     def test_documentation_and_dependencies_do_not_invoke_native_tools(self):
-        for paths in (["docs/editor-roadmap.md"], ["editor/extlibs/yaml-cpp/src/emit.cpp"],
+        for paths in (["README.md"], ["editor/extlibs/yaml-cpp/src/emit.cpp"],
                       ["core/ext/imgui/imgui.cpp"], ["editor/src-backup/foo.cpp"],
                       ["core/src/Graphics/internal/stb_image_aug.c"],
                       ["core/include/robot2D/Graphics/internal/glad.h"]):

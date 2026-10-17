@@ -37,6 +37,6 @@ Run the built editor from its staged output directory, with its `res` resources 
 
 ## If configuration fails
 
-Keep the first CMake error and the compiler/generator versions when reporting a problem. Mono paths, reference assemblies, graphics drivers and missing submodules are common environment inputs. See [C# build details](https://github.com/Enziferum/robot2D/blob/dev/docs/csharp-build.md).
+Keep the first CMake error and the compiler/generator versions when reporting a problem. Mono paths, reference assemblies, graphics drivers and missing submodules are common environment inputs. The managed API build and required references are defined in [ScriptCore.cmake](https://github.com/Enziferum/robot2D/blob/dev/editor/cmake/ScriptCore.cmake).
 
-The repository README contains older instructions in places; the target names above are checked against current CMake files. A complete fresh-machine installation walkthrough remains release work.
+The repository README includes build, test and standalone packaging commands. A complete fresh-machine installation walkthrough remains release work.
