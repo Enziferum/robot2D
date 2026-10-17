@@ -196,8 +196,11 @@ msvcrt.dll/libc.so.6; C# вызывает abs(-37) и проверяет 37. Т�
 config, новый DesktopRuntime/instance polling dev 4132acf и показ GL_FRONT.
 Итог обязательного hook и серверного CI публикуется в Issue #81/PR #132.
 
-Presentation probe на Linux создаёт видимое окно внутри Xvfb: GL_FRONT у
-скрытого GLX окна в CI возвращал нули. Проверка синей стены и чёрной внутренней
-области сохраняется; Windows probe и обычные process smoke остаются скрытыми.
-Границы чтения default framebuffer описаны в
-[OpenGL Common Mistakes](https://wikis.khronos.org/opengl/Common_Mistakes).
+Presentation probe на Windows читает GL_FRONT после display. В Linux CI
+Mesa/Xvfb возвращал нули из GL_FRONT и у скрытого, и у отображённого GLX окна.
+Linux test executable использует GNU ld --wrap=glfwSwapBuffers: читает пиксели
+GL_BACK непосредственно перед настоящим swap и проверяет ровно один вызов.
+Проверяются framebuffer 0, отсутствие GL ошибок, синяя стена и чёрная внутренняя
+область. Если display пропущен, wrapper не вызывается и тест падает. Game и
+общая библиотека не получают тестовых перехватчиков. Все process окна снова скрыты.
+Механизм wrapper: [GNU ld](https://sourceware.org/binutils/docs/ld/Options.html).
