@@ -76,9 +76,9 @@ namespace editor {
             return true;
         }
 
-        bool isRuntimeDown() const {
+        bool isRuntimeDown(const robot2D::Window& window) const {
             for(const auto& [key, value]: m_keys)
-                if(!robot2D::Window::isKeyboardPressed(key))
+                if(!window.isKeyPressed(key))
                     return false;
             return true;
         }
@@ -118,9 +118,9 @@ namespace editor {
             }
         }
 
-        void runTimeUpdate() {
+        void runTimeUpdate(const robot2D::Window& window) {
             for(const auto& [id, shortCut]: m_shortCuts) {
-                if(shortCut.isRuntimeDown())
+                if(shortCut.isRuntimeDown(window))
                     shortCut();
             }
         }

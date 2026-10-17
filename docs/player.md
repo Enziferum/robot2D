@@ -174,3 +174,24 @@ runtime start 41–42 мс, первый update 2–3 мс и render/display о�
 проверяет эти события. Полный CTest объединённого кода: 219/219. Последняя проверка
 конечного exe до синхронизации: SHA 521887d, первый кадр 596,95 мс, ожидание tick
 16,93 мс; runtime report PASS 3 12. Финальные hook/CI и SHA сборки — в Issue #81.
+
+### Mono config и CI — 2026-10-17
+
+MonoEtc должен содержать mono/config, --check проверяет его наличие до окна.
+Host явно применяет dllmap из этой конфигурации. Файл читается через fs::u8path
+и передаётся в mono_config_parse_memory: Mono filename parser не применял config
+из Unicode Windows пути. SDK конфигурация и пользовательские проекты не меняются.
+Временное состояние ScriptEngineData освобождается при ошибке чтения до JIT init.
+
+Это часть обязанности embedding host, а не пользовательского игрового скрипта:
+[Mono embedding](https://www.mono-project.com/docs/advanced/embedding/) и
+[DLL mappings](https://www.mono-project.com/docs/advanced/pinvoke/dllmap/).
+Тестовый пакет дополняет свою копию config alias Robot2DPlayerNativeProbe на
+msvcrt.dll/libc.so.6; C# вызывает abs(-37) и проверяет 37. Так тест доказывает
+применение именно упакованного config на обеих OS. File.WriteAllText report
+дополнительно проверяет native поддержку файлового I/O на Linux.
+
+Без config parsing регрессия воспроизводимо падает. После memory parser локально
+пройдены 227/227 тестов (56 graphics), включая перенос в Unicode путь, missing
+config, новый DesktopRuntime/instance polling dev 4132acf и показ GL_FRONT.
+Итог обязательного hook и серверного CI публикуется в Issue #81/PR #132.

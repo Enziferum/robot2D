@@ -39,7 +39,7 @@ def main():
         cwd = root / "unrelated cwd"
         cwd.mkdir()
         environment = os.environ.copy()
-        for name in ("MONO_PATH", "MONO_CFG_DIR", "MONO_GAC_PREFIX", "MONO_ENV_OPTIONS"):
+        for name in ("MONO_PATH", "MONO_CFG_DIR", "MONO_GAC_PREFIX", "MONO_ENV_OPTIONS", "MONO_CONFIG"):
             environment.pop(name, None)
         if os.name == "nt":
             environment["PATH"] = str(Path(os.environ["SystemRoot"]) / "System32")
@@ -72,6 +72,10 @@ def main():
         bcl.rename(bcl.with_suffix(".hidden"))
         run(1, "--check")
         bcl.with_suffix(".hidden").rename(bcl)
+        mono_config = moved / "runtime/mono/etc/mono/config"
+        mono_config.rename(mono_config.with_suffix(".hidden"))
+        run(1, "--check")
+        mono_config.with_suffix(".hidden").rename(mono_config)
         try:
             external = root / "external.scene"
             external.write_text("outside package", encoding="utf-8")

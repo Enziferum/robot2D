@@ -86,6 +86,8 @@ namespace editor::runtime {
         result.monoEtc = packagePath(result.root, data, "MonoEtc", true);
         if(!fs::is_regular_file(result.monoLib / "mono/4.5/mscorlib.dll"))
             throw std::runtime_error("MonoLib: missing mono/4.5/mscorlib.dll");
+        if(!fs::is_regular_file(result.monoEtc / "mono/config"))
+            throw std::runtime_error("MonoEtc: missing mono/config");
         auto window = yaml::required(data, "Window");
         result.size = {yaml::read<unsigned>(window, "Width"), yaml::read<unsigned>(window, "Height")};
         result.fullscreen = yaml::read<bool>(window, "Fullscreen");

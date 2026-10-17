@@ -19,6 +19,7 @@
    source distribution.
 *********************************************************************/
 
+#include <exception>
 #include <editor/Application.hpp>
 #include <editor/scripting/ScriptingEngine.hpp>
 
@@ -275,21 +276,29 @@ namespace editor {
     }
 
     void Application::destroy() {
-        robot2D::GuiContextScope guiContext(m_guiWrapper.context());
+        if(m_shutdownStarted) return;
+        m_shutdownStarted = true;
+        std::exception_ptr firstError;
+        const auto cleanup = [&firstError](auto&& action) {
+            try { action(); }
+            catch(...) { if(!firstError) firstError = std::current_exception();}
+        };
         RB_EDITOR_INFO("[Application] Destroy started");
-        if(m_editorLayoutActive)
-            saveEditorLayout();
-        RB_EDITOR_INFO("[Application] Editor module destroy started; waiting for background work");
-        if(m_editorModule) {
-            m_editorModule -> destroy();
-            m_editorModule.reset();
+        {
+            robot2D::GuiContextScope guiContext(m_guiWrapper.context());
+            if(m_editorLayoutActive && m_guiWrapper.context())
+                cleanup([this]() { saveEditorLayout(); });
+            if(m_editorModule) {
+                cleanup([this]() { m_editorModule -> destroy(); });
+                m_editorModule.reset();
+            }
         }
         m_guiWrapper.shutdown();
-        LocalResourceManager::getManager() -> releaseGraphicsResources();
-        EditorResourceManager::getManager() -> releaseGraphicsResources();
-        RB_EDITOR_INFO("[Application] Editor module released; Mono shutdown started");
-        m_scriptingEngine.Shutdown();
-        RB_EDITOR_INFO("[Application] Mono shutdown completed");
+        cleanup([]() { LocalResourceManager::getManager() -> releaseGraphicsResources(); });
+        cleanup([]() { EditorResourceManager::getManager() -> releaseGraphicsResources(); });
+        cleanup([this]() { m_scriptingEngine.Shutdown(); });
+        RB_EDITOR_INFO("[Application] Destroy completed");
+        if(firstError) std::rethrow_exception(firstError);
     }
 
 } // namespace editor

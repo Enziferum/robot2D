@@ -19,6 +19,7 @@
    source distribution.
 *********************************************************************/
 
+#include <cstdio>
 #include <robot2D/Engine.hpp>
 #include <robot2D/Util/Logger.hpp>
 
@@ -66,16 +67,29 @@ namespace robot2D {
             engineConfiguration.windowTitle, engineConfiguration.windowSize.x,
             engineConfiguration.windowSize.y, engineConfiguration.maxFrameRate);
 
-        RenderWindow renderWindow{engineConfiguration.windowSize,
+        DesktopRuntime desktop;
+        RenderWindow renderWindow{desktop, engineConfiguration.windowSize,
                                   engineConfiguration.windowTitle,
                                   engineConfiguration.windowContext};
 
         struct ApplicationLifetime {
             Application::Ptr& application;
-            ~ApplicationLifetime() {
+            RenderWindow& window;
+            bool destroyStarted = false;
+            ~ApplicationLifetime() noexcept {
+                window.makeCurrent();
+                if(application && !destroyStarted) {
+                    try { application -> destroy(); }
+                    catch(const std::exception& error) {
+                        std::fprintf(stderr, "Application shutdown failed during unwinding: %s\n", error.what());
+                    }
+                    catch(...) { std::fputs("Application shutdown failed during unwinding: unknown exception\n",
+                                     stderr); }
+                }
+                window.makeCurrent();
                 application.reset();
             }
-        } applicationLifetime{m_application};
+        } applicationLifetime{m_application, renderWindow};
 
         float timePerFrame = 1.F / static_cast<float>(engineConfiguration.maxFrameRate);
         float timeProcessed = 0.F;
@@ -87,7 +101,7 @@ namespace robot2D {
         RB_CORE_INFO("[Engine] Application setup completed; entering main loop");
         std::uint64_t eventFrame = 0;
         while(m_application -> isRunning()) {
-            renderWindow.processEvents();
+            desktop.processEvents();
             m_application -> handleEventFrame(renderWindow.takeEvents(++eventFrame));
             if(!m_application -> isRunning() || !renderWindow.isOpen()) break;
             float delta = m_frameClock.restart().asSeconds();
@@ -106,9 +120,12 @@ namespace robot2D {
         RB_CORE_INFO("[Engine] Main loop stopped; application_running={}; window_open={}",
             m_application -> isRunning(), renderWindow.isOpen());
         RB_CORE_INFO("[Engine] Application destroy started");
+        renderWindow.makeCurrent();
+        applicationLifetime.destroyStarted = true;
         m_application -> destroy();
         RB_CORE_INFO("[Engine] Application destroy completed");
         // GUI and application graphics resources must be released before the local window.
+        renderWindow.makeCurrent();
         m_application.reset();
         RB_CORE_INFO("[Engine] Application released; window can now be destroyed");
     }

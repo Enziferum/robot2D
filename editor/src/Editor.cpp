@@ -120,8 +120,8 @@ namespace editor {
 
         ShortCut saveScene{robot2D::Key::LEFT_CONTROL, robot2D::Key::S};
         saveScene.setCallback([this]() {
-            if(robot2D::Window::isKeyboardPressed(robot2D::Key::LEFT_SHIFT) ||
-            robot2D::Window::isKeyboardPressed(robot2D::Key::RIGHT_SHIFT))
+            if(m_window -> isKeyPressed(robot2D::Key::LEFT_SHIFT) ||
+            m_window -> isKeyPressed(robot2D::Key::RIGHT_SHIFT))
                 m_interactor -> saveAll();
             else
                 m_interactor -> saveScene();
@@ -186,6 +186,7 @@ namespace editor {
         }
 
         m_editorCamera = std::make_shared<EditorCamera2D>();
+        m_editorCamera -> setWindow(*m_window);
         auto scriptInteractor = editorInteractor -> getScriptInteractor();
 
         /// TODO(a.raag): assert with FILENAME LINE

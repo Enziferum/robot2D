@@ -82,6 +82,27 @@ Player обработчики resize/close переведены на typed Event
 Редактор, Game и suite собраны; CTest 219/219 пройден на объединённом коде.
 Hook merge-коммита и CI проверяются перед публикацией результата в PR #132.
 
+### CI и Window/Desktop dev — 2026-10-17
+
+GitHub Git API подтвердил: head 3d82e39 содержит f4121a7 (второй родитель;
+compare ahead=6, behind=0), несмотря на прежний конфликтный PR status.
+Затем dev продвинулся до 4132acf через PR #137. Дополнительный merge сохраняет
+DesktopRuntime, instance polling и новые Desktop-тесты; CMake объединён с
+player fixtures без удаления проверок Core.
+
+Отдельное падение Linux player-runtime: embedded Mono не применял dllmap
+из упакованного mono/config (System.Native при C# File.WriteAllText).
+Конфиг читается через filesystem поток и mono_config_parse_memory: Mono filename
+parser не применял конфигурацию из Unicode Windows пути. Постоянный fixture
+добавляет собственный native alias на abs в msvcrt/libc; managed OnCreate
+проверяет его. Без чтения config регрессия падает на Windows; memory parser
+проходит в перенесённой папке с кириллицей. Отсутствие mono/config даёт ошибку
+--check до окна. Ни SDK, ни чужие проекты для fixture не меняются.
+
+Editor/Game/core/editor suite собраны; полный CTest 227/227 (56 graphics)
+успешен. Обязательный hook и CI нового head проверяются перед публикацией
+окончательного результата; Issue #81, PR #132.
+
 ## HUD-01: C# текст и порядок надписей — 2026-10-16
 
 Ведущий — ассистент по поручению пользователя. Ветка HUD-01 в отдельном worktree

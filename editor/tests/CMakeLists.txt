@@ -234,3 +234,15 @@ add_custom_target(robot2D-player-arena
     DEPENDS robot2D-player robot2D-player-fixture
     COMMENT "Create a standalone diagnostic arena in the build tree"
     VERBATIM)
+
+add_executable(robot2D-desktop-window-tests DesktopWindowTests.cpp)
+target_link_libraries(robot2D-desktop-window-tests PRIVATE robot2D-editor-objects)
+add_dependencies(robot2D-editor-test-suite robot2D-desktop-window-tests)
+rb2d_register_test(core-desktop-uninitialized robot2D-desktop-window-tests uninitialized "headless;core;desktop")
+rb2d_register_test(core-desktop-editor-shutdown robot2D-desktop-window-tests editor-shutdown "headless;core;desktop")
+if(RB2D_EDITOR_GRAPHICS_TESTS)
+    foreach(desktop_case IN ITEMS lifetime render-lifetime rollback borrowed events engine)
+        rb2d_register_test("core-desktop-${desktop_case}" robot2D-desktop-window-tests "${desktop_case}" "graphics;core;desktop")
+        set_tests_properties("core-desktop-${desktop_case}" PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 60)
+    endforeach()
+endif()

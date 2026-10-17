@@ -54,7 +54,7 @@ namespace robot2D::priv {
                 if(m_error.empty()) m_error = m_render.lastError();
                 shutdown(); ImGui::SetCurrentContext(previous); return fail(m_error);
             }
-            for(auto& cursor : m_cursors) cursor = std::make_unique<Cursor>();
+            for(auto& cursor : m_cursors) cursor = std::make_unique<Cursor>(m_window -> desktop());
             m_cursors[ImGuiMouseCursor_Arrow] -> createDefault();
             m_cursors[ImGuiMouseCursor_TextInput] -> create(CursorType::TextInput);
             m_cursors[ImGuiMouseCursor_ResizeNS] -> create(CursorType::ResizeUpDown);

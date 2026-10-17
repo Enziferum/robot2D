@@ -25,24 +25,23 @@
 
 namespace robot2D {
 
-    std::unique_ptr<priv::WindowImpl> Window::m_windowImpl = nullptr;
-
-    Window::Window() :
+    Window::Window(DesktopRuntime& desktop) :
+        m_desktop(desktop),
         m_win_size(800, 600),
         m_name("robot2D"),
         m_context(WindowContext::Default) {
         Window::create();
     }
 
-    Window::Window(const vec2u& size, const std::string& name, const WindowContext& context) :
+    Window::Window(DesktopRuntime& desktop, const vec2u& size, const std::string& name, const WindowContext& context) :
+        m_desktop(desktop),
         m_win_size(size.x, size.y),
         m_name(name),
         m_context(context) {
         Window::create();
     }
 
-    Window::~Window() {
-    }
+    Window::~Window() noexcept = default;
 
     bool Window::isOpen() const {
         return m_windowImpl -> isOpen();
@@ -68,7 +67,7 @@ namespace robot2D {
     }
 
     void Window::processEvents() {
-        if(m_windowImpl) m_windowImpl -> processEvents();
+        m_desktop.processEvents();
     }
 
     FrameEvents Window::takeEvents(std::uint64_t frame) {
@@ -113,7 +112,7 @@ namespace robot2D {
     }
 
     void Window::create() {
-        m_windowImpl = priv::WindowImpl::create(m_win_size, m_name, m_context);
+        m_windowImpl = priv::WindowImpl::create(m_desktop, m_win_size, m_name, m_context);
         if(m_windowImpl == nullptr)
             throw std::runtime_error("Can't create WindowImpl");
     }
@@ -130,20 +129,19 @@ namespace robot2D {
         return m_win_size;
     }
 
-    bool Window::isMousePressed(const Mouse& button) {
+    void Window::makeCurrent() {
+        m_desktop.checkThread();
+        m_windowImpl -> makeCurrent();
+    }
+
+    bool Window::isMouseButtonPressed(Mouse button) const {
+        m_desktop.checkThread();
         return m_windowImpl -> isMousePressed(button);
     }
 
-    bool Window::isKeyboardPressed(const Key& key) {
+    bool Window::isKeyPressed(Key key) const {
+        m_desktop.checkThread();
         return m_windowImpl -> isKeyboardPressed(key);
-    }
-
-    bool Window::isJoystickAvailable(const JoystickType& joystickType) {
-        return m_windowImpl -> isJoystickAvailable(joystickType);
-    }
-
-    bool Window::JoystickIsGamepad(const JoystickType& joystickType) {
-        return m_windowImpl -> JoystickIsGamepad(joystickType);
     }
 
     void Window::setMouseCursorVisible(const bool& flag) {
@@ -193,10 +191,6 @@ namespace robot2D {
 
     vec2f Window::getMousePos() const {
         return m_windowImpl -> getMousePos();
-    }
-
-    bool Window::getJoystickGamepadInput(const JoystickType& joystickType, JoystickGamepadInput& gamepadInput) {
-        return m_windowImpl -> getJoystickGamepadInput(joystickType, gamepadInput);
     }
 
     void Window::setVsync(bool flag) {

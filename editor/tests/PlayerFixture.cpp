@@ -19,6 +19,16 @@ int main(int argc, char** argv) {
             root / "assets/fonts/hud.ttf", tests::fs::copy_options::overwrite_existing);
         tests::fs::copy_file(tests::fs::path(RB2D_TEST_PLAYER_SCRIPT), root / "assets/scripts/bin/Arena.dll",
             tests::fs::copy_options::overwrite_existing);
+        const auto monoConfig = root / "runtime/mono/etc/mono/config";
+        auto config = tests::read(monoConfig);
+        const auto closingTag = config.rfind("</configuration>");
+        CHECK(closingTag != std::string::npos);
+        config.insert(closingTag,
+            R"(
+<dllmap dll="Robot2DPlayerNativeProbe" target="msvcrt.dll" os="windows" />
+<dllmap dll="Robot2DPlayerNativeProbe" target="libc.so.6" os="!windows" />
+)");
+        tests::write(monoConfig, config);
         std::string image(18, '\0'); image[2] = 2; image[12] = 4; image[14] = 2; image[16] = 32; image[17] = 0x28;
         for(int i = 0; i < 8; ++i) image.append("\xff\xff\xff\xff", 4);
         tests::write(root / "assets/sheet.tga", image);
