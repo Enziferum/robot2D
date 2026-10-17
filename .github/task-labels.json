@@ -385,6 +385,9 @@
       "area:editor",
       "type:feature",
       "owner:shared"
+    ],
+    "WEB-01": [
+      "type:maintenance"
     ]
   }
 }
