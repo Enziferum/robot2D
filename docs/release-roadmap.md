@@ -104,15 +104,15 @@ Core дополняет существующий план следующими �
 | [ASSET-02](https://github.com/Enziferum/robot2D/issues/73) — Минимальный импорт и переносимые ссылки на ресурсы | Ассистент; реализация поручена 2026-10-15 | — |
 | [ANIM-01](https://github.com/Enziferum/robot2D/issues/74) — Спрайтшит → клип → preview → C# → standalone | Ассистент; реализация поручена 2026-10-15 | [ASSET-02](https://github.com/Enziferum/robot2D/issues/73) |
 | [PREFAB-01](https://github.com/Enziferum/robot2D/issues/75) — Шаблоны врагов и пуль для runtime-спавна | Ассистент; реализация поручена 2026-10-15 | [ASSET-02](https://github.com/Enziferum/robot2D/issues/73) |
-| [SCRIPT-01](https://github.com/Enziferum/robot2D/issues/76) — Воспроизводимая сборка C# и диагностика ошибок | Совместно; ведущий перед стартом | — |
+| [SCRIPT-01](https://github.com/Enziferum/robot2D/issues/76) — Воспроизводимая сборка C# и диагностика ошибок | Ассистент; реализация поручена 2026-10-16 | — |
 | [RUNTIME-01](https://github.com/Enziferum/robot2D/issues/77) — C# Instantiate/Destroy и жизнь runtime-сущностей | Совместно; ведущий перед стартом | [SCRIPT-01](https://github.com/Enziferum/robot2D/issues/76), [PREFAB-01](https://github.com/Enziferum/robot2D/issues/75), [ECS-02](https://github.com/Enziferum/robot2D/issues/103), [ECS-03](https://github.com/Enziferum/robot2D/issues/104), [ECS-05](https://github.com/Enziferum/robot2D/issues/102) |
 | [RUNTIME-02](https://github.com/Enziferum/robot2D/issues/37) — Play/Stop: изоляция и повторяемый запуск | Совместно; ведущий перед стартом | [SCRIPT-01](https://github.com/Enziferum/robot2D/issues/76), [ECS-03](https://github.com/Enziferum/robot2D/issues/104) |
 | [PHYS-01](https://github.com/Enziferum/robot2D/issues/78) — Физика и события столкновений для арены | Ассистент; реализация поручена 2026-10-15 | [RUNTIME-01](https://github.com/Enziferum/robot2D/issues/77) |
 | [INPUT-01](https://github.com/Enziferum/robot2D/issues/79) — Ввод, камера и прицеливание в Game View и standalone | Совместно; ведущий перед стартом | — |
-| [HUD-01](https://github.com/Enziferum/robot2D/issues/80) — Минимальный HUD и отображение состояния из C# | Совместно; ведущий перед стартом | [SCRIPT-01](https://github.com/Enziferum/robot2D/issues/76), [ASSET-02](https://github.com/Enziferum/robot2D/issues/73) |
+| [HUD-01](https://github.com/Enziferum/robot2D/issues/80) — Минимальный HUD и отображение состояния из C# | Ассистент; реализация поручена 2026-10-16 | [SCRIPT-01](https://github.com/Enziferum/robot2D/issues/76), [ASSET-02](https://github.com/Enziferum/robot2D/issues/73) |
 | [PLAYER-01](https://github.com/Enziferum/robot2D/issues/81) — Standalone player для существующей сцены | Совместно; ведущий перед стартом | [RUNTIME-01](https://github.com/Enziferum/robot2D/issues/77), [RUNTIME-02](https://github.com/Enziferum/robot2D/issues/37), [INPUT-01](https://github.com/Enziferum/robot2D/issues/79), [ASSET-02](https://github.com/Enziferum/robot2D/issues/73) |
 | [RENDER-03](https://github.com/Enziferum/robot2D/issues/82) — Порядок sprite/text, камера и resize для игры | Ассистент; реализация поручена 2026-10-15 | [RENDER-02](https://github.com/Enziferum/robot2D/issues/63) |
-| [BUILD-01](https://github.com/Enziferum/robot2D/issues/83) — Build: C# → проверка проекта → папка Game.exe | Совместно; ведущий перед стартом | [PLAYER-01](https://github.com/Enziferum/robot2D/issues/81), [SCRIPT-01](https://github.com/Enziferum/robot2D/issues/76), [ASSET-02](https://github.com/Enziferum/robot2D/issues/73), [PREFAB-01](https://github.com/Enziferum/robot2D/issues/75) |
+| [BUILD-01](https://github.com/Enziferum/robot2D/issues/83) — Build: C# → проверка проекта → папка Game.exe | Ассистент; реализация поручена 2026-10-16 | [PLAYER-01](https://github.com/Enziferum/robot2D/issues/81), [SCRIPT-01](https://github.com/Enziferum/robot2D/issues/76), [ASSET-02](https://github.com/Enziferum/robot2D/issues/73), [PREFAB-01](https://github.com/Enziferum/robot2D/issues/75) |
 | [GAME-01](https://github.com/Enziferum/robot2D/issues/84) — Арена: управление игроком, стрельба и попадания | Совместно; ведущий перед стартом | [RUNTIME-01](https://github.com/Enziferum/robot2D/issues/77), [PHYS-01](https://github.com/Enziferum/robot2D/issues/78), [INPUT-01](https://github.com/Enziferum/robot2D/issues/79), [ANIM-01](https://github.com/Enziferum/robot2D/issues/74) |
 | [GAME-02](https://github.com/Enziferum/robot2D/issues/85) — Арена: 2–3 типа врагов и волны | Совместно; ведущий перед стартом | [GAME-01](https://github.com/Enziferum/robot2D/issues/84), [PREFAB-01](https://github.com/Enziferum/robot2D/issues/75) |
 | [GAME-03](https://github.com/Enziferum/robot2D/issues/86) — Арена: уровень, HUD, проигрыш и повторная партия | Совместно; ведущий перед стартом | [CMD-01](https://github.com/Enziferum/robot2D/issues/46), [GAME-02](https://github.com/Enziferum/robot2D/issues/85), [HUD-01](https://github.com/Enziferum/robot2D/issues/80), [BUILD-01](https://github.com/Enziferum/robot2D/issues/83) |
@@ -177,3 +177,82 @@ Core дополняет существующий план следующими �
 План переиспользует существующие CMD/LOAD/ASYNC/ASSET/UI/VIEW/CODE/ARCH и Review-задачи. Issue #37 Scene Cloning продолжена как RUNTIME-02, #38 Refactoring — как ARCH-02. Исторические результаты не объявляются проверенными заново; открытые Review-задачи не закрываются этим планированием. Старые TOOL/TEST/CI/PROCESS остаются завершённой инфраструктурой; Config .ini #41 не добавляется в критический путь без отдельного решения.
 
 Датированная история реализации — [editor-roadmap.md](editor-roadmap.md). Этот релизный маршрут заменяет прежнюю последовательность после TOOL-01 в части следующих приоритетов; архитектурные схемы из обсуждения не становятся утверждённым проектом классов.
+
+
+### CORE-02 / основа ввода 0.8 — 2026-10-16
+
+[CORE-02 #119](https://github.com/Enziferum/robot2D/issues/119) готовит typed Event,
+GUI capture и диагностику потока. Контракт и границы — [core-events.md](core-events.md).
+INPUT-01 #79 остаётся открытой для общего InputState/C# и распределения по fixed ticks;
+этот шаг не закрывает игровые критерии ввода и многоконного backend.
+
+
+### Согласованный контракт времени после CORE-02 — 2026-10-16
+
+[Fixed timestep / Engine / RuntimeSession](fixed-timestep-contract.md) задаёт
+будущие границы общего editor/player scheduler, физики и Play/Pause/Stop.
+Это согласованный контракт, а не реализованный релизный критерий. Сначала
+завершаем CORE-02; реализация тайминга и интеграция INPUT-01/RUNTIME-01/02
+начинаются отдельным последующим шагом. PHYS-01 сохраняет внешний dt и не
+вводит собственный накопитель.
+
+
+## Core без ECS: уточнение 2026-10-16
+
+[CORE-01 #110](https://github.com/Enziferum/robot2D/issues/110) — согласованные
+пользователем исправления Util и базовых классов с регрессиями и C++ API
+документацией; ведущий — Codex. Первый шаг включает ResourceHandler, восстановление
+Core/Graphics тестов, необходимые исправления MessageBus/памяти и генерацию HTML.
+Исправления корректности выполняются до стабилизации 0.8; новые публичные
+возможности выбираются по потребителям, без рефакторинга ECS и нового рендера.
+Результаты и оставшийся объём — [project-roadmap.md](project-roadmap.md), контракт
+и запуск генерации — [core-api.md](core-api.md). Это основа C++ справочника;
+она не закрывает пользовательскую документацию и C# API задачи DOC-01.
+
+Второй шаг CORE-01: Logger/Assert, форматтеры и описания методов. Повторный Init
+сохраняет журнал; ошибки начальной настройки допускают повтор; assertions
+имеют определённое поведение Debug/Release и проверены death tests.
+Результаты второго шага и границы следующего (FileInputStream/Time/Clock/векторы)
+сохранены в project-roadmap.md. Это не завершает CORE-01 и DOC-01.
+
+
+Третий отдельный шаг CORE-01 — FileInputStream: EOF/ошибки, 64-битные смещения,
+UTF-8 пути, повторное открытие, getSize и документация с регрессиями. Результаты
+проверок/публикации — в Issue #110 и project-roadmap.md. Далее Time/Clock;
+перед Vector2/Vector3 и Window/Desktop требуется отдельное обсуждение деталей
+с пользователем до старта каждого пункта, включая просьбы просто продолжить.
+
+
+Четвёртый шаг CORE-01 — Time/Clock: монотонный источник интервалов, единый старт,
+точность float преобразований при сохранении API, документация и регрессии.
+Engine получает delta прежним способом; результаты — project-roadmap.md/Issue #110.
+После этого обязательное обсуждение Vector2/Vector3 до начала реализации;
+отдельное обсуждение Window/Desktop также остаётся обязательным.
+
+
+Дополнение CORE-01: constexpr/noexcept Time и отдельно согласованный совместимый
+Vector2/Vector3 (const conversions, constexpr/noexcept, тесты/документация).
+Типы dot/cross и семантика сравнений сохранены. Перед Window/Desktop по-прежнему
+обязательно отдельное обсуждение до начала реализации.
+
+
+### Объединение Core и оставшиеся GUI-исправления — 2026-10-16
+
+CORE-01/02 объединяются в PR #122 по запросу пользователя; PR #112 заменяется
+общим результатом после проверок. Полный текущий список расположен в начале
+[project-roadmap.md](project-roadmap.md#актуальный-план-core-и-robot2d-imgui--2026-10-16).
+CORE-01 не закрывает весь Core и DOC-01: остаются Window/GLFW lifecycle,
+Engine/fixed timestep, расширение справочника и отдельный crash report.
+Для robot2D-imgui отдельно учитываются IMGUI-01 scopes (#121/PR #123), renderer
+correctness, GuiImpl/context/fonts, API/payload, Core Graphics/Window, upstream
+и multi-viewports. Эти задачи не считаются выполненными по миграции ввода CORE-02.
+Исполнитель и конкретный следующий объём выбираются перед реализацией.
+
+### CORE-01: Window/Desktop, 2026-10-17
+
+Первый согласованный шаг реализован в codex/core-01-window-desktop: явный
+DesktopRuntime, единоличное владение окном, корректный GL/native shutdown,
+ошибки создания и polling с явным окном. Контракт — [core-api.md](core-api.md),
+проверки и ограничения — [project-roadmap.md](project-roadmap.md).
+Это не завершение всего CORE-01: timing/RuntimeSession только согласованы,
+multi-viewports/WindowID/DPI/IME/clipboard и crash reports остаются отдельно.

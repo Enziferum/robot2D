@@ -13,25 +13,33 @@ namespace robot2D {
     public:
         using Ptr = std::shared_ptr<ITreeItem>;
 
-        ITreeItem(): m_id(-1){}
-        ITreeItem(int id): m_id{id}{}
+        ITreeItem() : m_id(-1) {
+        }
+        ITreeItem(int id) : m_id{id} {
+        }
         virtual ~ITreeItem() = 0;
 
-        bool hasChildrens() const { return !m_childrens.empty(); }
+        bool hasChildrens() const {
+            return !m_childrens.empty();
+        }
 
-        int getID() const { return m_id; }
+        int getID() const {
+            return m_id;
+        }
 
         void setName(std::string& name) {
             m_name = &name;
         }
 
         /// \brief don't call if user data was set void or you want to call on void type
-        template<typename T, typename = std::enable_if_t<!std::is_same_v<std::decay_t<T>, void>>>
+        template<typename T, typename = std::enable_if_t<!std::is_same_v<std::decay_t<T>, void> > >
         T* getUserData() {
             return static_cast<T*>(getUserDataInternal());
         }
 
-        bool isChild() const { return m_child_id != NO_INDEX; }
+        bool isChild() const {
+            return m_child_id != NO_INDEX;
+        }
 
         bool deleteChild(ITreeItem::Ptr item) {
             m_deletePendingItems.emplace_back(item);
@@ -49,7 +57,9 @@ namespace robot2D {
             m_parent -> removeChild(this);
         }
 
-        std::vector<ITreeItem::Ptr>& getChildrens() { return m_childrens; }
+        std::vector<ITreeItem::Ptr>& getChildrens() {
+            return m_childrens;
+        }
     protected:
         void removeChild(ITreeItem* child) {
             auto found = std::find_if(m_childrens.begin(), m_childrens.end(), [&child](ITreeItem::Ptr item) {
@@ -80,21 +90,23 @@ namespace robot2D {
         std::aligned_storage<sizeof(T), alignof(T)> m_storage;
     };
 
-    template<typename UserDataT, typename = std::enable_if_t<std::is_standard_layout_v<UserDataT>>>
-    class TreeItem: public ITreeItem {
+    template<typename UserDataT, typename = std::enable_if_t<std::is_standard_layout_v<UserDataT> > >
+    class TreeItem : public ITreeItem {
     private:
         using TreeItemUserData = std::shared_ptr<UserDataT>;
     public:
-        using Ptr = std::shared_ptr<TreeItem<UserDataT>>;
-        TreeItem(): ITreeItem() { }
-        explicit TreeItem(int id): ITreeItem(id) { }
+        using Ptr = std::shared_ptr<TreeItem<UserDataT> >;
+        TreeItem() : ITreeItem() {
+        }
+        explicit TreeItem(int id) : ITreeItem(id) {
+        }
 
-        template<typename... Args>
+        template<typename ... Args>
         TreeItem::Ptr addChild(Args&& ... args) {
-            auto child = std::make_shared<TreeItem<UserDataT>>(std::forward<Args>(args)...);
+            auto child = std::make_shared<TreeItem<UserDataT> >(std::forward<Args>(args)...);
             child -> m_id = m_id;
             child -> m_child_id = m_childrens.size();
-            m_childrens.template emplace_back(child);
+            m_childrens.emplace_back(child);
             return child;
         }
 
@@ -133,12 +145,11 @@ namespace robot2D {
 
     namespace util {
         template <class BidirectionalIterator, class T> inline
-        BidirectionalIterator find_first_if(const BidirectionalIterator first, const BidirectionalIterator last, T&& predicate)
-        {
-            for (BidirectionalIterator it = first; it != last;)
+        BidirectionalIterator find_first_if(const BidirectionalIterator first, const BidirectionalIterator last,
+            T&& predicate) {
+            for(BidirectionalIterator it = first; it != last;) {
                 //reverse iteration: 1. check 2. decrement 3. evaluate
-            {
-                if (predicate(*it))
+                if(predicate(*it))
                     return it;
                 ++it; //
             }
@@ -146,14 +157,13 @@ namespace robot2D {
         }
 
         template <class BidirectionalIterator, class T> inline
-        BidirectionalIterator find_last_if(const BidirectionalIterator first, const BidirectionalIterator last, T&& predicate)
-        {
-            for (BidirectionalIterator it = last; it != first;)
+        BidirectionalIterator find_last_if(const BidirectionalIterator first, const BidirectionalIterator last,
+            T&& predicate) {
+            for(BidirectionalIterator it = last; it != first;) {
                 //reverse iteration: 1. check 2. decrement 3. evaluate
-            {
                 --it; //
 
-                if (predicate(*it))
+                if(predicate(*it))
                     return it;
             }
             return last;
@@ -163,24 +173,24 @@ namespace robot2D {
     /// TODO(a.raag): Add as Child, and remove be child Logic
     class TreeHierarchy {
     public:
-        explicit TreeHierarchy(std::string name): m_name(std::move(name)) {
+        explicit TreeHierarchy(std::string name) : m_name(std::move(name)) {
             m_tree_base_flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick
-                                | ImGuiTreeNodeFlags_SpanAvailWidth;
+                | ImGuiTreeNodeFlags_SpanAvailWidth;
         }
         ~TreeHierarchy() = default;
 
-        using ItemCallback = std::function<void(ITreeItem::Ptr selected)>;
-        using ReorderItemCallback = std::function<void(ITreeItem::Ptr source, ITreeItem::Ptr target)>;
+        using ItemCallback = std::function<void (ITreeItem::Ptr selected)>;
+        using ReorderItemCallback = std::function<void (ITreeItem::Ptr source, ITreeItem::Ptr target)>;
 
         template<typename T, typename ... Args>
         typename TreeItem<T>::Ptr addItem(Args&& ... args) {
-            static_assert(std::is_standard_layout_v<T> && "UserData Type must be pod");
-            auto treeItem = std::make_shared<TreeItem<T>>(std::forward<Args>(args)...);
+            static_assert(std::is_standard_layout_v<T>&& "UserData Type must be pod");
+            auto treeItem = std::make_shared<TreeItem<T> >(std::forward<Args>(args)...);
             if(!treeItem) {
                 /// error
             }
             treeItem -> m_id = m_items.size();
-            m_items.template emplace_back(treeItem);
+            m_items.emplace_back(treeItem);
             return treeItem;
         }
 
@@ -247,7 +257,7 @@ namespace robot2D {
                 /// insert before remove last
                 m_insertItems.push_back(std::make_tuple(targetIter, source, ReorderDeleteType::Last));
             }
-            else if (sourceOldDistance < targetOldDistance) {
+            else if(sourceOldDistance < targetOldDistance) {
                 m_insertItems.push_back(std::make_tuple(targetIter, source, ReorderDeleteType::First));
             }
         }

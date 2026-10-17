@@ -14,6 +14,8 @@
 #include <editor/FileApi.hpp>
 #include <editor/ResouceManager.hpp>
 #include <editor/LocalResourceManager.hpp>
+#include <editor/EditorResourceManager.hpp>
+#include <editor/TextSystem.hpp>
 #include <editor/async/AnimationTextureSliceTask.hpp>
 #include <array>
 #include <iostream>
@@ -46,6 +48,7 @@ namespace {
         }
         ~GraphicsContext() {
             editor::LocalResourceManager::getManager() -> releaseGraphicsResources();
+            editor::EditorResourceManager::getManager() -> releaseGraphicsResources();
             glfwDestroyWindow(m_window); glfwTerminate();
         }
     private:
@@ -153,6 +156,188 @@ namespace {
         glReadPixels(9, 23, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixel.data());
         CHECK(pixel[0] > 250 && pixel[1] < 3 && pixel[2] < 3);
         CHECK(glGetError() == GL_NO_ERROR);
+    }
+
+    void editorGuiScene() {
+        Directory fixture;
+        fs::create_directories(fixture / "res");
+        for(const auto* directory : {"textures", "shaders", "icons", "fonts"})
+            fs::copy(fs::path(RB2D_TEST_RESOURCE_DIR) / directory, fixture.path() / "res" / directory,
+                fs::copy_options::recursive);
+        struct WorkingDirectory {
+            fs::path previous = fs::current_path();
+            ~WorkingDirectory() {
+                fs::current_path(previous);
+            }
+        } workingDirectory;
+        fs::current_path(fixture.path());
+        auto* previousContext = glfwGetCurrentContext();
+        robot2D::WindowContext options(false, false, robot2D::WindowContext::RenderApi::OpenGL4_5);
+        robot2D::DesktopRuntime desktop(robot2D::DesktopRuntime::Ownership::Borrowed);
+        auto window = std::make_unique<robot2D::RenderWindow>(desktop, robot2D::vec2u{1280, 720},
+                "Editor integration test",
+                options);
+        struct WindowCleanup {
+            std::unique_ptr<robot2D::RenderWindow>& window;
+            GLFWwindow* previous;
+            ~WindowCleanup() {
+                editor::LocalResourceManager::getManager() -> releaseGraphicsResources();
+                editor::EditorResourceManager::getManager() -> releaseGraphicsResources();
+                window.reset();
+                glfwMakeContextCurrent(previous);
+            }
+        } windowCleanup{window, previousContext};
+        robot2D::Gui gui;
+        robot2D::GuiConfiguration configuration;
+        configuration.window = window.get();
+        configuration.allowDefaultFallback = true;
+        CHECK(gui.initialize(configuration));
+        {
+            robot2D::GuiContextScope scope(gui.context());
+            ImGui::GetIO().IniFilename = nullptr;
+            ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+            robot2D::MessageBus bus;
+            editor::MessageDispatcher dispatcher;
+            editor::Editor view(bus, gui);
+            editor::EditorPresenter presenter(&view);
+            editor::EditorRouter router(&view);
+            editor::EditorLogic logic(bus, dispatcher, presenter, router);
+            auto scripts = std::make_shared<ScriptStub>();
+            logic.setup(scripts);
+            QueueStop stop;
+            view.setup(window.get(), &logic);
+            auto scene = std::make_shared<editor::Scene>(bus);
+            auto camera = scene -> createEntity("Separate game camera");
+            auto& cameraData = camera.addComponent<editor::CameraComponent>();
+            cameraData.isPrimary = true;
+            cameraData.position = {608, 517};
+            cameraData.size = {894, 489};
+            camera.addComponent<editor::DrawableComponent>().setColor(robot2D::Color(255, 255, 255, 0));
+            auto sprite = scene -> createEntity("Visible quad");
+            sprite.getComponent<editor::TransformComponent>().setPosition({100, 100});
+            sprite.getComponent<editor::TransformComponent>().setSize({100, 100});
+            sprite.addComponent<editor::DrawableComponent>().setColor(robot2D::Color::Red);
+            scene -> update(0);
+            fs::create_directories(fixture / "assets/scenes");
+            editor::SceneSerializer serializer(scene);
+            CHECK(serializer.serialize((fixture / "assets/scenes/main.scene").u8string(), "Test", scripts));
+            auto project = std::make_shared<editor::Project>();
+            project -> setPath(fixture.path().u8string());
+            project -> setStartScene("main.scene");
+            logic.loadProject(project);
+            CHECK(waitFor([&]() {
+                editor::TaskQueue::GetQueue() -> process();
+                return presenter.getState() != editor::EditorState::Load;
+            }));
+            CHECK(presenter.getState() == editor::EditorState::Edit);
+            robot2D::FrameBufferSpecification outputSpecification;
+            outputSpecification.size = window -> getFramebufferSize().as<int>();
+            outputSpecification.attachments = {robot2D::FrameBufferTextureFormat::RGBA8,
+                                               robot2D::FrameBufferTextureFormat::Depth};
+            auto output = robot2D::FrameBuffer::Create(outputSpecification);
+            for(int frame = 0; frame < 5; ++frame) {
+                window -> processEvents();
+                (void)window -> takeEvents(static_cast<std::uint64_t>(frame));
+                view.update(1.f / 60);
+                CHECK(gui.beginFrame(1.f / 60));
+                window -> clear();
+                view.render();
+                CHECK(gui.endFrame());
+                window -> afterRender();
+                const auto size = window -> getFramebufferSize();
+                if(output -> getSpecification().size != size.as<int>()) output -> Resize(size);
+                // Hidden native back buffers resize asynchronously under X11/Xvfb.
+                // Compose to an explicit target matching the GUI framebuffer scale instead.
+                output -> Bind();
+                window -> clear();
+                CHECK(gui.render());
+                std::vector<unsigned char> pixels(size.x * size.y * 4);
+                glReadPixels(0, 0, size.x, size.y, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+                std::size_t red = 0;
+                for(std::size_t i = 0; i < pixels.size(); i += 4)
+                    if(pixels[i] > 250 && pixels[i + 1] < 3 && pixels[i + 2] < 3) ++red;
+                // Docking assigns panel sizes over the first frames; subsequent frames must contain the scene.
+                if(frame >= 3 && red < 1000)
+                    throw std::runtime_error("Editor GUI scene pixels: red=" + std::to_string(red) +
+                              "; target=" + std::to_string(size.x) + "x" + std::to_string(size.y));
+                CHECK(glGetError() == GL_NO_ERROR);
+            }
+            output -> unBind();
+            logic.destroy();
+            gui.shutdown();
+        }
+        auto* icons = editor::EditorResourceManager::getManager();
+        const auto icon = icons -> getTexture(editor::EditorResourceID::Movie).getID();
+        CHECK(glIsTexture(icon));
+        icons -> releaseGraphicsResources();
+        icons -> releaseGraphicsResources();
+        CHECK(!icons -> hasTexture(editor::EditorResourceID::Movie));
+        CHECK(!glIsTexture(icon));
+        CHECK(glGetError() == GL_NO_ERROR);
+    }
+
+    void hudText() {
+        class Target final : public robot2D::RenderTarget {
+        public:
+            Target() : RenderTarget({32, 32}, robot2D::WindowContext::RenderApi::OpenGL4_5,
+                    robot2D::WindowContext::RenderDimensionType::TwoD) {
+            }
+        } target;
+        robot2D::Font regular, bold;
+        CHECK(regular.loadFromFile((fs::path(RB2D_TEST_RESOURCE_DIR) / "fonts/notosans-regular.ttf").u8string(), 10));
+        CHECK(bold.loadFromFile((fs::path(RB2D_TEST_RESOURCE_DIR) / "fonts/notosans-bold.ttf").u8string(), 10));
+        robot2D::MessageBus bus; editor::Scene scene(bus);
+        auto background = scene.createEntity("Background");
+        background.getComponent<editor::TransformComponent>().setPosition({0, 0});
+        background.getComponent<editor::TransformComponent>().setSize({32, 32});
+        auto& bg = background.addComponent<editor::DrawableComponent>(); bg.setColor(robot2D::Color::Blue);
+        bg.setDepth(0);
+        auto first = scene.createEntity("Health"); auto second = scene.createEntity("Wave");
+        const auto label = [](editor::SceneEntity entity, const robot2D::Font& font, float x, robot2D::Color color) {
+            entity.getComponent<editor::TransformComponent>().setPosition({x, 2});
+            auto& drawable = entity.addComponent<editor::DrawableComponent>(); drawable.setColor(color);
+            drawable.setDepth(1);
+            auto& text = entity.addComponent<editor::TextComponent>(); text.setFont(font); text.setText("H");
+        };
+        label(first, regular, 1, robot2D::Color::Red); label(second, bold, 17, robot2D::Color::Green);
+        auto missing = scene.createEntity("No font yet"); missing.addComponent<editor::DrawableComponent>();
+        missing.addComponent<editor::TextComponent>().setText("Not loaded");
+        const auto render = [&]() {
+            // GLFW's framebuffer may be larger than 32 pixels on a HiDPI desktop.
+            glViewport(0, 0, 32, 32);
+            scene.update(0); target.beforeRender(); target.clear(robot2D::Color::Black); target.draw(scene);
+            target.afterRender();
+            std::array<unsigned char, 32 * 32 * 4> pixels{};
+            glReadPixels(0, 0, 32, 32, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+            std::array<int, 2> colors{};
+            for(std::size_t i = 0; i < pixels.size(); i += 4) {
+                if(pixels[i] > 80 && pixels[i + 1] < 10) ++colors[0];
+                if(pixels[i + 1] > 80 && pixels[i] < 10) ++colors[1];
+            }
+            CHECK(glGetError() == GL_NO_ERROR); return colors;
+        };
+        auto colors = render();
+        CHECK(colors[0] > 3 && colors[1] > 3);
+        auto cover = scene.createEntity("Cover health only");
+        cover.getComponent<editor::TransformComponent>().setPosition({0, 0});
+        cover.getComponent<editor::TransformComponent>().setSize({16, 32});
+        auto& overlay = cover.addComponent<editor::DrawableComponent>(); overlay.setColor(robot2D::Color::Blue);
+        overlay.setDepth(2); overlay.setReorderZBuffer(true);
+        colors = render(); CHECK(colors[0] == 0 && colors[1] > 3);
+        second.getComponent<editor::TextComponent>().setText(""); colors = render(); CHECK(colors[1] == 0);
+        second.getComponent<editor::TextComponent>().setText(std::string(2001, 'H')); render();
+        second.getComponent<editor::TextComponent>().setText(u8"Игрок\nH"); render();
+        second.getComponent<editor::TextComponent>().setFont(regular); render();
+        CHECK(first.getComponent<editor::TransformComponent>().getPosition().x == 1);
+        std::weak_ptr<robot2D::Texture> texture = first.getComponent<editor::TextComponent>().getTextureHandle();
+        first.removeComponent<editor::TextComponent>(); render();
+        CHECK(!texture.expired());
+        CHECK(first.getComponent<editor::DrawableComponent>().getTexture().getSize().x > 0);
+        first.getComponent<editor::DrawableComponent>().setTexture(std::shared_ptr<robot2D::Texture>{});
+        CHECK(!first.getComponent<editor::DrawableComponent>().hasTexture());
+        robot2D::Font empty;
+        second.getComponent<editor::TextComponent>().setFont(empty); render();
+        CHECK(!second.getComponent<editor::DrawableComponent>().hasTexture());
     }
 
     void hierarchy() {
@@ -677,6 +862,8 @@ int main(int argc, char** argv) {
         const std::string name = argv[1];
         if(name == "hierarchy") hierarchy();
         else if(name == "runtime-camera-order") runtimeCameraOrder();
+        else if(name == "editor-gui-scene") editorGuiScene();
+        else if(name == "hud-text") hudText();
         else if(name == "asset-roundtrip") assetRoundtrip();
         else if(name == "missing-assets") missingAssets();
         else if(name == "asset-identity") assetIdentity();

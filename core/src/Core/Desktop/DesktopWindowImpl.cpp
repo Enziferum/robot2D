@@ -19,6 +19,8 @@
    source distribution.
 *********************************************************************/
 
+#include <cassert>
+#include <limits>
 #include <robot2D/Util/Logger.hpp>
 #include <robot2D/Graphics/GL.hpp>
 #include <robot2D/Config.hpp>
@@ -26,50 +28,84 @@
 
 namespace robot2D::priv {
 
-    DesktopWindowImpl::DesktopWindowImpl() :
-        m_window(nullptr),
-        m_size(800, 600),
-        m_name("Robot2D"),
-        m_context(),
-        m_cursorVisible(true) {
-        setup();
+    void DesktopWindowImpl::NativeWindowDeleter::operator()(GLFWwindow* window) const noexcept {
+        destroy(window);
     }
 
-    DesktopWindowImpl::DesktopWindowImpl(const vec2u& size,
-        const std::string& name,
-        WindowContext& context) :
-        m_window(nullptr),
-        m_size(size),
-        m_name(name),
-        m_context(context),
-        m_cursorVisible(true) {
-        setup();
+    DesktopWindowImpl::DesktopWindowImpl(DesktopRuntime& desktop, const vec2u& size,
+        const std::string& name, WindowContext& context) :
+        DesktopWindowImpl(desktop, size, name, context, NativeFunctions{}) {
     }
 
-    DesktopWindowImpl::~DesktopWindowImpl() = default;
+    DesktopWindowImpl::DesktopWindowImpl(DesktopRuntime& desktop, const vec2u& size,
+        const std::string& name, WindowContext& context, NativeFunctions functions) :
+        m_desktop(desktop), m_nativeWindow(nullptr, NativeWindowDeleter{functions.destroy}), m_window(nullptr),
+        m_size(size), m_name(name), m_context(context),
+        m_cursorVisible(true) {
+        m_desktop.checkThread();
+        auto* previous = glfwGetCurrentContext();
+        auto* recovery = previous ? previous : recoveryContext(desktop);
+        bool loaderStarted = false;
+        try {
+            setup(functions, loaderStarted);
+            m_desktop.attach(*this);
+        }
+        catch(...) {
+            m_nativeWindow.reset();
+#if defined(ROBOT2D_WINDOWS) || defined(ROBOT2D_LINUX)
+            // GLAD owns a process-global table; a failed load may have overwritten it.
+            if(loaderStarted && recovery) {
+                glfwMakeContextCurrent(recovery);
+                gladLoadGLLoader((GLADloadproc)glfwGetProcAddress);
+            }
+#endif
+            glfwMakeContextCurrent(previous);
+            throw;
+        }
+    }
+
+    DesktopWindowImpl::~DesktopWindowImpl() {
+        m_desktop.checkThread();
+        m_desktop.detach(*this);
+        glfwSetWindowUserPointer(m_window, nullptr);
+    }
+
+    void DesktopWindowImpl::makeCurrent() {
+        glfwMakeContextCurrent(m_window);
+    }
 
     bool DesktopWindowImpl::pollEvents(Event& event) {
-        //TODO: @a.raag sleep/wait some time ?
-        if(m_event_queue.empty()) {
-        }
+        return m_event_queue.poll(event);
+    }
 
-        if(!m_event_queue.empty()) {
-            event = m_event_queue.front();
-            m_event_queue.pop();
-            return true;
-        }
+    std::vector<Event> DesktopWindowImpl::takeEvents() {
+        return m_event_queue.take();
+    }
 
-        return false;
+    void DesktopWindowImpl::processEvents() {
+        m_desktop.processEvents();
+    }
+
+    void DesktopWindowImpl::rethrowCallbackError() {
+        if(m_callbackError) {
+            auto error = std::exchange(m_callbackError, {});
+            std::rethrow_exception(error);
+        }
     }
 
     void* DesktopWindowImpl::getRaw() {
         return static_cast<void*>(m_window);
     }
 
-    void DesktopWindowImpl::setup() {
-        /* Initialize the library */
-        if(!glfwInit())
-            throw std::runtime_error("Can't Init GLFW3");
+    void DesktopWindowImpl::setup(NativeFunctions functions, bool& loaderStarted) {
+        if(m_size.x == 0 || m_size.y == 0 ||
+            m_size.x > static_cast<unsigned>(std::numeric_limits<int>::max()) ||
+            m_size.y > static_cast<unsigned>(std::numeric_limits<int>::max()) ||
+            (m_context.renderApi != WindowContext::RenderApi::OpenGL4_3 &&
+            m_context.renderApi != WindowContext::RenderApi::OpenGL4_5))
+            throw WindowCreationError(WindowCreationStage::Validation, 0,
+                      "Invalid window configuration: " + m_name + " size=" + std::to_string(m_size.x) +
+                      "x" + std::to_string(m_size.y));
 
         RB_CORE_INFO("Engine's Version {0}, build {1}", RB2_VERSION_FULL, RB2_BUILD_ID);
         RB_CORE_WARN("Window background is GLFW3 with flags: {0}", glfwGetVersionString());
@@ -108,13 +144,18 @@ namespace robot2D::priv {
         GLFWmonitor* primary = m_context.fullscreen ? glfwGetPrimaryMonitor() : nullptr;
 
         /* Create a windowed mode window and its OpenGL context */
-        m_window = glfwCreateWindow(static_cast<int>(m_size.x),
+        m_window = functions.create(static_cast<int>(m_size.x),
                 static_cast<int>(m_size.y),
                 m_name.c_str(), primary, nullptr);
         if(!m_window) {
-            glfwTerminate();
-            exit(1);
+            const char* description = nullptr;
+            const int code = glfwGetError(&description);
+            throw WindowCreationError(WindowCreationStage::NativeWindow, code,
+                      "Window creation failed: " + m_name + " size=" + std::to_string(m_size.x) + "x" +
+                      std::to_string(m_size.y) + " OpenGL=" + std::to_string(opengl_major) + "." +
+                      std::to_string(opengl_minor) + ": " + (description ? description : "unknown error"));
         }
+        m_nativeWindow.reset(m_window);
 
         /* Make the window's context current */
         glfwMakeContextCurrent(m_window);
@@ -124,9 +165,13 @@ namespace robot2D::priv {
         setup_callbacks();
 
 #if defined(ROBOT2D_WINDOWS) || defined(ROBOT2D_LINUX)
-        if(!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+        loaderStarted = true;
+        if(functions.loadContext ? !functions.loadContext() : !gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
             RB_CORE_CRITICAL("Failed to initialize GLAD");
-            throw std::runtime_error("Failed to initialize GLAD");
+            throw WindowCreationError(WindowCreationStage::ContextLoader, 0,
+                      "Failed to initialize GLAD for window: " + m_name + " size=" +
+                      std::to_string(m_size.x) + "x" + std::to_string(m_size.y) + " OpenGL=" +
+                      std::to_string(opengl_major) + "." + std::to_string(opengl_minor));
         }
 #endif
         glViewport(0, 0, static_cast<int>(m_size.x), static_cast<int>(m_size.y));
@@ -143,12 +188,10 @@ namespace robot2D::priv {
 
     void DesktopWindowImpl::close() {
         glfwSetWindowShouldClose(m_window, true);
-        glfwTerminate();
     }
 
     void DesktopWindowImpl::display() {
         glfwSwapBuffers(m_window);
-        glfwPollEvents();
     }
 
     void DesktopWindowImpl::setup_callbacks() {
@@ -167,8 +210,6 @@ namespace robot2D::priv {
         glfwSetDropCallback(m_window, dragdrop_callback);
         glfwSetWindowFocusCallback(m_window, focus_callback);
         glfwSetCharCallback(m_window, text_callback);
-        glfwSetJoystickUserPointer(GLFW_JOYSTICK_1, this);
-        glfwSetJoystickCallback(joystick_callback);
     }
 
     void DesktopWindowImpl::cancelClose() {
@@ -176,137 +217,101 @@ namespace robot2D::priv {
     }
 
     void DesktopWindowImpl::close_callback(GLFWwindow* wnd) {
-        auto window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
-        Event event{};
-        event.type = Event::Closed;
-        window -> m_event_queue.push(event);
+        auto* window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
+        // A request is delivered before Engine decides whether to stop.
+
+        if(window) window -> enqueue(Event::Closed{});
     }
 
-    void DesktopWindowImpl::key_callback(GLFWwindow* wnd, int key, [[maybe_unused]] int scancode,
-        int action, [[maybe_unused]] int mods) {
-        auto window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
-
-        Event event{};
-
-        if(action == GLFW_REPEAT || action == GLFW_PRESS)
-            event.type = Event::KeyPressed;
-        if(action == GLFW_RELEASE)
-            event.type = Event::KeyReleased;
-        event.key.code = Int2Key(key);
-        window -> m_event_queue.push(event);
+    void DesktopWindowImpl::key_callback(GLFWwindow* wnd, int key, int scancode, int action, int mods) {
+        auto* window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
+        if(!window) return;
+        const Event::KeyboardEvent data{Int2Key(key), scancode, static_cast<unsigned>(mods)};
+        if(action == GLFW_PRESS || action == GLFW_REPEAT)
+            window -> enqueue(Event::KeyPressed{data, action == GLFW_REPEAT});
+        else if(action == GLFW_RELEASE)
+            window -> enqueue(Event::KeyReleased{data});
     }
 
     void DesktopWindowImpl::cursor_callback(GLFWwindow* wnd, double xpos, double ypos) {
-        auto window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
-
-        Event event{};
-        event.move.x = static_cast<float>(xpos);
-        event.move.y = static_cast<float>(ypos);
-        event.type = Event::MouseMoved;
-
-        window->m_event_queue.push(event);
+        auto* window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
+        if(window) window -> enqueue(Event::MouseMoved{{static_cast<float>(xpos), static_cast<float>(ypos)}});
     }
 
-    void DesktopWindowImpl::mouseWhell_callback(GLFWwindow* wnd, [[maybe_unused]] double xpos, double ypos) {
-        auto window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
-        Event event{};
-        event.type = Event::MouseWheel;
-        event.wheel.scroll_x = 0;
-        event.wheel.scroll_y = static_cast<float>(ypos);
-        window->m_event_queue.push(event);
+    void DesktopWindowImpl::mouseWhell_callback(GLFWwindow* wnd, double xpos, double ypos) {
+        auto* window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
+        if(!window) return;
+        double x = 0, y = 0;
+        glfwGetCursorPos(wnd, &x, &y);
+        window -> enqueue(Event::MouseWheel{{static_cast<float>(xpos), static_cast<float>(ypos),
+                static_cast<float>(x), static_cast<float>(y)}});
     }
 
-    void DesktopWindowImpl::mouse_callback(GLFWwindow* wnd, int button, int action, [[maybe_unused]] int mods) {
-        auto window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
-
-        double xpos, ypos;
-        glfwGetCursorPos(wnd, &xpos, &ypos);
-
-        Event event{};
-        event.mouse.btn = button;
-        event.mouse.x = static_cast<int>(xpos);
-        event.mouse.y = static_cast<int>(ypos);
-
-        if(action == GLFW_PRESS)
-            event.type = Event::MousePressed;
-
-        if(action == GLFW_RELEASE)
-            event.type = Event::MouseReleased;
-
-        window -> m_event_queue.push(event);
+    void DesktopWindowImpl::mouse_callback(GLFWwindow* wnd, int button, int action, int mods) {
+        auto* window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
+        if(!window) return;
+        double x = 0, y = 0;
+        glfwGetCursorPos(wnd, &x, &y);
+        const Event::MouseButtonEvent data{button, static_cast<float>(x), static_cast<float>(y),
+                                           static_cast<unsigned>(mods)};
+        if(action == GLFW_PRESS) window -> enqueue(Event::MousePressed{data});
+        else if(action == GLFW_RELEASE) window -> enqueue(Event::MouseReleased{data});
     }
 
     void DesktopWindowImpl::size_callback(GLFWwindow* wnd, int w, int h) {
-        auto window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
-        Event event{};
-        event.type = Event::Resized;
-        event.size.widht = w;
-        event.size.heigth = h;
-
-        window -> m_event_queue.push(event);
+        auto* window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
+        if(window) window -> enqueue(Event::Resized{{static_cast<unsigned>(w), static_cast<unsigned>(h)}});
     }
 
-    void DesktopWindowImpl::framebuffer_callback([[maybe_unused]] GLFWwindow* window, int width, int height) {
-        glViewport(0, 0, width, height);
+    vec2u DesktopWindowImpl::getLogicalSize() const {
+        int width = 0, height = 0;
+        if(m_window) glfwGetWindowSize(m_window, &width, &height);
+        return {static_cast<unsigned>(width), static_cast<unsigned>(height)};
+    }
+
+    vec2u DesktopWindowImpl::getFramebufferSize() const {
+        int width = 0, height = 0;
+        if(m_window) glfwGetFramebufferSize(m_window, &width, &height);
+        return {static_cast<unsigned>(width), static_cast<unsigned>(height)};
+    }
+
+    void DesktopWindowImpl::framebuffer_callback([[maybe_unused]] GLFWwindow* window,
+        [[maybe_unused]] int width, [[maybe_unused]] int height) {
+        // Render passes query framebuffer size and select their own viewport.
     }
 
     void DesktopWindowImpl::maximized_callback([[maybe_unused]] GLFWwindow* wnd, [[maybe_unused]] int state) {
     }
 
     void DesktopWindowImpl::focus_callback(GLFWwindow* wnd, int focus) {
-        auto window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
-        Event event{};
-        if(focus) {
-            event.type = Event::GainFocus;
-        }
-        else {
-            event.type = Event::LostFocus;
-        }
-
-        window->m_event_queue.push(event);
+        auto* window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
+        if(!window) return;
+        if(focus) window -> enqueue(Event::GainFocus{});
+        else window -> enqueue(Event::LostFocus{});
     }
 
     void DesktopWindowImpl::text_callback(GLFWwindow* wnd, unsigned int symbol) {
-        auto window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
-        Event event{};
-        event.type = Event::TextEntered;
-        event.text.symbol = symbol;
-        window->m_event_queue.push(event);
+        auto* window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
+        if(window) window -> enqueue(Event::TextEntered{{symbol}});
     }
 
     void DesktopWindowImpl::dragdrop_callback(GLFWwindow* wnd, int count, const char** paths) {
-        auto window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
-        std::vector<std::string> outputPaths;
-        for(int i = 0; i < count; ++i) {
-            if(paths[i] != nullptr)
-                outputPaths.emplace_back(paths[i]);
+        auto* window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
+        if(!window) return;
+        try {
+            Event::FilesDropped data;
+            for(int i = 0; i < count; ++i)
+                if(paths[i]) data.paths.emplace_back(paths[i]);
+            window -> enqueue(std::move(data));
         }
-        if(window -> m_dropCallback)
-            window -> m_dropCallback(std::move(outputPaths));
+        catch(...) { window -> m_callbackError = std::current_exception(); }
     }
 
-    void DesktopWindowImpl::joystick_callback(int jid, int evt) {
-        if(evt == GLFW_CONNECTED) {
-            auto window = static_cast<DesktopWindowImpl*>(glfwGetJoystickUserPointer(jid));
-            if(!window || jid != GLFW_JOYSTICK_1)
-                return;
-
-            Event event{};
-            event.type = Event::JoystickConnected;
-            event.joystick.joytickId = jid;
-            event.joystick.isGamepad = glfwJoystickIsGamepad(jid);
-            window -> m_event_queue.push(event);
-        }
-
-        if(evt == GLFW_DISCONNECTED) {
-            auto window = static_cast<DesktopWindowImpl*>(glfwGetJoystickUserPointer(jid));
-            if(!window || jid != GLFW_JOYSTICK_1)
-                return;
-            Event event{};
-            event.type = Event::JoystickDisconnected;
-            event.joystick.joytickId = jid;
-            window -> m_event_queue.push(event);
-        }
+    void DesktopWindowImpl::joystickEvent(int jid, int action) noexcept {
+        if(action == GLFW_CONNECTED)
+            enqueue(Event::JoystickConnected{{jid, glfwJoystickIsGamepad(jid) == GLFW_TRUE}});
+        else if(action == GLFW_DISCONNECTED)
+            enqueue(Event::JoystickDisconnected{{jid, false}});
     }
 
     void DesktopWindowImpl::setIcon(Image&& icon) {
@@ -319,19 +324,15 @@ namespace robot2D::priv {
     }
 
     bool DesktopWindowImpl::isMousePressed(const Mouse& button) {
-        return (glfwGetMouseButton(m_window, static_cast<int>(button)) == GLFW_PRESS);
+        const int code = static_cast<int>(button);
+        return code >= GLFW_MOUSE_BUTTON_1 && code <= GLFW_MOUSE_BUTTON_LAST &&
+               glfwGetMouseButton(m_window, code) == GLFW_PRESS;
     }
 
     bool DesktopWindowImpl::isKeyboardPressed(const Key& key) {
-        return glfwGetKey(m_window, key2Int(key));
-    }
-
-    bool DesktopWindowImpl::isJoystickAvailable(const JoystickType& joystickType) {
-        return (glfwJoystickPresent(static_cast<int>(joystickType)) == GLFW_TRUE);
-    }
-
-    bool DesktopWindowImpl::JoystickIsGamepad(const JoystickType& joystickType) {
-        return (glfwJoystickIsGamepad(static_cast<int>(joystickType)) == GLFW_TRUE);
+        const int code = key2Int(key);
+        return code >= GLFW_KEY_SPACE && code <= GLFW_KEY_LAST &&
+               glfwGetKey(m_window, code) == GLFW_PRESS;
     }
 
     void DesktopWindowImpl::setMouseCursorVisible(const bool& flag) {
@@ -389,52 +390,11 @@ namespace robot2D::priv {
         };
     }
 
-    bool DesktopWindowImpl::getJoystickGamepadInput(const JoystickType& joystickType,
-        JoystickGamepadInput& gamepadInput) {
-        GLFWgamepadstate wgamepadstate;
-        auto status = glfwGetGamepadState(static_cast<int>(joystickType), &wgamepadstate);
-        if(status != GLFW_TRUE)
-            return false;
-
-        // TODO(a.raag): remove magic constraints //
-
-        gamepadInput.leftManipulatorOffset = {
-            wgamepadstate.axes[GLFW_GAMEPAD_AXIS_LEFT_X],
-            wgamepadstate.axes[GLFW_GAMEPAD_AXIS_LEFT_Y]
-        };
-
-        if(gamepadInput.leftManipulatorOffset.x == 1.5259022e-05f) {
-            gamepadInput.leftManipulatorOffset.x = 0;
-        }
-
-        if(gamepadInput.leftManipulatorOffset.y == -1.5259022e-05f) {
-            gamepadInput.leftManipulatorOffset.y = 0;
-        }
-
-        gamepadInput.rightManipulatorOffset = {
-            wgamepadstate.axes[GLFW_GAMEPAD_AXIS_RIGHT_X],
-            wgamepadstate.axes[GLFW_GAMEPAD_AXIS_RIGHT_Y]
-        };
-
-        if(gamepadInput.rightManipulatorOffset.x == 1.5259022e-05f) {
-            gamepadInput.rightManipulatorOffset.x = 0;
-        }
-
-        if(gamepadInput.rightManipulatorOffset.y == -1.5259022e-05f) {
-            gamepadInput.rightManipulatorOffset.y = 0;
-        }
-
-        gamepadInput.leftTrigger = wgamepadstate.axes[GLFW_GAMEPAD_AXIS_LEFT_TRIGGER];
-        gamepadInput.rightTrigger = wgamepadstate.axes[GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER];
-
-        for(int i = 0; i < GLFW_GAMEPAD_BUTTON_LAST + 1; ++i)
-            gamepadInput.buttons[i] = static_cast<bool>(wgamepadstate.buttons[i]);
-
-        return true;
-    }
-
     void DesktopWindowImpl::setVsync(bool flag) {
+        auto* previous = glfwGetCurrentContext();
+        makeCurrent();
         glfwSwapInterval(flag ? 1 : 0);
+        glfwMakeContextCurrent(previous);
     }
 
     void DesktopWindowImpl::addDropCallback(std::function<void(std::vector<std::string>&&)>&& callback) {

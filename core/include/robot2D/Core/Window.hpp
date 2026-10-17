@@ -1,22 +1,22 @@
 /*********************************************************************
-(c) Alex Raag 2023
-https://github.com/Enziferum
-robot2D - Zlib license.
-This software is provided 'as-is', without any express or
-implied warranty. In no event will the authors be held
-liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute
-it freely, subject to the following restrictions:
-1. The origin of this software must not be misrepresented;
-you must not claim that you wrote the original software.
-If you use this software in a product, an acknowledgment
-in the product documentation would be appreciated but
-is not required.
-2. Altered source versions must be plainly marked as such,
-and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any
-source distribution.
+   (c) Alex Raag 2023
+   https://github.com/Enziferum
+   robot2D - Zlib license.
+   This software is provided 'as-is', without any express or
+   implied warranty. In no event will the authors be held
+   liable for any damages arising from the use of this software.
+   Permission is granted to anyone to use this software for any purpose,
+   including commercial applications, and to alter it and redistribute
+   it freely, subject to the following restrictions:
+   1. The origin of this software must not be misrepresented;
+   you must not claim that you wrote the original software.
+   If you use this software in a product, an acknowledgment
+   in the product documentation would be appreciated but
+   is not required.
+   2. Altered source versions must be plainly marked as such,
+   and must not be misrepresented as being the original software.
+   3. This notice may not be removed or altered from any
+   source distribution.
 *********************************************************************/
 
 #pragma once
@@ -26,6 +26,8 @@ source distribution.
 #include <memory>
 #include <functional>
 
+#include <robot2D/Core/Mouse.hpp>
+#include <robot2D/Core/Joystick.hpp>
 #include <robot2D/Graphics/Color.hpp>
 #include <robot2D/Graphics/Image.hpp>
 
@@ -33,6 +35,7 @@ source distribution.
 #include "Event.hpp"
 #include "WindowContext.hpp"
 #include "Cursor.hpp"
+#include "DesktopRuntime.hpp"
 
 namespace robot2D {
 
@@ -53,24 +56,38 @@ namespace robot2D {
         /// To specify custom options use other Constructors.
         ///
         ////////////////////////////////////////////////////////////////
-        Window();
+        explicit Window(DesktopRuntime& desktop);
         ////////////////////////////////////////////////////////////////
         /// \brief Special Constructor. Allow to specify options.
         ///
+        /// \param desktop Runtime that outlives this window; use on its creating main thread.
         /// \param size Specify window size in 2D Space
         /// \param name Specify custom name or use setTitle method.
         /// \param windowContext Specify options to Window. Check WindowContext for detail information.
         ///
         ////////////////////////////////////////////////////////////////
-        Window(const vec2u& size,
-               const std::string& name,
-               const WindowContext& windowContext = robot2D::WindowContext::Default);
-        ~Window();
+        Window(DesktopRuntime& desktop, const vec2u& size,
+            const std::string& name,
+            const WindowContext& windowContext = robot2D::WindowContext::Default);
+        Window(const Window&) = delete;
+        Window& operator=(const Window&) = delete;
+        Window(Window&&) = delete;
+        Window& operator=(Window&&) = delete;
+        virtual ~Window() noexcept;
+        DesktopRuntime& desktop() const noexcept {
+            return m_desktop;
+        }
+        /// Select this window's GL context before graphics work and shutdown.
+        void makeCurrent();
 
         ////
         //// \brief process OS events and puts it to robot2D::Event
         ////
         bool pollEvents(Event& event);
+        /// Pump GLFW on the window thread. User callbacks are not invoked by GLFW callbacks.
+        void processEvents();
+        /// Drain the ordered queue into an owning batch and stamp its frame number.
+        FrameEvents takeEvents(std::uint64_t frame);
 
         ////
         //// \brief check if window is opened just now
@@ -94,10 +111,15 @@ namespace robot2D {
         void setSize(const robot2D::vec2u& size);
 
         const vec2u& getSize();
+        /// Physical drawable size; may be zero while minimized.
+        vec2u getFramebufferSize() const;
+        /// Actual client size in logical coordinates, including OS size constraints.
+        vec2u getLogicalSize() const;
 
         /// \brief allow you to set big/small icons to your app
         void setIcon(robot2D::Image&& icon);
 
+        /// Borrowed handle valid until destruction. Do not destroy it or replace backend callbacks/user pointer.
         WindowHandle getRaw() const;
 
         void setCursor(const Cursor& cursor);
@@ -122,22 +144,21 @@ namespace robot2D {
         void setMousePos(const vec2f& pos);
         vec2f getMousePos() const;
 
-        static bool isMousePressed(const Mouse& button);
-        static bool isKeyboardPressed(const Key& key);
-        static bool isJoystickAvailable(const JoystickType& joystickType);
-        static bool JoystickIsGamepad(const JoystickType& joystickType);
-
-        static bool getJoystickGamepadInput(const JoystickType& joystickType, JoystickGamepadInput& gamepadInput);
+        /// Raw per-window state; GUI routing and fixed-step transitions belong to higher layers.
+        bool isMouseButtonPressed(Mouse button) const;
+        bool isKeyPressed(Key key) const;
     protected:
         virtual void onResize(const int& w, const int& h);
     private:
         void create();
     protected:
-        static std::unique_ptr<priv::WindowImpl> m_windowImpl;
+        DesktopRuntime& m_desktop;
+        std::unique_ptr<priv::WindowImpl> m_windowImpl;
 
         /// window settings
         vec2u m_win_size;
         std::string m_name;
         WindowContext m_context;
+        std::function<void(std::vector<std::string>&&)> m_dropCallback;
     };
 }

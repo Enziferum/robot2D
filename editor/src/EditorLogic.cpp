@@ -31,6 +31,7 @@
 
 #include <editor/components/ButtonComponent.hpp>
 #include <editor/scripting/ScriptingEngine.hpp>
+#include <editor/scripting/ScriptProject.hpp>
 
 
 #include <editor/commands/DuplicateCommand.hpp>
@@ -40,31 +41,11 @@
 #include <utility>
 
 
-#ifdef ROBOT2D_WINDOWS
-    #include <windows.h>    //GetModuleFileNameW
-#else
-    #include <climits>
-    #include <unistd.h>     //readlink
-#endif
-
-
-
-
 namespace {
     const std::string scenePath = "assets/scenes";
     const robot2D::FloatRect initRectangle = {{-10000, -10000}, {20000, 20000}};
 
-    std::filesystem::path get_exec_path() {
-    #ifdef ROBOT2D_WINDOWS
-        wchar_t path[MAX_PATH] = { 0 };
-        GetModuleFileNameW(NULL, path, MAX_PATH);
-        return path;
-    #else
-        char result[PATH_MAX];
-        ssize_t count = readlink("/proc/self/exe", result, PATH_MAX);
-        return std::string(result, (count > 0) ? count : 0);
-    #endif
-    }
+
 }
 
 namespace {
@@ -94,6 +75,26 @@ namespace {
 
 
 namespace editor {
+    namespace {
+        class ScriptProjectTask final : public ITask {
+        public:
+            ScriptProjectTask(ITaskFunction::Ptr callback, Project::Ptr project, std::filesystem::path sources,
+                ScriptProjectTools tools) : ITask(std::move(callback)), m_project(std::move(project)),
+                m_sources(std::move(sources)), m_tools(std::move(tools)) {
+            }
+            void execute() override {
+                result = m_sources.empty() ? buildProjectScripts(m_project -> getPath(), m_project -> getName(),
+                        m_tools)
+                    : generateProjectScripts(m_project -> getPath(), m_project -> getName(), m_sources, m_tools);
+                if(!result.success) fail(result.diagnostic);
+            }
+            ScriptBuildResult result;
+        private:
+            Project::Ptr m_project;
+            std::filesystem::path m_sources;
+            ScriptProjectTools m_tools;
+        };
+    }
     EditorLogic::EditorLogic(robot2D::MessageBus& messageBus,
         MessageDispatcher& messageDispatcher,
         EditorPresenter& presenter,
@@ -131,13 +132,17 @@ namespace editor {
 
         m_messageDispatcher.onMessage<GenerateProjectMessage>(MessageID::GenerateProject,
             BIND_CLASS_FN(generateProject));
+        m_messageDispatcher.onMessage<BuildScriptsMessage>(MessageID::BuildScripts,
+            [this](const BuildScriptsMessage&) { buildScripts(false); });
 
         m_quadTree.resizeRectangle(initRectangle);
     }
 
 
     void EditorLogic::handleEventsRuntime(const robot2D::Event& event) {
-        m_activeScene -> handleEventsRuntime(event);
+        // Focus/mode cancellation can arrive before async scene loading completes.
+        if(m_activeScene)
+            m_activeScene -> handleEventsRuntime(event);
     }
 
     void EditorLogic::update(float dt) {
@@ -372,14 +377,13 @@ namespace editor {
 
 
     void EditorLogic::switchRuntimeState(const ToolbarMessage::Type& type) {
-        auto ptr = m_scriptInteractor.lock();
-
+        if(!m_activeScene) return;
         if(type == ToolbarMessage::Type::Start) {
-            m_activeScene -> onRuntimeStart(ptr);
-            m_presenter.switchState(EditorState::Run);
+            if(!m_activeScene -> isRunning()) buildScripts(true);
         }
         else if(type == ToolbarMessage::Type::Stop) {
-            m_activeScene -> onRuntimeStop(ptr);
+            m_startAfterScriptBuild = false;
+            m_activeScene -> onRuntimeStop(m_scriptInteractor.lock());
             m_presenter.switchState(EditorState::Edit);
         }
     }
@@ -775,9 +779,16 @@ namespace editor {
 
     void EditorLogic::exportProject(const ExportOptions& exportOptions) {
         auto queue = TaskQueue::GetQueue();
-        queue -> addAsyncTask<ExportTask>([](const ExportTask& exportTask) {
-
+        RB_EDITOR_INFO("[Build] Requested; output='{}'; start_scene='{}'", exportOptions.outputFolder,
+            exportOptions.startScene);
+        auto id = queue -> addAsyncTaskWithCompletion<ExportTask>([options = exportOptions](const ExportTask& task) {
+            if(task.getOutcome() != TaskOutcome::Succeeded)
+                RB_EDITOR_ERROR("[Build] Not created; output='{}'; start_scene='{}'; reason='{}'",
+                options.outputFolder, options.startScene, task.getErrorMessage());
         }, exportOptions);
+        if(id == InvalidTaskId)
+            RB_EDITOR_ERROR("[Build] Not queued; output='{}'; reason='task queue is stopping'",
+                exportOptions.outputFolder);
     }
 
     SceneEntity EditorLogic::getEntity(UUID uuid) {
@@ -792,31 +803,61 @@ namespace editor {
         m_activeScene -> setEditorCamera(editorCamera);
     }
 
+    void EditorLogic::showScriptError(const std::string& diagnostic) {
+        RB_EDITOR_ERROR("[ScriptBuild] Failed; project='{}'; reason={}",
+            m_currentProject ? m_currentProject -> getPath() : std::string{}, diagnostic);
+        m_popupConfiguration = {};
+        m_popupConfiguration.title = "Scripts build failed";
+        m_popupConfiguration.error = diagnostic.substr(0, 4096) + "\nSee Console for the complete build log.";
+        m_presenter.showPopup(&m_popupConfiguration);
+    }
+
     void EditorLogic::generateProject(const GenerateProjectMessage& message) {
-        std::string genCmd;
-#ifdef ROBOT2D_WINDOWS
-        genCmd = "python res/gen/gen_project.py";
-#else
-        genCmd = "python3 res/gen/gen_project.py";
-#endif
-        genCmd += " --path " + message.genPath;
-        genCmd += " --name " + m_currentProject -> getName();
-        genCmd += " --copypath " + m_currentProject -> getPath() + "/assets/scripts/bin/";
-        auto exePath = get_exec_path();
-        exePath = exePath.remove_filename();
-        genCmd += " --coredllpath " + exePath.string() + "res/script/robot2D_ScriptCore.dll";
+        buildScripts(false, std::filesystem::u8path(message.genPath));
+    }
 
-        RB_EDITOR_INFO("EditorLogic: command to generate robot2D's script's project {0}", genCmd);
-
-        /// TODO(a.raag): GenerateProjectTask + Popup
-        auto f = std::async([genCmd](){
-            if(std::system(genCmd.c_str())) {
-                /// nice
+    void EditorLogic::buildScripts(bool startRuntime, std::filesystem::path sourceDirectory) {
+        if(!m_currentProject || !m_activeScene || m_activeScene -> isRunning() || m_scriptBuildPending) return;
+        auto project = m_currentProject;
+        auto scene = m_activeScene;
+        m_scriptBuildPending = true;
+        m_startAfterScriptBuild = startRuntime;
+        RB_EDITOR_INFO("[ScriptBuild] Started; project='{}'", project -> getPath());
+        auto id = TaskQueue::GetQueue() -> addAsyncTaskWithCompletion<ScriptProjectTask>(
+            [this, project, scene](const ScriptProjectTask& task) {
+            m_scriptBuildPending = false;
+            if(project != m_currentProject || scene != m_activeScene) return;
+            if(task.getOutcome() != TaskOutcome::Succeeded) {
+                m_startAfterScriptBuild = false;
+                showScriptError(task.getErrorMessage()); return;
             }
-            else {
-                /// TODO(a.raag): ShowError
+            auto scripts = m_scriptInteractor.lock();
+            auto* engine = scripts ? scripts -> getScriptingEngine() : nullptr;
+            if(!engine || !engine -> runtimeInit(task.result.assembly.u8string())) {
+                m_startAfterScriptBuild = false;
+                showScriptError("The newly compiled script assembly could not be loaded."); return;
             }
-        });
+            RB_EDITOR_INFO("[ScriptBuild] Succeeded; path='{}'; details={}", task.result.assembly.u8string(),
+            task.result.diagnostic);
+            if(!m_startAfterScriptBuild) return;
+            m_startAfterScriptBuild = false;
+            std::string missing;
+            m_activeScene -> forEachEntity([&](SceneEntity& entity) {
+                if(entity.hasComponent<ScriptComponent>()) {
+                    const auto& name = entity.getComponent<ScriptComponent>().name;
+                    if(!name.empty() && !engine -> hasEntityClass(name)) missing += name + "\n";
+                }
+            });
+            if(!missing.empty()) {
+                showScriptError("Scene script classes are missing from the new assembly:\n" + missing); return;
+            }
+            m_activeScene -> onRuntimeStart(scripts);
+            m_presenter.switchState(EditorState::Run);
+        }, project, std::move(sourceDirectory), scriptProjectTools());
+        if(id == InvalidTaskId) {
+            m_scriptBuildPending = false; m_startAfterScriptBuild = false;
+            showScriptError("The task queue is stopping; scripts were not built.");
+        }
     }
 
     std::shared_ptr<IScriptInteractorFrom> EditorLogic::getScriptInteractor() const {

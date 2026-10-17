@@ -1,14 +1,17 @@
 # Разбор robot2D ImGui и требования к Core
 
-Дата: 2026-10-16. Статус: контракт renderer согласован пользователем для передачи
-в Core; контракт GuiImpl и план Api/обёрток зафиксированы пользователем.
-Пользователь отдельно поручил первый оконный шаг IMGUI-01; его результат
-описан в конце. Остальные контракты не являются разрешением на реализацию.
-База чтения: локальный `dev` @ `3e3cfe3`. Результаты ниже получены чтением кода;
-они не заменяют воспроизведение дефектов и проверки будущих исправлений.
+Обновлено: 2026-10-17. База сверки: удалённый `dev` @
+`4132acf3120da33eebb7334a3d96d00ef7f40860`, после CORE-02 #122,
+IMGUI-02 #130 и Window/Desktop #137. Основной checkout под IDE не переключался.
+Первичный аудит выполнен 2026-10-16 по `3e3cfe3`; таблицы ниже обновлены по dev.
+Контракты renderer/GuiImpl и план Api ранее зафиксированы пользователем.
+Текущее поручение — актуализация документа и передача остатка требований в Core,
+без новой реализации. Выполненные шаги и открытые предложения различаются явно.
+Проверки прежних PR здесь не объявляются запущенными заново.
 
 `robot2D-imgui` сохраняет собственные platform/render backend и использует Core
-Graphics. Собственный MultiSelection редактора и SelectionService сохраняются.
+Graphics остаётся целевым путём: текущий GuiRender пока напрямую вызывает OpenGL.
+Собственный MultiSelection редактора и SelectionService сохраняются.
 Window/Event развиваются в другом чате; этот документ фиксирует согласованный
 контракт потребителя. Имена API и способ реализации согласуются с Core отдельно.
 
@@ -25,21 +28,27 @@ Window/Event развиваются в другом чате; этот доку�
 
 ## Синхронизация с работой над Core
 
-Прочитан чат «Составить план ревью Core/Util». На момент чтения CORE-02 в работе
-в отдельном worktree `core-02-events`, ветка `CORE-02`. Пользователь поручил там
-Event на std::variant, типизированный EventBinder, адаптацию GuiImpl и тесты
-порядка событий и захвата ввода. Сообщение чата о внесённых изменениях не означает
-завершение проверок или интеграцию в dev.
+Координация — чат «Составить план ревью Core/Util». Фактический результат:
 
-В согласованном там направлении GuiImpl подаёт переходы через Add*Event;
-маршрутизатор приложения решает capture и сохраняет владельца Press/Release.
-Эти обязанности не переносить в renderer и не реализовывать второй раз здесь.
-В прочитанном рабочем Event.hpp CORE-02 есть sequence/frame/receivedAt,
-но нет WindowID. Это наблюдение о текущем незавершённом файле, не итоговый контракт.
+| Область | Состояние на базе сверки |
+|---|---|
+| Event/input | [CORE-02 #122](https://github.com/Enziferum/robot2D/pull/122) merged: variant Event, typed EventBinder, FIFO/frame batch, Add*Event и capture; владельцы Press/Release остаются в editor |
+| GuiRender/GuiImpl | [IMGUI-02 #130](https://github.com/Enziferum/robot2D/pull/130) merged: однооконная корректность, lifecycle, владеющий font set; контракт и прежние проверки — [gui-backend.md](gui-backend.md) |
+| Window/Desktop | [PR #137](https://github.com/Enziferum/robot2D/pull/137) merged: DesktopRuntime, RAII native window, ошибки/rollback, polling с явным окном, общий pump и корректный GL shutdown |
+| Scopes Api | [IMGUI-01 #121 / PR #123](https://github.com/Enziferum/robot2D/pull/123) открыт, реализован в отдельной ветке; конфликты с dev разрешены в ветке IMGUI-01, локальные повторные проверки пройдены; интеграция ещё впереди |
+| Graphics / Multi-Viewports | Минимальный Core API ещё согласуется; собственного PlatformIO backend и нескольких GUI-окон нет |
+| Payload / прочие обёртки | A7 обсуждён без реализации; A2–A6 остаются отдельными шагами |
 
-Отправлен запрос о плане Window, WindowID, координатах, DPI, shared contexts и
-границах Graphics. Дальнейшие требования из таблиц ниже требуют согласования
-с владельцем Core. Код и рабочие файлы его worktree этим разбором не меняются.
+У Event есть sequence/frame/receivedAt, но нет WindowID. Sequence отдельных
+EventQueue не задаёт общий порядок нескольких окон. Наличие независимого
+backend у каждого Window не означает готовность multi-viewports/context sharing.
+getLogicalSize/getFramebufferSize уже есть: повторно заказывать их не требуется.
+
+Оставшиеся запросы перечислены в таблицах Graphics/Window и пакете передачи ниже.
+Имена API, capabilities и объём следующего шага согласует ведущий Core отдельно.
+Код и рабочие файлы Core этим документом не меняются. Состояние Issue #110
+не использовать как доказательство завершения всех требований: при сверке она
+закрыта, хотя roadmap и сообщения Core ещё называют общий остаток открытым.
 
 ## Карта интеграции
 
@@ -61,18 +70,18 @@ Event на std::variant, типизированный EventBinder, адапта�
 P2 — устранить при приведении интеграции в порядок. Это приоритеты плана,
 а не утверждение, что каждый случай уже воспроизведён в UI.
 
-| ID | Наблюдение в текущем коде | Исправление и наблюдаемая проверка |
+| ID | Состояние в dev | Оставшееся / приёмка |
 |---|---|---|
-| R1 P1 | OrthoView::getMatrix берёт `T = m_viewport.lx`, хотя верх задаёт `ly` | Использовать Y; проверить проекцию при DisplayPos=(120,350) и отрицательной позиции. Проверка только (0,0) не ловит дефект |
-| R2 P1 | OpenGLContext сохраняет часть state. Shader в конце сбрасывается через unUse, старые program/VAO/texture/sampler не восстанавливаются. Sampler uniform=0, но active texture unit не устанавливается | Явный UI pass и договорённость о сохранении либо переустановке state; проверить ненулевой texture unit, чужой sampler/program/VAO до UI и корректный рисунок после UI |
-| R3 P1 | Draw loop не обрабатывает UserCallback и reset render state | Исполнять callbacks в порядке команд, обрабатывать reset согласно закреплённой версии ImGui; регрессия callback между двумя рисунками |
-| R4 P2 | IdxOffset используется, VtxOffset нет; RendererHasVtxOffset сейчас не объявлен | Добавить baseVertex или эквивалентное смещение vertex binding, затем объявить поддержку. Без флага текущий код ограничен размером списка, а не автоматически неверен для любого UI. Проверить draw list свыше 64K вершин |
-| R5 P1 | setupGL создаёт сырые VBO/EBO, default destructor их не удаляет; отказ shader setup не передаётся GuiImpl | RAII, освобождение при частичном отказе, явный результат setup; проверить циклы setup/shutdown и отказ инициализации |
-| R6 P2 | Параллельно создаются Core VertexArray/VertexBuffer, не используемые draw loop. Их layout задаёт цвет Float4 вместо packed RGBA8 | Оставить один путь через Graphics, с layout sizeof/offsetof(ImDrawVert). Удалять дубли после перевода; сравнить цвет/alpha по пикселям |
-| R7 P2 | Для каждого CmdList вызывается glBufferData; VAO создаётся на render | Измерить upload bytes/calls и CPU/GPU время. Предложение: ёмкость буферов с ростом и загрузка геометрии крупными блоками; VAO на context. Не считать glBufferData само по себе доказанной проблемой скорости |
-| R8 P2 | ClipRect учитывает DisplayPos/FramebufferScale, но нет clamp к target и пропуска равных границ | Определить преобразование/округление scissor, пересечение с framebuffer и пропуск пустых прямоугольников; проверить край target, fractional scale, minimized window |
-| R9 P1 | Шрифты загружаются из внешнего vector, при этом FontDataOwnedByAtlas=true | Выбрать явное владение: копия в памяти ImGui либо хранение исходного буфера с правильным флагом. Не передавать vector::data как владение allocator ImGui; проверить memory-font и shutdown |
-| R10 P2 | Renderer включает файл иконок из editor через относительный путь; собирает atlas и знает merge иконок | Набор шрифтов/иконок задаёт потребитель, renderer обслуживает GPU-текстуры. Локальная политика шрифтов может остаться в Gui; самостоятельный example не должен требовать editor/src |
+| R1 P1 | Исправлено в IMGUI-02: проекция использует Y | Сохранить проверки разных X/Y и отрицательного DisplayPos |
+| R2 P1 | Исправлено в текущем GL backend: state сохраняется один раз на проход, включая active texture/sampler/program/VAO | Перенести гарантию в Graphics pass; учитывать будущий binding cache |
+| R3 P1 | UserCallback и reset обработаны, UI state восстанавливается после callback | Сохранить порядок/barrier и регрессии при переносе на Graphics |
+| R4 P2 | IdxOffset поддержан; ненулевой VtxOffset отклоняется, RendererHasVtxOffset не заявлен | Нужны baseVertex или эквивалент и тест >64K вершин, затем capability |
+| R5 P1 | Исправлено: VBO/EBO освобождаются, частичный отказ откатывается, ошибка передаётся GuiImpl | Сохранить setup/shutdown/rollback при переходе на Core ресурсы |
+| R6 P2 | Неиспользуемый дублирующий VAO/VBO путь удалён; активный путь остаётся прямым GL | Нужен layout Core с packed RGBA8, sizeof/offsetof(ImDrawVert) для единого Graphics пути |
+| R7 P2 | Upload через glBufferData для CmdList и временный VAO сохранены | Сначала измерить uploads/bytes/рост; capacity и VAO на context после Core API/lifetime |
+| R8 P2 | Исправлено: clip округляется floor/ceil, пересекается с target; пустой пропускается | Сохранить fractional scale/minimized/DisplayPos регрессии |
+| R9 P1 | Исправлено владение memory-font; конфигурация копируется | Сохранить font/source lifetime при миграции upstream |
+| R10 P2 | Font set и merge задаёт потребитель, renderer не выбирает иконки editor | Добавить texture lifecycle выбранного upstream при его миграции |
 
 Сохранять порядок CmdLists и CmdBuffer. Для объединённой загрузки учитывать
 накопленные index/vertex offsets между списками плюс смещения команды.
@@ -85,14 +94,14 @@ VAO на каждый render сейчас обеспечивает работу 
 
 ## GuiImpl и жизненный цикл
 
-| ID | Текущее состояние | План |
+| ID | Состояние в dev | Оставшееся |
 |---|---|---|
-| G1 | В dev используются KeyMap/KeysDown, polling мыши и ручные modifier fields | Принять и проверить результат CORE-02; не делать параллельную миграцию этого же файла |
-| G2 | CreateContext вызывается без хранения собственного ImGuiContext*. Shutdown безусловно обращается к GetIO/DestroyContext, включая объект без setup | Явное владение context, определённая политика повторного setup, безопасный shutdown до setup/после отказа; все операции обращаются к своему context |
-| G3 | GuiRender::setup возвращает void; дальнейший NewFrame/render возможен после отказа GPU setup | Публиковать ready только после успешного setup; откатывать частичные ресурсы, определить контракт ошибок и повторного запуска |
-| G4 | DisplaySize берётся из Window::getSize, framebuffer scale не вычисляется; dt передаётся без проверки | Отделить logical size от framebuffer size, обновлять DPI/scale по согласованному Window API; определить обработку dt<=0 и minimized состояния |
-| G5 | Clipboard handlers закомментированы, IME не интегрирован; часть курсоров заменена Arrow | Добавить clipboard/IME через Core platform сервисы и честные capabilities; проверить текст, Ctrl+C/V и позицию IME в отдельном окне |
-| G6 | Один Window*, render только главного viewport, нет PlatformIO handlers | Сначала стабильный однооконный backend; multi-viewport подключить после Window-контракта из следующего раздела |
+| G1 | Выполнено CORE-02: feedGuiEvent/Add*Event и capture snapshot, без прежней перезаписи polling | Сохранить router/Press–Release; адаптация к группе окон после WindowID |
+| G2 | Выполнено IMGUI-02: собственный context, восстановление предыдущего, безопасный shutdown | Сохранить lifetime при добавлении platform windows |
+| G3 | Выполнено: initialize/ready только после успеха; bool/lastError, rollback и состояния кадра | Не дублировать реализацию lifecycle |
+| G4 | Logical/framebuffer size и scale, finite positive dt и пропуск нулевого target реализованы | Content scale/monitor/DPI changes и перенос окна между мониторами ещё нужны |
+| G5 | Курсоры привязаны к DesktopRuntime, capabilities выставляются по готовности | Clipboard/IME и platform capabilities остаются запросом к Core |
+| G6 | Стабилизирован однооконный backend, один заимствованный Window | PlatformIO, registry viewport→WindowID→context/target и multi-viewports не реализованы |
 
 ### Согласованный контракт GuiImpl
 
@@ -104,11 +113,10 @@ GuiRender исполняет GPU-команды, editor управляет па�
 
 ### Учёт CORE-02
 
-При последнем чтении рабочего дерева CORE-02 уже выделены
-`feedGuiEvent(ImGuiIO&, const Event&)` и `GuiInputCapture` с полями mouse,
-keyboard, activeItem, popup. События подаются через Add*Event; перезапись
-KeysDown/MouseDown через polling удалена. Это состояние незавершённой ветки,
-а не утверждение о merge или повторно выполненных проверках.
+CORE-02 уже в dev через #122. Выделены `feedGuiEvent(ImGuiIO&, const Event&)`
+и `GuiInputCapture` с mouse/keyboard/activeItem/popup. События подаются через
+Add*Event; прежняя перезапись KeysDown/MouseDown через polling удалена.
+Это реализованная однооконная основа, а не ожидаемая зависимость.
 
 Сохранить адаптер, пригодный для headless-проверок без GPU renderer. Capture
 снимается до NewFrame и не является результатом обработки отдельного события.
@@ -255,27 +263,29 @@ Shutdown требует живых сервисов Core platform/Graphics. Сн
 передача ошибок setup, владеющий фиксированный font set и сохранение адаптера
 CORE-02. Реестр viewport/PlatformIO подключить после согласования Window API.
 Горячая замена font set, runtime-переключение multi-viewport и новый router
-в этот объём не входят. Реализация ни одного из этих шагов пока не поручена.
+в этот объём не входят. Первый однооконный объём уже реализован IMGUI-02;
+следующие пункты не являются поручением на реализацию.
 
-Приёмка будущей реализации: shutdown до setup/дважды и после частичного отказа;
+Приёмка lifecycle/font set выполнена в IMGUI-02; сохранить регрессии: shutdown до setup/дважды и после частичного отказа;
 повторный initialize; собственный/предыдущий ImGui context; ошибочный dt;
 cancelFrame и пропуск GPU render; память memory-font после освобождения буфера
 вызывающего кода, missing required font и явный fallback; atlas region updates;
 DPI без двойного масштаба; переход фокуса/drag между окнами, закрытие панели
 без завершения приложения, minimized главное окно и восстановление GL context.
-Сохранить сценарии CORE-02; эти проверки в данном разборе не запускались.
+Сохранить сценарии CORE-02. Atlas updates, DPI и межоконные сценарии остаются
+будущей приёмкой; при актуализации документа тесты заново не запускались.
 
 ## Api и обёртки
 
 | ID | Наблюдение | Предлагаемая правка |
 |---|---|---|
-| A1 | createWindow игнорирует bool Begin, всегда вызывает callback; windowOptions.disable выполняется до отложенного End и не выполнится при исключении callback | RAII для обеих обязанностей; callback только при видимости. Отдельно определить порядок style scope и End. Для скрытого dockspace сохранить KeepAliveOnly вне пропущенного содержимого |
+| A1 | В dev ещё старый путь; исправление WindowScope/styles/createWindow/IPanel и dockspace реализовано в IMGUI-01 #123 | PR не merged; в IMGUI-01 разрешены конфликты с dev, сохранён GuiImpl и пройдены повторные локальные проверки; не считать завершённым в dev |
 | A2 | ImageButton использует старую перегрузку без явного строкового ID | Передавать независимый ID; проверить две кнопки с одной текстурой. Обновить вызывающие места при миграции upstream |
 | A3 | RenderFrameBuffer безусловно разыменовывает Ptr | Определить предусловие либо безопасный пустой результат, политику UV flip и lifetime текстуры до исполнения draw data |
 | A4 | DrawAnimatedImage не получает textureSize, а делит UV на его компоненты. Обе sprite-функции deprecated | Сначала проверить потребителей. Предложить единый Image(Sprite/TextureRegion), определить texture rect, zero-size и flip; не чинить неиспользуемый API без решения о сохранении |
 | A5 | InputText повторяет стандартный resize adapter для std::string | Сохранить удобный API, сверить с misc/cpp/imgui_stdlib выбранного тега; проверить рост строки, UTF-8 и chaining callback. Сам const_cast не объявляется отдельным дефектом |
 | A6 | Sugar хранит различие always-End/conditional-End, но TreeNode scope безусловно делает TreePop при open, даже с NoTreePushOnOpen. Несколько macros ссылаются на ImGuiSugar вместо robot2D::Sugar | Проверить именно используемые обёртки; учитывать flags, исправить namespace; compile smoke для публичных scopes плюс баланс стеков |
-| A7 | DragDropTarget::unpackPayload<T> делает cast без DataSize/ограничения типа; PayloadBuffer хранит чужой адрес | Для простых значений проверять тип/размер, копировать trivially copyable payload; документировать borrowed lifetime. Для строк использовать имеющийся size-aware unpack, для сущностей — UUID, без знания editor в библиотеке |
+| A7 | DragDropTarget::unpackPayload<T> делает cast без DataSize/ограничения типа; PayloadBuffer хранит чужой адрес | Предложены optional копии допустимого значения, владеющий текст и delivery-only accept; отдельный inspect для preview. UUID/пути остаются в editor; точный API пока не утверждён и не реализован |
 
 ### Зафиксированный план Api и обёрток
 
@@ -397,10 +407,10 @@ cancelled — явную отмену. Finished не гарантирует от
 Эти контролы развиваются после базовых примитивов по конкретным потребителям;
 весь список не является одним поручением на реализацию.
 
-### Первый объём будущей работы
+### Объём Api и следующий независимый шаг
 
-1. Безопасные scopes: исправить A1/A6, определить style lifetime, переиспользовать
-   основу в createWindow/IPanel, добавить нужные ScopedID/условные style guards.
+1. IMGUI-01: scopes окон/стилей и dockspace уже реализованы в PR #123;
+   синхронизация и интеграция ещё впереди. A6/Sugar не объявлять исправленным этим PR.
 2. Изображения: явный ID ImageButton и общий ImageRegion/UV-контракт;
    адаптировать существующие вызовы Scene/Game/toolbar. Окончательный TextureView
    зависит от Core Graphics; не заводить конкурирующий тип. Исправление ID/scopes
@@ -420,7 +430,35 @@ NoTreePushOnOpen, закрытие/focus панели и скрытый dockspac
 с одной texture, UV Sprite/FBO; отклонение неверных payload type/size,
 preview без действия и жизнь скопированного значения после drop; EditResult
 для drag/reset/ввода и отсутствия изменения. Сохранить сценарии SelectionService
-и MultiSelection. Проверки пока не выполнялись.
+и MultiSelection. Для A1 есть прежние проверки ветки IMGUI-01; остальные пункты
+не объявляются проверенными, после синхронизации #123 повторный полный CTest прошёл 228/228, включая 55 graphics.
+
+### Payload: обсуждённое предложение A7, без реализации
+
+Следующий независимый от Core шаг: сохранить DragDropTarget как RAII scope;
+acceptValue<T>/acceptText возвращают optional владеющего результата только при
+delivery. Отдельные inspectValue/inspectText возвращают копию и явные состояния
+preview/delivery; наличие preview не запускает действие. Raw AcceptBeforeDelivery
+не должен менять контракт accept. В одном target сохранить проверку нескольких ID.
+
+Предложены симметричные setValuePayload/setTextPayload. Для value недостаточно
+trivially_copyable: нужен явный допуск типа; первый формат — uint64_t, editor
+сам преобразует UUID. Проверяются ID, DataSize, адрес и точный размер; чтение
+через memcpy не зависит от выравнивания. Текст копируется по длине, допускает
+один завершающий NUL и сохраняет внутренние NUL. Editor-адаптер пути отклоняет
+пустое значение и внутренний NUL до файловой операции.
+
+Миграция: Assets/Inspector/Scene/Viewport/Animation и прямой drag/drop TreeHierarchy,
+без изменения MultiSelection, очереди reorder/reparent или модели команд.
+Предложено удалить старые unpackPayload<T>/PayloadBuffer/unpackPayload2Buffer
+и deprecated SimpleDragDrop после миграции всех потребителей; это изменение
+публичного API ещё требует согласования, как и окончательные сигнатуры.
+
+Постоянные headless-тесты: type/size/null/недопустимый размер, невыровненный вход,
+сохранность копии после изменения источника; текст с/без конечного NUL и встроенным
+NUL, отказ editor-пути; настоящий ImGui context и несколько кадров drag/preview/
+delivery/cancel, несколько ID одного target и баланс scopes при раннем выходе.
+Это предложенный объём, не новая зарегистрированная IMGUI-задача и не реализация.
 
 ## Согласованный контракт рендера через Core Graphics
 
@@ -590,6 +628,11 @@ GuiRender учитывает DisplayPos/FramebufferScale, пересекает c
 один раз на проход. Восстановление включает согласованность state cache Core;
 оно не заменяет завершение ранее накопленной отрисовки сцены.
 
+Уточнение по dev: Core сейчас хранит очередь draws, но не кеширует GL bindings
+с пропуском bind. Поэтому текущий IMGUI-02 обходится без нового invalidation API;
+вызывающий слой завершает очередь через RenderTarget::afterRender(). Требование
+согласованности cache относится к будущему Graphics pass, если такой cache появится.
+
 ImGui callbacks исполняет GuiRender в исходном порядке. Reset-команда повторно
 устанавливает UI state. После произвольного callback, включая прямые GL-вызовы,
 нужно инвалидировать затронутый cache Graphics и восстановить необходимые
@@ -633,28 +676,65 @@ updates. Persistent mapping, ring buffers, indirect draws и multi-draw сейч
 
 ## Запрос к рефакторингу Window
 
+Уже реализованы и повторно не запрашиваются: DesktopRuntime owned/borrowed,
+единоличное владение native window каждого Window, ошибки создания/rollback,
+разрушение GPU до native context, makeCurrent конкретного окна, polling с явным
+окном и единый processEvents отдельно от swap. Logical/framebuffer sizes тоже
+уже доступны. Ни один из этих пунктов сам по себе не включает Multi-Viewports.
+
 | Потребность robot2D-imgui | Что нужно определить в Core |
 |---|---|
 | Событие от конкретного окна | Стабильный WindowID и lifetime; окно-источник в event/envelope; единый порядок событий нескольких окон |
 | Координаты desktop | Signed position, явные client/screen преобразования; монитор слева/сверху главного имеет отрицательные координаты |
-| DPI и несколько мониторов | Logical size, framebuffer pixels, content scale; monitor bounds/work area; уведомления о смене DPI/мониторов |
-| Дополнительное окно панели | Независимые create/show/hide/move/resize/title/focus/minimize/destroy; close request не завершает GLFW и приложение целиком |
+| DPI и несколько мониторов | Сохранить существующие logical/framebuffer sizes; добавить content scale, monitor bounds/work area и уведомления о смене DPI/мониторов |
+| Дополнительное окно панели | Независимое владение/create/close уже есть; дополнить show/hide/focus/state и операции platform window, не завершать весь runtime при закрытии панели |
 | Свойства platform window | Decoration, resizable, topmost, taskbar, owner/parent и no-focus/no-input — по capabilities ОС; native handle для IME и платформенных требований |
 | Ввод и курсор | Фокус по окнам, cursor enter/leave, захват drag за границами, hovered window; warp мыши в выбранное окно. Clipboard/IME — сервисы платформы |
-| OpenGL | Создание context с sharing, получить/сделать current/восстановить прежний, swap конкретного окна, уничтожить в определённом порядке |
-| Event pump | Обработка ОС отдельно от swap; обслуживать панели, даже когда главное окно minimized; не собирать несколько независимых несогласованных event loops |
+| OpenGL | makeCurrent/display и порядок уничтожения уже есть; нужны shared creation, context identity, получение/восстановление прежнего current context, согласование lifetime с Graphics |
+| Event pump | Единый pump уже реализован; проверить обслуживание панелей при minimized главном окне и сохранить один цикл, не добавлять конкурирующие loops |
 
 ImGui context остаётся один, GL contexts может быть несколько. Нельзя напрямую
 превращать LostFocus главного окна в потерю фокуса всего UI при переходе в другую
 панель. При отсутствии capability backend должен иметь определённое поведение
 и не заявлять соответствующий BackendFlag.
 
+### Пакет оставшихся требований для чата Core — 2026-10-17
+
+Это передача требований потребителя для согласования контрактов, без поручения
+реализовать Core или менять GuiImpl/CORE-02. Последовательность предлагается,
+а не считается принятым исполнителем планом:
+
+1. Graphics, совместно с RENDER-04 #98: выбрать минимальный последовательный
+   pass/target API; packed vertex layout; streaming VBO/IBO; UInt16/UInt32,
+   firstIndex/baseVertex; texture views/region updates/row pitch. Определить
+   ошибки, lifetime до исполнения, callback reset и границу состояния.
+2. Window/platform: WindowID и межоконный порядок Event; signed desktop/client
+   coordinates; content scale/monitors/DPI notifications; platform window
+   properties/capabilities, hover/focus/drag capture, clipboard/IME.
+3. Общая граница Window/Graphics: shared context creation, context identity,
+   current-context restore, context-local VAO/FBO cleanup и видимость/synchronization
+   записей общих textures/buffers перед чтением в другом context.
+
+Минимальная приёмка Graphics: packed color/alpha, несколько draw lists/ranges,
+оба index type и >64K вершин, clip с отрицательным DisplayPos/fractional scale,
+atlas patch с offset/padded rows, callbacks/state и Core draw после GUI.
+Минимальная приёмка Window: монитор слева/сверху, разные DPI и перенос панели,
+межоконный drag и фокус/IME, закрытие панели без выхода приложения, minimized
+главное окно, общий texture из Scene/Game и правильный shutdown обоих contexts.
+
+Однооконные исправления #122/#130/#137 сохраняются. Backend не переключает
+contexts внутри GuiRender; это координирует platform/вызывающий слой. ImGuiContext
+один на группу окон, Core не зависит от ImGui. Отдельно согласовать имена API,
+capabilities, следующий TASK-ID/ведущего и объём; не создавать дубли существующих
+RENDER-04/05. Upstream upgrade и собственный MultiSelection остаются работой GUI.
+
 ## Обновление Dear ImGui
 
-Локально: `1.90 WIP`, `IMGUI_VERSION_NUM=18994`; README прямо указывает mix docking
+В dev базы сверки: `1.90 WIP`, `IMGUI_VERSION_NUM=18994`; README прямо указывает mix docking
 и multiselection. Цель обсуждения — закреплённый upstream docking release,
-актуальный при начале миграции. На дату разбора releases/latest указывает 1.93.0;
-релиз перечисляет `v1.93.0-docking`. Тег и SHA проверить перед загрузкой.
+актуальный при начале миграции. В первичном разборе рассматривался 1.93.0;
+при этой актуализации внешний upstream не перепроверялся. Тег, SHA и контракт
+texture updates проверить перед загрузкой, не считать прежний номер актуальным автоматически.
 
 Сначала инвентаризировать изменения vendored ImGui/imconfig и потребителей
 imgui_internal.h, ImGuizmo, Spinner и Sugar. Отделить настройки интеграции от
@@ -679,8 +759,8 @@ imgui_internal.h, ImGuizmo, Spinner и Sugar. Отделить настройк�
 
 | Шаг | Граница результата | Зависимость и приёмка |
 |---|---|---|
-| 1. Согласовать Core | Ответ на таблицы Graphics/Window и регистрация небольшого объёма | Сначала актуальный итог CORE-02; не переносить его незавершённые файлы вручную |
-| 2. Корректность текущего backend | R1–R3, R5, R9, G2/G3; необходимые A1/guards | Одно окно, воспроизводящие регрессии, graphics suite. Не ждать всей многооконности для локальных дефектов |
+| 1. Согласовать Core | Ответ на таблицы Graphics/Window и регистрация небольшого объёма | CORE-02 и Window/Desktop уже merged; согласовать именно оставшиеся операции |
+| 2. Корректность текущего backend | R1–R3, R5, R8–R10, G1–G3 и однооконная часть G4 выполнены в dev | A1 — отдельный открытый PR #123; Graphics migration и Multi-Viewports этим результатом не закрыты |
 | 3. Поднять upstream | Закреплённый docking release и адаптация своего backend/API/texture lifecycle | Минимальные Graphics texture операции согласованы; редактор собирается, старые сценарии сохранены |
 | 4. Единый Graphics путь | Один набор GPU-ресурсов, точный layout, draw ranges/state, VtxOffset | API Core из согласованных таблиц; R6/R4 и устранение дублирующего GL-пути |
 | 5. Оптимизировать по измерениям | Буферы с ёмкостью, меньше uploads, VAO на context при готовом lifecycle | R7 и одинаковые нагрузки до/после, без изменения изображения и порядка |
@@ -713,67 +793,26 @@ imgui_internal.h, ImGuizmo, Spinner и Sugar. Отделить настройк�
 выбрать область форматтера/анализатора по [development-tools.md](development-tools.md);
 не запускать анализ vendored Dear ImGui как собственного кода по умолчанию.
 
-В исходном исследовательском разборе сборка, runtime-тесты, benchmarks и ручные UI-сценарии не запускались; проверки IMGUI-01 записаны отдельно ниже.
-Следующий шаг — согласовать ответ Core и первый объём исправлений, затем выбрать
-исполнителя. Сам исследовательский разбор не менял C++/Window/Event/MultiSelection.
+При актуализации документа сборка, runtime-тесты, benchmarks и ручные UI-сценарии
+заново не запускались. Прежние результаты IMGUI-02/CORE-02/Window описаны в их
+PR и gui-backend.md/core-api.md. Далее согласовать ответ Core и отдельные объёмы
+Graphics/Window; payload остаётся независимым предложенным GUI-шагом.
+C++/Window/Event/MultiSelection этим документом не изменяются.
 
+## IMGUI-01: синхронизация с dev — 2026-10-17
 
-## IMGUI-01 первый шаг реализации 2026-10-16
+По поручению пользователя в отдельный worktree IMGUI-01 объединён origin/dev
+@ 4132acf. Конфликты реестров задач и документации разрешены с сохранением
+обоих наборов записей; все регистрации headless/graphics тестов сохранены.
+GuiImpl.cpp/.hpp не отличаются от dev, CORE-02 и Core API не менялись.
+WindowScope сохраняет требование живого текущего context на срок scope.
+В imgui-scope-unwind добавлена проверка двух contexts: исключение callback
+в GuiContextScope восстанавливает окна/стили выбранного context, затем прежний
+context и его стеки остаются пригодными для продолжения кадра.
 
-Задача [IMGUI-01 #121](https://github.com/Enziferum/robot2D/issues/121), ветка
-`IMGUI-01` от удалённого dev @ c05a55b, отдельный worktree imgui-01-window-scopes.
-Пользователь поручил только scopes окон/стилей и сохранение dockspace.
-
-Добавлены WindowStyleScope и WindowScope. Стили WindowOptions удерживаются
-до End, затем восстанавливаются; callback вызывается только при видимом Begin,
-исключения не подавляются. createWindow и IPanel используют одну основу,
-сигнатуры и политика видимости/focus панелей сохранены. UIManager поддерживает
-скрытый dockspace через KeepAliveOnly с тем же ID в стеке host-окна.
-
-Четыре headless-сценария imgui-scope-windows/unwind/panels/docking проверяют
-видимое/свёрнутое окно, false open, ранний выход, исключение, вложенные scopes,
-восстановление стилей, закрытие/показ/focus панели и сохранение DockId при
-нескольких скрытых кадрах host. Тесты вызывают реальную общую функцию host,
-используемую UIManager, без native окна и GPU context. На первом появлении
-ImGui может измерять свёрнутое окно: тест false Begin задаёт фиксированный размер.
-
-Windows GCC 16.2/Ninja Release: robot2D, robot2D-core-tests и
-robot2D-editor-test-suite собраны; CTest 56/56 без пропусков (graphics выключены).
-WindowScope прошёл отдельный строгий clang-tidy в явной области своей библиотеки.
-Обязательный pre-commit прошёл: Python 47/47, формат, сборка, CTest 56/56
-и строгий clang-tidy 179 собственных единиц. Проверки CORE-02 сюда не переносятся. GuiImpl/Event, Core Graphics/Window и vendored ImGui не менялись.
-
-Ручная приёмка ещё нужна: закрыть Inspector крестиком, показать через меню,
-проверить focus; сменить dock tabs, свернуть/восстановить host, сохранить layout,
-перезапустить и проверить расположение/видимость панелей. Эти действия не
-объявляются выполненными по headless-тестам. Следующий шаг — публикация PR в dev, CI и ручная приёмка. Остальные контракты в этом документе — планы.
-
-
-### Ревью PR 123 и закрытый WindowScope
-
-Проверены CI исходного commit 210b060: ubuntu-24.04/Release,
-windows-2022/Release и оба Tests check завершились SUCCESS.
-Ревью выявило P2: open=false на входе подавлял callback, но всё ещё вызывал
-ImGui::Begin, создавая окно с заголовком. Усиленная регрессия сначала упала
-на изменении стека окон. Исправление не вызывает Begin/End и не применяет
-стили для закрытого окна; отложенные SetNextWindow параметры потребляются,
-чтобы size/position/focus/dock не утекали в следующее окно. При начавшемся
-Begin End остаётся обязательным, даже если Begin вернул false или закрыл окно.
-
-Тест docking дополнительно проверяет скрытые кадры без подачи панели, как
-в UIManager, и последующее восстановление прежнего DockId; исходный вариант
-с продолжающейся подачей панели сохранён. Целевые headless-сценарии 4/4 прошли.
-Порядок End перед освобождением стилей и KeepAliveOnly в ID-стеке host
-проверен; других ошибок в этом объёме не выявлено. Native UI-приёмка остаётся.
-Результат CI 210b060 не считается результатом CI исправления; новый head
-проверяется отдельно после публикации. GuiImpl/CORE-02/Core не менялись.
-
-
-Проверки исправления ревью: редактор/core-tests/suite собраны обязательным
-hook, CTest 56/56 и Python 47/47 прошли, формат и строгий анализ изменённого
-headless-теста прошли без обхода. Отдельный строгий анализ Api/WindowScope
-и собственных заголовков интеграции прошёл с CPLUS_INCLUDE_PATH на native
-resource headers установленного Clang 23: без этого standalone разбор
-imgui_internal.h попадал в несовместимые GCC intrinsic-заголовки. Область
-ограничена src/robot2D и include/robot2D/imgui; vendored ImGui не анализируется
-как собственный код и не меняется. Подавления ошибок не добавлялись.
+Windows Ninja/Release GCC 16.2.0: robot2D, robot2D-core-tests и
+robot2D-editor-test-suite собраны; полный CTest 228/228 без пропусков,
+включая 55 graphics и четыре imgui-scope сценария. Локальные ссылки проверены.
+Обязательный hook и CI актуального commit фиксируются в PR #123; прежний CI
+f4fc9c3 не является проверкой объединённой версии. Native UI-приёмка окон,
+крестика Inspector и layout после перезапуска остаётся отдельным шагом.

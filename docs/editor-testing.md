@@ -112,6 +112,52 @@ headless-запуск для Windows/Linux; удалённый CI и Linux ло�
 `imgui-scope-docking` входят в robot2D-editor-test-suite и headless-группу.
 Создают настоящий ImGui context/кадр без native окна и GL: видимость callback,
 стек окон/стилей после раннего выхода/исключения, вложенность, состояние/focus
-IPanel и сохранение docking при скрытом host. Запуск: `ctest --test-dir <build-dir>
+IPanel и сохранение docking при скрытом host. Unwind также проверяет два
+контекста через GuiContextScope из dev: исключение не повреждает стеки
+выбранного контекста, предыдущий восстанавливается. Запуск: `ctest --test-dir <build-dir>
 -R imgui-scope --output-on-failure`. Крестик зарегистрированной панели,
 перезапуск с layout и внешний вид проверяются вручную по IMGUI-01.
+
+## Регрессии физики PHYS-01
+
+`robot2D-physics-tests` входит в `robot2D-editor-test-suite`: 10 сценариев
+`editor-physics-*` с метками headless/physics. Они проверяют стены/пули,
+геометрию, сенсоры/фильтры, жизненный цикл тел, мутации из callback,
+невалидные параметры, сериализацию и реальный C++/C# обмен через Mono.
+Managed PhysicsDriver собирается со свежей ScriptCore с warnings-as-errors.
+Контракт и ручной сценарий — [physics.md](physics.md).
+
+Managed-сценарий физики проверяет полный trigger-цикл для обоих получателей:
+Enter, несколько Stay, Exit, отсутствие лишних событий после выхода, повторный
+вход/выход и Stop. Проверки фаз/счётчиков/пакета ловят перестановку StayTrigger
+и ExitTrigger между C++ и C#, а не только размер ABI.
+
+## Gui backend
+
+IMGUI-02: 3 headless и 6 graphics сценариев OpenGL 4.3/4.5 в общей suite.
+Контракты, покрытие и ручная приёмка — [gui-backend.md](gui-backend.md).
+
+
+Дополнительно editor-scene-editor-gui-scene загружает изолированный проект
+с прозрачной камерой перед видимым quad и проверяет пиксели полного прохода
+Editor::render + Gui после стабилизации docking. Он ловит порчу Core EBO при
+создании SceneGrid; renderer-43/45 также проверяют сохранность VAO при создании
+IndexBuffer и чередование Core/FBO/GUI нескольких кадров.
+
+## Window/Desktop lifetime
+
+CORE-01 добавляет DesktopWindowTests и цель robot2D-desktop-window-tests в suite.
+Headless: core-desktop-uninitialized (borrowed GLFW без init, пустой Cursor),
+core-desktop-editor-shutdown (destroy редактора до setup и повторно).
+Graphics: core-desktop-lifetime, render-lifetime, rollback, borrowed, events,
+engine. Запуск: `ctest --test-dir <build-dir> -R core-desktop --output-on-failure`.
+Недоступность реального GLFW/OpenGL probe даёт 77/Skipped; ошибка проверяемого
+контракта после успешного probe является failure. Для проверки rollback есть
+узкая внутренняя подстановка create/destroy/loader функций, без public fault flags.
+
+Проверяется фактический размер клиента до/после создания второго окна: оконная
+система вправе ограничить запрошенные размеры. Native handles больше не удаляются
+тестами вручную после Window: их уничтожает владелец. Renderer cleanup наблюдает
+контекст непосредственно при удалении GL buffers. Engine проверяется при обычном
+выходе и исключениях setup/кадра/cleanup, включая смену контекста в destroy.
+Ручная приёмка Window/Desktop приведена в [core-api.md](core-api.md).

@@ -39,7 +39,14 @@ namespace robot2D {
     Texture::Texture() = default;
 
     Texture::~Texture() {
-        glCall(glDeleteTextures, 1, &m_texture);
+        release();
+    }
+
+    void Texture::release() noexcept {
+        if(m_texture != 0) {
+            glDeleteTextures(1, &m_texture);
+            m_texture = 0;
+        }
     }
 
     bool Texture::loadFromFile(const std::string& path) {
@@ -59,8 +66,7 @@ namespace robot2D {
     }
 
     void Texture::setupGL() {
-        if(m_texture != 20000)
-            glDeleteTextures(1, &m_texture);
+        release();
         if(RenderAPI::getOpenGLVersion() == RenderApi::OpenGL4_5)
             glCreateTextures(GL_TEXTURE_2D, 1, &m_texture);
         else {

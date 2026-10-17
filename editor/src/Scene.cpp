@@ -812,6 +812,8 @@ namespace editor {
             auto parent = getParent(entity);
             if(parent)
                 parent.getComponent<HierarchyComponent>().m_childrenIDs.remove(uuid);
+            if(context == SceneContext::Runtime && m_physicsAdapter)
+                m_physicsAdapter -> removeRuntime(entity);
             storage.roots.remove(entity);
             storage.entities.erase(uuid);
             ecs -> removeEntity(entity.getWrappedEntity());

@@ -66,8 +66,7 @@ namespace editor {
 
     TextSystem::TextSystem(robot2D::MessageBus& messageBus) :
         robot2D::ecs::System(messageBus, typeid(TextSystem)),
-        m_initialized{false},
-        m_needUpdate{false} {
+        m_initialized{false} {
 
         addRequirement<TextComponent>();
         addRequirement<DrawableComponent>();
@@ -75,12 +74,6 @@ namespace editor {
     }
 
     void TextSystem::setupGL() {
-        m_quadBatchRender.initalize({{
-                {robot2D::ElementType::Float2, "Position"},
-                {robot2D::ElementType::Float2, "UVS"},
-                {robot2D::ElementType::Float4, "Color"},
-            }});
-
         m_textShader.createShader(robot2D::ShaderType::Vertex, textVertShader, false, "Editor.Text.vertex");
         m_textShader.createShader(robot2D::ShaderType::Fragment, textFragShader, false, "Editor.Text.fragment");
         m_textShader.use();
@@ -90,58 +83,71 @@ namespace editor {
         m_initialized = true;
     }
 
+    const std::vector<std::unique_ptr<TextSystem::Batch> >& TextSystem::getBatches(unsigned int entityIndex) const {
+        static const std::vector<std::unique_ptr<Batch> > empty;
+        auto found = m_batches.find(entityIndex);
+        return found == m_batches.end() ? empty : found -> second;
+    }
+
     void TextSystem::update(float dt) {
-        if(!m_initialized)
-            setupGL();
-
         (void)dt;
+        if(!m_initialized) setupGL();
+        std::unordered_map<unsigned int, bool> used;
         for(auto& entity: m_entities) {
+            if(!entity.hasComponent<TextComponent>() || !entity.hasComponent<DrawableComponent>() ||
+                !entity.hasComponent<TransformComponent>()) continue;
+            const auto index = entity.getIndex();
+            used[index] = true;
+            auto& batches = m_batches[index];
             auto& text = entity.getComponent<TextComponent>();
-
-            entity.getComponent<DrawableComponent>().setTexture(text.getTexture());
-            if(text.m_needUpdate) {
-                text.m_needUpdate = false;
-                m_needUpdate = true;
+            auto& drawable = entity.getComponent<DrawableComponent>();
+            if(!text.getFont() || text.getFont() -> getImages().empty()) {
+                drawable.setTexture(std::shared_ptr<robot2D::Texture>{});
+                batches.clear(); continue;
             }
-        }
-
-        if(m_needUpdate) {
-            m_quadBatchRender.preProcessBatching();
-            m_quadBatchRender.refresh();
-
-            for(auto& ent: m_entities) {
-                auto& textComp = ent.getComponent<TextComponent>();
-                auto& drawable = ent.getComponent<DrawableComponent>();
-                auto& tx = ent.getComponent<TransformComponent>();
-
-                if(!textComp.getFont())
-                    continue;
-
-                auto& m_bufferCache = textComp.getGlyphCache();
-                const auto& glyphCharacters = textComp.getFont() -> getGlyphCharacters();
-
-                robot2D::vec2f copyPos = tx.getPosition();
-                robot2D::vec2f m_pos = tx.getPosition();
-
-                for(const auto& s: textComp.getText()) {
-                    const auto& preQuad = m_bufferCache[s];
-
-                    for(int i = 0; i < 4; ++i) {
-                        robot2D::Vertex vertex;
-                        vertex.position = tx.getTransform() * preQuad.vertices[i].position;
-                        vertex.texCoords = preQuad.vertices[i].uvs;
-                        vertex.color = drawable.getColor().toGL();
-                        m_quadBatchRender.pack(std::move(vertex));
-                    }
-
-                    m_pos.x += glyphCharacters.at(s).advance;
-                    tx.setPosition(m_pos);
+            drawable.setTexture(text.getTextureHandle());
+            auto& tx = entity.getComponent<TransformComponent>();
+            const auto& glyphs = text.getFont() -> getGlyphCharacters();
+            const auto& cache = text.getGlyphCache();
+            robot2D::vec2f pen{0.f, 0.f};
+            std::size_t count = 0;
+            Batch* batch = nullptr;
+            for(unsigned char character: text.getText()) {
+                if(character == '\n') {
+                    pen.x = 0.f; pen.y += text.getCharacterSize(); continue;
                 }
-                tx.setPosition(copyPos);
+                if((character & 0xc0) == 0x80) continue;
+                // The current Font atlas covers ASCII. Keep UTF-8 text intact;
+                // one fallback glyph represents each unavailable code point.
+                const int code = glyphs.count(character) ? character : '?';
+                auto glyph = cache.find(code); auto metrics = glyphs.find(code);
+                if(glyph == cache.end() || metrics == glyphs.end()) continue;
+                if(!batch || batch -> needRefresh()) {
+                    if(batch) batch -> processBatching();
+                    if(count == batches.size()) {
+                        auto next = std::make_unique<Batch>();
+                        next -> initalize({{{robot2D::ElementType::Float2, "Position"},
+                                {robot2D::ElementType::Float2, "UVS"}, {robot2D::ElementType::Float4, "Color"}}});
+                        batches.push_back(std::move(next));
+                    }
+                    batch = batches[count++].get();
+                    batch -> refresh(); batch -> preProcessBatching();
+                }
+                for(const auto& point: glyph -> second.vertices) {
+                    robot2D::Vertex vertex;
+                    vertex.position = tx.getTransformNoScale() * (point.position + pen);
+                    vertex.texCoords = point.uvs;
+                    vertex.color = drawable.getColor().toGL();
+                    batch -> pack(std::move(vertex));
+                }
+                pen.x += metrics -> second.advance;
             }
-
-            m_quadBatchRender.processBatching();
-            m_needUpdate = false;
+            if(batch) batch -> processBatching();
+            batches.resize(count);
+        }
+        for(auto it = m_batches.begin(); it != m_batches.end();) {
+            if(!used.count(it -> first)) it = m_batches.erase(it);
+            else ++it;
         }
     }
 }

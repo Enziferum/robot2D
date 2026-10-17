@@ -175,6 +175,7 @@ class ReviewTests(unittest.TestCase):
     def test_cli_event_stream_and_error_with_zero_exit(self):
         fake = self.root / 'fake_codex.py'
         fake.write_text('''import json
+import os
 import sys
 sys.stdin.read()
 print(json.dumps({'type': 'thread.started', 'thread_id': 'fake-session'}))

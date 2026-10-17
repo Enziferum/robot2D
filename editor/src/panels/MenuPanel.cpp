@@ -1,22 +1,22 @@
 /*********************************************************************
-(c) Alex Raag 2023
-https://github.com/Enziferum
-robot2D - Zlib license.
-This software is provided 'as-is', without any express or
-implied warranty. In no event will the authors be held
-liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute
-it freely, subject to the following restrictions:
-1. The origin of this software must not be misrepresented;
-you must not claim that you wrote the original software.
-If you use this software in a product, an acknowledgment
-in the product documentation would be appreciated but
-is not required.
-2. Altered source versions must be plainly marked as such,
-and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any
-source distribution.
+   (c) Alex Raag 2023
+   https://github.com/Enziferum
+   robot2D - Zlib license.
+   This software is provided 'as-is', without any express or
+   implied warranty. In no event will the authors be held
+   liable for any damages arising from the use of this software.
+   Permission is granted to anyone to use this software for any purpose,
+   including commercial applications, and to alter it and redistribute
+   it freely, subject to the following restrictions:
+   1. The origin of this software must not be misrepresented;
+   you must not claim that you wrote the original software.
+   If you use this software in a product, an acknowledgment
+   in the product documentation would be appreciated but
+   is not required.
+   2. Altered source versions must be plainly marked as such,
+   and must not be misrepresented as being the original software.
+   3. This notice may not be removed or altered from any
+   source distribution.
 *********************************************************************/
 
 #include <imgui/imgui.h>
@@ -44,11 +44,12 @@ namespace editor {
         static bool openPluginMenu = false;
     }
 
-    MenuPanel::MenuPanel(robot2D::MessageBus& messageBus, UIInteractor::Ptr interactor, UIManager* panelManager):
+    MenuPanel::MenuPanel(robot2D::MessageBus& messageBus, UIInteractor::Ptr interactor, UIManager* panelManager) :
         IPanel(UniqueType(typeid(MenuPanel))),
         m_messageBus{messageBus},
         m_interactor{interactor},
-        m_panelManager{panelManager}{}
+        m_panelManager{panelManager} {
+    }
 
     void MenuPanel::render() {
         if(openDeveloperMenu)
@@ -65,19 +66,19 @@ namespace editor {
 
         imgui_MenuBar {
             imgui_Menu("File")
-                fileMenu();
+            fileMenu();
 
             imgui_Menu("Edit")
-                editMenu();
+            editMenu();
 
             imgui_Menu("View")
-                viewMenu();
+            viewMenu();
 
             imgui_Menu("Project")
-                projectMenu();
+            projectMenu();
 
             imgui_Menu("Plugins")
-                pluginsMenu();
+            pluginsMenu();
 
             imgui_Menu("Developer") {
                 ImGui::MenuItem("Show Info", nullptr, &openDeveloperMenu);
@@ -86,7 +87,7 @@ namespace editor {
             }
 
             imgui_Menu("Help")
-                helpMenu();
+            helpMenu();
         }
 
     }
@@ -101,8 +102,8 @@ namespace editor {
             description.name = "Project";
             description.path = path;
 
-            int allocSize = StringBuffer::calcAllocSize(description.name) 
-                                + StringBuffer::calcAllocSize(description.path);
+            int allocSize = StringBuffer::calcAllocSize(description.name)
+                + StringBuffer::calcAllocSize(description.path);
 
             void* rawBuffer = m_messageBus.postMessage(MessageID::CreateProject, allocSize);
             Buffer buffer{ rawBuffer };
@@ -117,11 +118,11 @@ namespace editor {
             std::vector<std::string> openPatterns = {"*.robot2D"};
             std::string outputPath;
 
-            if (FiledialogAdapter::get() -> openFile(outputPath,
-                                                     "Open robot2D project",
-                                                     "",
-                                                     openPatterns,
-                                                     "Robot2D Project")) {
+            if(FiledialogAdapter::get() -> openFile(outputPath,
+                "Open robot2D project",
+                "",
+                openPatterns,
+                "Robot2D Project")) {
                 fs::path openPath{std::string(outputPath)};
                 auto filePath = openPath.filename();
                 openPath.remove_filename();
@@ -154,10 +155,10 @@ namespace editor {
             const auto defaultSavePath = combinePath(m_interactor -> getAssociatedProjectPath(), "assets/scenes");
 
             if(FiledialogAdapter::get() -> saveFile(savePath,
-                                                    "Save Robot2D Scene",
-                                                     defaultSavePath,
-                                                     saveFilePatterns,
-                                                     "Scene")){
+                "Save Robot2D Scene",
+                defaultSavePath,
+                saveFilePatterns,
+                "Scene")) {
 
                 int allocSize = StringBuffer::calcAllocSize(savePath);
                 void* rawBuffer = m_messageBus.postMessage(MessageID::SaveScene, allocSize);
@@ -184,11 +185,14 @@ namespace editor {
     }
 
     void MenuPanel::projectMenu() {
+        imgui_MenuItem("Build Scripts") {
+            m_messageBus.postMessage<BuildScriptsMessage>(MessageID::BuildScripts);
+        }
         imgui_MenuItem("Generate Project", "Ctrl+G") {
             std::string genPath;
             if(!FiledialogAdapter::get() -> selectFolder(genPath,
-                                                         "Generate Robot2D Scripts's project",
-                                                         "")) {
+                "Generate Robot2D Scripts's project",
+                "")) {
                 return;
             }
 
@@ -233,8 +237,7 @@ namespace editor {
 
             imgui_ListBox("CommandsPool") {
                 int cntr = 1;
-                for (int n = commandStack.size() - 1; n >= 0; --n)
-                {
+                for(int n = commandStack.size() - 1; n >= 0; --n) {
                     ImGui::Text("%i. %s", cntr, commandStack[n].getName());
                     ++cntr;
                 }
@@ -242,7 +245,8 @@ namespace editor {
         }
     }
 
-    void MenuPanel::helpMenu() {}
+    void MenuPanel::helpMenu() {
+    }
 
     void MenuPanel::showExportProjectModal() {
         ImVec2 center = ImGui::GetMainViewport() -> GetCenter();
@@ -259,16 +263,14 @@ namespace editor {
             /// TODO(a.raag): add some macro to remove shadowing
             imgui_Combo("Start Scene", currentSceneName)
             {
-                for (int i = 0; i < scenesNames.size(); i++)
-                {
+                for(int i = 0; i < scenesNames.size(); i++) {
                     bool isSelected = currentSceneName == scenesNames[i];
-                    if (ImGui::Selectable(scenesNames[i].c_str(), isSelected))
-                    {
+                    if(ImGui::Selectable(scenesNames[i].c_str(), isSelected)) {
                         currentSceneName = scenesNames[i].c_str();
                         m_exportOptions.startScene = currentSceneName;
                     }
 
-                    if (isSelected)
+                    if(isSelected)
                         ImGui::SetItemDefaultFocus();
                 }
             }
@@ -300,15 +302,15 @@ namespace editor {
 
     void MenuPanel::onPopupRender() {
         switch(m_popupType) {
-            case PopupType::None:
-                break;
-            case PopupType::NewProject:
-                break;
-            case PopupType::OpenProject:
-                break;
-            case PopupType::Export:
-                showExportProjectModal();
-                break;
+        case PopupType::None:
+            break;
+        case PopupType::NewProject:
+            break;
+        case PopupType::OpenProject:
+            break;
+        case PopupType::Export:
+            showExportProjectModal();
+            break;
         }
     }
 

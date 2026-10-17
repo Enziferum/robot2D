@@ -24,12 +24,13 @@ namespace editor {
         virtual void closeCurrentProject(std::function<void()>&& resultCallback) = 0;
     };
 
-    class IEditorModule: public IEditorOpener {
+    class IEditorModule : public IEditorOpener {
     public:
         using Ptr = std::unique_ptr<IEditorModule>;
         ~IEditorModule() override = 0;
 
         virtual void setup(robot2D::RenderWindow* window, ScriptingEngineService::Ptr scriptingEngine) = 0;
+        virtual void beginEventFrame() = 0;
         virtual void handleEvents(const robot2D::Event& event) = 0;
         virtual void handleMessages(const robot2D::Message& message) = 0;
         virtual void update(float dt) = 0;
@@ -37,11 +38,11 @@ namespace editor {
         virtual void destroy() = 0;
     };
 
-    class EditorModule final: public IEditorModule {
+    class EditorModule final : public IEditorModule {
     public:
         EditorModule(robot2D::MessageBus& messageBus,
-                     MessageDispatcher& messageDispatcher,
-                     robot2D::Gui& gui);
+            MessageDispatcher& messageDispatcher,
+            robot2D::Gui& gui);
         EditorModule(const EditorModule& other) = delete;
         EditorModule& operator=(const EditorModule& other) = delete;
         EditorModule(EditorModule&& other) = delete;
@@ -49,6 +50,7 @@ namespace editor {
         ~EditorModule() override = default;
 
         void setup(robot2D::RenderWindow* window, ScriptingEngineService::Ptr scriptingEngine) override;
+        void beginEventFrame() override;
         void handleEvents(const robot2D::Event& event) override;
         void handleMessages(const robot2D::Message& message) override;
         void update(float dt) override;
