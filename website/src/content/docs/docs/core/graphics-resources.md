@@ -33,3 +33,5 @@ A `View` controls the view transform. Physical framebuffer size can differ from 
 These are ownership rules, not a promise of asynchronous streaming, hot reload or automatic lifetime repair.
 
 Sources: [RenderTarget](https://github.com/Enziferum/robot2D/blob/4132acf/core/include/robot2D/Graphics/RenderTarget.hpp), [Sprite](https://github.com/Enziferum/robot2D/blob/4132acf/core/include/robot2D/Graphics/Sprite.hpp), [Texture](https://github.com/Enziferum/robot2D/blob/4132acf/core/include/robot2D/Graphics/Texture.hpp), [ResourceHandler](https://github.com/Enziferum/robot2D/blob/4132acf/core/include/robot2D/Util/ResourceHandler.hpp).
+
+Try [Lesson 01: your first sprite](../first-sprite/) for the complete source, asset paths, explicit texture rectangle and resource cleanup.

@@ -111,6 +111,7 @@ for (const route of [
   'docs/scripting/',
   'docs/project-status/',
   'docs/core/',
+  'docs/core/first-sprite/',
   'docs/core/application-events/',
   'docs/core/graphics-resources/',
   'docs/core/ecs/',
