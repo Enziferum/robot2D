@@ -50,6 +50,26 @@ if(WIN32)
     rb2d_register_test(editor-cache-write-failure robot2D-editor-tests cache-write-failure "headless;windows")
 endif()
 
+# Compile and exercise the actual sample controller against the current public C# API.
+set(platformer_project "${CMAKE_SOURCE_DIR}/examples/RobotLabPlatformer")
+add_mono_assembly(TARGET robot2D-platformer-scripts
+    DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/../res/script"
+    SOURCES "${platformer_project}/assets/scripts/PlayerController.cs"
+    REFERENCES "${robot2D_ScriptCore_OUTPUT}"
+    ADDITIONAL_ARGS -sdk:4.8 -langversion:7.2 -warnaserror+)
+add_dependencies(robot2D-platformer-scripts robot2D_ScriptCore)
+add_executable(robot2D-platformer-tests PlatformerTests.cpp)
+target_link_libraries(robot2D-platformer-tests PRIVATE robot2D-editor-objects)
+target_compile_definitions(robot2D-platformer-tests PRIVATE
+    RB2D_TEST_SCRIPTCORE="${robot2D_ScriptCore_OUTPUT}"
+    RB2D_TEST_PLATFORMER_ASSEMBLY="${robot2D-platformer-scripts_OUTPUT}"
+    RB2D_TEST_PLATFORMER_PROJECT="${platformer_project}")
+add_dependencies(robot2D-platformer-tests robot2D-platformer-scripts)
+add_dependencies(robot2D-editor-test-suite robot2D-platformer-tests)
+foreach(platformer_case IN ITEMS route recovery contacts boundaries)
+    rb2d_register_test("editor-platformer-${platformer_case}" robot2D-platformer-tests "${platformer_case}" "headless;scripting;physics;game")
+endforeach()
+
 if(RB2D_EDITOR_GRAPHICS_TESTS)
     foreach(batch_api IN ITEMS 43 45)
         foreach(batch_case IN ITEMS capacity textures layers flush geometry three-d malformed mixed mixed-overflow camera viewport-resize window-resize)
