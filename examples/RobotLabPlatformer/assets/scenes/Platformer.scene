@@ -1,0 +1,405 @@
+{
+  "SceneVersion": 1,
+  "Scene": "Robot Lab - Platformer",
+  "EntityCount": 8,
+  "RootEntities": [
+    10001,
+    10002,
+    10003,
+    10004,
+    10005,
+    10006,
+    10007,
+    10008
+  ],
+  "Entities": [
+    {
+      "Entity": 10001,
+      "TagComponent": {
+        "Tag": "MainCamera"
+      },
+      "TransformComponent": {
+        "Position": [
+          640.0,
+          360.0
+        ],
+        "Size": [
+          20.0,
+          20.0
+        ],
+        "Rotation": 0,
+        "Origin": [
+          0,
+          0
+        ]
+      },
+      "SpriteComponent": {
+        "Color": [
+          255,
+          255,
+          255,
+          0
+        ],
+        "TexturePath": "",
+        "zDepth": -10
+      },
+      "CameraComponent": {
+        "isPrimary": true,
+        "OrthoSize": 1,
+        "Size": [
+          1280,
+          720
+        ],
+        "Position": [
+          0,
+          0
+        ]
+      }
+    },
+    {
+      "Entity": 10002,
+      "TagComponent": {
+        "Tag": "Environment - Laboratory"
+      },
+      "TransformComponent": {
+        "Position": [
+          0.0,
+          0.0
+        ],
+        "Size": [
+          1280.0,
+          720.0
+        ],
+        "Rotation": 0,
+        "Origin": [
+          0,
+          0
+        ]
+      },
+      "SpriteComponent": {
+        "Color": [
+          255,
+          255,
+          255,
+          255
+        ],
+        "TexturePath": "assets/textures/Laboratory.png",
+        "zDepth": -5
+      }
+    },
+    {
+      "Entity": 10003,
+      "TagComponent": {
+        "Tag": "01 - Landing platform"
+      },
+      "TransformComponent": {
+        "Position": [
+          21.79500254971953,
+          572.5267720550739
+        ],
+        "Size": [
+          387.65935747067823,
+          129.2197858235594
+        ],
+        "Rotation": 0,
+        "Origin": [
+          0,
+          0
+        ]
+      },
+      "SpriteComponent": {
+        "Color": [
+          255,
+          255,
+          255,
+          255
+        ],
+        "TexturePath": "assets/textures/Platform.png",
+        "zDepth": 2
+      },
+      "Rigidbody2DComponent": {
+        "BodyType": "Static",
+        "FixedRotation": true,
+        "Bullet": false,
+        "GravityScale": 1,
+        "LinearDamping": 0,
+        "AngularDamping": 0
+      },
+      "BoxCollider2DComponent": {
+        "Offset": [
+          -0.6246812850586423,
+          -7.136664966853687
+        ],
+        "Size": [
+          0.451427255985267,
+          0.03869376479873718
+        ],
+        "Density": 1,
+        "Friction": 0,
+        "Restitution": 0,
+        "RestitutionThreshold": 0.5,
+        "UseDefaultMask": true,
+        "FilterLayer": "Default",
+        "IsTrigger": false
+      }
+    },
+    {
+      "Entity": 10004,
+      "TagComponent": {
+        "Tag": "02 - Landing platform"
+      },
+      "TransformComponent": {
+        "Position": [
+          424.3370729219786,
+          499.26568077511473
+        ],
+        "Size": [
+          227.05762366139726,
+          75.68587455379908
+        ],
+        "Rotation": 0,
+        "Origin": [
+          0,
+          0
+        ]
+      },
+      "SpriteComponent": {
+        "Color": [
+          255,
+          255,
+          255,
+          255
+        ],
+        "TexturePath": "assets/textures/Platform.png",
+        "zDepth": 2
+      },
+      "Rigidbody2DComponent": {
+        "BodyType": "Static",
+        "FixedRotation": true,
+        "Bullet": false,
+        "GravityScale": 1,
+        "LinearDamping": 0,
+        "AngularDamping": 0
+      },
+      "BoxCollider2DComponent": {
+        "Offset": [
+          -0.36588475267717513,
+          -2.1086180520143216
+        ],
+        "Size": [
+          0.451427255985267,
+          0.06606252526613664
+        ],
+        "Density": 1,
+        "Friction": 0,
+        "Restitution": 0,
+        "RestitutionThreshold": 0.5,
+        "UseDefaultMask": true,
+        "FilterLayer": "Default",
+        "IsTrigger": false
+      }
+    },
+    {
+      "Entity": 10005,
+      "TagComponent": {
+        "Tag": "03 - Landing platform"
+      },
+      "TransformComponent": {
+        "Position": [
+          679.3370729219786,
+          404.26568077511473
+        ],
+        "Size": [
+          227.05762366139726,
+          75.68587455379908
+        ],
+        "Rotation": 0,
+        "Origin": [
+          0,
+          0
+        ]
+      },
+      "SpriteComponent": {
+        "Color": [
+          255,
+          255,
+          255,
+          255
+        ],
+        "TexturePath": "assets/textures/Platform.png",
+        "zDepth": 2
+      },
+      "Rigidbody2DComponent": {
+        "BodyType": "Static",
+        "FixedRotation": true,
+        "Bullet": false,
+        "GravityScale": 1,
+        "LinearDamping": 0,
+        "AngularDamping": 0
+      },
+      "BoxCollider2DComponent": {
+        "Offset": [
+          -0.36588475267717513,
+          -2.1086180520142648
+        ],
+        "Size": [
+          0.451427255985267,
+          0.06606252526613664
+        ],
+        "Density": 1,
+        "Friction": 0,
+        "Restitution": 0,
+        "RestitutionThreshold": 0.5,
+        "UseDefaultMask": true,
+        "FilterLayer": "Default",
+        "IsTrigger": false
+      }
+    },
+    {
+      "Entity": 10006,
+      "TagComponent": {
+        "Tag": "04 - Exit platform"
+      },
+      "TransformComponent": {
+        "Position": [
+          940.1759306476288,
+          297.2718001019888
+        ],
+        "Size": [
+          315.6654767975523,
+          105.2218255991841
+        ],
+        "Rotation": 0,
+        "Origin": [
+          0,
+          0
+        ]
+      },
+      "SpriteComponent": {
+        "Color": [
+          255,
+          255,
+          255,
+          255
+        ],
+        "TexturePath": "assets/textures/Platform.png",
+        "zDepth": 2
+      },
+      "Rigidbody2DComponent": {
+        "BodyType": "Static",
+        "FixedRotation": true,
+        "Bullet": false,
+        "GravityScale": 1,
+        "LinearDamping": 0,
+        "AngularDamping": 0
+      },
+      "BoxCollider2DComponent": {
+        "Offset": [
+          -0.5086690464049752,
+          -4.882712901580817
+        ],
+        "Size": [
+          0.451427255985267,
+          0.047518658524764945
+        ],
+        "Density": 1,
+        "Friction": 0,
+        "Restitution": 0,
+        "RestitutionThreshold": 0.5,
+        "UseDefaultMask": true,
+        "FilterLayer": "Default",
+        "IsTrigger": false
+      }
+    },
+    {
+      "Entity": 10007,
+      "TagComponent": {
+        "Tag": "Player"
+      },
+      "TransformComponent": {
+        "Position": [
+          80.78309409888357,
+          530.3180223285488
+        ],
+        "Size": [
+          104.0,
+          104.0
+        ],
+        "Rotation": 0,
+        "Origin": [
+          0,
+          0
+        ]
+      },
+      "SpriteComponent": {
+        "Color": [
+          255,
+          255,
+          255,
+          255
+        ],
+        "TexturePath": "assets/textures/Player.png",
+        "zDepth": 4
+      },
+      "Rigidbody2DComponent": {
+        "BodyType": "Dynamic",
+        "FixedRotation": true,
+        "Bullet": true,
+        "GravityScale": 1.8,
+        "LinearDamping": 0,
+        "AngularDamping": 0
+      },
+      "BoxCollider2DComponent": {
+        "Offset": [
+          -0.8708133971291829,
+          3.4098883572567047
+        ],
+        "Size": [
+          0.17307692307692307,
+          0.36992393571340937
+        ],
+        "Density": 1,
+        "Friction": 0,
+        "Restitution": 0,
+        "RestitutionThreshold": 0.5,
+        "UseDefaultMask": true,
+        "FilterLayer": "Default",
+        "IsTrigger": false
+      },
+      "ScriptComponent": {
+        "ClassName": "RobotLabPlatformer.PlayerController"
+      }
+    },
+    {
+      "Entity": 10008,
+      "TagComponent": {
+        "Tag": "UI - Title and controls"
+      },
+      "TransformComponent": {
+        "Position": [
+          0.0,
+          0.0
+        ],
+        "Size": [
+          1280.0,
+          720.0
+        ],
+        "Rotation": 0,
+        "Origin": [
+          0,
+          0
+        ]
+      },
+      "SpriteComponent": {
+        "Color": [
+          255,
+          255,
+          255,
+          255
+        ],
+        "TexturePath": "assets/textures/Interface.png",
+        "zDepth": 10
+      }
+    }
+  ]
+}
