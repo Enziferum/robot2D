@@ -43,3 +43,5 @@ This describes the current implementation; it does not promise the final physics
 Release graphics-dependent application resources while their GL context still exists. At the checked commit, Engine makes its window current for application teardown before destroying the window and desktop. Avoid keeping resource owners in longer-lived globals.
 
 Sources: [Application](https://github.com/Enziferum/robot2D/blob/4132acf/core/include/robot2D/Application.hpp), [Engine loop](https://github.com/Enziferum/robot2D/blob/4132acf/core/src/Engine.cpp), [DesktopRuntime](https://github.com/Enziferum/robot2D/blob/4132acf/core/include/robot2D/Core/DesktopRuntime.hpp), [typed Event](https://github.com/Enziferum/robot2D/blob/4132acf/core/include/robot2D/Core/Event.hpp).
+
+Continue with [Lesson 02: keyboard movement](../keyboard-movement/) for typed input events, held state and time-based movement.
