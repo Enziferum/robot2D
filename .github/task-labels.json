@@ -380,6 +380,11 @@
       "area:editor",
       "type:bug",
       "owner:shared"
+    ],
+    "GAME-04": [
+      "area:editor",
+      "type:feature",
+      "owner:shared"
     ]
   }
 }
