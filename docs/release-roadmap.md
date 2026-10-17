@@ -37,7 +37,21 @@
 
 ## Первая игра и границы 0.8
 
-Одна арена из четырёх стен, игрок, движение и прицеливание, стрельба, здоровье и урон, волны с 2–3 типами врагов, спрайтовые анимации, минимальный HUD, проигрыш и новая партия. Сначала достаточно одного типа врага; затем добавляются ещё 1–2. Геймплей и баланс живут в C# проекта игры, а не в коде EditorLogic.
+По решению пользователя 2026-10-17 основная демоигра — **Robot Lab**
+(RobotLabPlatformer), вместо арены. [Геймдизайн](robot-lab-design.md): один
+уровень на 3–5 минут, движение/прыжок, три обязательные энергоячейки, периодические
+лазеры, контрольная точка, шлюз, победа и повтор. Бой и волны исключены.
+Геймплей и баланс живут в C# проекта игры, через публичный API движка.
+
+Этапы с отдельной приёмкой: GAME-01 — базовый маршрут → отзывчивость/анимации;
+GAME-02 — ячейки/шлюз → лазеры/checkpoint/возрождение; GAME-03 — итоговый маршрут,
+камера/HUD/пауза/победа/полный рестарт; BUILD-01 → QA-01 — поставка. Прототип
+одноэкранный; несколько экранов добавляются при необходимости читаемого маршрута.
+Полный учебный выпуск [GAME-04 #138](https://github.com/Enziferum/robot2D/issues/138) под DOC-01 относится к 1.0; в 0.8 достаточно
+исходного проекта и инструкции открытия/сборки. Универсальные runtime/prefab
+контракты сохраняются, даже если уровень использует расставленные объекты.
+Завершение демо определяется полным циклом, воспроизводимостью и приёмкой,
+а не количеством уровней. Движущиеся платформы и новые механики — отдельно.
 
 Build создаёт переносимую папку с Game.exe, ресурсами и зависимостями. Один exe без дополнительных файлов не требуется. Конечному игроку не нужны редактор, SDK или dev PATH.
 
@@ -96,20 +110,20 @@ Core дополняет существующий план следующими �
 | [CMD-04](https://github.com/Enziferum/robot2D/issues/72) — История команд и dirty-state относительно сохранения | Совместно; ведущий перед стартом | [CMD-02](https://github.com/Enziferum/robot2D/issues/70), [CMD-03](https://github.com/Enziferum/robot2D/issues/71) |
 | [ASSET-02](https://github.com/Enziferum/robot2D/issues/73) — Минимальный импорт и переносимые ссылки на ресурсы | Ассистент; реализация поручена 2026-10-15 | — |
 | [ANIM-01](https://github.com/Enziferum/robot2D/issues/74) — Спрайтшит → клип → preview → C# → standalone | Ассистент; реализация поручена 2026-10-15 | [ASSET-02](https://github.com/Enziferum/robot2D/issues/73) |
-| [PREFAB-01](https://github.com/Enziferum/robot2D/issues/75) — Шаблоны врагов и пуль для runtime-спавна | Ассистент; реализация поручена 2026-10-15 | [ASSET-02](https://github.com/Enziferum/robot2D/issues/73) |
+| [PREFAB-01](https://github.com/Enziferum/robot2D/issues/75) — Шаблоны игровых объектов и runtime-спавн | Ассистент; реализация поручена 2026-10-15 | [ASSET-02](https://github.com/Enziferum/robot2D/issues/73) |
 | [SCRIPT-01](https://github.com/Enziferum/robot2D/issues/76) — Воспроизводимая сборка C# и диагностика ошибок | Ассистент; реализация поручена 2026-10-16 | — |
 | [RUNTIME-01](https://github.com/Enziferum/robot2D/issues/77) — C# Instantiate/Destroy и жизнь runtime-сущностей | Совместно; ведущий перед стартом | [SCRIPT-01](https://github.com/Enziferum/robot2D/issues/76), [PREFAB-01](https://github.com/Enziferum/robot2D/issues/75), [ECS-02](https://github.com/Enziferum/robot2D/issues/103), [ECS-03](https://github.com/Enziferum/robot2D/issues/104), [ECS-05](https://github.com/Enziferum/robot2D/issues/102) |
 | [RUNTIME-02](https://github.com/Enziferum/robot2D/issues/37) — Play/Stop: изоляция и повторяемый запуск | Совместно; ведущий перед стартом | [SCRIPT-01](https://github.com/Enziferum/robot2D/issues/76), [ECS-03](https://github.com/Enziferum/robot2D/issues/104) |
-| [PHYS-01](https://github.com/Enziferum/robot2D/issues/78) — Физика и события столкновений для арены | Ассистент; реализация поручена 2026-10-15 | [RUNTIME-01](https://github.com/Enziferum/robot2D/issues/77) |
-| [INPUT-01](https://github.com/Enziferum/robot2D/issues/79) — Ввод, камера и прицеливание в Game View и standalone | Совместно; ведущий перед стартом | — |
+| [PHYS-01](https://github.com/Enziferum/robot2D/issues/78) — Физика и события столкновений для Robot Lab | Ассистент; реализация поручена 2026-10-15 | [RUNTIME-01](https://github.com/Enziferum/robot2D/issues/77) |
+| [INPUT-01](https://github.com/Enziferum/robot2D/issues/79) — Ввод и камера в Game View и standalone | Совместно; ведущий перед стартом | — |
 | [HUD-01](https://github.com/Enziferum/robot2D/issues/80) — Минимальный HUD и отображение состояния из C# | Ассистент; реализация поручена 2026-10-16 | [SCRIPT-01](https://github.com/Enziferum/robot2D/issues/76), [ASSET-02](https://github.com/Enziferum/robot2D/issues/73) |
 | [PLAYER-01](https://github.com/Enziferum/robot2D/issues/81) — Standalone player для существующей сцены | Совместно; ведущий перед стартом | [RUNTIME-01](https://github.com/Enziferum/robot2D/issues/77), [RUNTIME-02](https://github.com/Enziferum/robot2D/issues/37), [INPUT-01](https://github.com/Enziferum/robot2D/issues/79), [ASSET-02](https://github.com/Enziferum/robot2D/issues/73) |
 | [RENDER-03](https://github.com/Enziferum/robot2D/issues/82) — Порядок sprite/text, камера и resize для игры | Ассистент; реализация поручена 2026-10-15 | [RENDER-02](https://github.com/Enziferum/robot2D/issues/63) |
 | [BUILD-01](https://github.com/Enziferum/robot2D/issues/83) — Build: C# → проверка проекта → папка Game.exe | Ассистент; реализация поручена 2026-10-16 | [PLAYER-01](https://github.com/Enziferum/robot2D/issues/81), [SCRIPT-01](https://github.com/Enziferum/robot2D/issues/76), [ASSET-02](https://github.com/Enziferum/robot2D/issues/73), [PREFAB-01](https://github.com/Enziferum/robot2D/issues/75) |
-| [GAME-01](https://github.com/Enziferum/robot2D/issues/84) — Арена: управление игроком, стрельба и попадания | Совместно; ведущий перед стартом | [RUNTIME-01](https://github.com/Enziferum/robot2D/issues/77), [PHYS-01](https://github.com/Enziferum/robot2D/issues/78), [INPUT-01](https://github.com/Enziferum/robot2D/issues/79), [ANIM-01](https://github.com/Enziferum/robot2D/issues/74) |
-| [GAME-02](https://github.com/Enziferum/robot2D/issues/85) — Арена: 2–3 типа врагов и волны | Совместно; ведущий перед стартом | [GAME-01](https://github.com/Enziferum/robot2D/issues/84), [PREFAB-01](https://github.com/Enziferum/robot2D/issues/75) |
-| [GAME-03](https://github.com/Enziferum/robot2D/issues/86) — Арена: уровень, HUD, проигрыш и повторная партия | Совместно; ведущий перед стартом | [CMD-01](https://github.com/Enziferum/robot2D/issues/46), [GAME-02](https://github.com/Enziferum/robot2D/issues/85), [HUD-01](https://github.com/Enziferum/robot2D/issues/80), [BUILD-01](https://github.com/Enziferum/robot2D/issues/83) |
-| [QA-01](https://github.com/Enziferum/robot2D/issues/87) — 0.8 RC: полная арена и запуск на чистой Windows | Совместно; ведущий перед стартом | [GAME-03](https://github.com/Enziferum/robot2D/issues/86), [LOAD-01](https://github.com/Enziferum/robot2D/issues/45), [ASYNC-01](https://github.com/Enziferum/robot2D/issues/56), [RENDER-03](https://github.com/Enziferum/robot2D/issues/82) |
+| [GAME-01](https://github.com/Enziferum/robot2D/issues/84) — Robot Lab: движение, прыжок и анимации игрока | Совместно; ведущий перед стартом | PHYS-01, INPUT-01, SCRIPT-01, ASSET-02; ANIM-01 для второго этапа |
+| [GAME-02](https://github.com/Enziferum/robot2D/issues/85) — Robot Lab: энергоячейки, лазеры и контрольная точка | Совместно; ведущий перед стартом | GAME-01, PHYS-01, RUNTIME-01/02 |
+| [GAME-03](https://github.com/Enziferum/robot2D/issues/86) — Robot Lab: уровень, HUD, победа и повторная партия | Совместно; ведущий перед стартом | GAME-02, ANIM-01, HUD-01, INPUT-01, RUNTIME-02; BUILD-01 для standalone |
+| [QA-01](https://github.com/Enziferum/robot2D/issues/87) — 0.8 RC: Robot Lab и запуск на чистой Windows | Совместно; ведущий перед стартом | [GAME-03](https://github.com/Enziferum/robot2D/issues/86), [LOAD-01](https://github.com/Enziferum/robot2D/issues/45), [ASYNC-01](https://github.com/Enziferum/robot2D/issues/56), [RENDER-03](https://github.com/Enziferum/robot2D/issues/82) |
 | [CMD-01](https://github.com/Enziferum/robot2D/issues/46) — CommandStack, клонирование, удаление и clipboard | Совместно; ведущий перед стартом | [SNAP-01](https://github.com/Enziferum/robot2D/issues/68), [CMD-02](https://github.com/Enziferum/robot2D/issues/70), [CMD-03](https://github.com/Enziferum/robot2D/issues/71), [CMD-04](https://github.com/Enziferum/robot2D/issues/72) |
 | [LOAD-01](https://github.com/Enziferum/robot2D/issues/45) — Надёжная загрузка и завершение работы | Совместно; ведущий перед стартом | [CANCEL-01](https://github.com/Enziferum/robot2D/issues/69) |
 | [ASYNC-01](https://github.com/Enziferum/robot2D/issues/56) — Исходы задач, остановка и завершение очереди | Совместно; ведущий перед стартом | [CANCEL-01](https://github.com/Enziferum/robot2D/issues/69) |
@@ -144,6 +158,9 @@ Core дополняет существующий план следующими �
 
 
 ### 1.0.0
+
+[GAME-04 #138](https://github.com/Enziferum/robot2D/issues/138) — Robot Lab: учебные этапы от сцены до сборки (под DOC-01).
+Предшественники: GAME-03, QA-01, API-01; выпуск проверяется вместе с DOC-01.
 
 | Задача | Ответственность | Предшественники |
 |---|---|---|
