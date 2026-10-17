@@ -46,7 +46,12 @@ int main() {
     try {
         auto config = editor::runtime::loadLaunchConfig(editor::runtime::executableDirectory() / "game-launch.yaml");
         CHECK(glfwInit());
+#ifdef _WIN32
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+#else
+        // GLX front-buffer reads require a mapped window, including inside Xvfb.
+        glfwWindowHint(GLFW_VISIBLE, GLFW_TRUE);
+#endif
         robot2D::EngineConfiguration engineConfig;
         engineConfig.windowSize = config.size; engineConfig.windowTitle = config.title;
         engineConfig.windowContext.renderApi = robot2D::WindowContext::RenderApi::OpenGL4_5;
