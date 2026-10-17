@@ -433,3 +433,21 @@ work/run-ui-preview.cmd запускает актуальный ASSET-01/work/pr
 в asset-paths; пять повторов этого теста и следующий полный hook прошли.
 Полная общая проверка с graphics: 119/119 (44 graphics), без пропусков.
 Далее — пользовательская приёмка RobotLabPlatformer с новым UI.
+
+
+## ASSET-01: подключение Robot Lab 02 из BRAND-01 — 2026-10-17
+
+По прямому запросу пользователя из BRAND-01 @e6951ee перенесены только ресурсы
+выбранного логотипа 02, provenance/master и Windows RC-подключение. Полная ветка
+BRAND-01/dev не сливалась: SlateTeal, Toolbar, AssetsPanel и RUNTIME-02 сохранены
+в существующем ASSET-01 без изменений исходников UI. Связанные задачи:
+[ASSET-01 #47](https://github.com/Enziferum/robot2D/issues/47),
+[BRAND-01 #135](https://github.com/Enziferum/robot2D/issues/135).
+
+Пересобраны robot2D/core-tests/editor-suite в проверенном Ninja/Release каталоге
+work/pre-commit-build; headless CTest 75/75. PNG окна 512x512 и staged ICO совпадают
+с исходниками; PE-проверка подтвердила 7 встроенных изображений, совпадающих с ICO.
+Launcher work/run-ui-preview.cmd указывает на эту общую сборку с темой, Toolbar,
+AssetsPanel, runtime-исправлением и новой иконкой. Computer-use и запуск GUI
+не выполнялись; визуальная приёмка демо и иконки остаётся пользователю.
+Следующий шаг — обязательный hook, обновление PR #127 и пользовательская проверка.
