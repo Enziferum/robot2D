@@ -7,7 +7,7 @@ server {
     index index.html;
 
     # HTML, Pagefind manifests and non-hashed public assets must revalidate.
-    add_header Cache-Control "no-cache";
+    add_header Cache-Control "no-cache" always;
 
     location / {
         try_files $uri $uri/ =404;
@@ -15,6 +15,7 @@ server {
 
     # Astro filenames in this directory are content-hashed.
     location /_astro/ {
+        root /srv/robot2d/shared;
         try_files $uri =404;
         add_header Cache-Control "public, max-age=31536000, immutable";
     }
