@@ -1,4 +1,5 @@
 #pragma once
+#include <chrono>
 #include <robot2D/Application.hpp>
 #include <editor/runtime/LaunchConfig.hpp>
 #include <editor/Scene.hpp>
@@ -16,6 +17,7 @@ namespace editor::runtime {
         void render() override;
     private:
         void fail(const std::string& reason);
+        void startupStep(const char* phase);
         LaunchConfig m_config;
         std::shared_ptr<PlayerResult> m_result;
         robot2D::MessageBus m_bus;
@@ -25,5 +27,8 @@ namespace editor::runtime {
         IEditorCamera::Ptr m_camera;
         bool m_monoInitialized{false};
         bool m_hasTick{false};
+        bool m_hasPresentedFrame{false};
+        std::chrono::steady_clock::time_point m_startupBegin{std::chrono::steady_clock::now()};
+        std::chrono::steady_clock::time_point m_startupStage{m_startupBegin};
     };
 }

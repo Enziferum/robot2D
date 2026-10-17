@@ -93,6 +93,8 @@ def main():
                 raise AssertionError("Managed gameplay never completed:\n" + output)
             if "Runtime started" not in output or "Runtime stopped; exit_code=0" not in output:
                 raise AssertionError("Runtime lifecycle log missing:\n" + output)
+            if "[PlayerStartup] stage='first_frame_presented'" not in output:
+                raise AssertionError("First frame timing boundary missing:\n" + output)
             font = moved / "assets/fonts/hud.ttf"
             font.rename(font.with_suffix(".hidden"))
             output = run(1)

@@ -62,15 +62,25 @@ namespace editor::runtime {
         m_config(std::move(config)), m_result(std::move(result)) {
     }
 
+    void PlayerApplication::startupStep(const char* phase) {
+        const auto now = std::chrono::steady_clock::now();
+        RB_EDITOR_INFO("[PlayerStartup] stage='{}'; duration_ms={:.3f}; total_ms={:.3f}; scene='{}'", phase,
+            std::chrono::duration<double, std::milli>(now - m_startupStage).count(),
+            std::chrono::duration<double, std::milli>(now - m_startupBegin).count(), m_config.scene.u8string());
+        m_startupStage = now;
+    }
     void PlayerApplication::setup() {
         try {
             RB_EDITOR_INFO("[Player] Load started; package='{}'; scene='{}'", m_config.root.u8string(),
                 m_config.scene.u8string());
+            startupStep("window_ready");
             auto coreBase = m_config.core; coreBase.replace_extension();
             m_engine.Init(coreBase.u8string(), m_config.monoLib.u8string(), m_config.monoEtc.u8string());
             m_monoInitialized = true;
+            startupStep("mono_core");
             if(!m_engine.runtimeInit(m_config.scripts.u8string())) throw std::runtime_error(
                           "Cannot load game script assembly");
+            startupStep("game_assembly");
             m_engine.SetWindow(m_window);
             m_scene = std::make_shared<Scene>(m_bus);
             m_scene -> setAssociatedProjectPath(m_config.root.u8string());
@@ -79,6 +89,7 @@ namespace editor::runtime {
             SceneSerializer reader(m_scene);
             if(!reader.deserialize(m_config.scene.u8string(),
                 m_scripts)) throw std::runtime_error(reader.getErrorMessage());
+            startupStep("scene_deserialize");
             unsigned cameras = 0;
             m_scene -> forEachEntity([&](SceneEntity& entity) {
                 if(entity.hasComponent<CameraComponent>() && entity.getComponent<CameraComponent>().isPrimary) {
@@ -97,8 +108,11 @@ namespace editor::runtime {
                 }
             });
             if(cameras != 1) throw std::runtime_error("Player requires exactly one primary scene camera");
+            startupStep("scene_validate");
             loadSceneAssets(m_scene);
+            startupStep("assets_cpu");
             m_scene -> forEachEntity([&](SceneEntity& entity) { activateEntityAssets(m_scene, entity, true); });
+            startupStep("assets_gpu");
             m_scene -> forEachEntity([&](SceneEntity& entity) {
                 if(entity.hasComponent<ButtonComponent>()) {
                     m_scene -> registerUICallback(entity);
@@ -114,6 +128,7 @@ namespace editor::runtime {
             m_scene -> onRuntimeStart(m_scripts);
             m_scene -> setRuntimeCamera(true);
             m_scene -> setRuntimeWindowSize(m_window -> getSize());
+            startupStep("runtime_start");
             RB_EDITOR_INFO("[Player] Runtime started; scene='{}'", m_config.scene.u8string());
         }
         catch(const std::exception& error) { fail(error.what()); }
@@ -141,15 +156,25 @@ namespace editor::runtime {
     }
     void PlayerApplication::update(float dt) {
         if(!m_running || !m_scene) return;
-        try { m_scene -> updateRuntime(dt, m_scripts); m_hasTick = true; }
+        try {
+            if(!m_hasTick) startupStep("first_update_begin");
+            m_scene -> updateRuntime(dt, m_scripts);
+            if(!m_hasTick) startupStep("first_update_complete");
+            m_hasTick = true;
+        }
         catch(const std::exception& error) { fail(error.what()); }
     }
     void PlayerApplication::render() {
         if(!m_running || !m_scene || !m_hasTick) return;
         try {
+            if(!m_hasPresentedFrame) startupStep("first_render_begin");
             m_window -> beforeRender(); m_window -> clear(robot2D::Color::Black);
             m_window -> draw(*m_scene); m_window -> afterRender();
             m_window -> display();
+            if(!m_hasPresentedFrame) {
+                startupStep("first_frame_presented");
+                m_hasPresentedFrame = true;
+            }
         }
         catch(const std::exception& error) { fail(error.what()); }
     }
