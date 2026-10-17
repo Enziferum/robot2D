@@ -67,7 +67,7 @@ def executable(value):
         return path
     if Path(value).is_file():
         return str(Path(value).resolve())
-    raise CheckError(f"Missing tool: {value}. See docs/development-tools.md.")
+    raise CheckError(f"Missing tool: {value}. See AGENTS.md and scripts/install_git_hooks.py --help.")
 
 
 def normal(path):

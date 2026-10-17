@@ -44,9 +44,9 @@ Website navigation and media URLs use `src/lib/site.ts`; Starlight handles its o
 ## Source of truth
 
 - Engine development version: read from the parent CMakeLists.txt during Astro configuration. Do not raise the engine version to change the website.
-- Public release history starts at **0.8.0**. `src/data/releases.json` is a dated snapshot; `scripts/release-policy.mjs` filters it both during sync and rendering. An empty public catalogue is valid. The original pre-0.8 snapshot is preserved only in `../docs/archive/github-releases-before-0.8.0.json`, outside the site output. Normal builds and visitors make no GitHub API request.
+- Public release history starts at **0.8.0**. `src/data/releases.json` is a dated snapshot; `scripts/release-policy.mjs` filters it both during sync and rendering. An empty public catalogue is valid. Normal builds and visitors make no GitHub API request.
 - Refresh releases explicitly with `pnpm sync:releases`, review the diff, then commit. Optional `GITHUB_TOKEN` is read only from the environment. Errors preserve the existing snapshot. Drafts, invalid tags and versions below 0.8.0 are excluded; prereleases are labelled, and binary buttons come only from actual attached assets. Downloads prose must also be reviewed when a new public distribution appears.
-- Roadmap goals: parent `docs/release-roadmap.md` and GitHub milestones. No dates or completion claims are inferred.
+- Roadmap goals and acceptance criteria: GitHub milestones and Issues. No dates or completion claims are inferred.
 - Documentation: introductory Starlight guides live in `src/content/docs/docs/`; the extra directory puts documentation at `/docs/` while marketing pages use `src/pages/`.
 
 ## Media and design
