@@ -195,3 +195,9 @@ msvcrt.dll/libc.so.6; C# вызывает abs(-37) и проверяет 37. Т�
 пройдены 227/227 тестов (56 graphics), включая перенос в Unicode путь, missing
 config, новый DesktopRuntime/instance polling dev 4132acf и показ GL_FRONT.
 Итог обязательного hook и серверного CI публикуется в Issue #81/PR #132.
+
+Presentation probe на Linux создаёт видимое окно внутри Xvfb: GL_FRONT у
+скрытого GLX окна в CI возвращал нули. Проверка синей стены и чёрной внутренней
+области сохраняется; Windows probe и обычные process smoke остаются скрытыми.
+Границы чтения default framebuffer описаны в
+[OpenGL Common Mistakes](https://wikis.khronos.org/opengl/Common_Mistakes).
