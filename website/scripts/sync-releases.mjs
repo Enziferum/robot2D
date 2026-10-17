@@ -1,4 +1,5 @@
 import { writeFile } from 'node:fs/promises';
+import { parsePublicVersion } from './release-policy.mjs';
 
 // Explicit maintainer command: visitors and ordinary builds never call GitHub.
 const endpoint =
@@ -32,7 +33,7 @@ const safeURL = (value) => {
   return url.href;
 };
 const releases = input
-  .filter((release) => !release.draft)
+  .filter((release) => !release.draft && parsePublicVersion(release.tag_name))
   .map((release) => {
     if (
       !release.tag_name ||
@@ -44,7 +45,9 @@ const releases = input
       tag: release.tag_name,
       name: release.name || release.tag_name,
       publishedAt: release.published_at,
-      prerelease: Boolean(release.prerelease),
+      prerelease:
+        Boolean(release.prerelease) ||
+        parsePublicVersion(release.tag_name).prerelease,
       url: safeURL(release.html_url),
       assets: release.assets.map((asset) => ({
         name: asset.name,
@@ -53,8 +56,7 @@ const releases = input
     };
   })
   .sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
-if (!releases.length)
-  throw new Error('No published releases; existing snapshot was preserved');
+// Zero eligible releases is valid: do not fabricate a 0.8.0 release.
 const snapshot = {
   fetchedAt: new Date().toISOString(),
   source: endpoint,

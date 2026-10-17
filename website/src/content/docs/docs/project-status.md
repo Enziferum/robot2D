@@ -1,13 +1,13 @@
 ---
 title: Project status
-description: Development builds, historical releases and the road to 1.0.
+description: Development builds, the public release catalogue and the road to 1.0.
 ---
 
 ## Development and releases
 
 The current development line is **0.8.0-dev**. A version in the source tree is not automatically a published release. The website release list is a dated snapshot of GitHub Releases; always check GitHub for changes since that date.
 
-The original public releases predate much of the current editor. Screenshots on this website show development work, including changes awaiting integration. They are not screenshots of the historical v0.7 release.
+The public release catalogue starts with 0.8.0. Screenshots show development work, including changes awaiting integration; only published, checked artifacts belong in Downloads.
 
 ## Release goals
 

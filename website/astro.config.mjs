@@ -43,6 +43,28 @@ export default defineConfig({
             { label: 'Project status', slug: 'docs/project-status' },
           ],
         },
+        {
+          label: 'Core / C++',
+          items: [
+            { label: 'Overview', slug: 'docs/core' },
+            {
+              label: 'Application and events',
+              slug: 'docs/core/application-events',
+            },
+            {
+              label: 'Graphics and resources',
+              slug: 'docs/core/graphics-resources',
+            },
+            { label: 'ECS concepts', slug: 'docs/core/ecs' },
+          ],
+        },
+        {
+          label: 'Learn / Robot Lab',
+          items: [
+            { label: 'Learning path', slug: 'docs/learn' },
+            { label: 'Reading a scene', slug: 'docs/learn/reading-a-scene' },
+          ],
+        },
       ],
     }),
   ],

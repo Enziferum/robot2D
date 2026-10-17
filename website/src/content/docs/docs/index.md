@@ -16,8 +16,13 @@ Start with **Build from source** in the sidebar, then create your first scene. T
 
 ## Before you begin
 
-The current development line is 0.8.0-dev. Published historical releases differ substantially from the development editor shown on this website. No current installer is available in the website release snapshot.
+The current development line is 0.8.0-dev. The public catalogue starts with 0.8.0. Development screenshots are not a promise of a published binary. No current installer is available in the website release snapshot.
 
 Windows and Linux are development platforms. A GPU and driver supporting **OpenGL 4.5** are required. macOS is not part of the current build guidance.
 
 [Return to the website](../) · [Source and issues](https://github.com/Enziferum/robot2D)
+
+## Choose your next step
+
+- [Core / C++](core/): the library, lifecycle, events, graphics and ECS concepts.
+- [Learn / Robot Lab](learn/): a gradual learning path, starting with reading a scene.

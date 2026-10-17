@@ -2,7 +2,7 @@
 import SiteLayout from '../layouts/SiteLayout.astro';
 import { path, repo, developmentVersion, date } from '../lib/site';
 import { snapshot } from '../lib/releases';
-const latest = snapshot.releases[0];
+const latest = snapshot.releases.find((release) => !release.prerelease);
 ---
 
 <SiteLayout title="Get robot2D">
@@ -14,8 +14,8 @@ const latest = snapshot.releases[0];
       <em>Start exploring.</em>
     </h1>
     <p class="lede">
-      The current development version is {developmentVersion}. For the latest
-      work, build the dev branch from source.
+      Current development is {developmentVersion}. Public downloads start with
+      0.8.0; until a release is published, build the dev branch from source.
     </p>
   </section>
   <section class="wrap download-panel">
@@ -46,38 +46,47 @@ const latest = snapshot.releases[0];
       </div>
       <div>
         <dt>Toolchain</dt>
-        <dd>C++17 · CMake 3.21+ · Mono / MSBuild</dd>
+        <dd>C++17 · CMake 3.21+ · Mono / Python 3</dd>
       </div>
       <div>
         <dt>Binary distribution</dt>
-        <dd>No current installer published in the release snapshot.</dd>
+        <dd>
+          {latest?.assets.length
+            ? 'See the published release below.'
+            : 'No stable installer is available in the release snapshot.'}
+        </dd>
       </div>
     </dl>
   </section>
   <section class="section wrap split">
     <div>
-      <p class="eyebrow">Release archive</p>
-      <h2>Earlier chapters.</h2>
+      <p class="eyebrow">Public releases</p>
+      <h2>{latest ? latest.tag : '0.8.0 is the next step.'}</h2>
     </div>
     <div>
-      <p class="lede">
-        The most recent published release in our snapshot is{' '}
-        <strong>{latest.tag}</strong>, from {date(latest.publishedAt)}. It
-        predates the editor shown on this website.
-      </p>
-      <p>
-        That release has{' '}
-        {latest.assets.length === 0
-          ? 'no attached binary downloads'
-          : `${latest.assets.length} attached files`}
-        . GitHub provides source archives on its release page.
-      </p>
-      <a class="text-link" href={path('releases/')}>
-        Browse release history →
-      </a>
+      {latest ? (
+        <>
+          <p class="lede">
+            {latest.name} · {date(latest.publishedAt)}
+          </p>
+          <a class="text-link" href={latest.url}>
+            Open the published release ↗
+          </a>
+        </>
+      ) : (
+        <p class="lede">
+          A source checkout is available today. Stable binaries will be listed
+          once the first release from 0.8.0 onward is published and checked.
+        </p>
+      )}
+      <div class="actions">
+        <a class="text-link" href={path('releases/')}>
+          Release status →
+        </a>
+      </div>
       <p class="fine">
-        Release snapshot checked {date(snapshot.fetchedAt)}.{' '}
-        <a href={`${repo}/releases`}>Check GitHub for newer releases ↗</a>
+        Snapshot checked {date(snapshot.fetchedAt)}. Prereleases, when
+        available, are labelled separately in the catalogue.
       </p>
     </div>
   </section>
