@@ -1,0 +1,5 @@
+References/
+lib/
+*.csproj
+.robot2d/scripts-build.json
+.robot2d/scripts.rsp
