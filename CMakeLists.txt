@@ -31,3 +31,9 @@ add_subdirectory(core)
 add_subdirectory(editor)
 
 include(cmake/CoreDocumentation.cmake)
+
+option(RB2D_BUILD_CORE_EXAMPLES "Build the website Core tutorial examples" OFF)
+if(RB2D_BUILD_CORE_EXAMPLES)
+    add_subdirectory(website/public/examples/first-sprite examples/first-sprite)
+    add_subdirectory(website/public/examples/keyboard-movement examples/keyboard-movement)
+endif()

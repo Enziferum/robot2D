@@ -1,0 +1,59 @@
+---
+import SiteLayout from '../layouts/SiteLayout.astro';
+import EditorShot from '../components/EditorShot.astro';
+import { path } from '../lib/site';
+---
+
+<SiteLayout title="Robot Lab showcase">
+  <section class="page-intro wrap">
+    <p class="eyebrow">Showcase / 001</p>
+    <h1>
+      Meet <em>Robot Lab.</em>
+    </h1>
+    <p class="lede">
+      A small platformer, built to put the editor through its paces. Jump
+      through a laboratory, find your footing, and reach the exit.
+    </p>
+  </section>
+  <div class="wrap showcase-image">
+    <EditorShot eager />
+  </div>
+  <section class="section wrap split">
+    <div>
+      <p class="eyebrow">From inside the engine</p>
+      <h2>
+        A playable scene.
+        <br />
+        <em>A useful test.</em>
+      </h2>
+    </div>
+    <div>
+      <p class="lede">
+        This is a real screenshot of the demo running inside robot2D, shared by
+        the developer. The hierarchy, Player components and texture browser stay
+        visible around the game.
+      </p>
+      <p>
+        The scene brings together C# player controls, platforms, colliders,
+        textured sprites and a simple on-screen guide.
+      </p>
+      <dl class="facts">
+        <div>
+          <dt>Controls</dt>
+          <dd>A / D or arrow keys · Space to jump · R to restart</dd>
+        </div>
+        <div>
+          <dt>Captured build</dt>
+          <dd>d77dff3cbd56 · SlateTeal development editor</dd>
+        </div>
+        <div>
+          <dt>Availability</dt>
+          <dd>Demo download and gameplay video are not published yet.</dd>
+        </div>
+      </dl>
+      <a class="text-link" href={path('docs/first-scene/')}>
+        Start your own scene →
+      </a>
+    </div>
+  </section>
+</SiteLayout>

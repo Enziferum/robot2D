@@ -70,7 +70,8 @@
       "IMGUI-02": 126,
       "IMGUI-01": 121,
       "GAME-04": 138,
-      "WEB-01": 108
+      "WEB-01": 108,
+      "WEB-02": 133
     }
   },
   "tasks": {
@@ -139,6 +140,7 @@
     "IMGUI-02": "Корректность GuiRender и жизненный цикл GuiImpl",
     "IMGUI-01": "Безопасные scopes окон и стилей robot2D-imgui",
     "GAME-04": "Robot Lab: учебные этапы от сцены до сборки",
-    "WEB-01": "Публичное оформление robot2D: README и материалы для сайта"
+    "WEB-01": "Публичное оформление robot2D: README и материалы для сайта",
+    "WEB-02": "Сайт robot2D на Astro + Starlight в стиле SlateTeal"
   }
 }

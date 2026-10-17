@@ -1,0 +1,207 @@
+---
+title: 'Lesson 01: your first sprite'
+description: Create an 800 × 600 window, load a PNG and draw the Robot Lab player with Core C++.
+---
+
+import { Code } from '@astrojs/starlight/components';
+import applicationSource from '../../../../../public/examples/first-sprite/FirstSprite.hpp?raw';
+import mainSource from '../../../../../public/examples/first-sprite/main.cpp?raw';
+
+## What you will build
+
+A standalone C++ application: an **800 × 600 window**, a dark SlateTeal background,
+and the yellow Robot Lab player drawn in a 256 × 256 rectangle. Closing the window
+stops the application and releases its texture before the graphics context ends.
+You do not need to launch the editor or create an editor project.
+
+This lesson targets the **0.8.0 development API**, checked against Core baseline
+**4132acf**. It is not an installed SDK or a promise of a frozen 1.0 API. You need
+a configured [source checkout](../../getting-started/), C++17, CMake 3.21+, the
+repository's native dependencies and an OpenGL 4.3-capable desktop context for this
+example. Repository/editor requirements can be higher. Keep compiler and native
+library ABIs consistent.
+
+## Get the example
+
+The files live in `website/public/examples/first-sprite/` in the repository.
+The [empty-window example](../../../examples/core-window.cpp) is the starting point;
+this lesson adds resource loading and drawing to that application skeleton.
+
+Download the finished [application](../../../examples/first-sprite/FirstSprite.hpp),
+[entry point](../../../examples/first-sprite/main.cpp),
+[CMake target](../../../examples/first-sprite/CMakeLists.txt),
+[PNG](../../../examples/first-sprite/assets/robot.png) and
+[README with asset provenance](../../../examples/first-sprite/README.md) and
+[source license](../../../examples/first-sprite/LICENSE.txt).
+Keep their directory structure. These files are an in-repository example,
+not a standalone project that can find an installed robot2D package.
+
+```text
+website/public/examples/first-sprite/
+  FirstSprite.hpp
+  main.cpp
+  CMakeLists.txt
+  README.md
+  assets/
+    robot.png
+```
+
+This is the **input texture**, not a screenshot of a completed render. It has a
+transparent background and includes padding around the character:
+
+<img
+  src="../../../examples/first-sprite/assets/robot.png"
+  width="256"
+  height="256"
+  style="max-width:100%;height:auto;background:#162028;border-radius:12px"
+  alt="Yellow Robot Lab player: the transparent PNG used by this lesson"
+/>
+
+## 1. Create the window through Engine
+
+<Code code={mainSource} lang="cpp" title="main.cpp" />
+
+`robot2DInit()` initialises engine services. `EngineConfiguration` selects the
+window dimensions, title and update rate. `runEngine()` owns the desktop runtime,
+window and event loop; it attaches the window to your application before calling
+`setup()`. The application uses the borrowed `m_window` pointer and must not delete
+it. You do not create a second `DesktopRuntime` inside `setup()`.
+
+The first argument to the executable optionally replaces `assets/robot.png`.
+The default path is relative to the **process working directory**, not the C++
+source or the executable location. We will launch from the staged output folder.
+
+## 2. Load once, then draw every frame
+
+<Code code={applicationSource} lang="cpp" title="FirstSprite.hpp" />
+
+### Load the texture in setup
+
+`Texture::loadFromFile()` decodes the PNG and uploads it to the GPU. Call it once
+in `setup()`, with the window's graphics context active. Check its `bool` result;
+the example throws an error containing the resolved absolute path on failure.
+`runEngine()` reports setup errors and returns a non-zero exit code.
+
+`m_texture` is an application member, rather than a local variable in `setup()`.
+It therefore remains alive after `setup()` returns. `Sprite` keeps a pointer to
+the texture; assigning it does not copy the pixels or extend the texture's life.
+
+### Choose source pixels and destination size
+
+The explicit `IntRect(0, 0, width, height)` selects the **whole source PNG**.
+In the current baseline, do not rely on the default empty texture rectangle in
+`setTexture()` to select the whole image. With this API, specifying the rectangle
+avoids collapsed texture coordinates.
+
+`setSize()` sets the destination rectangle to 256 × 256 world units. Selecting a
+texture alone does not give the sprite its visible size. `setPosition()` places
+the top-left of that rectangle at `(272, 172)`, centring it in the initial window.
+The default 2D view maps these coordinates from the top-left, with Y downward.
+Do not use `setOrigin()` for this first example; default origin is `(0, 0)`.
+If you choose a non-square PNG, adjust the destination size to preserve its aspect
+ratio. Transparent padding also affects how large the visible character appears.
+
+### Submit and present a frame
+
+The frame has five operations:
+
+1. `clear()` fills the drawing destination with the background colour. Core colour
+   components here use the 0–255 range, so `Color(22, 32, 40)` is dark SlateTeal.
+2. `beforeRender()` starts a batch.
+3. `draw(m_sprite)` queues its quad.
+4. `afterRender()` submits the queued geometry.
+5. `display()` swaps the window buffers to present it.
+
+Keep loading outside this loop. To draw a second sprite, add another `draw()`
+between the same `beforeRender()` and `afterRender()` calls.
+
+### Close and release in order
+
+Engine delivers typed events to `handleEvents()`. A `Closed` event sets
+`m_running = false`; no custom polling loop is needed. `destroy()` releases the
+texture while Engine still owns a live, current graphics context. The later
+texture destructor sees an empty resource. This also permits cleanup if setup
+fails partway through. Never draw using the sprite after releasing its texture.
+
+## 3. Build and run
+
+From the **repository root**, after configuring the normal native dependencies:
+
+```sh
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DRB2D_BUILD_CORE_EXAMPLES=ON
+cmake --build build --config Release --target robot2D-first-sprite -j 4
+```
+
+For an existing build, reuse its directory, generator, compiler and dependency
+options. `RB2D_BUILD_CORE_EXAMPLES` is off by default. This opt-in target links
+`robot2D-core`; it does not build or launch the editor executable. The root
+configuration still checks the repository's dependencies, including editor ones.
+
+The target stages the executable and `assets/` in
+`build/examples/first-sprite/Release/`. For a different configuration, replace
+`Release` with its name; a single-config generator needs `CMAKE_BUILD_TYPE` set.
+
+On Windows, in PowerShell with the matching runtime DLLs on `PATH`:
+
+```powershell
+Set-Location build/examples/first-sprite/Release
+.\robot2D-first-sprite.exe
+```
+
+On Linux:
+
+```sh
+cd build/examples/first-sprite/Release
+./robot2D-first-sprite
+```
+
+On Windows with MinGW, an MSYS2 MinGW64 terminal is another way to make toolchain
+DLLs available. This is a development build, not a portable Windows installer.
+To run from a different working directory, pass the PNG's absolute path as the
+first argument (quote paths containing spaces).
+
+## Check the result
+
+You should see a dark background and a yellow robot near the centre. There is no
+movement, physics, editor chrome or animation yet. Resize behaviour uses Core's
+default view; this lesson does not introduce a camera or custom DPI policy.
+Close the window and check that the program exits normally.
+
+For the diagnostic path, run from the output folder with a nonexistent texture:
+
+```powershell
+.\robot2D-first-sprite.exe assets/does-not-exist.png
+$LASTEXITCODE
+```
+
+The error includes the absolute path and the process returns non-zero, rather
+than continuing with an invalid sprite. The equivalent shell check is
+`./robot2D-first-sprite assets/does-not-exist.png; echo $?`.
+
+The repository also contains two optional automated graphics checks. They render
+the same application code into a framebuffer in a **hidden window**, count yellow
+pixels within the sprite rectangle, check a close event and resource cleanup,
+and exercise missing-texture failure. See the example README for commands.
+These checks require a working GL context; a skipped graphics test is not a
+rendering pass. They do not replace a human check of the visible window.
+
+## If the screen is empty
+
+| Symptom                                    | Check                                                                                                              |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| PNG cannot be loaded                       | Read the reported absolute path. Check the working directory and staged `assets/robot.png`.                        |
+| Background appears, robot does not         | Keep the texture alive, pass the full source `IntRect`, set a non-zero destination size, and call `afterRender()`. |
+| Robot is stretched                         | Match the destination aspect ratio to the PNG dimensions.                                                          |
+| Window or context creation fails           | Check GPU/driver support and the requested OpenGL API; a display server is needed even for a hidden test window.   |
+| A DLL is missing on Windows                | Use the matching compiler runtime; do not mix MSVC and MinGW binaries.                                             |
+| You changed the source PNG but see old art | Replace the staged output PNG, or relink to repeat the post-build asset copy.                                      |
+
+## Try a small change
+
+Change the background colour and move the sprite to `(64, 64)`. Then draw a second
+sprite at a different position, sharing the same texture. Keep both draws inside
+one batch and keep that texture alive until both have finished drawing.
+
+Next, read [Application and events](../application-events/) and
+[Graphics and resources](../graphics-resources/) for the contracts behind this
+example. Continue with [Lesson 02: keyboard movement](../keyboard-movement/) to add held keys and time-based motion.

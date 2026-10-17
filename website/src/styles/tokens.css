@@ -1,0 +1,11 @@
+:root {
+  color-scheme: dark;
+  --bg: #171e25;
+  --surface: #1b242d;
+  --text: #dee6ec;
+  --muted: #9aabba;
+  --border: #354958;
+  --accent: #7cdbd8;
+}
+/* SlateTeal source: ASSET-01 editor/src/EditorStyles.cpp. Text accents and
+   muted text are brighter than widget colours for readable website copy. */

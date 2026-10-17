@@ -51,6 +51,10 @@
     "area:render": {
       "color": "D876E3",
       "description": "Рендер, графические ресурсы и контракт отрисовки Core/Editor/player"
+    },
+    "area:web": {
+      "color": "3E9DA5",
+      "description": "Публичный сайт и документация robot2D"
     }
   },
   "tasks": {
@@ -388,6 +392,10 @@
     ],
     "WEB-01": [
       "type:maintenance"
+    ],
+    "WEB-02": [
+      "area:web",
+      "type:feature"
     ]
   }
 }
