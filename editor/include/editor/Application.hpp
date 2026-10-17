@@ -77,6 +77,7 @@ namespace editor {
         ProjectInspector m_projectInspector;
         EventBinder m_eventBinder;
         bool m_editorLayoutActive { false };
+        bool m_shutdownStarted { false };
     };
 }
 

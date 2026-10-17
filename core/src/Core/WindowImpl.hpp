@@ -34,6 +34,7 @@
 #include <robot2D/Core/Event.hpp>
 #include <robot2D/Core/WindowContext.hpp>
 #include <robot2D/Core/Cursor.hpp>
+#include <robot2D/Core/DesktopRuntime.hpp>
 
 namespace robot2D::priv {
     class WindowImpl {
@@ -46,10 +47,10 @@ namespace robot2D::priv {
         virtual bool pollEvents(Event& event) = 0;
         virtual void processEvents() = 0;
         virtual std::vector<Event> takeEvents() = 0;
-        static WindowImpl::Ptr create();
-        static WindowImpl::Ptr create(const robot2D::vec2u& size,
+        static WindowImpl::Ptr create(DesktopRuntime& desktop, const robot2D::vec2u& size,
             const std::string& name, WindowContext& context);
 
+        virtual void makeCurrent() = 0;
         virtual void* getRaw() = 0;
         virtual vec2u getFramebufferSize() const = 0;
         virtual vec2u getLogicalSize() const = 0;
@@ -61,11 +62,6 @@ namespace robot2D::priv {
         virtual void display() = 0;
         virtual bool isMousePressed(const Mouse& button) = 0;
         virtual bool isKeyboardPressed(const Key& key) = 0;
-        virtual bool isJoystickAvailable(const JoystickType& joystickType) = 0;
-        virtual bool JoystickIsGamepad(const JoystickType& joystickType) = 0;
-        virtual bool getJoystickGamepadInput(const JoystickType& joystickType,
-            JoystickGamepadInput& gamepadInput) = 0;
-
         virtual void setSize(const robot2D::vec2u& size) = 0;
 
         virtual void setIcon(robot2D::Image&& icon) = 0;

@@ -1,8 +1,11 @@
 using System;
 using System.IO;
+using System.Runtime.InteropServices;
 using robot2D;
 public sealed class PlayerSmoke : Entity
 {
+    [DllImport("Robot2DPlayerNativeProbe", EntryPoint = "abs", CallingConvention = CallingConvention.Cdecl)]
+    private static extern int NativeAbsolute(int value);
     public int StartingWave;
     private RigidBody2D body;
     private TextComponent label;
@@ -12,6 +15,7 @@ public sealed class PlayerSmoke : Entity
     private int enters;
     public override void OnCreate()
     {
+        if(NativeAbsolute(-37) != 37) throw new Exception("Packaged Mono dllmap not applied");
         if(StartingWave != 3) throw new Exception("Serialized script field lost");
         body = GetComponent<RigidBody2D>();
         body.LinearVelocity = new Vector2(1, 0);
