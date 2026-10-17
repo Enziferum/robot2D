@@ -86,7 +86,9 @@ def main():
                    "robot2D-first-sprite", "robot2D-keyboard-movement", "robot2D-keyboard-movement-test",
                    "robot2D-bounded-sprite", "robot2D-sprite-animation", "robot2D-camera-view", "robot2D-core-lessons-test",
                    "robot2D-sprite-collisions", "robot2D-sprite-collisions-test",
-                   *(["robot2D-first-sprite-test", "robot2D-sprite-collisions-graphics-test"] if args.graphics else [])]),
+                   "robot2D-collect-items", "robot2D-collect-items-test",
+                   *(["robot2D-first-sprite-test", "robot2D-sprite-collisions-graphics-test",
+                      "robot2D-collect-items-graphics-test"] if args.graphics else [])]),
         ("test", ["ctest", "--test-dir", str(build), "-C", "Release", "--no-tests=error",
                   "--output-on-failure", "--timeout", "60", "--output-junit", str(junit)]),
     ]
