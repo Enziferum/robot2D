@@ -31,5 +31,6 @@ rmdir "$fixture/.deploy-lock"
 unlink "$fixture/current"
 mkdir "$fixture/current"
 if sh "$script" "$fixture" second; then echo "Real current directory replaced" >&2; exit 1; fi
-[ -d "$fixture/current" ] && [ ! -L "$fixture/current" ]
+[ -d "$fixture/current" ]
+[ ! -L "$fixture/current" ]
 echo 'Activation, rollback, invalid paths, incomplete upload, locking and real-directory protection passed.'
