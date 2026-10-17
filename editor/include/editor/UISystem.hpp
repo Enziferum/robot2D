@@ -45,7 +45,8 @@ namespace editor {
         std::vector<MouseHoverCallback> m_mouseHoverCallbacks;
         std::vector<MouseHoverCallback> m_mouseUnHoverCallbacks;
 
-        std::vector<Flags> m_mouseDownEvents;
+        struct PendingPress { Flags button; robot2D::vec2i position; };
+        std::vector<PendingPress> m_mouseDownEvents;
         std::vector<Flags> m_mouseUpEvents;
         robot2D::vec2i m_eventPosition{};
         IEditorCamera::Ptr m_editorCamera{nullptr};

@@ -15,6 +15,10 @@ namespace {
             std::shared_ptr<bool> passed) : PlayerApplication(std::move(config), std::move(result)), m_passed(passed) {
         }
         void update(float dt) override {
+            if(!m_updated) {
+                PlayerApplication::handleEvents(robot2D::Event{robot2D::Event::Resized{{0, 0}}});
+                PlayerApplication::handleEvents(robot2D::Event{robot2D::Event::Resized{{640, 360}}});
+            }
             PlayerApplication::update(dt); m_updated = true;
         }
         void render() override {
@@ -30,7 +34,7 @@ namespace {
                 '\n';
             *m_passed = wall[0] < 3 && wall[1] < 3 && wall[2] > 250
                 && interior[0] < 3 && interior[1] < 3 && interior[2] < 3;
-            m_running = false;
+            PlayerApplication::handleEvents(robot2D::Event{robot2D::Event::Closed{}});
         }
     private:
         std::shared_ptr<bool> m_passed;

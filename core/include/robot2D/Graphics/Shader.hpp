@@ -40,6 +40,8 @@ namespace robot2D {
         /// Only initialize class. To create use specific method.
         ShaderHandler();
         ~ShaderHandler();
+        /// Explicit release for exclusive owners; legacy copied handlers remain borrowed.
+        void release() noexcept;
 
         /// \brief Create specific shader.
         /// \details

@@ -29,3 +29,5 @@ include(cmake/ShaderValidation.cmake)
 
 add_subdirectory(core)
 add_subdirectory(editor)
+
+include(cmake/CoreDocumentation.cmake)

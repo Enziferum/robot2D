@@ -1,22 +1,22 @@
 /*********************************************************************
-(c) Alex Raag 2021
-https://github.com/Enziferum
-robot2D - Zlib license.
-This software is provided 'as-is', without any express or
-implied warranty. In no event will the authors be held
-liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute
-it freely, subject to the following restrictions:
-1. The origin of this software must not be misrepresented;
-you must not claim that you wrote the original software.
-If you use this software in a product, an acknowledgment
-in the product documentation would be appreciated but
-is not required.
-2. Altered source versions must be plainly marked as such,
-and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any
-source distribution.
+   (c) Alex Raag 2021
+   https://github.com/Enziferum
+   robot2D - Zlib license.
+   This software is provided 'as-is', without any express or
+   implied warranty. In no event will the authors be held
+   liable for any damages arising from the use of this software.
+   Permission is granted to anyone to use this software for any purpose,
+   including commercial applications, and to alter it and redistribute
+   it freely, subject to the following restrictions:
+   1. The origin of this software must not be misrepresented;
+   you must not claim that you wrote the original software.
+   If you use this software in a product, an acknowledgment
+   in the product documentation would be appreciated but
+   is not required.
+   2. Altered source versions must be plainly marked as such,
+   and must not be misrepresented as being the original software.
+   3. This notice may not be removed or altered from any
+   source distribution.
 *********************************************************************/
 
 #include <robot2D/imgui/Api.hpp>
@@ -31,7 +31,8 @@ source distribution.
 namespace sandbox {
 
 
-    constexpr const char* gridVertexShader = R"(
+    constexpr const char* gridVertexShader =
+        R"(
         #version 330 core
         layout (location = 0) in vec2 Position;
         layout (location = 1) in vec2 TexCoord;
@@ -50,7 +51,8 @@ namespace sandbox {
 
     )";
 
-    constexpr const char* gridFragmentShader = R"(
+    constexpr const char* gridFragmentShader =
+        R"(
         #version 450 core
 
         layout (location = 0) out vec4 fragColor;
@@ -87,9 +89,9 @@ namespace sandbox {
 
 
     robot2D::ecs::Entity addEntity(robot2D::ecs::Scene& scene,
-                                   robot2D::vec2f position,
-                                   robot2D::vec2f size,
-                                   std::string name) {
+        robot2D::vec2f position,
+        robot2D::vec2f size,
+        std::string name) {
         auto entity = scene.createEntity();
         auto& transform = entity.addComponent<TransformComponent>();
         transform.setPosition(position);
@@ -103,11 +105,10 @@ namespace sandbox {
     }
 
 
-    EditorUIScene::EditorUIScene(robot2D::RenderWindow& window):
-    Scene(window),
-    m_messageBus{},
-    m_scene{m_messageBus}
-    {
+    EditorUIScene::EditorUIScene(robot2D::RenderWindow& window) :
+        Scene(window),
+        m_messageBus{},
+        m_scene{m_messageBus} {
 
     }
 
@@ -117,9 +118,9 @@ namespace sandbox {
 
         m_view.reset({0, 0, 1920, 1080});
         //m_view.setViewport({0, 0, 0.5, 1});
-       // m_view.setIsClipping(true);
+        // m_view.setIsClipping(true);
 
-       m_texture.loadFromFile("res/textures/Doodler.png");
+        m_texture.loadFromFile("res/textures/Doodler.png");
 
         treeHierarchy.addOnSelectCallback([this](robot2D::ITreeItem::Ptr item){
             RB_INFO("Select TreeItem {0}", item -> getID());
@@ -127,9 +128,8 @@ namespace sandbox {
 
         treeHierarchy.addOnCallback([this](robot2D::ITreeItem::Ptr item) {
             bool entityDeleted = false;
-            if (ImGui::BeginPopupContextItem())
-            {
-                if (ImGui::MenuItem("Delete Entity"))
+            if(ImGui::BeginPopupContextItem()) {
+                if(ImGui::MenuItem("Delete Entity"))
                     entityDeleted = true;
 
                 ImGui::EndPopup();
@@ -164,7 +164,8 @@ namespace sandbox {
             treeHierarchy.setBefore(source, target);
         });
 
-        treeHierarchy.addOnMakeChildCallback([this](robot2D::ITreeItem::Ptr source, robot2D::ITreeItem::Ptr intoTarget) {
+        treeHierarchy.addOnMakeChildCallback([this](robot2D::ITreeItem::Ptr source,
+            robot2D::ITreeItem::Ptr intoTarget) {
             auto entity = intoTarget -> getUserData<robot2D::ecs::Entity>();
             auto& transform = entity -> getComponent<TransformComponent>();
             transform.addChild(*source -> getUserData<robot2D::ecs::Entity>());
@@ -182,7 +183,7 @@ namespace sandbox {
         for(int i = 0; i < startEntityValue; ++i) {
 
             std::string tagName = "Entity:" + std::to_string(i);
-            auto entity = addEntity(m_scene, { 100 + 200 * i, 100 }, { 54, 25 }, tagName);
+            auto entity = addEntity(m_scene, { static_cast<float>(100 + 200 * i), 100.f }, { 54, 25 }, tagName);
             if(i == 0) {
                 entity.getComponent<SpriteComponent>().setColor(robot2D::Color::Yellow);
                 entity.getComponent<SpriteComponent>().setTexture(m_texture);
@@ -208,9 +209,10 @@ namespace sandbox {
     }
 
     void EditorUIScene::handleEvents(const robot2D::Event& event) {
-        if(event.type == robot2D::Event::MousePressed && event.mouse.btn
+        if(event.type() == robot2D::Event::Type::MousePressed && event.get<robot2D::Event::MouseButtonEvent>().btn
             == robot2D::mouse2int(robot2D::Mouse::MouseLeft))
-            RB_INFO("Mouse Pos {0}:{1}", event.mouse.x, event.mouse.y);
+            RB_INFO("Mouse Pos {0}:{1}", event.get<robot2D::Event::MouseButtonEvent>().x,
+                event.get<robot2D::Event::MouseButtonEvent>().y);
     }
 
     void EditorUIScene::update(float dt) {
@@ -228,13 +230,13 @@ namespace sandbox {
 
 
 
-       // m_shader.unUse();
+        // m_shader.unUse();
     }
 
     void EditorUIScene::imGuiRender() {
         robot2D::WindowOptions windowOptions {};
         windowOptions.name = "EditorUIWindow";
-        windowOptions.flagsMask =  ImGuiWindowFlags_NoScrollbar;
+        windowOptions.flagsMask = ImGuiWindowFlags_NoScrollbar;
 
         robot2D::createWindow(windowOptions, [this]() { this -> windowFunction(); });
     }
@@ -245,7 +247,7 @@ namespace sandbox {
 
     void EditorUIScene::removeEntity(robot2D::ecs::Entity&& entity) {
         auto found = std::find_if(m_attachedEntities.begin(), m_attachedEntities.end(),
-                                                [&entity](robot2D::ecs::Entity ent) {
+                [&entity](robot2D::ecs::Entity ent) {
             return ent.getIndex() == entity.getIndex();
         });
         m_scene.removeEntity(entity);
