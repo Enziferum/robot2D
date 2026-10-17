@@ -149,6 +149,7 @@ namespace editor::runtime {
         try {
             m_window -> beforeRender(); m_window -> clear(robot2D::Color::Black);
             m_window -> draw(*m_scene); m_window -> afterRender();
+            m_window -> display();
         }
         catch(const std::exception& error) { fail(error.what()); }
     }

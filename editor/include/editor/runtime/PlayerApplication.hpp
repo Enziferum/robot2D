@@ -6,7 +6,7 @@
 
 namespace editor::runtime {
     struct PlayerResult { int exitCode{0}; };
-    class PlayerApplication final : public robot2D::Application {
+    class PlayerApplication : public robot2D::Application {
     public:
         PlayerApplication(LaunchConfig config, std::shared_ptr<PlayerResult> result);
         void setup() override;

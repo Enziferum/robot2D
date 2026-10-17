@@ -175,6 +175,9 @@ target_compile_definitions(robot2D-player-fixture PRIVATE
     RB2D_TEST_PLAYER_SCRIPT="${robot2D-player-smoke-script_OUTPUT}")
 add_dependencies(robot2D-player-fixture robot2D-player-smoke-script)
 add_dependencies(robot2D-editor-test-suite robot2D-player-fixture)
+add_executable(robot2D-player-presentation-tests PlayerPresentationTests.cpp)
+target_link_libraries(robot2D-player-presentation-tests PRIVATE robot2D-runtime)
+add_dependencies(robot2D-editor-test-suite robot2D-player-presentation-tests)
 foreach(mode IN ITEMS inputs runtime)
     if(mode STREQUAL "runtime" AND NOT RB2D_EDITOR_GRAPHICS_TESTS)
         continue()
@@ -183,7 +186,8 @@ foreach(mode IN ITEMS inputs runtime)
     file(MAKE_DIRECTORY "${directory}")
     add_test(NAME "player-${mode}" COMMAND "${Python3_EXECUTABLE}"
         "${CMAKE_CURRENT_SOURCE_DIR}/player_process.py" "${mode}"
-        --player "$<TARGET_FILE:robot2D-player>" --fixture "$<TARGET_FILE:robot2D-player-fixture>")
+        --player "$<TARGET_FILE:robot2D-player>" --fixture "$<TARGET_FILE:robot2D-player-fixture>"
+        --presentation "$<TARGET_FILE:robot2D-player-presentation-tests>")
     set_tests_properties("player-${mode}" PROPERTIES TIMEOUT 180
         LABELS "editor;player;integration" WORKING_DIRECTORY "${directory}")
     if(mode STREQUAL "runtime")
