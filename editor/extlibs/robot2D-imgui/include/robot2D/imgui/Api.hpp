@@ -29,6 +29,7 @@ source distribution.
 #include <robot2D/Graphics/FrameBuffer.hpp>
 
 #include "WindowOptions.hpp"
+#include "WindowScope.hpp"
 #include "ScopedStyleColor.hpp"
 #include "ScopedStyleVar.hpp"
 #include "Spinner.hpp"

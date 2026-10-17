@@ -375,6 +375,11 @@
       "type:bug",
       "type:tests",
       "owner:shared"
+    ],
+    "IMGUI-01": [
+      "area:editor",
+      "type:bug",
+      "owner:shared"
     ]
   }
 }

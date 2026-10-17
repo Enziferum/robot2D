@@ -1,22 +1,22 @@
 /*********************************************************************
-(c) Alex Raag 2026
-https://github.com/Enziferum
-robot2D - Zlib license.
-This software is provided 'as-is', without any express or
-implied warranty. In no event will the authors be held
-liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute
-it freely, subject to the following restrictions:
-1. The origin of this software must not be misrepresented;
-you must not claim that you wrote the original software.
-If you use this software in a product, an acknowledgment
-in the product documentation would be appreciated but
-is not required.
-2. Altered source versions must be plainly marked as such,
-and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any
-source distribution.
+   (c) Alex Raag 2026
+   https://github.com/Enziferum
+   robot2D - Zlib license.
+   This software is provided 'as-is', without any express or
+   implied warranty. In no event will the authors be held
+   liable for any damages arising from the use of this software.
+   Permission is granted to anyone to use this software for any purpose,
+   including commercial applications, and to alter it and redistribute
+   it freely, subject to the following restrictions:
+   1. The origin of this software must not be misrepresented;
+   you must not claim that you wrote the original software.
+   If you use this software in a product, an acknowledgment
+   in the product documentation would be appreciated but
+   is not required.
+   2. Altered source versions must be plainly marked as such,
+   and must not be misrepresented as being the original software.
+   3. This notice may not be removed or altered from any
+   source distribution.
 *********************************************************************/
 
 #include <cmath>
@@ -28,6 +28,7 @@ source distribution.
 #include <editor/EditorConfig.hpp>
 #include <imgui/imgui_internal.h>
 #include "panels/RuntimeControls.hpp"
+#include "panels/DockspaceHost.hpp"
 
 namespace editor {
 
@@ -56,8 +57,8 @@ namespace editor {
         void drawDockNode(ImGuiDockNode* node) {
             auto flags = node -> IsLeafNode() ? ImGuiTreeNodeFlags_Leaf : ImGuiTreeNodeFlags_None;
             if(ImGui::TreeNodeEx(reinterpret_cast<void*>(static_cast<std::uintptr_t>(node -> ID)), flags,
-                                "0x%08X  %.0f x %.0f  (ref %.0f x %.0f)",
-                                node -> ID, node -> Size.x, node -> Size.y, node -> SizeRef.x, node -> SizeRef.y)) {
+                "0x%08X  %.0f x %.0f  (ref %.0f x %.0f)",
+                node -> ID, node -> Size.x, node -> Size.y, node -> SizeRef.x, node -> SizeRef.y)) {
                 for(auto* child: node -> ChildNodes) {
                     if(child)
                         drawDockNode(child);
@@ -69,11 +70,12 @@ namespace editor {
 
     IUIManager::~IUIManager() = default;
 
-    UIManager::UIManager(robot2D::Gui& gui):
-        m_gui{gui}, m_panels() {}
+    UIManager::UIManager(robot2D::Gui& gui) :
+        m_gui{gui}, m_panels() {
+    }
 
     bool UIManager::registerPanel(IPanel& panel, const std::string& key, const std::string& name,
-                                   const std::string& windowName) {
+        const std::string& windowName) {
         auto belongs = std::find_if(m_panels.begin(), m_panels.end(), [&panel](const auto& item) {
             return item.get() == &panel;
         });
@@ -125,7 +127,8 @@ namespace editor {
                 auto* window = ImGui::FindWindowByName(entry.windowName.c_str());
                 ImGui::TableNextRow();
                 ImGui::TableNextColumn(); ImGui::TextUnformatted(entry.name.c_str());
-                ImGui::TableNextColumn(); ImGui::TextUnformatted(entry.panel -> getState() == PanelState::Visible ? "Yes" : "No");
+                ImGui::TableNextColumn();
+                ImGui::TextUnformatted(entry.panel -> getState() == PanelState::Visible ? "Yes" : "No");
                 ImGui::TableNextColumn();
                 if(window && window -> DockId)
                     ImGui::Text("0x%08X", window -> DockId);
@@ -164,7 +167,7 @@ namespace editor {
         const char* mode = !m_runtimeInteractor ? "No scene" : (running ? "Running" : "Editing");
         const auto& style = ImGui::GetStyle();
         const float buttonWidth = ImMax(ImGui::CalcTextSize(ICON_FA_STOP " Stop").x,
-                                        ImGui::CalcTextSize(ICON_FA_PLAY " Play").x) + style.FramePadding.x * 2.f;
+                ImGui::CalcTextSize(ICON_FA_PLAY " Play").x) + style.FramePadding.x * 2.f;
         const float modeWidth = ImGui::CalcTextSize(mode).x;
         const float gap = 16.f;
         const float height = ImGui::GetFrameHeight() + 8.f;
@@ -172,8 +175,8 @@ namespace editor {
         ImGui::PushStyleColor(ImGuiCol_ChildBg, running ? ImVec4{0.19f, 0.12f, 0.13f, 1.f}
                                                       : style.Colors[ImGuiCol_MenuBarBg]);
         const auto flags = ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoDocking
-                         | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse
-                         | ImGuiWindowFlags_AlwaysUseWindowPadding;
+            | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse
+            | ImGuiWindowFlags_AlwaysUseWindowPadding;
         if(ImGui::BeginChild("##RuntimeToolbar", {0.f, height}, false, flags)) {
             const float available = ImGui::GetContentRegionAvail().x;
             const bool showMode = available >= buttonWidth + gap + modeWidth;
@@ -198,9 +201,9 @@ namespace editor {
 
     void UIManager::renderBaseCanvas() {
         auto flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking
-                     | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse
-                     | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove
-                     | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+            | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse
+            | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove
+            | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
         const auto* viewport = ImGui::GetMainViewport();
         ImGui::SetNextWindowPos(viewport -> WorkPos);
         auto statusHeight = isStatusBarVisible() ? UtilPanel::getHeight() : 0.f;
@@ -209,10 +212,10 @@ namespace editor {
         robot2D::WindowOptions options{};
         options.flagsMask = flags;
         options.name = "Scene";
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.f);
-        ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.f);
-        robot2D::createWindow(options, BIND_CLASS_FN(canvasWindowFunction));
-        ImGui::PopStyleVar(2);
+        robot2D::ScopedStyleVarF styles{{ImGuiStyleVar_WindowRounding, 0.f},
+            {ImGuiStyleVar_WindowBorderSize, 0.f}};
+        ui::renderDockspaceHost(options, "Robot2D_Dockspace", dockspaceFlags,
+            BIND_CLASS_FN(canvasWindowFunction));
     }
 
     void UIManager::canvasWindowFunction() {
@@ -233,7 +236,7 @@ namespace editor {
             auto* root = ImGui::DockBuilderGetNode(dockspaceID);
             auto size = ImGui::GetContentRegionAvail();
             if(root && size.x > 0.f && size.y > 0.f
-               && (std::abs(size.x - root -> Size.x) > 0.5f || std::abs(size.y - root -> Size.y) > 0.5f)) {
+                && (std::abs(size.x - root -> Size.x) > 0.5f || std::abs(size.y - root -> Size.y) > 0.5f)) {
                 resizeDockNodeReferences(root, size);
                 ImGui::DockBuilderSetNodeSize(dockspaceID, size);
             }
@@ -265,13 +268,13 @@ namespace editor {
         const auto& config = EditorConfig::getConfig();
         auto centerID = rootID;
         auto leftID = ImGui::DockBuilderSplitNode(centerID, ImGuiDir_Left, config.leftRatio,
-                                                  nullptr, &centerID);
+                nullptr, &centerID);
         auto rightID = ImGui::DockBuilderSplitNode(centerID, ImGuiDir_Right,
-                                                   config.rightRatio / (1.f - config.leftRatio),
-                                                   nullptr, &centerID);
+                config.rightRatio / (1.f - config.leftRatio),
+                nullptr, &centerID);
         auto assetsID = centerID;
         auto viewportID = ImGui::DockBuilderSplitNode(centerID, ImGuiDir_Up, config.centerTopRatio,
-                                                      nullptr, &assetsID);
+                nullptr, &assetsID);
 
         ImGui::DockBuilderDockWindow("###ScenePanel", leftID);
         ImGui::DockBuilderDockWindow("###ViewportPanel", viewportID);
@@ -284,7 +287,8 @@ namespace editor {
         ImGui::DockBuilderFinish(rootID);
     }
 
-    void UIManager::blockEvents(bool flag) {}
+    void UIManager::blockEvents(bool flag) {
+    }
 
     SceneEntity UIManager::getTreeItem(editor::UUID uuid) {
         return getPanel<ScenePanel>().getTreeItem(uuid);
