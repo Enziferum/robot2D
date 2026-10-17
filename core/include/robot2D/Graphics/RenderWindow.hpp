@@ -40,8 +40,14 @@ namespace robot2D {
         RenderWindow& operator=(const RenderWindow&&) = delete;
         ~RenderWindow() override;
 
+        /// Compatibility explicit 1:1 render sizing; does not resize the native window.
         void resize(const robot2D::vec2i& newSize);
-    protected:
-        void onResize(const int& w, const int& h) override;
+        /// Select this context and synchronize the native output before rendering to it.
+        /// Returns false for minimized/zero targets; does not pause updates or pump events.
+        bool synchronizeSize();
+        /// Same synchronization with a supplied platform snapshot, useful for embedded surfaces.
+        bool synchronizeSize(const WindowMetrics& metrics);
+        /// Map logical client coordinates through this window's current physical viewport.
+        vec2f mapClientToCoords(const vec2f& point, const View& view, unsigned int layerID = 1) const;
     };
 }
