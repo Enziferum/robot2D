@@ -25,7 +25,9 @@ No C++ build, account, token or browser automation is required. Pagefind search 
 
 ## Hosting configuration
 
-No deployment or hosting provider is configured. The default local path is `/`. Set `SITE_URL` to the real public origin when a destination is chosen; this enables canonical URLs, social image URLs and the sitemap. Without it, Starlight deliberately skips its sitemap with a warning rather than generating a fictitious domain.
+GitHub Pages is the selected host: `https://enziferum.github.io/robot2D/`. The Website workflow publishes after website-related pushes to `dev`, or manually from a selected branch. Ordinary pull requests only run checks. See [Pages setup and manual publication](deploy/github-pages.md), including the first pre-merge deployment from WEB-02.
+
+Production origin/base path come from `actions/configure-pages`, so a later custom domain is supported. The default local path is `/`. Set `SITE_URL` for canonical URLs, social images and the sitemap; without it, local builds skip the sitemap rather than inventing a domain.
 
 Set `SITE_BASE` when hosting below a path, for example `/robot2D/`. Use the same environment for build, verification and preview:
 
@@ -61,7 +63,7 @@ Shared palette tokens are in `src/styles/tokens.css`, with separate marketing an
 
 The layout includes responsive breakpoints, a skip link, visible keyboard focus, image alternatives and reduced-motion support. Visual, keyboard and search interaction acceptance is manual: inspect the home and docs pages at desktop and narrow mobile widths, follow main navigation, open the original screenshot, use docs search, and verify the 404 page. No computer-use is permitted for this project; user acceptance remains necessary.
 
-Next: acquire VPS/domain, configure and validate the real Nginx/HTTPS deployment, publish more small Core articles and reproducible Robot Lab lessons, then package a demo and a short real gameplay recording. Donations are omitted until a real destination is agreed.
+Next: complete GitHub Pages publication and manual acceptance, publish more small Core articles and reproducible Robot Lab lessons, then package a demo and a short real gameplay recording. A custom domain can be connected later. Donations are omitted until a real destination is agreed.
 
 ## Screenshot proportions
 
@@ -81,6 +83,6 @@ responsive page layout and screenshot aspect ratio. No browser automation is use
 
 ## Documentation and deployment
 
-Core and Learn now have their own sidebar groups. Core lifecycle contracts are pinned to a checked source commit; the course is explicitly incremental. See [CONTENT.md](CONTENT.md) and [content-templates/lesson.md](content-templates/lesson.md) for authoring. Current prepared deployment is **Linux + Nginx**, without Docker: [deploy/README.md](deploy/README.md). It covers static build delivery, immutable release directories, atomic current-switching and rollback.
+Core and Learn now have their own sidebar groups. Core lifecycle contracts are pinned to a checked source commit; the course is explicitly incremental. See [CONTENT.md](CONTENT.md) and [content-templates/lesson.md](content-templates/lesson.md) for authoring. The primary deployment is **GitHub Pages**: [setup and manual publication](deploy/github-pages.md). The prepared **Linux + Nginx** alternative remains available in [deploy/README.md](deploy/README.md), covering immutable release directories, atomic current-switching and rollback.
 
 `pnpm test` checks the public release policy. CI also tests activation/rollback on Linux and saves the root-path preview artifact. `deploy/activate-release.sh` is Linux-only; do not invoke it on a real server until the host, permissions and domain are prepared. Nginx/HTTPS have not been validated on a purchased server yet.
