@@ -1,0 +1,2 @@
+// Main executable icon. Keep the lowest resource ID for the application icon.
+1 ICON "@CMAKE_CURRENT_SOURCE_DIR@/res/branding/robot2d.ico"
