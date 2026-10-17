@@ -28,6 +28,8 @@ const walk = (node, visit) => {
 const files = await walkFiles(dist);
 for (const file of files.filter((file) => file.endsWith('.html'))) {
   const html = await readFile(file, 'utf8');
+  if (/\bv0\.[0-7](?:\.\d+)?\b/.test(html))
+    failures.push(`${file}: pre-0.8 release leaked into public HTML`);
   const document = parse(html);
   const ids = new Set();
   const links = [];
@@ -108,6 +110,12 @@ for (const route of [
   'docs/first-scene/',
   'docs/scripting/',
   'docs/project-status/',
+  'docs/core/',
+  'docs/core/application-events/',
+  'docs/core/graphics-resources/',
+  'docs/core/ecs/',
+  'docs/learn/',
+  'docs/learn/reading-a-scene/',
 ]) {
   if (!documents.has(resolve(dist, route, 'index.html')))
     failures.push(`Missing required route: ${route}`);

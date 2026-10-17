@@ -1,56 +1,77 @@
 ---
 import SiteLayout from '../layouts/SiteLayout.astro';
-import { date, repo, developmentVersion } from '../lib/site';
+import { date, repo, path, developmentVersion } from '../lib/site';
 import { snapshot } from '../lib/releases';
 ---
 
-<SiteLayout title="Release history">
+<SiteLayout title="Releases from 0.8.0">
   <section class="page-intro wrap">
-    <p class="eyebrow">Release history</p>
+    <p class="eyebrow">Releases / A new chapter</p>
     <h1>
-      Every version.
+      Starting with
       <br />
-      <em>Another step.</em>
+      <em>0.8.0.</em>
     </h1>
     <p class="lede">
-      Published releases from GitHub. Current development is{' '}
-      {developmentVersion}; it has not been published as a stable release.
+      The public release catalogue starts here. Current development is{' '}
+      {developmentVersion}; published builds will appear below when they are
+      ready.
     </p>
-    <p class="fine">
-      Snapshot checked {date(snapshot.fetchedAt)}.{' '}
-      <a href={`${repo}/releases`}>See live releases on GitHub ↗</a>
-    </p>
+    <p class="fine">Release snapshot checked {date(snapshot.fetchedAt)}.</p>
   </section>
   <section class="release-list wrap">
-    {snapshot.releases.map((release) => (
+    {snapshot.releases.length ? (
+      snapshot.releases.map((release) => (
+        <article>
+          <div>
+            <time datetime={release.publishedAt}>
+              {date(release.publishedAt)}
+            </time>
+            <span class="pill">
+              {release.prerelease ? 'Prerelease' : 'Published release'}
+            </span>
+          </div>
+          <div>
+            <h2>{release.tag}</h2>
+            <p>{release.name}</p>
+            <a class="text-link" href={release.url}>
+              Read release notes ↗
+            </a>
+            {release.assets.length ? (
+              <ul>
+                {release.assets.map((asset) => (
+                  <li>
+                    <a href={asset.url}>{asset.name}</a>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p class="fine">No binary files attached to this release.</p>
+            )}
+          </div>
+        </article>
+      ))
+    ) : (
       <article>
         <div>
-          <time datetime={release.publishedAt}>
-            {date(release.publishedAt)}
-          </time>
-          <span class="pill">
-            {release.prerelease ? 'Prerelease' : 'Published release'}
-          </span>
+          <span class="pill">In development</span>
         </div>
         <div>
-          <h2>{release.tag}</h2>
-          <p>{release.name}</p>
-          <a class="text-link" href={release.url}>
-            Read the original release notes ↗
-          </a>
-          {release.assets.length ? (
-            <ul>
-              {release.assets.map((asset) => (
-                <li>
-                  <a href={asset.url}>{asset.name}</a>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p class="fine">Source archives on GitHub · No attached binaries</p>
-          )}
+          <h2>The first public release is ahead.</h2>
+          <p>
+            No release from 0.8.0 onward is published in this snapshot. There is
+            no installer to download yet.
+          </p>
+          <div class="actions">
+            <a class="button secondary" href={path('docs/getting-started/')}>
+              Build the development version →
+            </a>
+            <a class="text-link" href={`${repo}/milestone/1`}>
+              Follow 0.8.0 ↗
+            </a>
+          </div>
         </div>
       </article>
-    ))}
+    )}
   </section>
 </SiteLayout>

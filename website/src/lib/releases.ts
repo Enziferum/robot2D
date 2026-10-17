@@ -1,4 +1,5 @@
 import input from '../data/releases.json';
+import { publicReleases } from '../../scripts/release-policy.mjs';
 export interface ReleaseAsset {
   name: string;
   url: string;
@@ -15,4 +16,4 @@ export const snapshot: {
   fetchedAt: string;
   source: string;
   releases: Release[];
-} = input;
+} = { ...input, releases: publicReleases(input.releases) };

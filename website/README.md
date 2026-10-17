@@ -42,8 +42,8 @@ Website navigation and media URLs use `src/lib/site.ts`; Starlight handles its o
 ## Source of truth
 
 - Engine development version: read from the parent CMakeLists.txt during Astro configuration. Do not raise the engine version to change the website.
-- Release history: versioned `src/data/releases.json`, with its source and fetch timestamp. Normal builds and visitors make no GitHub API request.
-- Refresh releases explicitly with `pnpm sync:releases`, review the diff, then commit. Optional `GITHUB_TOKEN` is read only from the environment. Errors preserve the existing snapshot. Drafts are excluded, prereleases labelled, and binary buttons come only from actual attached assets. Downloads prose must also be reviewed when a new public distribution appears.
+- Public release history starts at **0.8.0**. `src/data/releases.json` is a dated snapshot; `scripts/release-policy.mjs` filters it both during sync and rendering. An empty public catalogue is valid. The original pre-0.8 snapshot is preserved only in `../docs/archive/github-releases-before-0.8.0.json`, outside the site output. Normal builds and visitors make no GitHub API request.
+- Refresh releases explicitly with `pnpm sync:releases`, review the diff, then commit. Optional `GITHUB_TOKEN` is read only from the environment. Errors preserve the existing snapshot. Drafts, invalid tags and versions below 0.8.0 are excluded; prereleases are labelled, and binary buttons come only from actual attached assets. Downloads prose must also be reviewed when a new public distribution appears.
 - Roadmap goals: parent `docs/release-roadmap.md` and GitHub milestones. No dates or completion claims are inferred.
 - Documentation: introductory Starlight guides live in `src/content/docs/docs/`; the extra directory puts documentation at `/docs/` while marketing pages use `src/pages/`.
 
@@ -53,7 +53,7 @@ Website navigation and media URLs use `src/lib/site.ts`; Starlight handles its o
 
 The image shows ASSET-01 development UI, including SlateTeal, toolbar and AssetsPanel work, not the historical v0.7 release. It contains generated game artwork inside a real running editor. No generated UI mockups are presented as product screenshots.
 
-Shared palette tokens are in `src/styles/tokens.css`, with separate marketing and Starlight styles. Widget SlateTeal colours come from ASSET-01 EditorStyles.cpp; website copy uses brighter accent and muted colours for contrast. The SlateTeal robot mark is in `../logo/slateteal-v1/`, with editable SVG, PNG and Windows ICO exports. Its generated concept and prompt are preserved alongside the clean geometric reconstruction. The site uses the SVG mark and live text; see that directory for editor integration boundaries. The first version uses a fixed dark theme and system fonts; there are no external font services.
+Shared palette tokens are in `src/styles/tokens.css`, with separate marketing and Starlight styles. Widget SlateTeal colours come from ASSET-01 EditorStyles.cpp; website copy uses brighter accent and muted colours for contrast. The active Robot Lab 02 raster mark and 03 mascot are documented in `../logo/robotlab-slateteal/`. Earlier SVG candidates are archived; the site uses the selected transparent PNG mark with live text. The first version uses a fixed dark theme and system fonts; there are no external font services.
 
 ## Checks and remaining acceptance
 
@@ -61,7 +61,7 @@ Shared palette tokens are in `src/styles/tokens.css`, with separate marketing an
 
 The layout includes responsive breakpoints, a skip link, visible keyboard focus, image alternatives and reduced-motion support. Visual, keyboard and search interaction acceptance is manual: inspect the home and docs pages at desktop and narrow mobile widths, follow main navigation, open the original screenshot, use docs search, and verify the 404 page. No computer-use is permitted for this project; user acceptance remains necessary.
 
-Next: user review of the visual layout and first SlateTeal logo; packaged demo and a short real gameplay recording; editor icon integration; hosting choice and a deployment workflow. Donations are omitted until a real destination is agreed.
+Next: acquire VPS/domain, configure and validate the real Nginx/HTTPS deployment, publish more small Core articles and reproducible Robot Lab lessons, then package a demo and a short real gameplay recording. Donations are omitted until a real destination is agreed.
 
 ## Screenshot proportions
 
@@ -78,3 +78,9 @@ with WebP and PNG fallback, explicit dimensions and lazy loading. Old v1 candida
 Editor integration is a separate worktree/PR, BRAND-01/#135, using the same selected source.
 Manual acceptance: logo at 100/150/200% scaling, mascot against the site background,
 responsive page layout and screenshot aspect ratio. No browser automation is used.
+
+## Documentation and deployment
+
+Core and Learn now have their own sidebar groups. Core lifecycle contracts are pinned to a checked source commit; the course is explicitly incremental. See [CONTENT.md](CONTENT.md) and [content-templates/lesson.md](content-templates/lesson.md) for authoring. Current prepared deployment is **Linux + Nginx**, without Docker: [deploy/README.md](deploy/README.md). It covers static build delivery, immutable release directories, atomic current-switching and rollback.
+
+`pnpm test` checks the public release policy. CI also tests activation/rollback on Linux and saves the root-path preview artifact. `deploy/activate-release.sh` is Linux-only; do not invoke it on a real server until the host, permissions and domain are prepared. Nginx/HTTPS have not been validated on a purchased server yet.

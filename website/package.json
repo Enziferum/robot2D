@@ -15,7 +15,8 @@
     "verify": "node scripts/verify-build.mjs",
     "sync:releases": "node scripts/sync-releases.mjs",
     "format:check": "prettier --check .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "test": "node --test tests/release-policy.test.mjs"
   },
   "dependencies": {
     "@astrojs/markdown-remark": "7.3.0",
