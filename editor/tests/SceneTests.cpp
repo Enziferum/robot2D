@@ -173,17 +173,17 @@ namespace {
         fs::current_path(fixture.path());
         auto* previousContext = glfwGetCurrentContext();
         robot2D::WindowContext options(false, false, robot2D::WindowContext::RenderApi::OpenGL4_5);
-        auto window = std::make_unique<robot2D::RenderWindow>(robot2D::vec2u{1280, 720}, "Editor integration test",
+        robot2D::DesktopRuntime desktop(robot2D::DesktopRuntime::Ownership::Borrowed);
+        auto window = std::make_unique<robot2D::RenderWindow>(desktop, robot2D::vec2u{1280, 720},
+                "Editor integration test",
                 options);
         struct WindowCleanup {
             std::unique_ptr<robot2D::RenderWindow>& window;
             GLFWwindow* previous;
             ~WindowCleanup() {
-                auto* native = static_cast<GLFWwindow*>(window -> getRaw());
                 editor::LocalResourceManager::getManager() -> releaseGraphicsResources();
                 editor::EditorResourceManager::getManager() -> releaseGraphicsResources();
                 window.reset();
-                glfwDestroyWindow(native);
                 glfwMakeContextCurrent(previous);
             }
         } windowCleanup{window, previousContext};
