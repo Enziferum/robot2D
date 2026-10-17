@@ -1,0 +1,30 @@
+{
+  "fetchedAt": "2026-10-16T21:06:13.866Z",
+  "source": "https://api.github.com/repos/Enziferum/robot2D/releases?per_page=100",
+  "releases": [
+    {
+      "tag": "v0.7",
+      "name": "Version 0.7",
+      "publishedAt": "2023-12-26T04:02:22Z",
+      "prerelease": false,
+      "url": "https://github.com/Enziferum/robot2D/releases/tag/v0.7",
+      "assets": []
+    },
+    {
+      "tag": "v0.3",
+      "name": "Version 0.3",
+      "publishedAt": "2022-03-09T19:04:09Z",
+      "prerelease": false,
+      "url": "https://github.com/Enziferum/robot2D/releases/tag/v0.3",
+      "assets": []
+    },
+    {
+      "tag": "v0.2",
+      "name": "Version 0.2",
+      "publishedAt": "2021-09-15T15:40:19Z",
+      "prerelease": false,
+      "url": "https://github.com/Enziferum/robot2D/releases/tag/v0.2",
+      "assets": []
+    }
+  ]
+}

@@ -1,0 +1,103 @@
+name: Website
+on:
+  pull_request:
+    paths:
+      - 'website/**'
+      - 'CMakeLists.txt'
+      - '.github/workflows/website.yml'
+  push:
+    branches: [dev]
+    paths:
+      - 'website/**'
+      - 'CMakeLists.txt'
+      - '.github/workflows/website.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+env:
+  PUBLISH_PAGES: ${{ github.event_name == 'push' || github.event_name == 'workflow_dispatch' }}
+concurrency:
+  group: website-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pages: read
+    outputs:
+      publish: ${{ env.PUBLISH_PAGES }}
+    defaults:
+      run:
+        working-directory: website
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Publish/test the selected branch, not GitHub's synthetic PR merge.
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Record source revision
+        run: |
+          git log -1 --format='Source commit: %H' >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: npm install --global pnpm@11.25.0
+      - run: pnpm install --frozen-lockfile
+      - name: Read GitHub Pages address
+        if: env.PUBLISH_PAGES == 'true'
+        id: pages
+        uses: actions/configure-pages@v5
+        with:
+          # Repository settings are enabled by the owner, not by this token.
+          enablement: false
+      - run: pnpm test
+      - run: pnpm check
+      - run: pnpm format:check
+      - run: pnpm build
+      - run: pnpm verify
+      - name: Check static release activation and rollback
+        run: sh deploy/test-activation.sh
+      - name: Save the root-path preview build
+        uses: actions/upload-artifact@v4
+        with:
+          name: robot2d-website-${{ github.run_id }}-${{ github.run_attempt }}
+          path: website/dist/
+          if-no-files-found: error
+          retention-days: 7
+      - name: Verify hosting in a subdirectory
+        run: pnpm build && pnpm verify
+        env:
+          SITE_BASE: /robot2D/
+          SITE_URL: https://example.invalid
+      - name: Build and verify the public Pages site
+        if: env.PUBLISH_PAGES == 'true'
+        run: pnpm build && pnpm verify
+        env:
+          SITE_BASE: ${{ steps.pages.outputs.base_path }}/
+          SITE_URL: ${{ steps.pages.outputs.origin }}
+      - name: Package the verified Pages build
+        if: env.PUBLISH_PAGES == 'true'
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: website/dist/
+  deploy:
+    if: needs.check.outputs.publish == 'true'
+    needs: check
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      pages: write
+      id-token: write
+    # Only one publication can update the public site at a time.
+    concurrency:
+      group: github-pages
+      cancel-in-progress: false
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy the verified site
+        id: deployment
+        uses: actions/deploy-pages@v4

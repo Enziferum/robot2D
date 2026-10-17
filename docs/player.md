@@ -204,3 +204,8 @@ GL_BACK непосредственно перед настоящим swap и п�
 область. Если display пропущен, wrapper не вызывается и тест падает. Game и
 общая библиотека не получают тестовых перехватчиков. Все process окна снова скрыты.
 Механизм wrapper: [GNU ld](https://sourceware.org/binutils/docs/ld/Options.html).
+
+Интеграция 0.8.0-dev с CORE-01 window metrics: player пропускает render/display,
+когда фактические WindowMetrics не drawable (минимизация или нулевой framebuffer).
+Update/pump продолжаются; first_frame_presented не отмечается до реального кадра.
+Core First Sprite/Keyboard Movement используют тот же guard перед render.

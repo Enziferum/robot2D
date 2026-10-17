@@ -167,6 +167,7 @@ namespace editor::runtime {
     }
     void PlayerApplication::render() {
         if(!m_running || !m_scene || !m_hasTick) return;
+        if(!m_window -> getMetrics().drawable()) return;
         try {
             if(!m_hasPresentedFrame) startupStep("first_render_begin");
             m_window -> beforeRender(); m_window -> clear(robot2D::Color::Black);

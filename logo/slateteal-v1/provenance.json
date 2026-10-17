@@ -1,0 +1,13 @@
+{
+  "asset": "robot2d-mark-master.png",
+  "created": "2026-10-17",
+  "method": "Built-in image_gen, transparent_background=true",
+  "dimensions": [
+    1254,
+    1254
+  ],
+  "sha256": "96a34ee13ded6426d07b9df0f159846e810571d597085082f3bab372196f5c98",
+  "status": "First SlateTeal brand candidate; website use, with editor-ready PNG/ICO exports.",
+  "exports": "Only resampling and PNG/ICO format conversion; original generated RGBA master preserved. Not a vector source.",
+  "production": "robot2d-mark.svg is a clean repo-native geometric reconstruction inspired by the generated concept; robot2d-logo.svg adds editable system-font lettering. robot2d-vector-*.png and robot2d-editor-vector.ico are exports from SVG. Generated raster files are retained as concept references."
+}
