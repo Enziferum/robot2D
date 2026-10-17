@@ -54,6 +54,8 @@ namespace robot2D::priv {
         void* getRaw() override;
         vec2u getFramebufferSize() const override;
         vec2u getLogicalSize() const override;
+        vec2f getContentScale() const override;
+        bool isMinimized() const override;
 
         bool isOpen() const override;
         void setTitle(const std::string& title) const override;
@@ -102,6 +104,8 @@ namespace robot2D::priv {
         static void mouse_callback(GLFWwindow* window, int key, int action, int mods);
         static void size_callback(GLFWwindow* window, int w, int h);
         static void framebuffer_callback(GLFWwindow* window, int width, int height);
+        static void content_scale_callback(GLFWwindow* window, float x, float y);
+        static void iconify_callback(GLFWwindow* window, int state);
         static void maximized_callback(GLFWwindow* window, int state);
         static void dragdrop_callback(GLFWwindow* wnd, int count, const char** paths);
         static void focus_callback(GLFWwindow* wnd, int focus);
