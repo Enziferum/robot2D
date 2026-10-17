@@ -45,6 +45,17 @@ Mono/native template, общие SceneAssets, clone Text/UI systems и UTF-8 з�
 ручная приёмка и BUILD-01. Full runtime lifecycle, Core ECS и fixed scheduler
 этим шагом не объявляются завершёнными.
 
+### Исправление показа кадра — 2026-10-17
+
+При ручной приёмке Game обнаружено белое окно: PlayerApplication завершал batch,
+но не вызывал Window::display (swap buffers). Добавлен показ после afterRender.
+PlayerPresentationTests запускает настоящий Engine/player и читает GL_FRONT:
+синяя стена и чёрный фон должны присутствовать в показанном кадре. Проверка
+включена в постоянный player-runtime; без display она воспроизводимо падает
+(передний буфер остаётся чёрным). Game.exe в player-arena пересобран.
+Ручная приёмка пользователя продолжается; Linux CI и вторая машина остаются
+отдельными незавершёнными проверками. PR #132, результат проверок — в Issue #81.
+
 ## HUD-01: C# текст и порядок надписей — 2026-10-16
 
 Ведущий — ассистент по поручению пользователя. Ветка HUD-01 в отдельном worktree

@@ -5,6 +5,7 @@ import os
 import shutil
 import subprocess
 import tempfile
+import time
 
 
 def main():
@@ -12,6 +13,7 @@ def main():
     parser.add_argument("mode", choices=["inputs", "runtime"])
     parser.add_argument("--player", type=Path, required=True)
     parser.add_argument("--fixture", type=Path, required=True)
+    parser.add_argument("--presentation", type=Path, required=True)
     args = parser.parse_args()
     with tempfile.TemporaryDirectory(prefix="player-fixture-", dir=Path.cwd()) as temporary:
         root = Path(temporary)
@@ -23,7 +25,16 @@ def main():
         subprocess.run([str(args.fixture), str(game)], env=fixture_env, check=True, timeout=20)
         moved = root / "Moved game & spaces"
         if os.name == "nt": moved = root / "Перенесенная игра & spaces"
-        game.rename(moved)
+        shutil.copy2(args.presentation, game / args.presentation.name)
+        for attempt in range(20):
+            try:
+                game.rename(moved)
+                break
+            except PermissionError:
+                if os.name != "nt" or attempt == 19:
+                    raise
+                # Windows virus scanners may briefly hold newly copied executables.
+                time.sleep(0.1)
         player = moved / args.player.name
         cwd = root / "unrelated cwd"
         cwd.mkdir()
@@ -73,6 +84,10 @@ def main():
             run(1, "--check")
             manifest.write_text(original, encoding="utf-8")
         if args.mode == "runtime":
+            presentation = subprocess.run([str(moved / args.presentation.name), str(manifest)], cwd=cwd,
+                                          env=environment, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, timeout=25)
+            if presentation.returncode != 0:
+                raise AssertionError("Presented frame test failed:\n" + presentation.stdout.decode("utf-8", errors="replace"))
             output = run(0)
             if not report.exists() or report.read_text() != "PASS 3 12":
                 raise AssertionError("Managed gameplay never completed:\n" + output)
