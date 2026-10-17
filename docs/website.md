@@ -129,3 +129,34 @@ Computer-use не применялся; визуальная приёмка и �
 Новые удалённые CI оцениваются после push отдельно от предыдущих запусков.
 Следующий небольшой шаг — границы игровой области или камера; DOC-01/GAME-04
 не объявляются завершёнными. Основной checkout пользователя не менялся.
+
+
+## WEB-02: GitHub Pages и первый публичный деплой — 2026-10-17
+
+По выбору пользователя основной хостинг — https://enziferum.github.io/robot2D/.
+В Website workflow добавлены push в dev (website/version/workflow paths) и
+workflow_dispatch из выбранной ветки. Обычные PR проверяются без публикации.
+Собирается/проверяется реальный Pages origin/base_path, затем upload dist/ и
+зависимый deploy с pages:write/id-token:write, github-pages environment и
+сериализацией публикаций. PAT/SSH не используются; свой домен позднее меняется
+через настройки Pages и повторную сборку. Linux/Nginx сохранён резервным вариантом.
+
+Владелец включил Source GitHub Actions; первый manual run 38996625916 прошёл
+check/upload, но deploy был отклонён environment rule, разрешавшим только dev.
+Владелец добавил WEB-02; API подтвердил обе ветки. CLI workflow_dispatch принят
+до merge нового workflow в default dev, поскольку Website уже зарегистрирован
+PR-проверками. Дополнительная метка PR/bootstrap не понадобились и не оставлены.
+
+Ручная публикация из WEB-02 / commit 209c513 успешно прошла:
+https://github.com/Enziferum/robot2D/actions/runs/38996920057.
+HTTPS-проверка: 200 главная, Docs, оба урока Core, Showcase, Downloads, Releases,
+sitemap; 17 связанных CSS/JS/images/search/example assets; корректный canonical и
+/robot2D/ base, без example.invalid в HTML; custom 404 возвращает 404.
+PR run 38996611808: check success, deploy skipped, обычный PR сайт не меняет.
+
+Локально: actionlint, pnpm test 6/6, Astro check без диагностик, формат,
+20 страниц и 723 ссылки/ресурса для настоящего адреса Pages; вариант корня домена
+также собирается и проверяется. C++ не менялся, native сборка/тесты на этом шаге
+не повторялись; обязательные hooks пройдены. Computer-use не применялся.
+Инструкция — website/deploy/github-pages.md. Следующий шаг: ручная визуальная,
+клавиатурная и поисковая приёмка; merge PR #134 включает обычный автодеплой из dev.

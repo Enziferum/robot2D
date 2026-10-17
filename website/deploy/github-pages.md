@@ -20,7 +20,7 @@ Workflow: [Website](../../.github/workflows/website.yml).
 подтверждены `build_type: workflow`, HTTPS и адрес
 **https://enziferum.github.io/robot2D/**. После включения Pages GitHub создал ограничение окружения: разрешена только
 ветка dev. Первый deploy из WEB-02 был отклонён до запуска шагов; для теста
-владелец должен добавить правило Branch → WEB-02, сохранив dev. Сам workflow
+владелец добавил правило Branch → WEB-02, сохранив dev. Сам workflow
 не включает Pages и не меняет настройки репозитория (`enablement: false`).
 Токен GitHub выдаётся Actions автоматически, PAT/секрет для Pages не нужен.
 
@@ -62,7 +62,9 @@ GitHub документирует наличие workflow в default branch ка
 изменение default branch не понадобились. Используйте CLI, если кнопки ещё нет.
 
 Статус — Actions → Website → check/deploy; после успеха адрес показан в summary
-и deployment github-pages. Только успешный deploy и HTTP-проверка подтверждают,
+и deployment github-pages. Первый успешный deploy из WEB-02: [run 38996920057](https://github.com/Enziferum/robot2D/actions/runs/38996920057), commit `209c513`. По HTTPS проверены главная, Docs, оба урока, Showcase, Downloads/Releases, sitemap, 17 связанных ресурсов и custom 404. Визуальная/поисковая приёмка остаётся ручной.
+
+Только успешный deploy и HTTP-проверка подтверждают,
 что сайт доступен: один upload artifact ещё не означает публикацию.
 
 ## Свой домен позднее
