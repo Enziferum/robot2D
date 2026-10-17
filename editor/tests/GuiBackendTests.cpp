@@ -433,14 +433,14 @@ int main(int argc, char** argv) {
                 WindowContext options(false, false,
                     api45 ? WindowContext::RenderApi::OpenGL4_5 : WindowContext::RenderApi::OpenGL4_3);
                 RenderAPI::getOpenGLVersion() = api45 ? RenderApi::OpenGL4_5 : RenderApi::OpenGL4_3;
-                Window window({128, 128}, "GUI backend tests", options);
+                DesktopRuntime desktop(DesktopRuntime::Ownership::Borrowed);
+                Window window(desktop, {128, 128}, "GUI backend tests", options);
                 if(scenario == "lifecycle") lifecycle(window);
                 else if(scenario == "renderer") {
                     coreInterop(window); renderer(window);
                 }
                 else if(scenario == "rollback") rollback(window);
                 else CHECK(false && "unknown scenario");
-                glfwDestroyWindow(static_cast<GLFWwindow*>(window.getRaw()));
             }
             glfwTerminate();
         }

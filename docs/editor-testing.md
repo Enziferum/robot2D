@@ -131,3 +131,21 @@ IMGUI-02: 3 headless и 6 graphics сценариев OpenGL 4.3/4.5 в обще
 Editor::render + Gui после стабилизации docking. Он ловит порчу Core EBO при
 создании SceneGrid; renderer-43/45 также проверяют сохранность VAO при создании
 IndexBuffer и чередование Core/FBO/GUI нескольких кадров.
+
+## Window/Desktop lifetime
+
+CORE-01 добавляет DesktopWindowTests и цель robot2D-desktop-window-tests в suite.
+Headless: core-desktop-uninitialized (borrowed GLFW без init, пустой Cursor),
+core-desktop-editor-shutdown (destroy редактора до setup и повторно).
+Graphics: core-desktop-lifetime, render-lifetime, rollback, borrowed, events,
+engine. Запуск: `ctest --test-dir <build-dir> -R core-desktop --output-on-failure`.
+Недоступность реального GLFW/OpenGL probe даёт 77/Skipped; ошибка проверяемого
+контракта после успешного probe является failure. Для проверки rollback есть
+узкая внутренняя подстановка create/destroy/loader функций, без public fault flags.
+
+Проверяется фактический размер клиента до/после создания второго окна: оконная
+система вправе ограничить запрошенные размеры. Native handles больше не удаляются
+тестами вручную после Window: их уничтожает владелец. Renderer cleanup наблюдает
+контекст непосредственно при удалении GL buffers. Engine проверяется при обычном
+выходе и исключениях setup/кадра/cleanup, включая смену контекста в destroy.
+Ручная приёмка Window/Desktop приведена в [core-api.md](core-api.md).

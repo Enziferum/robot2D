@@ -1,8 +1,8 @@
 # robot2D Core API
 
 Документированы ResourceHandler, Message/MessageBus и их память, Logger/Assert,
-FileInputStream, Time/Clock и Vector2/Vector3. В Doxygen включены эти Core-заголовки
-и каталог Util; подробности событий отдельно в [core-events.md](https://github.com/Enziferum/robot2D/blob/CORE-02/docs/core-events.md).
+FileInputStream, Time/Clock, Vector2/Vector3 и первый шаг Window/Desktop. В Doxygen включены эти Core-заголовки
+и каталог Util; подробности событий отдельно в [core-events.md](https://github.com/Enziferum/robot2D/blob/dev/docs/core-events.md).
 ECS, внутренние реализации и сторонние библиотеки в этот справочник не входят.
 
 ## ResourceHandler
@@ -303,3 +303,104 @@ compound operations, z в равенстве и передачу исключе�
 Проверки объединённой версии: headless 160/160, полный CTest с graphics 201/201,
 строгий анализ и чистая генерация Doxygen. Проверки старых веток отдельно не
 подменяют эти результаты. API тайминга остаётся только согласованным контрактом.
+
+## Window/Desktop: явное владение и polling
+
+Первый шаг Window/Desktop, CORE-01, 2026-10-17. Изменение C++ API требует
+пересборки и миграции конструкторов; старый ABI не сохраняется.
+
+```cpp
+robot2D::DesktopRuntime desktop;
+robot2D::RenderWindow window(desktop, {1280, 720}, "Example");
+std::uint64_t frameNumber = 0;
+while(window.isOpen()) {
+    desktop.processEvents();
+    auto events = window.takeEvents(++frameNumber);
+    // Здесь приложение обрабатывает events и при необходимости вызывает cancelClose().
+    if(!window.isOpen()) break;
+    // Сначала маршрутизация событий и решение о закрытии, затем update/render.
+    if(window.isKeyPressed(robot2D::Key::W)) { /* удержание */ }
+}
+```
+
+`Engine::run()` создаёт runtime перед RenderWindow. Приложение и GUI заимствуют
+окно. Runtime должен жить дольше всех своих окон и Cursor с native handle.
+Объекты создаются, используются и уничтожаются в главном потоке. Runtime,
+Window и Cursor не копируются и не перемещаются. Runtime проверяет поток при
+pump/создании/polling; остальные оконные методы имеют такое же предусловие.
+В Debug при разрушении runtime проверяется отсутствие живых окон/курсоров.
+
+У Window собственный unique_ptr backend; backend единолично владеет GLFWwindow.
+`getRaw()` — заимствованный handle до разрушения Window. Нельзя самостоятельно
+уничтожать его или заменять user pointer/callbacks backend. Создание другого
+окна не заменяет первое; это гарантия владения, а не поддержка multi-viewports
+или общего многооконного renderer. Перед GL-работой вызывается `makeCurrent()`.
+Разрушение RenderWindow выбирает его контекст до разрушения RenderTarget,
+затем Window уничтожает native window. Производные классы сами освобождают
+свои GPU-ресурсы с нужным контекстом до разрушения базовых классов.
+
+`close()` только устанавливает запрос закрытия: `isOpen()` становится false,
+но окно и контекст остаются живыми. `cancelClose()` отменяет запрос.
+Физическое уничтожение выполняет деструктор. Публичного destroy native window нет.
+
+`DesktopRuntime::Ownership::Owned` выполняет glfwInit/glfwTerminate. Для тестов
+и embedding с внешним GLFW используется `Ownership::Borrowed`: GLFW уже должен
+быть инициализирован, runtime его не завершает. Внешний владелец не завершает
+GLFW до удаления runtime и всех его клиентов. Одновременно разрешён один
+DesktopRuntime; повторное создание отклоняется без изменения активного runtime.
+Глобальный joystick callback временно принадлежит runtime и восстанавливается
+при его разрушении; предыдущий callback в этот период не вызывается. Error
+callback GLFW не заменяется. GLFW init не является счётчиком владельцев.
+
+Порядок shutdown: выбрать контекст окна → завершить потребителей GUI → shutdown
+GUI и его GPU-ресурсов → освободить ресурсы приложения/редактора → RenderTarget →
+native window → оставшиеся native cursors → runtime/GLFW. Курсоры GUI завершаются
+вместе с GUI. `Cursor()` создаёт только пустой объект для возврата системного
+курсора; native create требует `Cursor(desktop)`.
+
+После подключения окна Engine вызывает Application::destroy ровно один раз как при
+обычном выходе, так и при исключении из setup/цикла. destroy должен работать с
+частичной инициализацией. При ошибке destroy во время раскрутки стека исходное
+исключение сохраняется, вторичная ошибка выводится в stderr; объект приложения
+уничтожается до окна. Редактор продолжает независимые стадии очистки после
+ошибки одной стадии и сообщает первую ошибку. Повторный destroy редактора пуст.
+Это не механизм восстановления после access violation/аварии процесса.
+
+Ошибки GLFW/config/loader передаются через WindowCreationError со stage,
+скопированной диагностикой и nativeErrorCode. Стадии: Initialization, Validation,
+NativeWindow, ContextLoader. Нулевые/непредставимые в int размеры и неподдержанный
+RenderApi отклоняются. При отказе освобождается частичное native window,
+восстанавливается прежний текущий контекст и для него перезагружается таблица
+GLAD, если загрузчик успел её изменить. Если прежний current context был null,
+для восстановления GLAD временно используется живое окно runtime, затем current
+снова становится null. Другие окна и GLFW не завершаются;
+библиотека не вызывает exit. В GLAD ошибке nativeErrorCode равен 0. Стандартные исключения выделения памяти
+передаются без подмены. Успешное создание выбирает контекст нового окна.
+
+Клавиатура/мышь: window.isKeyPressed(key), window.isMouseButtonPressed(button),
+Keyboard::isKeyPressed(window, key), isMousePressed(window, button). Неизвестные
+коды вне диапазона GLFW возвращают false. Это сырое состояние окна, без политики
+GUI: EditorCamera/ShortCut получают своё окно, C# glue берёт его из ScriptService.
+Захват GUI и область Game View по-прежнему задаются маршрутизацией приложения;
+отдельная политика runtime polling для INPUT-01 остаётся будущей работой.
+Короткие press/release нельзя восстанавливать polling: для них используются
+упорядоченные Event/FrameEvents, будущая fixed-step доставка отдельно согласована.
+
+Джойстики опрашиваются через desktop.isJoystickAvailable / joystickIsGamepad /
+getJoystickGamepadInput либо free-функции с явным desktop. Native callback
+обрабатывает все GLFW joystick IDs и ставит события в очереди зарегистрированных
+окон в порядке получения. WindowID/политика нескольких независимых получателей
+остаётся следующему этапу. При отсутствии/некорректном ID polling возвращает false.
+
+Один desktop.processEvents() на итерацию обрабатывает все окна; совместимый
+window.processEvents() делегирует ему. Ошибки C callbacks сохраняются и
+передаются через C++ pump. Native callbacks не выполняют пользовательские
+обработчики или GL viewport операции. Очереди читаются отдельно для каждого окна.
+Sleep, новый scheduler/fixedDt и multi-viewports этим шагом не добавляются.
+
+Постоянные регрессии: DesktopWindowTests в editor suite, включая headless отказ
+borrowed runtime без init и graphics-сценарии lifetime/render-lifetime/rollback/
+borrowed/events/engine. Ручная приёмка: открыть проект → Scene/Game, движение
+камеры и shortcuts → текстовый ввод с захватом GUI → resize/сворачивание →
+закрытие с Save/Discard/Cancel → повторный запуск. Сценарий не считается
+пройденным без запуска пользователем.
