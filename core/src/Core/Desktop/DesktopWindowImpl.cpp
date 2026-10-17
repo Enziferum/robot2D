@@ -174,7 +174,8 @@ namespace robot2D::priv {
                       std::to_string(opengl_major) + "." + std::to_string(opengl_minor));
         }
 #endif
-        glViewport(0, 0, static_cast<int>(m_size.x), static_cast<int>(m_size.y));
+        const auto pixels = getFramebufferSize();
+        glViewport(0, 0, static_cast<int>(pixels.x), static_cast<int>(pixels.y));
     }
 
     bool DesktopWindowImpl::isOpen() const {
@@ -206,6 +207,8 @@ namespace robot2D::priv {
         glfwSetMouseButtonCallback(m_window, mouse_callback);
         glfwSetFramebufferSizeCallback(m_window, framebuffer_callback);
         glfwSetWindowSizeCallback(m_window, size_callback);
+        glfwSetWindowContentScaleCallback(m_window, content_scale_callback);
+        glfwSetWindowIconifyCallback(m_window, iconify_callback);
         glfwSetWindowMaximizeCallback(m_window, maximized_callback);
         glfwSetDropCallback(m_window, dragdrop_callback);
         glfwSetWindowFocusCallback(m_window, focus_callback);
@@ -275,9 +278,30 @@ namespace robot2D::priv {
         return {static_cast<unsigned>(width), static_cast<unsigned>(height)};
     }
 
-    void DesktopWindowImpl::framebuffer_callback([[maybe_unused]] GLFWwindow* window,
-        [[maybe_unused]] int width, [[maybe_unused]] int height) {
-        // Render passes query framebuffer size and select their own viewport.
+    vec2f DesktopWindowImpl::getContentScale() const {
+        vec2f scale{1.f, 1.f};
+        glfwGetWindowContentScale(m_window, &scale.x, &scale.y);
+        return scale;
+    }
+
+    bool DesktopWindowImpl::isMinimized() const {
+        return glfwGetWindowAttrib(m_window, GLFW_ICONIFIED) == GLFW_TRUE;
+    }
+
+    void DesktopWindowImpl::framebuffer_callback(GLFWwindow* wnd, int width, int height) {
+        auto* window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
+        if(window) window -> enqueue(Event::FramebufferResized{{static_cast<unsigned>(width),
+                    static_cast<unsigned>(height)}});
+    }
+
+    void DesktopWindowImpl::content_scale_callback(GLFWwindow* wnd, float x, float y) {
+        auto* window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
+        if(window) window -> enqueue(Event::ContentScaleChanged{x, y});
+    }
+
+    void DesktopWindowImpl::iconify_callback(GLFWwindow* wnd, int state) {
+        auto* window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
+        if(window) window -> enqueue(Event::MinimizedChanged{state == GLFW_TRUE});
     }
 
     void DesktopWindowImpl::maximized_callback([[maybe_unused]] GLFWwindow* wnd, [[maybe_unused]] int state) {
@@ -366,6 +390,9 @@ namespace robot2D::priv {
     }
 
     void DesktopWindowImpl::setSize(const vec2u& size) {
+        if(!size.x || !size.y || size.x > static_cast<unsigned>(std::numeric_limits<int>::max()) ||
+            size.y > static_cast<unsigned>(std::numeric_limits<int>::max()))
+            throw std::invalid_argument("Window::setSize requires positive representable logical dimensions");
         glfwSetWindowSize(m_window, static_cast<int>(size.x), static_cast<int>(size.y));
     }
 

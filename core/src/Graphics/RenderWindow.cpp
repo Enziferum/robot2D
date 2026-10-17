@@ -19,6 +19,7 @@
    source distribution.
 *********************************************************************/
 #include <stdexcept>
+#include <limits>
 #include <robot2D/Graphics/GL.hpp>
 #include <robot2D/Graphics/RenderWindow.hpp>
 #include <robot2D/Util/Logger.hpp>
@@ -30,6 +31,7 @@ namespace robot2D {
         Window{desktop}, RenderTarget{m_win_size,
             m_context.renderApi,
             m_context.renderDimensionType} {
+        synchronizeSize();
     }
 
     RenderWindow::RenderWindow(DesktopRuntime& desktop, const vec2u& size,
@@ -39,6 +41,7 @@ namespace robot2D {
         RenderTarget(m_win_size,
             context.renderApi,
             m_context.renderDimensionType) {
+        synchronizeSize();
     }
 
 
@@ -46,8 +49,34 @@ namespace robot2D {
         makeCurrent();
     }
 
-    void RenderWindow::onResize(const int& width, const int& height) {
-        resize({width, height});
+    bool RenderWindow::synchronizeSize() {
+        return synchronizeSize(getMetrics());
+    }
+
+    bool RenderWindow::synchronizeSize(const WindowMetrics& metrics) {
+        if(!metrics.drawable()) return false;
+        const auto limit = static_cast<unsigned>(std::numeric_limits<int>::max());
+        if(metrics.logicalSize.x > limit || metrics.logicalSize.y > limit ||
+            metrics.framebufferSize.x > limit || metrics.framebufferSize.y > limit)
+            throw std::invalid_argument("RenderWindow metrics exceed the native dimension range");
+        makeCurrent();
+        m_render -> setSurfaceSize(metrics.logicalSize, metrics.framebufferSize);
+        m_size = metrics.logicalSize;
+        glViewport(0, 0, static_cast<int>(metrics.framebufferSize.x), static_cast<int>(metrics.framebufferSize.y));
+        return true;
+    }
+
+    vec2f RenderWindow::mapClientToCoords(const vec2f& point, const View& view, unsigned int layerID) const {
+        (void)layerID;
+        const auto metrics = getMetrics();
+        if(!metrics.drawable()) return view.getCenter();
+        const auto viewport = m_render -> getViewport(view);
+        if(!viewport.width || !viewport.height) return view.getCenter();
+        const vec2f pixels{point.x * metrics.framebufferSize.x / metrics.logicalSize.x,
+                           point.y * metrics.framebufferSize.y / metrics.logicalSize.y};
+        const vec2f normalized{-1.f + 2.f * (pixels.x - viewport.lx) / viewport.width,
+                               1.f - 2.f * (pixels.y - viewport.ly) / viewport.height};
+        return view.getInverseTransform().transformPoint(normalized);
     }
 
     void RenderWindow::resize(const vec2i& newSize) {
@@ -56,6 +85,5 @@ namespace robot2D {
         m_render -> setSize({static_cast<unsigned int>(newSize.x), static_cast<unsigned int>(newSize.y)});
         m_size = vec2u { static_cast<unsigned int>(newSize.x),
                          static_cast<unsigned int>(newSize.y)};
-        m_win_size = m_size;
     }
 }

@@ -149,3 +149,22 @@ engine. Запуск: `ctest --test-dir <build-dir> -R core-desktop --output-on-
 контекст непосредственно при удалении GL buffers. Engine проверяется при обычном
 выходе и исключениях setup/кадра/cleanup, включая смену контекста в destroy.
 Ручная приёмка Window/Desktop приведена в [core-api.md](core-api.md).
+
+
+### Window metrics (CORE-01, 2026-10-17)
+
+`core-desktop-metrics-values` — headless нулевые/minimized метрики и различимость
+typed payload. `core-desktop-metrics` — actual native queries/валидация setSize,
+synthetic unequal/fractional logical/pixels, framebuffer-only resize, custom camera,
+zero/minimize/restore без GL при недоступном target. `core-desktop-metrics-events` —
+FIFO size/pixels/contentScale/minimize/restore с frame/sequence и без изменения чужого
+GL context/viewport. Последние два регистрируются при RB2D_EDITOR_GRAPHICS_TESTS=ON.
+Прежние batch-window-resize и event-routing tests сохраняют проверки совместимости.
+
+Ручная приёмка: запустить новый editor exe из его editor working directory;
+открыть проект, проверить Scene/Game и текстовый ввод; resize/maximize/restore;
+свернуть на несколько секунд, восстановить, повторить; закрыть с Save/Discard/Cancel;
+повторно открыть проект. При наличии двух мониторов перенести главное окно между
+100/150/200%: геометрия/клики/размер поверхности корректны, contentScale notification
+видна в Events. Горячая смена шрифтов пока не ожидается. Проверки с synthetic snapshots
+не объявляются реальным multi-monitor/DPI или OS minimize тестом.

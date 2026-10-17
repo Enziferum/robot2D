@@ -249,3 +249,13 @@ DesktopRuntime, единоличное владение окном, коррек
 проверки и ограничения — [project-roadmap.md](project-roadmap.md).
 Это не завершение всего CORE-01: timing/RuntimeSession только согласованы,
 multi-viewports/WindowID/DPI/IME/clipboard и crash reports остаются отдельно.
+
+
+### CORE-01: размеры/content scale/minimized — 2026-10-17
+
+Window/Desktop lifetime #137 слит в dev после CI и пользовательской приёмки.
+Согласован следующий небольшой этап: actual logical/framebuffer metrics,
+content scale конкретного окна и ordered notifications, минимизация без остановки
+updates/pump, правильный native viewport и сохранение камеры. Реализация/проверки
+ведутся в ветке CORE-01-window-metrics и project-roadmap.md; CORE-01 #110 повторно открыта.
+Динамические шрифты, timing/RuntimeSession и multi-viewports не входят в этот этап.

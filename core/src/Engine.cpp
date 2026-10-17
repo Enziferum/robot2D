@@ -113,6 +113,8 @@ namespace robot2D {
                 m_application -> update(timePerFrame);
             }
 
+            // Native metrics are current even when framebuffer changes without a logical resize.
+            renderWindow.synchronizeSize();
             m_application -> guiUpdate(delta);
             m_application -> render();
         }
