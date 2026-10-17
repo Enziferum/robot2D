@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="logo/logo.png" alt="robot2D logo" width="112">
+  <img src="website/public/brand/robot2d-logo-02-512.png" alt="robot2D — Robot Lab logo" width="160">
   <h1>robot2D</h1>
   <p><strong>A 2D game engine built in C++, with a visual editor and C# scripting.</strong></p>
   <p>A personal project for learning, experimenting, and making games.</p>
@@ -8,10 +8,11 @@
     <a href="docs/release-roadmap.md"><img src="https://img.shields.io/badge/status-in%20development-238b83" alt="In development"></a>
   </p>
   <p>
+    <a href="https://enziferum.github.io/robot2D/">Website</a> ·
+    <a href="https://enziferum.github.io/robot2D/docs/">Documentation</a> ·
     <a href="#inside-robot2d">Features</a> ·
     <a href="#build-from-source">Build from source</a> ·
     <a href="#road-to-10">Roadmap</a> ·
-    <a href="#documentation">Documentation</a> ·
     <a href="https://github.com/Enziferum/robot2D/issues">Issues</a>
   </p>
 </div>
@@ -19,12 +20,13 @@
 ---
 
 robot2D brings a C++ engine core, a scene editor, and C# gameplay scripting
-into one project. The direction is an editor-centered workflow: compose a scene,
-add behavior, try it in Play mode, and eventually build a game to share.
+into one project. Compose scenes in the editor, add C# behavior, try it in Play
+mode, and run a packaged scene in the standalone player.
 
 **Development preview.** The current line is **0.8.0-dev**. Core systems and editor
-tools exist, while the complete create → play → standalone build workflow is
-still being developed. APIs and project formats may change before 1.0.
+tools, a standalone player, and the first Robot Lab demo stage are implemented.
+The complete create → play → export workflow and release acceptance are still
+in progress. APIs and project formats may change before 1.0.
 
 ## Inside robot2D
 
@@ -35,9 +37,25 @@ still being developed. APIs and project formats may change before 1.0.
 | Scene editor | Scene viewport, hierarchy, Inspector, asset browser, and transform tools. |
 | Gameplay scripting | C# integration through Mono, script instances, and editor/runtime bindings. |
 | Animation tools | Sprite-sheet slicing, animation clips, an Animation panel, and playback systems. |
-| Project resources | Project-relative asset references and the first import and packaging groundwork. |
+| Physics | Box2D integration with rigid bodies, colliders, collision filters, and C# collision/trigger callbacks. |
+| Project resources | Project-relative assets, prefab serialization, and import and packaging groundwork. |
+| Standalone player | A separate game executable with a launch manifest and a bundled Mono runtime. |
 
-These describe existing systems, not a claim that every workflow is finished.
+## Try and learn
+
+- **[Robot Lab](examples/RobotLabPlatformer/README.md)** — the first C# platformer
+  stage: movement, jumping across platforms, and recovery after a fall. Follow
+  its README to prepare a local project copy and open it in the editor. Cells,
+  hazards, checkpoints, and the complete game loop are planned stages.
+- **[Core / C++ lessons](https://enziferum.github.io/robot2D/docs/core/)** — build
+  your first sprite and add keyboard movement with the engine library.
+- **[Your first scene](https://enziferum.github.io/robot2D/docs/first-scene/)** and
+  **[C# scripting](https://enziferum.github.io/robot2D/docs/scripting/)** —
+  introductory editor and gameplay guides.
+- **[Standalone player](docs/player.md)** — launch manifest, build commands,
+  packaging, and current limits. The test arena is an infrastructure diagnostic.
+
+These describe existing systems; release acceptance is still in progress.
 Undo/Redo, runtime object lifecycle, resource handling, and standalone builds have
 [tracked work and acceptance criteria](docs/release-roadmap.md).
 
@@ -45,7 +63,7 @@ Undo/Redo, runtime object lifecycle, resource handling, and standalone builds ha
 
 | Milestone | Goal |
 | --- | --- |
-| **0.8** | Create, build, and share a small 2D arena game, with animation, C# gameplay, and a standalone player. |
+| **0.8** | Create, build, and share Robot Lab, a small 2D platformer with animation, C# gameplay, and a standalone player. |
 | **0.9** | Develop the architecture, scene transitions, audio, game UI, and editor workflow. |
 | **1.0** | Deliver a stable public tool with documented compatibility, project recovery, a reproducible example, and an installer. |
 
@@ -119,7 +137,15 @@ manual UI checks. To reproduce the CI build and reports, follow the
 
 ## Documentation
 
-| Start here | What you will find |
+Start with the **[documentation website](https://enziferum.github.io/robot2D/docs/)**
+for getting started, editor/C# guides, and Core lessons. The
+[Robot Lab learning path](https://enziferum.github.io/robot2D/docs/learn/)
+connects the demo to the systems behind it. These guides are growing alongside
+the engine; a stable public API reference remains a goal for 1.0.
+
+Contributor instructions and implementation contracts remain in `docs/`:
+
+| Development reference | What you will find |
 | --- | --- |
 | [Project roadmap](docs/project-roadmap.md) | Shared direction for Core, ECS, rendering, Editor, and runtime. |
 | [Release roadmap](docs/release-roadmap.md) | Goals, dependencies, and acceptance criteria for 0.8–1.0. |
@@ -130,9 +156,6 @@ manual UI checks. To reproduce the CI build and reports, follow the
 | [Project workflow](docs/project-workflow.md) | Task IDs, branches, contribution workflow, and Git hooks. |
 | [Versioning](docs/versioning.md) | Development, release-candidate, and stable version rules. |
 
-These are development documents. A beginner tutorial and a stable public C# API
-reference are part of the road to 1.0.
-
 ## Repository layout
 
 ```text
@@ -140,7 +163,9 @@ core/           C++ engine library, core tests, and sandbox
 editor/         Scene editor, C# integration, resources, and editor tests
 cmake/          Shared build configuration
 scripts/        Build, validation, and development tools
-docs/           Design notes, workflow, and release plans
+examples/       Robot Lab source project and preparation instructions
+website/        Public website, guides, Core lesson sources, and branding
+docs/           Development contracts, workflow, design notes, and release plans
 ```
 
 ## Follow the project
