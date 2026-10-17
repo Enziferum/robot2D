@@ -116,6 +116,7 @@ for (const route of [
   'docs/core/sprite-bounds/',
   'docs/core/sprite-animation/',
   'docs/core/camera-view/',
+  'docs/core/sprite-collisions/',
   'docs/core/application-events/',
   'docs/core/graphics-resources/',
   'docs/core/ecs/',

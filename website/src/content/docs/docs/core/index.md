@@ -48,3 +48,4 @@ Then follow the buildable examples in order:
 - [Lesson 03: coordinates, origin and bounds](sprite-bounds/) — logical window size and keeping a sprite inside it.
 - [Lesson 04: texture rectangles and animation](sprite-animation/) — a four-frame procedural atlas and elapsed-time playback.
 - [Lesson 05: camera and mouse coordinates](camera-view/) — a larger world, aspect-aware View and client-to-world mapping.
+- [Lesson 06: simple sprite collisions](sprite-collisions/) — AABB, static walls and movement that slides along a surface.

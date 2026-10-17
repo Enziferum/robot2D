@@ -1,0 +1,184 @@
+---
+title: 'Lesson 06: simple sprite collisions'
+description: Detect overlapping sprite rectangles and stop a moving player at static walls while allowing it to slide.
+---
+
+import { Code } from '@astrojs/starlight/components';
+import collision from '../../../../../public/examples/sprite-collisions/Collision.hpp?raw';
+import application from '../../../../../public/examples/sprite-collisions/CollisionSprite.hpp?raw';
+import main from '../../../../../public/examples/sprite-collisions/main.cpp?raw';
+
+Move the Robot Lab sprite through an arena with seven solid walls. The player
+stops at a wall and can slide along it. Its rectangular backing turns amber while
+movement is blocked. This example targets **0.8.0-dev**, starting from **bde7d42**
+and the Window metrics API from Core baseline **79369b2**.
+
+We reuse the loading/render lifetime from [lesson 01](../first-sprite/), held-key
+input from [lesson 02](../keyboard-movement/) and the origin calculation from
+[lesson 03](../sprite-bounds/). Animation and camera from lessons 04–05 remain
+separate examples so the collision response is easier to inspect.
+
+## What counts as a collision?
+
+An **axis-aligned bounding box** (AABB) is a rectangle whose sides stay parallel to
+the X and Y axes. For two positive-size rectangles A and B, their interiors overlap
+when all four comparisons hold:
+
+```text
+A.left   < B.right
+A.right  > B.left
+A.top    < B.bottom
+A.bottom > B.top
+```
+
+These strict comparisons treat touching edges as contact, without penetration.
+That matters when the player rests against a wall: it must still be able to move
+parallel to the surface or away from it. An `overlaps()` query only detects a
+condition; it does not move either sprite or determine a response.
+
+Our boxes use the complete sprite quad, including transparent PNG padding. They
+are not pixel-perfect masks. The colored rectangle behind the player shows exactly
+which area is solid. A later game can define a separate, smaller collision box.
+
+## Position, size and origin still matter
+
+For the unrotated sprites in this lesson:
+
+```text
+left = position.x - origin.x * size.x
+top  = position.y - origin.y * size.y
+right = left + size.x
+bottom = top + size.y
+```
+
+The player's normalized origin is `(0.5, 0.5)`, while walls use `(0, 0)`. A 96-unit
+player centered at X = 312 has its right edge at 360, exactly against the central
+wall's left edge. Comparing sprite positions alone would miss their extents.
+
+As in lesson 03, we compute these boxes explicitly: arbitrary-origin calculations
+in `Sprite::getLocalBounds()` are unfinished in this baseline. We do not change
+Core to teach this example. Positive sizes, normalized origins, zero rotation and
+default scale are prerequisites for the helper below.
+
+## Resolve X, then Y
+
+A simple “move, test, undo everything” approach also cancels movement along a wall.
+Instead, resolve each axis separately:
+
+1. Compute the desired displacement from held input and `deltaTime`.
+2. For X, consider walls whose vertical intervals overlap the player's current box.
+3. Shorten horizontal movement to the nearest wall face in its direction.
+4. Apply X and recompute the player box.
+5. Repeat on Y using horizontal overlap at the resolved X position.
+
+When moving right, the maximum allowed displacement is
+`wall.left - player.right`. Moving left uses `wall.right - player.left`.
+The same rule applies vertically. We keep the nearest allowed distance over all
+walls, so their order does not determine which wall stops the player.
+
+<Code code={collision} lang="cpp" title="Collision.hpp" />
+
+This checks the whole displacement on each axis, not only the final overlap. Even
+a step large enough to cross a one-unit-thick wall stops at its near face.
+The path is deliberately **X followed by Y**: it is not an exact continuous sweep
+along the original diagonal. Axis order can affect corner behavior. It is a useful
+small kinematic solver, not a general physics engine or a guarantee for moving
+obstacles, rotated shapes, slopes or high-speed diagonal simulation.
+
+The player must start outside all walls. The helper does not repair an overlapping
+spawn or teleport; choose a valid spawn and validate destinations before using
+them. An already embedded player needs a separate depenetration policy. All walls
+remain static, and only the player moves.
+
+`CollisionResult` reports whether this step's requested displacement was shortened.
+It is not a collision-enter/exit event or persistent contact manifold. Resting
+without pushing does not set a blocked flag. Non-finite displacement is ignored.
+
+## Put it into an application
+
+<Code code={application} lang="cpp" title="CollisionSprite.hpp" />
+
+The arena is a fixed **800 × 600 world**, with a 24-unit border and three interior
+obstacles. Geometry is shared by drawing and collision: each wall's bounds come
+from that same sprite. A one-pixel white texture supplies the tinted solid quads;
+the player borrows the original PNG loaded by `FirstSprite`.
+
+`simulate()` performs input-driven motion and collision response during `update()`.
+The existing input helper normalizes diagonals, tracks aliases independently and
+clears held keys after focus loss. `render()` only shows the resulting positions
+and contact feedback. No movement depends on render frame count.
+
+The default view uses logical window coordinates. Resizing changes how much is
+visible; it does not rearrange the fixed arena or change collision coordinates.
+Use at least 800 × 600 logical client units to see it all. Minimized or unavailable
+surfaces skip movement and rendering in this example while Engine continues
+processing events. Camera-space presentation can be added later without changing
+world-space collision tests.
+
+Both textures are released in `destroy()` while the GL context is alive. A sprite
+borrows its texture; it does not transfer ownership. The white texture is uploaded
+once during `setup()`, not each frame.
+
+<Code code={main} lang="cpp" title="main.cpp" />
+
+## Build and run
+
+Use the dependencies and native toolchain described in [lesson 01](../first-sprite/).
+From the repository root, preserve an existing build's generator and toolchain:
+
+```sh
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DRB2D_BUILD_CORE_EXAMPLES=ON
+cmake --build build --config Release --target robot2D-sprite-collisions robot2D-sprite-collisions-test -j 4
+ctest --test-dir build -C Release -R '^core-lesson\.collision-' --output-on-failure
+```
+
+CMake copies `assets/robot.png` beside the executable. Run from that output directory
+or supply an explicit PNG path as the first argument. Keep matching runtime DLLs
+on PATH on Windows; for MinGW, use the matching MSYS2 MinGW64 environment.
+
+Windows PowerShell:
+
+```powershell
+Set-Location build/examples/sprite-collisions/Release
+.\robot2D-sprite-collisions.exe
+```
+
+Linux:
+
+```sh
+cd build/examples/sprite-collisions/Release
+./robot2D-sprite-collisions
+```
+
+Move with WASD/arrows; Escape exits. Push into each side of the border and central
+wall, hold a diagonal into a wall and try moving away. The rectangular backing
+should turn amber only while an attempted movement component is blocked. It should
+not enter a solid. Switch focus while holding a direction and verify that movement
+does not resume until a fresh press.
+
+## Automated checks and limits
+
+Five headless scenarios cover box corners against actual sprite transforms,
+touching/overlap, all four approach directions, sliding/corners, nearest-wall
+selection in either wall order, thin-wall crossing, invalid displacement and the
+published application's input/focus behavior at several update rates.
+
+An optional graphics test runs the actual application's setup/update/render in a
+hidden GL window, checks wall/contact pixels and nine rendered quads, then releases
+resources twice. It needs a working OpenGL context. See the
+[example README](../../../examples/sprite-collisions/README.md) for its commands.
+A skipped graphics test is not a rendering pass. These checks do not replace manual
+acceptance of a visible window or real keyboard input; computer-use is not used.
+
+Try changing one wall's size and moving the player with origin `(0, 0)`. Its
+rendered rectangle and collision box should still agree. Then compare the solver
+with a final-position-only overlap check using a deliberately large displacement:
+the latter can miss a thin wall entirely.
+
+Download [Collision.hpp](../../../examples/sprite-collisions/Collision.hpp),
+[CollisionSprite.hpp](../../../examples/sprite-collisions/CollisionSprite.hpp),
+[main.cpp](../../../examples/sprite-collisions/main.cpp),
+[CMakeLists.txt](../../../examples/sprite-collisions/CMakeLists.txt) and
+[LICENSE.txt](../../../examples/sprite-collisions/LICENSE.txt).
+Keep the lesson 01 and 02 directories alongside this example, or use the complete
+repository checkout. This is not a standalone installed SDK.
