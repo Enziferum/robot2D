@@ -34,9 +34,19 @@ namespace robot2D::priv {
     /// \brief our desktop backend is GLFW
     class DesktopWindowImpl : public WindowImpl {
     public:
-        DesktopWindowImpl();
-        DesktopWindowImpl(const vec2u& size, const std::string& name, WindowContext& context);
-        ~DesktopWindowImpl();
+        struct NativeFunctions {
+            GLFWwindow* (*create)(int, int, const char*, GLFWmonitor*, GLFWwindow*) = glfwCreateWindow;
+            void (*destroy)(GLFWwindow*) = glfwDestroyWindow;
+            bool (*loadContext)() = nullptr;
+        };
+        DesktopWindowImpl(DesktopRuntime& desktop, const vec2u& size, const std::string& name,
+            WindowContext& context);
+        DesktopWindowImpl(DesktopRuntime& desktop, const vec2u& size, const std::string& name,
+            WindowContext& context, NativeFunctions functions);
+        ~DesktopWindowImpl() override;
+        void makeCurrent() override;
+        void rethrowCallbackError();
+        void joystickEvent(int id, int action) noexcept;
 
         bool pollEvents(Event& event) override;
         void processEvents() override;
@@ -54,11 +64,6 @@ namespace robot2D::priv {
 
         bool isMousePressed(const Mouse& button)override;
         bool isKeyboardPressed(const Key& key)override;
-        bool isJoystickAvailable(const JoystickType& joystickType) override;
-        bool JoystickIsGamepad(const JoystickType& joystickType) override;
-        bool getJoystickGamepadInput(const JoystickType& joystickType,
-            JoystickGamepadInput& gamepadInput) override;
-
         void setSize(const robot2D::vec2u& size) override;
 
         void setIcon(robot2D::Image&& icon)override;
@@ -86,9 +91,10 @@ namespace robot2D::priv {
             try { m_event_queue.push(std::move(payload)); }
             catch(...) { m_callbackError = std::current_exception(); }
         }
-        void setup();
+        void setup(NativeFunctions functions, bool& loaderStarted);
         void setup_callbacks();
     private:
+        static GLFWwindow* recoveryContext(const DesktopRuntime& desktop) noexcept;
         static void close_callback(GLFWwindow* wnd);
         static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
         static void cursor_callback(GLFWwindow* window, double xpos, double ypos);
@@ -100,9 +106,15 @@ namespace robot2D::priv {
         static void dragdrop_callback(GLFWwindow* wnd, int count, const char** paths);
         static void focus_callback(GLFWwindow* wnd, int focus);
         static void text_callback(GLFWwindow* wnd, unsigned int);
-        static void joystick_callback(int jid, int event);
     private:
-        GLFWwindow* m_window;
+        struct NativeWindowDeleter {
+            void (*destroy)(GLFWwindow*) = glfwDestroyWindow;
+            void operator()(GLFWwindow* window) const noexcept;
+        };
+        DesktopRuntime& m_desktop;
+        std::unique_ptr<GLFWwindow, NativeWindowDeleter> m_nativeWindow;
+        GLFWwindow* m_window; // Borrowed alias of m_nativeWindow, for GLFW calls.
+
         EventQueue m_event_queue;
         std::exception_ptr m_callbackError;
         vec2u m_size;

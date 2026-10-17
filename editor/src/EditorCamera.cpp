@@ -92,7 +92,7 @@ namespace editor {
         robot2D::vec2f delta = (mousePos - m_mousePos) * deltaOffset;
         m_mousePos = mousePos;
 
-        if(robot2D::Window::isMousePressed(robot2D::Mouse::MouseMiddle) && m_leftCntrlPressed) {
+        if(m_window && m_window -> isMouseButtonPressed(robot2D::Mouse::MouseMiddle) && m_leftCntrlPressed) {
             auto center = m_view.getCenter();
             center.x += delta.x * 2.F;
             center.y += delta.y * 2.F;
@@ -130,15 +130,15 @@ namespace editor {
 
     void EditorCamera::update(robot2D::vec2f mousePos, float dt) {
 
-        if(robot2D::Keyboard::isKeyPressed(robot2D::Key::LEFT_CONTROL)) {
+        if(m_window && m_window -> isKeyPressed(robot2D::Key::LEFT_CONTROL)) {
             robot2D::vec2f delta = (mousePos - m_mousePos) * 0.003f;
             m_mousePos = mousePos;
 
-            if(robot2D::isMousePressed(robot2D::Mouse::MouseMiddle))
+            if(m_window -> isMouseButtonPressed(robot2D::Mouse::MouseMiddle))
                 mousePan(delta);
-            if(robot2D::isMousePressed(robot2D::Mouse::MouseLeft))
+            if(m_window -> isMouseButtonPressed(robot2D::Mouse::MouseLeft))
                 mouseRotate(delta);
-            if(robot2D::isMousePressed(robot2D::Mouse::MouseRight))
+            if(m_window -> isMouseButtonPressed(robot2D::Mouse::MouseRight))
                 mouseZoom(delta.y);
         }
 
