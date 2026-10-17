@@ -77,7 +77,7 @@ the entire pass; a HUD in window space would need its own view/pass.
 ## Build and try
 
 ```sh
-cmake -S . -B build -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DRB2D_BUILD_CORE_EXAMPLES=ON
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DRB2D_BUILD_CORE_EXAMPLES=ON
 cmake --build build --config Release --target robot2D-camera-view robot2D-core-lessons-test
 ctest --test-dir build -C Release -R '^core-lesson\.camera$' --output-on-failure
 ```

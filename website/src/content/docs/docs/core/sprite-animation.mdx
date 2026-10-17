@@ -78,7 +78,7 @@ through a `Sprite`: sprites only borrow textures.
 ## Build and verify
 
 ```sh
-cmake -S . -B build -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DRB2D_BUILD_CORE_EXAMPLES=ON
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DRB2D_BUILD_CORE_EXAMPLES=ON
 cmake --build build --config Release --target robot2D-sprite-animation robot2D-core-lessons-test
 ctest --test-dir build -C Release -R '^core-lesson\.animation$' --output-on-failure
 ```

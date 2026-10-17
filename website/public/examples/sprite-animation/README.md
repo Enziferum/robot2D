@@ -3,7 +3,7 @@
 Inside a configured `0.8.0-dev` robot2D checkout (Core metrics baseline 79369b2):
 
 ```sh
-cmake -S . -B build -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DRB2D_BUILD_CORE_EXAMPLES=ON
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DRB2D_BUILD_CORE_EXAMPLES=ON
 cmake --build build --config Release --target robot2D-sprite-animation robot2D-core-lessons-test
 ctest --test-dir build -C Release -R '^core-lesson\.animation$' --output-on-failure
 ```
