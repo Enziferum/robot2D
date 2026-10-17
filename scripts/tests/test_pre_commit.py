@@ -37,7 +37,7 @@ class PreCommitTests(unittest.TestCase):
     def test_managed_api_and_consumer_trigger_build_and_tests(self):
         for path in ("editor/scripting/robot2D-ScriptCore/robot2D-ScriptCore/Scene/Component.cs",
                      "editor/scripting/robot2D-ScriptCore/robot2D-ScriptCore/robot2D-ScriptCore.csproj",
-                     "editor/tests/ManagedApiTests.cs", "editor/res/gen/gen_project.py"):
+                     "editor/tests/ManagedApiTests.cs", "editor/res/gen/gen_project.py", "editor/tests/player_process.py"):
             with self.subTest(path=path), patch("sys.stdout", new_callable=io.StringIO) as output:
                 hook.check([path], plan=True)
                 plan = json.loads(output.getvalue())

@@ -101,3 +101,16 @@ Game/
 
 Эти проверки ещё не выполнялись: player отсутствует. BUILD-01 остаётся открытой;
 данный PR — подготовка и устранение ложного успеха, не выпуск готовой игры.
+
+
+## PLAYER-01: первый consumer
+
+[Standalone player](player.md) реализует launch manifest v1 с именами полей
+Version/Title/StartScene/ScriptAssembly/ScriptCore/MonoLib/MonoEtc/Window.
+Относительные пути ограничены package root. `<build>/player` содержит Game,
+ScriptCore, Mono/runtime helpers и native зависимости; `<build>/player-arena`
+доступен для диагностического запуска при включённых тестах.
+Предыдущие разделы сохраняют историю подготовки BUILD-01. Следующая интеграция
+экспортера должна формировать этот manifest, использовать общий C# builder и
+проверять артефакт player; заглушка ExportTask данным PLAYER шагом не заменяется.
+Чистая машина и готовая поставка ещё требуют приёмки.

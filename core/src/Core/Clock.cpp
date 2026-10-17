@@ -38,7 +38,8 @@ namespace robot2D {
         ++m_restartCount;
         const auto now = std::chrono::steady_clock::now();
         const auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(now - m_restart).count();
-        m_restart = now;
+        // Keep the unreported fraction; resetting to now loses time in a tight loop.
+        m_restart += std::chrono::microseconds(elapsed);
         return { elapsed };
     }
 

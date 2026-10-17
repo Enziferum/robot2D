@@ -29,6 +29,8 @@ namespace editor {
 
         void handleEvents(const robot2D::Event& event);
         void update(float dt) override;
+        robot2D::ecs::System::Ptr cloneSelf(robot2D::ecs::Scene* scene,
+            const std::vector<robot2D::ecs::Entity>& newEntities) override;
 
         void setCamera(IEditorCamera::Ptr camera) {
             m_editorCamera = camera;

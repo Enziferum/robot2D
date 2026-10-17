@@ -34,10 +34,11 @@ file(GLOB_RECURSE INCLS include/editor/*.hpp)
 file(GLOB_RECURSE SRC src/*.cpp)
 
 list(REMOVE_ITEM SRC "${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp")
+include(cmake/Runtime.cmake)
 add_library(robot2D-editor-objects OBJECT ${INCLS} ${SRC})
 add_executable(${PROJECT_NAME} src/main.cpp)
-
 include(cmake/ScriptCore.cmake)
+include(cmake/Player.cmake)
 find_package(Python3 3.8 REQUIRED COMPONENTS Interpreter)
 configure_file(cmake/ScriptBuildConfig.hpp.in "${CMAKE_CURRENT_BINARY_DIR}/generated/editor/ScriptBuildConfig.hpp" @ONLY)
 target_include_directories(robot2D-editor-objects PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/generated")
@@ -60,7 +61,7 @@ endif()
 target_include_directories(robot2D-editor-objects PUBLIC ${MONO_INCLUDE_PATH}
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>")
 
-target_link_libraries(robot2D-editor-objects PUBLIC ${LIBS})
+target_link_libraries(robot2D-editor-objects PUBLIC robot2D-runtime ${LIBS})
 target_link_libraries(${PROJECT_NAME} PRIVATE robot2D-editor-objects)
 
 if(RB2D_BUILD_EDITOR_TESTS)

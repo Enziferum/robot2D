@@ -66,6 +66,7 @@ namespace editor {
 
         //////////////////////////// Base Functions ///////////////////////
         void Init(const std::string& engineDLLPath);
+        void Init(const std::string& engineDLLPath, const std::string& monoLib, const std::string& monoEtc);
         bool runtimeInit(const std::string& filePath) override;
 
         void Shutdown();
@@ -105,7 +106,7 @@ namespace editor {
         bool loadCoreAssembly(const fs::path& );
         bool loadAppAssembly(const fs::path& );
 
-        void InitMono();
+        void InitMono(const std::string& monoLib, const std::string& monoEtc);
         void ShutdownMono();
         void LoadAssemblyClasses();
     };
