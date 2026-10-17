@@ -37,7 +37,6 @@ score pixel changes, item disappearance/restoration and cleanup. Five headless
 scenarios cover state/overlap/reset/focus and a full input-driven route at three
 update rates. Manual acceptance: readable HUD, all five items, repeated overlap,
 restart before/after completion, focus loss, resize/DPI and real keyboard input.
-No computer-use is used.
 
 Code uses the included Zlib license. Robot Lab PNG retains the lesson 01 notice.
 SourceSansPro-Regular.ttf is copied unchanged from editor/res/fonts; SHA256:

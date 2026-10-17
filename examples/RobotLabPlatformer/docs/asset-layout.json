@@ -85,7 +85,6 @@
       "animations": {},
       "seamless_verified": false,
       "collision_tested": false,
-      "prompt": "player-prompt.txt",
       "note": "Source PNG unchanged. Very faint alpha < 8 artifacts exist outside the visible silhouette. Suggested rect excludes these and retains transparent padding. Pivot and display size are proposed, not tested in robot2D.",
       "nonzero_alpha_bounds_px": [
         33,
@@ -146,7 +145,6 @@
       "animations": {},
       "seamless_verified": false,
       "collision_tested": false,
-      "prompt": "platform-prompt.txt",
       "note": "Source PNG unchanged. Very faint alpha < 8 artifacts exist outside the visible silhouette. Suggested rect excludes these and retains transparent padding. Pivot and display size are proposed, not tested in robot2D.",
       "nonzero_alpha_bounds_px": [
         91,
@@ -222,5 +220,6 @@
       ],
       "sha256": "8e0e1a452183f0b6346fa8f972776e83daf221d9bfd658ebbbc7f20fcdc191f9"
     }
-  }
+  },
+  "art_provenance": "AI-generated Robot Lab artwork; source images are preserved unchanged."
 }

@@ -78,7 +78,7 @@ origin/base_path из Pages: для project URL это `/robot2D/`, для со�
 используется как замена настройки Custom domain в GitHub.
 
 Ручная приёмка: главная, оба урока, навигация, изображения, поиск, 404 и доступность
-с разных сетей. Computer-use не применяется. На Pages заголовками/cache/TLS
+с разных сетей. На Pages заголовками/cache/TLS
 управляет GitHub; правила Nginx из резервного VPS-варианта сюда не переносятся.
 
 Справочники: [custom workflows](https://docs.github.com/en/pages/getting-started-with-github-pages/using-custom-workflows-with-github-pages),

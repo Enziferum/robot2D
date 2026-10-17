@@ -1,50 +1,40 @@
-# Как постепенно наполнять документацию
+# Contributing documentation
 
-Публичный справочник остаётся на английском, как текущий сайт. Рабочий процесс
-авторов здесь описан по-русски. Не создаём видимость законченной документации
-пустыми страницами: публикуем небольшие полезные статьи, остальное отмечаем в плане.
+Public guides are written in English. Keep each article focused on one reader
+question and an observable result. Publish working examples and state limitations.
 
-## Два направления
+- Core guides explain C++ contracts verified against the implementation. Pin source
+  links to a commit when describing behavior that depends on a development version.
+- Robot Lab lessons connect scenes and C# scripts to the engine systems they use.
+  Use [the lesson template](content-templates/lesson.md) for setup, source code,
+  expected results, diagnostics, an exercise and asset licensing.
+- Pages live in `src/content/docs/docs/core/` and `src/content/docs/docs/learn/`.
+  Register them in the Starlight sidebar. Relative links resolve from the published
+  page URL, rather than the source file's directory.
+- Import example sources with MDX `?raw` so the displayed code matches the compiled
+  example. Native examples live in `public/examples/`; enable
+  `RB2D_BUILD_CORE_EXAMPLES=ON` to build them in the repository checkout.
+- Add regression checks for example behavior. OpenGL checks require
+  `RB2D_CORE_EXAMPLE_GRAPHICS_TESTS=ON` and a working display/context. Compilation
+  and headless tests do not replace visible rendering, keyboard or DPI acceptance.
+- Before publishing, run `pnpm test`, `pnpm check`, `pnpm format:check`,
+  `pnpm build` and `pnpm verify`. Check navigation, search and the lesson manually.
 
-- **Core:** устройство и контракты C++, проверенные по реализации. Первый набор:
-  карта модулей, application/events, graphics/resources и ECS concepts.
-- **Learn / Robot Lab:** путь пользователя от сцены до игры. Общая установка/C# API —
-  DOC-01 #94, этапы Robot Lab — GAME-04 #138. Нынешний шаг готовит площадку и вводный
-  разбор сцены, а не начинает реализацию всех механик или всего курса.
+Use real engine screenshots for Showcase. Describe development builds accurately;
+do not present planned features or incomplete examples as released functionality.
+Deployment instructions are in [deploy/README.md](deploy/README.md) and
+[deploy/github-pages.md](deploy/github-pages.md).
 
-## Один PR — одна понятная порция
+## Example integration
 
-1. Выбрать вопрос читателя и один наблюдаемый результат.
-2. Для Core сверить код dev и записать commit; ссылаться на pinned source, если
-   объясняются детали API. Учитывать активные ECS/Render задачи, не объявлять их завершёнными.
-3. Для урока использовать content-templates/lesson.md. Нужны стартовая и готовая
-   версии проекта, условия использования ассетов, шаги, проверка результата,
-   диагностика и упражнение. Нет воспроизведения — явно назвать материал черновым/вводным.
-4. Добавить страницу в Starlight sidebar и уместную ссылку с соседней статьи.
-   Markdown хранится в src/content/docs/docs/core или learn; относительные ссылки
-   проверяются по **итоговому URL**, а не файловой структуре.
-5. Проверить pnpm test/check/format:check/build/verify, затем CI и ручную читательскую
-   приёмку. По возможности дать инструкцию человеку, не участвовавшему в её написании.
-6. После merge выложить новый static build по deploy/README.md.
+Lesson 01 imports source files with MDX `?raw`. Its sources and PNG are in
+`public/examples/first-sprite/`, and its graphics check is in
+`tests/core-first-sprite.cpp`. Native CI builds the examples on Windows and Linux;
+the Linux graphics job runs them under Xvfb and treats skipped graphics checks
+as errors.
 
-## Следующие небольшие материалы
-
-| Приоритет | Материал                     | Что нужно для публикации                                         |
-| --------- | ---------------------------- | ---------------------------------------------------------------- |
-| Готово    | Первый Sprite и Texture      | Урок first-sprite, исходники, PNG, CMake target, GL-тесты        |
-| Готово    | События и ввод               | Core 02: WASD/arrows, deltaTime, focus/repeat, 5 headless-тестов |
-| 3         | Диагностика чёрного экрана   | Реальные воспроизведения, логи, camera/framebuffer/view          |
-| 4         | Robot Lab: сцена             | Стартовый/готовый проект и проверенная версия редактора          |
-| 5         | Robot Lab: движение и прыжок | Проверенный C# API и пройденные игровые критерии                 |
-
-Далее можно добавлять короткие devlog, небольшие видео реального workflow,
-известные ограничения и список проверенных платформ. Showcase расширять реальными
-сценами; не нужны пустые testimonials, счётчики пользователей или обещания функций.
-Автогенерацию Doxygen и поиск по API рассмотрим после стабилизации нужных контрактов,
-а не вместо объясняющих статей.
-
-Урок Core 01 импортирует исходники через MDX `?raw`: отображаемый код совпадает с собираемым. Его CMake-цель включается `RB2D_BUILD_CORE_EXAMPLES=ON`; графические проверки — отдельным `RB2D_CORE_EXAMPLE_GRAPHICS_TESTS=ON`. Исходники и PNG находятся в public/examples/first-sprite, тест — tests/core-first-sprite.cpp.
-
-Native CI собирает пример на обеих платформах; Linux graphics job также запускает два core-lesson теста под Xvfb. Число пропусков в graphics CI проверяется как ошибка.
-
-Core 02: keyboard-movement переиспользует FirstSprite/PNG первого урока, содержит input state и update(deltaTime), 5 headless-сценариев на опубликованном приложении. Engine baseline 4132acf использует фиксированный шаг; не описывать его как render delta. Блоки кода закреплены в одной SlateTeal-палитре через ec.config.mjs, включая заголовки и кнопку копирования.
+Lesson 02 (`keyboard-movement`) reuses Lesson 01's application and PNG. Its five
+headless scenarios exercise input state and `update(deltaTime)`. The Engine
+baseline `4132acf` uses a fixed step; its timestep must not be described as render
+delta. Code blocks use `ec.config.mjs` for the shared SlateTeal palette, headings
+and copy button.

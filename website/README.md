@@ -25,7 +25,7 @@ No C++ build, account, token or browser automation is required. Pagefind search 
 
 ## Hosting configuration
 
-GitHub Pages is the selected host: `https://enziferum.github.io/robot2D/`. The Website workflow publishes after website-related pushes to `dev`, or manually from a selected branch. Ordinary pull requests only run checks. See [Pages setup and manual publication](deploy/github-pages.md), including the first pre-merge deployment from WEB-02.
+GitHub Pages is the selected host: `https://enziferum.github.io/robot2D/`. The Website workflow publishes after website-related pushes to `dev`, or manually from a selected branch. Ordinary pull requests only run checks. See [Pages setup and manual publication](deploy/github-pages.md) for workflow configuration and manual runs.
 
 Production origin/base path come from `actions/configure-pages`, so a later custom domain is supported. The default local path is `/`. Set `SITE_URL` for canonical URLs, social images and the sitemap; without it, local builds skip the sitemap rather than inventing a domain.
 
@@ -61,9 +61,7 @@ Shared palette tokens are in `src/styles/tokens.css`, with separate marketing an
 
 `pnpm verify` parses the built HTML, checks required routes, local links, anchors, images, scripts and the Pagefind bundle. It catches broken subdirectory paths as well as missing files. It does not test external links or execute browser interactions.
 
-The layout includes responsive breakpoints, a skip link, visible keyboard focus, image alternatives and reduced-motion support. Visual, keyboard and search interaction acceptance is manual: inspect the home and docs pages at desktop and narrow mobile widths, follow main navigation, open the original screenshot, use docs search, and verify the 404 page. No computer-use is permitted for this project; user acceptance remains necessary.
-
-Next: complete GitHub Pages publication and manual acceptance, publish more small Core articles and reproducible Robot Lab lessons, then package a demo and a short real gameplay recording. A custom domain can be connected later. Donations are omitted until a real destination is agreed.
+The layout includes responsive breakpoints, a skip link, visible keyboard focus, image alternatives and reduced-motion support. Visual, keyboard and search interaction acceptance is manual: inspect the home and docs pages at desktop and narrow mobile widths, follow main navigation, open the original screenshot, use docs search, and verify the 404 page.
 
 ## Screenshot proportions
 
@@ -71,15 +69,15 @@ Next: complete GitHub Pages publication and manual acceptance, publish more smal
 
 ## Selected Robot Lab branding
 
-The user selected logo **02** as the primary mark and character **03** as the site mascot.
+Logo **02** is the primary mark; character **03** is the site mascot.
 Active assets are in `public/brand/robot2d-logo-02-*` and `robot2d-mascot-03-*`;
-masters and exact generation prompts are in `../logo/robotlab-slateteal/`.
+masters and asset provenance are in `../logo/robotlab-slateteal/`.
 The provenance manifest records original master hashes. These are transparent raster assets,
 not vector stand-ins. Header, footer, Starlight and favicon use 02. The home page uses 03,
 with WebP and PNG fallback, explicit dimensions and lazy loading. Old v1 candidates remain archived.
-Editor integration is a separate worktree/PR, BRAND-01/#135, using the same selected source.
+The editor uses the same logo source.
 Manual acceptance: logo at 100/150/200% scaling, mascot against the site background,
-responsive page layout and screenshot aspect ratio. No browser automation is used.
+responsive page layout and screenshot aspect ratio.
 
 ## Documentation and deployment
 
@@ -92,7 +90,7 @@ and `camera-view`. Enable `RB2D_BUILD_CORE_EXAMPLES=ON` in the native checkout;
 the examples and five headless regression scenarios are also built by native CI.
 The animation/camera examples generate a small teaching atlas in code, with no
 extra art downloads. Visible rendering, real resize/DPI and mouse acceptance remain
-manual; computer-use is not part of the verification workflow.
+manual.
 
 Lesson 06 adds `public/examples/sprite-collisions`: a moving Robot Lab sprite,
 seven static walls, explicit AABBs and X-then-Y movement resolution with sliding.

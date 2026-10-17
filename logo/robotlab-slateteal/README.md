@@ -1,10 +1,12 @@
 # Robot Lab SlateTeal branding
 
-Выбор пользователя 2026-10-17: **02 — основной логотип**, **03 — маскот сайта**.
-Мастера RGBA PNG созданы image_gen по игровому Player из Robot Lab; prompts рядом.
-PNG/WebP/ICO экспорты без перерисовки, provenance в website/public/brand/robotlab-provenance.json.
+Logo **02** is the primary mark; character **03** is the site mascot.
+The RGBA PNG masters are AI-generated artwork based on the Robot Lab Player.
+PNG/WebP/ICO exports are derived from these masters. Source hashes and export
+metadata are recorded in [provenance.json](provenance.json) and
+[the website manifest](../../website/public/brand/robotlab-provenance.json).
 
-На сайте 02 используется в шапке, footer, Starlight и favicon; 03 — на главной.
-Надпись robot2D остаётся живым текстом. Предыдущий знак logo/slateteal-v1 архивный.
-Редактор получает тот же вариант 02 в отдельной задаче BRAND-01/#135; это независимый
-PR, сайт не требует его слияния. Растровый логотип не выдаётся за SVG.
+The website uses logo 02 in its header, footer, documentation and favicon, and
+mascot 03 on its home page. The editor uses the same logo 02 source.
+The robot2D wordmark remains live text. The earlier `logo/slateteal-v1` assets
+are archived alternatives. Raster masters are not vector sources.
