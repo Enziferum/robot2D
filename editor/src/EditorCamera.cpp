@@ -69,7 +69,6 @@ namespace editor {
     }
 
     void EditorCamera2D::handleEvents(const robot2D::Event& event) {
-        if(event.getIf<robot2D::Event::LostFocus>()) m_leftCntrlPressed = false;
 
         if(event.getIf<robot2D::Event::MouseWheel>() && m_leftCntrlPressed) {
             setZoom(m_zoom * std::pow(1.1f, event.get<robot2D::Event::MouseWheel>().scroll_y));

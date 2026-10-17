@@ -106,6 +106,18 @@ headless-запуск для Windows/Linux; удалённый CI и Linux ло�
 Настройка CI и просмотр отчётов описаны в [CI и отчётах](ci.md).
 
 
+## Оконные scopes ImGui
+
+`imgui-scope-windows`, `imgui-scope-unwind`, `imgui-scope-panels` и
+`imgui-scope-docking` входят в robot2D-editor-test-suite и headless-группу.
+Создают настоящий ImGui context/кадр без native окна и GL: видимость callback,
+стек окон/стилей после раннего выхода/исключения, вложенность, состояние/focus
+IPanel и сохранение docking при скрытом host. Unwind также проверяет два
+контекста через GuiContextScope из dev: исключение не повреждает стеки
+выбранного контекста, предыдущий восстанавливается. Запуск: `ctest --test-dir <build-dir>
+-R imgui-scope --output-on-failure`. Крестик зарегистрированной панели,
+перезапуск с layout и внешний вид проверяются вручную по IMGUI-01.
+
 ## Регрессии физики PHYS-01
 
 `robot2D-physics-tests` входит в `robot2D-editor-test-suite`: 10 сценариев

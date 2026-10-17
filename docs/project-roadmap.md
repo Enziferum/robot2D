@@ -536,6 +536,26 @@ headless CTest 70/70, формат и строгий clang-tidy 183 единиц
 из ASSET-01 work/pre-commit-build, прежний экспорт исходников больше не требуется.
 
 
+## IMGUI-01 оконные scopes 2026-10-16
+
+По поручению пользователя реализован независимый от CORE-02 шаг
+[IMGUI-01 #121](https://github.com/Enziferum/robot2D/issues/121): WindowScope,
+RAII стилей, общая основа createWindow/IPanel и KeepAliveOnly для скрытого
+host dockspace. Ветка IMGUI-01 от удалённого dev @ c05a55b, отдельный worktree;
+GuiImpl и Core не менялись. Редактор/core-tests/suite собраны, CTest 56/56
+без пропусков при выключенных graphics; четыре новых headless-сценария.
+Контракты, границы и ручная приёмка — [разбор robot2D-imgui](imgui-backend-review.md).
+Обязательный hook прошёл: Python 47/47, формат, сборка/CTest и строгий
+clang-tidy 179 собственных единиц; отдельно проверены Api.cpp/WindowScope.cpp
+и заголовки robot2D-imgui. Следующий шаг — PR/CI и ручная проверка панелей/layout.
+
+
+Ревью IMGUI-01 / PR #123: исходный CI 210b060 прошёл Windows/Linux.
+Исправлен обнаруженный при ревью закрытый WindowScope: open=false теперь
+не создаёт окно/стили и потребляет SetNextWindow параметры. Усилены headless
+проверки закрытого scope и восстановления docking без подачи скрытых панелей.
+Ручная UI-приёмка остаётся открытой; новый CI исправления проверяется отдельно.
+
 Публикация: [draft PR #122](https://github.com/Enziferum/robot2D/pull/122), ветка
 `CORE-02`. После объединения с dev @ c05a55b (ASSET-02 #118) сохранены обе записи
 roadmap и оба набора тестов. Повторный обязательный pre-commit: Python 47/47,
@@ -1027,3 +1047,15 @@ AssetsPanel, runtime-исправлением и новой иконкой. Comp
 Python 53/53, headless 75/75, strict clang-tidy 186 единиц. Общая сборка доступна
 через ASSET-01/work/run-ui-preview.cmd. GUI/graphics в этом ресурсном шаге
 не запускались; пользователь проверяет демо и визуальное отображение иконки.
+
+## IMGUI-01: синхронизация PR #123 с dev — 2026-10-17
+
+В отдельной ветке IMGUI-01 объединён origin/dev @ 4132acf. Сохранены оба
+реестра задач, история направлений и все тесты; GuiImpl.cpp/.hpp совпадают
+с dev, Core/CORE-02 не изменены. Добавлен актуализированный
+[аудит backend](imgui-backend-review.md) и headless-регрессия WindowScope
+при исключении внутри GuiContextScope с восстановлением прежнего context.
+Собраны editor, core-tests и editor suite; CTest 228/228 без пропусков,
+включая 55 graphics и четыре scope-сценария. Обязательный hook и CI нового
+commit фиксируются в PR #123. Следующий шаг — ревью/CI и ручная приёмка
+Inspector/focus/dock tabs/layout, затем интеграция; задача ещё не завершена.
