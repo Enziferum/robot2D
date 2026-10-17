@@ -48,6 +48,9 @@ namespace robot2D {
         /** @brief Returns elapsed time since the preceding restart, then resets it.
          * The first call measures from construction. Increments getRestartsCount()
          * once and leaves the lifetime measured by duration() unchanged.
+         * Sub-microsecond remainder is carried to the next restart instead of
+         * discarded, so rapid calls preserve elapsed time; a reported interval
+         * can include less than one microsecond from the preceding interval.
          */
         Time restart();
 
