@@ -47,6 +47,9 @@ public:
         m_texture.release();
     }
 
+protected:
+    robot2D::Sprite& sprite() { return m_sprite; }
+
 private:
     std::string m_texturePath;
     robot2D::Texture m_texture;

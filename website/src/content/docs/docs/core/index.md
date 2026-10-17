@@ -40,3 +40,5 @@ Core tests require `RB2D_BUILD_CORE_TESTS=ON`; build `robot2D-core-tests`, then 
 For engine users starting with the editor, the [Robot Lab learning path](../learn/) is a better first stop than extending Core.
 
 Start with [Lesson 01: your first sprite](first-sprite/) for a buildable window, PNG and sprite example.
+
+Continue with [Lesson 02: keyboard movement](keyboard-movement/) for typed input events, held state and time-based movement.

@@ -112,6 +112,7 @@ for (const route of [
   'docs/project-status/',
   'docs/core/',
   'docs/core/first-sprite/',
+  'docs/core/keyboard-movement/',
   'docs/core/application-events/',
   'docs/core/graphics-resources/',
   'docs/core/ecs/',

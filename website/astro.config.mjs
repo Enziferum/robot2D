@@ -49,6 +49,10 @@ export default defineConfig({
             { label: 'Overview', slug: 'docs/core' },
             { label: '01 — Your first sprite', slug: 'docs/core/first-sprite' },
             {
+              label: '02 — Keyboard movement',
+              slug: 'docs/core/keyboard-movement',
+            },
+            {
               label: 'Application and events',
               slug: 'docs/core/application-events',
             },
