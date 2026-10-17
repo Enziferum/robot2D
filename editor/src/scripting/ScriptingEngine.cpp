@@ -80,7 +80,7 @@ namespace editor {
     namespace util {
 
         char* ReadBytes(const std::string& filepath, uint32_t* outSize) {
-            std::ifstream stream(filepath, std::ios::binary | std::ios::ate);
+            std::ifstream stream(std::filesystem::u8path(filepath), std::ios::binary | std::ios::ate);
 
             if(!stream) {
                 // Failed to open the file
@@ -107,6 +107,7 @@ namespace editor {
         MonoAssembly* loadMonoAssembly(const std::string& assemblyPath) {
             uint32_t fileSize = 0;
             char* fileData = ReadBytes(assemblyPath, &fileSize);
+            if(!fileData || !fileSize) return nullptr;
 
             // NOTE: We can't use this image for anything other than loading the assembly because this image doesn't have a reference to the assembly
             MonoImageOpenStatus status;
@@ -115,6 +116,7 @@ namespace editor {
             if(status != MONO_IMAGE_OK) {
                 const char* errorMessage = mono_image_strerror(status);
                 RB_EDITOR_ERROR("ScriptingEngine: failed to load Mono image: {}", errorMessage);
+                delete [] fileData;
                 return nullptr;
             }
 
@@ -292,11 +294,31 @@ namespace editor {
 
     }
 
-    void ScriptEngine::runtimeInit(const std::string& filePath) {
+    bool ScriptEngine::runtimeInit(const std::string& filePath) {
+        if(!s_Data || s_Data -> interactor || !s_Data -> m_entityInstances.empty()) {
+            RB_EDITOR_ERROR("[ScriptBuild] Assembly reload rejected; path='{}'; reason=runtime is active", filePath);
+            return false;
+        }
+        const auto corePath = s_Data -> m_coreAssemblyFilepath;
+        s_Data -> m_entityClasses.clear();
+        s_Data -> m_entityClassesNames.clear();
+        s_Data -> m_entityClass.reset();
+        s_Data -> m_entityScriptFields.clear();
+        if(s_Data -> m_appDomain) {
+            mono_domain_set(s_Data -> m_rootDomain, false);
+            mono_domain_unload(s_Data -> m_appDomain);
+            s_Data -> m_appDomain = nullptr;
+        }
+        s_Data -> m_coreAssebly = nullptr;
+        s_Data -> m_coreAssemblyImage = nullptr;
+        s_Data -> m_appAssebly = nullptr;
+        s_Data -> m_appAssemblyImage = nullptr;
+        s_Data -> m_appAssemblyFilepath.clear();
+        if(!loadCoreAssembly(corePath) || filePath.empty()) return false;
         bool status = loadAppAssembly(filePath);
         if(!status) {
             RB_EDITOR_ERROR("[ScriptingEngine]: Can't load Application's Script Library {0}", filePath);
-            return;
+            return false;
         }
 
         LoadAssemblyClasses();
@@ -310,6 +332,7 @@ namespace editor {
 
         util::PrintAssemblyTypes(s_Data -> m_coreAssebly);
         util::PrintAssemblyTypes(s_Data -> m_appAssebly);
+        return true;
     }
 
     void ScriptEngine::LoadAssemblyClasses() {
@@ -417,8 +440,10 @@ namespace editor {
 
     bool ScriptEngine::loadCoreAssembly(const fs::path& filePath) {
         s_Data -> m_coreAssemblyFilepath = filePath;
-        s_Data -> m_appDomain = mono_domain_create_appdomain("Robot2DScriptRuntime", nullptr);
-        s_Data -> m_coreAssebly = util::loadMonoAssembly(filePath.string());
+        char domainName[] = "Robot2DScriptRuntime";
+        s_Data -> m_appDomain = mono_domain_create_appdomain(domainName, nullptr);
+        if(!s_Data -> m_appDomain || !mono_domain_set(s_Data -> m_appDomain, true)) return false;
+        s_Data -> m_coreAssebly = util::loadMonoAssembly(filePath.u8string());
         if(s_Data -> m_coreAssebly == nullptr) {
             return false;
         }
@@ -430,7 +455,7 @@ namespace editor {
 
     bool ScriptEngine::loadAppAssembly(const fs::path& filePath) {
         s_Data -> m_appAssemblyFilepath = filePath;
-        s_Data -> m_appAssebly = util::loadMonoAssembly(filePath.string());
+        s_Data -> m_appAssebly = util::loadMonoAssembly(filePath.u8string());
         if(s_Data -> m_appAssebly == nullptr) {
             return false;
         }
@@ -582,35 +607,30 @@ namespace editor {
     }
 
     void ScriptEngine::onPhysicsCallback(const PhysicsContact2D& contact, UUID self, UUID other) {
-        for(auto& [uuid, instance]: s_Data -> m_entityInstances) {
-            auto klass = instance -> getClassWrapper();
-
-            if(contact.entityA == uuid || contact.entityB == uuid) {
-
-                UUID ownContact = (contact.entityA == uuid) ? contact.entityA : contact.entityB;
-                UUID otherContact = (contact.entityA != uuid) ? contact.entityA : contact.entityB;
-
-                auto regMethods = s_Data -> m_entityClass -> getRegisterMethods();
-
-                if(regMethods.find("OnCollision2DInternal") == regMethods.end())
-                    continue;
-
-                uint64_t selfId = self;
-                uint64_t otherId = other;
-                int type = static_cast<int>(contact.type);
-
-
-                MonoClass* evClass = mono_class_from_name(s_Data -> m_coreAssemblyImage, "robot2D", "PhysicsContact2D");
-                RB_ASSERT(evClass)
-                mono_value_box(s_Data -> m_appDomain, evClass, (void*)&contact);
-                void* args[4] = { &selfId, &otherId, &type, (void*)&contact };
-
-                mono_runtime_invoke(regMethods["OnCollision2DInternal"],
-                    klass -> getInstance(), args, nullptr);
-            }
-
-        }
-
+        if(!s_Data || !s_Data -> m_entityClass ||
+            !((contact.entityA == self && contact.entityB == other) ||
+            (contact.entityB == self && contact.entityA == other)))
+            return;
+        const auto found = s_Data -> m_entityInstances.find(self);
+        if(found == s_Data -> m_entityInstances.end() || !found -> second)
+            return;
+        // Hold the selected instance across a callback; never broadcast to the other side.
+        auto instance = found -> second;
+        auto klass = instance -> getClassWrapper();
+        const auto& methods = s_Data -> m_entityClass -> getRegisterMethods();
+        const auto method = methods.find("OnCollision2DInternal");
+        if(!klass || !klass -> getInstance() || method == methods.end())
+            return;
+        std::uint64_t selfID = self, otherID = other;
+        int type = static_cast<int>(contact.type);
+        auto payload = contact;
+        void* args[4] = {&selfID, &otherID, &type, &payload};
+        MonoObject* exception = nullptr;
+        mono_runtime_invoke(method -> second, klass -> getInstance(), args, &exception);
+        if(exception)
+            RB_EDITOR_ERROR("[Physics] Managed callback failed; entity={}; other={}; type={}; reason={}", selfID,
+                otherID, type,
+                mono_class_get_name(mono_object_get_class(exception)));
     }
 
     MonoImage* ScriptEngine::GetCoreAssemblyImage() const {
@@ -644,20 +664,7 @@ namespace editor {
     }
 
     void ScriptEngine::ReloadEngine() {
-        mono_domain_set(mono_get_root_domain(), false);
-
-        mono_domain_unload(s_Data -> m_appDomain);
-
-        loadCoreAssembly(s_Data -> m_coreAssemblyFilepath);
-        loadAppAssembly(s_Data -> m_appAssemblyFilepath);
-        LoadAssemblyClasses();
-
-        ScriptGlue::registerComponents();
-
-        // Retrieve and instantiate class
-        s_Data -> m_entityClass.reset();
-        s_Data -> m_entityClass = std::make_shared<MonoClassWrapper>(s_Data, "robot2D",
-                "Entity", true);
+        runtimeInit(s_Data -> m_appAssemblyFilepath.u8string());
     }
 
     MonoClassWrapper::Ptr ScriptEngine::getManagedObject(UUID entityId) const {

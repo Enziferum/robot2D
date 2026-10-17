@@ -3,6 +3,7 @@
 #include <type_traits>
 #include <imgui/imgui_internal.h>
 #include <robot2D/imgui/Api.hpp>
+#include <robot2D/imgui/Gui.hpp>
 #include <editor/panels/IPanel.hpp>
 #include "../src/panels/DockspaceHost.hpp"
 
@@ -16,6 +17,7 @@ namespace {
         ImGuiContext* previous = ImGui::GetCurrentContext();
         ImGuiContext* context = ImGui::CreateContext();
         Context() {
+            ImGui::SetCurrentContext(context);
             auto& io = ImGui::GetIO();
             io.IniFilename = nullptr;
             io.DisplaySize = {800.f, 600.f};
@@ -127,6 +129,33 @@ namespace {
         ImGui::EndFrame();
         ImGui::NewFrame();
         robot2D::createWindow(options("AfterException"), []() { ImGui::Button("OK"); });
+        ImGui::EndFrame();
+
+        // GuiImpl now owns its context; scopes must unwind before it is restored.
+        Context other;
+        ImGui::SetCurrentContext(context.context);
+        ImGui::NewFrame();
+        Stacks original;
+        {
+            robot2D::GuiContextScope selected{other.context};
+            ImGui::NewFrame();
+            Stacks selectedStacks;
+            caught = false;
+            try {
+                robot2D::createWindow(options("SelectedContext"), []() {
+                    throw std::runtime_error("selected context failure");
+                });
+            }
+            catch(const std::runtime_error&) {
+                caught = true;
+            }
+            CHECK(caught);
+            CHECK(ImGui::GetCurrentContext() == other.context);
+            selectedStacks.check();
+            ImGui::EndFrame();
+        }
+        CHECK(ImGui::GetCurrentContext() == context.context);
+        original.check();
         ImGui::EndFrame();
     }
 

@@ -1,27 +1,28 @@
 /*********************************************************************
-(c) Alex Raag 2023
-https://github.com/Enziferum
-robot2D - Zlib license.
-This software is provided 'as-is', without any express or
-implied warranty. In no event will the authors be held
-liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute
-it freely, subject to the following restrictions:
-1. The origin of this software must not be misrepresented;
-you must not claim that you wrote the original software.
-If you use this software in a product, an acknowledgment
-in the product documentation would be appreciated but
-is not required.
-2. Altered source versions must be plainly marked as such,
-and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any
-source distribution.
+   (c) Alex Raag 2023
+   https://github.com/Enziferum
+   robot2D - Zlib license.
+   This software is provided 'as-is', without any express or
+   implied warranty. In no event will the authors be held
+   liable for any damages arising from the use of this software.
+   Permission is granted to anyone to use this software for any purpose,
+   including commercial applications, and to alter it and redistribute
+   it freely, subject to the following restrictions:
+   1. The origin of this software must not be misrepresented;
+   you must not claim that you wrote the original software.
+   If you use this software in a product, an acknowledgment
+   in the product documentation would be appreciated but
+   is not required.
+   2. Altered source versions must be plainly marked as such,
+   and must not be misrepresented as being the original software.
+   3. This notice may not be removed or altered from any
+   source distribution.
 *********************************************************************/
 
 #pragma once
 
-#include <queue>
+#include <exception>
+#include <robot2D/Core/EventQueue.hpp>
 
 #include <GLFW/glfw3.h>
 #include <robot2D/Core/WindowContext.hpp>
@@ -31,14 +32,28 @@ source distribution.
 namespace robot2D::priv {
 
     /// \brief our desktop backend is GLFW
-    class DesktopWindowImpl: public WindowImpl {
+    class DesktopWindowImpl : public WindowImpl {
     public:
-        DesktopWindowImpl();
-        DesktopWindowImpl(const vec2u& size, const std::string& name, WindowContext& context);
-        ~DesktopWindowImpl();
+        struct NativeFunctions {
+            GLFWwindow* (*create)(int, int, const char*, GLFWmonitor*, GLFWwindow*) = glfwCreateWindow;
+            void (*destroy)(GLFWwindow*) = glfwDestroyWindow;
+            bool (*loadContext)() = nullptr;
+        };
+        DesktopWindowImpl(DesktopRuntime& desktop, const vec2u& size, const std::string& name,
+            WindowContext& context);
+        DesktopWindowImpl(DesktopRuntime& desktop, const vec2u& size, const std::string& name,
+            WindowContext& context, NativeFunctions functions);
+        ~DesktopWindowImpl() override;
+        void makeCurrent() override;
+        void rethrowCallbackError();
+        void joystickEvent(int id, int action) noexcept;
 
         bool pollEvents(Event& event) override;
+        void processEvents() override;
+        std::vector<Event> takeEvents() override;
         void* getRaw() override;
+        vec2u getFramebufferSize() const override;
+        vec2u getLogicalSize() const override;
 
         bool isOpen() const override;
         void setTitle(const std::string& title) const override;
@@ -49,11 +64,6 @@ namespace robot2D::priv {
 
         bool isMousePressed(const Mouse& button)override;
         bool isKeyboardPressed(const Key& key)override;
-        bool isJoystickAvailable(const JoystickType& joystickType) override;
-        bool JoystickIsGamepad(const JoystickType& joystickType) override;
-        bool getJoystickGamepadInput(const JoystickType& joystickType,
-                                     JoystickGamepadInput& gamepadInput) override;
-
         void setSize(const robot2D::vec2u& size) override;
 
         void setIcon(robot2D::Image&& icon)override;
@@ -65,7 +75,7 @@ namespace robot2D::priv {
         void setPosition(const robot2D::vec2u& position) override;
         robot2D::vec2u getPosition() const override;
 
-        void setResizable(const bool &flag) override;
+        void setResizable(const bool& flag) override;
         void setMaximazed(const bool& flag) override;
 
         void setMousePos(const vec2f& pos) override;
@@ -74,9 +84,17 @@ namespace robot2D::priv {
         void setVsync(bool flag) override;
         void addDropCallback(std::function<void(std::vector<std::string>&&)>&& callback) override;
     private:
-        void setup();
+        template<typename Payload>
+        void enqueue(Payload payload) noexcept {
+            if(m_callbackError)
+                return;
+            try { m_event_queue.push(std::move(payload)); }
+            catch(...) { m_callbackError = std::current_exception(); }
+        }
+        void setup(NativeFunctions functions, bool& loaderStarted);
         void setup_callbacks();
     private:
+        static GLFWwindow* recoveryContext(const DesktopRuntime& desktop) noexcept;
         static void close_callback(GLFWwindow* wnd);
         static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods);
         static void cursor_callback(GLFWwindow* window, double xpos, double ypos);
@@ -88,10 +106,17 @@ namespace robot2D::priv {
         static void dragdrop_callback(GLFWwindow* wnd, int count, const char** paths);
         static void focus_callback(GLFWwindow* wnd, int focus);
         static void text_callback(GLFWwindow* wnd, unsigned int);
-        static void joystick_callback(int jid, int event);
     private:
-        GLFWwindow* m_window;
-        std::queue<Event> m_event_queue;
+        struct NativeWindowDeleter {
+            void (*destroy)(GLFWwindow*) = glfwDestroyWindow;
+            void operator()(GLFWwindow* window) const noexcept;
+        };
+        DesktopRuntime& m_desktop;
+        std::unique_ptr<GLFWwindow, NativeWindowDeleter> m_nativeWindow;
+        GLFWwindow* m_window; // Borrowed alias of m_nativeWindow, for GLFW calls.
+
+        EventQueue m_event_queue;
+        std::exception_ptr m_callbackError;
         vec2u m_size;
         std::string m_name;
         WindowContext m_context;

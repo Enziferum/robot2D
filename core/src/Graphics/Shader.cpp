@@ -215,6 +215,11 @@ namespace robot2D {
             1, GL_FALSE, value);
     }
 
+    void ShaderHandler::release() noexcept {
+        if(m_shaderProgram > 0) glDeleteProgram(static_cast<unsigned>(m_shaderProgram));
+        m_shaderProgram = -1;
+    }
+
     ShaderHandler::~ShaderHandler() {
         //        if(m_shaderProgram != -1)
         //            glDeleteShader(m_shaderProgram);

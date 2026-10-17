@@ -69,11 +69,28 @@ if(RB2D_EDITOR_GRAPHICS_TESTS)
         rb2d_register_test("core-graphics-${graphics_case}" robot2D-graphics-diagnostics-tests "${graphics_case}" "graphics;integration")
         set_tests_properties("core-graphics-${graphics_case}" PROPERTIES SKIP_RETURN_CODE 77)
     endforeach()
-    foreach(scene_case IN ITEMS hierarchy runtime-camera-order asset-roundtrip missing-assets asset-identity animation-resources roundtrip invalid legacy prefab prefab-viewport save-dirty async-load close-project startup-failure)
+    foreach(scene_case IN ITEMS hierarchy runtime-camera-order editor-gui-scene hud-text asset-roundtrip missing-assets asset-identity animation-resources roundtrip invalid legacy prefab prefab-viewport save-dirty async-load close-project startup-failure)
         rb2d_register_test("editor-scene-${scene_case}" robot2D-scene-tests "${scene_case}" "graphics;integration")
         set_tests_properties("editor-scene-${scene_case}" PROPERTIES SKIP_RETURN_CODE 77)
     endforeach()
 endif()
+
+add_mono_assembly(TARGET robot2D-hud-driver
+    DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/../res/script"
+    SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/HudDriver.cs" "${CMAKE_CURRENT_SOURCE_DIR}/../../docs/examples/HudExample.cs"
+    REFERENCES "${robot2D_ScriptCore_OUTPUT}"
+    ADDITIONAL_ARGS -sdk:4.8 -langversion:7.2 -warnaserror+)
+add_dependencies(robot2D-hud-driver robot2D_ScriptCore)
+add_executable(robot2D-hud-tests HudTests.cpp)
+target_link_libraries(robot2D-hud-tests PRIVATE robot2D-editor-objects)
+target_compile_definitions(robot2D-hud-tests PRIVATE
+    RB2D_TEST_MONO_LIB="${INTERNAL_MONO_ASSEMBLY_DIR}"
+    RB2D_TEST_MONO_ETC="${INTERNAL_MONO_CONFIG_DIR}"
+    RB2D_TEST_SCRIPTCORE="${robot2D_ScriptCore_OUTPUT}"
+    RB2D_TEST_HUD_DRIVER="${robot2D-hud-driver_OUTPUT}")
+add_dependencies(robot2D-hud-tests robot2D-hud-driver)
+add_dependencies(robot2D-editor-test-suite robot2D-hud-tests)
+rb2d_register_test(editor-hud-managed robot2D-hud-tests managed "headless;scripting;hud")
 
 # A managed consumer catches a missing/outdated API assembly in ordinary CI builds.
 add_mono_assembly(TARGET robot2D-managed-api-tests TYPE exe
@@ -112,9 +129,77 @@ foreach(prefab_case IN ITEMS instances invalid runtime package)
     rb2d_register_test("editor-prefab-${prefab_case}" robot2D-prefab-tests "${prefab_case}" "headless;prefab")
 endforeach()
 
+add_executable(robot2D-event-tests EventTests.cpp)
+target_link_libraries(robot2D-event-tests PRIVATE robot2D-editor-objects robot2D-imgui)
+add_dependencies(robot2D-editor-test-suite robot2D-event-tests)
+foreach(event_case IN ITEMS variant order binder gui gui-capture capture shortcuts history)
+    rb2d_register_test("editor-event-${event_case}" robot2D-event-tests "${event_case}" "headless;input")
+endforeach()
+
 add_executable(robot2D-scene-asset-tests SceneAssetTests.cpp)
 target_link_libraries(robot2D-scene-asset-tests PRIVATE robot2D-editor-objects)
 add_dependencies(robot2D-editor-test-suite robot2D-scene-asset-tests)
 foreach(asset_case IN ITEMS compatibility invalid)
     rb2d_register_test("editor-scene-assets-${asset_case}" robot2D-scene-asset-tests "${asset_case}" "headless;assets")
 endforeach()
+
+add_mono_assembly(TARGET robot2D-physics-driver
+    DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/../res/script"
+    SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/PhysicsDriver.cs"
+    REFERENCES "${robot2D_ScriptCore_OUTPUT}"
+    ADDITIONAL_ARGS -sdk:4.8 -langversion:7.2 -warnaserror+)
+add_dependencies(robot2D-physics-driver robot2D_ScriptCore)
+add_executable(robot2D-physics-tests PhysicsTests.cpp)
+target_link_libraries(robot2D-physics-tests PRIVATE robot2D-editor-objects)
+target_compile_definitions(robot2D-physics-tests PRIVATE
+    RB2D_TEST_SCRIPTCORE="${robot2D_ScriptCore_OUTPUT}"
+    RB2D_TEST_PHYSICS_DRIVER="${robot2D-physics-driver_OUTPUT}")
+add_dependencies(robot2D-physics-tests robot2D-physics-driver)
+add_dependencies(robot2D-editor-test-suite robot2D-physics-tests)
+foreach(physics_case IN ITEMS geometry walls bullet triggers filters lifecycle callbacks invalid serialization managed)
+    rb2d_register_test("editor-physics-${physics_case}" robot2D-physics-tests "${physics_case}" "headless;physics")
+endforeach()
+
+add_executable(robot2D-gui-backend-tests GuiBackendTests.cpp)
+target_link_libraries(robot2D-gui-backend-tests PRIVATE robot2D-imgui imgui)
+target_include_directories(robot2D-gui-backend-tests PRIVATE ../extlibs/robot2D-imgui/src/robot2D)
+target_compile_definitions(robot2D-gui-backend-tests PRIVATE RB2D_TEST_FONT_DIR="${CMAKE_CURRENT_SOURCE_DIR}/../res/fonts")
+add_dependencies(robot2D-editor-test-suite robot2D-gui-backend-tests)
+foreach(gui_case IN ITEMS math uninitialized fonts)
+    rb2d_register_test("imgui-backend-${gui_case}" robot2D-gui-backend-tests "${gui_case}" "headless;imgui")
+endforeach()
+if(RB2D_EDITOR_GRAPHICS_TESTS)
+    foreach(gui_api IN ITEMS 43 45)
+        foreach(gui_case IN ITEMS lifecycle renderer rollback)
+            set(gui_name "imgui-backend-${gui_case}-${gui_api}")
+            rb2d_register_test("${gui_name}" robot2D-gui-backend-tests "${gui_case}" "graphics;imgui" "${gui_api}")
+            set_tests_properties("${gui_name}" PROPERTIES SKIP_RETURN_CODE 77)
+        endforeach()
+    endforeach()
+endif()
+
+add_executable(robot2D-script-project-tests ScriptProjectTests.cpp)
+target_link_libraries(robot2D-script-project-tests PRIVATE robot2D-editor-objects)
+target_compile_definitions(robot2D-script-project-tests PRIVATE
+    RB2D_TEST_SCRIPT_PYTHON="${Python3_EXECUTABLE}"
+    RB2D_TEST_SCRIPT_GENERATOR="${CMAKE_CURRENT_SOURCE_DIR}/../res/gen/gen_project.py"
+    RB2D_TEST_SCRIPTCORE="${robot2D_ScriptCore_OUTPUT}"
+    RB2D_TEST_SCRIPT_MCS="${MONO_MCS_EXECUTABLE}"
+    RB2D_TEST_SCRIPT_MONO="${MONO_EXECUTABLE}")
+add_dependencies(robot2D-script-project-tests robot2D_ScriptCore)
+add_dependencies(robot2D-editor-test-suite robot2D-script-project-tests)
+foreach(script_case IN ITEMS project errors reload)
+    rb2d_register_test("editor-script-${script_case}" robot2D-script-project-tests "${script_case}" "headless;scripting")
+endforeach()
+
+add_executable(robot2D-desktop-window-tests DesktopWindowTests.cpp)
+target_link_libraries(robot2D-desktop-window-tests PRIVATE robot2D-editor-objects)
+add_dependencies(robot2D-editor-test-suite robot2D-desktop-window-tests)
+rb2d_register_test(core-desktop-uninitialized robot2D-desktop-window-tests uninitialized "headless;core;desktop")
+rb2d_register_test(core-desktop-editor-shutdown robot2D-desktop-window-tests editor-shutdown "headless;core;desktop")
+if(RB2D_EDITOR_GRAPHICS_TESTS)
+    foreach(desktop_case IN ITEMS lifetime render-lifetime rollback borrowed events engine)
+        rb2d_register_test("core-desktop-${desktop_case}" robot2D-desktop-window-tests "${desktop_case}" "graphics;core;desktop")
+        set_tests_properties("core-desktop-${desktop_case}" PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 60)
+    endforeach()
+endif()

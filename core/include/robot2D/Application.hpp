@@ -15,8 +15,11 @@ namespace robot2D {
         virtual ~Application() = 0;
 
         virtual void setup() = 0;
+        /// Called once by Engine after attaching the window, including setup/loop failure.
+        /// Must release partially initialized resources before the window/context dies.
         virtual void destroy();
 
+        virtual void handleEventFrame(const FrameEvents& events);
         virtual void handleEvents(const robot2D::Event& event);
         virtual void handleMessages();
         virtual void update(float deltaTime);

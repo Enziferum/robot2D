@@ -6,6 +6,7 @@ set(CORE_INCLUDE_FILES
         ${INCLROOT}/FileInputStream.hpp
         ${INCLROOT}/Event.hpp
         ${INCLROOT}/Window.hpp
+        ${INCLROOT}/DesktopRuntime.hpp
         ${INCLROOT}/Keyboard.hpp
         ${INCLROOT}/Joystick.hpp
         ${INCLROOT}/Vector2.hpp
@@ -27,6 +28,7 @@ set(CORE_SOURCE_FILES
         ${SRCROOT}/CursorImpl.cpp	
         ${SRCROOT}/CursorImpl.hpp
         ${SRCROOT}/Window.cpp
+        ${SRCROOT}/DesktopRuntime.cpp
         ${SRCROOT}/Event.cpp
         ${SRCROOT}/WindowImpl.cpp
         ${SRCROOT}/WindowImpl.hpp
@@ -35,7 +37,6 @@ set(CORE_SOURCE_FILES
         ${SRCROOT}/Mouse.cpp
         ${SRCROOT}/Joystick.cpp
         ${SRCROOT}/Clock.cpp
-        ${SRCROOT}/Time.cpp
  
         ${SRCROOT}/memory/IAllocator.cpp
         ${SRCROOT}/memory/StackAllocator.cpp

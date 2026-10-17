@@ -1,22 +1,22 @@
 /*********************************************************************
-(c) Alex Raag 2024
-https://github.com/Enziferum
-robot2D - Zlib license.
-This software is provided 'as-is', without any express or
-implied warranty. In no event will the authors be held
-liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute
-it freely, subject to the following restrictions:
-1. The origin of this software must not be misrepresented;
-you must not claim that you wrote the original software.
-If you use this software in a product, an acknowledgment
-in the product documentation would be appreciated but
-is not required.
-2. Altered source versions must be plainly marked as such,
-and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any
-source distribution.
+   (c) Alex Raag 2024
+   https://github.com/Enziferum
+   robot2D - Zlib license.
+   This software is provided 'as-is', without any express or
+   implied warranty. In no event will the authors be held
+   liable for any damages arising from the use of this software.
+   Permission is granted to anyone to use this software for any purpose,
+   including commercial applications, and to alter it and redistribute
+   it freely, subject to the following restrictions:
+   1. The origin of this software must not be misrepresented;
+   you must not claim that you wrote the original software.
+   If you use this software in a product, an acknowledgment
+   in the product documentation would be appreciated but
+   is not required.
+   2. Altered source versions must be plainly marked as such,
+   and must not be misrepresented as being the original software.
+   3. This notice may not be removed or altered from any
+   source distribution.
 *********************************************************************/
 
 
@@ -24,6 +24,7 @@ source distribution.
 #include <algorithm>
 
 #include <robot2D/imgui/Api.hpp>
+#include <robot2D/imgui/InputEvents.hpp>
 #include <robot2D/imgui/DragDropTarget.hpp>
 #include <imgui/imgui.h>
 
@@ -40,36 +41,35 @@ namespace editor {
         std::string iconPath = "res/icons";
 
         static std::unordered_map<IconType, std::string> iconNames = {
-                { IconType::Play, "PlayButton.png" },
-                { IconType::Stop, "StopButton.png" },
-                { IconType::Pause, "PauseButton.png" },
-                { IconType::Step, "StepButton.png" },
-                { IconType::Simulate, "SimulateButton.png" },
-                { IconType::Move, "move.png" },
-                { IconType::Scale, "scale.png" },
-                { IconType::Rotate, "rotate.png" },
+            { IconType::Play, "PlayButton.png" },
+            { IconType::Stop, "StopButton.png" },
+            { IconType::Pause, "PauseButton.png" },
+            { IconType::Step, "StepButton.png" },
+            { IconType::Simulate, "SimulateButton.png" },
+            { IconType::Move, "move.png" },
+            { IconType::Scale, "scale.png" },
+            { IconType::Rotate, "rotate.png" },
         };
 
         constexpr int frameBufferAttachmentIndex = 1;
     }
 
     ViewportPanel::ViewportPanel(
-            UIInteractor* uiInteractor,
-            IEditorCamera::Ptr editorCamera,
-            robot2D::MessageBus& messageBus,
-            MessageDispatcher& messageDispatcher,
-            Guizmo2D& guizmo2D,
-            CameraManipulator& collider,
-            SelectionCollider& selectionCollider):
-            IPanel(UniqueType(typeid(ViewportPanel))),
-            m_uiInteractor{uiInteractor},
-            m_editorCamera{editorCamera},
-            m_messageBus{messageBus},
-            m_messageDispatcher{messageDispatcher},
-            m_selectionCollider{selectionCollider},
-            m_guizmo2D{guizmo2D},
-            m_CameraCollider{collider}
-    {
+        UIInteractor* uiInteractor,
+        IEditorCamera::Ptr editorCamera,
+        robot2D::MessageBus& messageBus,
+        MessageDispatcher& messageDispatcher,
+        Guizmo2D& guizmo2D,
+        CameraManipulator& collider,
+        SelectionCollider& selectionCollider) :
+        IPanel(UniqueType(typeid(ViewportPanel))),
+        m_uiInteractor{uiInteractor},
+        m_editorCamera{editorCamera},
+        m_messageBus{messageBus},
+        m_messageDispatcher{messageDispatcher},
+        m_selectionCollider{selectionCollider},
+        m_guizmo2D{guizmo2D},
+        m_CameraCollider{collider} {
         m_windowOptions = robot2D::WindowOptions {
             {
                 {ImGuiStyleVar_WindowPadding, {0, 0}}
@@ -98,24 +98,25 @@ namespace editor {
 
     bool ViewportPanel::containsMouse(robot2D::vec2f position) const {
         return getState() == PanelState::Visible && m_panelHovered
-                && position.x >= m_ViewportBounds.minRegion.x && position.y >= m_ViewportBounds.minRegion.y
-                && position.x < m_ViewportBounds.maxRegion.x && position.y < m_ViewportBounds.maxRegion.y;
+               && position.x >= m_ViewportBounds.minRegion.x && position.y >= m_ViewportBounds.minRegion.y
+               && position.x < m_ViewportBounds.maxRegion.x && position.y < m_ViewportBounds.maxRegion.y;
     }
 
     void ViewportPanel::handleEvents(const robot2D::Event& event) {
         if(getState() != PanelState::Visible)
             return;
-        if(event.type == robot2D::Event::MousePressed && m_panelFocused && m_panelHovered) {
-            auto[mx, my] = ImGui::GetMousePos();
+        if(event.type() == robot2D::Event::Type::MousePressed && m_panelFocused && m_panelHovered) {
+            const auto& click = event.get<robot2D::Event::MousePressed>();
+            float mx = click.x, my = click.y;
             if(mx < m_ViewportBounds.minRegion.x || my < m_ViewportBounds.minRegion.y
-                    || mx >= m_ViewportBounds.maxRegion.x || my >= m_ViewportBounds.maxRegion.y)
+                || mx >= m_ViewportBounds.maxRegion.x || my >= m_ViewportBounds.maxRegion.y)
                 return;
             mx -= m_ViewportBounds.minRegion.x;
             my -= m_ViewportBounds.minRegion.y;
             robot2D::vec2f viewportSize = m_ViewportBounds.maxRegion - m_ViewportBounds.minRegion;
             my = viewportSize.y - my;
 
-            if( !m_guizmo2D.isActive() && !m_CameraCollider.isActive() ) {
+            if(!m_guizmo2D.isActive() && !m_CameraCollider.isActive() ) {
                 robot2D::vec2i mousePos = { static_cast<int>(mx), static_cast<int>(my) };
                 m_uiInteractor -> findEntity(mousePos);
             }
@@ -135,7 +136,8 @@ namespace editor {
         robot2D::vec2f viewportSize = m_ViewportBounds.maxRegion - m_ViewportBounds.minRegion;
         my = viewportSize.y - my;
 
-        if(m_panelFocused && m_panelHovered) {
+        const auto capture = robot2D::captureGuiInput();
+        if(m_panelFocused && m_panelHovered && !capture.activeItem && !capture.popup) {
             if(mx >= 0.f && my >= 0.f && mx < viewportSize.x && my < viewportSize.y)
                 m_editorCamera -> update({mx, my}, deltaTime);
         }
@@ -150,13 +152,13 @@ namespace editor {
             auto imagePosition = ImGui::GetCursorScreenPos();
             auto ViewPanelSize = ImGui::GetContentRegionAvail();
             if(!m_frameBuffer || !m_editorCamera || !m_uiInteractor
-                    || ViewPanelSize.x < 1.f || ViewPanelSize.y < 1.f)
+            || ViewPanelSize.x < 1.f || ViewPanelSize.y < 1.f)
                 return;
 
             m_ViewportBounds.minRegion = {imagePosition.x, imagePosition.y};
             m_editorCamera -> setViewportBounds(m_ViewportBounds.minRegion);
             robot2D::vec2u viewportSize{static_cast<unsigned int>(ViewPanelSize.x),
-                                      static_cast<unsigned int>(ViewPanelSize.y)};
+                                        static_cast<unsigned int>(ViewPanelSize.y)};
             if(m_ViewportSize != viewportSize || needResetViewport) {
                 m_ViewportSize = viewportSize;
                 m_frameBuffer -> Resize(m_ViewportSize);
@@ -190,8 +192,8 @@ namespace editor {
                         auto frame = m_CameraCollider.getRect();
 
                         robot2D::vec2f colliderPosition = {
-                                position.x - frame.width / 2.f,
-                                position.y - frame.height / 2.f,
+                            position.x - frame.width / 2.f,
+                            position.y - frame.height / 2.f,
                         };
 
                         // m_CameraCollider.setSize(m_selectedEntity.getComponent<CameraComponent>().orthoSize);
@@ -209,10 +211,10 @@ namespace editor {
             else if(selectedEntities.size() > 1) {
                 std::vector<TransformComponent*> moveTfs;
                 for(auto& entity: selectedEntities) {
-                   if(entity) {
-                       auto &tc = entity.getComponent<TransformComponent>();
-                       moveTfs.emplace_back(&tc);
-                   }
+                    if(entity) {
+                        auto& tc = entity.getComponent<TransformComponent>();
+                        moveTfs.emplace_back(&tc);
+                    }
                 }
                 m_guizmo2D.setIsShow(!moveTfs.empty());
                 m_guizmo2D.setManipulated(moveTfs);
@@ -222,7 +224,8 @@ namespace editor {
                         continue;
                     bool selectedAncestor = false;
                     for(auto parent = entity.getParent(); parent; parent = parent.getParent()) {
-                        if(std::find(selectedEntities.begin(), selectedEntities.end(), parent) != selectedEntities.end()) {
+                        if(std::find(selectedEntities.begin(), selectedEntities.end(),
+                        parent) != selectedEntities.end()) {
                             selectedAncestor = true;
                             break;
                         }
@@ -241,8 +244,8 @@ namespace editor {
             m_guizmo2D.updateHover({mousePosition.x, mousePosition.y}, m_panelHovered);
             {
                 robot2D::DragDropTarget dragDropTarget{};
-                if(auto&& payloadBuffer = dragDropTarget.unpackPayload2Buffer(contentSceneID,
-                                                                          ImGuiDragDropFlags_AcceptNoDrawDefaultRect)) {
+                if(auto && payloadBuffer = dragDropTarget.unpackPayload2Buffer(contentSceneID,
+                ImGuiDragDropFlags_AcceptNoDrawDefaultRect)) {
                     auto&& path = payloadBuffer.unpack<std::string>();
                     std::filesystem::path scenePath = std::filesystem::path("assets") / path;
 
@@ -253,8 +256,8 @@ namespace editor {
                     pack_message_string(messagePath, buffer);
                 }
 
-                if(auto&& payloadBuffer = dragDropTarget.unpackPayload2Buffer(contentPrefabItemID,
-                                                                          ImGuiDragDropFlags_AcceptNoDrawDefaultRect)) {
+                if(auto && payloadBuffer = dragDropTarget.unpackPayload2Buffer(contentPrefabItemID,
+                ImGuiDragDropFlags_AcceptNoDrawDefaultRect)) {
                     auto&& path = payloadBuffer.unpack<std::string>();
                     std::filesystem::path prefabPath = std::filesystem::path("assets") / path;
 

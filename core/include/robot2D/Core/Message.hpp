@@ -1,26 +1,28 @@
 /*********************************************************************
-(c) Alex Raag 2023
-https://github.com/Enziferum
-robot2D - Zlib license.
-This software is provided 'as-is', without any express or
-implied warranty. In no event will the authors be held
-liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute
-it freely, subject to the following restrictions:
-1. The origin of this software must not be misrepresented;
-you must not claim that you wrote the original software.
-If you use this software in a product, an acknowledgment
-in the product documentation would be appreciated but
-is not required.
-2. Altered source versions must be plainly marked as such,
-and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any
-source distribution.
+   (c) Alex Raag 2023
+   https://github.com/Enziferum
+   robot2D - Zlib license.
+   This software is provided 'as-is', without any express or
+   implied warranty. In no event will the authors be held
+   liable for any damages arising from the use of this software.
+   Permission is granted to anyone to use this software for any purpose,
+   including commercial applications, and to alter it and redistribute
+   it freely, subject to the following restrictions:
+   1. The origin of this software must not be misrepresented;
+   you must not claim that you wrote the original software.
+   If you use this software in a product, an acknowledgment
+   in the product documentation would be appreciated but
+   is not required.
+   2. Altered source versions must be plainly marked as such,
+   and must not be misrepresented as being the original software.
+   3. This notice may not be removed or altered from any
+   source distribution.
 *********************************************************************/
 
 #pragma once
 #include <cstdint>
+#include <cstddef>
+#include <stdexcept>
 #include <robot2D/Config.hpp>
 
 namespace robot2D {
@@ -47,16 +49,23 @@ namespace robot2D {
         /// Message ID. Allow to check what type it is. For your format start from MessageType::Count and higher value
         ID id = -1;
 
-        /// Allow to cast Message as your own Format returning from MessageBus
+        /**
+         * @brief Returns the typed payload until its bus is cleared or destroyed.
+         * @throws std::invalid_argument For absent storage, a size mismatch or a raw payload.
+         * @warning Select T using id: different types with the same size are not distinguished.
+         */
         template<typename T>
         const T& getData() const;
 
+        /// @brief Decodes raw storage using MessageFormatter<T>; requires a live raw payload.
         template<typename T>
         T unpack() {
             return MessageFormatter<T>::unpack(this);
         }
 
-        bool needUnpack() const { return m_needUnpack;  }
+        bool needUnpack() const {
+            return m_needUnpack;
+        }
     private:
         template<typename Allocator, std::size_t size>
         friend class TMessageBus;
@@ -82,7 +91,8 @@ namespace robot2D {
 
     template<typename T>
     const T& Message::getData() const {
-        //assert(sizeof(T) == buffer_sz && "T size must be == buffer_sz");
+        if(m_buffer == nullptr || sizeof(T) != m_buffersz || m_needUnpack)
+            throw std::invalid_argument("Message payload type or size does not match");
         return *static_cast<T*>(m_buffer);
     }
 }

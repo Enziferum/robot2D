@@ -1,22 +1,22 @@
 /*********************************************************************
-(c) Alex Raag 2021
-https://github.com/Enziferum
-robot2D - Zlib license.
-This software is provided 'as-is', without any express or
-implied warranty. In no event will the authors be held
-liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute
-it freely, subject to the following restrictions:
-1. The origin of this software must not be misrepresented;
-you must not claim that you wrote the original software.
-If you use this software in a product, an acknowledgment
-in the product documentation would be appreciated but
-is not required.
-2. Altered source versions must be plainly marked as such,
-and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any
-source distribution.
+   (c) Alex Raag 2021
+   https://github.com/Enziferum
+   robot2D - Zlib license.
+   This software is provided 'as-is', without any express or
+   implied warranty. In no event will the authors be held
+   liable for any damages arising from the use of this software.
+   Permission is granted to anyone to use this software for any purpose,
+   including commercial applications, and to alter it and redistribute
+   it freely, subject to the following restrictions:
+   1. The origin of this software must not be misrepresented;
+   you must not claim that you wrote the original software.
+   If you use this software in a product, an acknowledgment
+   in the product documentation would be appreciated but
+   is not required.
+   2. Altered source versions must be plainly marked as such,
+   and must not be misrepresented as being the original software.
+   3. This notice may not be removed or altered from any
+   source distribution.
 *********************************************************************/
 
 #pragma once
@@ -48,13 +48,13 @@ namespace fmt {
         // Presentation format: 'd'.
         char presentation = 'd';
 
-        // Parses format specifications of the form ['f' | 'e'].
+        // Parses the optional decimal presentation 'd'.
         constexpr auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
             auto it = ctx.begin(), end = ctx.end();
-            if (it != end && (*it == 'd' )) presentation = *it++;
+            if(it != end && (*it == 'd'))   presentation = *it++;
 
             // Check if reached the end of the range:
-            if (it != end && *it != '}')
+            if(it != end && *it != '}')
                 throw format_error("invalid format");
 
             // Return an iterator past the end of the parsed range:
@@ -62,11 +62,11 @@ namespace fmt {
         }
 
         template <typename FormatContext>
-        auto format(const robot2D::vec2u& value, FormatContext& ctx) -> decltype(ctx.out()) {
+        auto format(const robot2D::vec2u& value, FormatContext& ctx) const -> decltype(ctx.out()) {
             return format_to(
-                    ctx.out(),
-                    "({:d}, {:d})",
-                    value.x, value.y);
+                ctx.out(),
+                "({:d}, {:d})",
+                value.x, value.y);
         }
     };
 
@@ -78,10 +78,10 @@ namespace fmt {
         // Parses format specifications of the form ['f' | 'e'].
         constexpr auto parse(format_parse_context& ctx) -> decltype(ctx.begin()) {
             auto it = ctx.begin(), end = ctx.end();
-            if (it != end && (*it == 'f' || *it == 'e')) presentation = *it++;
+            if(it != end && (*it == 'f' || *it == 'e'))  presentation = *it++;
 
             // Check if reached the end of the range:
-            if (it != end && *it != '}')
+            if(it != end && *it != '}')
                 throw format_error("invalid format");
 
             // Return an iterator past the end of the parsed range:
@@ -89,12 +89,11 @@ namespace fmt {
         }
 
         template <typename FormatContext>
-        auto format(const robot2D::vec2u& value, FormatContext& ctx) -> decltype(ctx.out()) {
+        auto format(const robot2D::vec2f& value, FormatContext& ctx) const -> decltype(ctx.out()) {
             // ctx.out() is an output iterator to write to.
-            return format_to(
-                    ctx.out(),
-                    presentation == 'f' ? "({:.1f}, {:.1f})" : "({:.1e}, {:.1e})",
-                    value.x, value.y);
+            if(presentation == 'e')
+                return format_to(ctx.out(), "({:.1e}, {:.1e})", value.x, value.y);
+            return format_to(ctx.out(), "({:.1f}, {:.1f})", value.x, value.y);
         }
     };
 }
@@ -102,15 +101,46 @@ namespace fmt {
 
 
 namespace logger {
-    class Log
-    {
+    /**
+     * @brief Provides the shared core, editor and client logging channels.
+     * @details Initialization is once per process; getters initialize lazily.
+     * All channels share thread-safe console/file sinks and flush each message.
+     * Do not remove their registry entries or reset their slots during use.
+     */
+    class Log {
     public:
-        static void Init();
-        static const std::string& getFilePath() { return s_FilePath; }
+        /**
+         * @brief Initializes all channels once, truncating the selected file for this session.
+         * @param filePath Log destination; relative paths use the current working directory.
+         * @details Later calls preserve the channels, path and file contents, ignoring filePath.
+         * Concurrent initialization is serialized. A failed attempt publishes no channels and
+         * may be retried. Call explicitly before logging to choose a non-default destination.
+         * @throws std::invalid_argument If the first initialization receives an empty path.
+         * @throws spdlog::spdlog_ex For sink/registration errors, including occupied channel names.
+         * @throws std::filesystem::filesystem_error If resolving the destination fails.
+         */
+        static void Init(const std::string& filePath = "robot2D.log");
 
-        static std::shared_ptr<spdlog::logger>& getCoreLogger() { return s_CoreLogger; }
-        static std::shared_ptr<spdlog::logger>& getEditorLogger() { return s_EditorLogger; }
-        static std::shared_ptr<spdlog::logger>& getClientLogger() { return s_ClientLogger; }
+        /// @brief Returns the session's absolute log path, initializing with defaults if needed.
+        static const std::string& getFilePath() {
+            Init(); return s_FilePath;
+        }
+
+        /// @brief Returns the core channel; initialization failures propagate.
+        /// @warning Replacing the slot is supported only while no threads use the channel.
+        static std::shared_ptr<spdlog::logger>& getCoreLogger() {
+            Init(); return s_CoreLogger;
+        }
+        /// @brief Returns the editor channel; initialization failures propagate.
+        /// @warning Replacing the slot is supported only while no threads use the channel.
+        static std::shared_ptr<spdlog::logger>& getEditorLogger() {
+            Init(); return s_EditorLogger;
+        }
+        /// @brief Returns the client channel; initialization failures propagate.
+        /// @warning Replacing the slot is supported only while no threads use the channel.
+        static std::shared_ptr<spdlog::logger>& getClientLogger() {
+            Init(); return s_ClientLogger;
+        }
     private:
         static std::shared_ptr<spdlog::logger> s_CoreLogger;
         static std::string s_FilePath;

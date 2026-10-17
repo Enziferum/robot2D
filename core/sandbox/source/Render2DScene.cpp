@@ -173,7 +173,6 @@ std::vector<Quad> quads;
 std::vector<BoundingBox> bbs;
 
 robot2D::Font g_font;
-robot2D::Text g_text;
 
 Render2DScene::Render2DScene(robot2D::RenderWindow& window) : Scene(window), m_scene(messageBus) {
 }
@@ -263,8 +262,8 @@ void Render2DScene::setup() {
 
     m_textures.loadFromFile(ResourceID::Logo, texturePath);
     g_font.loadFromFile("res/fonts/font.ttf");
-    g_text.setText("Ожидание чтения карты");
-    g_text.setFont(g_font);
+    m_text.setText("Ожидание чтения карты");
+    m_text.setFont(g_font);
     {
         Quad q;
         q.setPosition({400, 400});
@@ -321,26 +320,30 @@ void Render2DScene::setup() {
 
 
 void Render2DScene::handleEvents(const robot2D::Event& event) {
-    if(event.type == robot2D::Event::Resized) {
-        RB_INFO("New Size = {0} and {1}", event.size.widht, event.size.heigth);
-        m_window.resize({static_cast<int>(event.size.widht),
-                         static_cast<int>(event.size.heigth)});
+    if(event.type() == robot2D::Event::Type::Resized) {
+        RB_INFO("New Size = {0} and {1}", event.get<robot2D::Event::SizeEvent>().width,
+            event.get<robot2D::Event::SizeEvent>().height);
+        m_window.resize({static_cast<int>(event.get<robot2D::Event::SizeEvent>().width),
+                         static_cast<int>(event.get<robot2D::Event::SizeEvent>().height)});
         m_window.setView(robot2D::View(robot2D::FloatRect{0, 0,
-                                                          static_cast<float>(event.size.widht),
-                                                          static_cast<float>(event.size.heigth)
+                                                          static_cast<float>(event.get<robot2D::Event::SizeEvent>().
+                                                          width),
+                                                          static_cast<float>(event.get<robot2D::Event::SizeEvent>().
+                                                          height)
             }));
     }
 
-    if(event.type == robot2D::Event::JoystickConnected) {
-        RB_INFO("Joysick Connected ID = {0}", event.joystick.joytickId);
+    if(event.type() == robot2D::Event::Type::JoystickConnected) {
+        RB_INFO("Joysick Connected ID = {0}", event.get<robot2D::Event::JoystickEvent>().joystickId);
     }
 
-    if(event.type == robot2D::Event::JoystickDisconnected) {
-        RB_INFO("Joysick Disconnected ID = {0}", event.joystick.joytickId);
+    if(event.type() == robot2D::Event::Type::JoystickDisconnected) {
+        RB_INFO("Joysick Disconnected ID = {0}", event.get<robot2D::Event::JoystickEvent>().joystickId);
     }
 
-    if(event.type == robot2D::Event::MousePressed) {
-        robot2D::vec2f mousePoint = {static_cast<float>(event.mouse.x), static_cast<float>(event.mouse.y)};
+    if(event.type() == robot2D::Event::Type::MousePressed) {
+        robot2D::vec2f mousePoint = {static_cast<float>(event.get<robot2D::Event::MouseButtonEvent>().x),
+                                     static_cast<float>(event.get<robot2D::Event::MouseButtonEvent>().y)};
         const auto& q = quads[0];
 
 
@@ -354,7 +357,7 @@ void Render2DScene::handleEvents(const robot2D::Event& event) {
             quads[0].color = robot2D::Color::White;
     }
 
-    if(event.type == robot2D::Event::MouseReleased) {
+    if(event.type() == robot2D::Event::Type::MouseReleased) {
         quads[0].color = robot2D::Color::Cyan;
     }
 
@@ -363,11 +366,11 @@ void Render2DScene::handleEvents(const robot2D::Event& event) {
 void Render2DScene::update(float dt) {
     constexpr float speed = 100.F;
 
-    if(robot2D::isJoystickAvailable(robot2D::JoystickType::One)
-        && robot2D::joystickIsGamepad(robot2D::JoystickType::One)) {
+    if(robot2D::isJoystickAvailable(m_window.desktop(), robot2D::JoystickType::One)
+        && robot2D::joystickIsGamepad(m_window.desktop(), robot2D::JoystickType::One)) {
 
         robot2D::JoystickGamepadInput gamepadInput{};
-        if(robot2D::getJoystickGamepadInput(robot2D::JoystickType::One, gamepadInput)) {
+        if(robot2D::getJoystickGamepadInput(m_window.desktop(), robot2D::JoystickType::One, gamepadInput)) {
             auto leftManipulator = gamepadInput.leftManipulatorOffset;
 
             if((-1.F <= leftManipulator.x && leftManipulator.x <= 1.F)
@@ -398,7 +401,7 @@ void Render2DScene::render() {
         m_window.draw(q);
     for(const auto& b: bbs)
         m_window.draw(b);
-    m_window.draw(g_text);
+    m_window.draw(m_text);
     m_window.afterRender();
 }
 

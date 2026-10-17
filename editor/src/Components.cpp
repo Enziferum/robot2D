@@ -75,6 +75,12 @@ namespace editor {
 
     void DrawableComponent::setTexture(const robot2D::Texture& texture) {
         m_texture = &texture;
+        if(m_ownedTexture.get() != &texture) m_ownedTexture.reset();
+    }
+
+    void DrawableComponent::setTexture(std::shared_ptr<robot2D::Texture> texture) {
+        m_ownedTexture = std::move(texture);
+        m_texture = m_ownedTexture.get();
     }
 
     robot2D::Texture& DrawableComponent::getTexture() {
@@ -230,8 +236,13 @@ namespace editor {
 
     void TextComponent::setFont(const robot2D::Font& font) {
         m_font = &font;
-        m_texture = new robot2D::Texture();
-        m_texture -> create(*(m_font -> getImages()[0]));
+        m_bufferCache.clear();
+        m_needUpdate = true;
+        m_texture.reset();
+        if(!font.getImages().empty()) {
+            m_texture = std::make_shared<robot2D::Texture>();
+            m_texture -> create(*font.getImages().front());
+        }
     }
 
     const robot2D::Font* TextComponent::getFont() const {

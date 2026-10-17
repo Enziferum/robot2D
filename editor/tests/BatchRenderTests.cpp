@@ -442,7 +442,8 @@ namespace {
         auto* original = glfwGetCurrentContext();
         GLFWwindow* created = nullptr;
         {
-            ResizeWindow window({64, 64}, "hidden resize regression",
+            DesktopRuntime desktop(DesktopRuntime::Ownership::Borrowed);
+            ResizeWindow window(desktop, {64, 64}, "hidden resize regression",
                 WindowContext(false, false, api45 ? WindowContext::RenderApi::OpenGL4_5
                                                  : WindowContext::RenderApi::OpenGL4_3));
             created = glfwGetCurrentContext();
@@ -482,7 +483,6 @@ namespace {
             CHECK(glGetError() == GL_NO_ERROR);
         }
         glfwMakeContextCurrent(original);
-        glfwDestroyWindow(created);
     }
 
     void malformed(bool api45, std::ostringstream& errors) {
