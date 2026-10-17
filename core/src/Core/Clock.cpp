@@ -23,21 +23,21 @@
 
 namespace robot2D {
     Clock::Clock() :
-        m_start(std::chrono::high_resolution_clock::now()),
-        m_restart(std::chrono::high_resolution_clock::now()),
+        m_start(std::chrono::steady_clock::now()),
+        m_restart(m_start),
         m_restartCount{0} {
     }
 
     Time Clock::duration() const {
-        auto now = std::chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::microseconds>(now - m_start).count();
+        const auto now = std::chrono::steady_clock::now();
+        const auto duration = std::chrono::duration_cast<std::chrono::microseconds>(now - m_start).count();
         return { duration };
     }
 
     Time Clock::restart() {
         ++m_restartCount;
-        auto now = std::chrono::high_resolution_clock::now();
-        auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(now - m_restart).count();
+        const auto now = std::chrono::steady_clock::now();
+        const auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(now - m_restart).count();
         // Keep the unreported fraction; resetting to now loses time in a tight loop.
         m_restart += std::chrono::microseconds(elapsed);
         return { elapsed };

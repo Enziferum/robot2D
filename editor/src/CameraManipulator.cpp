@@ -37,9 +37,15 @@ namespace editor {
     }
 
     CameraManipulator::CameraManipulator(robot2D::MessageBus& messageBus) : m_messageBus{messageBus} {
-        m_eventBinder.bindEvent(robot2D::Event::EventType::MousePressed, BIND_CLASS_FN(onMousePressed));
-        m_eventBinder.bindEvent(robot2D::Event::EventType::MouseReleased, BIND_CLASS_FN(onMouseReleased));
-        m_eventBinder.bindEvent(robot2D::Event::EventType::MouseMoved, BIND_CLASS_FN(onMouseMoved));
+        m_eventBinder.bind<robot2D::Event::MousePressed>([this](const robot2D::Event::MousePressed& event) {
+            onMousePressed(event);
+        });
+        m_eventBinder.bind<robot2D::Event::MouseReleased>([this](const robot2D::Event::MouseReleased& event) {
+            onMouseReleased(event);
+        });
+        m_eventBinder.bind<robot2D::Event::MouseMoved>([this](const robot2D::Event::MouseMoved& event) {
+            onMouseMoved(event);
+        });
 
         auto resourceManager = EditorResourceManager::getManager();
         if(!resourceManager -> hasTexture(EditorResourceID::Movie)) {
@@ -73,7 +79,12 @@ namespace editor {
     }
 
     void CameraManipulator::handleEvents(const robot2D::Event& event) {
-        m_eventBinder.handleEvents(event);
+        if(event.getIf<robot2D::Event::LostFocus>()) {
+            m_leftMousePressed = false;
+            m_pressedPoint = {};
+            m_selectedQuad = -1;
+        }
+        m_eventBinder.dispatch(event);
     }
 
     void CameraManipulator::update(robot2D::vec2f mousePos, float dt) {
@@ -82,10 +93,10 @@ namespace editor {
         recalculateRect(mousePos, dt);
     }
 
-    void CameraManipulator::onMousePressed(const robot2D::Event& event) {
-        if(event.type == robot2D::Event::MousePressed) {
+    void CameraManipulator::onMousePressed(const robot2D::Event::MousePressed& event) {
+        {
             m_leftMousePressed = true;
-            robot2D::vec2f pressedPoint{static_cast<float>(event.mouse.x), static_cast<float>(event.mouse.y)};
+            robot2D::vec2f pressedPoint{static_cast<float>(event.x), static_cast<float>(event.y)};
             pressedPoint = m_camera -> convertPixelToCoords(pressedPoint);
 
 
@@ -108,21 +119,21 @@ namespace editor {
         }
     }
 
-    void CameraManipulator::onMouseReleased(const robot2D::Event& event) {
-        if(event.type == robot2D::Event::MouseReleased) {
+    void CameraManipulator::onMouseReleased(const robot2D::Event::MouseReleased& event) {
+        {
             m_leftMousePressed = false;
             m_pressedPoint = {};
             m_selectedQuad = -1;
         }
     }
 
-    void CameraManipulator::onMouseMoved(const robot2D::Event& event) {
-        if(event.type != robot2D::Event::MouseMoved || !m_leftMousePressed)
+    void CameraManipulator::onMouseMoved(const robot2D::Event::MouseMoved& event) {
+        if(!m_leftMousePressed)
             return;
 
         robot2D::vec2f moveVector {
-            event.move.x,
-            event.move.y
+            event.x,
+            event.y
         };
 
         moveVector = m_camera -> convertPixelToCoords(moveVector);

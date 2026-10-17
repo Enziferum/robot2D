@@ -119,3 +119,15 @@ Managed-сценарий физики проверяет полный trigger-ц
 Enter, несколько Stay, Exit, отсутствие лишних событий после выхода, повторный
 вход/выход и Stop. Проверки фаз/счётчиков/пакета ловят перестановку StayTrigger
 и ExitTrigger между C++ и C#, а не только размер ABI.
+
+## Gui backend
+
+IMGUI-02: 3 headless и 6 graphics сценариев OpenGL 4.3/4.5 в общей suite.
+Контракты, покрытие и ручная приёмка — [gui-backend.md](gui-backend.md).
+
+
+Дополнительно editor-scene-editor-gui-scene загружает изолированный проект
+с прозрачной камерой перед видимым quad и проверяет пиксели полного прохода
+Editor::render + Gui после стабилизации docking. Он ловит порчу Core EBO при
+создании SceneGrid; renderer-43/45 также проверяют сохранность VAO при создании
+IndexBuffer и чередование Core/FBO/GUI нескольких кадров.

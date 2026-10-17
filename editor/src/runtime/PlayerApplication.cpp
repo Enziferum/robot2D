@@ -149,9 +149,10 @@ namespace editor::runtime {
         RB_EDITOR_INFO("[Player] Runtime stopped; exit_code={}", m_result -> exitCode);
     }
     void PlayerApplication::handleEvents(const robot2D::Event& event) {
-        if(event.type == robot2D::Event::Closed) m_running = false;
-        if(event.type == robot2D::Event::Resized && m_scene && event.size.widht && event.size.heigth)
-            m_scene -> setRuntimeWindowSize({event.size.widht, event.size.heigth});
+        using Event = robot2D::Event;
+        if(event.getIf<Event::Closed>()) m_running = false;
+        if(const auto* size = event.getIf<Event::Resized>(); size && m_scene && size->width && size->height)
+            m_scene -> setRuntimeWindowSize({size->width, size->height});
         if(m_scene && m_running) m_scene -> handleEventsRuntime(event);
     }
     void PlayerApplication::update(float dt) {

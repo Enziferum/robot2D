@@ -1,22 +1,22 @@
 /*********************************************************************
-(c) Alex Raag 2026
-https://github.com/Enziferum
-robot2D - Zlib license.
-This software is provided 'as-is', without any express or
-implied warranty. In no event will the authors be held
-liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute
-it freely, subject to the following restrictions:
-1. The origin of this software must not be misrepresented;
-you must not claim that you wrote the original software.
-If you use this software in a product, an acknowledgment
-in the product documentation would be appreciated but
-is not required.
-2. Altered source versions must be plainly marked as such,
-and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any
-source distribution.
+   (c) Alex Raag 2026
+   https://github.com/Enziferum
+   robot2D - Zlib license.
+   This software is provided 'as-is', without any express or
+   implied warranty. In no event will the authors be held
+   liable for any damages arising from the use of this software.
+   Permission is granted to anyone to use this software for any purpose,
+   including commercial applications, and to alter it and redistribute
+   it freely, subject to the following restrictions:
+   1. The origin of this software must not be misrepresented;
+   you must not claim that you wrote the original software.
+   If you use this software in a product, an acknowledgment
+   in the product documentation would be appreciated but
+   is not required.
+   2. Altered source versions must be plainly marked as such,
+   and must not be misrepresented as being the original software.
+   3. This notice may not be removed or altered from any
+   source distribution.
 *********************************************************************/
 
 #include <cmath>
@@ -32,10 +32,10 @@ namespace editor {
 #ifdef USE_GLM
     robot2D::Matrix3D fromGLM(const glm::mat4& glmMatrix) {
         return {
-                glmMatrix[0][0],glmMatrix[0][1],glmMatrix[0][2],glmMatrix[0][3],
-                glmMatrix[1][0],glmMatrix[1][1],glmMatrix[1][2],glmMatrix[1][3],
-                glmMatrix[2][0],glmMatrix[2][1],glmMatrix[2][2],glmMatrix[2][3],
-                glmMatrix[3][0],glmMatrix[3][1],glmMatrix[3][2],glmMatrix[3][3]
+            glmMatrix[0][0], glmMatrix[0][1], glmMatrix[0][2], glmMatrix[0][3],
+            glmMatrix[1][0], glmMatrix[1][1], glmMatrix[1][2], glmMatrix[1][3],
+            glmMatrix[2][0], glmMatrix[2][1], glmMatrix[2][2], glmMatrix[2][3],
+            glmMatrix[3][0], glmMatrix[3][1], glmMatrix[3][2], glmMatrix[3][3]
         };
     }
 #endif
@@ -59,8 +59,9 @@ namespace editor {
 
     IEditorCamera::~IEditorCamera() = default;
 
-    EditorCamera2D::EditorCamera2D():
-    IEditorCamera(EditorCameraType::Orthographic) {}
+    EditorCamera2D::EditorCamera2D() :
+        IEditorCamera(EditorCameraType::Orthographic) {
+    }
 
 
     void EditorCamera2D::setViewportSize(robot2D::vec2f newSize) {
@@ -69,18 +70,19 @@ namespace editor {
     }
 
     void EditorCamera2D::handleEvents(const robot2D::Event& event) {
+        if(event.getIf<robot2D::Event::LostFocus>()) m_leftCntrlPressed = false;
 
-        if(event.type == robot2D::Event::MouseWheel && m_leftCntrlPressed) {
-            m_zoom = zoomOffset + -event.wheel.scroll_y * zoomMultiplier;
+        if(event.type() == robot2D::Event::Type::MouseWheel && m_leftCntrlPressed) {
+            m_zoom = zoomOffset + -event.get<robot2D::Event::MouseWheelEvent>().scroll_y * zoomMultiplier;
             m_view.zoom(m_zoom);
         }
 
-        if(event.type == robot2D::Event::KeyPressed &&
-            event.key.code == robot2D::Key::LEFT_CONTROL)
+        if(event.type() == robot2D::Event::Type::KeyPressed &&
+            event.get<robot2D::Event::KeyboardEvent>().code == robot2D::Key::LEFT_CONTROL)
             m_leftCntrlPressed = true;
 
-        if(event.type == robot2D::Event::KeyReleased &&
-           event.key.code == robot2D::Key::LEFT_CONTROL)
+        if(event.type() == robot2D::Event::Type::KeyReleased &&
+            event.get<robot2D::Event::KeyboardEvent>().code == robot2D::Key::LEFT_CONTROL)
             m_leftCntrlPressed = false;
     }
 
@@ -104,12 +106,12 @@ namespace editor {
     }
 
 
-    EditorCamera::EditorCamera():
-                IEditorCamera(EditorCameraType::Perspective),
-                m_viewportSize{},
-                m_distance{10.f},
-                m_yaw{0.f},
-                m_pitch{0.f} {
+    EditorCamera::EditorCamera() :
+        IEditorCamera(EditorCameraType::Perspective),
+        m_viewportSize{},
+        m_distance{10.f},
+        m_yaw{0.f},
+        m_pitch{0.f} {
         updateView();
     }
 
@@ -119,8 +121,8 @@ namespace editor {
     }
 
     void EditorCamera::handleEvents(const robot2D::Event& event) {
-        if(event.type == robot2D::Event::MouseWheel) {
-            float delta = event.wheel.scroll_y * 0.1f;
+        if(event.type() == robot2D::Event::Type::MouseWheel) {
+            float delta = event.get<robot2D::Event::MouseWheelEvent>().scroll_y * 0.1f;
             mouseZoom(delta);
             updateView();
         }
@@ -144,8 +146,7 @@ namespace editor {
     }
 
 
-    std::pair<float, float> EditorCamera::PanSpeed() const
-    {
+    std::pair<float, float> EditorCamera::PanSpeed() const {
         float x = std::min(m_viewportSize.x / 1000.0f, 2.4f); // max = 2.4f
         float xFactor = 0.0366f * (x * x) - 0.1778f * x + 0.3021f;
 
@@ -167,8 +168,7 @@ namespace editor {
         m_pitch += delta.y * 0.8f;
     }
 
-    float EditorCamera::ZoomSpeed() const
-    {
+    float EditorCamera::ZoomSpeed() const {
         float distance = m_distance * 0.2f;
         distance = std::max(distance, 0.0f);
         float speed = distance * distance;
@@ -178,7 +178,7 @@ namespace editor {
 
     void EditorCamera::mouseZoom(float delta) {
         m_distance -= delta * ZoomSpeed();
-        if (m_distance < 1.0f) {
+        if(m_distance < 1.0f) {
             m_focalPoint += getForwardOrientation();
             m_distance = 1.0f;
         }

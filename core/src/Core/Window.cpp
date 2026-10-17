@@ -1,22 +1,22 @@
 /*********************************************************************
-(c) Alex Raag 2023
-https://github.com/Enziferum
-robot2D - Zlib license.
-This software is provided 'as-is', without any express or
-implied warranty. In no event will the authors be held
-liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute
-it freely, subject to the following restrictions:
-1. The origin of this software must not be misrepresented;
-you must not claim that you wrote the original software.
-If you use this software in a product, an acknowledgment
-in the product documentation would be appreciated but
-is not required.
-2. Altered source versions must be plainly marked as such,
-and must not be misrepresented as being the original software.
-3. This notice may not be removed or altered from any
-source distribution.
+   (c) Alex Raag 2023
+   https://github.com/Enziferum
+   robot2D - Zlib license.
+   This software is provided 'as-is', without any express or
+   implied warranty. In no event will the authors be held
+   liable for any damages arising from the use of this software.
+   Permission is granted to anyone to use this software for any purpose,
+   including commercial applications, and to alter it and redistribute
+   it freely, subject to the following restrictions:
+   1. The origin of this software must not be misrepresented;
+   you must not claim that you wrote the original software.
+   If you use this software in a product, an acknowledgment
+   in the product documentation would be appreciated but
+   is not required.
+   2. Altered source versions must be plainly marked as such,
+   and must not be misrepresented as being the original software.
+   3. This notice may not be removed or altered from any
+   source distribution.
 *********************************************************************/
 
 #include <robot2D/Core/Window.hpp>
@@ -27,23 +27,22 @@ namespace robot2D {
 
     std::unique_ptr<priv::WindowImpl> Window::m_windowImpl = nullptr;
 
-    Window::Window():
-    m_win_size(800, 600),
-    m_name("robot2D"),
-    m_context(WindowContext::Default)
-    {
+    Window::Window() :
+        m_win_size(800, 600),
+        m_name("robot2D"),
+        m_context(WindowContext::Default) {
         Window::create();
     }
 
-    Window::Window(const vec2u& size, const std::string& name, const WindowContext& context):
-            m_win_size(size.x, size.y),
-            m_name(name),
-            m_context(context)
-            {
+    Window::Window(const vec2u& size, const std::string& name, const WindowContext& context) :
+        m_win_size(size.x, size.y),
+        m_name(name),
+        m_context(context) {
         Window::create();
     }
 
-    Window::~Window() {}
+    Window::~Window() {
+    }
 
     bool Window::isOpen() const {
         return m_windowImpl -> isOpen();
@@ -54,12 +53,32 @@ namespace robot2D {
             return false;
 
         if(m_windowImpl -> pollEvents(event)) {
-            if(event.type == Event::Resized)
-                onResize(event.size.widht, event.size.heigth);
+            if(const auto* size = event.getIf<Event::Resized>()) {
+                m_win_size = {size -> width, size -> height};
+                onResize(static_cast<int>(size -> width), static_cast<int>(size -> height));
+            }
+            if(const auto* drop = event.getIf<Event::FilesDropped>()) {
+                // Compatibility callback is invoked outside GLFW callbacks.
+                if(m_dropCallback) m_dropCallback(std::vector<std::string>(drop -> paths));
+            }
             return true;
         }
 
         return false;
+    }
+
+    void Window::processEvents() {
+        if(m_windowImpl) m_windowImpl -> processEvents();
+    }
+
+    FrameEvents Window::takeEvents(std::uint64_t frame) {
+        FrameEvents result{frame, {}};
+        for(;;) {
+            Event event;
+            if(!pollEvents(event)) break;
+            result.events.push_back(std::move(event).withFrame(frame));
+        }
+        return result;
     }
 
     void Window::display() {
@@ -97,6 +116,14 @@ namespace robot2D {
         m_windowImpl = priv::WindowImpl::create(m_win_size, m_name, m_context);
         if(m_windowImpl == nullptr)
             throw std::runtime_error("Can't create WindowImpl");
+    }
+
+    vec2u Window::getLogicalSize() const {
+        return m_windowImpl ? m_windowImpl -> getLogicalSize() : vec2u{};
+    }
+
+    vec2u Window::getFramebufferSize() const {
+        return m_windowImpl ? m_windowImpl -> getFramebufferSize() : vec2u{};
     }
 
     const vec2u& Window::getSize() {
@@ -156,7 +183,7 @@ namespace robot2D {
         m_windowImpl -> setResizable(flag);
     }
 
-    void Window::setMaximazed(const bool &flag) {
+    void Window::setMaximazed(const bool& flag) {
         m_windowImpl -> setMaximazed(flag);
     }
 
@@ -177,7 +204,7 @@ namespace robot2D {
     }
 
     void Window::addDropCallback(std::function<void(std::vector<std::string>&&)>&& callback) {
-        m_windowImpl -> addDropCallback(std::move(callback));
+        m_dropCallback = std::move(callback);
     }
 
 }
