@@ -864,3 +864,29 @@ clang-tidy 191 единиц. Сайт: 6/6 тестов release policy, Astro ch
 -fsyntax-only с актуальными заголовками; запуск окна не выполнялся. Shell-синтаксис
 проверен локально, fixture-тест выкладки/отката выполняется в Linux CI; настоящий
 nginx -t/HTTPS/SSH остаётся шагом после покупки VPS и выбора домена.
+
+
+## WEB-02: первый практический урок Core — 2026-10-17
+
+Опубликован Lesson 01: your first sprite (/docs/core/first-sprite/): окно
+800x600 через Engine/Application, загрузка PNG Robot Lab, явные texture rect/size,
+пакетная отрисовка и освобождение GL-ресурса до закрытия контекста. Полный код
+импортируется в MDX из тех же файлов, которые собирает CMake, без отдельной копии
+листинга. Разобраны CWD/asset path, borrowed texture/window, диагностика и упражнение.
+Исходный PNG и provenance включены; основной checkout пользователя не менялся.
+
+Опциональная цель robot2D-first-sprite включается RB2D_BUILD_CORE_EXAMPLES=ON,
+выход <build>/examples/first-sprite/<configuration> с assets рядом. Это пример
+внутри исходного репозитория, не установленный SDK; зависимости root configuration
+сохраняются. Native CI собирает его на обеих платформах; Linux graphics job
+дополнительно запускает core-lesson.render/missing-texture.
+
+Локально собраны executable и test target; 2/2 graphics-теста прошли без пропусков
+в скрытом GL-окне: реальные жёлтые пиксели в границах спрайта, один quad/draw call,
+close event, повторное освобождение и missing-texture с абсолютным путём.
+Проверяются методы опубликованного приложения, а не управление Engine event loop
+или интерфейсом редактора. Python 53/53; сайт test 6/6, Astro check без диагностик,
+format:check, build 19 страниц, ссылки 622 для / и 634 для /robot2D/.
+Computer-use не применялся; визуальная приёмка видимого окна остаётся пользователю.
+Обязательный commit hook и CI фиксируются после завершения проверок PR #134.
+Следующий материал — клавиатурное перемещение; общий DOC-01/GAME-04 не закрываются.

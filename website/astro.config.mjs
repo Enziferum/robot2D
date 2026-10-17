@@ -47,6 +47,7 @@ export default defineConfig({
           label: 'Core / C++',
           items: [
             { label: 'Overview', slug: 'docs/core' },
+            { label: '01 — Your first sprite', slug: 'docs/core/first-sprite' },
             {
               label: 'Application and events',
               slug: 'docs/core/application-events',
