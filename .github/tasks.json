@@ -5,6 +5,7 @@
     "project_number": 5,
     "project_url": "https://github.com/users/Enziferum/projects/5",
     "issues": {
+      "BRAND-01": 135,
       "RENDER-02": 63,
       "RENDER-01": 61,
       "PROCESS-01": 44,
@@ -70,6 +71,7 @@
     }
   },
   "tasks": {
+    "BRAND-01": "Robot Lab 02: логотип и иконки редактора",
     "RENDER-02": "Корректность ёмкости, переполнения и завершения batch",
     "RENDER-01": "Диагностика OpenGL и проверка GLSL",
     "SAVE-01": "Проверить сохранение и Save / Discard / Cancel",
