@@ -408,3 +408,65 @@ borrowed/events/engine. Ручная приёмка: открыть проект
 камеры и shortcuts → текстовый ввод с захватом GUI → resize/сворачивание →
 закрытие с Save/Discard/Cancel → повторный запуск. Сценарий не считается
 пройденным без запуска пользователем.
+
+
+## Window metrics: размеры, content scale и минимизация
+
+Второй шаг Window/Desktop, CORE-01, 2026-10-17. Рабочая ветка
+`CORE-01-window-metrics` от dev `4132acf`; первый шаг #137 уже слит и принят пользователем.
+
+`Window::getMetrics()` возвращает `WindowMetrics`: actual logical client size,
+framebuffer pixels, platform contentScale (по двум осям) и minimized. Это запросы
+на главном потоке, не атомарная транзакция ОС. `getLogicalSize()` и
+`getFramebufferSize()` сохранены; `getContentScale()` и `isMinimized()` доступны отдельно.
+Compatibility `getSize()` теперь обновляет свой кеш фактическим logical size при
+каждом вызове; сохранённую ссылку нельзя считать live-уведомлением о размере.
+`setSize()` задаёт запрос ОС, не публикует его как уже применённый размер.
+Нулевые и превышающие INT_MAX размеры запроса отклоняются invalid_argument до GLFW.
+
+`Resized` сохраняет logical/client семантику. Добавлены `FramebufferResized`
+(physical pixels), `ContentScaleChanged` (x/y) и `MinimizedChanged` (bool).
+Они дописаны в конец Type/variant, прежние порядковые значения сохранены.
+Callbacks только ставят события в существующую FIFO, без GL и пользовательского
+кода. Payload — историческое изменение; getter — текущее состояние. Порядок разных
+callbacks зависит от ОС; взаимного следования logical/pixels/DPI/minimize не обещаем.
+Чтение старого Resized из очереди не подменяет фактические размеры окна.
+
+`RenderWindow::synchronizeSize()` перед native output выбирает контекст окна и
+синхронизирует renderer: logical size задаёт default view, framebuffer size —
+пиксельный viewport. Пользовательские views сохраняются. Метод не bind-ит target:
+вызывающий слой должен выбрать native framebuffer, закончить прежние отложенные
+draws и вызывать его до начала нового pass. Перегрузка с WindowMetrics применяет
+явный снимок поверхности (например embedding); она не меняет native размеры.
+Размеры больше INT_MAX отклоняются. `resize(vec2i)` сохранён как явное изменение
+render sizing 1:1, без изменения ОС; normal window path использует synchronizeSize.
+`mapPixelToCoords` по-прежнему принимает физические пиксели текущего target.
+`mapClientToCoords(point, view)` переводит logical client point окна в world с
+фактическим framebuffer/logical отношением и текущим viewport; это не helper для
+offscreen Scene/Game. На недоступной поверхности/нулевом viewport возвращает центр view.
+
+Engine синхронизирует размеры перед GUI/render, без изменения расчёта времени и update.
+Редактор также синхронизирует native output перед clear. При minimized или нулевой
+поверхности он делает cancelFrame для уже начатого GUI-кадра и пропускает render/swap.
+Update, сообщения и event pump продолжаются; это не Pause runtime. Сам GuiImpl
+потребляет готовые draw data без GPU-вызовов при недоступном окне. Наличие положительного
+framebuffer не отменяет minimized; отсутствие нулевого framebuffer не доказывает видимость.
+На платформе без достоверного iconified состояние ограничено возможностями GLFW;
+нулевой drawable size обрабатывается независимо. Сон/новый scheduler не добавлены.
+
+Scene offscreen framebuffer пока сохраняет прежний logical allocation policy:
+обновляется один раз перед рендером по последнему положительному фактическому размеру,
+а не по каждому историческому событию. Game framebuffer/камера не привязаны к DPI окна.
+Автоматическое повышение разрешения Scene/Game по DPI — отдельный GUI/Render шаг.
+
+Content scale не равен framebuffer/logical. GUI продолжает вычислять
+DisplayFramebufferScale из размеров; стартовый font size редактора получает scale.x
+конкретного окна вместо GetDeviceCaps/96. При дальнейшей смене масштаба Core сообщает
+событие, но font set не перестраивается. Горячая смена темы/шрифтов, monitor API,
+WindowID, signed desktop positions, shared contexts и multi-viewports вне этого шага.
+
+Проверки/результаты — project-roadmap.md. Ручная приёмка: resize/maximize/restore,
+minimize/restore, закрытие при свёрнутом окне, переход inspector → editor, Scene/Game
+и GUI input; перенос целого окна между мониторами с масштабом 100/150/200%.
+На переходе между мониторами пока проверяем размеры/клики/уведомления, без обещания
+горячей смены размера шрифта. Синтетические метрики не заменяют реальный DPI-тест.

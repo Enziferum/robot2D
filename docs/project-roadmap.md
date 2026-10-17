@@ -13,7 +13,7 @@ Core, ECS, Render, Editor, runtime/player, пример игры и инстру
 [PR #112](https://github.com/Enziferum/robot2D/pull/112) сохраняются вместе с историей;
 он заменён объединённым PR. CORE-02 #122 и затем IMGUI-02 #130 слиты в dev
 после зелёного CI и подтверждённой пользователем ручной приёмки.
-CORE-01 #110 остаётся общей открытой задачей, не обещанием полного завершения Core.
+CORE-01 #110 повторно открыта для оставшегося согласованного объёма после merge #137; это общая задача, а не отметка о полном завершении Core.
 Датированные разделы ниже — история; этот блок задаёт текущие границы плана.
 
 | Этап | Что сделано / что остаётся | Статус |
@@ -24,7 +24,7 @@ CORE-01 #110 остаётся общей открытой задачей, не �
 | robot2D-imgui: текущая корректность renderer | OrthoView Y; GL state и active texture/sampler/program/VAO; UserCallback/reset; scissor clamp/empty; GPU-resource RAII/отказ setup; владение memory-font | IMGUI-02 #126 / PR #130 merged; проверки и ограничения — [gui-backend.md](gui-backend.md) |
 | robot2D-imgui: GuiImpl lifecycle | Собственный ImGuiContext, safe shutdown до setup/после отказа, ready только после успеха; состояния кадра, шрифтовый набор | IMGUI-02 #126 / PR #130 merged; lifecycle/font set и G1/input приняты пользователем |
 | robot2D-imgui: обёртки | Typed/size-aware drag/drop и borrowed lifetime; явные ImageButton ID, null framebuffer, sprite UV/zero-size, string InputText, Sugar flags/namespace | A7 обсуждается соседним GUI-чатом без реализации; A2–A6 остаются отдельными согласуемыми шагами; A1 — PR #123 |
-| Core Window/Desktop | Владение native window/GLFW, уничтожение, ошибки создания; logical/framebuffer size, minimized/DPI, источник событий WindowID, signed coordinates, clipboard/IME и contexts | CORE-01: первый шаг lifetime/runtime/polling реализован локально, проверки/PR; размеры из IMGUI-02 сохранены; остальные пункты отдельно |
+| Core Window/Desktop | Владение native window/GLFW, уничтожение, ошибки создания; logical/framebuffer size, minimized/DPI, источник событий WindowID, signed coordinates, clipboard/IME и contexts | Первый шаг #137 в dev, CI и ручная приёмка пройдены; второй шаг размеров/content scale/minimized реализуется в CORE-01-window-metrics; прочий platform API отдельно |
 | Core Graphics для GUI | Явный UI pass/state/cache; точный vertex layout, draw ranges/baseVertex; streaming buffers, texture views/updates/row pitch, context-local VAO/FBO и lifetime | Связано с RENDER-04 #98 / RENDER-05 #99; согласовать минимальный API до переноса GuiRender |
 | Engine / fixed timestep | Общий scheduler editor/player, fixedDt, предел догоняющих шагов, queued Play/Pause/Stop, SessionId | [Контракт согласован](fixed-timestep-contract.md), реализация не начата; сначала завершение CORE-01/02 |
 | Runtime / fixed input | Общая RuntimeSession, OnUpdate/OnFixedUpdate, frame/fixed input и временные границы, Pause/Resume | Последующая интеграция RUNTIME-01/02, INPUT-01 и PHYS-01; не реализовано этим объединением |
@@ -38,7 +38,7 @@ CORE-01 #110 остаётся общей открытой задачей, не �
 GUI-ветки и пользовательский основной checkout не копируются и не редактируются.
 
 Последовательность сейчас: CORE-02 #122 и IMGUI-02 #130 уже в dev →
-согласованный первый шаг Window/Desktop в CORE-01 → проверки/PR/ручная приёмка.
+Window/Desktop lifetime #137 в dev → согласованный шаг размеров/content scale/minimized → проверки/PR/ручная приёмка.
 Следующий Graphics API и обновление upstream согласуются отдельно. Тайминг согласован, но
 автоматически не запускается; остальные зависимости остаются в своих Issues.
 Оптимизацию uploads/ёмкости и VAO выполняем после измерений, отдельным шагом.
@@ -1059,3 +1059,36 @@ Python 53/53, headless 75/75, strict clang-tidy 186 единиц. Общая с�
 включая 55 graphics и четыре scope-сценария. Обязательный hook и CI нового
 commit фиксируются в PR #123. Следующий шаг — ревью/CI и ручная приёмка
 Inspector/focus/dock tabs/layout, затем интеграция; задача ещё не завершена.
+
+## CORE-01: Window metrics — 2026-10-17
+
+Ведущий Codex, реализация поручена пользователем после обсуждения API.
+Первый этап Window/Desktop #137 merged в dev `4132acf`; пользователь прошёл ручную
+приёмку, все четыре CI checks принятого fdabfed6e5f9 SUCCESS. Issue #110 была
+закрыта после merge и повторно открыта: весь Core не завершён.
+
+Новый отдельный worktree/ветка `CORE-01-window-metrics` от dev `4132acf`.
+Реализуются actual logical/framebuffer queries, contentScale/minimized snapshots,
+отдельные ordered typed события без GL callbacks, logical default view и physical
+viewport, сохранение custom views, валидация setSize, устранение повторного resize.
+Editor/Sandbox пропускают native output при недоступной поверхности; GUI-кадр
+завершается, event pump и updates продолжаются. Font scale при запуске берётся у
+окна; горячего font reload нет. Scene offscreen allocation пока logical.
+
+Добавлены постоянные проверки метрик/zero/minimized, callback FIFO и отсутствия GL
+побочных эффектов, framebuffer-only/fractional resize, custom camera и восстановления.
+Обновляются прежние resize/routing tests. Windows GCC 16.2/Ninja Release: editor/core-tests/editor suite собраны; полный
+CTest 227/227, включая 57 graphics, без пропусков. Doxygen 1.18/WARN_AS_ERROR
+сгенерирован; Sandbox, sandbox-event-compat и ImGui example собраны. Обязательный
+hook пройден: Python 53/53, headless CTest 170/170, Uncrustify 0.83 и строгий
+clang-tidy 200 собственных единиц. Отдельный строгий анализ изменённого GuiImpl
+пройден. Проверены 47 локальных ссылок на файлы в изменённых документах.
+CI нового commit и ручная DPI/minimize приёмка ещё впереди; исторические проверки
+#137 не считаются проверками этого изменения.
+
+Границы: timing/fixedDt, горячая смена fonts/style, multi-viewports, monitor API,
+WindowID, signed desktop positions, shared contexts, clipboard/IME и новый Graphics
+pass не реализуются. GUI-требования проверены по локальному imgui-backend-review.md
+соседнего чата; этот untracked файл не включается в ветку. ECS/Snapshot/CancellationToken
+остаются за пользователем. Следующее — CI и ручная приёмка нового шага, затем
+отдельное согласование следующего platform/Graphics объёма.

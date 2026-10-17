@@ -46,6 +46,7 @@ namespace robot2D {
 
             void setup() override;
             void setSize(const vec2u& size) override;
+            void setSurfaceSize(const vec2u& logical, const vec2u& pixels) override;
             void createLayer() override;
             unsigned int getLayerCount() const override;
 

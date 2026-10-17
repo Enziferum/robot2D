@@ -320,19 +320,6 @@ void Render2DScene::setup() {
 
 
 void Render2DScene::handleEvents(const robot2D::Event& event) {
-    if(event.type() == robot2D::Event::Type::Resized) {
-        RB_INFO("New Size = {0} and {1}", event.get<robot2D::Event::SizeEvent>().width,
-            event.get<robot2D::Event::SizeEvent>().height);
-        m_window.resize({static_cast<int>(event.get<robot2D::Event::SizeEvent>().width),
-                         static_cast<int>(event.get<robot2D::Event::SizeEvent>().height)});
-        m_window.setView(robot2D::View(robot2D::FloatRect{0, 0,
-                                                          static_cast<float>(event.get<robot2D::Event::SizeEvent>().
-                                                          width),
-                                                          static_cast<float>(event.get<robot2D::Event::SizeEvent>().
-                                                          height)
-            }));
-    }
-
     if(event.type() == robot2D::Event::Type::JoystickConnected) {
         RB_INFO("Joysick Connected ID = {0}", event.get<robot2D::Event::JoystickEvent>().joystickId);
     }

@@ -173,8 +173,7 @@ namespace robot2D::priv {
         // Consume even when skipped/failed: draw data never escapes into the next frame.
         m_state = GuiState::Ready;
         GuiContextScope scope(m_context);
-        const auto pixels = m_window -> getFramebufferSize();
-        if(pixels.x == 0 || pixels.y == 0) return true;
+        if(!m_window -> getMetrics().drawable()) return true;
         try {
             const auto* data = ImGui::GetDrawData();
             if(!data || !m_render.render(*data)) return fail(m_render.lastError());

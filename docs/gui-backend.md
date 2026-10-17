@@ -56,7 +56,8 @@ allowDefaultFallback и defaultFont=0 выбирает встроенный шр
 ## Core и граница отрисовки
 
 Window::getLogicalSize() запрашивает фактический client size, getFramebufferSize()
-— физические pixels. Старый getSize() сохраняет прежнюю кешированную семантику.
+— физические pixels. После шага Window metrics getSize() обновляет свой кеш
+фактическим logical size при каждом вызове (см. дополнение ниже).
 Разделение учитывает ограничения ОС при создании окна, даже до Resized batch.
 FramebufferScale вычисляется из фактических размеров; при нулевом logical size
 нет деления на ноль. Перемещение между DPI-мониторами и перестройка шрифтов отложены.
@@ -185,3 +186,16 @@ module и до потери GL-контекста. Полный scene/GUI тес
 устанавливает gdb для получения стека при повторном отказе. Lifetime-исправление
 573e65f прошло локальный hook: editor/core-tests/suite, headless и строгий анализ;
 подтверждение Linux и Windows выполняется на следующем опубликованном head.
+
+
+### Следующий Core Window metrics contract — 2026-10-17
+
+После #137 Core добавляет WindowMetrics/getContentScale/isMinimized и отдельные
+FramebufferResized/ContentScaleChanged/MinimizedChanged. Существующие logical/pixel
+getters и DisplayFramebufferScale сохраняются. getSize совместимо именем/ссылкой,
+но обновляется фактическим logical size при запросе. Callback не выполняет GL.
+GuiImpl пропускает GPU output не только при zero framebuffer, но и minimized.
+Editor отменяет уже начатый GUI-кадр перед пропущенным render; update и pump продолжаются.
+ContentScale используется для стартовых шрифтов вместо системного Windows DPI;
+динамический reload font set не добавлен. Подробности/проверки — core-api.md и
+project-roadmap.md. Это не закрывает дальнейшие monitor/multi-viewport требования.

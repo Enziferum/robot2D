@@ -45,6 +45,19 @@ namespace robot2D {
 
     using WindowHandle = void*;
 
+    /// Current platform values, queried on the runtime thread; not an atomic OS transaction.
+    struct WindowMetrics {
+        vec2u logicalSize;
+        vec2u framebufferSize;
+        vec2f contentScale{1.f, 1.f};
+        bool minimized{false};
+
+        /// A minimized window may retain a positive framebuffer size.
+        bool drawable() const noexcept {
+            return !minimized && logicalSize.x && logicalSize.y && framebufferSize.x && framebufferSize.y;
+        }
+    };
+
     /**
      * \brief Creates Window where you can draw own entites / objects.
      */
@@ -110,7 +123,12 @@ namespace robot2D {
 
         void setSize(const robot2D::vec2u& size);
 
+        /// Compatibility logical-size query. The returned reference is refreshed on each call.
         const vec2u& getSize();
+        /// Current dimensions and platform UI scale; contentScale is not framebuffer/logical.
+        WindowMetrics getMetrics() const;
+        vec2f getContentScale() const;
+        bool isMinimized() const;
         /// Physical drawable size; may be zero while minimized.
         vec2u getFramebufferSize() const;
         /// Actual client size in logical coordinates, including OS size constraints.

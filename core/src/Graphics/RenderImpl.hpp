@@ -56,6 +56,7 @@ namespace robot2D {
             virtual const View& getDefaultView() = 0;
             virtual void setup() = 0;
             virtual void setSize(const vec2u& size) = 0;
+            virtual void setSurfaceSize(const vec2u& logical, const vec2u& pixels) = 0;
 
             virtual void beforeRender() const = 0;
             virtual void afterRender() const = 0;
