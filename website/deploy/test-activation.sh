@@ -8,14 +8,17 @@ cleanup() {
 }
 trap cleanup 0
 mkdir -p "$fixture/releases"
-for id in first second incomplete; do mkdir -p "$fixture/releases/$id/docs" "$fixture/releases/$id/pagefind"; done
+for id in first second incomplete; do mkdir -p "$fixture/releases/$id/docs" "$fixture/releases/$id/pagefind" "$fixture/releases/$id/_astro"; done
 for id in first second; do
+    printf "%s" "$id" > "$fixture/releases/$id/_astro/$id.js"
     for file in index.html docs/index.html 404.html pagefind/pagefind-entry.json; do printf '%s' "$id" > "$fixture/releases/$id/$file"; done
 done
 sh "$script" "$fixture" first
 [ "$(readlink "$fixture/current")" = releases/first ]
 sh "$script" "$fixture" second
 [ "$(cat "$fixture/current/index.html")" = second ]
+[ "$(cat "$fixture/shared/_astro/first.js")" = first ]
+[ "$(cat "$fixture/shared/_astro/second.js")" = second ]
 sh "$script" "$fixture" first
 [ "$(cat "$fixture/current/index.html")" = first ]
 for invalid in ../outside incomplete; do

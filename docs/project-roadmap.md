@@ -854,3 +854,13 @@ CTest 169/169, формат и строгий clang-tidy затронутых е
 multi-viewports/WindowID, signed coordinates/DPI/IME/clipboard, новый timing и
 runtime input routing остаются последующим задачам. ECS не меняется.
 Следующий шаг после проверок — PR в dev и ручная приёмка editor shutdown/input.
+
+
+WEB-02: подготовка Core/Learn/Nginx опубликована первым шагом 227f4df;
+синхронизация с Core baseline dev 4132acf — 7e6ffa3, конфликт roadmap разрешён
+с сохранением обеих сторон. Обязательный hook прошёл, headless 169/169 и strict
+clang-tidy 191 единиц. Сайт: 6/6 тестов release policy, Astro check без диагностик,
+18 HTML-страниц, ссылки/ресурсы 532 для / и 543 для /robot2D/. Пример Core проверен
+-fsyntax-only с актуальными заголовками; запуск окна не выполнялся. Shell-синтаксис
+проверен локально, fixture-тест выкладки/отката выполняется в Linux CI; настоящий
+nginx -t/HTTPS/SSH остаётся шагом после покупки VPS и выбора домена.
