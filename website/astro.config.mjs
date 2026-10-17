@@ -62,6 +62,10 @@ export default defineConfig({
             },
             { label: '05 — Camera and mouse', slug: 'docs/core/camera-view' },
             {
+              label: '06 — Sprite collisions',
+              slug: 'docs/core/sprite-collisions',
+            },
+            {
               label: 'Application and events',
               slug: 'docs/core/application-events',
             },

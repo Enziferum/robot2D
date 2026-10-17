@@ -94,4 +94,11 @@ The animation/camera examples generate a small teaching atlas in code, with no
 extra art downloads. Visible rendering, real resize/DPI and mouse acceptance remain
 manual; computer-use is not part of the verification workflow.
 
+Lesson 06 adds `public/examples/sprite-collisions`: a moving Robot Lab sprite,
+seven static walls, explicit AABBs and X-then-Y movement resolution with sliding.
+Five headless scenarios and an optional hidden-window render check exercise the
+published application. It requires positive unrotated quads, static obstacles and
+a non-overlapping start; it is not a general physics solver. Native CI builds the
+example/tests and runs the GL check in its graphics job.
+
 `pnpm test` checks the public release policy. CI also tests activation/rollback on Linux and saves the root-path preview artifact. `deploy/activate-release.sh` is Linux-only; do not invoke it on a real server until the host, permissions and domain are prepared. Nginx/HTTPS have not been validated on a purchased server yet.
