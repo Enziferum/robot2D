@@ -1,4 +1,5 @@
 #include <array>
+#include <cmath>
 #include <iostream>
 #include <limits>
 #include <stdexcept>
@@ -276,6 +277,126 @@ namespace {
         require(before == after, "native callback modified an unrelated current context");
     }
 
+    void metricsValues() {
+        WindowMetrics value{{800, 600}, {1600, 1200}, {1.5f, 1.5f}, false};
+        require(value.drawable(), "positive surface was rejected");
+        value.minimized = true;
+        require(!value.drawable(), "minimized positive surface was drawable");
+        value.minimized = false;
+        value.framebufferSize.x = 0;
+        require(!value.drawable(), "zero pixel width was drawable");
+        value.framebufferSize = {1600, 1200}; value.logicalSize.y = 0;
+        require(!value.drawable(), "zero logical height was drawable");
+        Event scale(Event::ContentScaleChanged{1.5f, 2.f});
+        require(scale.type() == Event::Type::ContentScaleChanged &&
+            scale.get<Event::ContentScaleChanged>().y == 2.f, "scale payload/type mismatch");
+        Event pixels(Event::FramebufferResized{{1600, 1200}});
+        require(!pixels.getIf<Event::Resized>() && pixels.get<Event::SizeEvent>().width == 1600,
+            "framebuffer and logical resize were confused");
+    }
+
+    void metrics() {
+        DesktopRuntime desktop;
+        glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+        RenderWindow window(desktop, {128, 96}, "metrics");
+        auto* native = static_cast<GLFWwindow*>(window.getRaw());
+        const auto actual = window.getMetrics();
+        int width = 0, height = 0;
+        glfwGetWindowSize(native, &width, &height);
+        require(actual.logicalSize == vec2u(static_cast<unsigned>(width), static_cast<unsigned>(height)),
+            "logical query is not actual client size");
+        float x = 0, y = 0;
+        glfwGetWindowContentScale(native, &x, &y);
+        require(actual.contentScale == vec2f(x, y), "content scale differs from GLFW");
+        require(actual.minimized == (glfwGetWindowAttrib(native, GLFW_ICONIFIED) == GLFW_TRUE),
+            "minimized query differs from GLFW");
+        require(window.getSize() == actual.logicalSize, "compatibility getter is stale");
+        for(const auto size : {vec2u{0, 1}, vec2u{1, 0}, vec2u{std::numeric_limits<unsigned>::max(), 1}}) {
+            bool rejected = false;
+            try { window.setSize(size); }
+            catch(const std::invalid_argument&) { rejected = true; }
+            require(rejected && window.getSize() == window.getLogicalSize(), "invalid size corrupted window");
+        }
+        window.setSize({173, 107});
+        desktop.processEvents();
+        require(window.getSize() == window.getLogicalSize(), "setSize cached a request instead of actual size");
+        window.takeEvents(1);
+        require(window.synchronizeSize(), "native positive metrics were rejected");
+        const auto logical = window.getLogicalSize();
+        const auto center = window.mapClientToCoords({logical.x * 0.5f, logical.y * 0.5f}, window.getDefaultView());
+        require(std::abs(center.x - window.getDefaultView().getCenter().x) < 0.01f &&
+            std::abs(center.y - window.getDefaultView().getCenter().y) < 0.01f, "client mapping drifted");
+
+        View camera(FloatRect{10, 20, 200, 100});
+        window.setView(camera);
+        WindowMetrics snapshot{{80, 60}, {120, 90}, {2.f, 2.f}, false};
+        require(window.synchronizeSize(snapshot), "fractional pixel ratio was rejected");
+        std::array<GLint, 4> viewport{};
+        glGetIntegerv(GL_VIEWPORT, viewport.data());
+        require(viewport == std::array<GLint, 4>{0, 0, 120, 90}, "viewport uses logical dimensions");
+        require(window.getDefaultView().getSize() == vec2f(80, 60), "default view uses physical pixels");
+        require(window.getView().getTransform() == camera.getTransform(), "DPI changed a custom camera");
+        snapshot.framebufferSize = {160, 120};
+        require(window.synchronizeSize(snapshot), "framebuffer-only change was ignored");
+        glGetIntegerv(GL_VIEWPORT, viewport.data());
+        require(viewport[2] == 160 && viewport[3] == 120, "framebuffer-only viewport stayed stale");
+        require(window.getSize() == window.getLogicalSize(), "surface synchronization changed native size cache");
+        const auto savedView = window.getDefaultView().getTransform();
+        for(int state = 0; state != 3; ++state) {
+            auto unavailable = snapshot;
+            if(state == 0) unavailable.minimized = true;
+            if(state == 1) unavailable.framebufferSize.x = 0;
+            if(state == 2) unavailable.logicalSize.y = 0;
+            glViewport(3, 4, 17, 19);
+            require(!window.synchronizeSize(unavailable), "unavailable target was rendered");
+            glGetIntegerv(GL_VIEWPORT, viewport.data());
+            require(viewport == std::array<GLint, 4>{3, 4, 17, 19}, "unavailable target modified GL");
+            require(window.getDefaultView().getTransform() == savedView, "minimize destroyed the view");
+        }
+        require(window.synchronizeSize(snapshot), "restore failed");
+        glGetIntegerv(GL_VIEWPORT, viewport.data());
+        require(viewport[2] == 160 && viewport[3] == 120, "restore did not reset native viewport");
+        require(glGetError() == GL_NO_ERROR, "metrics produced a GL error");
+    }
+
+    void metricsEvents() {
+        DesktopRuntime desktop;
+        glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+        Window window(desktop, {64, 64}, "metrics events");
+        Window other(desktop, {64, 64}, "unrelated context");
+        auto* native = static_cast<GLFWwindow*>(window.getRaw());
+        auto size = glfwSetWindowSizeCallback(native, nullptr);
+        auto pixels = glfwSetFramebufferSizeCallback(native, nullptr);
+        auto scale = glfwSetWindowContentScaleCallback(native, nullptr);
+        auto minimize = glfwSetWindowIconifyCallback(native, nullptr);
+        glfwSetWindowSizeCallback(native, size); glfwSetFramebufferSizeCallback(native, pixels);
+        glfwSetWindowContentScaleCallback(native, scale); glfwSetWindowIconifyCallback(native, minimize);
+        require(size && pixels && scale && minimize, "missing platform callback");
+        window.takeEvents(1);
+        const auto actual = window.getLogicalSize();
+        other.makeCurrent(); glViewport(1, 2, 23, 29);
+        size(native, 90, 60); pixels(native, 180, 120); scale(native, 1.5f, 2.f);
+        minimize(native, GLFW_TRUE); pixels(native, 0, 0); minimize(native, GLFW_FALSE);
+        pixels(native, 180, 120);
+        std::array<GLint, 4> viewport{}; glGetIntegerv(GL_VIEWPORT, viewport.data());
+        require(glfwGetCurrentContext() == other.getRaw() && viewport == std::array<GLint, 4>{1, 2, 23, 29},
+            "platform callbacks switched context or changed viewport");
+        auto batch = window.takeEvents(7);
+        require(batch.events.size() == 7, "metrics events were dropped or combined");
+        require(batch.events[0].get<Event::Resized>().width == 90 &&
+            batch.events[1].get<Event::FramebufferResized>().width == 180 &&
+            batch.events[2].get<Event::ContentScaleChanged>().y == 2.f &&
+            batch.events[3].get<Event::MinimizedChanged>().minimized &&
+            batch.events[4].get<Event::FramebufferResized>().width == 0 &&
+            !batch.events[5].get<Event::MinimizedChanged>().minimized &&
+            batch.events[6].get<Event::FramebufferResized>().width == 180, "metrics order/payload changed");
+        for(std::size_t index = 1; index < batch.events.size(); ++index)
+            require(batch.events[index].context().sequence > batch.events[index - 1].context().sequence &&
+                batch.events[index].context().frame == 7, "metrics metadata order changed");
+        require(window.getSize() == actual, "historical callback replaced actual native size");
+        require(other.takeEvents(7).events.empty(), "metrics leaked into another window queue");
+    }
+
     struct EngineResult { int cleanup = 0; int destructors = 0; bool validContext = true; };
     class ProbeApplication final : public Application {
     public:
@@ -336,7 +457,8 @@ int main(int argc, char** argv) {
     try {
         if(argc != 2) throw std::runtime_error("expected scenario");
         const std::string scenario = argv[1];
-        if(scenario == "uninitialized") uninitialized();
+        if(scenario == "metrics-values") metricsValues();
+        else if(scenario == "uninitialized") uninitialized();
         else if(scenario == "editor-shutdown") editorShutdown();
         else {
             if(!graphicsAvailable()) return 77;
@@ -345,6 +467,8 @@ int main(int argc, char** argv) {
             else if(scenario == "rollback") rollback();
             else if(scenario == "borrowed") borrowed();
             else if(scenario == "events") events();
+            else if(scenario == "metrics") metrics();
+            else if(scenario == "metrics-events") metricsEvents();
             else if(scenario == "engine") engine();
             else throw std::runtime_error("unknown scenario");
         }

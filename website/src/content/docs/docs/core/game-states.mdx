@@ -1,0 +1,176 @@
+---
+title: 'Lesson 08: playing, paused and won'
+description: Control simulation with explicit game states while keeping input events and rendering alive.
+---
+
+import { Code } from '@astrojs/starlight/components';
+import flow from '../../../../../public/examples/game-states/GameFlow.hpp?raw';
+import application from '../../../../../public/examples/game-states/StatefulGame.hpp?raw';
+import main from '../../../../../public/examples/game-states/main.cpp?raw';
+
+Continue the [item collection game](../collect-items/) with three explicit states:
+**Playing**, **Paused** and **Won**. P toggles pause, collecting the fifth item wins,
+and R starts another round. The arena and HUD stay visible while simulation is
+frozen. This example uses the **0.8.0-dev** Core API, checked from baseline
+**f3f53ec**, and builds inside the repository with the preceding lesson sources.
+
+## Game state is separate from application lifetime
+
+Do not pause by setting `m_running = false`: that asks Engine to end the application.
+A paused game still needs its event pump so P, R, Escape and the window close button
+work. It still renders so the player can see the paused scene and controls.
+
+The application remains running in all three states. Only the simulation branch
+changes. An enum is preferable to independent `isPaused` and `hasWon` booleans here:
+it cannot represent an accidental fourth combination, “paused and won”. Focus is
+separate information because a won window can also lose focus.
+
+| Current state | Event                               | Result               |
+| ------------- | ----------------------------------- | -------------------- |
+| Playing       | Fresh P press                       | Paused               |
+| Paused        | Fresh P press, window focused       | Playing              |
+| Playing       | Final item collected                | Won                  |
+| Any state     | Fresh R press, window focused       | New round in Playing |
+| Playing       | Focus lost or minimize notification | Paused               |
+| Paused        | Focus regained or window restored   | Remain Paused        |
+| Won           | P, focus loss or focus gain         | Remain Won           |
+| Any state     | Escape or close                     | Exit application     |
+
+R and P autorepeat are ignored. No timer automatically resumes the game. After
+focus returns, the player explicitly presses P or R. Completion preserves the
+score of 50 and the empty item set until a restart.
+
+## Describe the transitions
+
+<Code code={flow} lang="cpp" title="GameFlow.hpp" />
+
+`canUpdate()` is the single simulation gate: the phase must be Playing and the
+window must be focused. `win()` cannot turn a paused or unfocused round into a win.
+The state model owns no window, texture or score; it describes which operations are
+allowed. The collection model from lesson 07 remains responsible for items/points.
+
+This is a small state machine, not a general scene manager. Three enum alternatives
+and explicit methods are enough; a hierarchy of heap-allocated state objects would
+add little to this example. Separate classes can become useful when states own
+substantial, different behavior later.
+
+## Keep events flowing, gate simulation
+
+<Code code={application} lang="cpp" title="StatefulGame.hpp" />
+
+The event handler processes exit and focus events before checking whether movement
+is allowed. It forwards genuine focus events to the existing input helper. It also
+handles a `MinimizedChanged(true)` notification as a request to pause; restoring the
+window does not resume. If a native surface is otherwise unavailable, `update()`
+skips simulation and the inherited renderer skips drawing, without ending Engine.
+
+Movement presses only reach the input helper during Playing. Releases can reach
+it in every state. Entering pause, resuming, winning and restarting clear held
+movement. Otherwise, a key held before pause—or pressed during it—could move the
+player immediately after resume. A key still physically held must be released and
+pressed again; autorepeat does not reconstruct its held state.
+
+The example forwards input through `CollisionSprite`, rather than calling
+`CollectItems::handleEvents()`: lesson 07 handles R itself, and that handler would
+bypass this game's focus/restart policy. The qualification makes that choice
+explicit. Escape and close are still handled by the existing application code.
+
+Only three small extension points are added to earlier examples: `clearHeld()` in
+the input helper, protected `clearMovement()` in the collision application, and
+protected `setHint()` in the collection application. They preserve earlier lesson
+behavior and avoid copying the arena, input or font lifetime code. Core itself is
+unchanged.
+
+### Pause means no simulation
+
+`stepGame()` returns before collision movement and pickup detection when paused or
+won. It does not simulate with a zero timestep: lesson 07 can still collect an item
+at the current position when `deltaTime` is zero. Skipping the complete simulation
+step is what freezes both motion and triggers.
+
+Skipped update durations are not stored. Engine continues its existing fixed-step
+loop, but the game ignores those calls until Playing resumes. The first resumed
+update uses its normal current timestep; it does not apply the wall-clock duration
+of the pause as a giant movement. This lesson introduces no new clock or scheduler.
+
+### Win after the final pickup
+
+During Playing, movement resolves against walls, then item overlap updates the
+score. When the collection model becomes complete, the game transitions to Won in
+that same update, clears movement and changes the hint to `Victory! R: restart`.
+Further updates cannot move the player or award more points. P has no effect on Won.
+
+R calls the existing round reset, returns the phase to Playing and clears movement.
+It restores all items and the player spawn without reloading the PNG or font.
+Unlike lesson 07, holding a direction while restarting does not continue movement:
+the new round requires a fresh direction press.
+
+### Render every drawable frame
+
+Rendering is inherited from the previous lessons and continues for Playing, Paused
+and Won. The same score line remains visible. A second line names the current
+phase and its controls. When collection refreshes lesson 07's hint, `showPhase()`
+restores the state-specific message; it is not rebuilt on every rendered frame.
+
+All textures, the font and text objects retain lesson 07's setup/destroy lifetime.
+Changing phase allocates no new GL resources. The sample uses text to indicate the
+state; a modal menu, dimming overlay and mouse buttons are independent additions.
+
+## Build and run
+
+Use the native dependencies described in [lesson 01](../first-sprite/), preserving
+your existing build's generator and toolchain. From the repository root:
+
+```sh
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DRB2D_BUILD_CORE_EXAMPLES=ON
+cmake --build build --config Release --target robot2D-game-states robot2D-game-states-test -j 4
+ctest --test-dir build -C Release -R '^core-lesson\.states-' --output-on-failure
+```
+
+CMake copies the Robot Lab PNG and lesson 07's Source Sans Pro font/OFL notice into
+`assets/` beside the executable. Run from that output directory. Optional arguments
+override the PNG path and then the font path. Windows needs matching native runtime
+DLLs on PATH; for MinGW, use the matching MSYS2 MinGW64 environment.
+
+```powershell
+Set-Location build/examples/game-states/Release
+.\robot2D-game-states.exe
+```
+
+On Linux:
+
+```sh
+cd build/examples/game-states/Release
+./robot2D-game-states
+```
+
+<Code code={main} lang="cpp" title="main.cpp" />
+
+## Check the result
+
+Use WASD/arrows to move and collect the five items. Try P while moving: the world
+must freeze while the HUD remains visible. Press movement keys while paused, then
+resume; no direction should remain latched. Switch away and back; the game should
+stay paused. Finish the round and verify that P cannot resume it. R should reset
+from Playing, Paused and Won. Escape and the close button must work in every phase.
+
+Six headless scenarios exercise pause/no pickup, stale/repeated input, focus and
+minimize/restore, victory freezing, restart from all states, and exit in all states.
+An optional hidden-window GL check compares rendered frames: the paused world
+stays unchanged while the HUD changes, Won has no item quads, and restart restores
+the Playing scene. See the [example README](../../../examples/game-states/README.md)
+for the graphics commands. A skipped GL check is not a rendering pass; visible
+window, real input and display-scale acceptance remain manual.
+
+Try adding an explicit “Confirm restart” state before replacing the current round.
+Write its transition table first and keep exit available. As a separate exercise,
+decide whether winning should still allow player movement; then change the
+simulation policy and its tests together, without making Paused behave differently.
+
+Download [GameFlow.hpp](../../../examples/game-states/GameFlow.hpp),
+[StatefulGame.hpp](../../../examples/game-states/StatefulGame.hpp),
+[main.cpp](../../../examples/game-states/main.cpp),
+[CMakeLists.txt](../../../examples/game-states/CMakeLists.txt) and
+[LICENSE.txt](../../../examples/game-states/LICENSE.txt).
+Use the full checkout or keep the lesson 01/02/06/07 source directories alongside
+this example. This is not an installed SDK.

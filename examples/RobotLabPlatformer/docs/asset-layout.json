@@ -1,0 +1,225 @@
+{
+  "canvas": [
+    1280,
+    720
+  ],
+  "sprite_sources": "Unmodified platformer-v1 Player.png and Platform.png",
+  "native_ui_branch": "ASSET-01 a0d316f",
+  "platforms": [
+    {
+      "visible_left": 40,
+      "visible_top": 625,
+      "visible_width": 350,
+      "collider_height": 10
+    },
+    {
+      "visible_left": 435,
+      "visible_top": 530,
+      "visible_width": 205,
+      "collider_height": 10
+    },
+    {
+      "visible_left": 690,
+      "visible_top": 435,
+      "visible_width": 205,
+      "collider_height": 10
+    },
+    {
+      "visible_left": 955,
+      "visible_top": 340,
+      "visible_width": 285,
+      "collider_height": 10
+    }
+  ],
+  "player_spawn": [
+    80.78309409888357,
+    530.3180223285488
+  ],
+  "gravity_pixels": 564.48,
+  "speed_pixels": 256,
+  "jump_pixels": 441.6,
+  "jump_height_pixels": 172.73469387755105,
+  "source_metadata": {
+    "player-idle-v1.json": {
+      "schema": "game-2d-assets/v1",
+      "asset_id": "player-idle-v1",
+      "image": "Player.png",
+      "image_size_px": [
+        1254,
+        1254
+      ],
+      "coordinate_system": "top-left, x-right, y-down",
+      "alpha_verified": true,
+      "alpha_extrema": [
+        0,
+        255
+      ],
+      "measurement_status": "measured; visible bounds use alpha >= 8, suggested texture rect adds 4px padding",
+      "frames": [
+        {
+          "id": "idle",
+          "rect_px": [
+            288,
+            152,
+            657,
+            984
+          ],
+          "pivot_px": [
+            328.5,
+            979
+          ],
+          "pivot_status": "proposed; relative to trimmed rect",
+          "bounds_px": [
+            4,
+            4,
+            649,
+            976
+          ]
+        }
+      ],
+      "suggested_game_visible_size_px": [
+        43,
+        64
+      ],
+      "facing": "right",
+      "animations": {},
+      "seamless_verified": false,
+      "collision_tested": false,
+      "note": "Source PNG unchanged. Very faint alpha < 8 artifacts exist outside the visible silhouette. Suggested rect excludes these and retains transparent padding. Pivot and display size are proposed, not tested in robot2D.",
+      "nonzero_alpha_bounds_px": [
+        33,
+        0,
+        1189,
+        1254
+      ],
+      "visible_alpha_threshold": 8,
+      "visible_bounds_px": [
+        292,
+        156,
+        649,
+        976
+      ]
+    },
+    "platform-v1.json": {
+      "schema": "game-2d-assets/v1",
+      "asset_id": "platform-v1",
+      "image": "Platform.png",
+      "image_size_px": [
+        2172,
+        724
+      ],
+      "coordinate_system": "top-left, x-right, y-down",
+      "alpha_verified": true,
+      "alpha_extrema": [
+        0,
+        255
+      ],
+      "measurement_status": "measured; visible bounds use alpha >= 8, suggested texture rect adds 4px padding",
+      "frames": [
+        {
+          "id": "platform",
+          "rect_px": [
+            98,
+            290,
+            1969,
+            141
+          ],
+          "pivot_px": [
+            984.5,
+            4
+          ],
+          "pivot_status": "proposed; relative to trimmed rect",
+          "bounds_px": [
+            4,
+            4,
+            1961,
+            133
+          ]
+        }
+      ],
+      "suggested_game_visible_size_px": [
+        320,
+        22
+      ],
+      "facing": null,
+      "animations": {},
+      "seamless_verified": false,
+      "collision_tested": false,
+      "note": "Source PNG unchanged. Very faint alpha < 8 artifacts exist outside the visible silhouette. Suggested rect excludes these and retains transparent padding. Pivot and display size are proposed, not tested in robot2D.",
+      "nonzero_alpha_bounds_px": [
+        91,
+        184,
+        1978,
+        421
+      ],
+      "visible_alpha_threshold": 8,
+      "visible_bounds_px": [
+        102,
+        294,
+        1961,
+        133
+      ]
+    }
+  },
+  "verification": {
+    "project_scene_native_load": true,
+    "opengl_textures_uploaded": 4,
+    "native_route_reached_platforms": [
+      1,
+      2,
+      3,
+      4
+    ],
+    "native_recovery": true,
+    "controller_api_doubles_checks": 13,
+    "manual_editor_play": false
+  },
+  "images": {
+    "Interface.png": {
+      "size_px": [
+        1280,
+        720
+      ],
+      "mode": "RGBA",
+      "alpha_extrema": [
+        0,
+        255
+      ],
+      "sha256": "4eb0d8a08c96b04c1a93140fcba19a5ad30b8890b21105484ee8d7b97171de49"
+    },
+    "Laboratory.png": {
+      "size_px": [
+        1672,
+        940
+      ],
+      "mode": "RGB",
+      "alpha_extrema": null,
+      "sha256": "04bf14963d45c3a7d2fc934d2012eb6c758a98bcec1592e7278b4df147b21246"
+    },
+    "Platform.png": {
+      "size_px": [
+        2172,
+        724
+      ],
+      "mode": "RGBA",
+      "alpha_extrema": [
+        0,
+        255
+      ],
+      "sha256": "a45b16bc2b0baaef4d32ba12cc2689762cc62327108289a4f86c40acfe348ab2"
+    },
+    "Player.png": {
+      "size_px": [
+        1254,
+        1254
+      ],
+      "mode": "RGBA",
+      "alpha_extrema": [
+        0,
+        255
+      ],
+      "sha256": "8e0e1a452183f0b6346fa8f972776e83daf221d9bfd658ebbbc7f20fcdc191f9"
+    }
+  },
+  "art_provenance": "AI-generated Robot Lab artwork; source images are preserved unchanged."
+}

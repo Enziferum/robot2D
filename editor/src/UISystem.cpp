@@ -91,7 +91,8 @@ namespace editor {
                 if(hitbox.isHovered) {
                     if(hitbox.onHoverOnce && !hitbox.wasHovered) {
                         auto index = hitbox.callbackIDs[UIHitbox::CallbackID::MouseMoved];
-                        if(index >= 0)
+                        if(index >= 0 && static_cast<std::size_t>(index) < m_mouseHoverCallbacks.size() &&
+                            m_mouseHoverCallbacks[index])
                             m_mouseHoverCallbacks[index](ent);
                     }
                     hitbox.wasHovered = true;
@@ -100,7 +101,8 @@ namespace editor {
             }
             if(!hitbox.isHovered) {
                 auto index = hitbox.callbackIDs[UIHitbox::CallbackID::MouseMoved];
-                if(index >= 0)
+                if(index >= 0 && static_cast<std::size_t>(index) < m_mouseUnHoverCallbacks.size() &&
+                    m_mouseUnHoverCallbacks[index])
                     m_mouseUnHoverCallbacks[index](ent);
 
                 hitbox.wasHovered = false;
@@ -124,6 +126,17 @@ namespace editor {
 
         m_mouseDownEvents.clear();
         m_mouseUpEvents.clear();
+    }
+
+    robot2D::ecs::System::Ptr UISystem::cloneSelf(robot2D::ecs::Scene* scene,
+        const std::vector<robot2D::ecs::Entity>& newEntities) {
+        auto clone = std::make_shared<UISystem>(m_messageBus);
+        if(!cloneBase(clone, scene, newEntities)) return nullptr;
+        clone -> m_editorCamera = m_editorCamera;
+        clone -> m_mousePressedCallbacks = m_mousePressedCallbacks;
+        clone -> m_mouseHoverCallbacks = m_mouseHoverCallbacks;
+        clone -> m_mouseUnHoverCallbacks = m_mouseUnHoverCallbacks;
+        return clone;
     }
 
 }

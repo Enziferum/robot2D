@@ -23,6 +23,7 @@
 #include <string>
 #include <fstream>
 #include <filesystem>
+#include <sstream>
 #include <memory>
 #include <unordered_map>
 
@@ -34,6 +35,7 @@
 #include <mono/metadata/metadata.h>
 #include <mono/metadata/assembly.h>
 #include <mono/metadata/mono-debug.h>
+#include <mono/metadata/mono-config.h>
 #include <mono/metadata/threads.h>
 
 
@@ -273,9 +275,17 @@ namespace editor {
 
 
     void ScriptEngine::Init(const std::string& engineDLLPath) {
+        Init(engineDLLPath, INTERNAL_MONO_ASSEMBLY_DIR, INTERNAL_MONO_CONFIG_DIR);
+    }
+
+    void ScriptEngine::Init(const std::string& engineDLLPath, const std::string& monoLib, const std::string& monoEtc) {
         s_Data = new ScriptEngineData();
 
-        InitMono();
+        try { InitMono(monoLib, monoEtc); }
+        catch(...) {
+            delete s_Data; s_Data = nullptr;
+            throw;
+        }
         ScriptGlue::setService(this);
         ScriptGlue::registerFunctions();
 
@@ -466,9 +476,18 @@ namespace editor {
         return true;
     }
 
-    void ScriptEngine::InitMono() {
+    void ScriptEngine::InitMono(const std::string& monoLib, const std::string& monoEtc) {
         bool enableDebug = false;
-        mono_set_dirs(INTERNAL_MONO_ASSEMBLY_DIR, INTERNAL_MONO_CONFIG_DIR);
+        const auto configPath = std::filesystem::u8path(monoEtc) / "mono/config";
+        std::ifstream input(configPath, std::ios::binary);
+        if(!input) throw std::runtime_error("Cannot read Mono configuration: " + configPath.u8string());
+        std::ostringstream contents;
+        contents << input.rdbuf();
+        if(input.bad()) throw std::runtime_error("I/O error reading Mono configuration: " + configPath.u8string());
+        const auto config = contents.str();
+        mono_set_dirs(monoLib.c_str(), monoEtc.c_str());
+        // Mono's filename parser does not handle Unicode Windows paths; parse the packaged bytes.
+        mono_config_parse_memory(config.c_str());
 
         if(enableDebug) {
             const char* options[] =

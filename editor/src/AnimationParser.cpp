@@ -27,6 +27,9 @@
 #include <robot2D/Util/Logger.hpp>
 #include <editor/AnimationParser.hpp>
 
+#include <filesystem>
+#include <fstream>
+#include <sstream>
 namespace editor {
 
     unsigned long colorToHex(int r, int g, int b, int a) {
@@ -66,8 +69,12 @@ namespace editor {
         };
         if(!anim)
             return fail("null destination");
-        TiXmlDocument document(path.c_str());
-        if(!document.LoadFile())
+        std::ifstream input(std::filesystem::u8path(path), std::ios::binary);
+        std::ostringstream contents;
+        contents << input.rdbuf();
+        TiXmlDocument document;
+        document.Parse(contents.str().c_str());
+        if(!input || document.Error())
             return fail("invalid or unreadable XML");
         const auto* head = document.FirstChildElement("sprites");
         if(!head || !head -> Attribute("image") || !*head -> Attribute("image"))
@@ -156,10 +163,12 @@ namespace editor {
         head -> InsertEndChild(*animation.get());
         document.InsertEndChild(*head.get());
 
-        if(!document.SaveFile())
-            return false;
-
-        return true;
+        TiXmlPrinter printer;
+        if(!document.Accept(&printer)) return false;
+        std::ofstream output(std::filesystem::u8path(path), std::ios::binary | std::ios::trunc);
+        output << printer.CStr();
+        output.close();
+        return static_cast<bool>(output);
     }
 
 

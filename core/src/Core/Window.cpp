@@ -53,7 +53,6 @@ namespace robot2D {
 
         if(m_windowImpl -> pollEvents(event)) {
             if(const auto* size = event.getIf<Event::Resized>()) {
-                m_win_size = {size -> width, size -> height};
                 onResize(static_cast<int>(size -> width), static_cast<int>(size -> height));
             }
             if(const auto* drop = event.getIf<Event::FilesDropped>()) {
@@ -118,15 +117,32 @@ namespace robot2D {
     }
 
     vec2u Window::getLogicalSize() const {
+        m_desktop.checkThread();
         return m_windowImpl ? m_windowImpl -> getLogicalSize() : vec2u{};
     }
 
     vec2u Window::getFramebufferSize() const {
+        m_desktop.checkThread();
         return m_windowImpl ? m_windowImpl -> getFramebufferSize() : vec2u{};
     }
 
     const vec2u& Window::getSize() {
+        m_win_size = getLogicalSize();
         return m_win_size;
+    }
+
+    WindowMetrics Window::getMetrics() const {
+        return {getLogicalSize(), getFramebufferSize(), getContentScale(), isMinimized()};
+    }
+
+    vec2f Window::getContentScale() const {
+        m_desktop.checkThread();
+        return m_windowImpl -> getContentScale();
+    }
+
+    bool Window::isMinimized() const {
+        m_desktop.checkThread();
+        return m_windowImpl -> isMinimized();
     }
 
     void Window::makeCurrent() {
@@ -173,7 +189,7 @@ namespace robot2D {
     }
 
     void Window::setSize(const vec2u& size) {
-        m_win_size = size;
+        m_desktop.checkThread();
         m_windowImpl -> setSize(size);
     }
 

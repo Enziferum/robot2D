@@ -36,14 +36,6 @@
       "color": "0E8A16",
       "description": "Покрытие поведения автоматическими тестами"
     },
-    "owner:shared": {
-      "color": "BFDADC",
-      "description": "Совместно: ведущий выбирается перед стартом; второй помогает проектированием и ревью"
-    },
-    "owner:user": {
-      "color": "F9D0C4",
-      "description": "Реализация закреплена за пользователем; ассистент помогает по согласованию"
-    },
     "area:core": {
       "color": "0E8A16",
       "description": "Библиотека Core: ECS, графика и общие контракты движка"
@@ -51,32 +43,36 @@
     "area:render": {
       "color": "D876E3",
       "description": "Рендер, графические ресурсы и контракт отрисовки Core/Editor/player"
+    },
+    "area:web": {
+      "color": "3E9DA5",
+      "description": "Публичный сайт и документация robot2D"
     }
   },
   "tasks": {
+    "BRAND-01": [
+      "area:editor",
+      "type:feature"
+    ],
     "RENDER-02": [
       "area:editor",
       "type:bug",
-      "owner:shared",
       "area:core",
       "area:render"
     ],
     "RENDER-01": [
       "area:tooling",
       "type:maintenance",
-      "owner:shared",
       "area:core",
       "area:render"
     ],
     "SAVE-01": [
       "area:editor",
-      "type:bug",
-      "owner:shared"
+      "type:bug"
     ],
     "LOAD-01": [
       "area:editor",
-      "type:bug",
-      "owner:shared"
+      "type:bug"
     ],
     "TEST-01": [
       "area:editor",
@@ -84,33 +80,27 @@
     ],
     "CMD-01": [
       "area:editor",
-      "type:feature",
-      "owner:shared"
+      "type:feature"
     ],
     "ASSET-01": [
       "area:editor",
-      "type:feature",
-      "owner:shared"
+      "type:feature"
     ],
     "UI-01": [
       "area:editor",
-      "type:feature",
-      "owner:shared"
+      "type:feature"
     ],
     "VIEW-01": [
       "area:editor",
-      "type:feature",
-      "owner:shared"
+      "type:feature"
     ],
     "CODE-01": [
       "area:editor",
-      "type:refactor",
-      "owner:shared"
+      "type:refactor"
     ],
     "LOG-01": [
       "area:editor",
-      "type:maintenance",
-      "owner:shared"
+      "type:maintenance"
     ],
     "TOOL-01": [
       "area:tooling",
@@ -118,13 +108,11 @@
     ],
     "ARCH-01": [
       "area:editor",
-      "type:design",
-      "owner:shared"
+      "type:design"
     ],
     "ASYNC-01": [
       "area:editor",
-      "type:maintenance",
-      "owner:shared"
+      "type:maintenance"
     ],
     "CI-01": [
       "area:tooling",
@@ -136,229 +124,185 @@
     ],
     "VERSION-01": [
       "area:workflow",
-      "type:maintenance",
-      "owner:shared"
+      "type:maintenance"
     ],
     "PLAN-01": [
       "area:workflow",
-      "type:design",
-      "owner:shared"
+      "type:design"
     ],
     "PLAN-02": [
       "area:workflow",
-      "type:design",
-      "owner:shared"
+      "type:design"
     ],
     "PLAN-03": [
       "area:workflow",
-      "type:design",
-      "owner:shared"
+      "type:design"
     ],
     "SNAP-01": [
       "area:editor",
-      "type:design",
-      "owner:user"
+      "type:design"
     ],
     "CANCEL-01": [
       "area:editor",
-      "type:design",
-      "owner:user"
+      "type:design"
     ],
     "CMD-02": [
       "area:editor",
-      "type:feature",
-      "owner:shared"
+      "type:feature"
     ],
     "CMD-03": [
       "area:editor",
-      "type:bug",
-      "owner:shared"
+      "type:bug"
     ],
     "CMD-04": [
       "area:editor",
-      "type:bug",
-      "owner:shared"
+      "type:bug"
     ],
     "ASSET-02": [
       "area:editor",
-      "type:feature",
-      "owner:shared"
+      "type:feature"
     ],
     "ANIM-01": [
       "area:editor",
-      "type:feature",
-      "owner:shared"
+      "type:feature"
     ],
     "PREFAB-01": [
       "area:editor",
-      "type:feature",
-      "owner:shared"
+      "type:feature"
     ],
     "SCRIPT-01": [
       "area:tooling",
-      "type:feature",
-      "owner:shared"
+      "type:feature"
     ],
     "RUNTIME-01": [
       "area:editor",
-      "type:feature",
-      "owner:shared"
+      "type:feature"
     ],
     "RUNTIME-02": [
       "area:editor",
-      "type:bug",
-      "owner:shared"
+      "type:bug"
     ],
     "PHYS-01": [
       "area:editor",
-      "type:bug",
-      "owner:shared"
+      "type:bug"
     ],
     "INPUT-01": [
       "area:editor",
-      "type:bug",
-      "owner:shared"
+      "type:bug"
     ],
     "HUD-01": [
       "area:editor",
-      "type:feature",
-      "owner:shared"
+      "type:feature"
     ],
     "PLAYER-01": [
       "area:editor",
-      "type:feature",
-      "owner:shared"
+      "type:feature"
     ],
     "RENDER-03": [
       "area:editor",
       "type:bug",
-      "owner:shared",
       "area:core",
       "area:render"
     ],
     "BUILD-01": [
       "area:tooling",
-      "type:feature",
-      "owner:shared"
+      "type:feature"
     ],
     "GAME-01": [
       "area:editor",
-      "type:feature",
-      "owner:shared"
+      "type:feature"
     ],
     "GAME-02": [
       "area:editor",
-      "type:feature",
-      "owner:shared"
+      "type:feature"
     ],
     "GAME-03": [
       "area:editor",
-      "type:feature",
-      "owner:shared"
+      "type:feature"
     ],
     "QA-01": [
       "area:editor",
-      "type:tests",
-      "owner:shared"
+      "type:tests"
     ],
     "ARCH-02": [
       "area:editor",
-      "type:refactor",
-      "owner:shared"
+      "type:refactor"
     ],
     "SCENE-01": [
       "area:editor",
-      "type:feature",
-      "owner:shared"
+      "type:feature"
     ],
     "AUDIO-01": [
       "area:editor",
-      "type:feature",
-      "owner:shared"
+      "type:feature"
     ],
     "GUI-01": [
       "area:editor",
-      "type:feature",
-      "owner:shared"
+      "type:feature"
     ],
     "ANIM-02": [
       "area:editor",
-      "type:bug",
-      "owner:shared"
+      "type:bug"
     ],
     "API-01": [
       "area:editor",
-      "type:design",
-      "owner:shared"
+      "type:design"
     ],
     "RECOVERY-01": [
       "area:editor",
-      "type:feature",
-      "owner:shared"
+      "type:feature"
     ],
     "DOC-01": [
       "area:workflow",
-      "type:maintenance",
-      "owner:shared"
+      "type:maintenance"
     ],
     "DIST-01": [
       "area:tooling",
-      "type:feature",
-      "owner:shared"
+      "type:feature"
     ],
     "UPDATE-01": [
       "area:tooling",
-      "type:feature",
-      "owner:shared"
+      "type:feature"
     ],
     "QA-02": [
       "area:editor",
-      "type:tests",
-      "owner:shared"
+      "type:tests"
     ],
     "RENDER-04": [
       "area:core",
       "area:render",
-      "type:design",
-      "owner:shared"
+      "type:design"
     ],
     "RENDER-05": [
       "area:core",
       "area:render",
-      "type:refactor",
-      "owner:shared"
+      "type:refactor"
     ],
     "ECS-01": [
       "area:core",
-      "type:design",
-      "owner:shared"
+      "type:design"
     ],
     "ECS-04": [
       "area:core",
-      "type:refactor",
-      "owner:shared"
+      "type:refactor"
     ],
     "ECS-05": [
       "area:core",
-      "type:refactor",
-      "owner:shared"
+      "type:refactor"
     ],
     "ECS-02": [
       "area:core",
-      "type:bug",
-      "owner:shared"
+      "type:bug"
     ],
     "ECS-03": [
       "area:core",
-      "type:bug",
-      "owner:shared"
+      "type:bug"
     ],
     "CORE-02": [
       "area:core",
       "area:editor",
       "type:refactor",
-      "type:tests",
-      "owner:shared"
+      "type:tests"
     ],
     "CORE-01": [
       "area:core",
@@ -369,8 +313,22 @@
       "area:editor",
       "area:render",
       "type:bug",
-      "type:tests",
-      "owner:shared"
+      "type:tests"
+    ],
+    "IMGUI-01": [
+      "area:editor",
+      "type:bug"
+    ],
+    "GAME-04": [
+      "area:editor",
+      "type:feature"
+    ],
+    "WEB-01": [
+      "type:maintenance"
+    ],
+    "WEB-02": [
+      "area:web",
+      "type:feature"
     ]
   }
 }

@@ -1,0 +1,33 @@
+{
+  "selected": "02",
+  "tool": "AI-generated raster artwork; transparent RGBA master",
+  "asset": {
+    "master": "robot2d-logo-02-master.png",
+    "size": [
+      1254,
+      1254
+    ],
+    "alphaRange": [
+      0,
+      255
+    ],
+    "sha256": "e4a69dfaaf6a1a823f7dc673b4678f9c37304c66732bf0db1478dd8027e3e198",
+    "exports": [
+      "robot2d-logo-02-16.png",
+      "robot2d-logo-02-24.png",
+      "robot2d-logo-02-32.png",
+      "robot2d-logo-02-48.png",
+      "robot2d-logo-02-64.png",
+      "robot2d-logo-02-128.png",
+      "robot2d-logo-02-256.png",
+      "robot2d-logo-02-512.png",
+      "robot2d-logo-02-editor.ico",
+      "robot2d-logo-02-web.webp"
+    ]
+  },
+  "consumers": [
+    "editor/res/textures/logo.png",
+    "editor/res/branding/robot2d.ico"
+  ],
+  "site": "WEB-02 / #133; same selected source"
+}

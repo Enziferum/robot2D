@@ -1,3 +1,7 @@
+#include <filesystem>
+#include <fstream>
+#include <iterator>
+#include <limits>
 #include <robot2D/Util/Logger.hpp>
 #include <robot2D/Graphics/Font.hpp>
 
@@ -29,7 +33,7 @@ namespace robot2D {
         return m_glyphCharacters;
     }
 
-    const std::vector<std::unique_ptr<robot2D::Image>>& Font::getImages() const {
+    const std::vector<std::unique_ptr<robot2D::Image> >& Font::getImages() const {
         return m_images;
     }
 
@@ -44,18 +48,23 @@ namespace robot2D {
         FT_Library library;
         FT_Face face;
 
-        if (FT_Init_FreeType(&library)) {
+        if(FT_Init_FreeType(&library)) {
             RB_CORE_ERROR("ERROR::FREETYPE: Could not init FreeType Library");
             return false;
         }
 
-        if (FT_New_Face(library, path.c_str(), 0, &face)) {
+        std::ifstream input(std::filesystem::u8path(path), std::ios::binary);
+        std::vector<unsigned char> bytes{std::istreambuf_iterator<char>(input), std::istreambuf_iterator<char>{}};
+        if(!input || bytes.empty() || bytes.size() > static_cast<std::size_t>(std::numeric_limits<FT_Long>::max()) ||
+            FT_New_Memory_Face(library, bytes.data(), static_cast<FT_Long>(bytes.size()), 0, &face)) {
+            FT_Done_FreeType(library);
             RB_CORE_ERROR("ERROR::FREETYPE: Failed to load font");
             return false;
         }
 
         FT_Set_Pixel_Sizes(face, 0, charSize);
 
+        m_sourceBytes = std::move(bytes);
         m_library = library;
         m_face = face;
         m_path = path;
@@ -78,19 +87,18 @@ namespace robot2D {
         auto rowHeight = 0;
         auto currentRenderIndex = 0;
 
-        auto finalizeTexture = [this,  &image, &textureData](bool createNext)
+        auto finalizeTexture = [this, &image, &textureData](bool createNext)
         {
             image -> create(
                 {TextureAtlasSize, TextureAtlasSize},
                 textureData.data(),
                 robot2D::ImageColorFormat::RED,
                 robot2D::ImageParameter::ClampToEdge
-            );
+                );
 
 
             m_images.push_back(std::move(image));
-            if (createNext)
-            {
+            if(createNext) {
                 image = std::make_unique<robot2D::Image>();
                 memset(textureData.data(), 0, textureData.size());
             }
@@ -100,8 +108,7 @@ namespace robot2D {
         unsigned int start = 32;
         unsigned int end = 127;
 
-        for (auto it = start; it <= end;)
-        {
+        for(auto it = start; it <= end;) {
             FT_Load_Glyph(face, FT_Get_Char_Index(face, it), FT_LOAD_DEFAULT);
             FT_Render_Glyph(face->glyph, FT_RENDER_MODE_NORMAL);
 
@@ -113,16 +120,14 @@ namespace robot2D {
 
             rowHeight = std::max(rowHeight, static_cast<int>(bmpHeight));
 
-            if (colsLeft < bmpWidth)
-            {
+            if(colsLeft < bmpWidth) {
                 currentPixelPositionCol = 0;
                 currentPixelPositionRow += rowHeight + 1;
                 rowHeight = 0;
                 continue;
             }
 
-            if (rowsLeft < bmpHeight)
-            {
+            if(rowsLeft < bmpHeight) {
                 finalizeTexture(true);
                 currentPixelPositionCol = 0;
                 currentPixelPositionRow = 0;
@@ -132,29 +137,28 @@ namespace robot2D {
 
             auto& charProps = m_glyphCharacters[static_cast<int>(it)];
             charProps.size = {
-                    static_cast<float>(face -> glyph-> metrics.width >> 6),
-                    static_cast<float>(face -> glyph-> metrics.height >> 6)
+                static_cast<float>(face -> glyph-> metrics.width >> 6),
+                static_cast<float>(face -> glyph-> metrics.height >> 6)
             };
 
             charProps.bearing = {
-                    static_cast<int>(face->glyph->metrics.horiBearingX >> 6),
-                    static_cast<int>(face->glyph->metrics.horiBearingY >> 6)
+                static_cast<int>(face->glyph->metrics.horiBearingX >> 6),
+                static_cast<int>(face->glyph->metrics.horiBearingY >> 6)
             };
 
             charProps.advance = static_cast<float>(face->glyph->metrics.horiAdvance >> 6);
 
-            if (bmpWidth == 0 && bmpHeight == 0) {
+            if(bmpWidth == 0 && bmpHeight == 0) {
                 charProps.textureIndex = -1;
                 ++it;
                 continue;
             }
 
-            for (auto i = 0; i < bmpHeight; i++)
-            {
+            for(auto i = 0; i < bmpHeight; i++) {
                 int globalRow = currentPixelPositionRow + i;
                 int reversedRow = bmpHeight - i - 1;
                 memcpy(textureData.data() + globalRow * 512 + currentPixelPositionCol,
-                       ptrBitmap->buffer + reversedRow * bmpWidth, bmpWidth);
+                    ptrBitmap->buffer + reversedRow * bmpWidth, bmpWidth);
             }
 
 
@@ -171,12 +175,12 @@ namespace robot2D {
         }
 
         // If there is a leftover texture after preparing the characters, add it to the list of textures
-        if (currentPixelPositionRow > 0 || currentPixelPositionCol > 0) {
+        if(currentPixelPositionRow > 0 || currentPixelPositionCol > 0) {
             finalizeTexture(false);
         }
     }
 
-    std::unordered_map<int, GlyphQuad> Font::getBufferCache(float scale) const  {
+    std::unordered_map<int, GlyphQuad> Font::getBufferCache(float scale) const {
         std::unordered_map<int, GlyphQuad> m_bufferCache;
 
         float maxBearing = static_cast<float>(m_glyphCharacters.at('H').bearing.y);
@@ -199,24 +203,24 @@ namespace robot2D {
 
             vertex0.position = { x, y };
             vertex0.uvs = {
-                    (glyphProperties.indexPosition.x) / textureSize,
-                    (glyphProperties.indexPosition.y + glyphProperties.bmpSize.y) / textureSize
+                (glyphProperties.indexPosition.x) / textureSize,
+                (glyphProperties.indexPosition.y + glyphProperties.bmpSize.y) / textureSize
             };
             vertex1.position = {x + w, y};
             vertex1.uvs = {
-                    (glyphProperties.indexPosition.x + glyphProperties.bmpSize.x) / textureSize,
-                    (glyphProperties.indexPosition.y + glyphProperties.bmpSize.y) / textureSize
+                (glyphProperties.indexPosition.x + glyphProperties.bmpSize.x) / textureSize,
+                (glyphProperties.indexPosition.y + glyphProperties.bmpSize.y) / textureSize
             };
 
             vertex2.position = {x + w, y + h};
             vertex2.uvs = {
-                    (glyphProperties.indexPosition.x + glyphProperties.bmpSize.x) / textureSize,
-                    (glyphProperties.indexPosition.y) / textureSize
+                (glyphProperties.indexPosition.x + glyphProperties.bmpSize.x) / textureSize,
+                (glyphProperties.indexPosition.y) / textureSize
             };
             vertex3.position = { x, y + h};
             vertex3.uvs = {
-                    glyphProperties.indexPosition.x / textureSize,
-                    (glyphProperties.indexPosition.y) / textureSize
+                glyphProperties.indexPosition.x / textureSize,
+                (glyphProperties.indexPosition.y) / textureSize
             };
 
 
