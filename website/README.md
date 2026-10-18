@@ -81,6 +81,13 @@ responsive page layout and screenshot aspect ratio.
 
 ## Documentation and deployment
 
+Lesson 08 (`public/examples/game-states`) extends the collection arena with
+Playing/Paused/Won, focus/minimize pause, guarded restart and state-specific HUD.
+Build `robot2D-game-states` with `RB2D_BUILD_CORE_EXAMPLES=ON`; assets are staged
+beside the executable. P pauses/resumes, R restarts, Escape exits. Six headless
+cases and an optional GL frame comparison check simulation/input gating and
+continued rendering. See the example README for commands and manual acceptance.
+
 Core and Learn now have their own sidebar groups. Core lifecycle contracts are pinned to a checked source commit; the course is explicitly incremental. See [CONTENT.md](CONTENT.md) and [content-templates/lesson.md](content-templates/lesson.md) for authoring. The primary deployment is **GitHub Pages**: [setup and manual publication](deploy/github-pages.md). The prepared **Linux + Nginx** alternative remains available in [deploy/README.md](deploy/README.md), covering immutable release directories, atomic current-switching and rollback.
 
 Core lessons 03–05 target the integrated `0.8.0-dev` API (Window metrics baseline

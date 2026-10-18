@@ -56,6 +56,8 @@ public:
     }
 
 protected:
+    void clearMovement() { m_input.clearHeld(); }
+
     // Later lessons can add triggers/HUD inside the same render pass.
     virtual void drawExtras() {}
 

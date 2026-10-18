@@ -8,9 +8,11 @@
 
 class KeyboardMovement {
 public:
+    void clearHeld() { m_held.fill(false); }
+
     void handleEvent(const robot2D::Event& event) {
         if(event.getIf<robot2D::Event::LostFocus>()) {
-            m_held.fill(false);
+            clearHeld();
             m_focused = false;
         }
         else if(event.getIf<robot2D::Event::GainFocus>()) {

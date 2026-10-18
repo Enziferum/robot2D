@@ -67,6 +67,10 @@ export default defineConfig({
             },
             { label: '07 — Items and score', slug: 'docs/core/collect-items' },
             {
+              label: '08 — Playing, paused and won',
+              slug: 'docs/core/game-states',
+            },
+            {
               label: 'Application and events',
               slug: 'docs/core/application-events',
             },

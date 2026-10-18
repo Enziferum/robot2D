@@ -57,6 +57,10 @@ public:
     const CollectionState& round() const { return m_round; }
 
 protected:
+    void setHint(const std::string& hint) {
+        if(m_hintText) m_hintText -> setText(hint);
+    }
+
     void configureItems() {
         const std::array<robot2D::vec2f, CollectionState::itemCount> positions{{
             {220.F, 100.F}, {650.F, 120.F}, {90.F, 450.F}, {300.F, 500.F}, {650.F, 500.F}}};
