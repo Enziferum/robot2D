@@ -23,6 +23,7 @@
 #include <limits>
 #include <robot2D/Util/Logger.hpp>
 #include <robot2D/Graphics/GL.hpp>
+#include <robot2D/Graphics/RenderAPI.hpp>
 #include <robot2D/Config.hpp>
 #include "DesktopWindowImpl.hpp"
 
@@ -181,6 +182,17 @@ namespace robot2D::priv {
                       std::to_string(opengl_major) + "." + std::to_string(opengl_minor));
         }
 #endif
+        switch(m_context.renderApi) {
+        case WindowContext::RenderApi::OpenGL4_1:
+            RenderAPI::getOpenGLVersion() = RenderApi::OpenGL4_1;
+            break;
+        case WindowContext::RenderApi::OpenGL4_3:
+            RenderAPI::getOpenGLVersion() = RenderApi::OpenGL4_3;
+            break;
+        case WindowContext::RenderApi::OpenGL4_5:
+            RenderAPI::getOpenGLVersion() = RenderApi::OpenGL4_5;
+            break;
+        }
         const auto framebufferSize = getFramebufferSize();
         glViewport(0, 0, static_cast<int>(framebufferSize.x), static_cast<int>(framebufferSize.y));
     }

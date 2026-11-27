@@ -5,6 +5,7 @@
 #include <robot2D/Graphics/Sprite.hpp>
 #include <robot2D/Graphics/Texture.hpp>
 #include <robot2D/Graphics/FrameBuffer.hpp>
+#include <robot2D/Graphics/RenderAPI.hpp>
 #include <robot2D/imgui/Gui.hpp>
 #include <iostream>
 #include <stdexcept>
@@ -21,6 +22,20 @@ int main() {
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
         glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
         robot2D::WindowContext options(false, false, robot2D::WindowContext::RenderApi::OpenGL4_1);
+        {
+            robot2D::RenderAPI::getOpenGLVersion() = robot2D::RenderApi::OpenGL4_5;
+            robot2D::Window plainWindow(desktop, {64, 64}, "Core resources", options);
+            require(robot2D::RenderAPI::getOpenGLVersion() == robot2D::RenderApi::OpenGL4_1, "Window API selection");
+            glad_glTexStorage2D = nullptr;
+            robot2D::FrameBufferSpecification spec;
+            spec.size = {32, 32};
+            spec.attachments = {robot2D::FrameBufferTextureFormat::RGBA8,
+                                robot2D::FrameBufferTextureFormat::DEPTH24STENCIL8};
+            auto framebuffer = robot2D::FrameBuffer::Create(spec);
+            framebuffer -> Bind();
+            require(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "Window resources");
+            framebuffer -> unBind();
+        }
         robot2D::RenderWindow window(desktop, {320, 240}, "Core ImGui 4.1", options);
         GLint major = 0, minor = 0, profile = 0, flags = 0;
         glGetIntegerv(GL_MAJOR_VERSION, &major);
