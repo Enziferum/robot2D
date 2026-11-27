@@ -59,8 +59,11 @@ Core sprite и ImGui, проверяет framebuffer с depth/stencil, MSAA и r
 Указатели DSA и glTexStorage2D отключаются внутри отдельного процесса теста.
 
 CI Linux запускает его через Xvfb/Mesa с ограничением GL 4.1/GLSL 410.
-Windows CI собирает smoke и запускает headless tests. macOS дополнительно
-запускает графический smoke отдельным шагом. macOS job нацелен на Apple silicon;
+Windows и macOS CI собирают smoke и запускают headless tests. Графический
+запуск на hosted macos-15-arm64 проверен в Actions run 46006344388: NSGL
+отклонил создание контекста 4.1 с `Failed to find a suitable pixel format`.
+Этот runner не подтверждает графику или Retina; smoke запускайте отдельно
+на Mac с доступным OpenGL renderer. macOS job нацелен на Apple silicon;
 Intel и universal binary требуют отдельной проверки.
 
 Ручная приёмка на Mac: соберите и запустите `robot2D-core-imgui-smoke`, затем
