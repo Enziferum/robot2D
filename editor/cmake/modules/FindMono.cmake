@@ -1,6 +1,6 @@
 # Unix distributions use multiarch library directories; include/assembly/config
 # paths cannot be inferred by walking up from libmonosgen's directory.
-if(UNIX AND NOT APPLE)
+if(UNIX)
     find_package(PkgConfig REQUIRED)
     pkg_check_modules(MONO_PC REQUIRED mono-2)
     find_program(MONO_EXECUTABLE mono REQUIRED)

@@ -28,14 +28,7 @@
 
 #include <robot2D/Config.hpp>
 
-#if defined(ROBOT2D_WINDOWS)
-    #include <robot2D/Graphics/internal/glad.h>
-#elif defined(ROBOT2D_LINUX)
-    #include <robot2D/Graphics/internal/glad.h>
-#elif defined(ROBOT2D_MACOS)
-    #define GL_SILENCE_DEPRECATION
-    #include <OpenGL/gl3.h>
-#endif
+#include <robot2D/Graphics/internal/glad.h>
 
 namespace robot2D {
     struct GLDiagnosticsOptions {

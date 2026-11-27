@@ -52,7 +52,7 @@ namespace robot2D::priv {
         }
         catch(...) {
             m_nativeWindow.reset();
-#if defined(ROBOT2D_WINDOWS) || defined(ROBOT2D_LINUX)
+#if defined(ROBOT2D_WINDOWS) || defined(ROBOT2D_LINUX) || defined(ROBOT2D_MACOS)
             // GLAD owns a process-global table; a failed load may have overwritten it.
             if(loaderStarted && recovery) {
                 glfwMakeContextCurrent(recovery);
@@ -101,7 +101,8 @@ namespace robot2D::priv {
         if(m_size.x == 0 || m_size.y == 0 ||
             m_size.x > static_cast<unsigned>(std::numeric_limits<int>::max()) ||
             m_size.y > static_cast<unsigned>(std::numeric_limits<int>::max()) ||
-            (m_context.renderApi != WindowContext::RenderApi::OpenGL4_3 &&
+            (m_context.renderApi != WindowContext::RenderApi::OpenGL4_1 &&
+            m_context.renderApi != WindowContext::RenderApi::OpenGL4_3 &&
             m_context.renderApi != WindowContext::RenderApi::OpenGL4_5))
             throw WindowCreationError(WindowCreationStage::Validation, 0,
                       "Invalid window configuration: " + m_name + " size=" + std::to_string(m_size.x) +
@@ -117,6 +118,11 @@ namespace robot2D::priv {
         int opengl_minor = 0;
 
         switch(m_context.renderApi) {
+        case WindowContext::RenderApi::OpenGL4_1: {
+            opengl_major = 4;
+            opengl_minor = 1;
+            break;
+        }
         case WindowContext::RenderApi::OpenGL4_3: {
             opengl_major = 4;
             opengl_minor = 3;
@@ -131,7 +137,8 @@ namespace robot2D::priv {
         RB_CORE_WARN("Engine's GraphicsApi is OpenGL, Version {0}.{1}.", std::to_string(opengl_major),
             std::to_string(opengl_minor));
 
-        if(m_context.renderApi == WindowContext::RenderApi::OpenGL4_3 ||
+        if(m_context.renderApi == WindowContext::RenderApi::OpenGL4_1 ||
+            m_context.renderApi == WindowContext::RenderApi::OpenGL4_3 ||
             m_context.renderApi == WindowContext::RenderApi::OpenGL4_5) {
 #if !defined(NDEBUG)
             glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
@@ -164,7 +171,7 @@ namespace robot2D::priv {
 
         setup_callbacks();
 
-#if defined(ROBOT2D_WINDOWS) || defined(ROBOT2D_LINUX)
+#if defined(ROBOT2D_WINDOWS) || defined(ROBOT2D_LINUX) || defined(ROBOT2D_MACOS)
         loaderStarted = true;
         if(functions.loadContext ? !functions.loadContext() : !gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
             RB_CORE_CRITICAL("Failed to initialize GLAD");
@@ -174,7 +181,8 @@ namespace robot2D::priv {
                       std::to_string(opengl_major) + "." + std::to_string(opengl_minor));
         }
 #endif
-        glViewport(0, 0, static_cast<int>(m_size.x), static_cast<int>(m_size.y));
+        const auto framebufferSize = getFramebufferSize();
+        glViewport(0, 0, static_cast<int>(framebufferSize.x), static_cast<int>(framebufferSize.y));
     }
 
     bool DesktopWindowImpl::isOpen() const {

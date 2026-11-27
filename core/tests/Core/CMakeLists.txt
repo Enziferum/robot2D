@@ -1,4 +1,5 @@
 set(CORE_SRC
+        Core/WindowContextTests.cpp
         Core/TimeTests.cpp
         Core/ClockTests.cpp
         Core/FileInputStreamTests.cpp

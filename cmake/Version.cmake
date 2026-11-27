@@ -19,31 +19,31 @@ set(RB2D_GIT_SHA "unknown")
 find_package(Git QUIET)
 if(GIT_FOUND)
     execute_process(COMMAND "${GIT_EXECUTABLE}" rev-parse --show-toplevel
-            WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}" OUTPUT_VARIABLE git_root
+            WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" OUTPUT_VARIABLE git_root
             OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET RESULT_VARIABLE git_result)
     # An unpacked source archive nested in another repository must not borrow its SHA.
     if(git_result EQUAL 0)
         file(REAL_PATH "${git_root}" git_root)
-        file(REAL_PATH "${CMAKE_SOURCE_DIR}" source_root)
+        file(REAL_PATH "${CMAKE_CURRENT_SOURCE_DIR}" source_root)
         if(git_root STREQUAL source_root)
             execute_process(COMMAND "${GIT_EXECUTABLE}" rev-parse --verify HEAD
-                    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}" OUTPUT_VARIABLE git_sha
+                    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" OUTPUT_VARIABLE git_sha
                     OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET RESULT_VARIABLE git_result)
             if(git_result EQUAL 0 AND git_sha MATCHES "^[0-9a-fA-F]+$")
                 set(RB2D_GIT_SHA "${git_sha}")
             endif()
             execute_process(COMMAND "${GIT_EXECUTABLE}" symbolic-ref -q HEAD
-                    WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}" OUTPUT_VARIABLE git_branch
+                    WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" OUTPUT_VARIABLE git_branch
                     OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET)
             foreach(ref IN ITEMS HEAD packed-refs "${git_branch}")
                 if(ref STREQUAL "")
                     continue()
                 endif()
                 execute_process(COMMAND "${GIT_EXECUTABLE}" rev-parse --git-path "${ref}"
-                        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}" OUTPUT_VARIABLE git_path
+                        WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}" OUTPUT_VARIABLE git_path
                         OUTPUT_STRIP_TRAILING_WHITESPACE ERROR_QUIET RESULT_VARIABLE git_result)
                 if(git_result EQUAL 0 AND NOT git_path STREQUAL "")
-                    get_filename_component(git_path "${git_path}" ABSOLUTE BASE_DIR "${CMAKE_SOURCE_DIR}")
+                    get_filename_component(git_path "${git_path}" ABSOLUTE BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
                     set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${git_path}")
                 endif()
             endforeach()
@@ -52,7 +52,7 @@ if(GIT_FOUND)
 endif()
 
 set(RB2D_BUILD_ID "${RB2D_EDITOR_BUILD_ID}")
-set(RB2D_VERSION "${CMAKE_PROJECT_VERSION}")
+set(RB2D_VERSION "${PROJECT_VERSION}")
 if(NOT RB2D_VERSION_PRERELEASE STREQUAL "")
     string(APPEND RB2D_VERSION "-${RB2D_VERSION_PRERELEASE}")
 endif()

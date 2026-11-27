@@ -2,8 +2,8 @@
 find_package(Python3 QUIET COMPONENTS Interpreter)
 if(Python3_Interpreter_FOUND)
     add_custom_target(robot2D-check-shaders
-        COMMAND "${Python3_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/scripts/validate_shaders.py"
-        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+        COMMAND "${Python3_EXECUTABLE}" "${robot2D_SOURCE_DIR}/scripts/validate_shaders.py"
+        WORKING_DIRECTORY "${robot2D_SOURCE_DIR}"
         COMMENT "Validating GLSL stages and linked programs"
         VERBATIM)
 endif()

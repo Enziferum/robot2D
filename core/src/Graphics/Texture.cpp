@@ -79,8 +79,10 @@ namespace robot2D {
         auto glFormat = convertColorType(m_image.getColorFormat());
         if(glFormat == GL_RGBA)
             internalFormat = GL_RGBA8;
+        else if(glFormat == GL_RED)
+            internalFormat = GL_R8;
 
-        if(RenderAPI::getOpenGLVersion() == RenderApi::OpenGL4_3) {
+        if(RenderAPI::getOpenGLVersion() != RenderApi::OpenGL4_5) {
             if(m_texParam == 0) {
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
@@ -138,7 +140,8 @@ namespace robot2D {
     void Texture::bindBufferData(void* bufferData) {
         auto glFormat = convertColorType(m_image.getColorFormat());
         auto size = m_image.getSize();
-        if(RenderAPI::getOpenGLVersion() == RenderApi::OpenGL4_3)
+        glBindTexture(GL_TEXTURE_2D, m_texture);
+        if(RenderAPI::getOpenGLVersion() != RenderApi::OpenGL4_5)
             glTexImage2D(GL_TEXTURE_2D, 0, glFormat, size.x,
                 size.y, 0, glFormat, GL_UNSIGNED_BYTE, bufferData);
         else
@@ -147,7 +150,7 @@ namespace robot2D {
     }
 
     void Texture::bind(uint32_t slot) {
-        if(RenderAPI::getOpenGLVersion() == RenderApi::OpenGL4_3) {
+        if(RenderAPI::getOpenGLVersion() != RenderApi::OpenGL4_5) {
             glActiveTexture(GL_TEXTURE0 + slot);
             glBindTexture(GL_TEXTURE_2D, m_texture);
         }

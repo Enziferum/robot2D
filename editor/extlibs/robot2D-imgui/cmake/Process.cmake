@@ -1,4 +1,4 @@
-include(${CMAKE_SOURCE_DIR}/cmake/Functions.cmake)
+include(${robot2D_SOURCE_DIR}/cmake/Functions.cmake)
 include(Options)
 
 set(INCLROOT ${CMAKE_CURRENT_SOURCE_DIR}/include)

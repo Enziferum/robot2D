@@ -193,7 +193,9 @@ namespace robot2D::priv {
         m_renderBuffer.quadVertexPositions[3] = {0.F, 1.F, 0.F};
 
         std::string openGLVersion;
-        if(m_renderApi == RenderApi::OpenGL4_3)
+        if(m_renderApi == RenderApi::OpenGL4_1)
+            openGLVersion = "#version 410 core \n";
+        else if(m_renderApi == RenderApi::OpenGL4_3)
             openGLVersion = "#version 430 core \n";
         else if(m_renderApi == RenderApi::OpenGL4_5)
             openGLVersion = "#version 450 core \n";
@@ -471,7 +473,7 @@ namespace robot2D::priv {
         buffer.vertexBuffer -> setData(vertices, vertexCount * sizeof(RenderVertex));
 
         for(uint32_t i = 1; i < textureSlotCount; ++i) {
-            if(m_renderApi == RenderApi::OpenGL4_3) {
+            if(m_renderApi != RenderApi::OpenGL4_5) {
                 glActiveTexture(GL_TEXTURE0 + i);
                 glBindTexture(GL_TEXTURE_2D, textureSlots[i]);
             }
@@ -685,7 +687,7 @@ namespace robot2D::priv {
             else
                 currentShader -> use();
             if(states.texture) {
-                if(m_renderApi == RenderApi::OpenGL4_3) {
+                if(m_renderApi != RenderApi::OpenGL4_5) {
                     glActiveTexture(GL_TEXTURE0);
                     glBindTexture(GL_TEXTURE_2D, states.texture->getID());
                 }
@@ -755,7 +757,7 @@ namespace robot2D::priv {
         currentShader -> use();
 
         if(states.texture) {
-            if(m_renderApi == RenderApi::OpenGL4_3) {
+            if(m_renderApi != RenderApi::OpenGL4_5) {
                 glActiveTexture(GL_TEXTURE0);
                 glBindTexture(GL_TEXTURE_2D, states.texture->getID());
             }

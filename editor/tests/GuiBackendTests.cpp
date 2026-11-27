@@ -252,7 +252,8 @@ namespace {
     class CoreTarget final : public RenderTarget {
     public:
         CoreTarget() : RenderTarget({128, 128}, RenderAPI::getOpenGLVersion() == RenderApi::OpenGL4_5
-                    ? WindowContext::RenderApi::OpenGL4_5 : WindowContext::RenderApi::OpenGL4_3,
+                    ? WindowContext::RenderApi::OpenGL4_5 : (RenderAPI::getOpenGLVersion() == RenderApi::OpenGL4_1
+                        ? WindowContext::RenderApi::OpenGL4_1 : WindowContext::RenderApi::OpenGL4_3),
                 WindowContext::RenderDimensionType::TwoD) {
         }
     };
@@ -420,10 +421,13 @@ int main(int argc, char** argv) {
         }
         else {
             if(!glfwInit()) return 77;
+            const bool api41 = argc > 2 && std::string(argv[2]) == "41";
             const bool api45 = argc > 2 && std::string(argv[2]) == "45";
             glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
-            glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4); glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, api45 ? 5 : 3);
+            glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+            glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, api45 ? 5 : (api41 ? 1 : 3));
             glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+            glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GLFW_TRUE);
             auto* probe = glfwCreateWindow(32, 32, "GUI test probe", nullptr, nullptr);
             if(!probe) {
                 glfwTerminate(); return 77;
@@ -431,8 +435,10 @@ int main(int argc, char** argv) {
             glfwDestroyWindow(probe);
             {
                 WindowContext options(false, false,
-                    api45 ? WindowContext::RenderApi::OpenGL4_5 : WindowContext::RenderApi::OpenGL4_3);
-                RenderAPI::getOpenGLVersion() = api45 ? RenderApi::OpenGL4_5 : RenderApi::OpenGL4_3;
+                    api45 ? WindowContext::RenderApi::OpenGL4_5 :
+                    (api41 ? WindowContext::RenderApi::OpenGL4_1 : WindowContext::RenderApi::OpenGL4_3));
+                RenderAPI::getOpenGLVersion() =
+                    api45 ? RenderApi::OpenGL4_5 : (api41 ? RenderApi::OpenGL4_1 : RenderApi::OpenGL4_3);
                 DesktopRuntime desktop(DesktopRuntime::Ownership::Borrowed);
                 Window window(desktop, {128, 128}, "GUI backend tests", options);
                 if(scenario == "lifecycle") lifecycle(window);
