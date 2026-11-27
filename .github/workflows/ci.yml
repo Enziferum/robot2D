@@ -61,19 +61,19 @@ jobs:
         if: runner.os == 'Windows'
         uses: msys2/setup-msys2@v2
         with:
-          msystem: MINGW64
+          msystem: UCRT64
           # Keep Git for Windows visible for version metadata and Git fixtures.
           path-type: inherit
           update: true
           install: >-
-            mingw-w64-x86_64-gcc
-            mingw-w64-x86_64-cmake
-            mingw-w64-x86_64-ninja
-            mingw-w64-x86_64-glfw
-            mingw-w64-x86_64-spdlog
-            mingw-w64-x86_64-freetype
-            mingw-w64-x86_64-python
-            mingw-w64-x86_64-pkgconf
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-cmake
+            mingw-w64-ucrt-x86_64-ninja
+            mingw-w64-ucrt-x86_64-glfw
+            mingw-w64-ucrt-x86_64-spdlog
+            mingw-w64-ucrt-x86_64-freetype
+            mingw-w64-ucrt-x86_64-python
+            mingw-w64-ucrt-x86_64-pkgconf
 
       - name: Install Windows Mono
         if: runner.os == 'Windows'
