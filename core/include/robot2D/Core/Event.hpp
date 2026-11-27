@@ -51,7 +51,7 @@ namespace robot2D {
         enum class Type {
             None, Resized, Closed, GainFocus, LostFocus, MouseMoved, MouseWheel,
             MousePressed, MouseReleased, KeyPressed, KeyReleased, TextEntered,
-            DragDrop, JoystickConnected, JoystickDisconnected
+            DragDrop, JoystickConnected, JoystickDisconnected, FramebufferResized, ContentScaleChanged, MinimizedChanged
         };
 
         struct SizeEvent { unsigned width{0}; unsigned height{0}; };
@@ -63,6 +63,9 @@ namespace robot2D {
         struct JoystickEvent { int joystickId{0}; bool isGamepad{false}; };
 
         struct Resized : SizeEvent {};
+        struct FramebufferResized : SizeEvent {};
+        struct ContentScaleChanged { float x{1.f}; float y{1.f}; };
+        struct MinimizedChanged { bool minimized{false}; };
         struct Closed {};
         struct GainFocus {};
         struct LostFocus {};
@@ -79,7 +82,8 @@ namespace robot2D {
 
         using Data = std::variant<std::monostate, Resized, Closed, GainFocus, LostFocus,
                 MouseMoved, MouseWheel, MousePressed, MouseReleased, KeyPressed,
-                KeyReleased, TextEntered, FilesDropped, JoystickConnected, JoystickDisconnected>;
+                KeyReleased, TextEntered, FilesDropped, JoystickConnected, JoystickDisconnected,
+                FramebufferResized, ContentScaleChanged, MinimizedChanged>;
 
         Event() = default;
         template<typename Payload, typename = std::enable_if_t<

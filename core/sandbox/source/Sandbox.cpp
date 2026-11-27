@@ -64,6 +64,7 @@ void Sandbox::update(float dt) {
 }
 
 void Sandbox::render() {
+    if(!m_window -> synchronizeSize()) return;
     m_window -> clear();
     m_scene -> render();
     m_scene -> imGuiRender();

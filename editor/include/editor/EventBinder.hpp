@@ -20,88 +20,9 @@
 *********************************************************************/
 
 #pragma once
-#include <functional>
-#include <stdexcept>
-#include <type_traits>
-#include <typeindex>
-#include <unordered_map>
-#include <utility>
-#include <robot2D/Core/Event.hpp>
+#include <robot2D/Core/EventBinder.hpp>
 
 namespace editor {
-    enum class EventResult { Ignored, Handled };
-
-    /// One handler per concrete payload type. Bind/unbind outside dispatch only.
-    class EventBinder {
-    public:
-        EventBinder() = default;
-        EventBinder(const EventBinder&) = delete;
-        EventBinder& operator=(const EventBinder&) = delete;
-        EventBinder(EventBinder&&) = delete;
-        EventBinder& operator=(EventBinder&&) = delete;
-        ~EventBinder() = default;
-
-        template<typename Payload, typename Callback>
-        void bind(Callback&& callback) {
-            static_assert(isPayload<Payload>(std::make_index_sequence<std::variant_size_v<robot2D::Event::Data> >{}),
-                "Bind requires a concrete Event payload alternative");
-            requireIdle();
-            using Function = std::decay_t<Callback>;
-            m_handlers[std::type_index(typeid(Payload))] =
-                [function = Function(std::forward<Callback>(callback))](const robot2D::Event& event,
-                const robot2D::EventContext& context) mutable {
-                const auto& value = event.get<Payload>();
-                if constexpr(std::is_invocable_v<Function&, const Payload&, const robot2D::EventContext&>) {
-                    if constexpr(std::is_void_v<std::invoke_result_t<Function&, const Payload&,
-                        const robot2D::EventContext&> >) {
-                        function(value, context);
-                        return EventResult::Handled;
-                    }
-                    else return function(value, context);
-                }
-                else {
-                    static_assert(std::is_invocable_v<Function&, const Payload&>,
-                        "Handler requires a const payload reference");
-                    if constexpr(std::is_void_v<std::invoke_result_t<Function&, const Payload&> >) {
-                        function(value);
-                        return EventResult::Handled;
-                    }
-                    else return function(value);
-                }
-            };
-        }
-        template<typename Payload> void unbind() {
-            requireIdle(); m_handlers.erase(std::type_index(typeid(Payload)));
-        }
-
-        EventResult dispatch(const robot2D::Event& event, const robot2D::EventContext& context) const {
-            struct DispatchScope {
-                unsigned& depth;
-                explicit DispatchScope(unsigned& value) : depth(value) {
-                    ++depth;
-                }
-                ~DispatchScope() {
-                    --depth;
-                }
-            } scope{m_dispatchDepth};
-            return event.visit([&](const auto& payload) {
-                const auto found = m_handlers.find(std::type_index(typeid(payload)));
-                return found == m_handlers.end() ? EventResult::Ignored : found -> second(event, context);
-            });
-        }
-        EventResult dispatch(const robot2D::Event& event) const {
-            return dispatch(event, event.context());
-        }
-    private:
-        template<typename Payload, std::size_t... Index>
-        static constexpr bool isPayload(std::index_sequence<Index...>) noexcept {
-            return (std::is_same_v<Payload, std::variant_alternative_t<Index, robot2D::Event::Data> > || ...);
-        }
-        void requireIdle() const {
-            if(m_dispatchDepth != 0) throw std::logic_error("Cannot modify EventBinder during dispatch");
-        }
-        mutable unsigned m_dispatchDepth{0};
-        using Handler = std::function<EventResult (const robot2D::Event&, const robot2D::EventContext&)>;
-        std::unordered_map<std::type_index, Handler> m_handlers;
-    };
+    using EventResult = robot2D::EventResult;
+    using EventBinder = robot2D::EventBinder;
 }

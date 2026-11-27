@@ -66,7 +66,8 @@ namespace editor {
         static const char* typeName(robot2D::Event::Type type) {
             static constexpr const char* names[] = {"None", "Resize", "Close request", "Focus gained", "Focus lost",
                                                     "Mouse move", "Scroll", "Mouse press", "Mouse release", "Key press",
-                                                    "Key release", "Text", "Drop", "Joystick +", "Joystick -"};
+                                                    "Key release", "Text", "Drop", "Joystick +", "Joystick -",
+                                                    "Framebuffer resize", "Content scale", "Minimized"};
             return names[static_cast<std::size_t>(type)];
         }
         static const char* routeName(InputRoute route) {

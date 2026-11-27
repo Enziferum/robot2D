@@ -37,6 +37,15 @@ int main() {
             framebuffer -> unBind();
         }
         robot2D::RenderWindow window(desktop, {320, 240}, "Core ImGui 4.1", options);
+        robot2D::WindowMetrics fractional{{80, 60}, {120, 90}, {2.f, 2.f}, false};
+        require(window.synchronizeSize(fractional), "Fractional surface");
+        require(window.getDefaultView().getSize() == robot2D::vec2f(80, 60), "Logical default view");
+        GLint fractionalViewport[4] = {};
+        glGetIntegerv(GL_VIEWPORT, fractionalViewport);
+        require(fractionalViewport[2] == 120 && fractionalViewport[3] == 90, "Physical fractional viewport");
+        fractional.minimized = true;
+        require(!window.synchronizeSize(fractional), "Minimized surface");
+        require(window.synchronizeSize(), "Restore native surface");
         GLint major = 0, minor = 0, profile = 0, flags = 0;
         glGetIntegerv(GL_MAJOR_VERSION, &major);
         glGetIntegerv(GL_MINOR_VERSION, &minor);
@@ -111,7 +120,7 @@ int main() {
         glReadPixels(16, 48, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, rendered);
         require(rendered[0] > 240 && rendered[1] < 10 && rendered[2] < 10, "Core sprite pixels");
         pixelTarget -> unBind();
-        window.resize({width, height});
+        require(window.synchronizeSize(), "Native frame synchronization");
         window.clear();
         window.beforeRender();
         window.draw(sprite);

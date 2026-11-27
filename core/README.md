@@ -43,15 +43,66 @@ GL-ресурсы создавайте и освобождайте с текущ
 поддерживаемым контрактом.
 
 Размер окна и курсор выражаются в logical pixels, framebuffer — в физических.
-ImGui получает scale из их отношения. Для Core перед рисованием в окно обновляйте
-поверхность через `window.resize()` с `window.getFramebufferSize()`; при нулевом
-framebuffer пропускайте кадр. View и координаты сцены задавайте отдельно согласно
-выбранной системе координат приложения.
+`Window::getMetrics()` возвращает фактические logical/framebuffer размеры,
+content scale и минимизацию. Content scale и отношение framebuffer/logical
+могут различаться. `getSize()` сохраняет совместимость и возвращает фактический
+logical размер, а не последний запрос `setSize()` или старое событие resize.
+
+Перед рисованием в окно вызывайте `window.synchronizeSize()`: default view
+остаётся в logical координатах, viewport получает физические размеры,
+пользовательские камеры сохраняются. При минимизации или нулевых размерах метод
+возвращает false; пропускайте вывод и swap, продолжая pump/update. Если GUI-кадр
+уже начат, завершите его через `cancelFrame()`. ImGui render также потребляет
+готовый кадр без вывода в недоступное окно. `resize(vec2i)` оставлен как явная
+настройка render surface 1:1 для совместимости; он не меняет native окно.
+
+`mapClientToCoords()` переводит logical mouse position через физический viewport
+в координаты заданного View. `FramebufferResized`, `ContentScaleChanged` и
+`MinimizedChanged` — отдельные типизированные события. Они сохраняются в FIFO;
+callbacks не меняют GL-состояние и не подменяют фактические размеры историческими
+значениями. Window, DesktopRuntime, cursors и GUI используйте на одном UI-потоке.
+
+## События и Engine
+
+`robot2D::EventBinder` доступен из `<robot2D/Core/EventBinder.hpp>` без Editor.
+Один обработчик привязывается к конкретному payload, например `Event::KeyPressed`;
+можно принимать payload и `EventContext` или только payload. Callback возвращает
+`EventResult::Ignored/Handled`; callback с void считается Handled. Callbacks
+должны быть копируемыми. bind/unbind во время dispatch запрещены; исключение из
+callback передаётся вызывающему коду, состояние dispatch восстанавливается.
+Существующие `editor::EventBinder/EventResult` остаются совместимыми aliases.
+
+`Window::takeEvents(frame)` возвращает владеющий batch с sequence, временем
+приёма и номером кадра. События доставляйте в исходном порядке один раз.
+`Gui::handleEvents()` должен получать все события независимо от capture;
+snapshot `inputCapture()` берите перед `beginFrame()`. GUI capture определяет
+обработку прикладных shortcuts/мыши, но не отменяет системные события и release.
+Состояние игровых действий для fixed ticks — отдельный уровень поверх raw input.
+
+Можно использовать собственный цикл с DesktopRuntime/RenderWindow/Gui либо
+унаследовать Application и вызвать Engine. `Engine::run()` отвергает null
+application, неположительный maxFrameRate и нулевые/непредставимые размеры до
+инициализации desktop. При таком отказе переданный application освобождается.
+После прикрепления окна destroy вызывается один раз, включая ошибку setup/кадра,
+и application уничтожается с живым текущим GL-контекстом. Остановка из
+handleMessages/update/guiUpdate прекращает последующие callbacks этого кадра.
+
+Текущее имя maxFrameRate сохранено для совместимости: оно задаёт частоту fixed
+update (`1 / maxFrameRate`), а не отдельный limiter рендера. Vsync задаётся через
+WindowContext. Новый timestep/RuntimeSession и ограничение догоняющих шагов
+не входят в этот контракт.
+
+Для инструмента Core+ImGui не требуется ECS Scene. Текущий ECS можно использовать
+отдельно; новый storage/clone/undo контракт не является условием создания окна,
+ресурсов, рендера и GUI. Текущий renderer сохраняется; ресурсы отложенного batch
+должны жить до `afterRender()`. Аудио-модуль можно подключать со стороны приложения.
 
 ## Проверки
 
 `RB2D_BUILD_CORE_TESTS=ON` включает штатные headless Core tests и сборку
-`robot2D-core-imgui-smoke`, если ImGui включён. `RB2D_CORE_GRAPHICS_TESTS=ON`
+`robot2D-core-imgui-smoke`, если ImGui включён. Отдельная Core+ImGui конфигурация
+также проверяет GUI math, CPU font atlas и uninitialized lifecycle без Editor/Mono.
+`RB2D_CORE_GRAPHICS_TESTS=ON`
 дополнительно регистрирует этот графический тест в CTest; отсутствие контекста
 считается ошибкой. Тест создаёт скрытое окно 4.1 core/forward-compatible, рисует
 Core sprite и ImGui, проверяет framebuffer с depth/stencil, MSAA и resize,

@@ -5,6 +5,7 @@ set(CORE_INCLUDE_FILES
 
         ${INCLROOT}/FileInputStream.hpp
         ${INCLROOT}/Event.hpp
+        ${INCLROOT}/EventBinder.hpp
         ${INCLROOT}/Window.hpp
         ${INCLROOT}/DesktopRuntime.hpp
         ${INCLROOT}/Keyboard.hpp

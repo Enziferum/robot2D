@@ -79,9 +79,6 @@ namespace editor {
         m_eventBinder.bind<robot2D::Event::KeyReleased>([this](const robot2D::Event::KeyReleased& event) {
             onKeyReleased(event);
         });
-        m_eventBinder.bind<robot2D::Event::Resized>([this](const robot2D::Event::Resized& evt) {
-            m_frameBuffer -> Resize({evt.width, evt.height});
-        });
         m_eventBinder.bind<robot2D::Event::MousePressed>([this](const robot2D::Event::MousePressed& event) {
             onMousePressed(event);
         });
@@ -333,6 +330,10 @@ namespace editor {
     }
 
     void Editor::render() {
+        const auto logical = m_window -> getLogicalSize();
+        if(m_frameBuffer && logical.x && logical.y &&
+            m_frameBuffer -> getSpecification().size != logical.as<int>())
+            m_frameBuffer -> Resize(logical);
         if(m_configuration.useGUI) {
             if(m_frameBuffer)
                 m_frameBuffer -> Bind();

@@ -41,7 +41,8 @@ namespace robot2D {
         ~RenderWindow() override;
 
         void resize(const robot2D::vec2i& newSize);
-    protected:
-        void onResize(const int& w, const int& h) override;
+        bool synchronizeSize();
+        bool synchronizeSize(const WindowMetrics& metrics);
+        vec2f mapClientToCoords(const vec2f& point, const View& view, unsigned int layerID = 1) const;
     };
 }
