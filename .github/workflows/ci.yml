@@ -113,6 +113,10 @@ jobs:
           MESA_GLSL_VERSION_OVERRIDE: '410'
         run: ${{ runner.os == 'Linux' && 'xvfb-run -a python3 scripts/ci.py --core-only --graphics --build-dir build-core' || runner.os == 'macOS' && 'python3 scripts/ci.py --core-only --build-dir build-core' || 'python scripts/ci.py --core-only --build-dir build-core' }}
 
+      - name: Run macOS OpenGL 4.1 graphics smoke
+        if: runner.os == 'macOS'
+        run: ./build-core/robot2D-core-imgui-smoke
+
       - name: Diagnose scene integration crash
         if: failure() && runner.os == 'Linux'
         run: |
