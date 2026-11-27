@@ -1,5 +1,9 @@
 {
   "programs": [
+    {"name": "Core.Quad.410", "stages": [
+      {"stage": "vert", "path": "core/include/robot2D/Graphics/QuadShaderTexts.hpp", "symbol": "vertexSource", "prefix": "#version 410 core\n"},
+      {"stage": "frag", "path": "core/include/robot2D/Graphics/QuadShaderTexts.hpp", "symbol": "fragmentSource", "prefix": "#version 410 core\n"}
+    ]},
     {"name": "Core.Quad.430", "stages": [
       {"stage": "vert", "path": "core/include/robot2D/Graphics/QuadShaderTexts.hpp", "symbol": "vertexSource", "prefix": "#version 430 core\n"},
       {"stage": "frag", "path": "core/include/robot2D/Graphics/QuadShaderTexts.hpp", "symbol": "fragmentSource", "prefix": "#version 430 core\n"}

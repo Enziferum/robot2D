@@ -434,7 +434,7 @@ namespace {
     public:
         using RenderWindow::RenderWindow;
         void notifyResize(int width, int height) {
-            onResize(width, height);
+            resize({width, height});
         }
     };
 
@@ -460,7 +460,7 @@ namespace {
             std::array<unsigned char, 4> oldPixel {};
             glReadPixels(4, 59, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, oldPixel.data());
             CHECK(oldPixel[0] > 250 && oldPixel[1] < 3 && oldPixel[2] < 3);
-            CHECK(window.getSize() == vec2u{128, 64});
+            CHECK(window.getSize() == window.getLogicalSize());
             View fixed(FloatRect{0, 0, 64, 64});
             const auto point = window.mapPixelToCoords({64, 32}, fixed);
             CHECK(std::abs(point.x - 32) < 0.01f && std::abs(point.y - 32) < 0.01f);
@@ -469,7 +469,7 @@ namespace {
             window.notifyResize(32, 64);
             CHECK(window.getView().getSize() == vec2f{128, 64});
             CHECK(window.getView(0).getSize() == vec2f{32, 64});
-            CHECK(window.getSize() == vec2u{32, 64});
+            CHECK(window.getSize() == window.getLogicalSize());
             const auto next = window.mapPixelToCoords({16, 32}, fixed);
             CHECK(std::abs(next.x - 32) < 0.01f && std::abs(next.y - 32) < 0.01f);
             CHECK(window.getDefaultView().getSize() == vec2f{32, 64});

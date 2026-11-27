@@ -29,6 +29,9 @@ jobs:
           - os: ubuntu-24.04
             shell: bash
             command: xvfb-run -a python3 scripts/ci.py --graphics
+          - os: macos-15
+            shell: bash
+            command: python3 scripts/ci.py
           - os: windows-2022
             shell: msys2 {0}
             command: python scripts/ci.py
@@ -44,23 +47,33 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y ninja-build g++ pkg-config libglfw3-dev libspdlog-dev libfreetype-dev libgl1-mesa-dev mono-devel xvfb xauth libgl1-mesa-dri gdb
 
+      - name: Install macOS dependencies
+        if: runner.os == 'macOS'
+        run: |
+          test "$(uname -m)" = arm64
+          brew install ninja pkgconf glfw spdlog freetype mono
+          echo "$(brew --prefix mono)/bin" >> "$GITHUB_PATH"
+          echo "PKG_CONFIG_PATH=$(brew --prefix mono)/lib/pkgconfig" >> "$GITHUB_ENV"
+          echo "CC=clang" >> "$GITHUB_ENV"
+          echo "CXX=clang++" >> "$GITHUB_ENV"
+
       - name: Install Windows dependencies
         if: runner.os == 'Windows'
         uses: msys2/setup-msys2@v2
         with:
-          msystem: MINGW64
+          msystem: UCRT64
           # Keep Git for Windows visible for version metadata and Git fixtures.
           path-type: inherit
           update: true
           install: >-
-            mingw-w64-x86_64-gcc
-            mingw-w64-x86_64-cmake
-            mingw-w64-x86_64-ninja
-            mingw-w64-x86_64-glfw
-            mingw-w64-x86_64-spdlog
-            mingw-w64-x86_64-freetype
-            mingw-w64-x86_64-python
-            mingw-w64-x86_64-pkgconf
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-cmake
+            mingw-w64-ucrt-x86_64-ninja
+            mingw-w64-ucrt-x86_64-glfw
+            mingw-w64-ucrt-x86_64-spdlog
+            mingw-w64-ucrt-x86_64-freetype
+            mingw-w64-ucrt-x86_64-python
+            mingw-w64-ucrt-x86_64-pkgconf
 
       - name: Install Windows Mono
         if: runner.os == 'Windows'
@@ -75,23 +88,43 @@ jobs:
           path: work/glslang-src
           persist-credentials: false
 
+      - name: Checkout pinned GoogleTest
+        uses: actions/checkout@v7
+        with:
+          repository: google/googletest
+          ref: v1.14.0
+          path: work/googletest-src
+          persist-credentials: false
+
       - name: Build GLSL validator
         run: |
           cmake -S work/glslang-src -B work/glslang-build -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_SPIRV=OFF -DENABLE_HLSL=OFF -DGLSLANG_TESTS=OFF -DGLSLANG_ENABLE_INSTALL=OFF
           cmake --build work/glslang-build --target glslang-standalone --parallel 2
 
       - name: Validate GLSL stages and programs
-        run: python${{ runner.os == 'Linux' && '3' || '' }} scripts/validate_shaders.py --validator work/glslang-build/StandAlone/glslang${{ runner.os == 'Windows' && '.exe' || '' }} --require-version 16.6.0
+        run: python${{ runner.os != 'Windows' && '3' || '' }} scripts/validate_shaders.py --validator work/glslang-build/StandAlone/glslang${{ runner.os == 'Windows' && '.exe' || '' }} --require-version 16.6.0
 
       - name: Verify report generation
         env:
           GLSLANG_VALIDATOR: work/glslang-build/StandAlone/glslang${{ runner.os == 'Windows' && '.exe' || '' }}
-        run: python${{ runner.os == 'Linux' && '3' || '' }} -m unittest discover -s scripts/tests -v
+        run: python${{ runner.os != 'Windows' && '3' || '' }} -m unittest discover -s scripts/tests -v
 
       - name: Configure, build and test
         env:
           LIBGL_ALWAYS_SOFTWARE: '1'
-        run: ${{ matrix.command }}
+        run: ${{ matrix.command }} --googletest-source work/googletest-src
+
+      - name: Build and test standalone Core and ImGui
+        env:
+          LIBGL_ALWAYS_SOFTWARE: '1'
+          MESA_GL_VERSION_OVERRIDE: '4.1FC'
+          MESA_GLSL_VERSION_OVERRIDE: '410'
+        run: ${{ runner.os == 'Linux' && 'xvfb-run -a python3 scripts/ci.py --core-only --graphics --build-dir build-core' || runner.os == 'macOS' && 'python3 scripts/ci.py --core-only --build-dir build-core' || 'python scripts/ci.py --core-only --build-dir build-core' }} --googletest-source work/googletest-src
+
+      - name: Report hosted macOS graphics limitation
+        if: runner.os == 'macOS'
+        run: |
+          echo 'macOS: Core+ImGui graphics smoke is compiled. Hosted Apple silicon runner rejected an OpenGL 4.1 context with NSGL: Failed to find a suitable pixel format (run 46006344388). Native graphics/Retina acceptance requires a Mac with an OpenGL renderer; see core/README.md.' >> "$GITHUB_STEP_SUMMARY"
 
       - name: Diagnose scene integration crash
         if: failure() && runner.os == 'Linux'
@@ -110,6 +143,8 @@ jobs:
           name: test-report-${{ matrix.os }}
           path: |
             build/reports/
+            build-core/reports/
+            build-core/Testing/Temporary/
             build/Testing/Temporary/
             build/CMakeFiles/CMakeConfigureLog.yaml
             build/editor/tests/scenarios/

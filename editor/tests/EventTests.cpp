@@ -254,6 +254,9 @@ namespace {
         context.capture.popup = true;
         CHECK(router.route(Event{}, context).cancelInputs);
         CHECK(router.route(Event(Event::Resized{{100, 200}}), context).target == InputRoute::System);
+        CHECK(router.route(Event(Event::FramebufferResized{{200, 400}}), context).target == InputRoute::System);
+        CHECK(router.route(Event(Event::ContentScaleChanged{1.5f, 2.f}), context).target == InputRoute::System);
+        CHECK(router.route(Event(Event::MinimizedChanged{true}), context).target == InputRoute::System);
     }
     void shortcuts() {
         editor::ShortCut shortcut{robot2D::Key::LEFT_CONTROL, robot2D::Key::S};

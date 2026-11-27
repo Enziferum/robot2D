@@ -3,7 +3,8 @@
 namespace robot2D {
     enum class RenderApi {
         OpenGL4_3,
-        OpenGL4_5
+        OpenGL4_5,
+        OpenGL4_1
     };
 
     enum class RenderDimensionType {

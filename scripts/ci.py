@@ -63,6 +63,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--build-dir", type=Path, default=Path("build"))
     parser.add_argument("--graphics", action="store_true")
+    parser.add_argument("--core-only", action="store_true")
+    parser.add_argument("--googletest-source", type=Path)
     parser.add_argument("--parallel", type=int, default=2)
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[1]
@@ -80,10 +82,20 @@ def main():
                        "-DRB2D_BUILD_CORE_TESTS=ON", "-DRB2D_BUILD_EDITOR_TESTS=ON",
                        f"-DRB2D_EDITOR_GRAPHICS_TESTS={'ON' if args.graphics else 'OFF'}"]),
         ("build", ["cmake", "--build", str(build), "--parallel", str(args.parallel),
-                   "--target", "robot2D", "robot2D-core-tests", "robot2D-editor-test-suite"]),
+                   "--target", "robot2D-core", "robot2D-imgui", "robot2D", "robot2D-core-tests", "robot2D-editor-test-suite"]),
         ("test", ["ctest", "--test-dir", str(build), "-C", "Release", "--no-tests=error",
                   "--output-on-failure", "--timeout", "60", "--output-junit", str(junit)]),
     ]
+    commands[0][1].extend([f"-DRB2D_BUILD_EDITOR={'OFF' if args.core_only else 'ON'}",
+                           f"-DRB2D_CORE_GRAPHICS_TESTS={'ON' if args.core_only else 'OFF'}"])
+    if args.googletest_source:
+        commands[0][1].append(f"-DFETCHCONTENT_SOURCE_DIR_GOOGLETEST={(root / args.googletest_source).resolve()}")
+    if args.core_only:
+        commands[1][1][commands[1][1].index("--target") + 1:] = [
+            "robot2D-core", "robot2D-imgui", "robot2D-core-tests"]
+        commands[1][1].append("robot2D-core-imgui-smoke")
+        if not args.graphics:
+            commands[2][1].extend(["-LE", "graphics"])
     try:
         for phase, command in commands:
             result = run(command, reports / f"{phase}.log", root)

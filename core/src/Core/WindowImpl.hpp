@@ -54,6 +54,8 @@ namespace robot2D::priv {
         virtual void* getRaw() = 0;
         virtual vec2u getFramebufferSize() const = 0;
         virtual vec2u getLogicalSize() const = 0;
+        virtual vec2f getContentScale() const = 0;
+        virtual bool isMinimized() const = 0;
 
         virtual bool isOpen() const = 0;
         virtual void setTitle(const std::string& title) const = 0;

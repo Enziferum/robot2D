@@ -193,7 +193,9 @@ namespace robot2D::priv {
         m_renderBuffer.quadVertexPositions[3] = {0.F, 1.F, 0.F};
 
         std::string openGLVersion;
-        if(m_renderApi == RenderApi::OpenGL4_3)
+        if(m_renderApi == RenderApi::OpenGL4_1)
+            openGLVersion = "#version 410 core \n";
+        else if(m_renderApi == RenderApi::OpenGL4_3)
             openGLVersion = "#version 430 core \n";
         else if(m_renderApi == RenderApi::OpenGL4_5)
             openGLVersion = "#version 450 core \n";
@@ -282,12 +284,16 @@ namespace robot2D::priv {
     }
 
     void OpenGLRender::setSize(const vec2u& size) {
-        if(!size.x || !size.y || size == m_size)
+        setSurfaceSize(size, size);
+    }
+
+    void OpenGLRender::setSurfaceSize(const vec2u& size, const vec2u& pixels) {
+        if(!size.x || !size.y || !pixels.x || !pixels.y || (size == m_size && pixels == m_surfaceSize))
             return;
         afterRender();
         m_size = size;
-        m_surfaceSize = size;
-        m_drawViewport = {0, 0, static_cast<int>(size.x), static_cast<int>(size.y)};
+        m_surfaceSize = pixels;
+        m_drawViewport = {0, 0, static_cast<int>(pixels.x), static_cast<int>(pixels.y)};
         m_virtualViewport = {};
         m_default.reset({0, 0, static_cast<float>(size.x), static_cast<float>(size.y)});
         for(unsigned int layerID = 0; layerID < m_renderLayers.size(); ++layerID) {
@@ -297,7 +303,7 @@ namespace robot2D::priv {
                 applyCurrentView(layerID);
             }
         }
-        glViewport(0, 0, size.x, size.y);
+        glViewport(0, 0, pixels.x, pixels.y);
     }
 
     void OpenGLRender::setViewVirtual(const vec2u& windowSize, const View& view, unsigned int layerID) {
@@ -471,7 +477,7 @@ namespace robot2D::priv {
         buffer.vertexBuffer -> setData(vertices, vertexCount * sizeof(RenderVertex));
 
         for(uint32_t i = 1; i < textureSlotCount; ++i) {
-            if(m_renderApi == RenderApi::OpenGL4_3) {
+            if(m_renderApi != RenderApi::OpenGL4_5) {
                 glActiveTexture(GL_TEXTURE0 + i);
                 glBindTexture(GL_TEXTURE_2D, textureSlots[i]);
             }
@@ -685,7 +691,7 @@ namespace robot2D::priv {
             else
                 currentShader -> use();
             if(states.texture) {
-                if(m_renderApi == RenderApi::OpenGL4_3) {
+                if(m_renderApi != RenderApi::OpenGL4_5) {
                     glActiveTexture(GL_TEXTURE0);
                     glBindTexture(GL_TEXTURE_2D, states.texture->getID());
                 }
@@ -755,7 +761,7 @@ namespace robot2D::priv {
         currentShader -> use();
 
         if(states.texture) {
-            if(m_renderApi == RenderApi::OpenGL4_3) {
+            if(m_renderApi != RenderApi::OpenGL4_5) {
                 glActiveTexture(GL_TEXTURE0);
                 glBindTexture(GL_TEXTURE_2D, states.texture->getID());
             }

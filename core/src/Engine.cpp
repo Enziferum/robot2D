@@ -20,6 +20,8 @@
 *********************************************************************/
 
 #include <cstdio>
+#include <limits>
+#include <stdexcept>
 #include <robot2D/Engine.hpp>
 #include <robot2D/Util/Logger.hpp>
 
@@ -61,7 +63,14 @@ namespace robot2D {
     void Engine::run(Application::Ptr application,
         EngineConfiguration&& engineConfiguration) {
 
-        m_application = std::move(application);
+        if(!application)
+            throw std::invalid_argument("Engine::run requires an application");
+        if(engineConfiguration.maxFrameRate <= 0)
+            throw std::invalid_argument("Engine requires a positive frame rate");
+        const auto limit = static_cast<unsigned>(std::numeric_limits<int>::max());
+        if(!engineConfiguration.windowSize.x || !engineConfiguration.windowSize.y ||
+            engineConfiguration.windowSize.x > limit || engineConfiguration.windowSize.y > limit)
+            throw std::invalid_argument("Engine requires positive representable window dimensions");
 
         RB_CORE_INFO("[Engine] Creating window; title='{}'; size={}x{}; frame_rate={}",
             engineConfiguration.windowTitle, engineConfiguration.windowSize.x,
@@ -71,6 +80,7 @@ namespace robot2D {
         RenderWindow renderWindow{desktop, engineConfiguration.windowSize,
                                   engineConfiguration.windowTitle,
                                   engineConfiguration.windowContext};
+        m_application = std::move(application);
 
         struct ApplicationLifetime {
             Application::Ptr& application;
@@ -107,13 +117,17 @@ namespace robot2D {
             float delta = m_frameClock.restart().asSeconds();
             timeProcessed += delta;
 
-            while(timeProcessed >= timePerFrame) {
+            while(m_application -> isRunning() && timeProcessed >= timePerFrame) {
                 timeProcessed -= timePerFrame;
                 m_application -> handleMessages();
+                if(!m_application -> isRunning()) break;
                 m_application -> update(timePerFrame);
             }
+            if(!m_application -> isRunning()) break;
 
+            renderWindow.synchronizeSize();
             m_application -> guiUpdate(delta);
+            if(!m_application -> isRunning()) break;
             m_application -> render();
         }
 

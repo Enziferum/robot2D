@@ -23,6 +23,7 @@
 #include <limits>
 #include <robot2D/Util/Logger.hpp>
 #include <robot2D/Graphics/GL.hpp>
+#include <robot2D/Graphics/RenderAPI.hpp>
 #include <robot2D/Config.hpp>
 #include "DesktopWindowImpl.hpp"
 
@@ -52,7 +53,7 @@ namespace robot2D::priv {
         }
         catch(...) {
             m_nativeWindow.reset();
-#if defined(ROBOT2D_WINDOWS) || defined(ROBOT2D_LINUX)
+#if defined(ROBOT2D_WINDOWS) || defined(ROBOT2D_LINUX) || defined(ROBOT2D_MACOS)
             // GLAD owns a process-global table; a failed load may have overwritten it.
             if(loaderStarted && recovery) {
                 glfwMakeContextCurrent(recovery);
@@ -101,7 +102,8 @@ namespace robot2D::priv {
         if(m_size.x == 0 || m_size.y == 0 ||
             m_size.x > static_cast<unsigned>(std::numeric_limits<int>::max()) ||
             m_size.y > static_cast<unsigned>(std::numeric_limits<int>::max()) ||
-            (m_context.renderApi != WindowContext::RenderApi::OpenGL4_3 &&
+            (m_context.renderApi != WindowContext::RenderApi::OpenGL4_1 &&
+            m_context.renderApi != WindowContext::RenderApi::OpenGL4_3 &&
             m_context.renderApi != WindowContext::RenderApi::OpenGL4_5))
             throw WindowCreationError(WindowCreationStage::Validation, 0,
                       "Invalid window configuration: " + m_name + " size=" + std::to_string(m_size.x) +
@@ -117,6 +119,11 @@ namespace robot2D::priv {
         int opengl_minor = 0;
 
         switch(m_context.renderApi) {
+        case WindowContext::RenderApi::OpenGL4_1: {
+            opengl_major = 4;
+            opengl_minor = 1;
+            break;
+        }
         case WindowContext::RenderApi::OpenGL4_3: {
             opengl_major = 4;
             opengl_minor = 3;
@@ -131,7 +138,8 @@ namespace robot2D::priv {
         RB_CORE_WARN("Engine's GraphicsApi is OpenGL, Version {0}.{1}.", std::to_string(opengl_major),
             std::to_string(opengl_minor));
 
-        if(m_context.renderApi == WindowContext::RenderApi::OpenGL4_3 ||
+        if(m_context.renderApi == WindowContext::RenderApi::OpenGL4_1 ||
+            m_context.renderApi == WindowContext::RenderApi::OpenGL4_3 ||
             m_context.renderApi == WindowContext::RenderApi::OpenGL4_5) {
 #if !defined(NDEBUG)
             glfwWindowHint(GLFW_OPENGL_DEBUG_CONTEXT, GLFW_TRUE);
@@ -164,7 +172,7 @@ namespace robot2D::priv {
 
         setup_callbacks();
 
-#if defined(ROBOT2D_WINDOWS) || defined(ROBOT2D_LINUX)
+#if defined(ROBOT2D_WINDOWS) || defined(ROBOT2D_LINUX) || defined(ROBOT2D_MACOS)
         loaderStarted = true;
         if(functions.loadContext ? !functions.loadContext() : !gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
             RB_CORE_CRITICAL("Failed to initialize GLAD");
@@ -174,7 +182,19 @@ namespace robot2D::priv {
                       std::to_string(opengl_major) + "." + std::to_string(opengl_minor));
         }
 #endif
-        glViewport(0, 0, static_cast<int>(m_size.x), static_cast<int>(m_size.y));
+        switch(m_context.renderApi) {
+        case WindowContext::RenderApi::OpenGL4_1:
+            RenderAPI::getOpenGLVersion() = RenderApi::OpenGL4_1;
+            break;
+        case WindowContext::RenderApi::OpenGL4_3:
+            RenderAPI::getOpenGLVersion() = RenderApi::OpenGL4_3;
+            break;
+        case WindowContext::RenderApi::OpenGL4_5:
+            RenderAPI::getOpenGLVersion() = RenderApi::OpenGL4_5;
+            break;
+        }
+        const auto framebufferSize = getFramebufferSize();
+        glViewport(0, 0, static_cast<int>(framebufferSize.x), static_cast<int>(framebufferSize.y));
     }
 
     bool DesktopWindowImpl::isOpen() const {
@@ -206,6 +226,8 @@ namespace robot2D::priv {
         glfwSetMouseButtonCallback(m_window, mouse_callback);
         glfwSetFramebufferSizeCallback(m_window, framebuffer_callback);
         glfwSetWindowSizeCallback(m_window, size_callback);
+        glfwSetWindowContentScaleCallback(m_window, content_scale_callback);
+        glfwSetWindowIconifyCallback(m_window, iconify_callback);
         glfwSetWindowMaximizeCallback(m_window, maximized_callback);
         glfwSetDropCallback(m_window, dragdrop_callback);
         glfwSetWindowFocusCallback(m_window, focus_callback);
@@ -275,9 +297,30 @@ namespace robot2D::priv {
         return {static_cast<unsigned>(width), static_cast<unsigned>(height)};
     }
 
-    void DesktopWindowImpl::framebuffer_callback([[maybe_unused]] GLFWwindow* window,
-        [[maybe_unused]] int width, [[maybe_unused]] int height) {
-        // Render passes query framebuffer size and select their own viewport.
+    vec2f DesktopWindowImpl::getContentScale() const {
+        vec2f scale{1.f, 1.f};
+        glfwGetWindowContentScale(m_window, &scale.x, &scale.y);
+        return scale;
+    }
+
+    bool DesktopWindowImpl::isMinimized() const {
+        return glfwGetWindowAttrib(m_window, GLFW_ICONIFIED) == GLFW_TRUE;
+    }
+
+    void DesktopWindowImpl::framebuffer_callback(GLFWwindow* wnd, int width, int height) {
+        auto* window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
+        if(window) window -> enqueue(Event::FramebufferResized{{static_cast<unsigned>(width),
+                    static_cast<unsigned>(height)}});
+    }
+
+    void DesktopWindowImpl::content_scale_callback(GLFWwindow* wnd, float x, float y) {
+        auto* window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
+        if(window) window -> enqueue(Event::ContentScaleChanged{x, y});
+    }
+
+    void DesktopWindowImpl::iconify_callback(GLFWwindow* wnd, int state) {
+        auto* window = static_cast<DesktopWindowImpl*>(glfwGetWindowUserPointer(wnd));
+        if(window) window -> enqueue(Event::MinimizedChanged{state == GLFW_TRUE});
     }
 
     void DesktopWindowImpl::maximized_callback([[maybe_unused]] GLFWwindow* wnd, [[maybe_unused]] int state) {
@@ -366,6 +409,9 @@ namespace robot2D::priv {
     }
 
     void DesktopWindowImpl::setSize(const vec2u& size) {
+        if(!size.x || !size.y || size.x > static_cast<unsigned>(std::numeric_limits<int>::max()) ||
+            size.y > static_cast<unsigned>(std::numeric_limits<int>::max()))
+            throw std::invalid_argument("Window::setSize requires positive representable logical dimensions");
         glfwSetWindowSize(m_window, static_cast<int>(size.x), static_cast<int>(size.y));
     }
 

@@ -1,22 +1,22 @@
 /*********************************************************************
-(c) Alex Raag 2021
-https://github.com/Enziferum
-robot2D - Zlib license.
-This software is provided 'as-is', without any express or
-implied warranty. In no event will the authors be held
-liable for any damages arising from the use of this software.
-Permission is granted to anyone to use this software for any purpose,
-including commercial applications, and to alter it and redistribute
-it freely, subject to the following restrictions:
-1. The origin of this software must not be misrepresented;
-you must not claim that you wrote the original software.
-If you use this software in a product, an acknowledgment
-in the product documentation would be appreciated but
-is not required.
-2. Altered source versions must be plainly marked as such,
-and must not be misrepresented as being the original software.
-3. This notice may nocountt be removed or altered from any
-source distribution.
+   (c) Alex Raag 2021
+   https://github.com/Enziferum
+   robot2D - Zlib license.
+   This software is provided 'as-is', without any express or
+   implied warranty. In no event will the authors be held
+   liable for any damages arising from the use of this software.
+   Permission is granted to anyone to use this software for any purpose,
+   including commercial applications, and to alter it and redistribute
+   it freely, subject to the following restrictions:
+   1. The origin of this software must not be misrepresented;
+   you must not claim that you wrote the original software.
+   If you use this software in a product, an acknowledgment
+   in the product documentation would be appreciated but
+   is not required.
+   2. Altered source versions must be plainly marked as such,
+   and must not be misrepresented as being the original software.
+   3. This notice may nocountt be removed or altered from any
+   source distribution.
 *********************************************************************/
 #include <robot2D/Graphics/GL.hpp>
 #include <robot2D/Graphics/RenderAPI.hpp>
@@ -37,7 +37,7 @@ namespace robot2D::priv {
             else {
                 for(int n{0}; n < count; ++n) {
                     glCall(glGenTextures, 1, outID);
-                    glCall(glBindTexture, GL_TEXTURE_2D, *outID);
+                    glCall(glBindTexture, TextureTarget(multiSampled), *outID);
                     outID++;
                 }
             }
@@ -48,11 +48,12 @@ namespace robot2D::priv {
         }
 
         static void AttachColorTexture(RenderID id, int samples, GLenum internalFormat,
-                                       GLenum format, robot2D::vec2i size, int index) {
+            GLenum format, robot2D::vec2i size, int index) {
             bool multiSampled = samples > 1;
             if(multiSampled) {
                 glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, internalFormat, size.x, size.y, GL_FALSE);
-            } else {
+            }
+            else {
                 glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, size.x, size.y, 0, format, GL_UNSIGNED_BYTE, nullptr);
 
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -66,12 +67,17 @@ namespace robot2D::priv {
         }
 
         static void AttachDepthTexture(RenderID id, int samples, GLenum format, GLenum attachmentType,
-                                       robot2D::vec2i size) {
+            robot2D::vec2i size) {
             bool multiSampled = samples > 1;
             if(multiSampled) {
                 glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, samples, format, size.x, size.y, GL_FALSE);
-            } else {
-                glTexStorage2D(GL_TEXTURE_2D, 1, format, size.x, size.y);
+            }
+            else {
+                if(RenderAPI::getOpenGLVersion() == RenderApi::OpenGL4_1)
+                    glTexImage2D(GL_TEXTURE_2D, 0, format, size.x, size.y, 0,
+                        GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, nullptr);
+                else
+                    glTexStorage2D(GL_TEXTURE_2D, 1, format, size.x, size.y);
 
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
                 glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -85,23 +91,23 @@ namespace robot2D::priv {
 
         static bool isDepthFormat(FrameBufferTextureFormat format) {
             switch(format) {
-                case FrameBufferTextureFormat::DEPTH24STENCIL8:
-                    return true;
-                default:
-                    return false;
+            case FrameBufferTextureFormat::DEPTH24STENCIL8:
+                return true;
+            default:
+                return false;
             }
         }
     }
 
-    OpenGLFrameBuffer::OpenGLFrameBuffer(const FrameBufferSpecification& specification):
+    OpenGLFrameBuffer::OpenGLFrameBuffer(const FrameBufferSpecification& specification) :
         m_specification{specification},
-        m_renderID(0)
-        {
+        m_renderID(0) {
 
         for(auto spec: m_specification.attachments.m_attachments) {
             if(!Utils::isDepthFormat(spec.m_format)) {
                 m_colorAttachementSpecs.emplace_back(spec);
-            } else
+            }
+            else
                 m_depthAttachmentSpec = spec;
         }
 
@@ -144,18 +150,18 @@ namespace robot2D::priv {
             for(std::size_t it = 0; it < m_colorAttachments.size(); ++it) {
                 Utils::bindTexture(multiSampled, m_colorAttachments[it]);
                 switch(m_colorAttachementSpecs[it].m_format) {
-                    case FrameBufferTextureFormat::RGBA8:
-                        Utils::AttachColorTexture(m_colorAttachments[it], m_specification.Samples,
-                                                  GL_RGBA8, GL_RGBA,
-                                                  m_specification.size, it);
-                        break;
-                    case FrameBufferTextureFormat::RED_INTEGER:
-                        Utils::AttachColorTexture(m_colorAttachments[it], m_specification.Samples,
-                                                  GL_R32I, GL_RED_INTEGER,
-                                                  m_specification.size, it);
-                        break;
-                    default:
-                        break;
+                case FrameBufferTextureFormat::RGBA8:
+                    Utils::AttachColorTexture(m_colorAttachments[it], m_specification.Samples,
+                        GL_RGBA8, GL_RGBA,
+                        m_specification.size, it);
+                    break;
+                case FrameBufferTextureFormat::RED_INTEGER:
+                    Utils::AttachColorTexture(m_colorAttachments[it], m_specification.Samples,
+                        GL_R32I, GL_RED_INTEGER,
+                        m_specification.size, it);
+                    break;
+                default:
+                    break;
                 }
             }
         }
@@ -164,13 +170,13 @@ namespace robot2D::priv {
             Utils::createTextures(multiSampled, &m_depthAttachment, 1);
             Utils::bindTexture(multiSampled, m_depthAttachment);
             switch(m_depthAttachmentSpec.m_format) {
-                case FrameBufferTextureFormat::DEPTH24STENCIL8:
-                    Utils::AttachDepthTexture(m_depthAttachment, m_specification.Samples,
-                                              GL_DEPTH24_STENCIL8, GL_DEPTH_STENCIL_ATTACHMENT,
-                                              m_specification.size);
-                    break;
-                default:
-                    break;
+            case FrameBufferTextureFormat::DEPTH24STENCIL8:
+                Utils::AttachDepthTexture(m_depthAttachment, m_specification.Samples,
+                    GL_DEPTH24_STENCIL8, GL_DEPTH_STENCIL_ATTACHMENT,
+                    m_specification.size);
+                break;
+            default:
+                break;
             }
         }
 
@@ -180,7 +186,8 @@ namespace robot2D::priv {
                                   GL_COLOR_ATTACHMENT2,
                                   GL_COLOR_ATTACHMENT3};
             glCall(glDrawBuffers, m_colorAttachments.size(), buffers);
-        } else if(m_colorAttachments.empty()) {
+        }
+        else if(m_colorAttachments.empty()) {
             // only depth pass
             glCall(glDrawBuffer, GL_NONE);
         }

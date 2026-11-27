@@ -1,4 +1,7 @@
 set(CORE_SRC
+        Core/EngineTests.cpp
+        Core/EventTests.cpp
+        Core/WindowContextTests.cpp
         Core/TimeTests.cpp
         Core/ClockTests.cpp
         Core/FileInputStreamTests.cpp

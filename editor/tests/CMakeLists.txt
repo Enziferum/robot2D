@@ -70,7 +70,7 @@ endif()
 
 add_mono_assembly(TARGET robot2D-hud-driver
     DESTINATION "${CMAKE_CURRENT_BINARY_DIR}/../res/script"
-    SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/HudDriver.cs" "${CMAKE_CURRENT_SOURCE_DIR}/../../docs/examples/HudExample.cs"
+    SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/HudDriver.cs" "${CMAKE_CURRENT_SOURCE_DIR}/HudExample.cs"
     REFERENCES "${robot2D_ScriptCore_OUTPUT}"
     ADDITIONAL_ARGS -sdk:4.8 -langversion:7.2 -warnaserror+)
 add_dependencies(robot2D-hud-driver robot2D_ScriptCore)
@@ -162,7 +162,7 @@ foreach(gui_case IN ITEMS math uninitialized fonts)
     rb2d_register_test("imgui-backend-${gui_case}" robot2D-gui-backend-tests "${gui_case}" "headless;imgui")
 endforeach()
 if(RB2D_EDITOR_GRAPHICS_TESTS)
-    foreach(gui_api IN ITEMS 43 45)
+    foreach(gui_api IN ITEMS 41 43 45)
         foreach(gui_case IN ITEMS lifecycle renderer rollback)
             set(gui_name "imgui-backend-${gui_case}-${gui_api}")
             rb2d_register_test("${gui_name}" robot2D-gui-backend-tests "${gui_case}" "graphics;imgui" "${gui_api}")
@@ -188,10 +188,11 @@ endforeach()
 add_executable(robot2D-desktop-window-tests DesktopWindowTests.cpp)
 target_link_libraries(robot2D-desktop-window-tests PRIVATE robot2D-editor-objects)
 add_dependencies(robot2D-editor-test-suite robot2D-desktop-window-tests)
+rb2d_register_test(core-desktop-metrics-values robot2D-desktop-window-tests metrics-values "headless;core;desktop")
 rb2d_register_test(core-desktop-uninitialized robot2D-desktop-window-tests uninitialized "headless;core;desktop")
 rb2d_register_test(core-desktop-editor-shutdown robot2D-desktop-window-tests editor-shutdown "headless;core;desktop")
 if(RB2D_EDITOR_GRAPHICS_TESTS)
-    foreach(desktop_case IN ITEMS lifetime render-lifetime rollback borrowed events engine)
+    foreach(desktop_case IN ITEMS lifetime render-lifetime rollback borrowed events engine metrics metrics-events)
         rb2d_register_test("core-desktop-${desktop_case}" robot2D-desktop-window-tests "${desktop_case}" "graphics;core;desktop")
         set_tests_properties("core-desktop-${desktop_case}" PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 60)
     endforeach()
