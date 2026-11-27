@@ -140,7 +140,6 @@ namespace robot2D {
     void Texture::bindBufferData(void* bufferData) {
         auto glFormat = convertColorType(m_image.getColorFormat());
         auto size = m_image.getSize();
-        glBindTexture(GL_TEXTURE_2D, m_texture);
         if(RenderAPI::getOpenGLVersion() != RenderApi::OpenGL4_5)
             glTexImage2D(GL_TEXTURE_2D, 0, glFormat, size.x,
                 size.y, 0, glFormat, GL_UNSIGNED_BYTE, bufferData);
