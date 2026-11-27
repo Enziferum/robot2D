@@ -88,6 +88,14 @@ jobs:
           path: work/glslang-src
           persist-credentials: false
 
+      - name: Checkout pinned GoogleTest
+        uses: actions/checkout@v7
+        with:
+          repository: google/googletest
+          ref: v1.14.0
+          path: work/googletest-src
+          persist-credentials: false
+
       - name: Build GLSL validator
         run: |
           cmake -S work/glslang-src -B work/glslang-build -G Ninja -DCMAKE_BUILD_TYPE=Release -DENABLE_SPIRV=OFF -DENABLE_HLSL=OFF -DGLSLANG_TESTS=OFF -DGLSLANG_ENABLE_INSTALL=OFF
@@ -104,14 +112,14 @@ jobs:
       - name: Configure, build and test
         env:
           LIBGL_ALWAYS_SOFTWARE: '1'
-        run: ${{ matrix.command }}
+        run: ${{ matrix.command }} --googletest-source work/googletest-src
 
       - name: Build and test standalone Core and ImGui
         env:
           LIBGL_ALWAYS_SOFTWARE: '1'
           MESA_GL_VERSION_OVERRIDE: '4.1FC'
           MESA_GLSL_VERSION_OVERRIDE: '410'
-        run: ${{ runner.os == 'Linux' && 'xvfb-run -a python3 scripts/ci.py --core-only --graphics --build-dir build-core' || runner.os == 'macOS' && 'python3 scripts/ci.py --core-only --build-dir build-core' || 'python scripts/ci.py --core-only --build-dir build-core' }}
+        run: ${{ runner.os == 'Linux' && 'xvfb-run -a python3 scripts/ci.py --core-only --graphics --build-dir build-core' || runner.os == 'macOS' && 'python3 scripts/ci.py --core-only --build-dir build-core' || 'python scripts/ci.py --core-only --build-dir build-core' }} --googletest-source work/googletest-src
 
       - name: Run macOS OpenGL 4.1 graphics smoke
         if: runner.os == 'macOS'
